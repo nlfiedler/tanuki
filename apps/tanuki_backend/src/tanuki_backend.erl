@@ -93,7 +93,7 @@ by_date(Year, Month) when is_integer(Year), is_integer(Month) ->
 %
 -spec date_list_to_string([integer()]) -> string().
 date_list_to_string(Datelist) ->
-    io_lib:format("~p/~p/~p ~p:~p", Datelist).
+    lists:flatten(io_lib:format("~B/~B/~B ~B:~B", Datelist)).
 
 %
 % @doc Retrieves the mimetype for a document with the given checksum, in

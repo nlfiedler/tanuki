@@ -77,7 +77,8 @@ all() ->
         by_tag,
         by_tags,
         by_year,
-        by_month
+        by_month,
+        date_formatter
     ].
 
 fetch_document(_Config) ->
@@ -163,3 +164,8 @@ by_month(_Config) ->
     Ids = [[<<"test_AC">>], [<<"test_AB">>]],
     [Validate(I, C, E) || {I, C, E} <- lists:zip3(Inputs, Counts, Ids)],
     ok.
+
+date_formatter(_Config) ->
+    Result = tanuki_backend:date_list_to_string([2014, 12, 23, 22, 28]),
+    error_logger:info_msg("date_formatter = ~p~n", [Result]),
+    ?assertEqual("2014/12/23 22:28", Result).

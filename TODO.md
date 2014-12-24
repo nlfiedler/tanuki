@@ -13,17 +13,19 @@
 
 1. Fetch additional details of the image and display in `asset.erl`
 1. Produce thumbnails for the images and cache them
-    * https://github.com/kivra/emagick
     * https://github.com/mokele/eim
+    * caching
+        * `application:set_env(mnesia, dir, "where/to/store/the/db").`
+        * `Nodes = [node()].`
 1. Display thumbnails of the images in `asset.erl` and `tag.erl`
 1. Make the thumbnail image a link to the full-size image
 1. Organize the assets by date in `tag.erl`
-1. Format the date properly in `tag.erl`
 1. Display available dates (year, then months)
 1. Display assets by date (with pagination?)
 1. Use ETS to cache the tags and such in memory of `tanuki_backend` process.
     * Cache invalidation via couchbeam change listeners.
 1. Produce thumbnails for the videos and cache them
+    * https://github.com/emedia-project/erlffmpeg
 
 ### Implementation Details
 
