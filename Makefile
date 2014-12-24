@@ -1,9 +1,12 @@
 .PHONY: clean compile eunit ct dev rel
 
+NITRO_DIR = apps/tanuki_backend/priv/static/nitrogen
+
 clean:
 	rebar -r clean skip_deps=true
 
 compile:
+	@(test -d $(NITRO_DIR) || mkdir $(NITRO_DIR))
 	$(MAKE) -C apps/tanuki_backend copy-static
 	rebar -r compile skip_deps=true
 
