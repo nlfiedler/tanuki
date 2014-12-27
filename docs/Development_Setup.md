@@ -55,3 +55,10 @@ $ cd exif-py
 $ python setup.py build
 $ python setup.py install
 ```
+
+## Backend
+
+### Requirements
+
+* ImageMagick
+    * Homebrew: `brew install imagemagick`

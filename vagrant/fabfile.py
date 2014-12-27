@@ -38,6 +38,8 @@ DIR_GIT = 'git-2.1.0'
 TAR_GIT = '{}.tar.xz'.format(DIR_GIT)
 URL_GIT = 'https://www.kernel.org/pub/software/scm/git/{}'.format(TAR_GIT)
 
+# TODO: install ImageMagick
+
 
 @task
 def build_all():

@@ -29,6 +29,7 @@ App = [
     {applications, [
         kernel,
         stdlib,
+        % mnesia,
         syntax_tools,  %% erl_syntax module
         compiler,      %% compile module
         mimetypes,
@@ -37,7 +38,8 @@ App = [
         sync,
         nitrogen_core,
         jsx,           %% for couchbeam
-        couchbeam
+        couchbeam,
+        eim
     ]},
     {mod, {tanuki_backend_app, []}},
     {env, AppEnv}

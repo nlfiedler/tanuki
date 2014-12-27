@@ -11,14 +11,10 @@
 
 ### Action Items
 
-1. Fetch additional details of the image and display in `asset.erl`
-1. Produce thumbnails for the images and cache them
-    * https://github.com/mokele/eim
-    * caching
-        * `application:set_env(mnesia, dir, "where/to/store/the/db").`
-        * `Nodes = [node()].`
+1. Cache the generated thumbnails (using mnesia)
 1. Display thumbnails of the images in `asset.erl` and `tag.erl`
 1. Make the thumbnail image a link to the full-size image
+1. Fetch additional details of the image and display in `asset.erl`
 1. Organize the assets by date in `tag.erl`
 1. Display available dates (year, then months)
 1. Display assets by date (with pagination?)

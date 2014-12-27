@@ -21,7 +21,7 @@
 -module(tanuki_backend).
 -export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1]).
 -export([all_tags/0, date_list_to_string/1, fetch_document/1, path_to_mimes/2]).
--export([generate_etag/2]).
+-export([generate_etag/2, produce_thumbnail/2]).
 
 %%
 %% Client API
@@ -117,3 +117,32 @@ generate_etag(Arguments, strong_etag_extra) ->
     Parts = string:tokens(Filepath, "/"),
     Checksum = string:join(lists:sublist(Parts, length(Parts) - 3, 3), ""),
     {strong, list_to_binary(Checksum)}.
+
+%
+% @doc TODO: write doc comment
+% TODO: add a -spec
+%
+produce_thumbnail(_Checksum, RelativePath) ->
+    % TODO: check if Checksum exists in mnesia thumbnails table
+    % F = fun() ->
+    %     case mnesia:read({thumbnails, Checksum}) of
+    %         [#thumbnails{sha256=C, binary=B}] ->
+    %             B;
+    %         [] ->
+    %             undefined
+    %     end
+    % end,
+    % mnesia:activity(transaction, F).
+    % TODO: if yes, return data
+    % TODO: if no, retrieve full image and produce thumbnail
+    % TODO: store thumbnail in mnesia thumbnails table
+    {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
+    SourceFile = filename:join(AssetsDir, RelativePath),
+    {ok, Binary} = file:read_file(SourceFile),
+    {ok, Image} = eim:load(Binary),
+    DerivedBinary = eim:derive(Image, jpg, {scale, width, 240}),
+    % F = fun() ->
+    %     mnesia:write(#thumbnails{sha256=Checksum, binary=DerivedBinary})
+    % end,
+    % mnesia:activity(transaction, F).
+    {ok, DerivedBinary, <<"image/jpeg">>}.

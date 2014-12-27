@@ -86,6 +86,8 @@ init_dispatch(DocRoot, StaticPaths) ->
         [{directory, AssetsDir},
          {mimetypes, {fun tanuki_backend:path_to_mimes/2, default}},
          {etag, {fun tanuki_backend:generate_etag/2, strong_etag_extra}}]},
+    %% Install our handler for thumbnails
+    ThumbnailsEntry = {"/thumbnails/[...]", tanuki_thumbnail_handler, []},
 
     %% Start Cowboy...
     %% NOTE: According to Loic, there's no way to pass the buck back to cowboy
@@ -95,7 +97,11 @@ init_dispatch(DocRoot, StaticPaths) ->
     %% the static_paths section of cowboy.config
     Dispatch = [
         %% Nitrogen will handle everything that's not handled in the StaticDispatches
-        {'_', StaticDispatches ++ [AssetsEntry, {'_', HandlerModule , HandlerOpts}]}
+        {'_', StaticDispatches ++ [
+            AssetsEntry,
+            ThumbnailsEntry,
+            {'_', HandlerModule , HandlerOpts}
+        ]}
     ],
     cowboy_router:compile(Dispatch).
 
