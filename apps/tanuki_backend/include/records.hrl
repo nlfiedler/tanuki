@@ -23,8 +23,10 @@
 -include("plugins.hrl").
 
 %
-% Mnesia record for storing thumbnails.
+% Mnesia record for storing thumbnails, and the record for tracking how old a
+% particular thumbnail is, for count limiting.
 %
 -record(thumbnails, {sha256, binary}).
+-record(thumbnail_dates, {timestamp, sha256}).
 
 %% Include any application-specific custom elements, actions, or validators below

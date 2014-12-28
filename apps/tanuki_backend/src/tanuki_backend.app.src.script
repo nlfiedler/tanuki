@@ -29,7 +29,7 @@ App = [
     {applications, [
         kernel,
         stdlib,
-        % mnesia,
+        mnesia,
         syntax_tools,  %% erl_syntax module
         compiler,      %% compile module
         mimetypes,

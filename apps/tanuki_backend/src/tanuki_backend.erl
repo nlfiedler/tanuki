@@ -22,6 +22,7 @@
 -export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1]).
 -export([all_tags/0, date_list_to_string/1, fetch_document/1, path_to_mimes/2]).
 -export([generate_etag/2, produce_thumbnail/2]).
+-include("../include/records.hrl").  % just "records.hrl" is ideal, but ST-Erlang does not like it
 
 %%
 %% Client API
@@ -112,6 +113,7 @@ path_to_mimes(Filename, _Database) ->
 % @doc Returns an ETag for a given file, which essentially means converting
 %      the file path to a sha256 checksum.
 %
+-spec generate_etag(list(), strong_etag_extra) -> {strong, bitstring()}.
 generate_etag(Arguments, strong_etag_extra) ->
     {_, Filepath} = lists:keyfind(filepath, 1, Arguments),
     Parts = string:tokens(Filepath, "/"),
@@ -119,30 +121,28 @@ generate_etag(Arguments, strong_etag_extra) ->
     {strong, list_to_binary(Checksum)}.
 
 %
-% @doc TODO: write doc comment
-% TODO: add a -spec
+% @doc Either retrieve the thumbnail produced earlier, or generate one
+%      now and cache for later use. Returns {ok, Binary, Mimetype}.
 %
-produce_thumbnail(_Checksum, RelativePath) ->
-    % TODO: check if Checksum exists in mnesia thumbnails table
-    % F = fun() ->
-    %     case mnesia:read({thumbnails, Checksum}) of
-    %         [#thumbnails{sha256=C, binary=B}] ->
-    %             B;
-    %         [] ->
-    %             undefined
-    %     end
-    % end,
-    % mnesia:activity(transaction, F).
-    % TODO: if yes, return data
-    % TODO: if no, retrieve full image and produce thumbnail
-    % TODO: store thumbnail in mnesia thumbnails table
-    {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
-    SourceFile = filename:join(AssetsDir, RelativePath),
-    {ok, Binary} = file:read_file(SourceFile),
-    {ok, Image} = eim:load(Binary),
-    DerivedBinary = eim:derive(Image, jpg, {scale, width, 240}),
-    % F = fun() ->
-    %     mnesia:write(#thumbnails{sha256=Checksum, binary=DerivedBinary})
-    % end,
-    % mnesia:activity(transaction, F).
-    {ok, DerivedBinary, <<"image/jpeg">>}.
+-spec produce_thumbnail(string(), string()) -> {ok, binary(), bitstring()}.
+produce_thumbnail(Checksum, RelativePath) ->
+    % look for thumbnail cached in mnesia, producing and storing, if needed
+    F = fun() ->
+        case mnesia:read({thumbnails, Checksum}) of
+            [#thumbnails{sha256=_C, binary=Binary}] ->
+                Binary;
+            [] ->
+                % TODO: get the count and trim if too many
+                % producing a thumbnail in a transaction is not ideal...
+                {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
+                SourceFile = filename:join(AssetsDir, RelativePath),
+                {ok, Binary0} = file:read_file(SourceFile),
+                {ok, Image} = eim:load(Binary0),
+                % this image type and the mimetype below are coupled
+                Binary = eim:derive(Image, jpg, {scale, width, 240}),
+                mnesia:write(#thumbnails{sha256=Checksum, binary=Binary}),
+                Binary
+        end
+    end,
+    Binary = mnesia:activity(transaction, F),
+    {ok, Binary, <<"image/jpeg">>}.

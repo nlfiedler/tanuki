@@ -11,7 +11,6 @@
 
 ### Action Items
 
-1. Cache the generated thumbnails (using mnesia)
 1. Display thumbnails of the images in `asset.erl` and `tag.erl`
 1. Make the thumbnail image a link to the full-size image
 1. Fetch additional details of the image and display in `asset.erl`
@@ -22,6 +21,8 @@
     * Cache invalidation via couchbeam change listeners.
 1. Produce thumbnails for the videos and cache them
     * https://github.com/emedia-project/erlffmpeg
+1. Prune older cached thumbnails to avoid running out of memory
+    * Add a created_at field to table, add index, use first() to remove the oldest
 
 ### Implementation Details
 

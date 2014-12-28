@@ -39,11 +39,11 @@ init_per_suite(Config) ->
     end,
     {ok, Db} = couchbeam:create_db(S, ?TESTDB, []),
     add_test_docs(Db, Config),
-    % % set up mnesia
-    % Priv = ?config(priv_dir, Config),
-    % ok = application:set_env(mnesia, dir, Priv),
-    % tanuki_backend_app:ensure_schema([node()]),
-    % ok = application:start(mnesia),
+    % set up mnesia
+    Priv = ?config(priv_dir, Config),
+    ok = application:set_env(mnesia, dir, Priv),
+    tanuki_backend_app:ensure_schema([node()]),
+    ok = application:start(mnesia),
     % start the application(s)
     ok = application:set_env(cowboy, bind_address, "0.0.0.0"),
     ok = application:set_env(cowboy, port, 8000),
@@ -73,7 +73,7 @@ end_per_suite(Config) ->
     S = couchbeam:server_connection(Url, []),
     couchbeam:delete_db(S, ?TESTDB),
     couchbeam:stop(),
-    % application:stop(mnesia),
+    application:stop(mnesia),
     ok.
 
 all() ->
