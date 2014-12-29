@@ -101,9 +101,11 @@ date_list_to_string(Datelist) ->
 %      a form suitable for the Cowboy dispatch mimetype handler.
 %
 -spec path_to_mimes(string(), term()) -> {bitstring(), bitstring(), list()}.
-path_to_mimes(Filename, _Database) ->
+path_to_mimes(Filename, Database) when is_bitstring(Filename) ->
+    path_to_mimes(bitstring_to_list(Filename), Database);
+path_to_mimes(Filename, _Database) when is_list(Filename) ->
     Parts = string:tokens(Filename, "/"),
-    Checksum = string:join(lists:sublist(Parts, length(Parts) - 3, 3), ""),
+    Checksum = string:join(lists:sublist(Parts, length(Parts) - 2, 3), ""),
     case by_checksum(Checksum) of
         [] -> [<<"application/octet-stream">>];
         [H|_T] -> [couchbeam_doc:get_value(<<"value">>, H)]
@@ -115,9 +117,13 @@ path_to_mimes(Filename, _Database) ->
 %
 -spec generate_etag(list(), strong_etag_extra) -> {strong, bitstring()}.
 generate_etag(Arguments, strong_etag_extra) ->
-    {_, Filepath} = lists:keyfind(filepath, 1, Arguments),
+    {_, Filepath0} = lists:keyfind(filepath, 1, Arguments),
+    Filepath = case is_binary(Filepath0) of
+        true -> bitstring_to_list(Filepath0);
+        false -> Filepath0
+    end,
     Parts = string:tokens(Filepath, "/"),
-    Checksum = string:join(lists:sublist(Parts, length(Parts) - 3, 3), ""),
+    Checksum = string:join(lists:sublist(Parts, length(Parts) - 2, 3), ""),
     {strong, list_to_binary(Checksum)}.
 
 %

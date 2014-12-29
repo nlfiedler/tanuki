@@ -38,12 +38,14 @@ body() ->
 inner_body() ->
     Id = wf:q(id),
     {document, Document} = tanuki_backend:fetch_document(Id),
-    ImageBase = "/thumbnails/",
     Checksum = bitstring_to_list(couchbeam_doc:get_value(<<"sha256">>, Document)),
-    ImageSrc = ImageBase ++ string:substr(Checksum, 1, 2) ++ "/" ++
+    Checkslash = string:substr(Checksum, 1, 2) ++ "/" ++
         string:substr(Checksum, 3, 2) ++ "/" ++ string:substr(Checksum, 5),
+    ImageSrc = "/thumbnails/" ++ Checkslash,
+    Label = bitstring_to_list(couchbeam_doc:get_value(<<"file_name">>, Document)),
+    ImageUrl = "/assets/" ++ Checkslash,
     [
         #h1 { text="Asset " ++ Id },
         #p{},
-        #image{ image=ImageSrc }
+        #link { title=Label, text=Label, url=ImageUrl, body=#image{ image=ImageSrc } }
     ].

@@ -85,7 +85,9 @@ all() ->
         by_tags,
         by_year,
         by_month,
-        date_formatter
+        date_formatter,
+        path_to_mimes,
+        generate_etag
     ].
 
 fetch_document(_Config) ->
@@ -174,5 +176,51 @@ by_month(_Config) ->
 
 date_formatter(_Config) ->
     Result = tanuki_backend:date_list_to_string([2014, 12, 23, 22, 28]),
-    error_logger:info_msg("date_formatter = ~p~n", [Result]),
-    ?assertEqual("2014/12/23 22:28", Result).
+    ?assertEqual("2014/12/23 22:28", Result),
+    ok.
+
+path_to_mimes(_Config) ->
+    % success case leading path
+    Filepath1 = "foo/39/09/2991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100",
+    Result1 = tanuki_backend:path_to_mimes(Filepath1, a113),
+    ?assertEqual(1, length(Result1)),
+    ?assertEqual(<<"image/jpeg">>, hd(Result1)),
+    % success case exact path
+    Filepath2 = "39/09/2991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100",
+    Result2 = tanuki_backend:path_to_mimes(Filepath2, a113),
+    ?assertEqual(1, length(Result2)),
+    ?assertEqual(<<"image/jpeg">>, hd(Result2)),
+    % success case binary path
+    Filepath3 = <<"39/09/2991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100">>,
+    Result3 = tanuki_backend:path_to_mimes(Filepath3, a113),
+    ?assertEqual(1, length(Result3)),
+    ?assertEqual(<<"image/jpeg">>, hd(Result3)),
+    % unknown checksum case
+    Filepath4 = "foo/11/22/34567890abcdef",
+    Result4 = tanuki_backend:path_to_mimes(Filepath4, a113),
+    ?assertEqual(1, length(Result4)),
+    ?assertEqual(<<"application/octet-stream">>, hd(Result4)),
+    % fail case no slashes
+    ?assertError(function_clause, tanuki_backend:path_to_mimes("abcdef", a113)),
+    % fail case short path
+    ?assertError(function_clause, tanuki_backend:path_to_mimes("abc/def", a113)),
+    ok.
+
+generate_etag(_Config) ->
+    % success case leading path
+    Input1 = [{filepath, "foo/39/09/2991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100"}],
+    {strong, Result1} = tanuki_backend:generate_etag(Input1, strong_etag_extra),
+    ?assertEqual(<<"39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100">>, Result1),
+    % success case exact path
+    Input2 = [{filepath, "39/09/2991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100"}],
+    {strong, Result2} = tanuki_backend:generate_etag(Input2, strong_etag_extra),
+    ?assertEqual(<<"39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100">>, Result2),
+    % success case binary path
+    Input3 = [{filepath, <<"39/09/2991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100">>}],
+    {strong, Result3} = tanuki_backend:generate_etag(Input3, strong_etag_extra),
+    ?assertEqual(<<"39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100">>, Result3),
+    % fail case no slashes
+    ?assertError(function_clause, tanuki_backend:generate_etag([{filepath, "abcdef"}], a113)),
+    % fail case short path
+    ?assertError(function_clause, tanuki_backend:generate_etag([{filepath, "abc/def"}], a113)),
+    ok.
