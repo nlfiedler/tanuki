@@ -21,7 +21,7 @@
 -module(tanuki_backend).
 -export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1]).
 -export([all_tags/0, date_list_to_string/1, fetch_document/1, path_to_mimes/2]).
--export([generate_etag/2, produce_thumbnail/2]).
+-export([generate_etag/2, retrieve_thumbnail/2]).
 -include("../include/records.hrl").  % just "records.hrl" is ideal, but ST-Erlang does not like it
 
 %%
@@ -124,25 +124,52 @@ generate_etag(Arguments, strong_etag_extra) ->
 % @doc Either retrieve the thumbnail produced earlier, or generate one
 %      now and cache for later use. Returns {ok, Binary, Mimetype}.
 %
--spec produce_thumbnail(string(), string()) -> {ok, binary(), bitstring()}.
-produce_thumbnail(Checksum, RelativePath) ->
+-spec retrieve_thumbnail(string(), string()) -> {ok, binary(), bitstring()}.
+retrieve_thumbnail(Checksum, RelativePath) ->
     % look for thumbnail cached in mnesia, producing and storing, if needed
     F = fun() ->
-        case mnesia:read({thumbnails, Checksum}) of
+        case mnesia:read(thumbnails, Checksum) of
             [#thumbnails{sha256=_C, binary=Binary}] ->
                 Binary;
             [] ->
-                % TODO: get the count and trim if too many
                 % producing a thumbnail in a transaction is not ideal...
-                {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
-                SourceFile = filename:join(AssetsDir, RelativePath),
-                {ok, Binary0} = file:read_file(SourceFile),
-                {ok, Image} = eim:load(Binary0),
-                % this image type and the mimetype below are coupled
-                Binary = eim:derive(Image, jpg, {scale, width, 240}),
+                Binary = generate_thumbnail(RelativePath),
                 mnesia:write(#thumbnails{sha256=Checksum, binary=Binary}),
+                T = seconds_since_epoch(),
+                mnesia:write(#thumbnail_dates{timestamp=T, sha256=Checksum}),
+                % update the count of thumbnails currently cached
+                Count = mnesia:dirty_update_counter(thumbnail_counter, id, 1),
+                % prune oldest record if we reached our limit
+                if Count > 1000 ->
+                    OldestKey = mnesia:first(thumbnail_dates),
+                    [#thumbnail_dates{sha256=OC}] = mnesia:read(thumbnail_dates, OldestKey),
+                    mnesia:delete({thumbnails, OC}),
+                    mnesia:delete({thumbnail_dates, OldestKey}),
+                    mnesia:dirty_update_counter(thumbnail_counter, id, -1);
+                   true -> ok
+                end,
                 Binary
         end
     end,
     Binary = mnesia:activity(transaction, F),
+    % thumbnails are always jpeg
     {ok, Binary, <<"image/jpeg">>}.
+
+%
+% @doc Produce a jpeg thumbnail of the named image file.
+%
+-spec generate_thumbnail(string()) -> binary().
+generate_thumbnail(RelativePath) ->
+    {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
+    SourceFile = filename:join(AssetsDir, RelativePath),
+    {ok, Binary} = file:read_file(SourceFile),
+    {ok, Image} = eim:load(Binary),
+    eim:derive(Image, jpg, {scale, width, 240}).
+
+%
+% @doc Return the seconds since the epoch (1970/1/1 00:00).
+%
+-spec seconds_since_epoch() -> integer().
+seconds_since_epoch() ->
+    {Mega, Sec, _Micro} = now(),
+    Mega * 1000000 + Sec.

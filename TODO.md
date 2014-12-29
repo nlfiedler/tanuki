@@ -21,8 +21,7 @@
     * Cache invalidation via couchbeam change listeners.
 1. Produce thumbnails for the videos and cache them
     * https://github.com/emedia-project/erlffmpeg
-1. Prune older cached thumbnails to avoid running out of memory
-    * Add a created_at field to table, add index, use first() to remove the oldest
+1. Would be good to Common Test the thumbnail generation code
 
 ### Implementation Details
 

@@ -33,7 +33,7 @@ handle(Req, State) ->
     Checksum = string:join(PathInfoStr, ""),
     RelativePath = filename:join(PathInfoStr),
 	% retrieve the thumbnail, set as response body
-    {ok, Binary, Mimetype} = tanuki_backend:produce_thumbnail(Checksum, RelativePath),
+    {ok, Binary, Mimetype} = tanuki_backend:retrieve_thumbnail(Checksum, RelativePath),
     {ok, Req3} = cowboy_req:reply(200, [
         {<<"content-type">>, Mimetype}
     ], Binary, Req2),

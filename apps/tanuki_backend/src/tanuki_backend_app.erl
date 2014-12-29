@@ -65,6 +65,9 @@ ensure_schema(Nodes) ->
                     {attributes, record_info(fields, thumbnail_dates)},
                     {type, ordered_set}
                 ]),
+                {atomic, ok} = mnesia:create_table(thumbnail_counter, [
+                    {attributes, record_info(fields, thumbnail_counter)}
+                ]),
                 ok;
             true ->
                 ok
