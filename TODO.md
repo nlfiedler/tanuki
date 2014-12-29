@@ -11,9 +11,7 @@
 
 ### Action Items
 
-1. Add more negative test cases
-1. Display thumbnails of the images in `asset.erl` and `tag.erl`
-1. Make the thumbnail image a link to the full-size image
+1. Display thumbnails of the images in `tag.erl`
 1. Fetch additional details of the image and display in `asset.erl`
 1. Organize the assets by date in `tag.erl`
 1. Display available dates (year, then months)

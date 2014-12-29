@@ -91,10 +91,12 @@ all() ->
     ].
 
 fetch_document(_Config) ->
-    {Result, Document} = tanuki_backend:fetch_document("test_AA"),
-    ?assertEqual(document, Result),
-    Content = couchbeam_doc:get_value(<<"file_owner">>, Document),
-    ?assertEqual(<<"akwok">>, Content),
+    {Result1, Document1} = tanuki_backend:fetch_document("test_AA"),
+    ?assertEqual(document, Result1),
+    Content1 = couchbeam_doc:get_value(<<"file_owner">>, Document1),
+    ?assertEqual(<<"akwok">>, Content1),
+    % negative case, not found
+    ?assertEqual({error, not_found}, tanuki_backend:fetch_document("foobar")),
     ok.
 
 all_tags(_Config) ->
@@ -122,6 +124,8 @@ by_checksum(_Config) ->
     Ids = [<<"test_AA">>],
     Values = [<<"image/jpeg">>],
     [Validate(Row, Id, Value) || {Row, Id, Value} <- lists:zip3(Rows, Ids, Values)],
+    % negative case, no matching checksum
+    ?assertEqual([], tanuki_backend:by_checksum("foobar")),
     ok.
 
 by_tag(_Config) ->
@@ -133,6 +137,8 @@ by_tag(_Config) ->
     end,
     Keys = [<<"test_AA">>, <<"test_AC">>],
     [Validate(Row, Key) || {Row, Key} <- lists:zip(Rows, Keys)],
+    % negative case, no such tag
+    ?assertEqual([], tanuki_backend:by_tag("foobar")),
     ok.
 
 by_tags(_Config) ->
@@ -146,6 +152,8 @@ by_tags(_Config) ->
     Ids = [<<"test_AA">>, <<"test_AC">>, <<"test_AB">>, <<"test_AC">>],
     Keys = [<<"cat">>, <<"cat">>, <<"picnic">>, <<"picnic">>],
     [Validate(Row, Id, Key) || {Row, Id, Key} <- lists:zip3(Rows, Ids, Keys)],
+    % negative case, no such tags
+    ?assertEqual([], tanuki_backend:by_tags(["foo", "bar"])),
     ok.
 
 by_year(_Config) ->

@@ -44,8 +44,10 @@ init([]) ->
     {ok, State}.
 
 handle_call({fetch_document, DocId}, _From, #state{database=Db}=State) ->
-    {ok, Doc} = couchbeam:open_doc(Db, DocId),
-    {reply, {document, Doc}, State};
+    case couchbeam:open_doc(Db, DocId) of
+        {ok, Doc} -> {reply, {document, Doc}, State};
+        {error, Reason} -> {reply, {error, Reason}, State}
+    end;
 handle_call(all_tags, _From, #state{database=Db}=State) ->
     Options = [{group_level, 1}],
     {ok, Rows} = couchbeam_view:fetch(Db, {"assets", "tags"}, Options),
