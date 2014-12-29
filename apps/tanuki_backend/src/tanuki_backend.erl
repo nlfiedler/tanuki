@@ -20,8 +20,9 @@
 %% -------------------------------------------------------------------
 -module(tanuki_backend).
 -export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1]).
--export([all_tags/0, date_list_to_string/1, fetch_document/1, path_to_mimes/2]).
--export([generate_etag/2, retrieve_thumbnail/2]).
+-export([all_tags/0, fetch_document/1, path_to_mimes/2, generate_etag/2]).
+-export([get_best_date/1, date_list_to_string/1]).
+-export([retrieve_thumbnail/2]).
 -include("../include/records.hrl").  % just "records.hrl" is ideal, but ST-Erlang does not like it
 
 %%
@@ -179,3 +180,36 @@ generate_thumbnail(RelativePath) ->
 seconds_since_epoch() ->
     {Mega, Sec, _Micro} = now(),
     Mega * 1000000 + Sec.
+
+%
+% @doc Extract the most accurate date from the given document. The precedence
+%      is EXIF original date, followed by file date, followed by import date.
+%      The date is the format stored in the database (a list of integers).
+%
+-spec get_best_date(term()) -> list() | none.
+get_best_date(Doc) ->
+    case get_field_value(<<"exif_date">>, Doc) of
+        none ->
+            case get_field_value(<<"file_date">>, Doc) of
+                none ->
+                    get_field_value(<<"import_date">>, Doc);
+                Date -> Date
+            end;
+        Date -> Date
+    end.
+
+%
+% @doc Extract the value of the named field, or none if either undefined or null.
+%
+-spec get_field_value(term(), binary()) -> term() | none.
+get_field_value(Field, Document) ->
+    case couchbeam_doc:get_value(Field, Document) of
+        undefined ->
+            none;
+        null ->
+            none;
+        none ->
+            none;
+        Value ->
+            Value
+    end.

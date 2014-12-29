@@ -13,6 +13,10 @@
 
 1. Display thumbnails of the images in `tag.erl`
 1. Fetch additional details of the image and display in `asset.erl`
+1. Show all other tags in `tag.erl`
+    * Clicking on one goes to `tags.erl` which shows assets with all selected tags
+    * As with `tag.erl`, show all other tags; clicking on one adds to the list of tags
+    * Show an `x` next to each tag; clicking removes tag from list and refreshes page
 1. Organize the assets by date in `tag.erl`
 1. Display available dates (year, then months)
 1. Display assets by date (with pagination?)

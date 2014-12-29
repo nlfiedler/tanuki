@@ -87,7 +87,8 @@ all() ->
         by_month,
         date_formatter,
         path_to_mimes,
-        generate_etag
+        generate_etag,
+        get_best_date
     ].
 
 fetch_document(_Config) ->
@@ -231,4 +232,13 @@ generate_etag(_Config) ->
     ?assertError(function_clause, tanuki_backend:generate_etag([{filepath, "abcdef"}], a113)),
     % fail case short path
     ?assertError(function_clause, tanuki_backend:generate_etag([{filepath, "abc/def"}], a113)),
+    ok.
+
+get_best_date(_Config) ->
+    {document, Document1} = tanuki_backend:fetch_document("test_AA"),
+    ?assertEqual([2013, 1, 31, 5, 26], tanuki_backend:get_best_date(Document1)),
+    {document, Document2} = tanuki_backend:fetch_document("test_AB"),
+    ?assertEqual([2014, 10, 24, 15, 9], tanuki_backend:get_best_date(Document2)),
+    {document, Document3} = tanuki_backend:fetch_document("test_AC"),
+    ?assertEqual([2014, 7, 15, 3, 13], tanuki_backend:get_best_date(Document3)),
     ok.

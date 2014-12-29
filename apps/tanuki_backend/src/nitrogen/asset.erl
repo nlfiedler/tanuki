@@ -44,8 +44,11 @@ inner_body() ->
     ImageSrc = "/thumbnails/" ++ Checkslash,
     Label = bitstring_to_list(couchbeam_doc:get_value(<<"file_name">>, Document)),
     ImageUrl = "/assets/" ++ Checkslash,
+    DateList = tanuki_backend:get_best_date(Document),
+    DateString = "Date: " ++ tanuki_backend:date_list_to_string(DateList),
     [
         #h1 { text="Asset " ++ Id },
         #p{},
-        #link { title=Label, text=Label, url=ImageUrl, body=#image{ image=ImageSrc } }
+        #link { title=Label, text=Label, url=ImageUrl, body=#image{ image=ImageSrc } },
+        #p{ text=DateString}
     ].
