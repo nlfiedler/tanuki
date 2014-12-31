@@ -62,3 +62,5 @@ $ python setup.py install
 
 * ImageMagick
     * Homebrew: `brew install imagemagick`
+* nlfiedler/eim requires pkg-config to configure MagickWand
+    * Homebrew: `brew install pkg-config`
