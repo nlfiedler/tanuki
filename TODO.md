@@ -14,9 +14,8 @@
 1. Display thumbnails of the images in `tag.erl`
 1. Fetch additional details of the image and display in `asset.erl`
 1. Show all other tags in `tag.erl`
-    * Clicking on one goes to `tags.erl` which shows assets with all selected tags
-    * As with `tag.erl`, show all other tags; clicking on one adds to the list of tags
-    * Show an `x` next to each tag; clicking removes tag from list and refreshes page
+    * Clicking on one adds to list of selected tags, reloads `tag.erl` to show new results
+    * Show an `x` next to each tag; clicking removes tag from list and reloads page
 1. Organize the assets by date in `tag.erl`
 1. Display available dates (year, then months)
 1. Display assets by date (with pagination?)
@@ -25,6 +24,7 @@
 1. Produce thumbnails for the videos and cache them
     * https://github.com/emedia-project/erlffmpeg
 1. Would be good to Common Test the thumbnail generation code
+1. Show list of locations alongside list of tags
 
 ### Implementation Details
 
