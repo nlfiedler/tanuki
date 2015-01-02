@@ -107,8 +107,14 @@
   ;
   (setv utcnow (datetime.utcnow))
   (setv importdate (date-string-to-ints-list (utcnow.strftime *datetime-format*)))
-  (setv asset_folder (os.path.basename (os.path.normpath dirpath)))
-  (setv tags (list-comp tag [tag (.split (.lower asset_folder) "_") ] (!= tag "")))
+  (setv asset_folder (.lower (os.path.basename (os.path.normpath dirpath))))
+  (setv parts (.split asset_folder "@" 1))
+  (if (> (len parts) 1)
+    (do
+      (setv asset_folder (get parts 0))
+      (setv location (.replace (get parts 1) "_" " ")))
+    (setv location None))
+  (setv tags (list-comp tag [tag (.split asset_folder "_")] (!= tag "")))
   (*logger* (.format "--- Processing tags: {}\n" (.join ", " tags)))
   (for [entry (os.listdir dirpath)]
     (setv filepath (os.path.join dirpath entry))
@@ -128,6 +134,7 @@
               (assoc doc "file_owner" (file-owner filepath))
               (assoc doc "file_size" (. (os.stat filepath) st_size))
               (assoc doc "import_date" importdate)
+              (assoc doc "location" location)
               (setv mimetype (.guess_type mimetypes filepath))
               (assoc doc "mimetype" (if mimetype (get mimetype 0) None))
               (assoc doc "sha256" checksum)
