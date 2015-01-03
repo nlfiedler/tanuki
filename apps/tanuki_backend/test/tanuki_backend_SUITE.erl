@@ -83,6 +83,7 @@ all() ->
         by_checksum,
         by_tag,
         by_tags,
+        by_tags_unique,
         by_year,
         by_month,
         date_formatter,
@@ -155,6 +156,21 @@ by_tags(_Config) ->
     [Validate(Row, Id, Key) || {Row, Id, Key} <- lists:zip3(Rows, Ids, Keys)],
     % negative case, no such tags
     ?assertEqual([], tanuki_backend:by_tags(["foo", "bar"])),
+    ok.
+
+by_tags_unique(_Config) ->
+    Rows = tanuki_backend:by_tags(["cat", "picnic"], unique),
+    ?assertEqual(3, length(Rows)),
+    Validate = fun(Row, Id, Key) ->
+        % view has "id" but documents have "_id"? weird
+        ?assertEqual(Id, couchbeam_doc:get_value(<<"id">>, Row)),
+        ?assertEqual(Key, couchbeam_doc:get_value(<<"key">>, Row))
+    end,
+    Ids = [<<"test_AA">>, <<"test_AB">>, <<"test_AC">>],
+    Keys = [<<"cat">>, <<"picnic">>, <<"cat">>],
+    [Validate(Row, Id, Key) || {Row, Id, Key} <- lists:zip3(Rows, Ids, Keys)],
+    % negative case, no such tags
+    ?assertEqual([], tanuki_backend:by_tags(["foo", "bar"], unique)),
     ok.
 
 by_year(_Config) ->

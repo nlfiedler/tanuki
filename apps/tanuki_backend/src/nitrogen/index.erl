@@ -37,7 +37,7 @@ inner_body() ->
     Rows = tanuki_backend:all_tags(),
     MakeLink = fun(Row) ->
         Label = bitstring_to_list(couchbeam_doc:get_value(<<"key">>, Row)),
-        Url = "/tag?name=" ++ Label,
+        Url = "/tag?tags=" ++ Label,
         [#listitem { body=#link { title=Label, text=Label, url=Url }}]
     end,
     [
