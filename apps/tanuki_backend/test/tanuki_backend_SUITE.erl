@@ -200,8 +200,10 @@ by_month(_Config) ->
     ok.
 
 date_formatter(_Config) ->
-    Result = tanuki_backend:date_list_to_string([2014, 12, 23, 22, 28]),
-    ?assertEqual("2014/12/23 22:28", Result),
+    Result1 = tanuki_backend:date_list_to_string([2014, 12, 23, 22, 28]),
+    ?assertEqual("2014/12/23 22:28", Result1),
+    Result2 = tanuki_backend:date_list_to_string([2014, 12, 23, 22, 28], date_only),
+    ?assertEqual("2014/12/23", Result2),
     ok.
 
 path_to_mimes(_Config) ->

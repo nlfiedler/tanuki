@@ -21,7 +21,7 @@
 -module(tanuki_backend).
 -export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1, by_tags/2]).
 -export([all_tags/0, fetch_document/1, path_to_mimes/2, generate_etag/2]).
--export([get_best_date/1, date_list_to_string/1]).
+-export([get_best_date/1, date_list_to_string/1, date_list_to_string/2]).
 -export([retrieve_thumbnail/2]).
 -include("../include/records.hrl").  % just "records.hrl" is ideal, but ST-Erlang does not like it
 
@@ -110,11 +110,19 @@ by_date(Year, Month) when is_integer(Year), is_integer(Month) ->
 
 %
 % @doc Converts a date-list (list of integers representing a date) of the
-%      form [2014, 7, 4, 12, 1] and converts it to a string: 2014/7/4 12:01.
+%      form [2014, 7, 4, 12, 1] to a string: 2014/7/4 12:01.
 %
 -spec date_list_to_string([integer()]) -> string().
 date_list_to_string(Datelist) ->
     lists:flatten(io_lib:format("~B/~B/~B ~B:~B", Datelist)).
+
+%
+% @doc Converts a date-list (list of integers representing a date) of the
+%      form [2014, 7, 4, 12, 1] to a string, with only the date: 2014/7/4.
+%
+-spec date_list_to_string([integer()], date_only) -> string().
+date_list_to_string(Datelist, date_only) ->
+    lists:flatten(io_lib:format("~B/~B/~B", lists:sublist(Datelist, 3))).
 
 %
 % @doc Retrieves the mimetype for a document with the given checksum, in
