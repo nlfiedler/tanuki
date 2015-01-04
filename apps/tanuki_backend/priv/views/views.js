@@ -46,7 +46,7 @@ var by_tag_map = function (doc) {
             date = doc.import_date;
         }
         doc.tags.forEach(function (tag) {
-            emit(tag.toLowerCase(), [date, doc.file_name]);
+            emit(tag.toLowerCase(), [date, doc.file_name, doc.sha256]);
 	    });
 	}
 };
