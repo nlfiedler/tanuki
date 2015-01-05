@@ -11,6 +11,7 @@
 
 ### Action Items
 
+1. Module eim is highly unstable, crashes often; replace with something ports based
 1. Display thumbnails of the images in `tag.erl`
 1. Fetch additional details of the image and display in `asset.erl`
 1. Show all other tags in `tag.erl`

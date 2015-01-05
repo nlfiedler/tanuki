@@ -32,49 +32,66 @@ title() ->
 
 body() ->
     #container_12 { body=[
-        % TODO: put the tag links in a sidebar
-        % #grid_4 { alpha=true, prefix=2, suffix=2, omega=true, body=tag_list() },
-        #grid_8 { alpha=true, prefix=2, suffix=2, omega=true, body=inner_body() }
+    % TODO: get these showing side-by-side (see style.css example in nitrogenproject.com source)
+        #grid_4 { alpha=true, prefix=1, body=tag_list() },
+        #grid_8 { suffix=1, omega=true, body=inner_body() }
     ]}.
 
 tag_list() ->
-    % TODO: move tags list code here
     % TODO: show selected tags in a sidebar, with 'x' to remove each from the list
-    [
-    ].
-
-inner_body() ->
     Tag = wf:q(tags),
     Tags = string:tokens(Tag, ","),
-    Title = string:join(Tags, ", "),
     OtherTags = compute_other_tags(Tags),
     MakeTagLink = fun(Row) ->
         Label = bitstring_to_list(couchbeam_doc:get_value(<<"key">>, Row)),
         Url = "/tag?tags=" ++ string:join([Label] ++ Tags, ","),
         [#listitem { body=#link { title=Label, text=Label, url=Url }}]
     end,
-    MakeAssetLink = fun(Row) ->
-        Id = bitstring_to_list(couchbeam_doc:get_value(<<"id">>, Row)),
-        Values = couchbeam_doc:get_value(<<"value">>, Row),
-        DateString = tanuki_backend:date_list_to_string(hd(Values)),
-        FileName = bitstring_to_list(hd(tl(Values))),
-        Label = io_lib:format("~p - ~p", [FileName, DateString]),
-        Url = "/asset?id=" ++ Id,
-        [#listitem { body=#link { title=Label, text=Label, url=Url }}]
-    end,
     [
-        #h1 { text="Assets tagged with " ++ Title },
-        #p{},
-        #list{
-            numbered=false,
-            body=[MakeAssetLink(Row) || Row <- tanuki_backend:by_tags(Tags, unique)]
-        },
         #h3 { text="Tags" },
-        #p{},
-        #list{
+        #p {},
+        #list {
             numbered=false,
             body=[MakeTagLink(Row) || Row <- OtherTags]
         }
+    ].
+
+inner_body() ->
+    Tag = wf:q(tags),
+    Tags = string:tokens(Tag, ","),
+    Title = string:join(Tags, ", "),
+    MakeAssetLink = fun(Row) ->
+        Id = bitstring_to_list(couchbeam_doc:get_value(<<"id">>, Row)),
+        Values = couchbeam_doc:get_value(<<"value">>, Row),
+        DateString = tanuki_backend:date_list_to_string(hd(Values), date_only),
+        FileName = bitstring_to_list(hd(tl(Values))),
+        Label = io_lib:format("~s - ~s", [FileName, DateString]),
+        Url = "/asset?id=" ++ Id,
+        % prepare the thumbnail
+        Checksum = bitstring_to_list(hd(tl(tl(Values)))),
+        Checkslash = string:substr(Checksum, 1, 2) ++ "/" ++
+            string:substr(Checksum, 3, 2) ++ "/" ++ string:substr(Checksum, 5),
+        ImageSrc = "/thumbnails/" ++ Checkslash,
+        % TODO: would be nice to have these flow horizontally and wrap around
+        % TODO: is there a more appropriate element type than container_12?
+        [#container_12 {
+            class="img",
+            body=#link {
+                url=Url,
+                body=#image {
+                    image=ImageSrc,
+                    alt=FileName
+                }
+            }
+        }, #container_12 {
+            class="desc",
+            body=Label
+        }]
+    end,
+    [
+        #h1 { text="Assets tagged with " ++ Title },
+        #p {},
+        [MakeAssetLink(Row) || Row <- tanuki_backend:by_tags(Tags)]
     ].
 
 %

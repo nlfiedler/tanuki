@@ -41,6 +41,7 @@ inner_body() ->
     Checksum = bitstring_to_list(couchbeam_doc:get_value(<<"sha256">>, Document)),
     Checkslash = string:substr(Checksum, 1, 2) ++ "/" ++
         string:substr(Checksum, 3, 2) ++ "/" ++ string:substr(Checksum, 5),
+    % TODO: change from thumbnail to something that fits the browser window
     ImageSrc = "/thumbnails/" ++ Checkslash,
     Label = bitstring_to_list(couchbeam_doc:get_value(<<"file_name">>, Document)),
     ImageUrl = "/assets/" ++ Checkslash,

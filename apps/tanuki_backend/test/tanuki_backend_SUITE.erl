@@ -83,7 +83,6 @@ all() ->
         by_checksum,
         by_tag,
         by_tags,
-        by_tags_unique,
         by_year,
         by_month,
         date_formatter,
@@ -145,32 +144,15 @@ by_tag(_Config) ->
 
 by_tags(_Config) ->
     Rows = tanuki_backend:by_tags(["cat", "picnic"]),
-    ?assertEqual(4, length(Rows)),
-    Validate = fun(Row, Id, Key) ->
+    ?assertEqual(1, length(Rows)),
+    Validate = fun(Row, Id) ->
         % view has "id" but documents have "_id"? weird
-        ?assertEqual(Id, couchbeam_doc:get_value(<<"id">>, Row)),
-        ?assertEqual(Key, couchbeam_doc:get_value(<<"key">>, Row))
+        ?assertEqual(Id, couchbeam_doc:get_value(<<"id">>, Row))
     end,
-    Ids = [<<"test_AA">>, <<"test_AC">>, <<"test_AB">>, <<"test_AC">>],
-    Keys = [<<"cat">>, <<"cat">>, <<"picnic">>, <<"picnic">>],
-    [Validate(Row, Id, Key) || {Row, Id, Key} <- lists:zip3(Rows, Ids, Keys)],
+    Ids = [<<"test_AC">>],
+    [Validate(Row, Id) || {Row, Id} <- lists:zip(Rows, Ids)],
     % negative case, no such tags
     ?assertEqual([], tanuki_backend:by_tags(["foo", "bar"])),
-    ok.
-
-by_tags_unique(_Config) ->
-    Rows = tanuki_backend:by_tags(["cat", "picnic"], unique),
-    ?assertEqual(3, length(Rows)),
-    Validate = fun(Row, Id, Key) ->
-        % view has "id" but documents have "_id"? weird
-        ?assertEqual(Id, couchbeam_doc:get_value(<<"id">>, Row)),
-        ?assertEqual(Key, couchbeam_doc:get_value(<<"key">>, Row))
-    end,
-    Ids = [<<"test_AA">>, <<"test_AB">>, <<"test_AC">>],
-    Keys = [<<"cat">>, <<"picnic">>, <<"cat">>],
-    [Validate(Row, Id, Key) || {Row, Id, Key} <- lists:zip3(Rows, Ids, Keys)],
-    % negative case, no such tags
-    ?assertEqual([], tanuki_backend:by_tags(["foo", "bar"], unique)),
     ok.
 
 by_year(_Config) ->

@@ -19,7 +19,7 @@
 %%
 %% -------------------------------------------------------------------
 -module(tanuki_backend).
--export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1, by_tags/2]).
+-export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1]).
 -export([all_tags/0, fetch_document/1, path_to_mimes/2, generate_etag/2]).
 -export([get_best_date/1, date_list_to_string/1, date_list_to_string/2]).
 -export([retrieve_thumbnail/2]).
@@ -69,22 +69,6 @@ by_tag(Tag) when is_list(Tag) ->
 -spec by_tags([string()]) -> [Rows::term()].
 by_tags(Tags) when is_list(Tags) ->
     gen_server:call(tanuki_backend_db, {by_tags, Tags}).
-
-%
-% @doc Retrieves all documents with the given tags, as couchbeam view results.
-%      Duplicate documents will be eliminated, although tags are not merged.
-%      Ordering is by document identifier.
-% @see by_tags/1.
-%
--spec by_tags([string()], unique) -> [Rows::term()].
-by_tags(Tags, unique) when is_list(Tags) ->
-    Rows = gen_server:call(tanuki_backend_db, {by_tags, Tags}),
-    Comp = fun(A, B) ->
-        IdA = couchbeam_doc:get_value(<<"id">>, A),
-        IdB = couchbeam_doc:get_value(<<"id">>, B),
-        IdA =< IdB
-    end,
-    lists:usort(Comp, Rows).
 
 %
 % @doc Retrieves all documents whose most relevant date is within the given year.
