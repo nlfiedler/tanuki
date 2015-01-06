@@ -180,9 +180,21 @@ retrieve_thumbnail(Checksum, RelativePath) ->
 generate_thumbnail(RelativePath) ->
     {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
     SourceFile = filename:join(AssetsDir, RelativePath),
-    {ok, Binary} = file:read_file(SourceFile),
-    {ok, Image} = eim:load(Binary),
-    eim:derive(Image, jpg, {scale, width, 240}).
+    %
+    % See http://www.imagemagick.org/Usage/thumbnails/ for the many available options.
+    % The code below is equivalent to the following shell command:
+    %
+    % $ convert -auto-orient -thumbnail '240x240>' -unsharp 0x.5 infile.jpg outfile.jpg
+    %
+    {ok, InData} = file:read_file(SourceFile),
+    Opts = [
+        {'auto-orient'},
+        {thumbnail, "'240x240>'"},
+        {unsharp,  "0x.5"}
+    ],
+    % TODO: would be ideal if we could pass the file we already have to emagick
+    {ok, OutData} = emagick:convert(InData, jpg, jpg, Opts),
+    OutData.
 
 %
 % @doc Return the seconds since the epoch (1970/1/1 00:00).

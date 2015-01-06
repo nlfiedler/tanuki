@@ -39,7 +39,8 @@ App = [
         nitrogen_core,
         jsx,           %% for couchbeam
         couchbeam,
-        eim
+        uuid,          %% for emagick
+        emagick
     ]},
     {mod, {tanuki_backend_app, []}},
     {env, AppEnv}
