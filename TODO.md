@@ -12,10 +12,7 @@
 ### Action Items
 
 1. Improvements to the code style and documentation
-    * types in record definitions
-    * using ‘when’ with -spec (see emagick.erl for example)
     * use iolists instead of string concatenation
-    * use @end with @doc and follow with a line of dashes, looks good
 1. Display thumbnails of the images in `tag.erl`
 1. Fetch additional details of the image and display in `asset.erl`
 1. Show all other tags in `tag.erl`

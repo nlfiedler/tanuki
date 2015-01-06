@@ -26,8 +26,10 @@
 % Mnesia record for storing thumbnails, and the records for tracking how old a
 % particular thumbnail is, for count limiting.
 %
--record(thumbnails, {sha256, binary}).
--record(thumbnail_dates, {timestamp, sha256}).
+-record(thumbnails, {sha256 :: string(),
+                     binary :: binary()}).
+-record(thumbnail_dates, {timestamp :: integer(),
+                          sha256    :: string()}).
 -record(thumbnail_counter, {id = 0, ver = 1}).
 
 %% Include any application-specific custom elements, actions, or validators below
