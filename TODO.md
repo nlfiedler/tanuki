@@ -11,22 +11,21 @@
 
 ### Action Items
 
-1. Improvements to the code style and documentation
-    * use iolists instead of string concatenation
-1. Display thumbnails of the images in `tag.erl`
-1. Fetch additional details of the image and display in `asset.erl`
-1. Show all other tags in `tag.erl`
-    * Clicking on one adds to list of selected tags, reloads `tag.erl` to show new results
-    * Show an `x` next to each tag; clicking removes tag from list and reloads page
+1. Show an `x` next to each tag on `tag.erl` to drop that tag from the query
+1. Get the list of tags in `tag.erl` to be along the side of the images
+1. Have the thumbnails on `tag.erl` appear in a grid format
 1. Organize the assets by date in `tag.erl`
-1. Display available dates (year, then months)
-1. Display assets by date (with pagination?)
+1. Have `asset.erl` show a larger version of the image instead of thumbnail
+1. Fetch additional details of the image for display in `asset.erl`
+1. Display available dates (year, then months) on `index.erl`
+1. Display assets by date (with pagination?) in a new `date.erl` page
 1. Use ETS to cache the tags and such in memory of `tanuki_backend` process.
     * Cache invalidation via couchbeam change listeners.
 1. Produce thumbnails for the videos and cache them
     * https://github.com/emedia-project/erlffmpeg
 1. Would be good to Common Test the thumbnail generation code
-1. Show list of locations alongside list of tags
+1. Show list of known locations along with the list of tags
+1. Will need pagination for `tag.erl`
 
 ### Implementation Details
 
