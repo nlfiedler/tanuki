@@ -55,6 +55,7 @@
 (setv *exif-datetime* "EXIF DateTimeOriginal")
 (setv *datetime-format* "%Y-%m-%d %H:%M")
 (setv *extraneous-files* [".DS_Store" ".localized"])
+(setv *ignored-help-file* "Set_Of_Tags@Location_Name")
 (setv *date-regex* (re.compile "(\\d{4})-(\\d{2})-(\\d{2}) (\\d{2}):(\\d{2})"))
 ; *logger* is a partially applied 'print' function to generate an email report,
 ; invoke in the same manner as the Python built-in print
@@ -329,10 +330,12 @@
         (for [entry (os.listdir args.path)]
           (setv fullpath (os.path.join args.path entry))
           (cond [(os.path.isfile fullpath)
-                  (if (in entry *extraneous-files*)
-                    ; Remove the superfluous files that Mac OS X likes to create.
-                    (os.unlink fullpath)
-                    (*logger* (.format "Ignoring file outside of tagged folder: {}\n" entry)))]
+                  (cond [(in entry *extraneous-files*)
+                          ; Remove the superfluous files that Mac OS X likes to create.
+                          (os.unlink fullpath)]
+                        [(!= entry *ignored-help-file*)
+                          (*logger* (.format
+                            "Ignoring file outside of tagged folder: {}\n" entry))])]
                 [(os.path.isdir fullpath)
                   (if (or args.now (path-old-enough? fullpath))
                     (process-path fullpath db args.dest)
