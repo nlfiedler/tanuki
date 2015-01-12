@@ -7,12 +7,14 @@
 %% following line:
 %%
 %% {assets_dir, "/home/jdoe/test/tanuki"}.
+%% {couchdb_opts [{basic_auth, {"admin", "secret123"}}]}.
 %%
 %% it would override the assets_dir value in the envionment below.
 %%
 DefaultEnv = [
     {assets_dir, "/usr/local/var/tanuki/assets"},
     {couchdb_url, "http://localhost:5984"},
+    {couchdb_opts, []},
     {database, "tanuki"}
 ].
 AppEnv = case file:consult("user_env.config") of

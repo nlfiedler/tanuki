@@ -31,7 +31,8 @@ init_per_suite(Config) ->
     ok = application:set_env(tanuki_backend, database, ?TESTDB),
     ok = couchbeam:start(),
     {ok, Url} = application:get_env(tanuki_backend, couchdb_url),
-    S = couchbeam:server_connection(Url, []),
+    {ok, Opts} = application:get_env(tanuki_backend, couchdb_opts),
+    S = couchbeam:server_connection(Url, Opts),
     % clean up any mess from a previously failed test
     {ok, _Wat} = case couchbeam:db_exists(S, ?TESTDB) of
         true  -> couchbeam:delete_db(S, ?TESTDB);
@@ -52,7 +53,7 @@ init_per_suite(Config) ->
     ok = application:set_env(cowboy, static_paths,
         ["/js/", "/images/", "/css/", "/nitrogen/", "/favicon.ico"]),
     {ok, _Started} = application:ensure_all_started(tanuki_backend),
-    [{url, Url} | Config].
+    [{url, Url}, {opts, Opts} | Config].
 
 add_test_docs(Db, Config) ->
     % populate test database from json files in data_dir
@@ -70,7 +71,8 @@ add_test_docs(Db, Config) ->
 end_per_suite(Config) ->
     gen_server:call(tanuki_backend_db, terminate),
     Url = ?config(url, Config),
-    S = couchbeam:server_connection(Url, []),
+    Opts = ?config(opts, Config),
+    S = couchbeam:server_connection(Url, Opts),
     couchbeam:delete_db(S, ?TESTDB),
     couchbeam:stop(),
     application:stop(mnesia),

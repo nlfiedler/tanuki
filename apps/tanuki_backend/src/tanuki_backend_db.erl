@@ -36,7 +36,8 @@ start_link() ->
 %%
 init([]) ->
     {ok, Url} = application:get_env(tanuki_backend, couchdb_url),
-    Server = couchbeam:server_connection(Url, []),
+    {ok, Opts} = application:get_env(tanuki_backend, couchdb_opts),
+    Server = couchbeam:server_connection(Url, Opts),
     {ok, DbName} = application:get_env(tanuki_backend, database),
     {ok, Db} = couchbeam:open_or_create_db(Server, DbName, []),
     install_designs(Db),
