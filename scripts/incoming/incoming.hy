@@ -128,20 +128,12 @@
           [(os.path.isfile filepath)
             (do
               (setv checksum (compute-checksum filepath))
-              (setv doc {})
-              (assoc doc "exif_date" (date-string-to-ints-list (get-original-date filepath)))
-              (assoc doc "file_date" (date-string-to-ints-list (file-date filepath)))
-              (assoc doc "file_name" entry)
-              (assoc doc "file_owner" (file-owner filepath))
-              (assoc doc "file_size" (. (os.stat filepath) st_size))
-              (assoc doc "import_date" importdate)
-              (assoc doc "location" location)
-              (setv mimetype (.guess_type mimetypes filepath))
-              (assoc doc "mimetype" (if mimetype (get mimetype 0) None))
-              (assoc doc "sha256" checksum)
-              (assoc doc "tags" tags)
-              (setv (, doc_id doc_rev) (db.save doc))
-              (*logger* (.format "{} => id={}, rev={}" entry doc_id doc_rev))
+              ; Either insert or update a document in the database.
+              (setv doc_id (find-document db checksum))
+              (if doc_id
+                (update-document db doc_id entry tags location)
+                (create-document db entry filepath tags importdate location))
+              ; Move the asset into place, or remove it if duplicate.
               (store-asset filepath checksum destpath))]
           [True
             (*logger* (.format "Ignoring non-file {}\n" entry))]))
@@ -166,6 +158,46 @@
         (break))
       (h.update data)))
   (h.hexdigest))
+
+(defn find-document [db checksum]
+  ;
+  ; Determine if the given checksum already exists in the database.
+  ; Returns the document id or None if not found.
+  ;
+  (setv results (apply db.view ["assets/by_checksum"] {"key" checksum}))
+  (if (= (len results) 0)
+    None
+    (. results rows [0] id)))
+
+(defn create-document [db filename fullpath tags importdate location]
+  (setv doc {})
+  (assoc doc "exif_date" (date-string-to-ints-list (get-original-date fullpath)))
+  (assoc doc "file_date" (date-string-to-ints-list (file-date fullpath)))
+  (assoc doc "file_name" filename)
+  (assoc doc "file_owner" (file-owner fullpath))
+  (assoc doc "file_size" (. (os.stat fullpath) st_size))
+  (assoc doc "import_date" importdate)
+  (assoc doc "location" location)
+  (setv mimetype (.guess_type mimetypes fullpath))
+  (assoc doc "mimetype" (if mimetype (get mimetype 0) None))
+  (assoc doc "sha256" checksum)
+  (assoc doc "tags" tags)
+  (setv (, doc_id doc_rev) (db.save doc))
+  (*logger* (.format "{} => id={}, rev={}" filename doc_id doc_rev)))
+
+(defn update-document [db doc_id filename tags location]
+  ;
+  ; Merge the given tags with existing document's tags.
+  ; If missing location field, set to location argument.
+  ;
+  (setv doc (.get db doc_id))
+  (if (not (in "location" doc))
+    (assoc doc "location" location))
+  (if (not (in "tags" doc))
+    (assoc doc "tags" tags)
+    (assoc doc "tags" (list (.union (set (get doc "tags")) (set tags)))))
+  (setv (, doc_id doc_rev) (db.save doc))
+  (*logger* (.format "{} => id={}, rev={}" filename doc_id doc_rev)))
 
 (defn file-owner [filepath]
   ;
@@ -216,13 +248,14 @@
   ; :param destpath: path to the storage area.
   ;
   ; If an existing asset with the same checksum already exists, the new
-  ; asset will be ignored.
+  ; asset will be removed to prevent further processing in the future.
   ;
   (setv dirname (os.path.join destpath (slice checksum 0 2) (slice checksum 2 4)))
   (if (not (os.path.exists dirname))
     (os.makedirs dirname))
   (setv newpath (os.path.join dirname (slice checksum 4)))
-  (if (not (os.path.exists newpath))
+  (if (os.path.exists newpath)
+    (os.unlink filepath)
     (os.rename filepath newpath)))
 
 (defn date-string-to-ints-list [value]
