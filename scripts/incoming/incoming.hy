@@ -132,7 +132,7 @@
               (setv doc_id (find-document db checksum))
               (if doc_id
                 (update-document db doc_id entry tags location)
-                (create-document db entry filepath tags importdate location))
+                (create-document db entry filepath tags importdate location checksum))
               ; Move the asset into place, or remove it if duplicate.
               (store-asset filepath checksum destpath))]
           [True
@@ -169,7 +169,7 @@
     None
     (. results rows [0] id)))
 
-(defn create-document [db filename fullpath tags importdate location]
+(defn create-document [db filename fullpath tags importdate location checksum]
   (setv doc {})
   (assoc doc "exif_date" (date-string-to-ints-list (get-original-date fullpath)))
   (assoc doc "file_date" (date-string-to-ints-list (file-date fullpath)))
