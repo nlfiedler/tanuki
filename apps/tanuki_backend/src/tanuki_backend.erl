@@ -69,15 +69,44 @@ by_tag(Tag) when is_list(Tag) ->
 
 %
 % @doc Retrieves all documents with the given tags, as couchbeam view results.
-%      If a document has more than one matching tag, it will appear more than
-%      once in the results. Ordering is by tag.
-% @see by_tags/2.
+%      Only those documents containing all of the given tags will be returned.
+%      Ordering is non-deterministic.  TODO: that needs to be fixed
 %
 -spec by_tags(Tags) -> Rows
     when Tags :: [string()],
          Rows :: [term()].
 by_tags(Tags) when is_list(Tags) ->
-    gen_server:call(tanuki_backend_db, {by_tags, Tags}).
+    % TODO: check for cached results in mnesia
+    % TODO: cache the raw results (AllRows) in mnesia
+    % TODO: do our own start_id/start_key scanning for pagination support
+    AllRows = gen_server:call(tanuki_backend_db, {by_tags, Tags}),
+    % Reduce the results to those that have all of the given tags.
+    TagCounts = lists:foldl(fun(Row, AccIn) ->
+            DocId = couchbeam_doc:get_value(<<"id">>, Row),
+            Count = maps:get(DocId, AccIn, 0),
+            maps:put(DocId, Count + 1, AccIn)
+        end, #{}, AllRows),
+    MatchingRows = lists:filter(fun(Row) ->
+            DocId = couchbeam_doc:get_value(<<"id">>, Row),
+            maps:get(DocId, TagCounts) =:= length(Tags)
+        end, AllRows),
+    % remove the duplicate rows
+    %   [[{<<"id">>, <<"test_AC">>}, {<<"key">>, <<"cat">>}],
+    %    [{<<"id">>, <<"test_AC">>}, {<<"key">>, <<"picnic">>}]]
+    case MatchingRows of
+        [] ->
+            MatchingRows;
+        _ ->
+            lists:foldr(fun(Row, AccIn) ->
+                    NewDocId = couchbeam_doc:get_value(<<"id">>, Row),
+                    PrevDocId = couchbeam_doc:get_value(<<"id">>, hd(AccIn)),
+                    if NewDocId =:= PrevDocId ->
+                        AccIn;
+                       true ->
+                        [Row|AccIn]
+                    end
+                end, [hd(MatchingRows)], tl(MatchingRows))
+    end.
 
 %
 % @doc Retrieves all documents whose most relevant date is within the given year.

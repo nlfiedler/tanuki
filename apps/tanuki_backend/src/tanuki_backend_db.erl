@@ -71,23 +71,7 @@ handle_call({by_tag, Tag}, _From, #state{database=Db}=State) ->
 handle_call({by_tags, Tags}, _From, #state{database=Db}=State) ->
     BinTags = [list_to_binary(Tag) || Tag <- Tags],
     Options = [{keys, BinTags}],
-    {ok, Rows0} = couchbeam_view:fetch(Db, {"assets", "by_tag"}, Options),
-    % Reduce the results to those that have all of the given tags.
-    % 1. Prepare the data for the 'reduce' function
-    Rows1 = lists:map(fun(Elem) ->
-            {1, couchbeam_doc:get_value(<<"id">>, Elem), Elem}
-        end, Rows0),
-    % 2. Perform the 'reduce' function, which sums up the number of tags for each document.
-    Rows2 = lists:foldl(fun({Count, Key, Row}, AccIn) ->
-            {Prev, _Row} = maps:get(Key, AccIn, {0, Row}),
-            maps:put(Key, {Prev + Count, Row}, AccIn)
-        end, #{}, Rows1),
-    % 3. Prune all entries that do not have a sufficient number of tags.
-    Rows3 = lists:filter(fun({_Key, {Count, _Row}}) ->
-            Count =:= length(Tags)
-        end, maps:to_list(Rows2)),
-    % 4. Extract the original couchbeam row from the intermediate result.
-    Rows = lists:map(fun({_Key, {_Count, Row}}) -> Row end, Rows3),
+    {ok, Rows} = couchbeam_view:fetch(Db, {"assets", "by_tag"}, Options),
     {reply, Rows, State};
 handle_call(terminate, _From, State) ->
     {stop, normal, ok, State}.

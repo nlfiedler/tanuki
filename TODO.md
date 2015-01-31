@@ -11,6 +11,14 @@
 
 ### Action Items
 
+1. Add pagination support to `tag.erl`
+    * http://guide.couchdb.org/draft/recipes.html
+        * Request rows_per_page + 1 rows from the view
+        * Display rows_per_page rows
+        * Store the +1 row as next_startkey and next_startkey_docid
+        * As page information, keep startkey and next_startkey
+        * Use the next_* values to create the next link
+        * Use the others (startkey?) to create the previous link
 1. Show an `x` next to each tag on `tag.erl` to drop that tag from the query
 1. Get the list of tags in `tag.erl` to be along the side of the images
 1. Have the thumbnails on `tag.erl` appear in a grid format
@@ -26,6 +34,8 @@
 1. Would be good to Common Test the thumbnail generation code
 1. Show list of known locations along with the list of tags
 1. Will need pagination for `tag.erl`
+1. Look into using https://github.com/ShoreTel-Inc/erld with Upstart to manage process
+1. Find the log for tanuki and add to logwatch
 
 ### Implementation Details
 
