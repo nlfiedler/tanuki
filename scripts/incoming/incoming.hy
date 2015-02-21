@@ -235,6 +235,9 @@
     (if (in *exif-datetime* tags)
       (do
         (setv value (. (get tags *exif-datetime*) values))
+        ; deal with whacky space-padded date formats
+        (if (in ": " value)
+          (setv value (.replace value ": " ":0")))
         (setv date (datetime.strptime value "%Y:%m:%d %H:%M:%S"))
         (setv value (datetime.strftime date *datetime-format*)))))
   value)
