@@ -268,7 +268,7 @@ generate_thumbnail(RelativePath) ->
 %
 -spec seconds_since_epoch() -> integer().
 seconds_since_epoch() ->
-    {Mega, Sec, _Micro} = now(),
+    {Mega, Sec, _Micro} = os:timestamp(),
     Mega * 1000000 + Sec.
 
 %
