@@ -112,8 +112,8 @@ process_duplicates(Db, Key, IdList) ->
     io:format("Earliest: ~p~n", [couchbeam_doc:get_value(<<"import_date">>, Earliest)]),
     % should probably get first non-empty location and set that in the earliest doc
     % save the merged tags into the earliest document
-    couchbeam_doc:set_value(<<"tags">>, AllTags, Earliest),
-    couchbeam:save_doc(Db, Earliest),
+    NewDoc = couchbeam_doc:set_value(<<"tags">>, AllTags, Earliest),
+    couchbeam:save_doc(Db, NewDoc),
     Duplicates = [Doc || {_D, Doc} <- tl(SortedByDate)],
     io:format("To be deleted: ~p~n", [length(Duplicates)]),
     % remove all of the duplicates
