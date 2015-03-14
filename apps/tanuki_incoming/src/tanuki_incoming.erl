@@ -1,6 +1,4 @@
-#!/usr/bin/env escript
-%% -*- erlang -*-
-%%! -pa deps/pwd/ebin deps/exif/ebin deps/couchbeam/ebin deps/hackney/ebin deps/idna/ebin deps/jsx/ebin deps/oauth/ebin deps/ssl_verify_hostname/ebin deps/mimetypes/ebin deps/gen_smtp/ebin
+%% -*- coding: utf-8 -*-
 %% -------------------------------------------------------------------
 %%
 %% Copyright (c) 2015 Nathan Fiedler
@@ -20,128 +18,80 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
-%%
-%% Process files in an 'incoming' folder by adding them to CouchDB.
-%%
-%% This script, which is intended to be run via a cron job, examines the
-%% contents of a particular directory, looking for content to add to CouchDB.
-%% The parent directories of any files found are used to assign tags to the
-%% blobs once the files are stored in CouchDB.
-%%
-%% See the project home page for details: https://github.com/nlfiedler/tanuki
-%%
-%% Usage:
-%% $ ./incoming.escript -p photos -d tanuki settings.config
-%%
-%% where settings.config contains the couchdb_url and couchdb_opts terms
-%% for connecting to CouchDB, which looks something like this.
-%%
-%%     {couchdb_url, "http://192.168.1.1:5984"}.
-%%     {couchdb_opts, [{basic_auth, {"admin", "secr3t"}}]}.
-%%
-%% Requires getopt (https://github.com/jcomellas/getopt/) to be installed
-%% in /usr/local/lib/erlang/lib (or somewhere in the load path).
-%%
-
--mode(compile).  % gives us a stack trace upon error?
+-module(tanuki_incoming).
+-behavior(gen_server).
+-export([start_link/0]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -include_lib("kernel/include/file.hrl").
 
--define(DBNAME, "tanuki").
--define(EXIF_DATETIME, "EXIF DateTimeOriginal").
--define(DATETIME_FORMAT, "%Y-%m-%d %H:%M").
--define(DATE_REGEX, "(\\d{4})-(\\d{2})-(\\d{2}) (\\d{2}):(\\d{2})").
--define(LOGFILE, "/var/log/tanuki-incoming.log").
--define(V, proplists:get_value).
+-record(state, {server, database, incoming_dir, blob_store}).
 
-main(Args) ->
-    OptSpecList = [
-        {path, $p, "path", string,           "base path of incoming assets"},
-        {dest, $d, "dest", string,           "base path of asset storage area"},
-        {now,  $N, "now",  {boolean, false}, "consider all paths, even very new ones"}
-    ],
-    case getopt:parse(OptSpecList, Args) of
-        {ok, {Options, NonOptArgs}} ->
-            ok = validate_args(Options),
-            if length(NonOptArgs) =/= 1 ->
-                    io:format("~nMust pass CouchDB configuration file~n~n"),
-                    exit(badarg);
-                true -> ok
-            end,
-            Filename = hd(NonOptArgs),
-            % Consult the Erlang terms file that contains our configuration,
-            case file:consult(Filename) of
-                {ok, Terms} ->
-                    Incoming = ?V(path, Options),
-                    BlobStore = ?V(dest, Options),
-                    DoItNow = ?V(now, Options),
-                    Logfile = start_logging(),
-                    process_incoming(Incoming, BlobStore, DoItNow, Terms),
-                    ok = error_logger:logfile(close),
-                    email_report(Logfile);
-                {error, enoent} ->
-                    io:format("File ~p not found", [Filename]),
-                    exit(badarg)
-                % else, surface the error
-            end;
-        {error, {Reason, Data}} ->
-            io:format("Error: ~s ~p~n~n", [Reason, Data]),
-            getopt:usage(OptSpecList, "fixperms")
-    end,
+-define(DELAY, 1000*60*60).
+
+%%
+%% Client API
+%%
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+%%
+%% gen_server callbacks
+%%
+init([]) ->
+    {ok, IncomingPath} = application:get_env(tanuki_incoming, incoming_dir),
+    {ok, BlobStore} = application:get_env(tanuki_incoming, assets_dir),
+    {ok, Url} = application:get_env(tanuki_incoming, couchdb_url),
+    {ok, Opts} = application:get_env(tanuki_incoming, couchdb_opts),
+    {ok, DbName} = application:get_env(tanuki_incoming, database),
+    Server = couchbeam:server_connection(Url, Opts),
+    {ok, Db} = couchbeam:open_or_create_db(Server, DbName, []),
+    State = #state{
+        server=Server,
+        database=Db,
+        incoming_dir=IncomingPath,
+        blob_store=BlobStore
+    },
+    fire_later(),
+    {ok, State}.
+
+handle_call(terminate, _From, State) ->
+    {stop, normal, ok, State}.
+
+handle_cast(process, State) ->
+    #state{database=Db, incoming_dir=Incoming, blob_store=Store} = State,
+    process_incoming(Incoming, Store, Db),
+    fire_later(),
+    {noreply, State};
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(Msg, State) ->
+    error_logger:info_msg("unexpected message: ~p~n", [Msg]),
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
     ok.
 
-% Ensure the parsed command line arguments are valid, exiting if not.
-validate_args(Options) ->
-    ValidatePath = fun(Path) ->
-        case filelib:is_dir(Path) of
-            true  -> ok;
-            false ->
-                io:format("Path does not exist: ~s~n", [Path]),
-                exit(badarg)
-        end
-    end,
-    ValidatePath(?V(path, Options)),
-    % ValidatePath(?V(dest, Options)),
-    ok.
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
-% Configure the error_logger to write to a file, returning the path to the file.
-start_logging() ->
-    Filename = case error_logger:logfile({open, ?LOGFILE}) of
-        ok -> ?LOGFILE;
-        {error, eacces} ->
-            case init:get_argument(home) of
-                {ok, Home} ->
-                    LogPath = filename:join(lists:flatten(Home), "tanuki-incoming.log"),
-                    ok = error_logger:logfile({open, LogPath}),
-                    LogPath;
-                error ->
-                    io:format("Cannot get home directory!"),
-                    exit(error)
-            end;
-        {error, Reason} ->
-            io:format("Cannot open log file: ~s~n", [Reason]),
-            exit(eaccess)
-    end,
-    error_logger:tty(false),
-    Filename.
+%%
+%% internal functions
+%%
+
+% Start a timer to cast a 'process' message to us later.
+fire_later() ->
+    M = gen_server,
+    F = cast,
+    A = [tanuki_incoming, process],
+    {ok, _TRef} = timer:apply_after(?DELAY, M, F, A),
+    ok.
 
 % Process the assets in the incoming directory, storing them in the
 % blob store area and inserting records in the database.
-process_incoming(Incoming, BlobStore, DoItNow, Config) ->
-    error_logger:info_msg("Tanuki incoming beginning...~n"),
-    ok = application:load(jsx),
-    ok = application:load(couchbeam),
-    ok = application:start(mimetypes),
-    ok = application:start(pwd),
-    ok = couchbeam:start(),
-    Url = ?V(couchdb_url, Config),
-    Opts = case ?V(couchdb_opts, Config) of
-        undefined -> [];
-        Val -> Val
-    end,
-    Server = couchbeam:server_connection(Url, Opts),
-    {ok, Db} = couchbeam:open_or_create_db(Server, ?DBNAME, []),
-
+process_incoming(Incoming, BlobStore, Db) ->
+    error_logger:info_msg("Incoming asset processing commencing...~n"),
     % Get the names of the directories in the Incoming path.
     {ok, Filenames} = file:list_dir(Incoming),
     Filepaths = [filename:join(Incoming, Name) || Name <- Filenames],
@@ -155,24 +105,22 @@ process_incoming(Incoming, BlobStore, DoItNow, Config) ->
                 NowSecs - CTime > 3600;
             {error, Reason2} ->
                 error_logger:error_msg("Failed to read file info of ~s, ~p~n", [Path, Reason2]),
-                exit(error)
+                false
         end
     end,
-    OldEnough = case DoItNow of
-        true -> Directories;
-        false -> lists:filter(PathOldEnough, Directories)
-    end,
+    OldEnough = lists:filter(PathOldEnough, Directories),
     ProcessPath = fun(Path) ->
-        process_path(Path, Db, BlobStore)
+        process_path(Path, BlobStore, Db)
     end,
     if length(OldEnough) == 0 ->
-            error_logger:info_msg("No (old enough) directories found, exiting~n");
+            error_logger:info_msg("No (old enough) directories found at this time~n");
         true -> lists:foreach(ProcessPath, OldEnough)
     end,
     ok.
 
 % Import the assets found with the named path.
-process_path(Path, Db, BlobStore) ->
+% TODO: export this so it can be tested
+process_path(Path, BlobStore, Db) ->
     ImportDate = calendar:universal_time(),
     {Tags, Location} = convert_path_to_tags_and_location(Path),
     error_logger:info_msg("Processing tags: ~p~n", [Tags]),
@@ -218,6 +166,7 @@ convert_path_to_tags_and_location(Path) ->
 
 % Remove any of the superfluous files from the given path.
 delete_extraneous_files(Path) ->
+    % Annoying and basically useless files specific to Mac OS X.
     Extras = [".DS_Store", ".localized"],
     {ok, Filenames} = file:list_dir(Path),
     DeleteFun = fun(Name) ->
@@ -226,8 +175,7 @@ delete_extraneous_files(Path) ->
                 case file:delete(filename:join(Path, Name)) of
                     ok -> ok;
                     {error, Reason} ->
-                        error_logger:error_msg("File delete failed: ~p~n", [Reason]),
-                        exit(ioerr)
+                        error_logger:error_msg("File delete failed: ~p~n", [Reason])
                 end;
             false -> ok
         end
@@ -242,7 +190,7 @@ compute_checksum(Filepath) ->
             lists:flatten([io_lib:format("~2.16.0B", [X]) || <<X:8>> <= Digest]);
         {error, Reason} ->
             error_logger:error_msg("File read failed: ~p~n", [Reason]),
-            exit(ioerr)
+            undefined
     end.
 
 % Determine if the given checksum already exists in the database.
@@ -290,8 +238,7 @@ create_document(Db, Filename, Fullpath, Tags, ImportDate, Location, Checksum) ->
             error_logger:info_msg("~s => id=~s, rev=~s~n",
                                   [Filename, binary_to_list(Id), binary_to_list(Rev)]);
         {error, Reason} ->
-            error_logger:error_msg("document save failed: ~p~n", [Reason]),
-            exit(error)
+            error_logger:error_msg("document save failed: ~p~n", [Reason])
     end,
     ok.
 
@@ -323,7 +270,7 @@ update_document(Db, DocId, Filename, Tags, Location) ->
 
 % Retrieve the named field from the document, returning none if not present.
 get_field_value(Field, Document) ->
-    % This is duplicated in tanuki_backend.erl...
+    % TODO: duplicated in tanuki_backend.erl, can we call that one instead?
     case couchbeam_doc:get_value(Field, Document) of
         undefined ->
             none;
@@ -338,10 +285,10 @@ file_owner(Path) ->
     case file:read_file_info(Path) of
         {ok, #file_info{uid = UserID}} ->
             Details = pwd:getpwuid(UserID),
-            ?V(pw_name, Details);
+            proplists:get_value(pw_name, Details);
         {error, Reason} ->
             error_logger:error_msg("Failed to read file info of ~s, ~p~n", [Path, Reason]),
-            exit(error)
+            undefined
     end.
 
 % Return the size in bytes of the named file.
@@ -351,7 +298,7 @@ file_size(Path) ->
             Size;
         {error, Reason} ->
             error_logger:error_msg("Failed to read file info of ~s, ~p~n", [Path, Reason]),
-            exit(error)
+            undefined
     end.
 
 % Return the mtime of the file, which is typically when it was created.
@@ -362,7 +309,7 @@ file_date(Path) ->
             [Y, Mo, D, H, Mi];
         {error, Reason} ->
             error_logger:error_msg("Failed to read file info of ~s, ~p~n", [Path, Reason]),
-            exit(error)
+            undefined
     end.
 
 % Attempt to read the original datetime from the EXIF tags, returning
@@ -401,32 +348,6 @@ store_asset(Filepath, Checksum, BlobStore) ->
         true  -> ok = file:delete(Filepath);
         false -> ok = file:rename(Filepath, DestPath)
     end.
-
-% Send the text in the named file via email to the root user.
-% Failing that, dump the content to stdout.
-email_report(Filename) ->
-    % Use io:format() to report errors as the log file is already closed.
-    case file:read_file(Filename) of
-        {ok, Binary} ->
-            Subject = <<"Subject: incoming processor report\r\n">>,
-            From = <<"From: tanuki\r\n">>,
-            To = <<"To: root\r\n\r\n">>,
-            Body = <<Subject/binary, From/binary, To/binary, Binary/binary>>,
-            Email = {<<"tanuki">>, [<<"root">>], Body},
-            Options = [{relay, "localhost"}],
-            case gen_smtp_client:send_blocking(Email, Options) of
-                {error, Type, Message} ->
-                    io:format("Email send failed: ~p, ~p~n", [Type, Message]);
-                {error, Reason} ->
-                    io:format("Email send failed: ~p~n", [Reason]);
-                _Receipt ->
-                    ok
-            end;
-        {error, Reason} ->
-            io:format("File read failed: ~p~n", [Reason]),
-            exit(ioerr)
-    end,
-    ok.
 
 % Parse a simple date/time string into a date/time tuple. For instance,
 % <<"2014:10:11 13:28:00">> would become {{2014,10,11},{13,28,0}}. A
@@ -482,8 +403,16 @@ acc(IntStr, Rest, Key, Acc, NextF) ->
     NextF(Rest, Acc1).
 
 datetime(Plist) ->
-    Date = {?V(year, Plist, 0), ?V(month, Plist, 0), ?V(day, Plist, 0)},
-    Time = {?V(hour, Plist, 0), ?V(minute, Plist, 0), ?V(second, Plist, 0)},
+    Date = {
+        proplists:get_value(year, Plist, 0),
+        proplists:get_value(month, Plist, 0),
+        proplists:get_value(day, Plist, 0)
+    },
+    Time = {
+        proplists:get_value(hour, Plist, 0),
+        proplists:get_value(minute, Plist, 0),
+        proplists:get_value(second, Plist, 0)
+    },
     {Date, Time}.
 
 datetime(_, Plist) ->

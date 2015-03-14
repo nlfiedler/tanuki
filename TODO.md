@@ -11,6 +11,7 @@
 
 ### Action Items
 
+1. Write tests for the tanuki_incoming application
 1. Add pagination support to `tag.erl`
     * http://guide.couchdb.org/draft/recipes.html
         * Request rows_per_page + 1 rows from the view
@@ -47,8 +48,6 @@
 
 ### Features
 
-* Runs in the same process as the backend, kicked off by a timer (c.f. timer:send_after/2)
-* Log actions during import
 * Send a daily email report of everything that was imported
     * Include the names of files and their checksums
     * Organize by tags

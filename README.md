@@ -6,7 +6,7 @@ Yes, another one of these. I am a programmer, it's what I do. I want to learn Er
 
 ## Current Status
 
-The incoming processor is written in [Hy](http://hylang.org), and will eventually be rewritten in Erlang. The backend application and web interface are being written in Erlang and built using [rebar](https://github.com/rebar/rebar/) and [relx](http://relx.org/). There is much yet to be done.
+The incoming processor, backend application, and web interface are written in Erlang and built using [rebar](https://github.com/rebar/rebar/) and [relx](http://relx.org/). There is much yet to be done, mostly in the web interface.
 
 ## Building and Testing
 
@@ -19,12 +19,3 @@ $ ./_rel/tanuki/bin/tanuki-dev
 ```
 
 The web server will be listening on port 8000. Be sure to have a CouchDB instance running.
-
-## Implementation Details
-
-* Everything written in Erlang because I want to learn it thoroughly.
-* Use `file:read_file_info()` to read file mtime information.
-* Use `crypto:hash(sha256, Data)` to generate the SHA256 checksum of the assets.
-* Use [spawngrid/mimetypes](https://github.com/spawngrid/mimetypes) for detecting mime types.
-* Use [erlang-exif](https://github.com/andrenth/erlang-exif) for reading EXIF data.
-* Use [couchbeam](https://github.com/benoitc/couchbeam) for CouchDB interface.

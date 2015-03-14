@@ -1,7 +1,7 @@
 %% -*- coding: utf-8 -*-
 %% -------------------------------------------------------------------
 %%
-%% Copyright (c) 2014 Nathan Fiedler
+%% Copyright (c) 2014-2015 Nathan Fiedler
 %%
 %% This file is provided to you under the Apache License,
 %% Version 2.0 (the "License"); you may not use this file
@@ -30,5 +30,5 @@ start_link() ->
 init([]) ->
     {ok, {{one_for_one, 1, 5},
           [{console,
-            {tanuki_incoming_fsm, start_link, []},
-            permanent, 5000, worker, [tanuki_incoming_fsm]}]}}.
+            {tanuki_incoming, start_link, []},
+            permanent, 5000, worker, [tanuki_incoming]}]}}.

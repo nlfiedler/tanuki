@@ -1,0 +1,46 @@
+%%
+%% Configure the incoming processor, with optional user overrides.
+%%
+%% If a file named user_env.config exists at the base of the application
+%% tree (apps/tanuki_incoming) then it will be used to override settings in
+%% the application environment. For example, if that file contained the
+%% following line:
+%%
+%% {assets_dir, "/home/jdoe/test/tanuki"}.
+%% {couchdb_opts [{basic_auth, {"admin", "secret123"}}]}.
+%%
+%% it would override the assets_dir value in the envionment below.
+%%
+DefaultEnv = [
+    {assets_dir, "/usr/local/var/tanuki/assets"},
+    {incoming_dir, "/does/not/exist"},
+    {couchdb_url, "http://localhost:5984"},
+    {couchdb_opts, []},
+    {database, "tanuki"}
+].
+AppEnv = case file:consult("user_env.config") of
+    {ok, Terms} ->
+        lists:ukeymerge(1, lists:keysort(1, Terms),  lists:keysort(1, DefaultEnv));
+    {error, enoent} ->
+        DefaultEnv
+    % else, surface the error
+end.
+App = [
+    {description, "Incoming asset processor"},
+    {vsn, "0.1.0"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib,
+        mnesia,
+        syntax_tools,  %% erl_syntax module
+        compiler,      %% compile module
+        mimetypes,
+        sync,
+        jsx,           %% for couchbeam
+        couchbeam
+    ]},
+    {mod, {tanuki_incoming_app, []}},
+    {env, AppEnv}
+].
+[{application, tanuki_incoming, App}].
