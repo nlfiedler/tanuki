@@ -6,13 +6,14 @@ Yes, another one of these. I am a programmer, it's what I do. I want to learn Er
 
 ## Current Status
 
-The incoming processor, backend application, and web interface are written in Erlang and built using [rebar](https://github.com/rebar/rebar/) and [relx](http://relx.org/). There is much yet to be done, mostly in the web interface.
+The incoming processor, backend application, and web interface are written in Erlang and built using [rebar](https://github.com/rebar/rebar/) and [relx](https://github.com/erlware/relx). There is much yet to be done, mostly in the web interface.
 
 ## Building and Testing
 
 Install Erlang/OTP R17 and CouchDB, then build the project like so:
 
 ```
+$ rebar get-deps
 $ rebar -r prepare-deps
 $ make dev
 $ ./_rel/tanuki/bin/tanuki-dev
