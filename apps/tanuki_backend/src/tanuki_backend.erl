@@ -34,9 +34,10 @@
 %      (where ejson is defined in couchbeam as essentially a proplist of
 %      binary strings).
 %
--spec fetch_document(DocId) -> {document, Doc}
-    when DocId :: string(),
-         Doc   :: term().
+-spec fetch_document(DocId) -> {ok, Doc} | {error, Reason}
+    when DocId  :: string(),
+         Doc    :: term(),
+         Reason :: term().
 fetch_document(DocId) ->
     gen_server:call(tanuki_backend_db, {fetch_document, DocId}).
 

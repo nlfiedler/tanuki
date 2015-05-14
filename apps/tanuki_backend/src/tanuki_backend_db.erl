@@ -46,7 +46,7 @@ init([]) ->
 
 handle_call({fetch_document, DocId}, _From, #state{database=Db}=State) ->
     case couchbeam:open_doc(Db, DocId) of
-        {ok, Doc} -> {reply, {document, Doc}, State};
+        {ok, Doc} -> {reply, {ok, Doc}, State};
         {error, Reason} -> {reply, {error, Reason}, State}
     end;
 handle_call(all_tags, _From, #state{database=Db}=State) ->

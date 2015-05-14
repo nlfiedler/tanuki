@@ -94,8 +94,7 @@ all() ->
     ].
 
 fetch_document(_Config) ->
-    {Result1, Document1} = tanuki_backend:fetch_document("test_AA"),
-    ?assertEqual(document, Result1),
+    {ok, Document1} = tanuki_backend:fetch_document("test_AA"),
     Content1 = couchbeam_doc:get_value(<<"file_owner">>, Document1),
     ?assertEqual(<<"akwok">>, Content1),
     % negative case, not found
@@ -237,10 +236,10 @@ generate_etag(_Config) ->
     ok.
 
 get_best_date(_Config) ->
-    {document, Document1} = tanuki_backend:fetch_document("test_AA"),
+    {ok, Document1} = tanuki_backend:fetch_document("test_AA"),
     ?assertEqual([2013, 1, 31, 5, 26], tanuki_backend:get_best_date(Document1)),
-    {document, Document2} = tanuki_backend:fetch_document("test_AB"),
+    {ok, Document2} = tanuki_backend:fetch_document("test_AB"),
     ?assertEqual([2014, 10, 24, 15, 9], tanuki_backend:get_best_date(Document2)),
-    {document, Document3} = tanuki_backend:fetch_document("test_AC"),
+    {ok, Document3} = tanuki_backend:fetch_document("test_AC"),
     ?assertEqual([2014, 7, 15, 3, 13], tanuki_backend:get_best_date(Document3)),
     ok.
