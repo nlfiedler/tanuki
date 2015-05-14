@@ -23,6 +23,8 @@
 -export([start/2, stop/1]).
 
 start(_Type, _Args) ->
+    % start up erlang-pwd for getting a username from a uid
+    pwd:start_link(),
     tanuki_incoming_sup:start_link().
 
 stop(_) ->

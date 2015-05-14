@@ -37,6 +37,8 @@
 1. Will need pagination for `tag.erl`
 1. Look into using https://github.com/ShoreTel-Inc/erld with Upstart to manage process
 1. Find the log for tanuki and add to logwatch
+1. Look at https://github.com/evanmiller/erl_img for possible image scaling library
+    * Would replace ImageMagick and emagick
 
 ### Implementation Details
 

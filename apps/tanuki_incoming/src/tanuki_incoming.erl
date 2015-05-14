@@ -56,11 +56,30 @@ init([]) ->
     {ok, State}.
 
 handle_call(terminate, _From, State) ->
-    {stop, normal, ok, State}.
+    {stop, normal, ok, State};
+handle_call(process_now, _From, State) ->
+    % Primarily for testing, so the test code can block until a (useless)
+    % response is received.
+    #state{database=Db, incoming_dir=Incoming, blob_store=Store} = State,
+    % All directories are old enough as we want to process them now.
+    FilterFun = fun(_Path) -> true end,
+    process_incoming(Incoming, Store, Db, FilterFun),
+    {reply, ok, State}.
 
 handle_cast(process, State) ->
     #state{database=Db, incoming_dir=Incoming, blob_store=Store} = State,
-    process_incoming(Incoming, Store, Db),
+    % Filter function to ensure the given directory is at least an hour old.
+    FilterFun = fun(Path) ->
+        NowSecs = tanuki_backend:seconds_since_epoch(),
+        case file:read_file_info(Path, [{time, posix}]) of
+            {ok, #file_info{ctime = CTime}} ->
+                NowSecs - CTime > 3600;
+            {error, Reason2} ->
+                error_logger:error_msg("Failed to read file info of ~s, ~p~n", [Path, Reason2]),
+                false
+        end
+    end,
+    process_incoming(Incoming, Store, Db, FilterFun),
     fire_later(),
     {noreply, State};
 handle_cast(_Msg, State) ->
@@ -90,25 +109,15 @@ fire_later() ->
 
 % Process the assets in the incoming directory, storing them in the
 % blob store area and inserting records in the database.
-process_incoming(Incoming, BlobStore, Db) ->
+process_incoming(Incoming, BlobStore, Db, FilterFun) ->
     error_logger:info_msg("Incoming asset processing commencing...~n"),
     % Get the names of the directories in the Incoming path.
     {ok, Filenames} = file:list_dir(Incoming),
     Filepaths = [filename:join(Incoming, Name) || Name <- Filenames],
     Directories = lists:filter(fun filelib:is_dir/1, Filepaths),
     error_logger:info_msg("Considering the following directories...~n~p~n", [Directories]),
-    % Check if the given directory is sufficiently old (at least 1 hour).
-    PathOldEnough = fun(Path) ->
-        NowSecs = seconds_since_epoch(),
-        case file:read_file_info(Path, [{time, posix}]) of
-            {ok, #file_info{ctime = CTime}} ->
-                NowSecs - CTime > 3600;
-            {error, Reason2} ->
-                error_logger:error_msg("Failed to read file info of ~s, ~p~n", [Path, Reason2]),
-                false
-        end
-    end,
-    OldEnough = lists:filter(PathOldEnough, Directories),
+    % Check if the given directory is sufficiently old.
+    OldEnough = lists:filter(FilterFun, Directories),
     ProcessPath = fun(Path) ->
         process_path(Path, BlobStore, Db)
     end,
@@ -119,7 +128,6 @@ process_incoming(Incoming, BlobStore, Db) ->
     ok.
 
 % Import the assets found with the named path.
-% TODO: export this so it can be tested
 process_path(Path, BlobStore, Db) ->
     ImportDate = calendar:universal_time(),
     {Tags, Location} = convert_path_to_tags_and_location(Path),
@@ -187,7 +195,7 @@ compute_checksum(Filepath) ->
     case file:read_file(Filepath) of
         {ok, Binary} ->
             Digest = crypto:hash(sha256, Binary),
-            lists:flatten([io_lib:format("~2.16.0B", [X]) || <<X:8>> <= Digest]);
+            lists:flatten([io_lib:format("~2.16.0b", [X]) || <<X:8>> <= Digest]);
         {error, Reason} ->
             error_logger:error_msg("File read failed: ~p~n", [Reason]),
             undefined
@@ -228,7 +236,7 @@ create_document(Db, Filename, Fullpath, Tags, ImportDate, Location, Checksum) ->
         {<<"file_size">>, file_size(Fullpath)},
         {<<"import_date">>, [Y, Mo, D, H, Mi]},
         {<<"location">>, LocData},
-        {<<"mimetype">>, hd(mimetypes:filename(Filename))},
+        {<<"mimetype">>, hd(mimetypes:filename(string:to_lower(Filename)))},
         {<<"sha256">>, list_to_binary(Checksum)},
         {<<"tags">>, [list_to_binary(Tag) || Tag <- Tags]}
     ]},
@@ -247,13 +255,13 @@ create_document(Db, Filename, Fullpath, Tags, ImportDate, Location, Checksum) ->
 update_document(Db, DocId, Filename, Tags, Location) ->
     error_logger:info_msg("Updating document for ~s...~n", [Filename]),
     {ok, Doc} = couchbeam:open_doc(Db, DocId),
-    Doc1 = case get_field_value(<<"location">>, Doc) of
+    Doc1 = case tanuki_backend:get_field_value(<<"location">>, Doc) of
         none -> couchbeam_doc:set_value(<<"location">>, Location, Doc);
         _Val -> Doc
     end,
     BinTags = [list_to_binary(Tag) || Tag <- Tags],
     error_logger:info_msg("new tags: ~p~n", [BinTags]),
-    case get_field_value(<<"tags">>, Doc1) of
+    case tanuki_backend:get_field_value(<<"tags">>, Doc1) of
         none ->
             Doc2 = couchbeam_doc:set_value(<<"tags">>, BinTags, Doc1);
         OldTags ->
@@ -267,18 +275,6 @@ update_document(Db, DocId, Filename, Tags, Location) ->
     error_logger:info_msg("~s => id=~s, rev=~s~n",
                           [Filename, binary_to_list(Id), binary_to_list(Rev)]),
     ok.
-
-% Retrieve the named field from the document, returning none if not present.
-get_field_value(Field, Document) ->
-    % TODO: duplicated in tanuki_backend.erl, can we call that one instead?
-    case couchbeam_doc:get_value(Field, Document) of
-        undefined ->
-            none;
-        null ->
-            none;
-        Value ->
-            Value
-    end.
 
 % Return the username of the file owner, of undefined if not available.
 file_owner(Path) ->
@@ -316,6 +312,10 @@ file_date(Path) ->
 % null if not available, or the date time as a list of integers.
 get_original_exif_date(Path) ->
     case exif:read(Path) of
+        % TODO: extend exif library to ignore/support JFIF data
+        % $ hexdump -C img_015.JPG | head
+        % 00000000  ff d8 ff e0 00 10 4a 46  49 46 00 01 01 01 00 48  |......JFIF.....H|
+        % 00000010  00 48 00 00 ff e1 03 08  45 78 69 66 00 00 4d 4d  |.H......Exif..MM|
         {error, Reason} ->
             error_logger:error_msg("Unable to read EXIF data from ~s, ~p~n", [Path, Reason]),
             null;
@@ -417,7 +417,3 @@ datetime(Plist) ->
 
 datetime(_, Plist) ->
     datetime(Plist).
-
-seconds_since_epoch() ->
-    {Mega, Sec, _Micro} = os:timestamp(),
-    Mega * 1000000 + Sec.
