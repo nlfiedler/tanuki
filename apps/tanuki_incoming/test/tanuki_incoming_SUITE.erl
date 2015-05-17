@@ -104,13 +104,11 @@ single_image_test(Config) ->
     DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
     {ok, Doc} = tanuki_backend:fetch_document(DocId),
     ?assertEqual(<<"img_015.JPG">>, couchbeam_doc:get_value(<<"file_name">>, Doc)),
-    % TODO: make the user name be the current user
-    ?assertEqual(<<"nfiedler">>, couchbeam_doc:get_value(<<"file_owner">>, Doc)),
+    CurrentUser = list_to_binary(os:getenv("USER")),
+    ?assertEqual(CurrentUser, couchbeam_doc:get_value(<<"file_owner">>, Doc)),
     ?assertEqual(369781, couchbeam_doc:get_value(<<"file_size">>, Doc)),
     ?assertEqual(<<"image/jpeg">>, couchbeam_doc:get_value(<<"mimetype">>, Doc)),
-    % TODO: exif date extraction is failing for img_015.JPG
-    % ?assertEqual([2011, 10, 7, 9, 18], couchbeam_doc:get_value(<<"exif_date">>, Doc)),
-    ?assertEqual(null, couchbeam_doc:get_value(<<"exif_date">>, Doc)),
+    ?assertEqual([2011, 10, 7, 16, 18], couchbeam_doc:get_value(<<"exif_date">>, Doc)),
     ?assertEqual(<<"field">>, couchbeam_doc:get_value(<<"location">>, Doc)),
     ?assertEqual(<<"d09fd659423e71bb1b5e20d78a1ab7ce393e74e463f2dface3634d78ec155397">>,
                  couchbeam_doc:get_value(<<"sha256">>, Doc)),

@@ -312,15 +312,11 @@ file_date(Path) ->
 % null if not available, or the date time as a list of integers.
 get_original_exif_date(Path) ->
     case exif:read(Path) of
-        % TODO: extend exif library to ignore/support JFIF data
-        % $ hexdump -C img_015.JPG | head
-        % 00000000  ff d8 ff e0 00 10 4a 46  49 46 00 01 01 01 00 48  |......JFIF.....H|
-        % 00000010  00 48 00 00 ff e1 03 08  45 78 69 66 00 00 4d 4d  |.H......Exif..MM|
         {error, Reason} ->
             error_logger:error_msg("Unable to read EXIF data from ~s, ~p~n", [Path, Reason]),
             null;
-        ExifDate ->
-            case dict:find(date_time_original, ExifDate) of
+        ExifData ->
+            case dict:find(date_time_original, ExifData) of
                 {ok, Original} ->
                     Parsed = date_parse(Original),
                     {{Y, Mo, D}, {H, Mi, _S}} = Parsed,
