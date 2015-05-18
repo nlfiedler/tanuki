@@ -78,15 +78,18 @@ end_per_suite(Config) ->
 
 all() ->
     [
-        single_image_test
+        single_image_test,
+        multiple_image_test,
+        empty_folder_test
     ].
 
+%% Test importing a single image.
 single_image_test(Config) ->
     DataDir = ?config(data_dir, Config),
     % create the incoming directory and copy our test photo there
     IncomingDir = ?config(incoming_dir, Config),
     TaggedDir = filename:join(IncomingDir, "yellow_flower@field"),
-    SrcImagePath = filename:join([DataDir, "img_015.JPG"]),
+    SrcImagePath = filename:join(DataDir, "img_015.JPG"),
     DestImagePath = filename:join(TaggedDir, "img_015.JPG"),
     ok = filelib:ensure_dir(DestImagePath),
     {ok, _BytesCopied} = file:copy(SrcImagePath, DestImagePath),
@@ -95,6 +98,7 @@ single_image_test(Config) ->
     gen_server:call(tanuki_incoming, process_now),
     % check that images are gone from incoming directory
     {ok, []} = file:list_dir(IncomingDir),
+    % verify images are in the assets directory
     AssetsDir = ?config(assets_dir, Config),
     true = filelib:is_file(filename:join([AssetsDir, "d0", "9f",
         "d659423e71bb1b5e20d78a1ab7ce393e74e463f2dface3634d78ec155397"])),
@@ -103,18 +107,115 @@ single_image_test(Config) ->
     ?assertEqual(1, length(Rows)),
     DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
     {ok, Doc} = tanuki_backend:fetch_document(DocId),
-    ?assertEqual(<<"img_015.JPG">>, couchbeam_doc:get_value(<<"file_name">>, Doc)),
     CurrentUser = list_to_binary(os:getenv("USER")),
-    ?assertEqual(CurrentUser, couchbeam_doc:get_value(<<"file_owner">>, Doc)),
-    ?assertEqual(369781, couchbeam_doc:get_value(<<"file_size">>, Doc)),
-    ?assertEqual(<<"image/jpeg">>, couchbeam_doc:get_value(<<"mimetype">>, Doc)),
-    ?assertEqual([2011, 10, 7, 16, 18], couchbeam_doc:get_value(<<"exif_date">>, Doc)),
-    ?assertEqual(<<"field">>, couchbeam_doc:get_value(<<"location">>, Doc)),
-    ?assertEqual(<<"d09fd659423e71bb1b5e20d78a1ab7ce393e74e463f2dface3634d78ec155397">>,
-                 couchbeam_doc:get_value(<<"sha256">>, Doc)),
-    ?assertEqual([<<"yellow">>, <<"flower">>], couchbeam_doc:get_value(<<"tags">>, Doc)),
+    ExpectedValues = #{
+        <<"exif_date">>  => [2011, 10, 7, 16, 18],
+        <<"file_name">>  => <<"img_015.JPG">>,
+        <<"file_owner">> => CurrentUser,
+        <<"file_size">>  => 369781,
+        <<"location">>   => <<"field">>,
+        <<"mimetype">>   => <<"image/jpeg">>,
+        <<"sha256">>     => <<"d09fd659423e71bb1b5e20d78a1ab7ce393e74e463f2dface3634d78ec155397">>,
+        % tags are in sorted order
+        <<"tags">>       => [<<"flower">>, <<"yellow">>]
+    },
+    maps:fold(fun(Key, Value, Doc) ->
+            ?assertEqual(Value, couchbeam_doc:get_value(Key, Doc)),
+            Doc
+        end, Doc, ExpectedValues),
     ok.
 
-% TODO: test with image that has no EXIF date at all
-% TODO: test with asset that has already been imported with different tags
-% TODO: test with the infamous extraneous files (e.g. .localized)
+%% Test importing multiple images.
+%% This also tests updating an asset (the flower gets imported a second time),
+%% in which the tags are merged and the locatio is not changed.
+multiple_image_test(Config) ->
+    DataDir = ?config(data_dir, Config),
+    % create the incoming directory and copy our test photos there
+    IncomingDir = ?config(incoming_dir, Config),
+    TaggedDir = filename:join(IncomingDir, "multiple@earth"),
+    ok = file:make_dir(TaggedDir),
+    Images = ["fighting_kittens.jpg", "img_015.JPG", "IMG_5745.JPG"],
+    CopyImages = fun(Filename) ->
+        SrcImagePath = filename:join(DataDir, Filename),
+        DestImagePath = filename:join(TaggedDir, Filename),
+        {ok, _BytesCopied} = file:copy(SrcImagePath, DestImagePath)
+    end,
+    ok = lists:foreach(CopyImages, Images),
+    % process the incoming images now
+    gen_server:call(tanuki_incoming, process_now),
+    % check that images are gone from incoming directory
+    {ok, []} = file:list_dir(IncomingDir),
+    % verify images are in the assets directory
+    AssetsDir = ?config(assets_dir, Config),
+    true = filelib:is_file(filename:join([AssetsDir, "d0", "9f",
+        "d659423e71bb1b5e20d78a1ab7ce393e74e463f2dface3634d78ec155397"])),
+    true = filelib:is_file(filename:join([AssetsDir, "03", "b5",
+        "8852bc8302f51a21d1093d47961bf16ba5762e3cdd34fde0daa95acdca1f"])),
+    true = filelib:is_file(filename:join([AssetsDir, "8d", "ca",
+        "f3d73a10548e445ebb27ff34d7159cc5d7f3730c24e95ffe5b07bd2300fd"])),
+    % check specific fields of each new document
+    KittensValues = #{
+        <<"exif_date">> => null,
+        <<"mimetype">>  => <<"image/jpeg">>,
+        <<"file_size">> => 40766,
+        <<"location">>  => <<"earth">>,
+        <<"sha256">>    => <<"8dcaf3d73a10548e445ebb27ff34d7159cc5d7f3730c24e95ffe5b07bd2300fd">>,
+        <<"tags">>      => [<<"multiple">>]
+    },
+    FlowerValues = #{
+        <<"exif_date">> => [2011, 10, 7, 16, 18],
+        <<"mimetype">>  => <<"image/jpeg">>,
+        <<"file_size">> => 369781,
+        % existing location does not change
+        <<"location">>  => <<"field">>,
+        <<"sha256">>    => <<"d09fd659423e71bb1b5e20d78a1ab7ce393e74e463f2dface3634d78ec155397">>,
+        % new tags are merged with old
+        <<"tags">>      => [<<"flower">>, <<"multiple">>, <<"yellow">>]
+    },
+    ValleyValues = #{
+        <<"exif_date">> => [2014, 04, 23, 13, 33],
+        <<"mimetype">>  => <<"image/jpeg">>,
+        <<"file_size">> => 107302,
+        <<"location">>  => <<"earth">>,
+        <<"sha256">>    => <<"03b58852bc8302f51a21d1093d47961bf16ba5762e3cdd34fde0daa95acdca1f">>,
+        <<"tags">>      => [<<"multiple">>]
+    },
+    FilenameToValues = #{
+        <<"fighting_kittens.jpg">> => KittensValues,
+        <<"img_015.JPG">> => FlowerValues,
+        <<"IMG_5745.JPG">> => ValleyValues
+    },
+    Rows = tanuki_backend:by_tag("multiple"),
+    ?assertEqual(3, length(Rows)),
+    ValidateRow = fun(Row) ->
+        DocId = couchbeam_doc:get_value(<<"id">>, Row),
+        {ok, Doc} = tanuki_backend:fetch_document(DocId),
+        Filename = couchbeam_doc:get_value(<<"file_name">>, Doc),
+        ExpectedValues = maps:get(Filename, FilenameToValues),
+        maps:fold(fun(Key, Value, Doc) ->
+                ?assertEqual(Value, couchbeam_doc:get_value(Key, Doc)),
+                Doc
+            end, Doc, ExpectedValues)
+    end,
+    lists:foreach(ValidateRow, Rows),
+    ok.
+
+%% Test in which the incoming directory is empty, hence nothing should be imported.
+%% Also tests removal of the automatically generated cruft from Mac OS X.
+empty_folder_test(Config) ->
+    % create an empty incoming directory
+    IncomingDir = ?config(incoming_dir, Config),
+    TaggedDir = filename:join(IncomingDir, "empty_folder"),
+    % create some useless Mac OS X files, which will be removed
+    LocalizedPath = filename:join(TaggedDir, ".localized"),
+    DSStorePath = filename:join(TaggedDir, ".DS_Store"),
+    ok = filelib:ensure_dir(DSStorePath),
+    ok = file:write_file(LocalizedPath, <<"dummy">>),
+    ok = file:write_file(DSStorePath, <<"dummy">>),
+    gen_server:call(tanuki_incoming, process_now),
+    % check that empty incoming directory is removed
+    {ok, []} = file:list_dir(IncomingDir),
+    % check that no assets were imported by those tags
+    Rows = tanuki_backend:by_tag("empty"),
+    ?assertEqual(0, length(Rows)),
+    ok.

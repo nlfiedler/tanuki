@@ -238,7 +238,7 @@ create_document(Db, Filename, Fullpath, Tags, ImportDate, Location, Checksum) ->
         {<<"location">>, LocData},
         {<<"mimetype">>, hd(mimetypes:filename(string:to_lower(Filename)))},
         {<<"sha256">>, list_to_binary(Checksum)},
-        {<<"tags">>, [list_to_binary(Tag) || Tag <- Tags]}
+        {<<"tags">>, [list_to_binary(Tag) || Tag <- lists:sort(Tags)]}
     ]},
     case couchbeam:save_doc(Db, Doc) of
         {ok, NewDoc} ->
@@ -315,7 +315,7 @@ get_original_exif_date(Path) ->
         {error, Reason} ->
             error_logger:error_msg("Unable to read EXIF data from ~s, ~p~n", [Path, Reason]),
             null;
-        ExifData ->
+        {ok, ExifData} ->
             case dict:find(date_time_original, ExifData) of
                 {ok, Original} ->
                     Parsed = date_parse(Original),

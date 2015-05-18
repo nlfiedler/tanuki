@@ -22,7 +22,7 @@
 -export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1]).
 -export([all_tags/0, fetch_document/1, path_to_mimes/2, generate_etag/2]).
 -export([get_best_date/1, date_list_to_string/1, date_list_to_string/2]).
--export([retrieve_thumbnail/2]).
+-export([retrieve_thumbnail/2, get_field_value/2]).
 -include("../include/records.hrl").  % just "records.hrl" is ideal, but ST-Erlang does not like it
 
 %%
