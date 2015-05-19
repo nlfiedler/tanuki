@@ -2,63 +2,19 @@
 
 ## Prerequisites
 
-While you could certainly perform the entire development cycle within your favorite environment, it makes some sense to use the Linux VM, to ensure everything works for the target system.
-
-* [VirtualBox](https://www.virtualbox.org)
-* [Vagrant](http://www.vagrantup.com)
-* [Fabric](http://www.fabfile.org)
-
-## Setup
-
-```
-$ cd vagrant
-$ vagrant up
-$ ./runfab build_all
-```
-
-## Development Cycle
-
-As mentioned above, it is probably best to use the Linux VM for development, to ensure everything works for the target system. You could, of course, use any system on which Erlang and CouchDB are supported.
-
-* Perform the setup for the VM as described above.
-* Edit the code using your favorite editor on the host system
-* From the Linux VM, run the following commands:
-```
-$ cd /vagrant_data
-$ rebar compile
-$ ./_rel/tanuki/bin/tanuki
-```
-* Visit [http://localhost:8000](http://localhost:8000) to see the web interface
-    * Thanks to port-forwarding, you can use your favorite browser on the host system
-
-## Prototype Incoming Processor
-
-### Python 3.x
-
-* Install Python 3.x.
-* Install Hy(lang) http://hylang.org
-* Install https://github.com/djc/couchdb-python
-* Install https://github.com/ianare/exif-py
-
-#### Detailed Steps
-
-```
-$ pyvenv-3.4 ~/Python/tanuki
-$ . ~/Python/tanuki/bin/activate
-$ pip install hy
-$ git clone git@github.com:djc/couchdb-python.git
-$ cd couchdb-python
-$ python setup.py build
-$ python setup.py install
-$ git clone git@github.com:ianare/exif-py.git
-$ cd exif-py
-$ python setup.py build
-$ python setup.py install
-```
-
-## Backend
-
-### Requirements
-
+* Erlang/OTP R17
+    - Homebrew: `brew install erlang`
+    - FreeBSD: `pkg install erlang`
+    - Ubuntu Linux: build from source as shown in the `Dockerfile`
+* CouchDB 1.6.1 or higher
+    - Homebrew: `brew install couchdb`
+    - FreeBSD: `pkg install couchdb`
+    - Ubuntu Linux: build from source as shown in the `Dockerfile`
 * ImageMagick
-    * Homebrew: `brew install imagemagick`
+    - Homebrew: `brew install imagemagick`
+    - FreeBSD: `pkg install ImageMagick-nox11`
+    - Ubuntu Linux: `apt-get install imagemagick`
+
+## Docker
+
+If setting up a development environment for tanuki seems like too much work, there is a `Dockerfile` in the `docker` directory, which will build an Ubuntu Linux container to run tanuki. For this you will need [Docker](https://www.docker.com) installed, both to build and run the container. See the instructions at the top of the `Dockerfile` for some guidance on how to use it. If you are using Mac OS X, check out [boot2docker](http://boot2docker.io), which works very well.

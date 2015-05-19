@@ -14,7 +14,6 @@
 1. Set up rebar to build merge_records.escript the way the steps were done in Make-a-Lisp
     * Generate escript from .erl file
     * Include dependencies so file is self-contained
-1. Convert the Vagrant files to Docker files
 1. Add pagination support to `tag.erl`
     * http://guide.couchdb.org/draft/recipes.html
         * Request rows_per_page + 1 rows from the view
