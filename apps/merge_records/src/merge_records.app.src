@@ -1,0 +1,17 @@
+{application, merge_records, [
+    {description, "Merge records that refer to the same asset."},
+    {vsn, "1.0.0"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib,
+        couchbeam,
+        hackney,
+        idna,
+        jsx,
+        oauth,
+        ssl_verify_hostname
+    ]},
+    {mod, {merge_records, []}},
+    {env, []}
+]}.

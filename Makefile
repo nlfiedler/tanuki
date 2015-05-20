@@ -21,3 +21,6 @@ dev: compile
 
 rel: compile
 	relx
+
+merge_records:
+	cd apps/merge_records && rebar compile escriptize
