@@ -119,9 +119,9 @@ single_image_test(Config) ->
         % tags are in sorted order
         <<"tags">>       => [<<"flower">>, <<"yellow">>]
     },
-    maps:fold(fun(Key, Value, Doc) ->
-            ?assertEqual(Value, couchbeam_doc:get_value(Key, Doc)),
-            Doc
+    maps:fold(fun(Key, Value, Elem) ->
+            ?assertEqual(Value, couchbeam_doc:get_value(Key, Elem)),
+            Elem
         end, Doc, ExpectedValues),
     ok.
 
@@ -192,9 +192,9 @@ multiple_image_test(Config) ->
         {ok, Doc} = tanuki_backend:fetch_document(DocId),
         Filename = couchbeam_doc:get_value(<<"file_name">>, Doc),
         ExpectedValues = maps:get(Filename, FilenameToValues),
-        maps:fold(fun(Key, Value, Doc) ->
-                ?assertEqual(Value, couchbeam_doc:get_value(Key, Doc)),
-                Doc
+        maps:fold(fun(Key, Value, Elem) ->
+                ?assertEqual(Value, couchbeam_doc:get_value(Key, Elem)),
+                Elem
             end, Doc, ExpectedValues)
     end,
     lists:foreach(ValidateRow, Rows),
