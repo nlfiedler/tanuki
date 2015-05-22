@@ -71,13 +71,8 @@ handle_cast(process, State) ->
     % Filter function to ensure the given directory is at least an hour old.
     FilterFun = fun(Path) ->
         NowSecs = tanuki_backend:seconds_since_epoch(),
-        case file:read_file_info(Path, [{time, posix}]) of
-            {ok, #file_info{ctime = CTime}} ->
-                NowSecs - CTime > 3600;
-            {error, Reason2} ->
-                error_logger:error_msg("Failed to read file info of ~s, ~p~n", [Path, Reason2]),
-                false
-        end
+        {ok, #file_info{ctime = CTime}} = file:read_file_info(Path, [{time, posix}]),
+        NowSecs - CTime > 3600
     end,
     process_incoming(Incoming, Store, Db, FilterFun),
     fire_later(),
@@ -192,14 +187,10 @@ delete_extraneous_files(Path) ->
 
 % Compute the SHA256 for the named file and return as a hex string.
 compute_checksum(Filepath) ->
-    case file:read_file(Filepath) of
-        {ok, Binary} ->
-            Digest = crypto:hash(sha256, Binary),
-            lists:flatten([io_lib:format("~2.16.0b", [X]) || <<X:8>> <= Digest]);
-        {error, Reason} ->
-            error_logger:error_msg("File read failed: ~p~n", [Reason]),
-            undefined
-    end.
+    % Fail fast if unable to read file.
+    {ok, Binary} = file:read_file(Filepath),
+    Digest = crypto:hash(sha256, Binary),
+    lists:flatten([io_lib:format("~2.16.0b", [X]) || <<X:8>> <= Digest]).
 
 % Determine if the given checksum already exists in the database.
 % Returns the document id (binary), or undefined if not found.
@@ -208,14 +199,11 @@ find_document(Db, Checksum) ->
     case couchbeam:doc_exists(Db, "_design/assets") of
         true ->
             Options = [{key, list_to_binary(Checksum)}],
-            case couchbeam_view:fetch(Db, {"assets", "by_checksum"}, Options) of
-                {ok, Rows} ->
-                    if length(Rows) == 1 -> couchbeam_doc:get_value(<<"id">>, hd(Rows));
-                        true -> undefined
-                    end;
-                {error, Reason} ->
-                    error_logger:error_msg("couchdb fetch failed: ~p~n", [Reason]),
-                    undefined
+            % Fail fast if unable to check for duplicates, rather than
+            % blindly creating more duplicate records.
+            {ok, Rows} = couchbeam_view:fetch(Db, {"assets", "by_checksum"}, Options),
+            if length(Rows) == 1 -> couchbeam_doc:get_value(<<"id">>, hd(Rows));
+                true -> undefined
             end;
         false -> undefined
     end.
@@ -240,14 +228,12 @@ create_document(Db, Filename, Fullpath, Tags, ImportDate, Location, Checksum) ->
         {<<"sha256">>, list_to_binary(Checksum)},
         {<<"tags">>, [list_to_binary(Tag) || Tag <- lists:sort(Tags)]}
     ]},
-    case couchbeam:save_doc(Db, Doc) of
-        {ok, NewDoc} ->
-            {Id, Rev} = couchbeam_doc:get_idrev(NewDoc),
-            error_logger:info_msg("~s => id=~s, rev=~s~n",
-                                  [Filename, binary_to_list(Id), binary_to_list(Rev)]);
-        {error, Reason} ->
-            error_logger:error_msg("document save failed: ~p~n", [Reason])
-    end,
+    % Fail fast if insertion failed, so we do not then move the asset out
+    % of the incoming directory and fail to process it properly.
+    {ok, NewDoc} = couchbeam:save_doc(Db, Doc),
+    {Id, Rev} = couchbeam_doc:get_idrev(NewDoc),
+    error_logger:info_msg("~s => id=~s, rev=~s~n",
+                          [Filename, binary_to_list(Id), binary_to_list(Rev)]),
     ok.
 
 % Merge the given tags with existing document's tags.
@@ -278,35 +264,20 @@ update_document(Db, DocId, Filename, Tags, Location) ->
 
 % Return the username of the file owner, of undefined if not available.
 file_owner(Path) ->
-    case file:read_file_info(Path) of
-        {ok, #file_info{uid = UserID}} ->
-            Details = pwd:getpwuid(UserID),
-            proplists:get_value(pw_name, Details);
-        {error, Reason} ->
-            error_logger:error_msg("Failed to read file info of ~s, ~p~n", [Path, Reason]),
-            undefined
-    end.
+    {ok, #file_info{uid = UserID}} = file:read_file_info(Path),
+    Details = pwd:getpwuid(UserID),
+    proplists:get_value(pw_name, Details).
 
 % Return the size in bytes of the named file.
 file_size(Path) ->
-    case file:read_file_info(Path) of
-        {ok, #file_info{size = Size}} ->
-            Size;
-        {error, Reason} ->
-            error_logger:error_msg("Failed to read file info of ~s, ~p~n", [Path, Reason]),
-            undefined
-    end.
+    {ok, #file_info{size = Size}} = file:read_file_info(Path),
+    Size.
 
 % Return the mtime of the file, which is typically when it was created.
 file_date(Path) ->
-    case file:read_file_info(Path) of
-        {ok, #file_info{mtime = Mtime}} ->
-            {{Y, Mo, D}, {H, Mi, _S}} = Mtime,
-            [Y, Mo, D, H, Mi];
-        {error, Reason} ->
-            error_logger:error_msg("Failed to read file info of ~s, ~p~n", [Path, Reason]),
-            undefined
-    end.
+    {ok, #file_info{mtime = Mtime}} = file:read_file_info(Path),
+    {{Y, Mo, D}, {H, Mi, _S}} = Mtime,
+    [Y, Mo, D, H, Mi].
 
 % Attempt to read the original datetime from the EXIF tags, returning
 % null if not available, or the date time as a list of integers.
