@@ -25,7 +25,16 @@ The incoming processor, backend application, and web interface are written in Er
     - FreeBSD: `pkg install ImageMagick-nox11`
     - Ubuntu Linux: `apt-get install imagemagick`
 
-Once the above prerequisites are installed, build the project like so:
+Once the above prerequisites are installed, some configuration may be necessary. In particular, the path to the incoming assets and the destination for the stored assets should be configured for your system. This is done for the two applications (`tanuki_backend` and `tanuki_incoming`) using a configuration file named `user_env.confg`, located in each of the application source directories (`apps/tanuki_backend` and `apps/tanuki_incoming`). The contents of these files will look something like this:
+
+```
+{assets_dir, "/Users/adam/testing/assets"}.
+{incoming_dir, "/Users/adam/testing/incoming"}.
+```
+
+The full set of settings can be found in the `*.app.src.script` files in `apps/tanuki_incoming/src` and `apps/tanuki_backend/src` directories. These are processed by `rebar` and build time and effect the development and release builds. The Common Test suites are configured in the test code and hence ignore these settings.
+
+Now that the applications are configured, we can finally build the project like so:
 
 ```
 $ rebar get-deps

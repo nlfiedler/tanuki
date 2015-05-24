@@ -2,7 +2,6 @@
 
 ## Action Items
 
-1. Document the use of `user_env.config` to configure apps
 1. Update to latest release of Nitrogen
 1. Set up rc-style launcher script (like couchdb) for starting/stopping in FreeBSD
     * https://www.freebsd.org/doc/en_US.ISO8859-1/articles/rc-scripting/article.html
