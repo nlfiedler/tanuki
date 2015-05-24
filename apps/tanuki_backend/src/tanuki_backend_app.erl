@@ -21,7 +21,7 @@
 -module(tanuki_backend_app).
 -behaviour(application).
 -export([start/2, stop/1, ensure_schema/1]).
--include("../include/records.hrl").  % just "records.hrl" is ideal, but ST-Erlang does not like it
+-include_lib("tanuki_backend/include/records.hrl").
 
 start(_Type, _Args) ->
     Nodes = [node()],

@@ -23,7 +23,7 @@
 -export([all_tags/0, fetch_document/1, path_to_mimes/2, generate_etag/2]).
 -export([get_best_date/1, date_list_to_string/1, date_list_to_string/2]).
 -export([retrieve_thumbnail/2, get_field_value/2]).
--include("../include/records.hrl").  % just "records.hrl" is ideal, but ST-Erlang does not like it
+-include_lib("tanuki_backend/include/records.hrl").
 
 %%
 %% Client API
@@ -248,6 +248,15 @@ retrieve_thumbnail(Checksum, RelativePath) ->
 generate_thumbnail(RelativePath) ->
     {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
     SourceFile = filename:join(AssetsDir, RelativePath),
+    % if using erl_img, this would work, except that erl_img is broken
+    % {ok, Image} = erl_img:load(SourceFile),
+    % Factor = if Image#erl_image.width > Image#erl_image.height ->
+    %         240 / Image#erl_image.width;
+    %     true -> 240 / Image#erl_image.height
+    % end,
+    % Thumbnail = erl_image:scale(Image, Factor),
+    % {ok, Data} = erl_img:to_binary(Thumbnail),
+    % Data.
     %
     % See http://www.imagemagick.org/Usage/thumbnails/ for the many available options.
     % The code below is equivalent to the following shell command:
@@ -261,8 +270,10 @@ generate_thumbnail(RelativePath) ->
         {unsharp,  "0x.5"}
     ],
     % TODO: would be ideal if we could pass the file we already have to emagick
-    {ok, OutData} = emagick:convert(InData, jpg, jpg, Opts),
-    OutData.
+    {ok, Results} = emagick:convert(InData, jpg, jpg, Opts),
+    % emagick returns a list of the binary data read from the output files,
+    % but since we only have one result, pull it from the list.
+    hd(Results).
 
 %
 % @doc Return the seconds since the epoch (1970/1/1 00:00).

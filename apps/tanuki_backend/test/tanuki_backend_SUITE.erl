@@ -29,6 +29,9 @@ init_per_suite(Config) ->
     % load the application so we can read and modify the environment
     ok = application:load(tanuki_backend),
     ok = application:set_env(tanuki_backend, database, ?TESTDB),
+    Priv = ?config(priv_dir, Config),
+    AssetsDir = filename:join(Priv, "assets"),
+    ok = application:set_env(tanuki_backend, assets_dir, AssetsDir),
     ok = couchbeam:start(),
     {ok, Url} = application:get_env(tanuki_backend, couchdb_url),
     {ok, Opts} = application:get_env(tanuki_backend, couchdb_opts),
@@ -41,7 +44,6 @@ init_per_suite(Config) ->
     {ok, Db} = couchbeam:create_db(S, ?TESTDB, []),
     add_test_docs(Db, Config),
     % set up mnesia
-    Priv = ?config(priv_dir, Config),
     ok = application:set_env(mnesia, dir, Priv),
     tanuki_backend_app:ensure_schema([node()]),
     ok = application:start(mnesia),
@@ -53,7 +55,12 @@ init_per_suite(Config) ->
     ok = application:set_env(cowboy, static_paths,
         ["/js/", "/images/", "/css/", "/nitrogen/", "/favicon.ico"]),
     {ok, _Started} = application:ensure_all_started(tanuki_backend),
-    [{url, Url}, {opts, Opts} | Config].
+    [
+        {url, Url},
+        {opts, Opts},
+        {assets_dir, AssetsDir} |
+        Config
+    ].
 
 add_test_docs(Db, Config) ->
     % populate test database from json files in data_dir
@@ -65,7 +72,9 @@ add_test_docs(Db, Config) ->
         {ok, _Doc1} = couchbeam:save_doc(Db, Json)
     end,
     {ok, Filenames} = file:list_dir(DataDir),
-    [InsertDocument(Filename) || Filename <- Filenames],
+    JsonSelector = fun(Name) -> filename:extension(Name) == ".json" end,
+    JsonFiles = lists:filter(JsonSelector, Filenames),
+    [InsertDocument(Filename) || Filename <- JsonFiles],
     ok.
 
 end_per_suite(Config) ->
@@ -90,7 +99,8 @@ all() ->
         date_formatter,
         path_to_mimes,
         generate_etag,
-        get_best_date
+        get_best_date,
+        generate_thumbnail
     ].
 
 fetch_document(_Config) ->
@@ -242,4 +252,19 @@ get_best_date(_Config) ->
     ?assertEqual([2014, 10, 24, 15, 9], tanuki_backend:get_best_date(Document2)),
     {ok, Document3} = tanuki_backend:fetch_document("test_AC"),
     ?assertEqual([2014, 7, 15, 3, 13], tanuki_backend:get_best_date(Document3)),
+    ok.
+
+generate_thumbnail(Config) ->
+    DataDir = ?config(data_dir, Config),
+    AssetsDir = ?config(assets_dir, Config),
+    Checksum = "8dcaf3d73a10548e445ebb27ff34d7159cc5d7f3730c24e95ffe5b07bd2300fd",
+    RelativePath = "8d/ca/f3d73a10548e445ebb27ff34d7159cc5d7f3730c24e95ffe5b07bd2300fd",
+    SrcImagePath = filename:join(DataDir, "fighting_kittens.jpg"),
+    DestImagePath = filename:join(AssetsDir, RelativePath),
+    ok = filelib:ensure_dir(DestImagePath),
+    {ok, _BytesCopied} = file:copy(SrcImagePath, DestImagePath),
+    {ok, Binary, Mimetype} = tanuki_backend:retrieve_thumbnail(Checksum, RelativePath),
+    % TODO: verify the image dimensions
+    ?assertEqual(<<"image/jpeg">>, Mimetype),
+    ?assert(is_binary(Binary)),
     ok.

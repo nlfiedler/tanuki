@@ -2,10 +2,12 @@
 
 ## Action Items
 
-1. Use `gen_smtp` in `tanuki_incoming` app to send email report for each import
-    * Include the names of files and their checksums
-    * Organize by tags
-1. If tanuki_incoming fails to insert new CouchDB document, revert the asset move
+1. Document the use of `user_env.config` to configure apps
+1. Update to latest release of Nitrogen
+1. Set up rc-style launcher script (like couchdb) for starting/stopping in FreeBSD
+    * https://www.freebsd.org/doc/en_US.ISO8859-1/articles/rc-scripting/article.html
+1. Use lager to format logs in an easier to parse format (for logwatch)
+    * https://github.com/basho/lager
 1. Add pagination support to `tag.erl`
     * http://guide.couchdb.org/draft/recipes.html
         * Request rows_per_page + 1 rows from the view
@@ -27,10 +29,4 @@
     * Cache invalidation via couchbeam change listeners.
 1. Produce thumbnails for the videos and cache them
     * https://github.com/emedia-project/erlffmpeg
-1. Would be good to Common Test the thumbnail generation code
 1. Show list of known locations along with the list of tags
-1. Will need pagination for `tag.erl`
-1. Look into using https://github.com/ShoreTel-Inc/erld with Upstart to manage process
-1. Find the log for tanuki and add to logwatch
-1. Look at https://github.com/evanmiller/erl_img for possible image scaling library
-    * Would replace ImageMagick and emagick
