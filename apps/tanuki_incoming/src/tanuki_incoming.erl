@@ -27,8 +27,6 @@
 
 -record(state, {server, database, incoming_dir, blob_store}).
 
--define(DELAY, 1000*60*60).
-
 %%
 %% Client API
 %%
@@ -46,13 +44,13 @@ init([]) ->
     {ok, DbName} = application:get_env(tanuki_incoming, database),
     Server = couchbeam:server_connection(Url, Opts),
     {ok, Db} = couchbeam:open_or_create_db(Server, DbName, []),
+    fire_soon(),
     State = #state{
         server=Server,
         database=Db,
         incoming_dir=IncomingPath,
         blob_store=BlobStore
     },
-    fire_later(),
     {ok, State}.
 
 handle_call(terminate, _From, State) ->
@@ -67,6 +65,9 @@ handle_call(process_now, _From, State) ->
     {reply, ok, State}.
 
 handle_cast(process, State) ->
+    % Set up the next iteration before processing the incoming assets, in
+    % the event that we fail fast during processing.
+    fire_later(),
     #state{database=Db, incoming_dir=Incoming, blob_store=Store} = State,
     % Filter function to ensure the given directory is at least an hour old.
     FilterFun = fun(Path) ->
@@ -75,7 +76,6 @@ handle_cast(process, State) ->
         NowSecs - CTime > 3600
     end,
     process_incoming(Incoming, Store, Db, FilterFun),
-    fire_later(),
     {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -99,7 +99,17 @@ fire_later() ->
     M = gen_server,
     F = cast,
     A = [tanuki_incoming, process],
-    {ok, _TRef} = timer:apply_after(?DELAY, M, F, A),
+    % send ourselves a message in an hour
+    {ok, _TRef} = timer:apply_after(1000*60*60, M, F, A),
+    ok.
+
+% Start a timer to cast a 'process' message to us sooner rather than later.
+fire_soon() ->
+    M = gen_server,
+    F = cast,
+    A = [tanuki_incoming, process],
+    % send ourselve a message in 10 seconds
+    {ok, _TRef} = timer:apply_after(1000*10, M, F, A),
     ok.
 
 % Process the assets in the incoming directory, storing them in the
