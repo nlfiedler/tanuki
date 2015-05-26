@@ -52,11 +52,12 @@ init_per_suite(Config) ->
     %
     ok = application:load(tanuki_backend),
     ok = application:set_env(tanuki_backend, database, ?TESTDB),
-    ok = application:set_env(cowboy, bind_address, "0.0.0.0"),
-    ok = application:set_env(cowboy, port, 8000),
-    ok = application:set_env(cowboy, server_name, nitrogen),
-    ok = application:set_env(cowboy, document_root, "./priv/static"),
-    ok = application:set_env(cowboy, static_paths,
+    ok = application:set_env(simple_bridge, handler, nitrogen),
+    ok = application:set_env(simple_bridge, backend, cowboy),
+    ok = application:set_env(simple_bridge, address, "0.0.0.0"),
+    ok = application:set_env(simple_bridge, port, 8000),
+    ok = application:set_env(simple_bridge, document_root, "./priv/static"),
+    ok = application:set_env(simple_bridge, static_paths,
         ["/js/", "/images/", "/css/", "/nitrogen/", "/favicon.ico"]),
     {ok, _Started2} = application:ensure_all_started(tanuki_backend),
     [

@@ -48,11 +48,12 @@ init_per_suite(Config) ->
     tanuki_backend_app:ensure_schema([node()]),
     ok = application:start(mnesia),
     % start the application(s)
-    ok = application:set_env(cowboy, bind_address, "0.0.0.0"),
-    ok = application:set_env(cowboy, port, 8000),
-    ok = application:set_env(cowboy, server_name, nitrogen),
-    ok = application:set_env(cowboy, document_root, "./priv/static"),
-    ok = application:set_env(cowboy, static_paths,
+    ok = application:set_env(simple_bridge, handler, nitrogen),
+    ok = application:set_env(simple_bridge, backend, cowboy),
+    ok = application:set_env(simple_bridge, address, "0.0.0.0"),
+    ok = application:set_env(simple_bridge, port, 8000),
+    ok = application:set_env(simple_bridge, document_root, "./priv/static"),
+    ok = application:set_env(simple_bridge, static_paths,
         ["/js/", "/images/", "/css/", "/nitrogen/", "/favicon.ico"]),
     {ok, _Started} = application:ensure_all_started(tanuki_backend),
     [

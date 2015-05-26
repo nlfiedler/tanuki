@@ -2,12 +2,14 @@
 
 ## Action Items
 
-1. Update to latest release of Nitrogen
+1. Is the tanuki_incoming app getting started?
+    * Connect to the running node and see which applications are loaded
 1. Set up rc-style launcher script (like couchdb) for starting/stopping in FreeBSD
     * https://www.freebsd.org/doc/en_US.ISO8859-1/articles/rc-scripting/article.html
 1. Use lager to format logs in an easier to parse format (for logwatch)
     * https://github.com/basho/lager
 1. Add pagination support to `tag.erl`
+    * Look at the paginate plugin: https://github.com/choptastic/paginate
     * http://guide.couchdb.org/draft/recipes.html
         * Request rows_per_page + 1 rows from the view
         * Display rows_per_page rows
