@@ -2,8 +2,8 @@
 
 ## Action Items
 
-1. Is the tanuki_incoming app getting started?
-    * Connect to the running node and see which applications are loaded
+1. Incoming processor is failing: `'module could not be loaded', [{exif,read,...`
+1. Update couchbeam to 1.1.7
 1. Set up rc-style launcher script (like couchdb) for starting/stopping in FreeBSD
     * https://www.freebsd.org/doc/en_US.ISO8859-1/articles/rc-scripting/article.html
 1. Use lager to format logs in an easier to parse format (for logwatch)
