@@ -45,6 +45,11 @@ App = [
         uuid,          %% for emagick
         emagick
     ]},
+    {included_applications, [
+        % so relx will include these in the build
+        nprocreg,
+        oauth
+    ]},
     {mod, {tanuki_backend_app, []}},
     {env, AppEnv}
 ].

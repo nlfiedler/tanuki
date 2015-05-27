@@ -2,8 +2,7 @@
 
 ## Action Items
 
-1. Incoming processor is failing: `'module could not be loaded', [{exif,read,...`
-1. Update couchbeam to 1.1.7
+1. Thumbnail handler not set up? `Page not found: "/thumbnails/7d/07/559..."`
 1. Set up rc-style launcher script (like couchdb) for starting/stopping in FreeBSD
     * https://www.freebsd.org/doc/en_US.ISO8859-1/articles/rc-scripting/article.html
 1. Use lager to format logs in an easier to parse format (for logwatch)

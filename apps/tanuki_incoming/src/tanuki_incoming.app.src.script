@@ -42,6 +42,10 @@ App = [
         couchbeam,
         pwd
     ]},
+    {included_applications, [
+        % so relx will include these in the build
+        exif
+    ]},
     {mod, {tanuki_incoming_app, []}},
     {env, AppEnv}
 ].
