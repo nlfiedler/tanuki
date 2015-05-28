@@ -1,7 +1,7 @@
 %% -*- coding: utf-8 -*-
 %% -------------------------------------------------------------------
 %%
-%% Copyright (c) 2014 Nathan Fiedler
+%% Copyright (c) 2014-2015 Nathan Fiedler
 %%
 %% This file is provided to you under the Apache License,
 %% Version 2.0 (the "License"); you may not use this file
@@ -32,29 +32,35 @@ init_dispatch() ->
 
     StaticDispatches = lists:map(fun(Dir) ->
         Path = reformat_path(Dir),
-        Opts = [
-            {mimetypes, {fun mimetypes:path_to_mimes/2, default}}
-            | localized_dir_file(DocRoot, Dir)
-        ],
-        {Path, cowboy_static, Opts}
+        Opts = localized_dir_file(DocRoot, Dir),
+        {Path, [], cowboy_static, Opts}
     end, StaticPaths),
 
     %% Serve up the assets from the configured directory, providing a
     %% function to produce the appropriate mimetype, and a suitable ETag.
     {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
-    AssetsEntry = {"/assets/[...]", cowboy_static,
-        [{directory, AssetsDir},
-         {mimetypes, {fun tanuki_backend:path_to_mimes/2, default}},
-         {etag, {fun tanuki_backend:generate_etag/2, strong_etag_extra}}]},
+    AssetsEntry = {
+        [<<"assets">>, '...'],
+        [],
+        cowboy_static,
+        {dir, AssetsDir, [
+            {mimetypes, {fun tanuki_backend:path_to_mimes/2, default}},
+            {etag, {fun tanuki_backend:generate_etag/2, strong_etag_extra}}
+        ]}
+    },
     %% Install our handler for thumbnails
-    ThumbnailsEntry = {"/thumbnails/[...]", tanuki_thumbnail_handler, []},
+    ThumbnailsEntry = {
+        [<<"thumbnails">>, '...'],
+        [],
+        tanuki_thumbnail_handler,
+        []
+    },
 
     [
-        %% Nitrogen will handle everything that's not handled in the StaticDispatches
-        {'_', StaticDispatches ++ [
+        {'_', [], StaticDispatches ++ [
             AssetsEntry,
             ThumbnailsEntry,
-            {'_', nitrogen_cowboy , []}
+            {'_', [], cowboy_simple_bridge_anchor, []}
         ]}
     ].
 
@@ -63,27 +69,13 @@ localized_dir_file(DocRoot, Path) ->
         $/ -> DocRoot ++ Path;
         _ -> DocRoot ++ "/" ++ Path
     end,
-    _NewPath2 = case lists:last(Path) of
-        $/ -> [{directory, NewPath}];
-        _ ->
-            Dir = filename:dirname(NewPath),
-            File = filename:basename(NewPath),
-            [
-                {directory, Dir},
-                {file, File}
-            ]
+    case lists:last(Path) of
+        $/ -> {dir, NewPath, [{mimetypes,cow_mimetypes,all}]};
+        _ -> {file, NewPath, [{mimetypes,cow_mimetypes,all}]}
     end.
 
-%% Ensure the paths start with /, and if a path ends with /, then add "[...]" to it
 reformat_path(Path) ->
-    Path2 = case hd(Path) of
-        $/ -> Path;
-        $\ -> Path;
-        _ -> [$/|Path]
-    end,
-    Path3 = case lists:last(Path) of
-        $/ -> Path2 ++ "[...]";
-        $\ -> Path2 ++ "[...]";
-        _ -> Path2
-    end,
-    Path3.
+    case lists:last(Path) of
+        $/ -> [list_to_binary(string:strip(Path, right, $/)), '...'];
+        _ -> [list_to_binary(Path)]
+    end.
