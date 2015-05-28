@@ -32,9 +32,9 @@ Once the above prerequisites are installed, some configuration may be necessary.
 {incoming_dir, "/Users/adam/testing/incoming"}.
 ```
 
-The full set of settings can be found in the `*.app.src.script` files in `apps/tanuki_incoming/src` and `apps/tanuki_backend/src` directories. These are processed by `rebar` and build time and effect the development and release builds. The Common Test suites are configured in the test code and hence ignore these settings.
+The full set of settings can be found in the `*.app.src.script` files in `apps/tanuki_incoming/src` and `apps/tanuki_backend/src` directories. These are processed by `rebar` at build time and effect the development and release builds. The Common Test suites are configured in the test code and hence ignore these settings.
 
-Now that the applications are configured, we can finally build the project like so:
+Once the applications are configured, build the project like so:
 
 ```
 $ rebar get-deps
