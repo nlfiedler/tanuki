@@ -20,7 +20,7 @@
 %% -------------------------------------------------------------------
 -module(tanuki_backend).
 -export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1]).
--export([all_tags/0, fetch_document/1, path_to_mimes/2, generate_etag/2]).
+-export([all_tags/0, fetch_document/1, path_to_mimes/1, generate_etag/3]).
 -export([get_best_date/1, date_list_to_string/1, date_list_to_string/2]).
 -export([retrieve_thumbnail/2, get_field_value/2, seconds_since_epoch/0]).
 -include_lib("tanuki_backend/include/records.hrl").
@@ -160,37 +160,32 @@ date_list_to_string(DateList, date_only) ->
 % @doc Retrieves the mimetype for a document with the given checksum, in
 %      a form suitable for the Cowboy dispatch mimetype handler.
 %
--spec path_to_mimes(Filename, Database) -> MimeType
-    when Filename :: bitstring(),
-         Database :: term(),
-         MimeType :: [binary()]
-    ; (Filename, Database) -> MimeType
-    when Filename :: string(),
-         Database :: term(),
-         MimeType :: [binary()].
-path_to_mimes(Filename, Database) when is_bitstring(Filename) ->
-    path_to_mimes(bitstring_to_list(Filename), Database);
-path_to_mimes(Filename, _Database) when is_list(Filename) ->
-    Parts = string:tokens(Filename, "/"),
+-spec path_to_mimes(Path) -> MimeType
+    when Path     :: binary(),
+         MimeType :: {binary(), binary(), []}.
+path_to_mimes(Path) when is_binary(Path) ->
+    Path2 = binary_to_list(Path),
+    Parts = string:tokens(Path2, "/"),
     Checksum = string:join(lists:sublist(Parts, length(Parts) - 2, 3), ""),
     case by_checksum(Checksum) of
-        [] -> [<<"application/octet-stream">>];
-        [H|_T] -> [couchbeam_doc:get_value(<<"value">>, H)]
+        [] -> {<<"application">>, <<"octet-stream">>, []};
+        [Doc|_T] ->
+            DocValue = couchbeam_doc:get_value(<<"value">>, Doc),
+            [Type, SubType] = binary:split(DocValue, <<"/">>),
+            {Type, SubType, []}
     end.
 
 %
 % @doc Returns an ETag for a given file, which essentially means converting
 %      the file path to a sha256 checksum.
 %
--spec generate_etag(Arguments, strong_etag_extra) -> {strong, Etag}
-    when Arguments :: list(),
-         Etag      :: bitstring().
-generate_etag(Arguments, strong_etag_extra) ->
-    {_, Filepath0} = lists:keyfind(filepath, 1, Arguments),
-    Filepath = case is_binary(Filepath0) of
-        true -> bitstring_to_list(Filepath0);
-        false -> Filepath0
-    end,
+-spec generate_etag(Path, Size, Mtime) -> {strong, Etag}
+    when Path  :: binary(),
+         Size  :: integer(),
+         Mtime :: term(),
+         Etag  :: binary().
+generate_etag(Path, _Size, _Mtime) ->
+    Filepath = binary_to_list(Path),
     Parts = string:tokens(Filepath, "/"),
     Checksum = string:join(lists:sublist(Parts, length(Parts) - 2, 3), ""),
     {strong, list_to_binary(Checksum)}.

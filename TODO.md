@@ -2,7 +2,6 @@
 
 ## Action Items
 
-1. Assets dispatch handler is broken
 1. Set up rc-style launcher script (like couchdb) for starting/stopping in FreeBSD
     * https://www.freebsd.org/doc/en_US.ISO8859-1/articles/rc-scripting/article.html
 1. Use lager to format logs in an easier to parse format (for logwatch)

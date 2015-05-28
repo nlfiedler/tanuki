@@ -44,10 +44,11 @@ init_dispatch() ->
         [],
         cowboy_static,
         {dir, AssetsDir, [
-            {mimetypes, {fun tanuki_backend:path_to_mimes/2, default}},
-            {etag, {fun tanuki_backend:generate_etag/2, strong_etag_extra}}
+            {mimetypes, tanuki_backend, path_to_mimes},
+            {etag, tanuki_backend, generate_etag}
         ]}
     },
+
     %% Install our handler for thumbnails
     ThumbnailsEntry = {
         [<<"thumbnails">>, '...'],
@@ -69,9 +70,9 @@ localized_dir_file(DocRoot, Path) ->
         $/ -> DocRoot ++ Path;
         _ -> DocRoot ++ "/" ++ Path
     end,
-    case lists:last(Path) of
-        $/ -> {dir, NewPath, [{mimetypes,cow_mimetypes,all}]};
-        _ -> {file, NewPath, [{mimetypes,cow_mimetypes,all}]}
+    case lists:last(NewPath) of
+        $/ -> {dir, NewPath, [{mimetypes, cow_mimetypes, all}]};
+        _ -> {file, NewPath, [{mimetypes, cow_mimetypes, all}]}
     end.
 
 reformat_path(Path) ->
