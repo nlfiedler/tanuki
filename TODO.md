@@ -2,6 +2,8 @@
 
 ## Action Items
 
+1. Make thumbnails faster and/or more efficient
+    * Could translate portions of mokele/eim into Rust using goertzenator/ruster_unsafe
 1. Set up rc-style launcher script (like couchdb) for starting/stopping in FreeBSD
     * https://www.freebsd.org/doc/en_US.ISO8859-1/articles/rc-scripting/article.html
 1. Use lager to format logs in an easier to parse format (for logwatch)
@@ -15,6 +17,7 @@
         * As page information, keep startkey and next_startkey
         * Use the next_* values to create the next link
         * Use the others (startkey?) to create the previous link
+    * An entirely different approach: https://gist.github.com/amedeo/820412
 1. Store tag selection in page state (e.g. `wf:state(Key, Value)`)
 1. Show an `x` next to each tag on `tag.erl` to drop that tag from the query
 1. Get the list of tags in `tag.erl` to be along the side of the images

@@ -81,6 +81,7 @@ end_per_suite(Config) ->
 all() ->
     [
         single_image_test,
+        topical_image_test,
         multiple_image_test,
         empty_folder_test
     ].
@@ -120,6 +121,49 @@ single_image_test(Config) ->
         <<"sha256">>     => <<"d09fd659423e71bb1b5e20d78a1ab7ce393e74e463f2dface3634d78ec155397">>,
         % tags are in sorted order
         <<"tags">>       => [<<"flower">>, <<"yellow">>]
+    },
+    maps:fold(fun(Key, Value, Elem) ->
+            ?assertEqual(Value, couchbeam_doc:get_value(Key, Elem)),
+            Elem
+        end, Doc, ExpectedValues),
+    ok.
+
+%% Test importing an image with topic, tags, and location.
+topical_image_test(Config) ->
+    DataDir = ?config(data_dir, Config),
+    % create the incoming directory and copy our test photo there
+    IncomingDir = ?config(incoming_dir, Config),
+    TaggedDir = filename:join(IncomingDir, "honeymoon^cows_field@hawaii"),
+    SrcImagePath = filename:join(DataDir, "dcp_1069.jpg"),
+    DestImagePath = filename:join(TaggedDir, "dcp_1069.jpg"),
+    ok = filelib:ensure_dir(DestImagePath),
+    {ok, _BytesCopied} = file:copy(SrcImagePath, DestImagePath),
+    % Would like to have set the ctime of the incoming directory but
+    % file:write_file_info/2,3 ignores the ctime value on Unix systems.
+    gen_server:call(tanuki_incoming, process_now),
+    % check that images are gone from incoming directory
+    {ok, []} = file:list_dir(IncomingDir),
+    % verify images are in the assets directory
+    AssetsDir = ?config(assets_dir, Config),
+    true = filelib:is_file(filename:join([AssetsDir, "dd", "8c",
+        "97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07"])),
+    % check that each field of each new document is the correct value
+    Rows = tanuki_backend:by_tag("cows"),
+    ?assertEqual(1, length(Rows)),
+    DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
+    {ok, Doc} = tanuki_backend:fetch_document(DocId),
+    CurrentUser = list_to_binary(os:getenv("USER")),
+    ExpectedValues = #{
+        <<"exif_date">>  => [2003, 9, 3, 17, 24],
+        <<"file_name">>  => <<"dcp_1069.jpg">>,
+        <<"file_owner">> => CurrentUser,
+        <<"file_size">>  => 80977,
+        <<"location">>   => <<"hawaii">>,
+        <<"mimetype">>   => <<"image/jpeg">>,
+        <<"topic">>      => <<"honeymoon">>,
+        <<"sha256">>     => <<"dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07">>,
+        % tags are in sorted order
+        <<"tags">>       => [<<"cows">>, <<"field">>]
     },
     maps:fold(fun(Key, Value, Elem) ->
             ?assertEqual(Value, couchbeam_doc:get_value(Key, Elem)),

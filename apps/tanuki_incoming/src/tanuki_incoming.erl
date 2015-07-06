@@ -135,7 +135,7 @@ process_incoming(Incoming, BlobStore, Db, FilterFun) ->
 % Import the assets found with the named path.
 process_path(Path, BlobStore, Db) ->
     ImportDate = calendar:universal_time(),
-    {Tags, Location} = convert_path_to_tags_and_location(Path),
+    {Topic, Tags, Location} = convert_path_to_details(Path),
     error_logger:info_msg("Processing tags: ~p~n", [Tags]),
     ok = delete_extraneous_files(Path),
     {ok, Filenames} = file:list_dir(Path),
@@ -147,8 +147,8 @@ process_path(Path, BlobStore, Db) ->
                 % Either insert or update a document in the database.
                 case find_document(Db, Checksum) of
                     undefined -> create_document(Db, Name, Filepath, Tags, ImportDate,
-                                                 Location, Checksum);
-                    DocId -> update_document(Db, DocId, Name, Tags, Location)
+                                                 Topic, Location, Checksum);
+                    DocId -> update_document(Db, DocId, Name, Tags, Topic, Location)
                 end,
                 % Move the asset into place, or remove it if duplicate.
                 store_asset(Filepath, Checksum, BlobStore);
@@ -163,19 +163,30 @@ process_path(Path, BlobStore, Db) ->
             error_logger:error_msg("Unable to remove ~s: ~p~n", [Path, Reason])
     end.
 
-% Convert the path to a set of tags and a location, if any. Location is
-% separated from tags by at sign (@). Tags are separated by underscore (_).
-% Any underscores in location are replaced with spaces.
-convert_path_to_tags_and_location(Path) ->
+% Convert the path to a topic, set of tags, and a location. Topic, if any,
+% is separated by a circumflex (^) and starts at the beginning of the path.
+% Location, if any, starts with an at sign (@) and goes to the end of the
+% path. Tags are required and are separated by underscore (_). Any
+% underscores in topic and location are replaced with spaces.
+convert_path_to_details(Path) ->
     AssetFolder = string:to_lower(filename:basename(Path)),
-    [Tags|Tail] = re:split(AssetFolder, "@", [{return, list}]),
+    [MaybeTopic|Rest] = re:split(AssetFolder, "\\^", [{return, list}]),
+    case Rest of
+        []     ->
+            Topic = undefined,
+            NotTopic = MaybeTopic;
+        [R|_] ->
+            Topic = re:replace(MaybeTopic, "_", " "),
+            NotTopic = R
+    end,
+    [Tags|Tail] = re:split(NotTopic, "@", [{return, list}]),
     Location = case Tail of
         []    -> undefined;
         [L|_] -> re:replace(L, "_", " ")
     end,
     TagList = re:split(Tags, "_", [{return, list}]),
     ValidTags = lists:filter(fun(Tag) -> length(Tag) > 0 end, TagList),
-    {ValidTags, Location}.
+    {Topic, ValidTags, Location}.
 
 % Remove any of the superfluous files from the given path.
 delete_extraneous_files(Path) ->
@@ -219,12 +230,16 @@ find_document(Db, Checksum) ->
     end.
 
 % Create a new document in the CouchDB database.
-create_document(Db, Filename, Fullpath, Tags, ImportDate, Location, Checksum) ->
+create_document(Db, Filename, Fullpath, Tags, ImportDate, Topic, Location, Checksum) ->
     error_logger:info_msg("Creating document for ~s...~n", [Filename]),
     {{Y, Mo, D}, {H, Mi, _S}} = ImportDate,
     LocData = case Location of
         undefined -> null;
-        Value -> list_to_binary(Value)
+        Value1 -> list_to_binary(Value1)
+    end,
+    TopData = case Topic of
+        undefined -> null;
+        Value2 -> list_to_binary(Value2)
     end,
     Doc = {[
         {<<"exif_date">>, get_original_exif_date(Fullpath)},
@@ -236,7 +251,8 @@ create_document(Db, Filename, Fullpath, Tags, ImportDate, Location, Checksum) ->
         {<<"location">>, LocData},
         {<<"mimetype">>, hd(mimetypes:filename(string:to_lower(Filename)))},
         {<<"sha256">>, list_to_binary(Checksum)},
-        {<<"tags">>, [list_to_binary(Tag) || Tag <- lists:sort(Tags)]}
+        {<<"tags">>, [list_to_binary(Tag) || Tag <- lists:sort(Tags)]},
+        {<<"topic">>, TopData}
     ]},
     % Fail fast if insertion failed, so we do not then move the asset out
     % of the incoming directory and fail to process it properly.
@@ -247,26 +263,39 @@ create_document(Db, Filename, Fullpath, Tags, ImportDate, Location, Checksum) ->
     ok.
 
 % Merge the given tags with existing document's tags.
-% If missing location field, set to location argument.
-update_document(Db, DocId, Filename, Tags, Location) ->
+% If missing topic field, set to Topic argument.
+% If missing location field, set to Location argument.
+update_document(Db, DocId, Filename, Tags, Topic, Location) ->
     error_logger:info_msg("Updating document for ~s...~n", [Filename]),
     {ok, Doc} = couchbeam:open_doc(Db, DocId),
-    Doc1 = case tanuki_backend:get_field_value(<<"location">>, Doc) of
-        none -> couchbeam_doc:set_value(<<"location">>, Location, Doc);
-        _Val -> Doc
+    TopData = case Topic of
+        undefined -> null;
+        Value1 -> list_to_binary(Value1)
+    end,
+    Doc1 = case tanuki_backend:get_field_value(<<"topic">>, Doc) of
+        none -> couchbeam_doc:set_value(<<"topic">>, TopData, Doc);
+        _Val1 -> Doc
+    end,
+    LocData = case Location of
+        undefined -> null;
+        Value2 -> list_to_binary(Value2)
+    end,
+    Doc2 = case tanuki_backend:get_field_value(<<"location">>, Doc1) of
+        none -> couchbeam_doc:set_value(<<"location">>, LocData, Doc1);
+        _Val2 -> Doc1
     end,
     BinTags = [list_to_binary(Tag) || Tag <- Tags],
     error_logger:info_msg("new tags: ~p~n", [BinTags]),
-    case tanuki_backend:get_field_value(<<"tags">>, Doc1) of
+    case tanuki_backend:get_field_value(<<"tags">>, Doc2) of
         none ->
-            Doc2 = couchbeam_doc:set_value(<<"tags">>, BinTags, Doc1);
+            Doc3 = couchbeam_doc:set_value(<<"tags">>, BinTags, Doc2);
         OldTags ->
             error_logger:info_msg("old tags: ~p~n", [OldTags]),
             MergedTags = lists:umerge(lists:sort(OldTags), lists:sort(BinTags)),
             error_logger:info_msg("merged tags: ~p~n", [MergedTags]),
-            Doc2 = couchbeam_doc:set_value(<<"tags">>, MergedTags, Doc1)
+            Doc3 = couchbeam_doc:set_value(<<"tags">>, MergedTags, Doc2)
     end,
-    {ok, NewDoc} = couchbeam:save_doc(Db, Doc2),
+    {ok, NewDoc} = couchbeam:save_doc(Db, Doc3),
     {Id, Rev} = couchbeam_doc:get_idrev(NewDoc),
     error_logger:info_msg("~s => id=~s, rev=~s~n",
                           [Filename, binary_to_list(Id), binary_to_list(Rev)]),
