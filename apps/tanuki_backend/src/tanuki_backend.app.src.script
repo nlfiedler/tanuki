@@ -32,6 +32,7 @@ App = [
     {applications, [
         kernel,
         stdlib,
+        sasl,          %% for logging
         mnesia,
         syntax_tools,  %% erl_syntax module
         compiler,      %% compile module
