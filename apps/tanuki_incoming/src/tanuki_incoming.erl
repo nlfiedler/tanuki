@@ -81,7 +81,7 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 handle_info(Msg, State) ->
-    error_logger:info_msg("unexpected message: ~p~n", [Msg]),
+    lager:notice("unexpected message: ~p", [Msg]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
@@ -115,19 +115,19 @@ fire_soon() ->
 % Process the assets in the incoming directory, storing them in the
 % blob store area and inserting records in the database.
 process_incoming(Incoming, BlobStore, Db, FilterFun) ->
-    error_logger:info_msg("Incoming asset processing commencing...~n"),
+    lager:info("Incoming asset processing commencing..."),
     % Get the names of the directories in the Incoming path.
     {ok, Filenames} = file:list_dir(Incoming),
     Filepaths = [filename:join(Incoming, Name) || Name <- Filenames],
     Directories = lists:filter(fun filelib:is_dir/1, Filepaths),
-    error_logger:info_msg("Considering the following directories...~n~p~n", [Directories]),
+    lager:info("Considering the following directories: ~p", [Directories]),
     % Check if the given directory is sufficiently old.
     OldEnough = lists:filter(FilterFun, Directories),
     ProcessPath = fun(Path) ->
         process_path(Path, BlobStore, Db)
     end,
     if length(OldEnough) == 0 ->
-            error_logger:info_msg("No (old enough) directories found at this time~n");
+            lager:info("No (old enough) directories found at this time");
         true -> lists:foreach(ProcessPath, OldEnough)
     end,
     ok.
@@ -136,7 +136,7 @@ process_incoming(Incoming, BlobStore, Db, FilterFun) ->
 process_path(Path, BlobStore, Db) ->
     ImportDate = calendar:universal_time(),
     {Topic, Tags, Location} = convert_path_to_details(Path),
-    error_logger:info_msg("Processing tags: ~p~n", [Tags]),
+    lager:info("Processing tags: ~p", [Tags]),
     ok = delete_extraneous_files(Path),
     {ok, Filenames} = file:list_dir(Path),
     ProcFun = fun(Name) ->
@@ -152,15 +152,15 @@ process_path(Path, BlobStore, Db) ->
                 end,
                 % Move the asset into place, or remove it if duplicate.
                 store_asset(Filepath, Checksum, BlobStore);
-            _ -> error_logger:warning_msg("Ignoring non-file entry ~s~n", [Name])
+            _ -> lager:warning("Ignoring non-file entry ~s", [Name])
         end
     end,
     lists:foreach(ProcFun, Filenames),
-    error_logger:info_msg("Done with ~p~n", [Path]),
+    lager:info("Done with ~p", [Path]),
     case file:del_dir(Path) of
         ok -> ok;
         {error, Reason} ->
-            error_logger:error_msg("Unable to remove ~s: ~p~n", [Path, Reason])
+            lager:error("Unable to remove ~s: ~p", [Path, Reason])
     end.
 
 % Convert the path to a topic, set of tags, and a location. Topic, if any,
@@ -199,7 +199,7 @@ delete_extraneous_files(Path) ->
                 case file:delete(filename:join(Path, Name)) of
                     ok -> ok;
                     {error, Reason} ->
-                        error_logger:error_msg("File delete failed: ~p~n", [Reason])
+                        lager:error("File delete failed: ~p", [Reason])
                 end;
             false -> ok
         end
@@ -231,7 +231,7 @@ find_document(Db, Checksum) ->
 
 % Create a new document in the CouchDB database.
 create_document(Db, Filename, Fullpath, Tags, ImportDate, Topic, Location, Checksum) ->
-    error_logger:info_msg("Creating document for ~s...~n", [Filename]),
+    lager:info("Creating document for ~s", [Filename]),
     {{Y, Mo, D}, {H, Mi, _S}} = ImportDate,
     LocData = case Location of
         undefined -> null;
@@ -258,15 +258,14 @@ create_document(Db, Filename, Fullpath, Tags, ImportDate, Topic, Location, Check
     % of the incoming directory and fail to process it properly.
     {ok, NewDoc} = couchbeam:save_doc(Db, Doc),
     {Id, Rev} = couchbeam_doc:get_idrev(NewDoc),
-    error_logger:info_msg("~s => id=~s, rev=~s~n",
-                          [Filename, binary_to_list(Id), binary_to_list(Rev)]),
+    lager:info("~s => id=~s, rev=~s", [Filename, binary_to_list(Id), binary_to_list(Rev)]),
     ok.
 
 % Merge the given tags with existing document's tags.
 % If missing topic field, set to Topic argument.
 % If missing location field, set to Location argument.
 update_document(Db, DocId, Filename, Tags, Topic, Location) ->
-    error_logger:info_msg("Updating document for ~s...~n", [Filename]),
+    lager:info("Updating document for ~s", [Filename]),
     {ok, Doc} = couchbeam:open_doc(Db, DocId),
     TopData = case Topic of
         undefined -> null;
@@ -285,20 +284,19 @@ update_document(Db, DocId, Filename, Tags, Topic, Location) ->
         _Val2 -> Doc1
     end,
     BinTags = [list_to_binary(Tag) || Tag <- Tags],
-    error_logger:info_msg("new tags: ~p~n", [BinTags]),
+    lager:info("new tags: ~p", [BinTags]),
     case tanuki_backend:get_field_value(<<"tags">>, Doc2) of
         none ->
             Doc3 = couchbeam_doc:set_value(<<"tags">>, BinTags, Doc2);
         OldTags ->
-            error_logger:info_msg("old tags: ~p~n", [OldTags]),
+            lager:info("old tags: ~p", [OldTags]),
             MergedTags = lists:umerge(lists:sort(OldTags), lists:sort(BinTags)),
-            error_logger:info_msg("merged tags: ~p~n", [MergedTags]),
+            lager:info("merged tags: ~p", [MergedTags]),
             Doc3 = couchbeam_doc:set_value(<<"tags">>, MergedTags, Doc2)
     end,
     {ok, NewDoc} = couchbeam:save_doc(Db, Doc3),
     {Id, Rev} = couchbeam_doc:get_idrev(NewDoc),
-    error_logger:info_msg("~s => id=~s, rev=~s~n",
-                          [Filename, binary_to_list(Id), binary_to_list(Rev)]),
+    lager:info("~s => id=~s, rev=~s", [Filename, binary_to_list(Id), binary_to_list(Rev)]),
     ok.
 
 % Return the username of the file owner, of undefined if not available.
@@ -323,7 +321,7 @@ file_date(Path) ->
 get_original_exif_date(Path) ->
     case exif:read(Path) of
         {error, Reason} ->
-            error_logger:error_msg("Unable to read EXIF data from ~s, ~p~n", [Path, Reason]),
+            lager:error("Unable to read EXIF data from ~s, ~p", [Path, Reason]),
             null;
         {ok, ExifData} ->
             case dict:find(date_time_original, ExifData) of
@@ -349,7 +347,7 @@ store_asset(Filepath, Checksum, BlobStore) ->
         true  -> ok;
         false -> filelib:ensure_dir(DestPath)
     end,
-    error_logger:info_msg("Moving ~s to ~s~n", [Filepath, DestPath]),
+    lager:info("Moving ~s to ~s", [Filepath, DestPath]),
     case filelib:is_regular(DestPath) of
         true  -> ok = file:delete(Filepath);
         false -> ok = file:rename(Filepath, DestPath)

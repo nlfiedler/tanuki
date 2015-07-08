@@ -2,6 +2,11 @@
 
 NITRO_DIR = apps/tanuki_backend/priv/static/nitrogen
 
+prepare:
+	rebar get-deps
+	cd deps/lager && make
+	rebar -r prepare-deps
+
 clean:
 	rebar -r clean skip_deps=true
 

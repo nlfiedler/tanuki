@@ -6,8 +6,6 @@
     * Could translate portions of mokele/eim into Rust using goertzenator/ruster_unsafe
 1. Set up rc-style launcher script (like couchdb) for starting/stopping in FreeBSD
     * https://www.freebsd.org/doc/en_US.ISO8859-1/articles/rc-scripting/article.html
-1. Use lager to format logs in an easier to parse format (for logwatch)
-    * https://github.com/basho/lager
 1. Add pagination support to `tag.erl`
     * Look at the paginate plugin: https://github.com/choptastic/paginate
     * http://guide.couchdb.org/draft/recipes.html

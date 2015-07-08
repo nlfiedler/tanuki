@@ -12,7 +12,7 @@ The incoming processor, backend application, and web interface are written in Er
 
 ### Prerequisites
 
-* Erlang/OTP R17
+* Erlang/OTP R17|R18
     - Homebrew: `brew install erlang`
     - FreeBSD: `pkg install erlang`
     - Ubuntu Linux: build from source as shown in the `Dockerfile`
@@ -37,8 +37,7 @@ The full set of settings can be found in the `*.app.src.script` files in `apps/t
 Once the applications are configured, build the project like so:
 
 ```
-$ rebar get-deps
-$ rebar -r prepare-deps
+$ make prepare
 $ make dev
 $ ./_rel/tanuki/bin/tanuki-dev
 ```

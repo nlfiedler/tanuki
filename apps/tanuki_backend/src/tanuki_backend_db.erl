@@ -80,7 +80,7 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 handle_info(Msg, State) ->
-    error_logger:info_msg("unexpected message: ~p~n", [Msg]),
+    lager:notice("unexpected message: ~p", [Msg]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
