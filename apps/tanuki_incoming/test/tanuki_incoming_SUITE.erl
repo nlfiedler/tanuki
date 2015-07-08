@@ -46,6 +46,7 @@ init_per_suite(Config) ->
     end,
     {ok, _Db} = couchbeam:create_db(S, ?TESTDB, []),
     % start the application under test
+    ok = application:set_env(lager, lager_common_test_backend, debug),
     {ok, _Started1} = application:ensure_all_started(tanuki_incoming),
     %
     % also need the backend to be configured and running in test mode

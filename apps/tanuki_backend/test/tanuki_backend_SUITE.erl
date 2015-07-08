@@ -48,6 +48,7 @@ init_per_suite(Config) ->
     tanuki_backend_app:ensure_schema([node()]),
     ok = application:start(mnesia),
     % start the application(s)
+    ok = application:set_env(lager, lager_common_test_backend, debug),
     ok = application:set_env(simple_bridge, handler, nitrogen),
     ok = application:set_env(simple_bridge, backend, cowboy),
     ok = application:set_env(simple_bridge, address, "0.0.0.0"),
