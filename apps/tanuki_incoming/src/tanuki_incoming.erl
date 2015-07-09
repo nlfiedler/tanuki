@@ -223,8 +223,12 @@ find_document(Db, Checksum) ->
             % Fail fast if unable to check for duplicates, rather than
             % blindly creating more duplicate records.
             {ok, Rows} = couchbeam_view:fetch(Db, {"assets", "by_checksum"}, Options),
-            if length(Rows) == 1 -> couchbeam_doc:get_value(<<"id">>, hd(Rows));
-                true -> undefined
+            % Likewise fail fast if there are multiple records with matching
+            % checksums, as that indicates an existing problem that needs
+            % immediate attention.
+            case length(Rows) of
+                1 -> couchbeam_doc:get_value(<<"id">>, hd(Rows));
+                0 -> undefined
             end;
         false -> undefined
     end.
@@ -267,22 +271,8 @@ create_document(Db, Filename, Fullpath, Tags, ImportDate, Topic, Location, Check
 update_document(Db, DocId, Filename, Tags, Topic, Location) ->
     lager:info("Updating document for ~s", [Filename]),
     {ok, Doc} = couchbeam:open_doc(Db, DocId),
-    TopData = case Topic of
-        undefined -> null;
-        Value1 -> list_to_binary(Value1)
-    end,
-    Doc1 = case tanuki_backend:get_field_value(<<"topic">>, Doc) of
-        none -> couchbeam_doc:set_value(<<"topic">>, TopData, Doc);
-        _Val1 -> Doc
-    end,
-    LocData = case Location of
-        undefined -> null;
-        Value2 -> list_to_binary(Value2)
-    end,
-    Doc2 = case tanuki_backend:get_field_value(<<"location">>, Doc1) of
-        none -> couchbeam_doc:set_value(<<"location">>, LocData, Doc1);
-        _Val2 -> Doc1
-    end,
+    Doc1 = maybe_set_location(Doc, Location),
+    Doc2 = maybe_set_topic(Doc1, Topic),
     BinTags = [list_to_binary(Tag) || Tag <- Tags],
     lager:info("new tags: ~p", [BinTags]),
     case tanuki_backend:get_field_value(<<"tags">>, Doc2) of
@@ -298,6 +288,32 @@ update_document(Db, DocId, Filename, Tags, Topic, Location) ->
     {Id, Rev} = couchbeam_doc:get_idrev(NewDoc),
     lager:info("~s => id=~s, rev=~s", [Filename, binary_to_list(Id), binary_to_list(Rev)]),
     ok.
+
+% Set the location field in the document, if not already set.
+% Returns the updated (or not) document.
+maybe_set_location(Doc, Location) ->
+    Value = case Location of
+        undefined -> null;
+        V -> list_to_binary(V)
+    end,
+    NewDoc = case tanuki_backend:get_field_value(<<"location">>, Doc) of
+        none -> couchbeam_doc:set_value(<<"location">>, Value, Doc);
+        _V -> Doc
+    end,
+    NewDoc.
+
+% Set the topic field in the document, if not already set.
+% Returns the updated (or not) document.
+maybe_set_topic(Doc, Topic) ->
+    Value = case Topic of
+        undefined -> null;
+        V -> list_to_binary(V)
+    end,
+    NewDoc = case tanuki_backend:get_field_value(<<"topic">>, Doc) of
+        none -> couchbeam_doc:set_value(<<"topic">>, Value, Doc);
+        _V -> Doc
+    end,
+    NewDoc.
 
 % Return the username of the file owner, of undefined if not available.
 file_owner(Path) ->
