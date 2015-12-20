@@ -2,6 +2,9 @@
 
 ## Action Items
 
+1. Images appear multiple times in tag search page
+    * Not happening for all tags, is it really broken?
+    * Could be an issue with the database
 1. Make thumbnails faster and/or more efficient
     * Could translate portions of mokele/eim into Rust using goertzenator/ruster_unsafe
 1. Set up rc-style launcher script (like couchdb) for starting/stopping in FreeBSD
@@ -30,3 +33,4 @@
 1. Produce thumbnails for the videos and cache them
     * https://github.com/emedia-project/erlffmpeg
 1. Show list of known locations along with the list of tags
+1. Show list of known topics along with the list of tags, locations
