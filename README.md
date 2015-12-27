@@ -44,6 +44,22 @@ $ ./_rel/tanuki/bin/tanuki-dev
 
 The web server will be listening on port 8000. Be sure to have a CouchDB instance running.
 
+### Triggering Processing
+
+To trigger the processing of digital assets in the "incoming" directory, without having to wait for the folders to be more than an hour old, connect to the remote node and send a message to the incoming processor, like so:
+
+```
+ erl -name foo -remsh 'tanuki@127.0.0.1'
+Erlang/OTP 18 [erts-7.2.1] [source] [64-bit] [smp:8:8] [async-threads:10] [hipe] [kernel-poll:false] [dtrace]
+
+Eshell V7.2.1  (abort with ^G)
+(tanuki@127.0.0.1)1> gen_server:call(tanuki_incoming, process_now).
+ok
+(tanuki@127.0.0.1)2>
+User switch command
+ --> q
+```
+
 ### Docker
 
 If setting up the necessary prerequisites seems like too much work, there is a `Dockerfile` in the `docker` directory, which will build an Ubuntu Linux container to run tanuki. For this you will need [Docker](https://www.docker.com) installed, both to build and run the container. See the instructions at the top of the `Dockerfile` for some guidance on how to use it. If you are using Mac OS X, check out [boot2docker](http://boot2docker.io), which works very well.
