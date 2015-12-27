@@ -25,6 +25,7 @@
 1. Display assets by date (with pagination?) in a new `date.erl` page
 1. Use ETS to cache the tags and such in memory of `tanuki_backend` process.
     * Cache invalidation via couchbeam change listeners.
+    * Could use https://github.com/nitrogen/simple_cache
 1. Produce thumbnails for the videos and cache them
     * https://github.com/emedia-project/erlffmpeg
 1. Show list of known locations along with the list of tags
