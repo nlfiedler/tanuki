@@ -91,23 +91,12 @@ by_tags(Tags) when is_list(Tags) ->
             DocId = couchbeam_doc:get_value(<<"id">>, Row),
             maps:get(DocId, TagCounts) =:= length(Tags)
         end, AllRows),
-    % remove the duplicate rows
-    %   [[{<<"id">>, <<"test_AC">>}, {<<"key">>, <<"cat">>}],
-    %    [{<<"id">>, <<"test_AC">>}, {<<"key">>, <<"picnic">>}]]
-    case MatchingRows of
-        [] ->
-            MatchingRows;
-        _ ->
-            lists:foldr(fun(Row, AccIn) ->
-                    NewDocId = couchbeam_doc:get_value(<<"id">>, Row),
-                    PrevDocId = couchbeam_doc:get_value(<<"id">>, hd(AccIn)),
-                    if NewDocId =:= PrevDocId ->
-                        AccIn;
-                       true ->
-                        [Row|AccIn]
-                    end
-                end, [hd(MatchingRows)], tl(MatchingRows))
-    end.
+    % Remove the duplicate rows, and sort them while we're at it.
+    lists:usort(fun(A, B) ->
+            IdA = couchbeam_doc:get_value(<<"id">>, A),
+            IdB = couchbeam_doc:get_value(<<"id">>, B),
+            IdA =< IdB
+        end, MatchingRows).
 
 %
 % @doc Retrieves all documents whose most relevant date is within the given year.

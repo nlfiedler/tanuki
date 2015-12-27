@@ -2,8 +2,6 @@
 
 ## Action Items
 
-1. Images appear multiple times when selecting multiple tags
-    * Tests appear to be working, so is it the `tag.erl` code?
 1. Set up rc-style launcher script (like couchdb) for starting/stopping in FreeBSD
     * https://www.freebsd.org/doc/en_US.ISO8859-1/articles/rc-scripting/article.html
 1. Add pagination support to `tag.erl`

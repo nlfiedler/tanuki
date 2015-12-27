@@ -115,13 +115,13 @@ fetch_document(_Config) ->
 
 all_tags(_Config) ->
     Rows = tanuki_backend:all_tags(),
-    ?assertEqual(4, length(Rows)),
+    ?assertEqual(6, length(Rows)),
     Validate = fun(Row, Key, Value) ->
         ?assertEqual(Key, couchbeam_doc:get_value(<<"key">>, Row)),
         ?assertEqual(Value, couchbeam_doc:get_value(<<"value">>, Row))
     end,
-    Keys = [<<"cat">>, <<"cheeseburger">>, <<"dog">>, <<"picnic">>],
-    Values = [2, 1, 1, 2],
+    Keys = [<<"cat">>, <<"cheeseburger">>, <<"christina">>, <<"dog">>, <<"joseph">>, <<"picnic">>],
+    Values = [2, 1, 3, 1, 3, 2],
     Expected = lists:zip3(Rows, Keys, Values),
     [Validate(Row, Key, Value) || {Row, Key, Value} <- Expected],
     ok.
@@ -156,13 +156,13 @@ by_tag(_Config) ->
     ok.
 
 by_tags(_Config) ->
-    Rows = tanuki_backend:by_tags(["cat", "picnic"]),
-    ?assertEqual(1, length(Rows)),
+    Rows = tanuki_backend:by_tags(["christina", "joseph"]),
+    ?assertEqual(3, length(Rows)),
     Validate = fun(Row, Id) ->
         % view has "id" but documents have "_id"? weird
         ?assertEqual(Id, couchbeam_doc:get_value(<<"id">>, Row))
     end,
-    Ids = [<<"test_AC">>],
+    Ids = [<<"test_AD">>, <<"test_AE">>, <<"test_AF">>],
     [Validate(Row, Id) || {Row, Id} <- lists:zip(Rows, Ids)],
     % negative case, no such tags
     ?assertEqual([], tanuki_backend:by_tags(["foo", "bar"])),
@@ -175,9 +175,13 @@ by_year(_Config) ->
         [?assertEqual(Id, couchbeam_doc:get_value(<<"id">>, Row)) ||
             {Id, Row} <- lists:zip(ExpectedIds, Rows) ]
     end,
-    Inputs = [2013, 2014],
-    Counts = [1, 2],
-    Ids = [[<<"test_AA">>], [<<"test_AC">>, <<"test_AB">>]],
+    Inputs = [2013, 2014, 2015],
+    Counts = [1, 2, 3],
+    Ids = [
+        [<<"test_AA">>],
+        [<<"test_AC">>, <<"test_AB">>],
+        [<<"test_AD">>, <<"test_AE">>, <<"test_AF">>]
+    ],
     [Validate(I, C, E) || {I, C, E} <- lists:zip3(Inputs, Counts, Ids)],
     ok.
 
@@ -188,9 +192,13 @@ by_month(_Config) ->
         [?assertEqual(Id, couchbeam_doc:get_value(<<"id">>, Row)) ||
             {Id, Row} <- lists:zip(ExpectedIds, Rows) ]
     end,
-    Inputs = [{2014, 7}, {2014, 10}],
-    Counts = [1, 1],
-    Ids = [[<<"test_AC">>], [<<"test_AB">>]],
+    Inputs = [{2014, 7}, {2014, 10}, {2015, 4}],
+    Counts = [1, 1, 3],
+    Ids = [
+        [<<"test_AC">>],
+        [<<"test_AB">>],
+        [<<"test_AD">>, <<"test_AE">>, <<"test_AF">>]
+    ],
     [Validate(I, C, E) || {I, C, E} <- lists:zip3(Inputs, Counts, Ids)],
     ok.
 
