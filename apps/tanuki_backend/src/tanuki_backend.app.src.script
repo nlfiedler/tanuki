@@ -42,12 +42,11 @@ App = [
         sync,
         nitrogen_core,
         jsx,           %% for couchbeam
-        couchbeam,
-        uuid,          %% for emagick
-        emagick
+        couchbeam
     ]},
     {included_applications, [
         % so relx will include these in the build
+        emagick_rs,
         nprocreg,
         oauth
     ]},

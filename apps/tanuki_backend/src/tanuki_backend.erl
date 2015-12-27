@@ -243,32 +243,8 @@ retrieve_thumbnail(Checksum, RelativePath) ->
 generate_thumbnail(RelativePath) ->
     {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
     SourceFile = filename:join(AssetsDir, RelativePath),
-    % if using erl_img, this would work, except that erl_img is broken
-    % {ok, Image} = erl_img:load(SourceFile),
-    % Factor = if Image#erl_image.width > Image#erl_image.height ->
-    %         240 / Image#erl_image.width;
-    %     true -> 240 / Image#erl_image.height
-    % end,
-    % Thumbnail = erl_image:scale(Image, Factor),
-    % {ok, Data} = erl_img:to_binary(Thumbnail),
-    % Data.
-    %
-    % See http://www.imagemagick.org/Usage/thumbnails/ for the many available options.
-    % The code below is equivalent to the following shell command:
-    %
-    % $ convert -auto-orient -thumbnail '240x240>' -unsharp 0x.5 infile.jpg outfile.jpg
-    %
-    {ok, InData} = file:read_file(SourceFile),
-    Opts = [
-        {'auto-orient'},
-        {thumbnail, "'240x240>'"},
-        {unsharp,  "0x.5"}
-    ],
-    % TODO: would be ideal if we could pass the file we already have to emagick
-    {ok, Results} = emagick:convert(InData, jpg, jpg, Opts),
-    % emagick returns a list of the binary data read from the output files,
-    % but since we only have one result, pull it from the list.
-    hd(Results).
+    {ok, ImageData} = file:read_file(SourceFile),
+    emagick_rs:image_fit(ImageData, 240, 240).
 
 %
 % @doc Return the seconds since the epoch (1970/1/1 00:00).

@@ -2,11 +2,8 @@
 
 ## Action Items
 
-1. Images appear multiple times in tag search page
-    * Not happening for all tags, is it really broken?
-    * Could be an issue with the database
-1. Make thumbnails faster and/or more efficient
-    * Could translate portions of mokele/eim into Rust using goertzenator/ruster_unsafe
+1. Images appear multiple times when selecting multiple tags
+    * Tests appear to be working, so is it the `tag.erl` code?
 1. Set up rc-style launcher script (like couchdb) for starting/stopping in FreeBSD
     * https://www.freebsd.org/doc/en_US.ISO8859-1/articles/rc-scripting/article.html
 1. Add pagination support to `tag.erl`

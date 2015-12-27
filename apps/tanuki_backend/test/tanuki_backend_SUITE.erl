@@ -258,7 +258,8 @@ generate_thumbnail(Config) ->
     ok = filelib:ensure_dir(DestImagePath),
     {ok, _BytesCopied} = file:copy(SrcImagePath, DestImagePath),
     {ok, Binary, Mimetype} = tanuki_backend:retrieve_thumbnail(Checksum, RelativePath),
-    % TODO: verify the image dimensions
+    % TODO: ideally would verify the image dimensions
     ?assertEqual(<<"image/jpeg">>, Mimetype),
     ?assert(is_binary(Binary)),
+    ?assertEqual(length(binary_to_list(Binary)), 13666),
     ok.
