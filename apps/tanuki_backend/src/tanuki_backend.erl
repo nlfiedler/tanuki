@@ -233,7 +233,8 @@ generate_thumbnail(RelativePath) ->
     {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
     SourceFile = filename:join(AssetsDir, RelativePath),
     {ok, ImageData} = file:read_file(SourceFile),
-    emagick_rs:image_fit(ImageData, 240, 240).
+    {ok, Resized} = emagick_rs:image_fit(ImageData, 240, 240),
+    Resized.
 
 %
 % @doc Return the seconds since the epoch (1970/1/1 00:00).
