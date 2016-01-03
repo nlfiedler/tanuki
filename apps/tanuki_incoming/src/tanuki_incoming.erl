@@ -335,19 +335,15 @@ file_date(Path) ->
 % Attempt to read the original datetime from the EXIF tags, returning
 % null if not available, or the date time as a list of integers.
 get_original_exif_date(Path) ->
-    case exif:read(Path) of
+    {ok, ImageData} = file:read_file(Path),
+    case emagick_rs:image_get_property(ImageData, "exif:DateTimeOriginal") of
         {error, Reason} ->
             lager:error("Unable to read EXIF data from ~s, ~p", [Path, Reason]),
             null;
-        {ok, ExifData} ->
-            case dict:find(date_time_original, ExifData) of
-                {ok, Original} ->
-                    Parsed = date_parse(Original),
-                    {{Y, Mo, D}, {H, Mi, _S}} = Parsed,
-                    [Y, Mo, D, H, Mi];
-                error ->
-                    null
-            end
+        {ok, OriginalDate} ->
+            Parsed = date_parse(OriginalDate),
+            {{Y, Mo, D}, {H, Mi, _S}} = Parsed,
+            [Y, Mo, D, H, Mi]
     end.
 
 % Move the named asset to its sharded location.
