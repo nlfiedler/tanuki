@@ -1,7 +1,7 @@
 %% -*- coding: utf-8 -*-
 %% -------------------------------------------------------------------
 %%
-%% Copyright (c) 2014 Nathan Fiedler
+%% Copyright (c) 2014-2016 Nathan Fiedler
 %%
 %% This file is provided to you under the Apache License,
 %% Version 2.0 (the "License"); you may not use this file
@@ -23,8 +23,6 @@
 -export([start/2, stop/1]).
 
 start(_Type, _Args) ->
-    % start up erlang-pwd for getting a username from a uid
-    pwd:start_link(),
     tanuki_incoming_sup:start_link().
 
 stop(_) ->

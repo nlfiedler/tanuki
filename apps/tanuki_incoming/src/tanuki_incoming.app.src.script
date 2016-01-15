@@ -40,8 +40,7 @@ App = [
         mimetypes,
         sync,
         jsx,           %% for couchbeam
-        couchbeam,
-        pwd
+        couchbeam
     ]},
     {mod, {tanuki_incoming_app, []}},
     {env, AppEnv}

@@ -318,7 +318,7 @@ maybe_set_topic(Doc, Topic) ->
 % Return the username of the file owner, of undefined if not available.
 file_owner(Path) ->
     {ok, #file_info{uid = UserID}} = file:read_file_info(Path),
-    Details = pwd:getpwuid(UserID),
+    {ok, Details} = epwd_rs:getpwuid(UserID),
     proplists:get_value(pw_name, Details).
 
 % Return the size in bytes of the named file.
