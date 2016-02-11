@@ -19,12 +19,14 @@
 1. Get the list of tags in `tag.erl` to be along the side of the images
 1. Have the thumbnails on `tag.erl` appear in a grid format
 1. Organize the assets by date in `tag.erl`
+1. Option to select assets by file extension (e.g. `.jpg` or `.mov`)
+    - Create a CouchDB view on filename extensions to make it easy to select
 1. Have `asset.erl` show a larger version of the image instead of thumbnail
 1. Fetch additional details of the image for display in `asset.erl`
 1. Display available dates (year, then months) on `index.erl`
 1. Display assets by date (with pagination?) in a new `date.erl` page
-1. Use ETS to cache the tags and such in memory of `tanuki_backend` process.
-    * Cache invalidation via couchbeam change listeners.
+1. Use ETS to cache the tags and such in memory of `tanuki_backend` process
+    * Cache invalidation via couchbeam change listeners
     * Could use https://github.com/nitrogen/simple_cache
 1. Produce thumbnails for the videos and cache them
     * https://github.com/emedia-project/erlffmpeg
