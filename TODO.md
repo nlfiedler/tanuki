@@ -2,7 +2,6 @@
 
 ## Action Items
 
-1. Update build prerequisites of `emagick.rs` to match that of `magick-rust`
 1. Set up rc-style launcher script (like couchdb) for starting/stopping in FreeBSD
     * https://www.freebsd.org/doc/en_US.ISO8859-1/articles/rc-scripting/article.html
 1. Add pagination support to `tag.erl`
