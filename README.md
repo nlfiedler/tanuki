@@ -21,9 +21,7 @@ The incoming processor, backend application, and web interface are written in Er
     - FreeBSD: `pkg install couchdb`
     - Ubuntu Linux: build from source as shown in the `Dockerfile`
 * ImageMagick
-    - Homebrew: `brew install imagemagick`
-    - FreeBSD: `pkg install ImageMagick-nox11`
-    - Ubuntu Linux: `apt-get install imagemagick`
+    - See the development setup docs in the `magick-rust` project.
 
 Once the above prerequisites are installed, some configuration may be necessary. In particular, the path to the incoming assets and the destination for the stored assets should be configured for your system. This is done for the two applications (`tanuki_backend` and `tanuki_incoming`) using a configuration file named `user_env.confg`, located in each of the application source directories (`apps/tanuki_backend` and `apps/tanuki_incoming`). The contents of these files will look something like this:
 

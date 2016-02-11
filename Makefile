@@ -1,10 +1,13 @@
-.PHONY: clean compile eunit ct dev rel
+#
+# Makefile, primarily for convenience.
+#
+.PHONY: prepare clean compile eunit ct dev rel merge_records
 
 NITRO_DIR = apps/tanuki_backend/priv/static/nitrogen
 
 prepare:
 	rebar get-deps
-	cd deps/lager && make
+	cd deps/lager && $(MAKE)
 	rebar -r prepare-deps
 
 clean:
