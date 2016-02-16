@@ -195,14 +195,14 @@ retrieve_thumbnail(Checksum, RelativePath) ->
             [#thumbnails{sha256=_C, binary=Binary}] ->
                 % record the time this thumbnail was accessed
                 T = seconds_since_epoch(),
-                mnesia:write(#thumbnail_dates{timestamp=T, sha256=Checksum}),
+                ok = mnesia:write(#thumbnail_dates{timestamp=T, sha256=Checksum}),
                 Binary;
             [] ->
                 % producing a thumbnail in a transaction is not ideal...
                 Binary = generate_thumbnail(RelativePath),
-                mnesia:write(#thumbnails{sha256=Checksum, binary=Binary}),
+                ok = mnesia:write(#thumbnails{sha256=Checksum, binary=Binary}),
                 T = seconds_since_epoch(),
-                mnesia:write(#thumbnail_dates{timestamp=T, sha256=Checksum}),
+                ok = mnesia:write(#thumbnail_dates{timestamp=T, sha256=Checksum}),
                 % update the count of thumbnails currently cached
                 Count = mnesia:dirty_update_counter(thumbnail_counter, id, 1),
                 % prune oldest record if we reached our limit
@@ -211,8 +211,8 @@ retrieve_thumbnail(Checksum, RelativePath) ->
                     % either when it was generated or when it was last retrieved
                     OldestKey = mnesia:first(thumbnail_dates),
                     [#thumbnail_dates{sha256=OC}] = mnesia:read(thumbnail_dates, OldestKey),
-                    mnesia:delete({thumbnails, OC}),
-                    mnesia:delete({thumbnail_dates, OldestKey}),
+                    ok = mnesia:delete({thumbnails, OC}),
+                    ok = mnesia:delete({thumbnail_dates, OldestKey}),
                     mnesia:dirty_update_counter(thumbnail_counter, id, -1);
                    true -> ok
                 end,

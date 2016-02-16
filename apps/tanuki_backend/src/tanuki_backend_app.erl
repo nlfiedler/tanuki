@@ -27,6 +27,7 @@ start(_Type, _Args) ->
     Nodes = [node()],
     ensure_schema(Nodes),
     ensure_mnesia(Nodes),
+    ok = mnesia:wait_for_tables([thumbnails, thumbnail_dates, thumbnail_counter], 5000),
     nitrogen_sup:start_link(),
     tanuki_backend_sup:start_link().
 
@@ -43,14 +44,6 @@ ensure_schema(Nodes) ->
             ok
     end,
     EnsureTables = fun() ->
-        % for now, just use ram_copies
-        % case mnesia:table_info(schema, storage_type) of
-        %     ram_copies ->
-        %         % should we change all nodes to disc_copies?
-        %         {atomic,ok} = mnesia:change_table_copy_type(schema, node(), disc_copies);
-        %     _ ->
-        %         ok
-        % end,
         Tables = mnesia:system_info(tables),
         case lists:member(thumbnails, Tables) of
             false ->
