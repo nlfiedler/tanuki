@@ -72,9 +72,7 @@ handle_call({by_tags, Tags}, _From, #state{database=Db}=State) ->
     BinTags = [list_to_binary(Tag) || Tag <- Tags],
     Options = [{keys, BinTags}],
     {ok, Rows} = couchbeam_view:fetch(Db, {"assets", "by_tag"}, Options),
-    {reply, Rows, State};
-handle_call(terminate, _From, State) ->
-    {stop, normal, ok, State}.
+    {reply, Rows, State}.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.

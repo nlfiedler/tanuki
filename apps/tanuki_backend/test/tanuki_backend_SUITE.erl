@@ -80,7 +80,7 @@ add_test_docs(Db, Config) ->
     ok.
 
 end_per_suite(Config) ->
-    gen_server:call(tanuki_backend_db, terminate),
+    application:stop(tanuki_backend_db),
     Url = ?config(url, Config),
     Opts = ?config(opts, Config),
     S = couchbeam:server_connection(Url, Opts),

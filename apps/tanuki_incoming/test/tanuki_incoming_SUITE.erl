@@ -70,8 +70,8 @@ init_per_suite(Config) ->
     ].
 
 end_per_suite(Config) ->
-    gen_server:call(tanuki_backend, terminate),
-    gen_server:call(tanuki_incoming, terminate),
+    application:stop(tanuki_backend),
+    application:stop(tanuki_incoming),
     Url = ?config(url, Config),
     Opts = ?config(opts, Config),
     S = couchbeam:server_connection(Url, Opts),

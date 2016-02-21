@@ -53,8 +53,6 @@ init([]) ->
     },
     {ok, State}.
 
-handle_call(terminate, _From, State) ->
-    {stop, normal, ok, State};
 handle_call(process_now, _From, State) ->
     % Primarily for testing, so the test code can block until a (useless)
     % response is received.
