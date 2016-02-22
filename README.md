@@ -61,3 +61,26 @@ User switch command
 ### Docker
 
 If setting up the necessary prerequisites seems like too much work, there is a `Dockerfile` in the `docker` directory, which will build an Ubuntu Linux container to run tanuki. For this you will need [Docker](https://www.docker.com) installed, both to build and run the container. See the instructions at the top of the `Dockerfile` for some guidance on how to use it. If you are using Mac OS X, check out [boot2docker](http://boot2docker.io), which works very well.
+
+### Deploying
+
+1. Write a configuration files, named `user_env.config`, at the base of each of the applications (`apps/tanuki_backend` and `apps/tanuki_incoming`).
+1. Build the release: `make rel`
+1. Copy the contents of `_rel` to the desired installation location (e.g. `/opt`).
+1. Start it up, likely using `sudo`.
+1. Occasionally check the log files in `/opt/tanuki/log`.
+
+For example:
+
+```shell
+$ cp ~/tanuki_backend.config apps/tanuki_backend/user_env.config
+$ cp ~/tanuki_incoming.config apps/tanuki_incoming/user_env.config
+$ make rel
+$ sudo rm -rf /opt/tanuki
+$ sudo cp -R _rel/tanuki /opt
+$ sudo /opt/tanuki/bin/tanuki -detached
+```
+
+### BSD daemon
+
+See the `config/tanuki.rc` file for an example of managing the tanuki application as a daemon via `rc.d` in BSD systems (in particular FreeBSD, and likely NetBSD as well). You will need to build and deploy the application as described above, and then use the `service` command to start it, as illustrated in `tanuki.rc`.
