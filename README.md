@@ -2,8 +2,6 @@
 
 A system for importing, storing, categorizing, browsing, displaying, and searching files, primarily images and videos. Attributes regarding the files are stored in a schema-less, document-oriented database. Designed to store millions of files. Primary interface is a web front-end with a simple design suitable for most web browsers.
 
-Yes, another one of these. I am a programmer, it's what I do. I want to learn Erlang and this is a good project with which to learn Erlang and OTP. See the Requirements wiki for additional technical reasons.
-
 ## Current Status
 
 The incoming processor, backend application, and web interface are written in Erlang and built using [rebar](https://github.com/rebar/rebar/) and [relx](https://github.com/erlware/relx). There is much yet to be done, mostly in the web interface.
@@ -30,12 +28,17 @@ Once the above prerequisites are installed, some configuration may be necessary.
 {incoming_dir, "/Users/adam/testing/incoming"}.
 ```
 
-The full set of settings can be found in the `*.app.src.script` files in `apps/tanuki_incoming/src` and `apps/tanuki_backend/src` directories. These are processed by `rebar` at build time and effect the development and release builds. The Common Test suites are configured in the test code and hence ignore these settings.
+The full set of settings can be found in the `*.app.src.script` files in the `apps/tanuki_incoming/src` and `apps/tanuki_backend/src` directories. These are processed by `rebar` at build time and effect the development and release builds. The Common Test suites are configured in the test code and hence ignore these settings.
 
-Once the applications are configured, build the project like so:
+Once the applications are configured, build and test the project like so:
 
 ```
-$ make prepare
+$ make test
+```
+
+To start an instance configured for development, use the following commands:
+
+```
 $ make dev
 $ ./_rel/tanuki/bin/tanuki-dev
 ```
@@ -47,15 +50,7 @@ The web server will be listening on port 8000. Be sure to have a CouchDB instanc
 To trigger the processing of digital assets in the "incoming" directory, without having to wait for the folders to be more than an hour old, connect to the remote node and send a message to the incoming processor, like so:
 
 ```
- erl -sname foo -remsh 'tanuki@localhost'
-Erlang/OTP 18 [erts-7.2.1] [source] [64-bit] [smp:8:8] [async-threads:10] [hipe] [kernel-poll:false] [dtrace]
-
-Eshell V7.2.1  (abort with ^G)
-(tanuki@127.0.0.1)1> gen_server:call(tanuki_incoming, process_now).
-ok
-(tanuki@127.0.0.1)2>
-User switch command
- --> q
+$ erl -noshell -sname fubar -eval "rpc:call('tanuki@localhost', gen_server, call, [tanuki_incoming, process_now]), init:stop()."
 ```
 
 ### Docker

@@ -1,11 +1,11 @@
 #
 # Makefile, primarily for convenience.
 #
-.PHONY: prepare clean compile eunit ct dev rel merge_records
+.PHONY: deps clean compile test dev release
 
 NITRO_DIR = apps/tanuki_backend/priv/static/nitrogen
 
-prepare:
+deps:
 	rebar get-deps
 	cd deps/lager && $(MAKE)
 	rebar -r prepare-deps
@@ -14,21 +14,16 @@ clean:
 	rebar -r clean skip_deps=true
 
 compile:
+	@(test -d deps || $(MAKE) deps)
 	@(test -d $(NITRO_DIR) || mkdir $(NITRO_DIR))
 	$(MAKE) -C apps/tanuki_backend copy-static
 	rebar -r compile skip_deps=true
 
-eunit: compile
-	rebar -r eunit skip_deps=true
-
-ct: compile
+test: compile
 	rebar -r ct skip_deps=true
 
 dev: compile
 	relx --dev-mode --relname tanuki --relvsn dev
 
-rel: compile
+release: clean compile
 	relx
-
-merge_records:
-	cd apps/merge_records && rebar compile escriptize
