@@ -13,11 +13,9 @@ The incoming processor, backend application, and web interface are written in Er
 * Erlang/OTP R17|R18
     - Homebrew: `brew install erlang`
     - FreeBSD: `pkg install erlang`
-    - Ubuntu Linux: build from source as shown in the `Dockerfile`
 * CouchDB 1.6.1 or higher
     - Homebrew: `brew install couchdb`
     - FreeBSD: `pkg install couchdb`
-    - Ubuntu Linux: build from source as shown in the `Dockerfile`
 * ImageMagick
     - See the development setup docs in the `magick-rust` project.
 
@@ -52,10 +50,6 @@ To trigger the processing of digital assets in the "incoming" directory, without
 ```
 $ erl -noshell -sname fubar -eval "rpc:call('tanuki@localhost', gen_server, call, [tanuki_incoming, process_now]), init:stop()."
 ```
-
-### Docker
-
-If setting up the necessary prerequisites seems like too much work, there is a `Dockerfile` in the `docker` directory, which will build an Ubuntu Linux container to run tanuki. For this you will need [Docker](https://www.docker.com) installed, both to build and run the container. See the instructions at the top of the `Dockerfile` for some guidance on how to use it. If you are using Mac OS X, check out [boot2docker](http://boot2docker.io), which works very well.
 
 ### Deploying
 
