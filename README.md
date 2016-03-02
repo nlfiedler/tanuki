@@ -65,7 +65,7 @@ For example:
 $ cp ~/tanuki_backend.config apps/tanuki_backend/user_env.config
 $ cp ~/tanuki_incoming.config apps/tanuki_incoming/user_env.config
 $ make rel
-$ sudo rm -rf /opt/tanuki
+$ sudo mkdir -p /opt
 $ sudo cp -R _rel/tanuki /opt
 $ sudo /opt/tanuki/bin/tanuki -detached
 ```

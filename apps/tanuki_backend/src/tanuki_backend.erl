@@ -233,8 +233,15 @@ generate_thumbnail(RelativePath) ->
     {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
     SourceFile = filename:join(AssetsDir, RelativePath),
     {ok, ImageData} = file:read_file(SourceFile),
-    {ok, Resized} = emagick_rs:image_fit(ImageData, 240, 240),
-    Resized.
+    case emagick_rs:image_fit(ImageData, 240, 240) of
+        {ok, Resized} -> Resized;
+        {error, Reason} ->
+            lager:error("failed to resize asset ~s: ~p", [RelativePath, Reason]),
+            PrivPath = code:priv_dir(tanuki_backend),
+            ImagePath = filename:join(PrivPath, "static/images/broken_image.jpg"),
+            {ok, BrokenData} = file:read_file(ImagePath),
+            BrokenData
+    end.
 
 %
 % @doc Return the seconds since the epoch (1970/1/1 00:00).
