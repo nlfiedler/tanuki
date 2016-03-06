@@ -4,6 +4,7 @@
 .PHONY: deps clean compile test dev release
 
 NITRO_DIR = apps/tanuki_backend/priv/static/nitrogen
+VERSION = _rel/tanuki/Version
 
 deps:
 	rebar get-deps
@@ -27,3 +28,5 @@ dev: compile
 
 release: clean compile
 	relx
+	@echo 'Build Date:' `date -I` > $(VERSION)
+	@echo 'HEAD Commit:' `git log --max-count=1 --pretty='%h'` >> $(VERSION)
