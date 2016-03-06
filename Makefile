@@ -28,5 +28,5 @@ dev: compile
 
 release: clean compile
 	relx
-	@echo 'Build Date:' `date -I` > $(VERSION)
+	@echo 'Build Date:' `date -R` > $(VERSION)
 	@echo 'HEAD Commit:' `git log --max-count=1 --pretty='%h'` >> $(VERSION)
