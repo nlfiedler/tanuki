@@ -2,4 +2,4 @@
 -noshell
 
 # for remote access & debugging
--name tanuki@localhost
+-sname tanuki@localhost

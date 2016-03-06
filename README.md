@@ -48,7 +48,7 @@ The web server will be listening on port 8000. Be sure to have a CouchDB instanc
 To trigger the processing of digital assets in the "incoming" directory, without having to wait for the folders to be more than an hour old, connect to the remote node and send a message to the incoming processor, like so:
 
 ```
-$ erl -noshell -sname fubar -eval "rpc:call('tanuki@localhost', gen_server, call, [tanuki_incoming, process_now]), init:stop()."
+$ erl -noshell -sname 'tanuki_in@localhost' -eval "rpc:call('tanuki@localhost', gen_server, call, [tanuki_incoming, process_now]), init:stop()."
 ```
 
 ### Deploying

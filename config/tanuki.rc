@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # PROVIDE: tanuki
-# REQUIRE: NETWORKING
+# REQUIRE: NETWORKING couchdb
 # KEYWORD: shutdown
 #
 # Start and stop the tanuki daemon using BSD-style rc.d system. Copy this file
@@ -31,7 +31,7 @@ tanuki_start() {
 tanuki_stop() {
     # Quietly connect to the other instance and tell it to shut down. The node
     # name must match what is found in the vm.args configuration file.
-    /usr/local/bin/erl -noshell -sname stop_tanuki \
+    /usr/local/bin/erl -noshell -sname 'stop_tanuki@localhost' \
         -eval "rpc:call('tanuki@localhost', init, stop, []), init:stop()."
 }
 
