@@ -31,8 +31,8 @@ tanuki_start() {
 tanuki_stop() {
     # Quietly connect to the other instance and tell it to shut down. The node
     # name must match what is found in the vm.args configuration file.
-    /usr/local/bin/erl -noshell -sname 'stop_tanuki@localhost' \
-        -eval "rpc:call('tanuki@localhost', init, stop, []), init:stop()."
+    /usr/local/bin/erl -noshell -sname stop_tanuki@localhost \
+        -eval "rpc:call(tanuki@localhost, init, stop, []), init:stop()."
 }
 
 run_rc_command "$1"

@@ -27,6 +27,6 @@ dev: compile
 	relx --dev-mode --relname tanuki --relvsn dev
 
 release: clean compile
-	relx
+	relx --relname tanuki --relvsn 0.1.0
 	@echo 'Build Date:' `date -R` > $(VERSION)
 	@echo 'HEAD Commit:' `git log --max-count=1 --pretty='%h'` >> $(VERSION)
