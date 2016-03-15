@@ -3,6 +3,9 @@
 ## Action Items
 
 1. Incorporate version information into page footer
+1. How to deal with images that are rotated?
+    * Apparently happens when exporting in "original" format
+    * Fixing them would change the sha256, hence need a rename and db update
 1. Add pagination support to `tag.erl`
     * Look at the paginate plugin: https://github.com/choptastic/paginate
     * http://guide.couchdb.org/draft/recipes.html

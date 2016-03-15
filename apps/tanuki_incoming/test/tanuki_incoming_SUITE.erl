@@ -49,8 +49,11 @@ init_per_suite(Config) ->
     ok = application:set_env(lager, lager_common_test_backend, debug),
     {ok, _Started1} = application:ensure_all_started(tanuki_incoming),
     %
-    % also need the backend to be configured and running in test mode
+    % Also need the backend to be configured and running in test mode (make
+    % sure it is not already running from another test suite).
     %
+    application:stop(tanuki_backend),
+    application:unload(tanuki_backend),
     ok = application:load(tanuki_backend),
     ok = application:set_env(tanuki_backend, database, ?TESTDB),
     ok = application:set_env(simple_bridge, handler, nitrogen),

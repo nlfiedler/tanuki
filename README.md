@@ -4,7 +4,7 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 
 ## Current Status
 
-The incoming processor, backend application, and web interface are written in Erlang and built using [rebar](https://github.com/rebar/rebar/) and [relx](https://github.com/erlware/relx). There is much yet to be done, mostly in the web interface.
+The incoming processor, backend application, and web interface are written in Erlang and built using [rebar3](https://github.com/erlang/rebar3/). There is much yet to be done, mostly in the web interface.
 
 ## Building and Testing
 
@@ -26,19 +26,19 @@ Once the above prerequisites are installed, some configuration may be necessary.
 {incoming_dir, "/Users/adam/testing/incoming"}.
 ```
 
-The full set of settings can be found in the `*.app.src.script` files in the `apps/tanuki_incoming/src` and `apps/tanuki_backend/src` directories. These are processed by `rebar` at build time and effect the development and release builds. The Common Test suites are configured in the test code and hence ignore these settings.
+The full set of settings can be found in the `*.app.src.script` files in the `apps/tanuki_incoming/src` and `apps/tanuki_backend/src` directories. These are processed by `rebar3` at build time and effect the development and release builds. The Common Test suites are configured in the test code and hence ignore these settings.
 
 Once the applications are configured, build and test the project like so:
 
 ```
-$ make test
+$ rebar3 ct
 ```
 
 To start an instance configured for development, use the following commands:
 
 ```
-$ make dev
-$ ./_rel/tanuki/bin/tanuki-dev
+$ rebar3 release
+$ ./_build/default/rel/tanuki/bin/tanuki-dev
 ```
 
 The web server will be listening on port 8000. Be sure to have a CouchDB instance running.
@@ -54,8 +54,8 @@ $ erl -noshell -sname tanuki_in@localhost -eval "rpc:call(tanuki@localhost, gen_
 ### Deploying
 
 1. Write a configuration files, named `user_env.config`, at the base of each of the applications (`apps/tanuki_backend` and `apps/tanuki_incoming`).
-1. Build the release: `make rel`
-1. Copy the contents of `_rel` to the desired installation location (e.g. `/opt`).
+1. Build the release: `rebar3 as prod release`
+1. Copy the contents of `_build/default/rel` to the desired installation location (e.g. `/opt`).
 1. Start it up, likely using `sudo`.
 1. Occasionally check the log files in `/opt/tanuki/log`.
 
@@ -64,9 +64,9 @@ For example:
 ```shell
 $ cp ~/tanuki_backend.config apps/tanuki_backend/user_env.config
 $ cp ~/tanuki_incoming.config apps/tanuki_incoming/user_env.config
-$ make rel
+$ rebar3 as prod release
 $ sudo mkdir -p /opt
-$ sudo cp -R _rel/tanuki /opt
+$ sudo cp -R _build/default/rel/tanuki /opt
 $ sudo /opt/tanuki/bin/tanuki -detached
 ```
 
