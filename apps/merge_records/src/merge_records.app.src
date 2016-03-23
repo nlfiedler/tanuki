@@ -9,7 +9,6 @@
         hackney,
         idna,
         jsx,
-        oauth,
         ssl_verify_hostname
     ]},
     {mod, {merge_records, []}},

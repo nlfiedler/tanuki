@@ -35,7 +35,7 @@ init_per_suite(Config) ->
     ok = application:set_env(tanuki_incoming, database, ?TESTDB),
     AssetsDir = filename:join(Priv, "assets"),
     ok = application:set_env(tanuki_incoming, assets_dir, AssetsDir),
-    ok = couchbeam:start(),
+    {ok, _Started0} = application:ensure_all_started(couchbeam),
     {ok, Url} = application:get_env(tanuki_incoming, couchdb_url),
     {ok, Opts} = application:get_env(tanuki_incoming, couchdb_opts),
     S = couchbeam:server_connection(Url, Opts),
@@ -79,7 +79,7 @@ end_per_suite(Config) ->
     Opts = ?config(opts, Config),
     S = couchbeam:server_connection(Url, Opts),
     couchbeam:delete_db(S, ?TESTDB),
-    couchbeam:stop(),
+    application:stop(couchbeam),
     ok.
 
 all() ->

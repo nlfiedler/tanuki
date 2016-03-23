@@ -54,7 +54,7 @@ main([]) ->
 find_duplicates(Config) ->
     ok = application:load(jsx),
     ok = application:load(couchbeam),
-    ok = couchbeam:start(),
+    {ok, _Started} = application:ensure_all_started(couchbeam),
     Url = proplists:get_value(couchdb_url, Config),
     Opts = case proplists:get_value(couchdb_opts, Config) of
         undefined -> [];

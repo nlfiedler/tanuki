@@ -32,7 +32,7 @@ init_per_suite(Config) ->
     Priv = ?config(priv_dir, Config),
     AssetsDir = filename:join(Priv, "assets"),
     ok = application:set_env(tanuki_backend, assets_dir, AssetsDir),
-    ok = couchbeam:start(),
+    {ok, _Started1} = application:ensure_all_started(couchbeam),
     {ok, Url} = application:get_env(tanuki_backend, couchdb_url),
     {ok, Opts} = application:get_env(tanuki_backend, couchdb_opts),
     S = couchbeam:server_connection(Url, Opts),
@@ -56,7 +56,7 @@ init_per_suite(Config) ->
     ok = application:set_env(simple_bridge, document_root, "./priv/static"),
     ok = application:set_env(simple_bridge, static_paths,
         ["/js/", "/images/", "/css/", "/nitrogen/", "/favicon.ico"]),
-    {ok, _Started} = application:ensure_all_started(tanuki_backend),
+    {ok, _Started2} = application:ensure_all_started(tanuki_backend),
     [
         {url, Url},
         {opts, Opts},
@@ -85,7 +85,7 @@ end_per_suite(Config) ->
     Opts = ?config(opts, Config),
     S = couchbeam:server_connection(Url, Opts),
     couchbeam:delete_db(S, ?TESTDB),
-    couchbeam:stop(),
+    application:stop(couchbeam),
     application:stop(mnesia),
     ok.
 
