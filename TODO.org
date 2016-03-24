@@ -1,0 +1,38 @@
+* TODO
+
+  ** Action Items [0/18]
+    - [ ] Incorporate version information into page footer
+    - [ ] Fix importer to detect image orientation and automatically rotate the images
+      - https://beradrian.wordpress.com/2008/11/14/rotate-exif-images/
+      - http://jpegclub.org/exif_orientation.html
+    - [ ] How to deal with the existing images that are rotated?
+      - Apparently happens when exporting in "original" format
+      - Fixing them would change the sha256, hence need a rename and db update
+    - [ ] Add pagination support to `tag.erl`
+      - Look at the paginate plugin: https://github.com/choptastic/paginate
+      - http://guide.couchdb.org/draft/recipes.html
+          - Request rows_per_page + 1 rows from the view
+          - Display rows_per_page rows
+          - Store the +1 row as next_startkey and next_startkey_docid
+          - As page information, keep startkey and next_startkey
+          - Use the next_* values to create the next link
+          - Use the others (startkey?) to create the previous link
+      - An entirely different approach: https://gist.github.com/amedeo/820412
+    - [ ] Store tag selection in page state (e.g. `wf:state(Key, Value)`)
+    - [ ] Show an `x` next to each tag on `tag.erl` to drop that tag from the query
+    - [ ] Get the list of tags in `tag.erl` to be along the side of the images
+    - [ ] Have the thumbnails on `tag.erl` appear in a grid format
+    - [ ] Organize the assets by date in `tag.erl`
+    - [ ] Option to select assets by file extension (e.g. `.jpg` or `.mov`)
+    - Create a CouchDB view on filename extensions to make it easy to select
+    - [ ] Have `asset.erl` show a larger version of the image instead of thumbnail
+    - [ ] Fetch additional details of the image for display in `asset.erl`
+    - [ ] Display available dates (year, then months) on `index.erl`
+    - [ ] Display assets by date (with pagination?) in a new `date.erl` page
+    - [ ] Use ETS to cache the tags and such in memory of `tanuki_backend` process
+      - Cache invalidation via couchbeam change listeners
+      - Could use https://github.com/nitrogen/simple_cache
+    - [ ] Produce thumbnails for the videos and cache them
+      - https://github.com/emedia-project/erlffmpeg
+    - [ ] Show list of known locations along with the list of tags
+    - [ ] Show list of known topics along with the list of tags, locations
