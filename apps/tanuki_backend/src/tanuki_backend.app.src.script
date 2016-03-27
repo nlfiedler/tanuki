@@ -39,6 +39,7 @@ App = [
         mimetypes,
         simple_bridge,
         cowboy,
+        ranch,
         sync,
         nitrogen_core,
         jsx,           %% for couchbeam
