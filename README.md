@@ -19,7 +19,7 @@ The incoming processor, backend application, and web interface are written in Er
 * ImageMagick
     - See the development setup docs in the `magick-rust` project.
 
-Once the above prerequisites are installed, some configuration may be necessary. In particular, the path to the incoming assets and the destination for the stored assets should be configured for your system. This is done for the two applications (`tanuki_backend` and `tanuki_incoming`) using a configuration file named `user_env.confg`, located in each of the application source directories (`apps/tanuki_backend` and `apps/tanuki_incoming`). The contents of these files will look something like this:
+Once the above prerequisites are installed, some configuration may be necessary. In particular, the path to the incoming assets and the destination for the stored assets should be configured for your system. This is done for the two applications (`tanuki_backend` and `tanuki_incoming`) using a single configuration file named `user_env.confg`, located at the base of the source tree. The contents of this file will look something like this:
 
 ```
 {assets_dir, "/Users/adam/testing/assets"}.
@@ -53,7 +53,7 @@ $ erl -noshell -sname tanuki_in@localhost -eval "rpc:call(tanuki@localhost, gen_
 
 ### Deploying
 
-1. Write a configuration files, named `user_env.config`, at the base of each of the applications (`apps/tanuki_backend` and `apps/tanuki_incoming`).
+1. Write a configuration file, named `user_env.config`, at the base of the source tree.
 1. Build the release: `rebar3 as prod release`
 1. Copy the contents of `_build/default/rel` to the desired installation location (e.g. `/opt`).
 1. Start it up, likely using `sudo`.
@@ -62,8 +62,7 @@ $ erl -noshell -sname tanuki_in@localhost -eval "rpc:call(tanuki@localhost, gen_
 For example:
 
 ```shell
-$ cp ~/tanuki_backend.config apps/tanuki_backend/user_env.config
-$ cp ~/tanuki_incoming.config apps/tanuki_incoming/user_env.config
+$ cp ~/tanuki_custom.config user_env.config
 $ rebar3 as prod release
 $ sudo mkdir -p /opt
 $ sudo cp -R _build/default/rel/tanuki /opt

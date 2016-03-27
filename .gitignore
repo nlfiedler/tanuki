@@ -6,3 +6,4 @@
 _build
 erl_crash.dump
 rebar.lock
+user_env.config

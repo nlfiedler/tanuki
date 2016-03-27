@@ -1,17 +1,16 @@
-%%
-%% Configure the incoming processor, with optional user overrides.
-%%
-%% If a file named user_env.config exists at the base of the application
-%% tree (apps/tanuki_incoming) then it will be used to override settings in
-%% the application environment. For example, if that file contained the
-%% following line:
-%%
-%% {assets_dir, "/home/jdoe/test/tanuki"}.
-%% {couchdb_opts [{basic_auth, {"admin", "secret123"}}]}.
-%%
-%% the result would be to override the assets_dir and couchdb_opts values
-%% in the default envionment below.
-%%
+%
+% Configure the incoming processor, with optional user overrides.
+%
+% If a file named user_env.config exists at the base of the source tree
+% then it will be used to override settings in the application environment.
+% For example, if that file contained the following line:
+%
+% {assets_dir, "/home/jdoe/test/tanuki"}.
+% {couchdb_opts [{basic_auth, {"admin", "secret123"}}]}.
+%
+% the result would be to override the assets_dir and couchdb_opts values
+% in the default envionment below.
+%
 DefaultEnv = [
     {assets_dir, "/usr/local/var/tanuki/assets"},
     {incoming_dir, "/does/not/exist"},
