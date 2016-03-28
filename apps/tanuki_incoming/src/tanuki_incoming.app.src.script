@@ -41,10 +41,11 @@ App = [
         jsx,           %% for couchbeam
         couchbeam
     ]},
-    {mod, {tanuki_incoming_app, [
+    {included_applications, [
         % so relx will include these in the build
         epwd_rs
-    ]}},
+    ]},
+    {mod, {tanuki_incoming_app, []}},
     {env, AppEnv}
 ].
 [{application, tanuki_incoming, App}].
