@@ -39,8 +39,6 @@ else:
 def all():
     """Install everything needed to build magick-rust."""
     sudo("pkg install -q -y git")
-    # need GNU make for emagick_rs
-    sudo("pkg install -q -y gmake")
     sudo("pkg install -q -y rust")
     sudo("pkg install -q -y cargo")
     sudo("pkg install -q -y ImageMagick-nox11")
