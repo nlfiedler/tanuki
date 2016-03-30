@@ -2,9 +2,6 @@
 
   ** Action Items [0/18]
     - [ ] Incorporate version information into page footer
-    - [ ] Fix importer to detect image orientation and automatically rotate the images
-      - https://beradrian.wordpress.com/2008/11/14/rotate-exif-images/
-      - http://jpegclub.org/exif_orientation.html
     - [ ] How to deal with the existing images that are rotated?
       - Apparently happens when exporting in "original" format
       - Fixing them would change the sha256, hence need a rename and db update

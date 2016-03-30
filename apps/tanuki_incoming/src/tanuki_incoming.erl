@@ -1,7 +1,7 @@
 %% -*- coding: utf-8 -*-
 %% -------------------------------------------------------------------
 %%
-%% Copyright (c) 2015 Nathan Fiedler
+%% Copyright (c) 2015-2016 Nathan Fiedler
 %%
 %% This file is provided to you under the Apache License,
 %% Version 2.0 (the "License"); you may not use this file
@@ -44,7 +44,7 @@ init([]) ->
     {ok, DbName} = application:get_env(tanuki_incoming, database),
     Server = couchbeam:server_connection(Url, Opts),
     {ok, Db} = couchbeam:open_or_create_db(Server, DbName, []),
-    fire_soon(),
+    setup_timer(),
     State = #state{
         server=Server,
         database=Db,
@@ -63,9 +63,6 @@ handle_call(process_now, _From, State) ->
     {reply, ok, State}.
 
 handle_cast(process, State) ->
-    % Set up the next iteration before processing the incoming assets, in
-    % the event that we fail fast during processing.
-    fire_later(),
     #state{database=Db, incoming_dir=Incoming, blob_store=Store} = State,
     % Filter function to ensure the given directory is at least an hour old.
     FilterFun = fun(Path) ->
@@ -92,22 +89,12 @@ code_change(_OldVsn, State, _Extra) ->
 %% internal functions
 %%
 
-% Start a timer to cast a 'process' message to us later.
-fire_later() ->
+% Start a timer to cast a 'process' message to ourselves every hour.
+setup_timer() ->
     M = gen_server,
     F = cast,
     A = [tanuki_incoming, process],
-    % send ourselves a message in an hour
-    {ok, _TRef} = timer:apply_after(1000*60*60, M, F, A),
-    ok.
-
-% Start a timer to cast a 'process' message to us sooner rather than later.
-fire_soon() ->
-    M = gen_server,
-    F = cast,
-    A = [tanuki_incoming, process],
-    % send ourselve a message in 10 seconds
-    {ok, _TRef} = timer:apply_after(1000*10, M, F, A),
+    {ok, _TRef} = timer:apply_interval(1000*60*60, M, F, A),
     ok.
 
 % Process the assets in the incoming directory, storing them in the
@@ -141,15 +128,16 @@ process_path(Path, BlobStore, Db) ->
         Filepath = filename:join(Path, Name),
         case file:read_file_info(Filepath) of
             {ok, #file_info{type=regular}} ->
-                Checksum = compute_checksum(Filepath),
+                Binary = correct_orientation(Filepath),
+                Checksum = compute_checksum(Binary),
                 % Either insert or update a document in the database.
                 case find_document(Db, Checksum) of
                     undefined -> create_document(Db, Name, Filepath, Tags, ImportDate,
-                                                 Topic, Location, Checksum);
+                                                 Topic, Location, Checksum, Binary);
                     DocId -> update_document(Db, DocId, Name, Tags, Topic, Location)
                 end,
                 % Move the asset into place, or remove it if duplicate.
-                store_asset(Filepath, Checksum, BlobStore);
+                store_asset(Filepath, Checksum, Binary, BlobStore);
             _ -> lager:warning("Ignoring non-file entry ~s", [Name])
         end
     end,
@@ -204,10 +192,24 @@ delete_extraneous_files(Path) ->
     end,
     lists:foreach(DeleteFun, Filenames).
 
-% Compute the SHA256 for the named file and return as a hex string.
-compute_checksum(Filepath) ->
+% Load the named asset file, correct its orientation if applicable, and
+% return the binary data. Does not modify the asset if the auto-orientation
+% is not successful.
+correct_orientation(Filepath) ->
     % Fail fast if unable to read file.
-    {ok, Binary} = file:read_file(Filepath),
+    {ok, Binary0} = file:read_file(Filepath),
+    % Attempt to auto-orient the image, but tolerate assets that are not
+    % images, and hence cannot be rotated.
+    case emagick_rs:auto_orient(Binary0) of
+        {ok, Binary1} -> Binary1;
+        {error, Reason} ->
+            % probably not an image
+            lager:warning("unable to auto-orient asset: ~p", [Reason]),
+            Binary0
+    end.
+
+% Compute the SHA256 for the given binary and return as a hex string.
+compute_checksum(Binary) ->
     Digest = crypto:hash(sha256, Binary),
     lists:flatten([io_lib:format("~2.16.0b", [X]) || <<X:8>> <= Digest]).
 
@@ -232,7 +234,7 @@ find_document(Db, Checksum) ->
     end.
 
 % Create a new document in the CouchDB database.
-create_document(Db, Filename, Fullpath, Tags, ImportDate, Topic, Location, Checksum) ->
+create_document(Db, Filename, Fullpath, Tags, ImportDate, Topic, Location, Checksum, Binary) ->
     lager:info("Creating document for ~s", [Filename]),
     {{Y, Mo, D}, {H, Mi, _S}} = ImportDate,
     LocData = case Location of
@@ -244,11 +246,11 @@ create_document(Db, Filename, Fullpath, Tags, ImportDate, Topic, Location, Check
         Value2 -> list_to_binary(Value2)
     end,
     Doc = {[
-        {<<"exif_date">>, get_original_exif_date(Fullpath)},
+        {<<"exif_date">>, get_original_exif_date(Binary)},
         {<<"file_date">>, file_date(Fullpath)},
         {<<"file_name">>, list_to_binary(Filename)},
         {<<"file_owner">>, list_to_binary(file_owner(Fullpath))},
-        {<<"file_size">>, file_size(Fullpath)},
+        {<<"file_size">>, byte_size(Binary)},
         {<<"import_date">>, [Y, Mo, D, H, Mi]},
         {<<"location">>, LocData},
         {<<"mimetype">>, hd(mimetypes:filename(string:to_lower(Filename)))},
@@ -319,11 +321,6 @@ file_owner(Path) ->
     {ok, Details} = epwd_rs:getpwuid(UserID),
     proplists:get_value(pw_name, Details).
 
-% Return the size in bytes of the named file.
-file_size(Path) ->
-    {ok, #file_info{size = Size}} = file:read_file_info(Path),
-    Size.
-
 % Return the mtime of the file, which is typically when it was created.
 file_date(Path) ->
     {ok, #file_info{mtime = Mtime}} = file:read_file_info(Path),
@@ -332,11 +329,10 @@ file_date(Path) ->
 
 % Attempt to read the original datetime from the EXIF tags, returning
 % null if not available, or the date time as a list of integers.
-get_original_exif_date(Path) ->
-    {ok, ImageData} = file:read_file(Path),
+get_original_exif_date(ImageData) ->
     case emagick_rs:image_get_property(ImageData, "exif:DateTimeOriginal") of
         {error, Reason} ->
-            lager:error("Unable to read EXIF data from ~s, ~p", [Path, Reason]),
+            lager:error("unable to read EXIF data: ~p", [Reason]),
             null;
         {ok, OriginalDate} ->
             Parsed = date_parse(OriginalDate),
@@ -345,7 +341,7 @@ get_original_exif_date(Path) ->
     end.
 
 % Move the named asset to its sharded location.
-store_asset(Filepath, Checksum, BlobStore) ->
+store_asset(Filepath, Checksum, Binary, BlobStore) ->
     % If an existing asset with the same checksum already exists, the new
     % asset will be removed to prevent further processing in the future.
     Part1 = string:sub_string(Checksum, 1, 2),
@@ -359,8 +355,10 @@ store_asset(Filepath, Checksum, BlobStore) ->
     end,
     lager:info("Moving ~s to ~s", [Filepath, DestPath]),
     case filelib:is_regular(DestPath) of
-        true  -> ok = file:delete(Filepath);
-        false -> ok = file:rename(Filepath, DestPath)
+        true -> ok = file:delete(Filepath);
+        false ->
+            ok = file:write_file(DestPath, Binary),
+            ok = file:delete(Filepath)
     end.
 
 % Parse a simple date/time string into a date/time tuple. For instance,

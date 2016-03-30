@@ -1,7 +1,7 @@
 %% -*- coding: utf-8 -*-
 %% -------------------------------------------------------------------
 %%
-%% Copyright (c) 2015 Nathan Fiedler
+%% Copyright (c) 2015-2016 Nathan Fiedler
 %%
 %% This file is provided to you under the Apache License,
 %% Version 2.0 (the "License"); you may not use this file
@@ -85,6 +85,7 @@ end_per_suite(Config) ->
 all() ->
     [
         single_image_test,
+        rotated_image_test,
         topical_image_test,
         multiple_image_test,
         empty_folder_test
@@ -99,7 +100,7 @@ single_image_test(Config) ->
     SrcImagePath = filename:join(DataDir, "img_015.JPG"),
     DestImagePath = filename:join(TaggedDir, "img_015.JPG"),
     ok = filelib:ensure_dir(DestImagePath),
-    {ok, _BytesCopied} = file:copy(SrcImagePath, DestImagePath),
+    {ok, 369781} = file:copy(SrcImagePath, DestImagePath),
     % Would like to have set the ctime of the incoming directory but
     % file:write_file_info/2,3 ignores the ctime value on Unix systems.
     gen_server:call(tanuki_incoming, process_now),
@@ -107,8 +108,8 @@ single_image_test(Config) ->
     {ok, []} = file:list_dir(IncomingDir),
     % verify images are in the assets directory
     AssetsDir = ?config(assets_dir, Config),
-    true = filelib:is_file(filename:join([AssetsDir, "d0", "9f",
-        "d659423e71bb1b5e20d78a1ab7ce393e74e463f2dface3634d78ec155397"])),
+    true = filelib:is_file(filename:join([AssetsDir, "3c", "e3",
+        "3e2aa38db15025d74b9cb9d137a68b5640f58560fd58c1e595e9bceda4bc"])),
     % check that each field of each new document is the correct value
     Rows = tanuki_backend:by_tag("yellow"),
     ?assertEqual(1, length(Rows)),
@@ -119,12 +120,49 @@ single_image_test(Config) ->
         <<"exif_date">>  => [2011, 10, 7, 16, 18],
         <<"file_name">>  => <<"img_015.JPG">>,
         <<"file_owner">> => CurrentUser,
-        <<"file_size">>  => 369781,
+        <<"file_size">>  => 326691,
         <<"location">>   => <<"field">>,
         <<"mimetype">>   => <<"image/jpeg">>,
-        <<"sha256">>     => <<"d09fd659423e71bb1b5e20d78a1ab7ce393e74e463f2dface3634d78ec155397">>,
+        <<"sha256">>     => <<"3ce33e2aa38db15025d74b9cb9d137a68b5640f58560fd58c1e595e9bceda4bc">>,
         % tags are in sorted order
         <<"tags">>       => [<<"flower">>, <<"yellow">>]
+    },
+    maps:fold(fun(Key, Value, Elem) ->
+            ?assertEqual(Value, couchbeam_doc:get_value(Key, Elem)),
+            Elem
+        end, Doc, ExpectedValues),
+    ok.
+
+% Test in which the incoming image has a non-optimal orientation, and it
+% will be automatically corrected before storage.
+rotated_image_test(Config) ->
+    DataDir = ?config(data_dir, Config),
+    % create the incoming directory and copy our test photo there
+    IncomingDir = ?config(incoming_dir, Config),
+    TaggedDir = filename:join(IncomingDir, "rotated_cats@outdoors"),
+    SrcImagePath = filename:join(DataDir, "fighting_kittens.jpg"),
+    DestImagePath = filename:join(TaggedDir, "fighting_kittens.jpg"),
+    ok = filelib:ensure_dir(DestImagePath),
+    {ok, 39932} = file:copy(SrcImagePath, DestImagePath),
+    gen_server:call(tanuki_incoming, process_now),
+    % check that images are gone from incoming directory
+    {ok, []} = file:list_dir(IncomingDir),
+    % verify images are in the assets directory
+    AssetsDir = ?config(assets_dir, Config),
+    true = filelib:is_file(filename:join([AssetsDir, "e9", "fb",
+        "9c3c396d4ea583aa965aa85a5a228bbb591482fbe3e9b9e10820314afe1e"])),
+    % check that each field of each new document is the correct value
+    Rows = tanuki_backend:by_tag("rotated"),
+    ?assertEqual(1, length(Rows)),
+    DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
+    {ok, Doc} = tanuki_backend:fetch_document(DocId),
+    ExpectedValues = #{
+        <<"exif_date">> => null,
+        <<"mimetype">>  => <<"image/jpeg">>,
+        <<"file_size">> => 40078,
+        <<"location">>  => <<"outdoors">>,
+        <<"sha256">>    => <<"e9fb9c3c396d4ea583aa965aa85a5a228bbb591482fbe3e9b9e10820314afe1e">>,
+        <<"tags">>      => [<<"cats">>, <<"rotated">>]
     },
     maps:fold(fun(Key, Value, Elem) ->
             ?assertEqual(Value, couchbeam_doc:get_value(Key, Elem)),
@@ -141,7 +179,7 @@ topical_image_test(Config) ->
     SrcImagePath = filename:join(DataDir, "dcp_1069.jpg"),
     DestImagePath = filename:join(TaggedDir, "dcp_1069.jpg"),
     ok = filelib:ensure_dir(DestImagePath),
-    {ok, _BytesCopied} = file:copy(SrcImagePath, DestImagePath),
+    {ok, 80977} = file:copy(SrcImagePath, DestImagePath),
     % Would like to have set the ctime of the incoming directory but
     % file:write_file_info/2,3 ignores the ctime value on Unix systems.
     gen_server:call(tanuki_incoming, process_now),
@@ -149,8 +187,8 @@ topical_image_test(Config) ->
     {ok, []} = file:list_dir(IncomingDir),
     % verify images are in the assets directory
     AssetsDir = ?config(assets_dir, Config),
-    true = filelib:is_file(filename:join([AssetsDir, "dd", "8c",
-        "97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07"])),
+    true = filelib:is_file(filename:join([AssetsDir, "50", "d2",
+        "62207f1202e52808574fc77803801df5dcab6bd20192da2bc7d8c14d1c5a"])),
     % check that each field of each new document is the correct value
     Rows = tanuki_backend:by_tag("cows"),
     ?assertEqual(1, length(Rows)),
@@ -161,11 +199,11 @@ topical_image_test(Config) ->
         <<"exif_date">>  => [2003, 9, 3, 17, 24],
         <<"file_name">>  => <<"dcp_1069.jpg">>,
         <<"file_owner">> => CurrentUser,
-        <<"file_size">>  => 80977,
+        <<"file_size">>  => 81355,
         <<"location">>   => <<"hawaii">>,
         <<"mimetype">>   => <<"image/jpeg">>,
         <<"topic">>      => <<"honeymoon">>,
-        <<"sha256">>     => <<"dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07">>,
+        <<"sha256">>     => <<"50d262207f1202e52808574fc77803801df5dcab6bd20192da2bc7d8c14d1c5a">>,
         % tags are in sorted order
         <<"tags">>       => [<<"cows">>, <<"field">>]
     },
@@ -175,9 +213,9 @@ topical_image_test(Config) ->
         end, Doc, ExpectedValues),
     ok.
 
-%% Test importing multiple images.
-%% This also tests updating an asset (the flower gets imported a second time),
-%% in which the tags are merged and the locatio is not changed.
+%% Test importing multiple images. This also tests updating an existing
+%% asset (or two), in which the tags are merged and the location is not
+%% changed.
 multiple_image_test(Config) ->
     DataDir = ?config(data_dir, Config),
     % create the incoming directory and copy our test photos there
@@ -197,37 +235,37 @@ multiple_image_test(Config) ->
     {ok, []} = file:list_dir(IncomingDir),
     % verify images are in the assets directory
     AssetsDir = ?config(assets_dir, Config),
-    true = filelib:is_file(filename:join([AssetsDir, "d0", "9f",
-        "d659423e71bb1b5e20d78a1ab7ce393e74e463f2dface3634d78ec155397"])),
-    true = filelib:is_file(filename:join([AssetsDir, "03", "b5",
-        "8852bc8302f51a21d1093d47961bf16ba5762e3cdd34fde0daa95acdca1f"])),
-    true = filelib:is_file(filename:join([AssetsDir, "8d", "ca",
-        "f3d73a10548e445ebb27ff34d7159cc5d7f3730c24e95ffe5b07bd2300fd"])),
+    true = filelib:is_file(filename:join([AssetsDir, "7a", "3d",
+        "c0673dc24cee1224022d0cc545cef3728bd54a5b73b6b1a52a5632a1359b"])),
+    true = filelib:is_file(filename:join([AssetsDir, "e9", "fb",
+        "9c3c396d4ea583aa965aa85a5a228bbb591482fbe3e9b9e10820314afe1e"])),
+    true = filelib:is_file(filename:join([AssetsDir, "3c", "e3",
+        "3e2aa38db15025d74b9cb9d137a68b5640f58560fd58c1e595e9bceda4bc"])),
     % check specific fields of each new document
     KittensValues = #{
         <<"exif_date">> => null,
         <<"mimetype">>  => <<"image/jpeg">>,
-        <<"file_size">> => 40766,
-        <<"location">>  => <<"earth">>,
-        <<"sha256">>    => <<"8dcaf3d73a10548e445ebb27ff34d7159cc5d7f3730c24e95ffe5b07bd2300fd">>,
-        <<"tags">>      => [<<"multiple">>]
+        <<"file_size">> => 40078,
+        <<"location">>  => <<"outdoors">>,
+        <<"sha256">>    => <<"e9fb9c3c396d4ea583aa965aa85a5a228bbb591482fbe3e9b9e10820314afe1e">>,
+        <<"tags">>      => [<<"cats">>, <<"multiple">>, <<"rotated">>]
     },
     FlowerValues = #{
         <<"exif_date">> => [2011, 10, 7, 16, 18],
         <<"mimetype">>  => <<"image/jpeg">>,
-        <<"file_size">> => 369781,
+        <<"file_size">> => 326691,
         % existing location does not change
         <<"location">>  => <<"field">>,
-        <<"sha256">>    => <<"d09fd659423e71bb1b5e20d78a1ab7ce393e74e463f2dface3634d78ec155397">>,
+        <<"sha256">>    => <<"3ce33e2aa38db15025d74b9cb9d137a68b5640f58560fd58c1e595e9bceda4bc">>,
         % new tags are merged with old
         <<"tags">>      => [<<"flower">>, <<"multiple">>, <<"yellow">>]
     },
     ValleyValues = #{
         <<"exif_date">> => [2014, 04, 23, 13, 33],
         <<"mimetype">>  => <<"image/jpeg">>,
-        <<"file_size">> => 107302,
+        <<"file_size">> => 104061,
         <<"location">>  => <<"earth">>,
-        <<"sha256">>    => <<"03b58852bc8302f51a21d1093d47961bf16ba5762e3cdd34fde0daa95acdca1f">>,
+        <<"sha256">>    => <<"7a3dc0673dc24cee1224022d0cc545cef3728bd54a5b73b6b1a52a5632a1359b">>,
         <<"tags">>      => [<<"multiple">>]
     },
     FilenameToValues = #{
