@@ -124,7 +124,7 @@ single_image_test(Config) ->
         <<"exif_date">>  => [2011, 10, 7, 16, 18],
         <<"file_name">>  => <<"img_015.JPG">>,
         <<"file_owner">> => CurrentUser,
-        <<"file_size">>  => 326691,
+        <<"file_size">>  => get_asset_size(Config, Mapping, <<"img_015.JPG">>),
         <<"location">>   => <<"field">>,
         <<"mimetype">>   => <<"image/jpeg">>,
         <<"sha256">>     => Checksum,
@@ -164,7 +164,7 @@ rotated_image_test(Config) ->
     ExpectedValues = #{
         <<"exif_date">> => null,
         <<"mimetype">>  => <<"image/jpeg">>,
-        <<"file_size">> => 40078,
+        <<"file_size">> => get_asset_size(Config, Mapping, <<"fighting_kittens.jpg">>),
         <<"location">>  => <<"outdoors">>,
         <<"sha256">>    => Checksum,
         <<"tags">>      => [<<"cats">>, <<"rotated">>]
@@ -205,7 +205,7 @@ topical_image_test(Config) ->
         <<"exif_date">>  => [2003, 9, 3, 17, 24],
         <<"file_name">>  => <<"dcp_1069.jpg">>,
         <<"file_owner">> => CurrentUser,
-        <<"file_size">>  => 81355,
+        <<"file_size">>  => get_asset_size(Config, Mapping, <<"dcp_1069.jpg">>),
         <<"location">>   => <<"hawaii">>,
         <<"mimetype">>   => <<"image/jpeg">>,
         <<"topic">>      => <<"honeymoon">>,
@@ -249,7 +249,7 @@ multiple_image_test(Config) ->
     KittensValues = #{
         <<"exif_date">> => null,
         <<"mimetype">>  => <<"image/jpeg">>,
-        <<"file_size">> => 40078,
+        <<"file_size">> => get_asset_size(Config, Mapping, <<"fighting_kittens.jpg">>),
         <<"location">>  => <<"outdoors">>,
         <<"sha256">>    => maps:get(<<"fighting_kittens.jpg">>, Mapping),
         <<"tags">>      => [<<"cats">>, <<"multiple">>, <<"rotated">>]
@@ -257,7 +257,7 @@ multiple_image_test(Config) ->
     FlowerValues = #{
         <<"exif_date">> => [2011, 10, 7, 16, 18],
         <<"mimetype">>  => <<"image/jpeg">>,
-        <<"file_size">> => 326691,
+        <<"file_size">> => get_asset_size(Config, Mapping, <<"img_015.JPG">>),
         % existing location does not change
         <<"location">>  => <<"field">>,
         <<"sha256">>    => maps:get(<<"img_015.JPG">>, Mapping),
@@ -267,7 +267,7 @@ multiple_image_test(Config) ->
     ValleyValues = #{
         <<"exif_date">> => [2014, 04, 23, 13, 33],
         <<"mimetype">>  => <<"image/jpeg">>,
-        <<"file_size">> => 104061,
+        <<"file_size">> => get_asset_size(Config, Mapping, <<"IMG_5745.JPG">>),
         <<"location">>  => <<"earth">>,
         <<"sha256">>    => maps:get(<<"IMG_5745.JPG">>, Mapping),
         <<"tags">>      => [<<"multiple">>]
@@ -346,3 +346,15 @@ verify_stored_assets(Config, Mapping) ->
     end,
     Checksums = maps:values(Mapping),
     lists:foreach(VerifyAsset, Checksums).
+
+% Retrieve the size of the image.
+get_asset_size(Config, Mapping, Filename) ->
+    AssetsDir = ?config(assets_dir, Config),
+    Checksum = maps:get(Filename, Mapping),
+    C = binary_to_list(Checksum),
+    Part1 = string:sub_string(C, 1, 2),
+    Part2 = string:sub_string(C, 3, 4),
+    Part3 = string:sub_string(C, 5),
+    Filepath = filename:join([AssetsDir, Part1, Part2, Part3]),
+    {ok, #file_info{size = Size}} = file:read_file_info(Filepath),
+    Size.
