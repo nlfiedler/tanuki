@@ -1,7 +1,6 @@
 * TODO
 
   ** Action Items [0/18]
-    - [ ] Tests need to get the sha1 of the new image since it can vary based on OS
     - [ ] Incorporate version information into page footer
     - [ ] How to deal with the existing images that are rotated?
       - Apparently happens when exporting in "original" format

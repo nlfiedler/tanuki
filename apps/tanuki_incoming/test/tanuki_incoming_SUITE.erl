@@ -1,23 +1,23 @@
-%% -*- coding: utf-8 -*-
-%% -------------------------------------------------------------------
-%%
-%% Copyright (c) 2015-2016 Nathan Fiedler
-%%
-%% This file is provided to you under the Apache License,
-%% Version 2.0 (the "License"); you may not use this file
-%% except in compliance with the License. You may obtain
-%% a copy of the License at
-%%
-%% http://www.apache.org/licenses/LICENSE-2.0
-%%
-%% Unless required by applicable law or agreed to in writing,
-%% software distributed under the License is distributed on an
-%% "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-%% KIND, either express or implied. See the License for the
-%% specific language governing permissions and limitations
-%% under the License.
-%%
-%% -------------------------------------------------------------------
+% -*- coding: utf-8 -*-
+% -------------------------------------------------------------------
+%
+% Copyright (c) 2015-2016 Nathan Fiedler
+%
+% This file is provided to you under the Apache License,
+% Version 2.0 (the "License"); you may not use this file
+% except in compliance with the License. You may obtain
+% a copy of the License at
+%
+% http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing,
+% software distributed under the License is distributed on an
+% "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+% KIND, either express or implied. See the License for the
+% specific language governing permissions and limitations
+% under the License.
+%
+% -------------------------------------------------------------------
 -module(tanuki_incoming_SUITE).
 -compile(export_all).
 -include_lib("common_test/include/ct.hrl").
@@ -44,7 +44,7 @@ init_per_suite(Config) ->
         true  -> couchbeam:delete_db(S, ?TESTDB);
         false -> {ok, foo}
     end,
-    {ok, _Db} = couchbeam:create_db(S, ?TESTDB, []),
+    {ok, Db} = couchbeam:create_db(S, ?TESTDB, []),
     % start the application under test
     ok = application:set_env(lager, lager_common_test_backend, debug),
     {ok, _Started1} = application:ensure_all_started(tanuki_incoming),
@@ -67,6 +67,7 @@ init_per_suite(Config) ->
     [
         {url, Url},
         {opts, Opts},
+        {db, Db},
         {incoming_dir, IncomingDir},
         {assets_dir, AssetsDir} |
         Config
@@ -91,7 +92,7 @@ all() ->
         empty_folder_test
     ].
 
-%% Test importing a single image.
+% Test importing a single image.
 single_image_test(Config) ->
     DataDir = ?config(data_dir, Config),
     % create the incoming directory and copy our test photo there
@@ -105,17 +106,20 @@ single_image_test(Config) ->
     % file:write_file_info/2,3 ignores the ctime value on Unix systems.
     gen_server:call(tanuki_incoming, process_now),
     % check that images are gone from incoming directory
-    {ok, []} = file:list_dir(IncomingDir),
+    ?assertEqual({ok, []}, file:list_dir(IncomingDir)),
     % verify images are in the assets directory
-    AssetsDir = ?config(assets_dir, Config),
-    true = filelib:is_file(filename:join([AssetsDir, "3c", "e3",
-        "3e2aa38db15025d74b9cb9d137a68b5640f58560fd58c1e595e9bceda4bc"])),
+    Db = ?config(db, Config),
+    Mapping = checksum_by_filename(Db, [<<"img_015.JPG">>]),
+    verify_stored_assets(Config, Mapping),
     % check that each field of each new document is the correct value
     Rows = tanuki_backend:by_tag("yellow"),
     ?assertEqual(1, length(Rows)),
     DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
     {ok, Doc} = tanuki_backend:fetch_document(DocId),
     CurrentUser = list_to_binary(os:getenv("USER")),
+    % Because the image may be rotated, the checksum may vary from one
+    % system to the next, so we must retrieve the checksum for the file.
+    Checksum = maps:get(<<"img_015.JPG">>, Mapping),
     ExpectedValues = #{
         <<"exif_date">>  => [2011, 10, 7, 16, 18],
         <<"file_name">>  => <<"img_015.JPG">>,
@@ -123,7 +127,7 @@ single_image_test(Config) ->
         <<"file_size">>  => 326691,
         <<"location">>   => <<"field">>,
         <<"mimetype">>   => <<"image/jpeg">>,
-        <<"sha256">>     => <<"3ce33e2aa38db15025d74b9cb9d137a68b5640f58560fd58c1e595e9bceda4bc">>,
+        <<"sha256">>     => Checksum,
         % tags are in sorted order
         <<"tags">>       => [<<"flower">>, <<"yellow">>]
     },
@@ -146,22 +150,23 @@ rotated_image_test(Config) ->
     {ok, 39932} = file:copy(SrcImagePath, DestImagePath),
     gen_server:call(tanuki_incoming, process_now),
     % check that images are gone from incoming directory
-    {ok, []} = file:list_dir(IncomingDir),
+    ?assertEqual({ok, []}, file:list_dir(IncomingDir)),
     % verify images are in the assets directory
-    AssetsDir = ?config(assets_dir, Config),
-    true = filelib:is_file(filename:join([AssetsDir, "e9", "fb",
-        "9c3c396d4ea583aa965aa85a5a228bbb591482fbe3e9b9e10820314afe1e"])),
+    Db = ?config(db, Config),
+    Mapping = checksum_by_filename(Db, [<<"fighting_kittens.jpg">>]),
+    verify_stored_assets(Config, Mapping),
     % check that each field of each new document is the correct value
     Rows = tanuki_backend:by_tag("rotated"),
     ?assertEqual(1, length(Rows)),
     DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
     {ok, Doc} = tanuki_backend:fetch_document(DocId),
+    Checksum = maps:get(<<"fighting_kittens.jpg">>, Mapping),
     ExpectedValues = #{
         <<"exif_date">> => null,
         <<"mimetype">>  => <<"image/jpeg">>,
         <<"file_size">> => 40078,
         <<"location">>  => <<"outdoors">>,
-        <<"sha256">>    => <<"e9fb9c3c396d4ea583aa965aa85a5a228bbb591482fbe3e9b9e10820314afe1e">>,
+        <<"sha256">>    => Checksum,
         <<"tags">>      => [<<"cats">>, <<"rotated">>]
     },
     maps:fold(fun(Key, Value, Elem) ->
@@ -170,7 +175,7 @@ rotated_image_test(Config) ->
         end, Doc, ExpectedValues),
     ok.
 
-%% Test importing an image with topic, tags, and location.
+% Test importing an image with topic, tags, and location.
 topical_image_test(Config) ->
     DataDir = ?config(data_dir, Config),
     % create the incoming directory and copy our test photo there
@@ -184,17 +189,18 @@ topical_image_test(Config) ->
     % file:write_file_info/2,3 ignores the ctime value on Unix systems.
     gen_server:call(tanuki_incoming, process_now),
     % check that images are gone from incoming directory
-    {ok, []} = file:list_dir(IncomingDir),
+    ?assertEqual({ok, []}, file:list_dir(IncomingDir)),
     % verify images are in the assets directory
-    AssetsDir = ?config(assets_dir, Config),
-    true = filelib:is_file(filename:join([AssetsDir, "50", "d2",
-        "62207f1202e52808574fc77803801df5dcab6bd20192da2bc7d8c14d1c5a"])),
+    Db = ?config(db, Config),
+    Mapping = checksum_by_filename(Db, [<<"dcp_1069.jpg">>]),
+    verify_stored_assets(Config, Mapping),
     % check that each field of each new document is the correct value
     Rows = tanuki_backend:by_tag("cows"),
     ?assertEqual(1, length(Rows)),
     DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
     {ok, Doc} = tanuki_backend:fetch_document(DocId),
     CurrentUser = list_to_binary(os:getenv("USER")),
+    Checksum = maps:get(<<"dcp_1069.jpg">>, Mapping),
     ExpectedValues = #{
         <<"exif_date">>  => [2003, 9, 3, 17, 24],
         <<"file_name">>  => <<"dcp_1069.jpg">>,
@@ -203,7 +209,7 @@ topical_image_test(Config) ->
         <<"location">>   => <<"hawaii">>,
         <<"mimetype">>   => <<"image/jpeg">>,
         <<"topic">>      => <<"honeymoon">>,
-        <<"sha256">>     => <<"50d262207f1202e52808574fc77803801df5dcab6bd20192da2bc7d8c14d1c5a">>,
+        <<"sha256">>     => Checksum,
         % tags are in sorted order
         <<"tags">>       => [<<"cows">>, <<"field">>]
     },
@@ -213,9 +219,9 @@ topical_image_test(Config) ->
         end, Doc, ExpectedValues),
     ok.
 
-%% Test importing multiple images. This also tests updating an existing
-%% asset (or two), in which the tags are merged and the location is not
-%% changed.
+% Test importing multiple images. This also tests updating an existing
+% asset (or two), in which the tags are merged and the location is not
+% changed.
 multiple_image_test(Config) ->
     DataDir = ?config(data_dir, Config),
     % create the incoming directory and copy our test photos there
@@ -232,22 +238,20 @@ multiple_image_test(Config) ->
     % process the incoming images now
     gen_server:call(tanuki_incoming, process_now),
     % check that images are gone from incoming directory
-    {ok, []} = file:list_dir(IncomingDir),
+    ?assertEqual({ok, []}, file:list_dir(IncomingDir)),
     % verify images are in the assets directory
-    AssetsDir = ?config(assets_dir, Config),
-    true = filelib:is_file(filename:join([AssetsDir, "7a", "3d",
-        "c0673dc24cee1224022d0cc545cef3728bd54a5b73b6b1a52a5632a1359b"])),
-    true = filelib:is_file(filename:join([AssetsDir, "e9", "fb",
-        "9c3c396d4ea583aa965aa85a5a228bbb591482fbe3e9b9e10820314afe1e"])),
-    true = filelib:is_file(filename:join([AssetsDir, "3c", "e3",
-        "3e2aa38db15025d74b9cb9d137a68b5640f58560fd58c1e595e9bceda4bc"])),
+    Db = ?config(db, Config),
+    Mapping = checksum_by_filename(Db, [
+        <<"fighting_kittens.jpg">>, <<"img_015.JPG">>, <<"IMG_5745.JPG">>
+    ]),
+    verify_stored_assets(Config, Mapping),
     % check specific fields of each new document
     KittensValues = #{
         <<"exif_date">> => null,
         <<"mimetype">>  => <<"image/jpeg">>,
         <<"file_size">> => 40078,
         <<"location">>  => <<"outdoors">>,
-        <<"sha256">>    => <<"e9fb9c3c396d4ea583aa965aa85a5a228bbb591482fbe3e9b9e10820314afe1e">>,
+        <<"sha256">>    => maps:get(<<"fighting_kittens.jpg">>, Mapping),
         <<"tags">>      => [<<"cats">>, <<"multiple">>, <<"rotated">>]
     },
     FlowerValues = #{
@@ -256,7 +260,7 @@ multiple_image_test(Config) ->
         <<"file_size">> => 326691,
         % existing location does not change
         <<"location">>  => <<"field">>,
-        <<"sha256">>    => <<"3ce33e2aa38db15025d74b9cb9d137a68b5640f58560fd58c1e595e9bceda4bc">>,
+        <<"sha256">>    => maps:get(<<"img_015.JPG">>, Mapping),
         % new tags are merged with old
         <<"tags">>      => [<<"flower">>, <<"multiple">>, <<"yellow">>]
     },
@@ -265,7 +269,7 @@ multiple_image_test(Config) ->
         <<"mimetype">>  => <<"image/jpeg">>,
         <<"file_size">> => 104061,
         <<"location">>  => <<"earth">>,
-        <<"sha256">>    => <<"7a3dc0673dc24cee1224022d0cc545cef3728bd54a5b73b6b1a52a5632a1359b">>,
+        <<"sha256">>    => maps:get(<<"IMG_5745.JPG">>, Mapping),
         <<"tags">>      => [<<"multiple">>]
     },
     FilenameToValues = #{
@@ -288,8 +292,8 @@ multiple_image_test(Config) ->
     lists:foreach(ValidateRow, Rows),
     ok.
 
-%% Test in which the incoming directory is empty, hence nothing should be imported.
-%% Also tests removal of the automatically generated cruft from Mac OS X.
+% Test in which the incoming directory is empty, hence nothing should be imported.
+% Also tests removal of the automatically generated cruft from Mac OS X.
 empty_folder_test(Config) ->
     % create an empty incoming directory
     IncomingDir = ?config(incoming_dir, Config),
@@ -302,8 +306,43 @@ empty_folder_test(Config) ->
     ok = file:write_file(DSStorePath, <<"dummy">>),
     gen_server:call(tanuki_incoming, process_now),
     % check that empty incoming directory is removed
-    {ok, []} = file:list_dir(IncomingDir),
+    ?assertEqual({ok, []}, file:list_dir(IncomingDir)),
     % check that no assets were imported by those tags
     Rows = tanuki_backend:by_tag("empty"),
     ?assertEqual(0, length(Rows)),
     ok.
+
+% Search all documents and return a map of the filenames to their
+% corresponding checksums.
+checksum_by_filename(Db, Filenames) ->
+    {ok, Rows} = couchbeam_view:fetch(Db),
+    MatchingFilename = fun(Elem, AccIn) ->
+        DocId = couchbeam_doc:get_value(<<"id">>, Elem),
+        case DocId of
+            <<"_design/assets">> -> AccIn;
+            _ ->
+                {ok, Doc} = couchbeam:open_doc(Db, DocId),
+                Value = couchbeam_doc:get_value(<<"file_name">>, Doc),
+                case lists:member(Value, Filenames) of
+                    true ->
+                        Checksum = couchbeam_doc:get_value(<<"sha256">>, Doc),
+                        maps:put(Value, Checksum, AccIn);
+                    false -> AccIn
+                end
+        end
+    end,
+    lists:foldl(MatchingFilename, #{}, Rows).
+
+% Verify that all of the assets are in the correct place. Mapping keys are
+% the original file names, values are the checksums.
+verify_stored_assets(Config, Mapping) ->
+    AssetsDir = ?config(assets_dir, Config),
+    VerifyAsset = fun(Checksum) ->
+        C = binary_to_list(Checksum),
+        Part1 = string:sub_string(C, 1, 2),
+        Part2 = string:sub_string(C, 3, 4),
+        Part3 = string:sub_string(C, 5),
+        ?assert(filelib:is_file(filename:join([AssetsDir, Part1, Part2, Part3])))
+    end,
+    Checksums = maps:values(Mapping),
+    lists:foreach(VerifyAsset, Checksums).
