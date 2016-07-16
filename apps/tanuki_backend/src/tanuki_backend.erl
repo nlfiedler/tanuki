@@ -19,10 +19,13 @@
 %%
 %% -------------------------------------------------------------------
 -module(tanuki_backend).
+
 -export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1]).
 -export([all_tags/0, fetch_document/1, path_to_mimes/1, generate_etag/3]).
 -export([get_best_date/1, date_list_to_string/1, date_list_to_string/2]).
 -export([retrieve_thumbnail/2, get_field_value/2, seconds_since_epoch/0]).
+
+-include_lib("kernel/include/file.hrl").
 -include_lib("tanuki_backend/include/records.hrl").
 
 %%
@@ -232,16 +235,33 @@ retrieve_thumbnail(Checksum, RelativePath) ->
 generate_thumbnail(RelativePath) ->
     {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
     SourceFile = filename:join(AssetsDir, RelativePath),
-    {ok, ImageData} = file:read_file(SourceFile),
-    case emagick_rs:image_fit(ImageData, 240, 240) of
-        {ok, Resized} -> Resized;
-        {error, Reason} ->
-            lager:error("failed to resize asset ~s: ~p", [RelativePath, Reason]),
-            PrivPath = code:priv_dir(tanuki_backend),
-            ImagePath = filename:join(PrivPath, "static/images/broken_image.jpg"),
-            {ok, BrokenData} = file:read_file(ImagePath),
-            BrokenData
+    % Avoid attempting to generate a thumbnail for large files, which are
+    % very likely not image files at all (e.g. videos). The value of 10MB
+    % was arrived at by examining a collection of images and videos that
+    % represent typical usage. That is, most images are less than 10MB and
+    % most videos are over 10MB; the overlap is acceptable, such that some
+    % large images will not get thumbnails, and some videos will be pulled
+    % into memory only to result in an error.
+    case file:read_file_info(SourceFile) of
+        {ok, #file_info{size = Bytes}} when Bytes < 10*1048576 ->
+            {ok, ImageData} = file:read_file(SourceFile),
+            case emagick_rs:image_fit(ImageData, 240, 240) of
+                {ok, Resized} -> Resized;
+                {error, Reason} ->
+                    lager:warning("unable to resize asset ~s: ~p", [RelativePath, Reason]),
+                    broken_image_placeholder()
+            end;
+        _ -> broken_image_placeholder()
     end.
+
+%
+% @doc Return the image data for the broken image placeholder thumbnail.
+%
+broken_image_placeholder() ->
+    PrivPath = code:priv_dir(tanuki_backend),
+    ImagePath = filename:join(PrivPath, "static/images/broken_image.jpg"),
+    {ok, BrokenData} = file:read_file(ImagePath),
+    BrokenData.
 
 %
 % @doc Return the seconds since the epoch (1970/1/1 00:00).

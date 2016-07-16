@@ -1,6 +1,6 @@
 * TODO
 
-  ** Action Items [0/18]
+  ** Action Items [0/17]
     - [ ] Incorporate version information into page footer
     - [ ] How to deal with the existing images that are rotated?
       - Apparently happens when exporting in "original" format
@@ -21,7 +21,7 @@
     - [ ] Have the thumbnails on `tag.erl` appear in a grid format
     - [ ] Organize the assets by date in `tag.erl`
     - [ ] Option to select assets by file extension (e.g. `.jpg` or `.mov`)
-    - Create a CouchDB view on filename extensions to make it easy to select
+      - Create a CouchDB view on filename extensions to make it easy to select
     - [ ] Have `asset.erl` show a larger version of the image instead of thumbnail
     - [ ] Fetch additional details of the image for display in `asset.erl`
     - [ ] Display available dates (year, then months) on `index.erl`

@@ -146,7 +146,7 @@ process_path(Path, BlobStore, Db) ->
     case file:del_dir(Path) of
         ok -> ok;
         {error, Reason} ->
-            lager:error("Unable to remove ~s: ~p", [Path, Reason])
+            lager:error("failed to remove ~s: ~p", [Path, Reason])
     end.
 
 % Convert the path to a topic, set of tags, and a location. Topic, if any,
@@ -182,10 +182,11 @@ delete_extraneous_files(Path) ->
     DeleteFun = fun(Name) ->
         case lists:member(Name, Extras) of
             true ->
-                case file:delete(filename:join(Path, Name)) of
+                FilePath = filename:join(Path, Name),
+                case file:delete(FilePath) of
                     ok -> ok;
                     {error, Reason} ->
-                        lager:error("File delete failed: ~p", [Reason])
+                        lager:error("failed to delete file ~w, ~w", [FilePath, Reason])
                 end;
             false -> ok
         end
@@ -332,7 +333,7 @@ file_date(Path) ->
 get_original_exif_date(ImageData) ->
     case emagick_rs:image_get_property(ImageData, "exif:DateTimeOriginal") of
         {error, Reason} ->
-            lager:error("unable to read EXIF data: ~p", [Reason]),
+            lager:warning("unable to read EXIF data: ~p", [Reason]),
             null;
         {ok, OriginalDate} ->
             Parsed = date_parse(OriginalDate),
