@@ -162,13 +162,13 @@ convert_path_to_details(Path) ->
             Topic = undefined,
             NotTopic = MaybeTopic;
         [R|_] ->
-            Topic = re:replace(MaybeTopic, "_", " "),
+            Topic = re:replace(MaybeTopic, "_", " ", [global]),
             NotTopic = R
     end,
     [Tags|Tail] = re:split(NotTopic, "@", [{return, list}]),
     Location = case Tail of
         []    -> undefined;
-        [L|_] -> re:replace(L, "_", " ")
+        [L|_] -> re:replace(L, "_", " ", [global])
     end,
     TagList = re:split(Tags, "_", [{return, list}]),
     ValidTags = lists:filter(fun(Tag) -> length(Tag) > 0 end, TagList),
