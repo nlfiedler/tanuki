@@ -1,0 +1,16 @@
+{application, tag_to_topic, [
+    {description, "Remove a tag and set as location in all matching documents."},
+    {vsn, "1.0.0"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib,
+        couchbeam,
+        hackney,
+        idna,
+        jsx,
+        ssl_verify_hostname
+    ]},
+    {mod, {tag_to_topic, []}},
+    {env, []}
+]}.
