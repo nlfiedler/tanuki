@@ -1,0 +1,16 @@
+{application, correct_orientation, [
+    {description, "Correct orientation of all image assets."},
+    {vsn, "1.0.0"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib,
+        couchbeam,
+        hackney,
+        idna,
+        jsx,
+        ssl_verify_hostname
+    ]},
+    {mod, {correct_orientation, []}},
+    {env, []}
+]}.
