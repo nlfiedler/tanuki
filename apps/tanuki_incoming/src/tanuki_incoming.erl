@@ -352,7 +352,7 @@ store_asset(Filepath, Checksum, Binary, BlobStore) ->
     DestPath = filename:join(BlobPath, Part3),
     case filelib:is_dir(BlobPath) of
         true  -> ok;
-        false -> filelib:ensure_dir(DestPath)
+        false -> ok = filelib:ensure_dir(DestPath)
     end,
     lager:info("Moving ~s to ~s", [Filepath, DestPath]),
     case filelib:is_regular(DestPath) of
