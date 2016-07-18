@@ -199,14 +199,21 @@ delete_extraneous_files(Path) ->
 correct_orientation(Filepath) ->
     % Fail fast if unable to read file.
     {ok, Binary0} = file:read_file(Filepath),
-    % Attempt to auto-orient the image, but tolerate assets that are not
-    % images, and hence cannot be rotated.
-    case emagick_rs:auto_orient(Binary0) of
-        {ok, Binary1} -> Binary1;
-        {error, Reason} ->
-            % probably not an image
-            lager:warning("unable to auto-orient asset: ~p", [Reason]),
-            Binary0
+    case emagick_rs:requires_orientation(Binary0) of
+        false ->
+            % Return the original binary, rather than the one that has been
+            % handled by ImageMagick, which invariably modifies the data,
+            % and thus changes the checksum.
+            Binary0;
+        true ->
+            % Attempt to auto-orient the image, but tolerate assets that
+            % are not images, and hence cannot be rotated.
+            case emagick_rs:auto_orient(Binary0) of
+                {ok, Binary1} -> Binary1;
+                {error, Reason} ->
+                    lager:warning("unable to auto-orient asset: ~p", [Reason]),
+                    Binary0
+            end
     end.
 
 % Compute the SHA256 for the given binary and return as a hex string.
