@@ -213,7 +213,10 @@ correct_orientation(Filepath) ->
                 {error, Reason} ->
                     lager:warning("unable to auto-orient asset: ~p", [Reason]),
                     Binary0
-            end
+            end;
+        {error, Reason} ->
+            lager:warning("unable to detect asset orientation: ~p", [Reason]),
+            Binary0
     end.
 
 % Compute the SHA256 for the given binary and return as a hex string.

@@ -86,6 +86,7 @@ end_per_suite(Config) ->
 all() ->
     [
         single_image_test,
+        non_image_test,
         rotated_image_test,
         topical_image_test,
         multiple_image_test,
@@ -130,6 +131,49 @@ single_image_test(Config) ->
         <<"sha256">>     => Checksum,
         % tags are in sorted order
         <<"tags">>       => [<<"flower">>, <<"yellow">>]
+    },
+    maps:fold(fun(Key, Value, Elem) ->
+            ?assertEqual(Value, couchbeam_doc:get_value(Key, Elem)),
+            Elem
+        end, Doc, ExpectedValues),
+    ok.
+
+% Test importing something that is not a JPEG image.
+non_image_test(Config) ->
+    DataDir = ?config(data_dir, Config),
+    % create the incoming directory and copy our test photo there
+    IncomingDir = ?config(incoming_dir, Config),
+    TaggedDir = filename:join(IncomingDir, "text"),
+    SrcImagePath = filename:join(DataDir, "LICENSE.txt"),
+    DestImagePath = filename:join(TaggedDir, "LICENSE.txt"),
+    ok = filelib:ensure_dir(DestImagePath),
+    {ok, 11358} = file:copy(SrcImagePath, DestImagePath),
+    % Would like to have set the ctime of the incoming directory but
+    % file:write_file_info/2,3 ignores the ctime value on Unix systems.
+    gen_server:call(tanuki_incoming, process_now),
+    % check that images are gone from incoming directory
+    ?assertEqual({ok, []}, file:list_dir(IncomingDir)),
+    % verify images are in the assets directory
+    Db = ?config(db, Config),
+    Mapping = checksum_by_filename(Db, [<<"LICENSE.txt">>]),
+    verify_stored_assets(Config, Mapping),
+    % check that each field of each new document is the correct value
+    Rows = tanuki_backend:by_tag("text"),
+    ?assertEqual(1, length(Rows)),
+    DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
+    {ok, Doc} = tanuki_backend:fetch_document(DocId),
+    CurrentUser = list_to_binary(os:getenv("USER")),
+    Checksum = maps:get(<<"LICENSE.txt">>, Mapping),
+    ExpectedValues = #{
+        <<"exif_date">>  => null,
+        <<"file_name">>  => <<"LICENSE.txt">>,
+        <<"file_owner">> => CurrentUser,
+        <<"file_size">>  => get_asset_size(Config, Mapping, <<"LICENSE.txt">>),
+        <<"location">>   => null,
+        <<"mimetype">>   => <<"text/plain">>,
+        <<"sha256">>     => Checksum,
+        % tags are in sorted order
+        <<"tags">>       => [<<"text">>]
     },
     maps:fold(fun(Key, Value, Elem) ->
             ?assertEqual(Value, couchbeam_doc:get_value(Key, Elem)),
