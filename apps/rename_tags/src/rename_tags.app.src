@@ -9,7 +9,7 @@
         hackney,
         idna,
         jsx,
-        ssl_verify_hostname
+        ssl_verify_fun
     ]},
     {mod, {rename_tags, []}},
     {env, []}
