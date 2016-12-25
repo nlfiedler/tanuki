@@ -208,7 +208,7 @@ rotated_image_test(Config) ->
     ExpectedValues = #{
         <<"exif_date">> => null,
         <<"mimetype">>  => <<"image/jpeg">>,
-        <<"file_size">> => get_asset_size(Config, Mapping, <<"fighting_kittens.jpg">>),
+        <<"file_size">> => 39932,
         <<"location">>  => <<"outdoors">>,
         <<"sha256">>    => Checksum,
         <<"tags">>      => [<<"cats">>, <<"rotated">>]
@@ -293,7 +293,7 @@ multiple_image_test(Config) ->
     KittensValues = #{
         <<"exif_date">> => null,
         <<"mimetype">>  => <<"image/jpeg">>,
-        <<"file_size">> => get_asset_size(Config, Mapping, <<"fighting_kittens.jpg">>),
+        <<"file_size">> => 39932,
         <<"location">>  => <<"outdoors">>,
         <<"sha256">>    => maps:get(<<"fighting_kittens.jpg">>, Mapping),
         <<"tags">>      => [<<"cats">>, <<"multiple">>, <<"rotated">>]

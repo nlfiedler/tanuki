@@ -128,16 +128,15 @@ process_path(Path, BlobStore, Db) ->
         Filepath = filename:join(Path, Name),
         case file:read_file_info(Filepath) of
             {ok, #file_info{type=regular}} ->
-                Binary = correct_orientation(Filepath),
-                Checksum = compute_checksum(Binary),
+                {ok, Checksum} = compute_checksum(Filepath),
                 % Either insert or update a document in the database.
                 case find_document(Db, Checksum) of
                     undefined -> create_document(Db, Name, Filepath, Tags, ImportDate,
-                                                 Topic, Location, Checksum, Binary);
+                                                 Topic, Location, Checksum);
                     DocId -> update_document(Db, DocId, Name, Tags, Topic, Location)
                 end,
                 % Move the asset into place, or remove it if duplicate.
-                store_asset(Filepath, Checksum, Binary, BlobStore);
+                store_asset(Filepath, Checksum, BlobStore);
             _ -> lager:warning("Ignoring non-file entry ~s", [Name])
         end
     end,
@@ -195,34 +194,62 @@ delete_extraneous_files(Path) ->
 
 % Load the named asset file, correct its orientation if applicable, and
 % return the binary data. Does not modify the asset if the auto-orientation
-% is not successful.
+% is not successful. Returns {ok, Binary} if successful, {error, Reason} if
+% not an image, or orientation is already correct.
 correct_orientation(Filepath) ->
-    % Fail fast if unable to read file.
-    {ok, Binary0} = file:read_file(Filepath),
-    case emagick_rs:requires_orientation(Binary0) of
-        false ->
-            % Return the original binary, rather than the one that has been
-            % handled by ImageMagick, which invariably modifies the data,
-            % and thus changes the checksum.
-            Binary0;
+    % We can only correct the orientation for images, which for the time
+    % being, are assumed to be JPEG images.
+    case is_jpeg(Filepath) of
         true ->
-            % Attempt to auto-orient the image, but tolerate assets that
-            % are not images, and hence cannot be rotated.
-            case emagick_rs:auto_orient(Binary0) of
-                {ok, Binary1} -> Binary1;
+            {ok, Binary0} = file:read_file(Filepath),
+            case emagick_rs:requires_orientation(Binary0) of
+                false ->
+                    % Return the original binary, rather than the one that
+                    % has been handled by ImageMagick, which invariably
+                    % modifies the data, and thus changes the checksum.
+                    {error, not_necessary};
+                true ->
+                    % Attempt to auto-orient the image, but tolerate assets
+                    % that are not images, and hence cannot be rotated.
+                    case emagick_rs:auto_orient(Binary0) of
+                        {ok, Binary1} -> {ok, Binary1};
+                        {error, Reason} ->
+                            lager:warning("unable to auto-orient asset: ~p", [Reason]),
+                            {error, Reason}
+                    end;
                 {error, Reason} ->
-                    lager:warning("unable to auto-orient asset: ~p", [Reason]),
-                    Binary0
+                    lager:warning("unable to detect asset orientation: ~p", [Reason]),
+                    {error, Reason}
             end;
-        {error, Reason} ->
-            lager:warning("unable to detect asset orientation: ~p", [Reason]),
-            Binary0
+        false -> {error, not_an_image}
     end.
 
-% Compute the SHA256 for the given binary and return as a hex string.
-compute_checksum(Binary) ->
-    Digest = crypto:hash(sha256, Binary),
-    lists:flatten([io_lib:format("~2.16.0b", [X]) || <<X:8>> <= Digest]).
+% Compute the SHA256 checksum for the named file, returning the result as a
+% string of hexadecimal digits. Processes the file in chunks to avoid
+% reading possibly very large files.
+compute_checksum(Filename) ->
+    {ok, Filehandle} = file:open(Filename, [read, binary, read_ahead]),
+    Context = crypto:hash_init(sha256),
+    case compute_checksum(Filehandle, Context) of
+        {ok, Digest} ->
+            {ok, lists:flatten([io_lib:format("~2.16.0b", [X]) || <<X:8>> <= Digest])};
+        R -> R
+    end.
+
+% Helper function that recursively computes the SHA256 of the opened file
+% in 64KB chunks. The file will be closed upon successful completion.
+compute_checksum(Filehandle, Context) ->
+    case file:read(Filehandle, 65536) of
+        {ok, Data} ->
+            NewContext = crypto:hash_update(Context, Data),
+            compute_checksum(Filehandle, NewContext);
+        eof ->
+            case file:close(Filehandle) of
+                ok -> {ok, crypto:hash_final(Context)};
+                RR -> RR
+            end;
+        R -> R
+    end.
 
 % Determine if the given checksum already exists in the database.
 % Returns the document id (binary), or undefined if not found.
@@ -245,8 +272,8 @@ find_document(Db, Checksum) ->
     end.
 
 % Create a new document in the CouchDB database.
-create_document(Db, Filename, Fullpath, Tags, ImportDate, Topic, Location, Checksum, Binary) ->
-    lager:info("Creating document for ~s", [Filename]),
+create_document(Db, Filename, Fullpath, Tags, ImportDate, Topic, Location, Checksum) ->
+    lager:info("creating document for ~s", [Filename]),
     {{Y, Mo, D}, {H, Mi, _S}} = ImportDate,
     LocData = case Location of
         undefined -> null;
@@ -256,12 +283,13 @@ create_document(Db, Filename, Fullpath, Tags, ImportDate, Topic, Location, Check
         undefined -> null;
         Value2 -> list_to_binary(Value2)
     end,
+    {ok, #file_info{size = FileSize}} = file:read_file_info(Fullpath),
     Doc = {[
-        {<<"exif_date">>, get_original_exif_date(Binary)},
+        {<<"exif_date">>, get_original_exif_date(Fullpath)},
         {<<"file_date">>, file_date(Fullpath)},
         {<<"file_name">>, list_to_binary(Filename)},
         {<<"file_owner">>, list_to_binary(file_owner(Fullpath))},
-        {<<"file_size">>, byte_size(Binary)},
+        {<<"file_size">>, FileSize},
         {<<"import_date">>, [Y, Mo, D, H, Mi]},
         {<<"location">>, LocData},
         {<<"mimetype">>, hd(mimetypes:filename(string:to_lower(Filename)))},
@@ -280,7 +308,7 @@ create_document(Db, Filename, Fullpath, Tags, ImportDate, Topic, Location, Check
 % If missing topic field, set to Topic argument.
 % If missing location field, set to Location argument.
 update_document(Db, DocId, Filename, Tags, Topic, Location) ->
-    lager:info("Updating document for ~s", [Filename]),
+    lager:info("updating document for ~s", [Filename]),
     {ok, Doc} = couchbeam:open_doc(Db, DocId),
     Doc1 = maybe_set_location(Doc, Location),
     Doc2 = maybe_set_topic(Doc1, Topic),
@@ -338,21 +366,44 @@ file_date(Path) ->
     {{Y, Mo, D}, {H, Mi, _S}} = Mtime,
     [Y, Mo, D, H, Mi].
 
+% Determine if the name file is a JPEG encoded image by scanning the first
+% and last two bytes.
+is_jpeg(Filepath) ->
+    % JPEG files start with 0xFFD8 and end with 0xFFD9.
+    {ok, Handle} = file:open(Filepath, [read, raw, binary]),
+    {ok, FirstBytes} = file:read(Handle, 2),
+    {ok, _NP} = file:position(Handle, {eof, -2}),
+    {ok, LastBytes} = file:read(Handle, 2),
+    ok = file:close(Handle),
+    <<255, 216>> =:= FirstBytes andalso <<255, 217>> =:= LastBytes.
+
 % Attempt to read the original datetime from the EXIF tags, returning
 % null if not available, or the date time as a list of integers.
-get_original_exif_date(ImageData) ->
-    case emagick_rs:image_get_property(ImageData, "exif:DateTimeOriginal") of
-        {error, Reason} ->
-            lager:warning("unable to read EXIF data: ~p", [Reason]),
-            null;
-        {ok, OriginalDate} ->
-            Parsed = date_parse(OriginalDate),
-            {{Y, Mo, D}, {H, Mi, _S}} = Parsed,
-            [Y, Mo, D, H, Mi]
+get_original_exif_date(Filepath) ->
+    % Exif data only exists in JPEG files, and no use loading a large video
+    % file into memory only to find it isn't an image at all.
+    case is_jpeg(Filepath) of
+        true ->
+            {ok, ImageData} = file:read_file(Filepath),
+            case emagick_rs:image_get_property(ImageData, "exif:DateTimeOriginal") of
+                {error, Reason} ->
+                    lager:warning("unable to read EXIF data: ~p", [Reason]),
+                    null;
+                {ok, OriginalDate} ->
+                    Parsed = date_parse(OriginalDate),
+                    {{Y, Mo, D}, {H, Mi, _S}} = Parsed,
+                    [Y, Mo, D, H, Mi]
+            end;
+        false -> null
     end.
 
-% Move the named asset to its sharded location.
-store_asset(Filepath, Checksum, Binary, BlobStore) ->
+% Move the named asset to its sharded location. If the asset is an image
+% whose orientation needs correction, it will be automatically oriented.
+% This changes the content such that its checksum will no longer match.
+% However, this ensures that the incoming assets are deduplicated using the
+% original contents, not the modified contents which could change in a non-
+% deterministic fashion.
+store_asset(Filepath, Checksum, BlobStore) ->
     % If an existing asset with the same checksum already exists, the new
     % asset will be removed to prevent further processing in the future.
     Part1 = string:sub_string(Checksum, 1, 2),
@@ -364,12 +415,18 @@ store_asset(Filepath, Checksum, Binary, BlobStore) ->
         true  -> ok;
         false -> ok = filelib:ensure_dir(DestPath)
     end,
-    lager:info("Moving ~s to ~s", [Filepath, DestPath]),
+    lager:info("moving ~s to ~s", [Filepath, DestPath]),
     case filelib:is_regular(DestPath) of
         true -> ok = file:delete(Filepath);
         false ->
-            ok = file:write_file(DestPath, Binary),
-            ok = file:delete(Filepath)
+            case correct_orientation(Filepath) of
+                {ok, Binary} ->
+                    ok = file:write_file(DestPath, Binary),
+                    ok = file:delete(Filepath);
+                {error, _Reason} ->
+                    % Reasons vary, and it has already been logged.
+                    ok = file:rename(Filepath, DestPath)
+            end
     end.
 
 % Parse a simple date/time string into a date/time tuple. For instance,
