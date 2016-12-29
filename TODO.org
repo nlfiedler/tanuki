@@ -44,3 +44,16 @@ last-modified: Thu, 01 Sep 2016 05:05:43 GMT
       - https://github.com/emedia-project/erlffmpeg
     - [ ] Show list of known locations along with the list of tags
     - [ ] Show list of known topics along with the list of tags, locations
+
+  ** Documentation
+    - [ ] Write an architecture document that explains the components
+      - CouchDB
+        - couchbeam
+      - Incoming
+      - Backend
+      - Frontend
+        - Phoenix
+          - Cowboy
+          - Plug
+        - Elixir
+      - Describe how pages are rendered (Phoenix endpoints, router, controllers, views)
