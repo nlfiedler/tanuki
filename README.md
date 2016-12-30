@@ -10,7 +10,7 @@ The incoming processor, backend application, and web interface are written in Er
 
 ### Prerequisites
 
-* Erlang/OTP R17|R18
+* Erlang/OTP R17 or higher
     - Homebrew: `brew install erlang`
     - FreeBSD: `pkg install erlang`
 * CouchDB 1.6.1 or higher
@@ -26,7 +26,7 @@ Once the above prerequisites are installed, some configuration may be necessary.
 {incoming_dir, "/Users/adam/testing/incoming"}.
 ```
 
-The full set of settings can be found in the `*.app.src.script` files in the `apps/tanuki_incoming/src` and `apps/tanuki_backend/src` directories. These are processed by `rebar3` at build time and effect the development and release builds. The Common Test suites are configured in the test code and hence ignore these settings.
+The full set of settings can be found in the `*.app.src.script` files in the `apps/tanuki_backend/src` and `apps/tanuki_incoming/src` directories. These are processed by `rebar3` at build time and affect the development and release builds. The Common Test suites are configured in the test code and hence ignore these settings.
 
 Once the applications are configured, build and test the project like so:
 
