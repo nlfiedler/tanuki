@@ -33,21 +33,13 @@ App = [
         stdlib,
         lager,         %% for logging
         mnesia,
-        syntax_tools,  %% erl_syntax module
-        compiler,      %% compile module
         mimetypes,
-        simple_bridge,
-        cowboy,
-        ranch,
-        sync,
-        nitrogen_core,
         jsx,           %% for couchbeam
         couchbeam
     ]},
     {included_applications, [
         % so relx will include these in the build
-        emagick_rs,
-        nprocreg
+        emagick_rs
     ]},
     {mod, {tanuki_backend_app, []}},
     {env, AppEnv}

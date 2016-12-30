@@ -49,13 +49,6 @@ init_per_suite(Config) ->
     ok = application:start(mnesia),
     % start the application(s)
     ok = application:set_env(lager, lager_common_test_backend, debug),
-    ok = application:set_env(simple_bridge, handler, nitrogen),
-    ok = application:set_env(simple_bridge, backend, cowboy),
-    ok = application:set_env(simple_bridge, address, "0.0.0.0"),
-    ok = application:set_env(simple_bridge, port, 8000),
-    ok = application:set_env(simple_bridge, document_root, "./priv/static"),
-    ok = application:set_env(simple_bridge, static_paths,
-        ["/js/", "/images/", "/css/", "/nitrogen/", "/favicon.ico"]),
     {ok, _Started2} = application:ensure_all_started(tanuki_backend),
     [
         {url, Url},

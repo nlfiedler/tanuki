@@ -34,10 +34,7 @@ App = [
         stdlib,
         lager,         %% for logging
         mnesia,
-        syntax_tools,  %% erl_syntax module
-        compiler,      %% compile module
         mimetypes,
-        sync,
         jsx,           %% for couchbeam
         couchbeam
     ]},

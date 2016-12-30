@@ -28,16 +28,17 @@ handle(Req, State) ->
     % {path, <<"/thumbnails/4f/40/25b...">>}
     % {path_info, [<<"4f">>, <<"40">>, <<"25b...">>]}
     % extract the checksum from the request URL
-    {PathInfo, Req2} = cowboy_req:path_info(Req),
-    PathInfoStr = [bitstring_to_list(P) || P <- PathInfo],
-    Checksum = string:join(PathInfoStr, ""),
-    RelativePath = filename:join(PathInfoStr),
-	% retrieve the thumbnail, set as response body
-    {ok, Binary, Mimetype} = tanuki_backend:retrieve_thumbnail(Checksum, RelativePath),
-    {ok, Req3} = cowboy_req:reply(200, [
-        {<<"content-type">>, Mimetype}
-    ], Binary, Req2),
-    {ok, Req3, State}.
+ %    {PathInfo, Req2} = cowboy_req:path_info(Req),
+ %    PathInfoStr = [bitstring_to_list(P) || P <- PathInfo],
+ %    Checksum = string:join(PathInfoStr, ""),
+ %    RelativePath = filename:join(PathInfoStr),
+ %  % retrieve the thumbnail, set as response body
+ %    {ok, Binary, Mimetype} = tanuki_backend:retrieve_thumbnail(Checksum, RelativePath),
+ %    {ok, Req3} = cowboy_req:reply(200, [
+ %        {<<"content-type">>, Mimetype}
+ %    ], Binary, Req2),
+ %    {ok, Req3, State}.
+    {ok, Req, State}.
 
 terminate(_Reason, _Req, _State) ->
     ok.

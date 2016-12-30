@@ -28,7 +28,6 @@ start(_Type, _Args) ->
     ensure_schema(Nodes),
     ensure_mnesia(Nodes),
     ok = mnesia:wait_for_tables([thumbnails, thumbnail_dates, thumbnail_counter], 5000),
-    nitrogen_sup:start_link(),
     tanuki_backend_sup:start_link().
 
 stop(_) ->

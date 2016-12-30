@@ -1,7 +1,7 @@
 %% -*- coding: utf-8 -*-
 %% -------------------------------------------------------------------
 %%
-%% Copyright (c) 2014 Nathan Fiedler
+%% Copyright (c) 2014-2016 Nathan Fiedler
 %%
 %% This file is provided to you under the Apache License,
 %% Version 2.0 (the "License"); you may not use this file
@@ -19,17 +19,12 @@
 %%
 %% -------------------------------------------------------------------
 
-%% Include the automatically generated plugins directory
--include("plugins.hrl").
-
 %
-% Mnesia record for storing thumbnails, and the records for tracking how old a
-% particular thumbnail is, for count limiting.
+% Mnesia record for storing thumbnails, and the records for tracking how
+% old a particular thumbnail is, for count limiting.
 %
 -record(thumbnails, {sha256 :: string(),
                      binary :: binary()}).
 -record(thumbnail_dates, {timestamp :: integer(),
                           sha256    :: string()}).
 -record(thumbnail_counter, {id = 0, ver = 1}).
-
-%% Include any application-specific custom elements, actions, or validators below
