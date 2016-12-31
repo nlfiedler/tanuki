@@ -2,8 +2,9 @@
 *.o
 *.plt
 *.pyc
-.vagrant
 _build
+deps
 erl_crash.dump
+logs
+mix.lock
 rebar.lock
-user_env.config

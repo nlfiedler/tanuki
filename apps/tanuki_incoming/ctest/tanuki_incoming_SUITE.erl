@@ -32,7 +32,7 @@ init_per_suite(Config) ->
     Priv = ?config(priv_dir, Config),
     IncomingDir = filename:join(Priv, "incoming"),
     ok = application:set_env(tanuki_incoming, incoming_dir, IncomingDir),
-    ok = application:set_env(tanuki_incoming, database, ?TESTDB),
+    {ok, Database} = application:get_env(tanuki_incoming, database),
     AssetsDir = filename:join(Priv, "assets"),
     ok = application:set_env(tanuki_incoming, assets_dir, AssetsDir),
     {ok, _Started0} = application:ensure_all_started(couchbeam),
@@ -40,11 +40,11 @@ init_per_suite(Config) ->
     {ok, Opts} = application:get_env(tanuki_incoming, couchdb_opts),
     S = couchbeam:server_connection(Url, Opts),
     % clean up any mess from a previously failed test
-    {ok, _Wat} = case couchbeam:db_exists(S, ?TESTDB) of
-        true  -> couchbeam:delete_db(S, ?TESTDB);
+    {ok, _Wat} = case couchbeam:db_exists(S, Database) of
+        true  -> couchbeam:delete_db(S, Database);
         false -> {ok, foo}
     end,
-    {ok, Db} = couchbeam:create_db(S, ?TESTDB, []),
+    {ok, Db} = couchbeam:create_db(S, Database, []),
     % start the application under test
     ok = application:set_env(lager, lager_common_test_backend, debug),
     {ok, _Started1} = application:ensure_all_started(tanuki_incoming),
@@ -55,7 +55,7 @@ init_per_suite(Config) ->
     application:stop(tanuki_backend),
     application:unload(tanuki_backend),
     ok = application:load(tanuki_backend),
-    ok = application:set_env(tanuki_backend, database, ?TESTDB),
+    ok = application:set_env(tanuki_backend, database, Database),
     {ok, _Started2} = application:ensure_all_started(tanuki_backend),
     [
         {url, Url},
@@ -72,7 +72,8 @@ end_per_suite(Config) ->
     Url = ?config(url, Config),
     Opts = ?config(opts, Config),
     S = couchbeam:server_connection(Url, Opts),
-    couchbeam:delete_db(S, ?TESTDB),
+    {ok, Database} = application:get_env(tanuki_incoming, database),
+    couchbeam:delete_db(S, Database),
     application:stop(couchbeam),
     ok.
 
@@ -86,9 +87,22 @@ all() ->
         empty_folder_test
     ].
 
+get_data_dir(Config) ->
+    % The ct task from mix_erlang_tasks plugin does not set the data_dir
+    % and Common Test defaults to where the beam file is located, which is
+    % not where the data directory happens to be.
+    DataDir = ?config(data_dir, Config),
+    case filelib:is_dir(DataDir) of
+        false ->
+            SourcePath = proplists:get_value(source, tanuki_incoming_SUITE:module_info(compile)),
+            filename:join(filename:dirname(SourcePath), "tanuki_incoming_SUITE_data");
+        true ->
+            DataDir
+    end.
+
 % Test importing a single image.
 single_image_test(Config) ->
-    DataDir = ?config(data_dir, Config),
+    DataDir = get_data_dir(Config),
     % create the incoming directory and copy our test photo there
     IncomingDir = ?config(incoming_dir, Config),
     TaggedDir = filename:join(IncomingDir, "yellow_flower@field"),
@@ -133,7 +147,7 @@ single_image_test(Config) ->
 
 % Test importing something that is not a JPEG image.
 non_image_test(Config) ->
-    DataDir = ?config(data_dir, Config),
+    DataDir = get_data_dir(Config),
     % create the incoming directory and copy our test photo there
     IncomingDir = ?config(incoming_dir, Config),
     TaggedDir = filename:join(IncomingDir, "text"),
@@ -177,7 +191,7 @@ non_image_test(Config) ->
 % Test in which the incoming image has a non-optimal orientation, and it
 % will be automatically corrected before storage.
 rotated_image_test(Config) ->
-    DataDir = ?config(data_dir, Config),
+    DataDir = get_data_dir(Config),
     % create the incoming directory and copy our test photo there
     IncomingDir = ?config(incoming_dir, Config),
     TaggedDir = filename:join(IncomingDir, "rotated_cats@outdoors"),
@@ -214,7 +228,7 @@ rotated_image_test(Config) ->
 
 % Test importing an image with topic, tags, and location.
 topical_image_test(Config) ->
-    DataDir = ?config(data_dir, Config),
+    DataDir = get_data_dir(Config),
     % create the incoming directory and copy our test photo there
     IncomingDir = ?config(incoming_dir, Config),
     TaggedDir = filename:join(IncomingDir, "honeymoon^cows_field@hawaii"),
@@ -260,7 +274,7 @@ topical_image_test(Config) ->
 % asset (or two), in which the tags are merged and the location is not
 % changed.
 multiple_image_test(Config) ->
-    DataDir = ?config(data_dir, Config),
+    DataDir = get_data_dir(Config),
     % create the incoming directory and copy our test photos there
     IncomingDir = ?config(incoming_dir, Config),
     TaggedDir = filename:join(IncomingDir, "multiple@earth"),

@@ -23,12 +23,10 @@
 -include_lib("common_test/include/ct.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--define(TESTDB, "tanuki_test").
-
 init_per_suite(Config) ->
     % load the application so we can read and modify the environment
     ok = application:load(tanuki_backend),
-    ok = application:set_env(tanuki_backend, database, ?TESTDB),
+    {ok, Database} = application:get_env(tanuki_backend, database),
     Priv = ?config(priv_dir, Config),
     AssetsDir = filename:join(Priv, "assets"),
     ok = application:set_env(tanuki_backend, assets_dir, AssetsDir),
@@ -37,18 +35,17 @@ init_per_suite(Config) ->
     {ok, Opts} = application:get_env(tanuki_backend, couchdb_opts),
     S = couchbeam:server_connection(Url, Opts),
     % clean up any mess from a previously failed test
-    {ok, _Wat} = case couchbeam:db_exists(S, ?TESTDB) of
-        true  -> couchbeam:delete_db(S, ?TESTDB);
+    {ok, _Wat} = case couchbeam:db_exists(S, Database) of
+        true  -> couchbeam:delete_db(S, Database);
         false -> {ok, foo}
     end,
-    {ok, Db} = couchbeam:create_db(S, ?TESTDB, []),
+    {ok, Db} = couchbeam:create_db(S, Database, []),
     add_test_docs(Db, Config),
     % set up mnesia
     ok = application:set_env(mnesia, dir, Priv),
     tanuki_backend_app:ensure_schema([node()]),
     ok = application:start(mnesia),
     % start the application(s)
-    ok = application:set_env(lager, lager_common_test_backend, debug),
     {ok, _Started2} = application:ensure_all_started(tanuki_backend),
     [
         {url, Url},
@@ -57,9 +54,22 @@ init_per_suite(Config) ->
         Config
     ].
 
+get_data_dir(Config) ->
+    % The ct task from mix_erlang_tasks plugin does not set the data_dir
+    % and Common Test defaults to where the beam file is located, which is
+    % not where the data directory happens to be.
+    DataDir = ?config(data_dir, Config),
+    case filelib:is_dir(DataDir) of
+        false ->
+            SourcePath = proplists:get_value(source, tanuki_backend_SUITE:module_info(compile)),
+            filename:join(filename:dirname(SourcePath), "tanuki_backend_SUITE_data");
+        true ->
+            DataDir
+    end.
+
 add_test_docs(Db, Config) ->
     % populate test database from json files in data_dir
-    DataDir = ?config(data_dir, Config),
+    DataDir = get_data_dir(Config),
     InsertDocument = fun(Filename) ->
         Filepath = filename:join([DataDir, Filename]),
         {ok, Binary} = file:read_file(Filepath),
@@ -77,7 +87,8 @@ end_per_suite(Config) ->
     Url = ?config(url, Config),
     Opts = ?config(opts, Config),
     S = couchbeam:server_connection(Url, Opts),
-    couchbeam:delete_db(S, ?TESTDB),
+    {ok, Database} = application:get_env(tanuki_backend, database),
+    couchbeam:delete_db(S, Database),
     application:stop(couchbeam),
     application:stop(mnesia),
     ok.
@@ -250,7 +261,7 @@ get_best_date(_Config) ->
     ok.
 
 generate_thumbnail(Config) ->
-    DataDir = ?config(data_dir, Config),
+    DataDir = get_data_dir(Config),
     AssetsDir = ?config(assets_dir, Config),
     Checksum = "8dcaf3d73a10548e445ebb27ff34d7159cc5d7f3730c24e95ffe5b07bd2300fd",
     RelativePath = "8d/ca/f3d73a10548e445ebb27ff34d7159cc5d7f3730c24e95ffe5b07bd2300fd",

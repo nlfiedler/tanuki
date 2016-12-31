@@ -4,7 +4,7 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 
 ## Current Status
 
-The incoming processor, backend application, and web interface are written in Erlang and built using [rebar3](https://github.com/erlang/rebar3/). There is much yet to be done, mostly in the web interface.
+The incoming processor, backend application, and web interface are written in a combination of Erlang and Elixir, with everything being built using [mix](http://elixir-lang.org/getting-started/mix-otp/introduction-to-mix.html).
 
 ## Building and Testing
 
@@ -13,31 +13,24 @@ The incoming processor, backend application, and web interface are written in Er
 * Erlang/OTP R17 or higher
     - Homebrew: `brew install erlang`
     - FreeBSD: `pkg install erlang`
+* Elixir 1.3 or higher
+    - Homebrew: `brew install elixir`
 * CouchDB 1.6.1 or higher
     - Homebrew: `brew install couchdb`
     - FreeBSD: `pkg install couchdb`
 * ImageMagick
     - See the development setup docs in the `magick-rust` project.
 
-Once the above prerequisites are installed, some configuration may be necessary. In particular, the path to the incoming assets and the destination for the stored assets should be configured for your system. This is done for the two applications (`tanuki_backend` and `tanuki_incoming`) using a single configuration file named `user_env.confg`, located at the base of the source tree. The contents of this file will look something like this:
+Once the above prerequisites are installed, run the tests like so:
 
 ```
-{assets_dir, "/Users/adam/testing/assets"}.
-{incoming_dir, "/Users/adam/testing/incoming"}.
-```
-
-The full set of settings can be found in the `*.app.src.script` files in the `apps/tanuki_backend/src` and `apps/tanuki_incoming/src` directories. These are processed by `rebar3` at build time and affect the development and release builds. The Common Test suites are configured in the test code and hence ignore these settings.
-
-Once the applications are configured, build and test the project like so:
-
-```
-$ rebar3 ct
+$ mix ct
 ```
 
 To start an instance configured for development, use the following commands:
 
 ```
-$ rebar3 release
+$ mix release
 $ ./_build/default/rel/tanuki/bin/tanuki-dev
 ```
 
@@ -53,8 +46,8 @@ $ erl -noshell -sname tanuki_in@localhost -eval "rpc:call(tanuki@localhost, gen_
 
 ### Deploying
 
-1. Write a configuration file, named `user_env.config`, at the base of the source tree.
-1. Build the release: `rebar3 as prod release`
+1. Write a configuration file, named `user.exs` into each `config` directory (i.e. in `tanuki_backend` and `tanuki_incoming`) to override any settings, as needed.
+1. Build the release: `mix release` (_this is not yet working_)
 1. Copy the contents of `_build/default/rel` to the desired installation location (e.g. `/opt`).
 1. Start it up, likely using `sudo`.
 1. Occasionally check the log files in `/opt/tanuki/log`.
@@ -62,8 +55,7 @@ $ erl -noshell -sname tanuki_in@localhost -eval "rpc:call(tanuki@localhost, gen_
 For example:
 
 ```shell
-$ cp ~/tanuki_custom.config user_env.config
-$ rebar3 as prod release
+$ mix release
 $ sudo mkdir -p /opt
 $ sudo cp -R _build/default/rel/tanuki /opt
 $ sudo /opt/tanuki/bin/tanuki -detached
