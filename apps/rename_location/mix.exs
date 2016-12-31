@@ -23,7 +23,7 @@ defmodule RenameLocation.Mixfile do
       :idna,
       :jsx,
       :ssl_verify_fun],
-     mod: {:rename_location, []},
+     mod: {:rename_location_app, []},
      description: 'Rename a location in all matching documents.']
   end
 

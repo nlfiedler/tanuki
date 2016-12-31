@@ -23,7 +23,7 @@ defmodule RenameTags.Mixfile do
       :idna,
       :jsx,
       :ssl_verify_fun],
-     mod: {:rename_tags, []},
+     mod: {:rename_tags_app, []},
      description: 'Rename a tag in all matching documents.']
   end
 

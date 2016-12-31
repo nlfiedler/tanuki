@@ -23,7 +23,7 @@ defmodule TagToLocation.Mixfile do
       :idna,
       :jsx,
       :ssl_verify_fun],
-     mod: {:tag_to_location, []},
+     mod: {:tag_to_location_app, []},
      description: 'Remove a tag and set as location in all matching documents.']
   end
 

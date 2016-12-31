@@ -23,7 +23,7 @@ defmodule TagToTopic.Mixfile do
       :idna,
       :jsx,
       :ssl_verify_fun],
-     mod: {:tag_to_topic, []},
+     mod: {:tag_to_topic_app, []},
      description: 'Remove a tag and set as topic in all matching documents.']
   end
 

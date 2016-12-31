@@ -23,7 +23,7 @@ defmodule MergeRecords.Mixfile do
       :idna,
       :jsx,
       :ssl_verify_fun],
-     mod: {:merge_records, []},
+     mod: {:merge_records_app, []},
      description: 'Merge records that refer to the same asset.']
   end
 

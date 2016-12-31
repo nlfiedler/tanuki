@@ -23,7 +23,7 @@ defmodule CorrectOrientation.Mixfile do
       :idna,
       :jsx,
       :ssl_verify_fun],
-     mod: {:correct_orientation, []},
+     mod: {:correct_orientation_app, []},
      description: 'Correct orientation of all image assets.']
   end
 
