@@ -30,7 +30,6 @@ defmodule TanukiBackend.Mixfile do
   defp deps do
     [{:couchbeam, github: "benoitc/couchbeam", tag: "1.3.1"},
      {:emagick_rs, github: "nlfiedler/emagick.rs", tag: "0.4.4"},
-     {:lager, github: "basho/lager", tag: "3.2.1"},
-     {:mix_erlang_tasks, github: "heroku/mix-erlang-tasks", branch: "umbrella_support"}]
+     {:lager, github: "basho/lager", tag: "3.2.1"}]
   end
 end

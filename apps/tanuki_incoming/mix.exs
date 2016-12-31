@@ -34,7 +34,6 @@ defmodule TanukiIncoming.Mixfile do
      {:epwd_rs, github: "nlfiedler/epwd.rs", tag: "0.1.7"},
      {:lager, github: "basho/lager", tag: "3.2.1"},
      {:mimetypes, github: "spawngrid/mimetypes", ref: "47d37a9"},
-     {:mix_erlang_tasks, github: "heroku/mix-erlang-tasks", branch: "umbrella_support"},
      {:tanuki_backend, in_umbrella: true}]
   end
 end

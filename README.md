@@ -4,13 +4,13 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 
 ## Current Status
 
-The incoming processor, backend application, and web interface are written in a combination of Erlang and Elixir, with everything being built using [mix](http://elixir-lang.org/getting-started/mix-otp/introduction-to-mix.html).
+The incoming processor, backend application, and web interface are written in a combination of Erlang and Elixir, with everything being built using [mix](https://hexdocs.pm/mix/Mix.html).
 
 ## Building and Testing
 
 ### Prerequisites
 
-* Erlang/OTP R17 or higher
+* Erlang/OTP R18 or higher
     - Homebrew: `brew install erlang`
     - FreeBSD: `pkg install erlang`
 * Elixir 1.3 or higher
@@ -24,6 +24,8 @@ The incoming processor, backend application, and web interface are written in a 
 Once the above prerequisites are installed, run the tests like so:
 
 ```
+$ mix deps.get
+$ mix compile
 $ mix ct
 ```
 
@@ -31,7 +33,7 @@ To start an instance configured for development, use the following commands:
 
 ```
 $ mix release
-$ ./_build/default/rel/tanuki/bin/tanuki-dev
+$ _build/dev/rel/tanuki/bin/tanuki foreground
 ```
 
 The web server will be listening on port 8000. Be sure to have a CouchDB instance running.
@@ -47,15 +49,15 @@ $ erl -noshell -sname tanuki_in@localhost -eval "rpc:call(tanuki@localhost, gen_
 ### Deploying
 
 1. Write a configuration file, named `user.exs` into each `config` directory (i.e. in `tanuki_backend` and `tanuki_incoming`) to override any settings, as needed.
-1. Build the release: `mix release` (_this is not yet working_)
-1. Copy the contents of `_build/default/rel` to the desired installation location (e.g. `/opt`).
+1. Build the release: `mix release --env=prod`
+1. Copy the contents of `_build/prod/rel` to the desired installation location (e.g. `/opt`).
 1. Start it up, likely using `sudo`.
 1. Occasionally check the log files in `/opt/tanuki/log`.
 
 For example:
 
 ```shell
-$ mix release
+$ mix release --env=prod
 $ sudo mkdir -p /opt
 $ sudo cp -R _build/default/rel/tanuki /opt
 $ sudo /opt/tanuki/bin/tanuki -detached
