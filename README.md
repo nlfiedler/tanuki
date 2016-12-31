@@ -29,14 +29,14 @@ $ mix compile
 $ mix ct
 ```
 
-To start an instance configured for development, use the following commands:
+To start an instance configured for development, run the commands shown below. While it would be nice to invoke `mix phoenix.server` from the umbrella project, Phoenix insists on trying to reload the Erlang applications, and fails. For now, just run the web app.
 
 ```
-$ mix release
-$ _build/dev/rel/tanuki/bin/tanuki foreground
+$ cd apps/tanuki_web
+$ mix phoenix.server
 ```
 
-The web server will be listening on port 8000. Be sure to have a CouchDB instance running.
+The web server will be listening on port 4000. Be sure to have a CouchDB instance running.
 
 ### Triggering Processing
 
@@ -49,7 +49,8 @@ $ erl -noshell -sname tanuki_in@localhost -eval "rpc:call(tanuki@localhost, gen_
 ### Deploying
 
 1. Write a configuration file, named `user.exs` into each `config` directory (i.e. in `tanuki_backend` and `tanuki_incoming`) to override any settings, as needed.
-1. Build the release: `mix release --env=prod`
+1. Digest the web assets (producing unique names to aid in cache invalidation): `MIX_ENV=prod mix phoenix.digest`
+1. Build the release: `MIX_ENV=prod mix release --env=prod`
 1. Copy the contents of `_build/prod/rel` to the desired installation location (e.g. `/opt`).
 1. Start it up, likely using `sudo`.
 1. Occasionally check the log files in `/opt/tanuki/log`.
@@ -57,7 +58,8 @@ $ erl -noshell -sname tanuki_in@localhost -eval "rpc:call(tanuki@localhost, gen_
 For example:
 
 ```shell
-$ mix release --env=prod
+$ MIX_ENV=prod mix phoenix.digest
+$ MIX_ENV=prod mix release --env=prod
 $ sudo mkdir -p /opt
 $ sudo cp -R _build/default/rel/tanuki /opt
 $ sudo /opt/tanuki/bin/tanuki -detached

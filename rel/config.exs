@@ -35,6 +35,7 @@ release :tanuki do
   set applications: [
     tanuki_backend: :permanent,
     tanuki_incoming: :permanent,
+    tanuki_web: :permanent,
     emagick_rs: :load,
     epwd_rs: :load
   ]
