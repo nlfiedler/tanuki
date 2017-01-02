@@ -1,6 +1,7 @@
 * TODO
 
   ** Action Items
+    - [ ] Get the Phoenix interface working for the most part
     - [ ] Show SHA256 of asset on details page
     - [ ] Get quicktime videos to work in the browser
 
@@ -13,10 +14,7 @@ content-type: video/quicktime
 etag: "660d5688ce16e62ffbea98ca8ec18827c6962ef59eefc40309274a1ff8dda38d"
 last-modified: Thu, 01 Sep 2016 05:05:43 GMT
 
-    - [ ] Look at using Elixir and Phoenix for the web interface
-    - [ ] Incorporate version information into page footer
-    - [ ] Add pagination support to `tag.erl`
-      - Look at the paginate plugin: https://github.com/choptastic/paginate
+    - [ ] Add pagination support to tags list
       - http://guide.couchdb.org/draft/recipes.html
           - Request rows_per_page + 1 rows from the view
           - Display rows_per_page rows
@@ -25,25 +23,19 @@ last-modified: Thu, 01 Sep 2016 05:05:43 GMT
           - Use the next_* values to create the next link
           - Use the others (startkey?) to create the previous link
       - An entirely different approach: https://gist.github.com/amedeo/820412
-    - [ ] Store tag selection in page state (e.g. `wf:state(Key, Value)`)
-    - [ ] Short intersecting tags based on current tag selection
-    - [ ] Show an `x` next to each tag on `tag.erl` to drop that tag from the query
-    - [ ] Get the list of tags in `tag.erl` to be along the side of the images
-    - [ ] Have the thumbnails on `tag.erl` appear in a grid format
-    - [ ] Organize the assets by date in `tag.erl`
-    - [ ] Option to select assets by file extension (e.g. `.jpg` or `.mov`)
-      - Create a CouchDB view on filename extensions to make it easy to select
-    - [ ] Have `asset.erl` show a larger version of the image instead of thumbnail
-    - [ ] Fetch additional details of the image for display in `asset.erl`
-    - [ ] Display available dates (year, then months) on `index.erl`
-    - [ ] Display assets by date (with pagination?) in a new `date.erl` page
-    - [ ] Use ETS to cache the tags and such in memory of `tanuki_backend` process
-      - Cache invalidation via couchbeam change listeners
-      - Could use https://github.com/nitrogen/simple_cache
+    - [ ] Store tag selection in cookies(?)
+    - [ ] Show intersecting tags based on current tag selection
+    - [ ] Show an 'x' next to each tag to drop that tag from the query
+    - [ ] Show list of tags along the side of the images
+    - [ ] Have the image thumbnails appear in a grid format
+    - [ ] Organize the image thumbnails by date
+    - [ ] Have asset page show a larger version of the image instead of thumbnail
+    - [ ] Fetch additional details of the image for display on asset page
+    - [ ] Allow browsing by dates (year, then months)
     - [ ] Produce thumbnails for the videos and cache them
       - https://github.com/emedia-project/erlffmpeg
-    - [ ] Show list of known locations along with the list of tags
-    - [ ] Show list of known topics along with the list of tags, locations
+    - [ ] Show list of known locations
+    - [ ] Show list of known topics
 
   ** Documentation
     - [ ] Write an architecture document that explains the components
