@@ -5,6 +5,7 @@
 _build
 deps
 erl_crash.dump
+log
 logs
 mix.lock
 rebar.lock
