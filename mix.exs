@@ -5,7 +5,7 @@ defmodule Tanuki.Mixfile do
     [apps_path: "apps",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps]
+     deps: deps()]
   end
 
   # Dependencies listed here are available only for this project and cannot

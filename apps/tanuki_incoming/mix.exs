@@ -12,7 +12,7 @@ defmodule TanukiIncoming.Mixfile do
      erlc_options: [:debug_info,
                     :fail_on_warning,
                     {:parse_transform, :lager_transform}],
-     deps: deps]
+     deps: deps()]
   end
 
   def application do

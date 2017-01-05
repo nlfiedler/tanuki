@@ -10,8 +10,8 @@ defmodule TagToTopic.Mixfile do
      lockfile: "../../mix.lock",
      compilers: [:erlang, :app],
      erlc_options: [:debug_info, :fail_on_warning],
-     escript: escript,
-     deps: deps]
+     escript: escript(),
+     deps: deps()]
   end
 
   def application do
