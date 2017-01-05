@@ -17,6 +17,7 @@ defmodule TanukiWeb.Router do
     pipe_through :browser # Use the default browser stack
 
     get "/", PageController, :index
+    get "/tagged", PageController, :tagged
   end
 
   # Other scopes may use custom stacks.

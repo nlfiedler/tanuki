@@ -1,0 +1,8 @@
+<%= render "tags.html", conn: @conn, tags: @tags %>
+
+<div>
+Selected tags:
+<%= for tag <- @selected_tags do %>
+  [x] <a href="<%= page_path @conn, :tagged, del_tag: tag %>"><%= tag %></a>
+<% end %>
+</div>

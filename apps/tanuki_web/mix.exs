@@ -28,7 +28,8 @@ defmodule TanukiWeb.Mixfile do
       :phoenix_html,
       :cowboy,
       :logger,
-      :gettext]]
+      :gettext,
+      :tanuki_backend]]
   end
 
   # Specifies which paths to compile per environment.
