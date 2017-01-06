@@ -18,6 +18,7 @@ defmodule TanukiWeb.Router do
 
     get "/", PageController, :index
     get "/tagged", PageController, :tagged
+    get "/thumbnail/:id", PageController, :thumbnail
   end
 
   # Other scopes may use custom stacks.
