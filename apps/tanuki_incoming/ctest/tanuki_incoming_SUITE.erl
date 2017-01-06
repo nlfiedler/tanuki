@@ -32,7 +32,10 @@ init_per_suite(Config) ->
     Priv = ?config(priv_dir, Config),
     IncomingDir = filename:join(Priv, "incoming"),
     ok = application:set_env(tanuki_incoming, incoming_dir, IncomingDir),
-    {ok, Database} = application:get_env(tanuki_incoming, database),
+    % TODO: seems like `mix ct` does not run test env correctly, or
+    %       somehow it doesn't take effect
+    % {ok, Database} = application:get_env(tanuki_backend, database),
+    Database = ?TESTDB,
     AssetsDir = filename:join(Priv, "assets"),
     ok = application:set_env(tanuki_incoming, assets_dir, AssetsDir),
     {ok, _Started0} = application:ensure_all_started(couchbeam),
@@ -72,7 +75,10 @@ end_per_suite(Config) ->
     Url = ?config(url, Config),
     Opts = ?config(opts, Config),
     S = couchbeam:server_connection(Url, Opts),
-    {ok, Database} = application:get_env(tanuki_incoming, database),
+    % TODO: seems like `mix ct` does not run test env correctly, or
+    %       somehow it doesn't take effect
+    % {ok, Database} = application:get_env(tanuki_backend, database),
+    Database = ?TESTDB,
     couchbeam:delete_db(S, Database),
     application:stop(couchbeam),
     ok.

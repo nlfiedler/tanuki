@@ -23,10 +23,15 @@
 -include_lib("common_test/include/ct.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
+-define(TESTDB, "tanuki_test").
+
 init_per_suite(Config) ->
     % load the application so we can read and modify the environment
     ok = application:load(tanuki_backend),
-    {ok, Database} = application:get_env(tanuki_backend, database),
+    % TODO: seems like `mix ct` does not run test env correctly, or
+    %       somehow it doesn't take effect
+    % {ok, Database} = application:get_env(tanuki_backend, database),
+    Database = ?TESTDB,
     Priv = ?config(priv_dir, Config),
     AssetsDir = filename:join(Priv, "assets"),
     ok = application:set_env(tanuki_backend, assets_dir, AssetsDir),
@@ -87,7 +92,10 @@ end_per_suite(Config) ->
     Url = ?config(url, Config),
     Opts = ?config(opts, Config),
     S = couchbeam:server_connection(Url, Opts),
-    {ok, Database} = application:get_env(tanuki_backend, database),
+    % TODO: seems like `mix ct` does not run test env correctly, or
+    %       somehow it doesn't take effect
+    % {ok, Database} = application:get_env(tanuki_backend, database),
+    Database = ?TESTDB,
     couchbeam:delete_db(S, Database),
     application:stop(couchbeam),
     application:stop(mnesia),
