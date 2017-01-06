@@ -15,11 +15,4 @@ config :tanuki_incoming,
 
 # Import environment specific config, if it exists, to override the
 # configuration defined above.
-if File.exists? "#{Mix.env}.exs" do
-  import_config "#{Mix.env}.exs"
-end
-
-# Allow user overrides, if any are present.
-if File.exists? "user.exs" do
-  import_config "user.exs"
-end
+import_config "#{Mix.env}.exs"
