@@ -62,6 +62,26 @@ defmodule TanukiWeb.PageController do
     |> send_resp(200, binary)
   end
 
+  def asset(conn, params) do
+    sha256 = to_charlist(params["id"])
+    filepath = to_string(:tanuki_backend.checksum_to_asset_path(sha256))
+    mimetype = case :tanuki_backend.by_checksum(sha256) do
+        [] ->
+          "application/octet-stream"
+        [doc|_t] ->
+          to_string(:couchbeam_doc.get_value(<<"value">>, doc))
+    end
+    # The Etag is just the checksum, which is already the best possible
+    # value for this asset.
+    etag = params["id"]
+    # Use the send_file function to avoid loading the entire asset into
+    # memory, since it could be an enormous video.
+    conn
+    |> put_resp_content_type(mimetype)
+    |> put_resp_header("etag", etag)
+    |> send_file(200, filepath)
+  end
+
   # Fetches the known tags and assigns the list to the connection as
   # `tags`, to be rendered by the "keys.html" template.
   defp fetch_tags(conn, _opts) do

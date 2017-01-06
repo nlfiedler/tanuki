@@ -19,6 +19,7 @@ defmodule TanukiWeb.Router do
     get "/", PageController, :index
     get "/tagged", PageController, :tagged
     get "/detail/:id", PageController, :detail
+    get "/asset/:id", PageController, :asset
     get "/thumbnail/:id", PageController, :thumbnail
   end
 

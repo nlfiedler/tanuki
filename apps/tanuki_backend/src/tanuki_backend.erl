@@ -24,6 +24,7 @@
 -export([all_tags/0, fetch_document/1, path_to_mimes/1, generate_etag/3]).
 -export([get_best_date/1, date_list_to_string/1, date_list_to_string/2]).
 -export([retrieve_thumbnail/1, get_field_value/2, seconds_since_epoch/0]).
+-export([checksum_to_asset_path/1]).
 
 -include_lib("kernel/include/file.hrl").
 -include_lib("tanuki_backend/include/records.hrl").
@@ -148,6 +149,21 @@ date_list_to_string(DateList) ->
 date_list_to_string(DateList, date_only) ->
     lists:flatten(io_lib:format("~B/~B/~B", lists:sublist(DateList, 3))).
 
+% @doc
+%
+% For a given SHA256 checksum, return the path to the asset.
+%
+-spec checksum_to_asset_path(Checksum) -> Filepath
+    when Checksum :: string(),
+         Filepath :: string().
+checksum_to_asset_path(Checksum) ->
+    {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
+    Part1 = string:sub_string(Checksum, 1, 2),
+    Part2 = string:sub_string(Checksum, 3, 4),
+    Part3 = string:sub_string(Checksum, 5),
+    RelativePath = filename:join([Part1, Part2, Part3]),
+    filename:join(AssetsDir, RelativePath).
+
 %
 % @doc Retrieves the mimetype for a document with the given checksum, in
 %      a form suitable for the Cowboy dispatch mimetype handler.
@@ -232,12 +248,7 @@ retrieve_thumbnail(Checksum) ->
     when Checksum :: string(),
          Image    :: binary().
 generate_thumbnail(Checksum) ->
-    {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
-    Part1 = string:sub_string(Checksum, 1, 2),
-    Part2 = string:sub_string(Checksum, 3, 4),
-    Part3 = string:sub_string(Checksum, 5),
-    RelativePath = filename:join([Part1, Part2, Part3]),
-    SourceFile = filename:join(AssetsDir, RelativePath),
+    SourceFile = checksum_to_asset_path(Checksum),
     % Avoid attempting to generate a thumbnail for large files, which are
     % very likely not image files at all (e.g. videos). The value of 10MB
     % was arrived at by examining a collection of images and videos that
@@ -251,7 +262,7 @@ generate_thumbnail(Checksum) ->
             case emagick_rs:image_fit(ImageData, 240, 240) of
                 {ok, Resized} -> Resized;
                 {error, Reason} ->
-                    lager:warning("unable to resize asset ~s: ~p", [RelativePath, Reason]),
+                    lager:warning("unable to resize asset ~s: ~p", [Checksum, Reason]),
                     broken_image_placeholder()
             end;
         _ -> broken_image_placeholder()

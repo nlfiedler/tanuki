@@ -1,7 +1,7 @@
 <div>
-  <!-- TODO: make image a link to full image -->
+  <a href="<%= page_path @conn, :asset, @asset_info[:sha] %>">
   <img src="<%= page_path @conn, :thumbnail, @asset_info[:sha] %>"
-       alt="<%= @asset_info[:fname] %>"/><br/>
+       alt="<%= @asset_info[:fname] %>"/></a><br/>
 
   <strong>Filename:</strong> <%= @asset_info[:fname] %></br>
   <strong>Date/time:</strong> <%= @asset_info[:datetime] %></br>
