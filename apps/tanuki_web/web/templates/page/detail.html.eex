@@ -1,0 +1,10 @@
+<div>
+  <!-- TODO: make image a link to full image -->
+  <img src="<%= page_path @conn, :thumbnail, @asset_info[:sha] %>"
+       alt="<%= @asset_info[:fname] %>"/><br/>
+
+  <strong>Filename:</strong> <%= @asset_info[:fname] %></br>
+  <strong>Date/time:</strong> <%= @asset_info[:datetime] %></br>
+  <strong>Size:</strong> <%= @asset_info[:size] %></br>
+  <strong>SHA256:</strong> <%= @asset_info[:sha] %>
+</div>

@@ -33,6 +33,25 @@ defmodule TanukiWeb.PageController do
     |> render(:tagged)
   end
 
+  def detail(conn, params) do
+    row_id = to_charlist(params["id"])
+    {:ok, document} = :tanuki_backend.fetch_document(row_id)
+    sha256 = to_string(:couchbeam_doc.get_value(<<"sha256">>, document))
+    filename = to_string(:couchbeam_doc.get_value(<<"file_name">>, document))
+    filesize = to_string(:couchbeam_doc.get_value(<<"file_size">>, document))
+    datetime_list = :tanuki_backend.get_best_date(document)
+    datetime_str = :tanuki_backend.date_list_to_string(datetime_list)
+    asset_info = %{
+      :fname => filename,
+      :size => filesize,
+      :datetime => datetime_str,
+      :sha => sha256
+    }
+    conn
+    |> assign(:asset_info, asset_info)
+    |> render(:detail)
+  end
+
   def thumbnail(conn, params) do
     sha256 = to_charlist(params["id"])
     {:ok, binary, mimetype} = :tanuki_backend.retrieve_thumbnail(sha256)
@@ -67,14 +86,13 @@ defmodule TanukiWeb.PageController do
   end
 
   defp build_asset_info(row) do
-    # TODO: probably need the id for showing the details?
-    # row_id = to_string(:couchbeam_doc.get_value(<<"id">>, row))
+    row_id = to_string(:couchbeam_doc.get_value(<<"id">>, row))
     values = :couchbeam_doc.get_value(<<"value">>, row)
     date_string = :tanuki_backend.date_list_to_string(hd(values), :date_only)
     filename = to_string(hd(tl(values)))
     checksum = to_string(hd(tl(tl(values))))
     %{
-      # :id => row_id,
+      :id => row_id,
       :fname => filename,
       :date => date_string,
       :sha => checksum
