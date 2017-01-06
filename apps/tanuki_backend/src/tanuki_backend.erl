@@ -23,7 +23,7 @@
 -export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1]).
 -export([all_tags/0, fetch_document/1, path_to_mimes/1, generate_etag/3]).
 -export([get_best_date/1, date_list_to_string/1, date_list_to_string/2]).
--export([retrieve_thumbnail/2, get_field_value/2, seconds_since_epoch/0]).
+-export([retrieve_thumbnail/1, get_field_value/2, seconds_since_epoch/0]).
 
 -include_lib("kernel/include/file.hrl").
 -include_lib("tanuki_backend/include/records.hrl").
@@ -186,12 +186,11 @@ generate_etag(Path, _Size, _Mtime) ->
 % @doc Either retrieve the thumbnail produced earlier, or generate one
 %      now and cache for later use. Returns {ok, Binary, Mimetype}.
 %
--spec retrieve_thumbnail(Checksum, RelativePath) -> {ok, Image, MimeType}
+-spec retrieve_thumbnail(Checksum) -> {ok, Image, MimeType}
     when Checksum     :: string(),
-         RelativePath :: string(),
          Image        :: bitstring(),
          MimeType     :: binary().
-retrieve_thumbnail(Checksum, RelativePath) ->
+retrieve_thumbnail(Checksum) ->
     % look for thumbnail cached in mnesia, producing and storing, if needed
     F = fun() ->
         case mnesia:read(thumbnails, Checksum) of
@@ -202,7 +201,7 @@ retrieve_thumbnail(Checksum, RelativePath) ->
                 Binary;
             [] ->
                 % producing a thumbnail in a transaction is not ideal...
-                Binary = generate_thumbnail(RelativePath),
+                Binary = generate_thumbnail(Checksum),
                 ok = mnesia:write(#thumbnails{sha256=Checksum, binary=Binary}),
                 T = seconds_since_epoch(),
                 ok = mnesia:write(#thumbnail_dates{timestamp=T, sha256=Checksum}),
@@ -229,11 +228,15 @@ retrieve_thumbnail(Checksum, RelativePath) ->
 %
 % @doc Produce a jpeg thumbnail of the named image file.
 %
--spec generate_thumbnail(RelativePath) -> Image
-    when RelativePath :: string(),
-         Image        :: binary().
-generate_thumbnail(RelativePath) ->
+-spec generate_thumbnail(Checksum) -> Image
+    when Checksum :: string(),
+         Image    :: binary().
+generate_thumbnail(Checksum) ->
     {ok, AssetsDir} = application:get_env(tanuki_backend, assets_dir),
+    Part1 = string:sub_string(Checksum, 1, 2),
+    Part2 = string:sub_string(Checksum, 3, 4),
+    Part3 = string:sub_string(Checksum, 5),
+    RelativePath = filename:join([Part1, Part2, Part3]),
     SourceFile = filename:join(AssetsDir, RelativePath),
     % Avoid attempting to generate a thumbnail for large files, which are
     % very likely not image files at all (e.g. videos). The value of 10MB
@@ -259,7 +262,7 @@ generate_thumbnail(RelativePath) ->
 %
 broken_image_placeholder() ->
     PrivPath = code:priv_dir(tanuki_backend),
-    ImagePath = filename:join(PrivPath, "static/images/broken_image.jpg"),
+    ImagePath = filename:join(PrivPath, "images/broken_image.jpg"),
     {ok, BrokenData} = file:read_file(ImagePath),
     BrokenData.
 
