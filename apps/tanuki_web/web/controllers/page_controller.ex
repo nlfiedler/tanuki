@@ -55,7 +55,7 @@ defmodule TanukiWeb.PageController do
         [] ->
           "application/octet-stream"
         [doc|_t] ->
-          to_string(:couchbeam_doc.get_value(<<"value">>, doc))
+          to_string(:couchbeam_doc.get_value("value", doc))
     end
     # The Etag is just the checksum, which is already the best possible
     # value for this asset.
@@ -82,10 +82,10 @@ defmodule TanukiWeb.PageController do
     # Field values are strings, which in Elixir are already binaries, so no
     # need to convert before sending to couchbeam.
     {:ok, document} = :tanuki_backend.fetch_document(row_id)
-    newdoc = :couchbeam_doc.set_value(<<"location">>, params["location"], document)
-    newdoc = :couchbeam_doc.set_value(<<"topic">>, params["topic"], newdoc)
+    newdoc = :couchbeam_doc.set_value("location", params["location"], document)
+    newdoc = :couchbeam_doc.set_value("topic", params["topic"], newdoc)
     tags = for t <- String.split(params["tags"], ","), do: String.trim(t)
-    newdoc = :couchbeam_doc.set_value(<<"tags">>, tags, newdoc)
+    newdoc = :couchbeam_doc.set_value("tags", tags, newdoc)
     {:ok, updated} = :tanuki_backend.update_document(newdoc)
     asset_info = read_doc(updated)
     conn
@@ -95,12 +95,12 @@ defmodule TanukiWeb.PageController do
 
   defp read_doc(document) do
     row_id = to_string(:couchbeam_doc.get_id(document))
-    sha256 = to_string(:couchbeam_doc.get_value(<<"sha256">>, document))
-    filename = to_string(:couchbeam_doc.get_value(<<"file_name">>, document))
-    filesize = to_string(:couchbeam_doc.get_value(<<"file_size">>, document))
-    location = to_string(:couchbeam_doc.get_value(<<"location">>, document))
-    topic = to_string(:couchbeam_doc.get_value(<<"topic">>, document))
-    tags = for t <- :couchbeam_doc.get_value(<<"tags">>, document), do: to_string(t)
+    sha256 = to_string(:couchbeam_doc.get_value("sha256", document))
+    filename = to_string(:couchbeam_doc.get_value("file_name", document))
+    filesize = to_string(:couchbeam_doc.get_value("file_size", document))
+    location = to_string(:couchbeam_doc.get_value("location", document))
+    topic = to_string(:couchbeam_doc.get_value("topic", document))
+    tags = for t <- :couchbeam_doc.get_value("tags", document), do: to_string(t)
     datetime_list = :tanuki_backend.get_best_date(document)
     datetime_str = :tanuki_backend.date_list_to_string(datetime_list)
     %{
@@ -119,7 +119,7 @@ defmodule TanukiWeb.PageController do
   # `tags`, to be rendered by the "keys.html" template.
   defp fetch_tags(conn, _opts) do
     results = :tanuki_backend.all_tags()
-    tags = for row <- results, do: :couchbeam_doc.get_value(<<"key">>, row)
+    tags = for row <- results, do: :couchbeam_doc.get_value("key", row)
     assign(conn, :tags, tags)
   end
 
@@ -139,8 +139,8 @@ defmodule TanukiWeb.PageController do
   end
 
   defp build_asset_info(row) do
-    row_id = to_string(:couchbeam_doc.get_value(<<"id">>, row))
-    values = :couchbeam_doc.get_value(<<"value">>, row)
+    row_id = to_string(:couchbeam_doc.get_value("id", row))
+    values = :couchbeam_doc.get_value("value", row)
     date_string = :tanuki_backend.date_list_to_string(hd(values), :date_only)
     filename = to_string(hd(tl(values)))
     checksum = to_string(hd(tl(tl(values))))
