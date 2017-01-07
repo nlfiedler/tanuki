@@ -21,7 +21,7 @@
 -module(tanuki_backend).
 
 -export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1]).
--export([all_tags/0, fetch_document/1, path_to_mimes/1, generate_etag/3]).
+-export([all_tags/0, fetch_document/1]).
 -export([get_best_date/1, date_list_to_string/1, date_list_to_string/2]).
 -export([retrieve_thumbnail/1, get_field_value/2, seconds_since_epoch/0]).
 -export([checksum_to_asset_path/1]).
@@ -163,40 +163,6 @@ checksum_to_asset_path(Checksum) ->
     Part3 = string:sub_string(Checksum, 5),
     RelativePath = filename:join([Part1, Part2, Part3]),
     filename:join(AssetsDir, RelativePath).
-
-%
-% @doc Retrieves the mimetype for a document with the given checksum, in
-%      a form suitable for the Cowboy dispatch mimetype handler.
-%
--spec path_to_mimes(Path) -> MimeType
-    when Path     :: binary(),
-         MimeType :: {binary(), binary(), []}.
-path_to_mimes(Path) when is_binary(Path) ->
-    Path2 = binary_to_list(Path),
-    Parts = string:tokens(Path2, "/"),
-    Checksum = string:join(lists:sublist(Parts, length(Parts) - 2, 3), ""),
-    case by_checksum(Checksum) of
-        [] -> {<<"application">>, <<"octet-stream">>, []};
-        [Doc|_T] ->
-            DocValue = couchbeam_doc:get_value(<<"value">>, Doc),
-            [Type, SubType] = binary:split(DocValue, <<"/">>),
-            {Type, SubType, []}
-    end.
-
-%
-% @doc Returns an ETag for a given file, which essentially means converting
-%      the file path to a sha256 checksum.
-%
--spec generate_etag(Path, Size, Mtime) -> {strong, Etag}
-    when Path  :: binary(),
-         Size  :: integer(),
-         Mtime :: term(),
-         Etag  :: binary().
-generate_etag(Path, _Size, _Mtime) ->
-    Filepath = binary_to_list(Path),
-    Parts = string:tokens(Filepath, "/"),
-    Checksum = string:join(lists:sublist(Parts, length(Parts) - 2, 3), ""),
-    {strong, list_to_binary(Checksum)}.
 
 %
 % @doc Either retrieve the thumbnail produced earlier, or generate one

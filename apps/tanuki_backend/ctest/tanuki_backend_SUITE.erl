@@ -32,6 +32,7 @@ init_per_suite(Config) ->
     %       somehow it doesn't take effect
     % {ok, Database} = application:get_env(tanuki_backend, database),
     Database = ?TESTDB,
+    ok = application:set_env(tanuki_backend, database, Database),
     Priv = ?config(priv_dir, Config),
     AssetsDir = filename:join(Priv, "assets"),
     ok = application:set_env(tanuki_backend, assets_dir, AssetsDir),
@@ -111,8 +112,6 @@ all() ->
         by_year,
         by_month,
         date_formatter,
-        path_to_mimes,
-        generate_etag,
         get_best_date,
         generate_thumbnail
     ].
@@ -219,44 +218,6 @@ date_formatter(_Config) ->
     ?assertEqual("2014/12/23 22:28", Result1),
     Result2 = tanuki_backend:date_list_to_string([2014, 12, 23, 22, 28], date_only),
     ?assertEqual("2014/12/23", Result2),
-    ok.
-
-path_to_mimes(_Config) ->
-    % success case leading path
-    Filepath1 = <<"foo/39/09/2991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100">>,
-    Result1 = tanuki_backend:path_to_mimes(Filepath1),
-    ?assertEqual({<<"image">>, <<"jpeg">>, []}, Result1),
-    % success case exact path
-    Filepath2 = <<"39/09/2991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100">>,
-    Result2 = tanuki_backend:path_to_mimes(Filepath2),
-    ?assertEqual({<<"image">>, <<"jpeg">>, []}, Result2),
-    % success case binary path
-    Filepath3 = <<"39/09/2991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100">>,
-    Result3 = tanuki_backend:path_to_mimes(Filepath3),
-    ?assertEqual({<<"image">>, <<"jpeg">>, []}, Result3),
-    % unknown checksum case
-    Filepath4 = <<"foo/11/22/34567890abcdef">>,
-    Result4 = tanuki_backend:path_to_mimes(Filepath4),
-    ?assertEqual({<<"application">>, <<"octet-stream">>, []}, Result4),
-    % fail case no slashes
-    ?assertError(function_clause, tanuki_backend:path_to_mimes(<<"abcdef">>)),
-    % fail case short path
-    ?assertError(function_clause, tanuki_backend:path_to_mimes(<<"abc/def">>)),
-    ok.
-
-generate_etag(_Config) ->
-    % success case leading path
-    Input1 = <<"foo/39/09/2991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100">>,
-    {strong, Result1} = tanuki_backend:generate_etag(Input1, ignored, ignored),
-    ?assertEqual(<<"39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100">>, Result1),
-    % success case exact path
-    Input2 = <<"39/09/2991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100">>,
-    {strong, Result2} = tanuki_backend:generate_etag(Input2, ignored, ignored),
-    ?assertEqual(<<"39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100">>, Result2),
-    % fail case no slashes
-    ?assertError(function_clause, tanuki_backend:generate_etag(<<"abcdef">>, ignored, ignored)),
-    % fail case short path
-    ?assertError(function_clause, tanuki_backend:generate_etag(<<"abc/def">>, ignored, ignored)),
     ok.
 
 get_best_date(_Config) ->
