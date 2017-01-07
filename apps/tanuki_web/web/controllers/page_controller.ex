@@ -32,23 +32,7 @@ defmodule TanukiWeb.PageController do
   def detail(conn, params) do
     row_id = to_charlist(params["id"])
     {:ok, document} = :tanuki_backend.fetch_document(row_id)
-    sha256 = to_string(:couchbeam_doc.get_value(<<"sha256">>, document))
-    filename = to_string(:couchbeam_doc.get_value(<<"file_name">>, document))
-    filesize = to_string(:couchbeam_doc.get_value(<<"file_size">>, document))
-    location = to_string(:couchbeam_doc.get_value(<<"location">>, document))
-    topic = to_string(:couchbeam_doc.get_value(<<"topic">>, document))
-    tags = for t <- :couchbeam_doc.get_value(<<"tags">>, document), do: to_string(t)
-    datetime_list = :tanuki_backend.get_best_date(document)
-    datetime_str = :tanuki_backend.date_list_to_string(datetime_list)
-    asset_info = %{
-      :fname => filename,
-      :size => filesize,
-      :datetime => datetime_str,
-      :sha => sha256,
-      :topic => topic,
-      :location => location,
-      :tags => tags
-    }
+    asset_info = read_doc(document)
     conn
     |> assign(:asset_info, asset_info)
     |> render(:detail)
@@ -82,6 +66,53 @@ defmodule TanukiWeb.PageController do
     |> put_resp_content_type(mimetype)
     |> put_resp_header("etag", etag)
     |> send_file(200, filepath)
+  end
+
+  def edit(conn, params) do
+    row_id = to_charlist(params["id"])
+    {:ok, document} = :tanuki_backend.fetch_document(row_id)
+    asset_info = read_doc(document)
+    conn
+    |> assign(:asset_info, asset_info)
+    |> render(:edit)
+  end
+
+  def update(conn, params) do
+    row_id = to_charlist(params["id"])
+    # Field values are strings, which in Elixir are already binaries, so no
+    # need to convert before sending to couchbeam.
+    {:ok, document} = :tanuki_backend.fetch_document(row_id)
+    newdoc = :couchbeam_doc.set_value(<<"location">>, params["location"], document)
+    newdoc = :couchbeam_doc.set_value(<<"topic">>, params["topic"], newdoc)
+    tags = for t <- String.split(params["tags"], ","), do: String.trim(t)
+    newdoc = :couchbeam_doc.set_value(<<"tags">>, tags, newdoc)
+    {:ok, updated} = :tanuki_backend.update_document(newdoc)
+    asset_info = read_doc(updated)
+    conn
+    |> assign(:asset_info, asset_info)
+    |> render(:detail)
+  end
+
+  defp read_doc(document) do
+    row_id = to_string(:couchbeam_doc.get_id(document))
+    sha256 = to_string(:couchbeam_doc.get_value(<<"sha256">>, document))
+    filename = to_string(:couchbeam_doc.get_value(<<"file_name">>, document))
+    filesize = to_string(:couchbeam_doc.get_value(<<"file_size">>, document))
+    location = to_string(:couchbeam_doc.get_value(<<"location">>, document))
+    topic = to_string(:couchbeam_doc.get_value(<<"topic">>, document))
+    tags = for t <- :couchbeam_doc.get_value(<<"tags">>, document), do: to_string(t)
+    datetime_list = :tanuki_backend.get_best_date(document)
+    datetime_str = :tanuki_backend.date_list_to_string(datetime_list)
+    %{
+      :id => row_id,
+      :fname => filename,
+      :size => filesize,
+      :datetime => datetime_str,
+      :sha => sha256,
+      :topic => topic,
+      :location => location,
+      :tags => tags
+    }
   end
 
   # Fetches the known tags and assigns the list to the connection as

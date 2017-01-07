@@ -70,6 +70,18 @@ td.thumb {
   padding: 15px;
 }
 
+td.detail {
+  padding-right: 15px;
+  text-align: right;
+  font-weight: bold;
+}
+
+img.asset {
+    display: block;
+    margin: auto;
+    width: 40%;
+}
+
 /* Responsive: Portrait tablets and up */
 @media screen and (min-width: 768px) {
   /* Remove the padding we set earlier */

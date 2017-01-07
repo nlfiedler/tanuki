@@ -1,13 +1,40 @@
 <div>
   <a href="<%= page_path @conn, :asset, @asset_info[:sha] %>">
-  <img src="<%= page_path @conn, :thumbnail, @asset_info[:sha] %>"
+  <img class="asset" src="<%= page_path @conn, :thumbnail, @asset_info[:sha] %>"
        alt="<%= @asset_info[:fname] %>"/></a><br/>
 
-  <strong>Filename:</strong> <%= @asset_info[:fname] %></br>
-  <strong>Date/time:</strong> <%= @asset_info[:datetime] %></br>
-  <strong>Size:</strong> <%= @asset_info[:size] %></br>
-  <strong>SHA256:</strong> <%= @asset_info[:sha] %></br>
-  <strong>Location:</strong> <%= @asset_info[:location] %></br>
-  <strong>Topic:</strong> <%= @asset_info[:topic] %></br>
-  <strong>Tags:</strong> <%= Enum.join(@asset_info[:tags], ", ") %>
+  <table>
+    <tr>
+      <td class="detail">Filename:</td>
+      <td><%= @asset_info[:fname] %></td>
+    </tr>
+    <tr>
+      <td class="detail">Date/time:</td>
+      <td><%= @asset_info[:datetime] %></td>
+    </tr>
+    <tr>
+      <td class="detail">Size:</td>
+      <td><%= @asset_info[:size] %></td>
+    </tr>
+    <tr>
+      <td class="detail">SHA256:</td>
+      <td><%= @asset_info[:sha] %></td>
+    </tr>
+    <tr>
+      <td class="detail">Location:</td>
+      <td><%= @asset_info[:location] %></td>
+    </tr>
+    <tr>
+      <td class="detail">Topic:</td>
+      <td><%= @asset_info[:topic] %></td>
+    </tr>
+    <tr>
+      <td class="detail">Tags:</td>
+      <td><%= Enum.join(@asset_info[:tags], ", ") %></td>
+    </tr>
+  </table>
+</div>
+
+<div>
+  [<a href="<%= page_path @conn, :edit, @asset_info[:id] %>">edit</a>]
 </div>

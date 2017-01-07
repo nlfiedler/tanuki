@@ -49,6 +49,11 @@ handle_call({fetch_document, DocId}, _From, #state{database=Db}=State) ->
         {ok, Doc} -> {reply, {ok, Doc}, State};
         {error, Reason} -> {reply, {error, Reason}, State}
     end;
+handle_call({update_document, Doc}, _From, #state{database=Db}=State) ->
+    case couchbeam:save_doc(Db, Doc) of
+        {ok, Updated} -> {reply, {ok, Updated}, State};
+        {error, Reason} -> {reply, {error, Reason}, State}
+    end;
 handle_call(all_tags, _From, #state{database=Db}=State) ->
     Options = [{group_level, 1}],
     {ok, Rows} = couchbeam_view:fetch(Db, {"assets", "tags"}, Options),

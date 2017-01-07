@@ -1,0 +1,39 @@
+<div>
+  <img class="asset" src="<%= page_path @conn, :thumbnail, @asset_info[:sha] %>"
+       alt="<%= @asset_info[:fname] %>"/><br/>
+
+  <table>
+    <tr>
+      <td class="detail">Filename:</td>
+      <td><%= @asset_info[:fname] %></td>
+    </tr>
+    <tr>
+      <td class="detail">Date/time:</td>
+      <td><%= @asset_info[:datetime] %></td>
+    </tr>
+    <tr>
+      <td class="detail">SHA256:</td>
+      <td><%= @asset_info[:sha] %></td>
+    </tr>
+  </table>
+
+  <form action="<%= page_path @conn, :update, @asset_info[:id] %>" method="post">
+    <table>
+      <tr>
+        <td class="detail">Location:</td>
+        <td><input type="text" name="location" value="<%= @asset_info[:location] %>"/></td>
+      </tr>
+      <tr>
+        <td class="detail">Topic:</td>
+        <td><input type="text" name="topic" value="<%= @asset_info[:topic] %>"/></td>
+      </tr>
+      <tr>
+        <td class="detail">Tags:</td>
+        <td><input type="text" name="tags" value="<%= Enum.join(@asset_info[:tags], ", ") %>"/></td>
+      </tr>
+    </table>
+    <input type="hidden" name="_csrf_token" value="<%= get_csrf_token() %>">
+    <input type="submit" value="Save" style="margin-right: 100px"/>
+    <a href="<%= page_path @conn, :detail, @asset_info[:id] %>">Cancel</a>
+  </form>
+</div>

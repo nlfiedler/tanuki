@@ -21,7 +21,7 @@
 -module(tanuki_backend).
 
 -export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1]).
--export([all_tags/0, fetch_document/1]).
+-export([all_tags/0, fetch_document/1, update_document/1]).
 -export([get_best_date/1, date_list_to_string/1, date_list_to_string/2]).
 -export([retrieve_thumbnail/1, get_field_value/2, seconds_since_epoch/0]).
 -export([checksum_to_asset_path/1]).
@@ -44,6 +44,17 @@
          Reason :: term().
 fetch_document(DocId) ->
     gen_server:call(tanuki_backend_db, {fetch_document, DocId}).
+
+% @doc
+%
+% Update the given document in the database.
+%
+-spec update_document(Doc) -> {ok, NewDoc} | {error, Reason}
+    when Doc    :: term(),
+         NewDoc :: term(),
+         Reason :: term().
+update_document(Doc) ->
+    gen_server:call(tanuki_backend_db, {update_document, Doc}).
 
 %
 % @doc Retrieves all known tags as couchbeam view results.
