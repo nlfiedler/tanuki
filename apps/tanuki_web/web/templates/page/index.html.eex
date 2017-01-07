@@ -1,3 +1,26 @@
-<p>Select a tag to get started...</p>
-
+<strong>Available tags:</strong>
 <%= render "tags.html", conn: @conn, tags: @tags %>
+
+<strong>Selected tags:</strong>
+<div>
+<%= for tag <- @selected_tags do %>
+  [x] <a href="<%= page_path @conn, :index, del_tag: tag %>"><%= tag %></a>
+<% end %>
+</div>
+
+<table>
+  <tr>
+    <%= for {info, index} <- Enum.with_index(@tag_info, 1) do %>
+      <td class="thumb">
+        <a href="<%= page_path @conn, :detail, info[:id] %>">
+        <img src="<%= page_path @conn, :thumbnail, info[:sha] %>"
+             alt="<%= info[:fname] %>"/></a><br/>
+        <%= info[:date] %> -- <%= info[:fname] %>
+      </td>
+      <%= if rem(index, 3) == 0 do %>
+        </tr>
+        <tr>
+      <% end %>
+    <% end %>
+  </tr>
+</table>

@@ -3,11 +3,7 @@ defmodule TanukiWeb.PageController do
 
   plug :fetch_tags
 
-  def index(conn, _params) do
-    render conn, :index
-  end
-
-  def tagged(conn, params) do
+  def index(conn, params) do
     conn = if Map.has_key?(params, "add_tag") do
       new_tag = params["add_tag"]
       selected_tags = get_selected_tags(conn)
@@ -30,7 +26,7 @@ defmodule TanukiWeb.PageController do
     conn
     |> assign(:selected_tags, selected_tags)
     |> assign(:tag_info, tag_info)
-    |> render(:tagged)
+    |> render(:index)
   end
 
   def detail(conn, params) do
