@@ -6,5 +6,8 @@
   <strong>Filename:</strong> <%= @asset_info[:fname] %></br>
   <strong>Date/time:</strong> <%= @asset_info[:datetime] %></br>
   <strong>Size:</strong> <%= @asset_info[:size] %></br>
-  <strong>SHA256:</strong> <%= @asset_info[:sha] %>
+  <strong>SHA256:</strong> <%= @asset_info[:sha] %></br>
+  <strong>Location:</strong> <%= @asset_info[:location] %></br>
+  <strong>Topic:</strong> <%= @asset_info[:topic] %></br>
+  <strong>Tags:</strong> <%= Enum.join(@asset_info[:tags], ", ") %>
 </div>

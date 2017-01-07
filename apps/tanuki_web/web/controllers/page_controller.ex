@@ -39,13 +39,19 @@ defmodule TanukiWeb.PageController do
     sha256 = to_string(:couchbeam_doc.get_value(<<"sha256">>, document))
     filename = to_string(:couchbeam_doc.get_value(<<"file_name">>, document))
     filesize = to_string(:couchbeam_doc.get_value(<<"file_size">>, document))
+    location = to_string(:couchbeam_doc.get_value(<<"location">>, document))
+    topic = to_string(:couchbeam_doc.get_value(<<"topic">>, document))
+    tags = for t <- :couchbeam_doc.get_value(<<"tags">>, document), do: to_string(t)
     datetime_list = :tanuki_backend.get_best_date(document)
     datetime_str = :tanuki_backend.date_list_to_string(datetime_list)
     asset_info = %{
       :fname => filename,
       :size => filesize,
       :datetime => datetime_str,
-      :sha => sha256
+      :sha => sha256,
+      :topic => topic,
+      :location => location,
+      :tags => tags
     }
     conn
     |> assign(:asset_info, asset_info)
