@@ -22,6 +22,7 @@ defmodule TanukiWeb.Router do
     get "/asset/:id/edit", PageController, :edit
     post "/asset/:id", PageController, :update
     get "/thumbnail/:id", PageController, :thumbnail
+    get "/preview/:id", PageController, :preview
   end
 
   # Other scopes may use custom stacks.

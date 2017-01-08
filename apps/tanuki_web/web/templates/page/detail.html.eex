@@ -1,6 +1,6 @@
 <div>
   <a href="<%= page_path @conn, :asset, @asset_info[:sha] %>">
-  <img class="asset" src="<%= page_path @conn, :thumbnail, @asset_info[:sha] %>"
+  <img class="asset" src="<%= page_path @conn, :preview, @asset_info[:sha] %>"
        alt="<%= @asset_info[:fname] %>"/></a><br/>
 
   <table>

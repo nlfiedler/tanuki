@@ -1,8 +1,7 @@
 * TODO
 
   ** Action Items
-    - [ ] Get the Phoenix interface working for the most part
-    - [ ] Show SHA256 of asset on details page
+    - [ ] Sort the tagged assets in descending date order
     - [ ] Get quicktime videos to work in the browser
 
 $ curl -i -X HEAD http://192.168.1.1:8000/assets/66/0d/5688ce16e62ffbea98ca8ec18827c6962ef59eefc40309274a1ff8dda38d
@@ -23,14 +22,6 @@ last-modified: Thu, 01 Sep 2016 05:05:43 GMT
           - Use the next_* values to create the next link
           - Use the others (startkey?) to create the previous link
       - An entirely different approach: https://gist.github.com/amedeo/820412
-    - [ ] Store tag selection in cookies(?)
-    - [ ] Show intersecting tags based on current tag selection
-    - [ ] Show an 'x' next to each tag to drop that tag from the query
-    - [ ] Show list of tags along the side of the images
-    - [ ] Have the image thumbnails appear in a grid format
-    - [ ] Organize the image thumbnails by date
-    - [ ] Have asset page show a larger version of the image instead of thumbnail
-    - [ ] Fetch additional details of the image for display on asset page
     - [ ] Allow browsing by dates (year, then months)
     - [ ] Produce thumbnails for the videos and cache them
       - https://github.com/emedia-project/erlffmpeg

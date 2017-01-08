@@ -48,6 +48,16 @@ defmodule TanukiWeb.PageController do
     |> send_resp(200, binary)
   end
 
+  def preview(conn, params) do
+    sha256 = to_charlist(params["id"])
+    binary = :tanuki_backend.generate_thumbnail(sha256, :preview)
+    etag = :crypto.hash(:sha, binary) |> Base.encode16 |> String.downcase
+    conn
+    |> put_resp_content_type("image/jpeg")
+    |> put_resp_header("etag", etag)
+    |> send_resp(200, binary)
+  end
+
   def asset(conn, params) do
     sha256 = to_charlist(params["id"])
     filepath = to_string(:tanuki_backend.checksum_to_asset_path(sha256))

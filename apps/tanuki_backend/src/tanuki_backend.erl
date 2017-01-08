@@ -24,7 +24,7 @@
 -export([all_tags/0, fetch_document/1, update_document/1]).
 -export([get_best_date/1, date_list_to_string/1, date_list_to_string/2]).
 -export([retrieve_thumbnail/1, get_field_value/2, seconds_since_epoch/0]).
--export([checksum_to_asset_path/1]).
+-export([checksum_to_asset_path/1, generate_thumbnail/2]).
 
 -include_lib("kernel/include/file.hrl").
 -include_lib("tanuki_backend/include/records.hrl").
@@ -194,7 +194,7 @@ retrieve_thumbnail(Checksum) ->
                 Binary;
             [] ->
                 % producing a thumbnail in a transaction is not ideal...
-                Binary = generate_thumbnail(Checksum),
+                Binary = generate_thumbnail(Checksum, thumbnail),
                 ok = mnesia:write(#thumbnails{sha256=Checksum, binary=Binary}),
                 T = seconds_since_epoch(),
                 ok = mnesia:write(#thumbnail_dates{timestamp=T, sha256=Checksum}),
@@ -218,13 +218,23 @@ retrieve_thumbnail(Checksum) ->
     % thumbnails are always jpeg
     {ok, Binary, <<"image/jpeg">>}.
 
+% @doc
 %
-% @doc Produce a jpeg thumbnail of the named image file.
+% Produce a jpeg thumbnail of the image file designated by the given SHA256
+% checksum. Two convenient sizes are available, either 'thumbnail' which
+% resizes the image to a box of 240 by 240 pixels, or 'preview', which
+% resizes the image to a box of 640 by 640 pixels. Or you can provide an
+% integer value of your own choosing.
 %
--spec generate_thumbnail(Checksum) -> Image
+-spec generate_thumbnail(Checksum, Size) -> Image
     when Checksum :: string(),
+         Size     :: thumbnail | preview | integer(),
          Image    :: binary().
-generate_thumbnail(Checksum) ->
+generate_thumbnail(Checksum, thumbnail) ->
+    generate_thumbnail(Checksum, 240);
+generate_thumbnail(Checksum, preview) ->
+    generate_thumbnail(Checksum, 640);
+generate_thumbnail(Checksum, Size) when is_integer(Size) ->
     SourceFile = checksum_to_asset_path(Checksum),
     % Avoid attempting to generate a thumbnail for large files, which are
     % very likely not image files at all (e.g. videos). The value of 10MB
@@ -236,7 +246,7 @@ generate_thumbnail(Checksum) ->
     case file:read_file_info(SourceFile) of
         {ok, #file_info{size = Bytes}} when Bytes < 10*1048576 ->
             {ok, ImageData} = file:read_file(SourceFile),
-            case emagick_rs:image_fit(ImageData, 240, 240) of
+            case emagick_rs:image_fit(ImageData, Size, Size) of
                 {ok, Resized} -> Resized;
                 {error, Reason} ->
                     lager:warning("unable to resize asset ~s: ~p", [Checksum, Reason]),
