@@ -4,7 +4,7 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 
 ## Current Status
 
-The incoming processor, backend application, and web interface are written in a combination of Erlang and Elixir, with everything being built using [mix](https://hexdocs.pm/mix/Mix.html).
+The incoming processor, backend application, and web interface are written in a combination of Erlang and Elixir, with everything being built using [mix](https://hexdocs.pm/mix/Mix.html). Some of the dependencies require [Rust](https://www.rust-lang.org/).
 
 ## Building and Testing
 
@@ -18,10 +18,31 @@ The incoming processor, backend application, and web interface are written in a 
 * CouchDB 1.6.1 or higher
     - Homebrew: `brew install couchdb`
     - FreeBSD: `pkg install couchdb`
-* ImageMagick
-    - See the development setup docs in the `magick-rust` project.
+* ImageMagick 6.9.x
+* Rust 1.10 or higher
 
-Once the above prerequisites are installed, run the tests like so:
+### Configuration
+
+Once the above prerequisites are installed, you will then need to configure the various applications (`tanuki_backend` and `tanuki_incoming`) to override certain settings. To do this, write a `dev.exs` that sets the `assets_dir` and `incoming_dir` as appropriate for your system. See the examples below for some guidance.
+
+```
+$ cat apps/tanuki_backend/config/dev.exs
+use Mix.Config
+
+config :tanuki_backend,
+  assets_dir: '/Users/samiam/Downloads/tanuki'
+
+$ cat apps/tanuki_incoming/config/dev.exs
+use Mix.Config
+
+config :tanuki_incoming,
+  assets_dir: '/Users/samiam/Downloads/tanuki',
+  incoming_dir: '/Users/samiam/Downloads/incoming'
+```
+
+### Commands
+
+Once the configuration is in place, you can run build everything and run the tests like so:
 
 ```
 $ mix deps.get
