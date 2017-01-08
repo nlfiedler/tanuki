@@ -2,7 +2,6 @@
 
 ## General Items
 
-1. Sort the tagged assets in descending date order
 1. Add an "/admin" scope for various functions
     - Renaming a tag across all documents
     - Renaming a topic across all documents

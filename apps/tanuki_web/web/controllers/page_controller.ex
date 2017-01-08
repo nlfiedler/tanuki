@@ -145,12 +145,24 @@ defmodule TanukiWeb.PageController do
   defp collect_asset_info(tags) do
     tags_as_charlist = for tag <- tags, do: to_charlist(tag)
     rows = :tanuki_backend.by_tags(tags_as_charlist)
+    rows = Enum.sort(rows, &asset_row_sorter/2)
     for row <- rows, do: build_asset_info(row)
+  end
+
+  defp asset_row_sorter(a, b) do
+    # The date is the first value in the list of "value" in the row in the
+    # 'by_tag' CouchDB view. By default sort newer assets before older.
+    a_date = hd(:couchbeam_doc.get_value("value", a))
+    b_date = hd(:couchbeam_doc.get_value("value", b))
+    a_date >= b_date
   end
 
   defp build_asset_info(row) do
     row_id = to_string(:couchbeam_doc.get_value("id", row))
     values = :couchbeam_doc.get_value("value", row)
+    # values is a list of [date, file_name, sha256], where 'date' is exif,
+    # file, or import date in that preferred order. The date value itself
+    # is a list of integers (e.g. [2014, 7, 4, 12, 1] ~> "2014/7/4 12:01").
     date_string = :tanuki_backend.date_list_to_string(hd(values), :date_only)
     filename = to_string(hd(tl(values)))
     checksum = to_string(hd(tl(tl(values))))
