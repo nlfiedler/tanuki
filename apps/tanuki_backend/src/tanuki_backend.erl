@@ -20,7 +20,7 @@
 %% -------------------------------------------------------------------
 -module(tanuki_backend).
 
--export([by_checksum/1, by_date/1, by_date/2, by_tags/1]).
+-export([by_checksum/1, by_date/1, by_date/2, by_tags/1, by_tags/2]).
 -export([all_tags/0, fetch_document/1, update_document/1]).
 -export([get_best_date/1, date_list_to_string/1, date_list_to_string/2]).
 -export([retrieve_thumbnail/1, get_field_value/2, seconds_since_epoch/0]).
@@ -80,27 +80,68 @@ by_checksum(Checksum) when is_list(Checksum) ->
 % Only those documents containing all of the given tags will be returned.
 % Ordering is non-deterministic.
 %
+% Results are cached based on the tags, so any changes in the database will
+% not be reflected by repeated queries for the same set of tags. However,
+% this serves repeated requests very well, such as for allowing efficient
+% pagination of many results.
+%
 -spec by_tags(Tags) -> Rows
     when Tags :: [string()],
          Rows :: [term()].
 by_tags(Tags) when is_list(Tags) ->
-    AllRows = gen_server:call(tanuki_backend_db, {by_tags, Tags}),
-    % Reduce the results to those that have all of the given tags.
-    TagCounts = lists:foldl(fun(Row, AccIn) ->
-            DocId = couchbeam_doc:get_value(<<"id">>, Row),
-            Count = maps:get(DocId, AccIn, 0),
-            maps:put(DocId, Count + 1, AccIn)
-        end, #{}, AllRows),
-    MatchingRows = lists:filter(fun(Row) ->
-            DocId = couchbeam_doc:get_value(<<"id">>, Row),
-            maps:get(DocId, TagCounts) =:= length(Tags)
-        end, AllRows),
-    % Remove the duplicate rows, and sort them while we're at it.
-    lists:usort(fun(A, B) ->
-            IdA = couchbeam_doc:get_value(<<"id">>, A),
-            IdB = couchbeam_doc:get_value(<<"id">>, B),
-            IdA =< IdB
-        end, MatchingRows).
+    by_tags(Tags, fun(_A, _B) -> true end).
+
+% @doc
+%
+% Like by_tags/1 with the results sorted according to the given function.
+%
+-spec by_tags(Tags, SortFun) -> Rows
+    when Tags    :: [string()],
+         SortFun :: fun((term(), term()) -> boolean()),
+         Rows    :: [term()].
+by_tags(Tags, SortFun) when is_list(Tags) ->
+    % Ensure the results cache table exists for this process.
+    case ets:info(by_tags) of
+        undefined ->
+            lager:info("creating by_tags ETS table"),
+            ets:new(by_tags, [set, named_table, compressed]);
+        _InfoList -> ok
+    end,
+    % Produce a key based on the requested tags and the sorting function
+    % such that if either change, the key changes.
+    Key = {list_to_binary(string:join(lists:sort(Tags), "")), SortFun},
+    case ets:lookup(by_tags, Key) of
+        [] ->
+            lager:info("cache miss for ~w", [Key]),
+            AllRows = gen_server:call(tanuki_backend_db, {by_tags, Tags}),
+            % Reduce the results to those that have all of the given tags.
+            TagCounts = lists:foldl(fun(Row, AccIn) ->
+                    DocId = couchbeam_doc:get_value(<<"id">>, Row),
+                    Count = maps:get(DocId, AccIn, 0),
+                    maps:put(DocId, Count + 1, AccIn)
+                end, #{}, AllRows),
+            MatchingRows = lists:filter(fun(Row) ->
+                    DocId = couchbeam_doc:get_value(<<"id">>, Row),
+                    maps:get(DocId, TagCounts) =:= length(Tags)
+                end, AllRows),
+            % Remove the duplicate rows by sorting on the document
+            % identifier in a unique fashion.
+            UnsortedResults = lists:usort(fun(A, B) ->
+                    IdA = couchbeam_doc:get_value(<<"id">>, A),
+                    IdB = couchbeam_doc:get_value(<<"id">>, B),
+                    IdA =< IdB
+                end, MatchingRows),
+            % Now sort the rows according to the given sorting function.
+            Results = lists:sort(SortFun, UnsortedResults),
+            % Save the results in ETS to avoid doing the same work again if
+            % a repeated request is made, replacing any previous values.
+            ets:delete_all_objects(by_tags),
+            ets:insert(by_tags, {Key, Results}),
+            Results;
+        [{_Key, Rows}] ->
+            lager:info("cache hit for ~w", [Key]),
+            Rows
+    end.
 
 %
 % @doc Retrieves all documents whose most relevant date is within the given year.
@@ -178,10 +219,12 @@ retrieve_thumbnail(Checksum) ->
         case mnesia:read(thumbnails, Checksum) of
             [#thumbnails{sha256=_C, binary=Binary}] ->
                 % record the time this thumbnail was accessed
+                lager:info("cache hit for thumbnail ~w", [Checksum]),
                 T = seconds_since_epoch(),
                 ok = mnesia:write(#thumbnail_dates{timestamp=T, sha256=Checksum}),
                 Binary;
             [] ->
+                lager:info("cache miss for thumbnail ~w", [Checksum]),
                 % producing a thumbnail in a transaction is not ideal...
                 Binary = generate_thumbnail(Checksum, thumbnail),
                 ok = mnesia:write(#thumbnails{sha256=Checksum, binary=Binary}),
@@ -193,6 +236,7 @@ retrieve_thumbnail(Checksum) ->
                 if Count > 1000 ->
                     % this finds the oldest thumbnail, where age is determined by
                     % either when it was generated or when it was last retrieved
+                    lager:info("discarding oldest cached thumbnail"),
                     OldestKey = mnesia:first(thumbnail_dates),
                     [#thumbnail_dates{sha256=OC}] = mnesia:read(thumbnail_dates, OldestKey),
                     ok = mnesia:delete({thumbnails, OC}),

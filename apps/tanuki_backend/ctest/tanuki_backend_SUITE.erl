@@ -161,6 +161,12 @@ by_tags(_Config) ->
     end,
     Ids = [<<"test_AD">>, <<"test_AE">>, <<"test_AF">>],
     [Validate(Row, Id) || {Row, Id} <- lists:zip(Rows, Ids)],
+
+    % request the same set of tags again to ensure caching is not broken
+    Rows2 = tanuki_backend:by_tags(["christina", "joseph"]),
+    ?assertEqual(3, length(Rows2)),
+    [Validate(Row, Id) || {Row, Id} <- lists:zip(Rows2, Ids)],
+
     % negative case, no such tags
     ?assertEqual([], tanuki_backend:by_tags(["foo", "bar"])),
     ok.
