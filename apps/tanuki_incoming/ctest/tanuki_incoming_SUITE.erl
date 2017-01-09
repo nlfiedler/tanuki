@@ -127,7 +127,7 @@ single_image_test(Config) ->
     Mapping = checksum_by_filename(Db, [<<"img_015.JPG">>]),
     verify_stored_assets(Config, Mapping),
     % check that each field of each new document is the correct value
-    Rows = tanuki_backend:by_tag("yellow"),
+    Rows = tanuki_backend:by_tags(["yellow"]),
     ?assertEqual(1, length(Rows)),
     DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
     {ok, Doc} = tanuki_backend:fetch_document(DocId),
@@ -172,7 +172,7 @@ non_image_test(Config) ->
     Mapping = checksum_by_filename(Db, [<<"LICENSE.txt">>]),
     verify_stored_assets(Config, Mapping),
     % check that each field of each new document is the correct value
-    Rows = tanuki_backend:by_tag("text"),
+    Rows = tanuki_backend:by_tags(["text"]),
     ?assertEqual(1, length(Rows)),
     DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
     {ok, Doc} = tanuki_backend:fetch_document(DocId),
@@ -214,7 +214,7 @@ rotated_image_test(Config) ->
     Mapping = checksum_by_filename(Db, [<<"fighting_kittens.jpg">>]),
     verify_stored_assets(Config, Mapping),
     % check that each field of each new document is the correct value
-    Rows = tanuki_backend:by_tag("rotated"),
+    Rows = tanuki_backend:by_tags(["rotated"]),
     ?assertEqual(1, length(Rows)),
     DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
     {ok, Doc} = tanuki_backend:fetch_document(DocId),
@@ -253,7 +253,7 @@ topical_image_test(Config) ->
     Mapping = checksum_by_filename(Db, [<<"dcp_1069.jpg">>]),
     verify_stored_assets(Config, Mapping),
     % check that each field of each new document is the correct value
-    Rows = tanuki_backend:by_tag("cows"),
+    Rows = tanuki_backend:by_tags(["cows"]),
     ?assertEqual(1, length(Rows)),
     DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
     {ok, Doc} = tanuki_backend:fetch_document(DocId),
@@ -335,7 +335,7 @@ multiple_image_test(Config) ->
         <<"img_015.JPG">> => FlowerValues,
         <<"IMG_5745.JPG">> => ValleyValues
     },
-    Rows = tanuki_backend:by_tag("multiple"),
+    Rows = tanuki_backend:by_tags(["multiple"]),
     ?assertEqual(3, length(Rows)),
     ValidateRow = fun(Row) ->
         DocId = couchbeam_doc:get_value(<<"id">>, Row),
@@ -366,7 +366,7 @@ empty_folder_test(Config) ->
     % check that empty incoming directory is removed
     ?assertEqual({ok, []}, file:list_dir(IncomingDir)),
     % check that no assets were imported by those tags
-    Rows = tanuki_backend:by_tag("empty"),
+    Rows = tanuki_backend:by_tags(["empty"]),
     ?assertEqual(0, length(Rows)),
     ok.
 

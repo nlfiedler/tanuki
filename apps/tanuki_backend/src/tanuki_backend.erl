@@ -20,7 +20,7 @@
 %% -------------------------------------------------------------------
 -module(tanuki_backend).
 
--export([by_checksum/1, by_date/1, by_date/2, by_tag/1, by_tags/1]).
+-export([by_checksum/1, by_date/1, by_date/2, by_tags/1]).
 -export([all_tags/0, fetch_document/1, update_document/1]).
 -export([get_best_date/1, date_list_to_string/1, date_list_to_string/2]).
 -export([retrieve_thumbnail/1, get_field_value/2, seconds_since_epoch/0]).
@@ -74,27 +74,16 @@ all_tags() ->
 by_checksum(Checksum) when is_list(Checksum) ->
     gen_server:call(tanuki_backend_db, {by_checksum, Checksum}).
 
+% @doc
 %
-% @doc Retrieves all documents with a given tag, as couchbeam view results.
-%
--spec by_tag(Tag) -> Rows
-    when Tag  :: string(),
-         Rows :: [term()].
-by_tag(Tag) when is_list(Tag) ->
-    gen_server:call(tanuki_backend_db, {by_tag, Tag}).
-
-%
-% @doc Retrieves all documents with the given tags, as couchbeam view results.
-%      Only those documents containing all of the given tags will be returned.
-%      Ordering is non-deterministic.  TODO: that needs to be fixed
+% Retrieves all documents with the given tags, as couchbeam view results.
+% Only those documents containing all of the given tags will be returned.
+% Ordering is non-deterministic.
 %
 -spec by_tags(Tags) -> Rows
     when Tags :: [string()],
          Rows :: [term()].
 by_tags(Tags) when is_list(Tags) ->
-    % TODO: check for cached results in mnesia
-    % TODO: cache the raw results (AllRows) in mnesia
-    % TODO: do our own start_id/start_key scanning for pagination support
     AllRows = gen_server:call(tanuki_backend_db, {by_tags, Tags}),
     % Reduce the results to those that have all of the given tags.
     TagCounts = lists:foldl(fun(Row, AccIn) ->

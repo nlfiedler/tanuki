@@ -107,7 +107,6 @@ all() ->
         fetch_document,
         all_tags,
         by_checksum,
-        by_tag,
         by_tags,
         by_year,
         by_month,
@@ -151,19 +150,6 @@ by_checksum(_Config) ->
     [Validate(Row, Id, Value) || {Row, Id, Value} <- lists:zip3(Rows, Ids, Values)],
     % negative case, no matching checksum
     ?assertEqual([], tanuki_backend:by_checksum("foobar")),
-    ok.
-
-by_tag(_Config) ->
-    Rows = tanuki_backend:by_tag("cat"),
-    ?assertEqual(2, length(Rows)),
-    Validate = fun(Row, Id) ->
-        % view has "id" but documents have "_id"? weird
-        ?assertEqual(Id, couchbeam_doc:get_value(<<"id">>, Row))
-    end,
-    Keys = [<<"test_AA">>, <<"test_AC">>],
-    [Validate(Row, Key) || {Row, Key} <- lists:zip(Rows, Keys)],
-    % negative case, no such tag
-    ?assertEqual([], tanuki_backend:by_tag("foobar")),
     ok.
 
 by_tags(_Config) ->

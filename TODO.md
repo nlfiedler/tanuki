@@ -2,6 +2,10 @@
 
 ## General Items
 
+1. Change `tanuki_backend:by_tags/1` to cache the results
+    - Cache the results in ETS, keyed by the set of tags (sorted and joined?)
+    - If the next request asks for the same set of tags, return the cached result
+    - Otherwise, clear the cached results, fetch anew, and cache
 1. Add an "/admin" scope for various functions
     - Renaming a tag across all documents
     - Renaming a topic across all documents
@@ -27,14 +31,7 @@
 1. Write a test for `fetch_document` in `tanuki_backend`
 1. Ensure QuickTime videos play in the browser
 1. Add pagination support to tags list
-    * http://guide.couchdb.org/draft/recipes.html
-        - Request rows_per_page + 1 rows from the view
-        - Display rows_per_page rows
-        - Store the +1 row as next_startkey and next_startkey_docid
-        - As page information, keep startkey and next_startkey
-        - Use the next_* values to create the next link
-        - Use the others (startkey?) to create the previous link
-    * An entirely different approach: https://gist.github.com/amedeo/820412
+    * Handle the pagination in `tanuki_web`, always fetching the (cached) results from the backend
 1. Allow browsing by dates (year, then months)
 1. Produce thumbnails for the videos and cache them
     * https://github.com/emedia-project/erlffmpeg
