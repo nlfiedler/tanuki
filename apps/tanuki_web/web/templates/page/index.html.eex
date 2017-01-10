@@ -24,3 +24,25 @@
     <% end %>
   </tr>
 </table>
+
+<div style="text-align: center">
+  <%= if not Enum.empty?(@page_data) do %>
+    <%= if @curr_page == @page_data[:first_page] do %>
+      &lt;first page&gt;
+    <% else %>
+      <a href="<%= page_path @conn, :index, page: @page_data[:first_page] %>">[first page]</a>
+    <% end %>
+    <%= for page_num <- @page_data[:pages] do %>
+      <%= if @curr_page == page_num do %>
+        &lt;<%= page_num %>&gt;
+      <% else %>
+        <a href="<%= page_path @conn, :index, page: page_num %>"><%= page_num %></a>
+      <% end %>
+    <% end %>
+    <%= if @curr_page == @page_data[:last_page] do %>
+      &lt;last page&gt;
+    <% else %>
+      <a href="<%= page_path @conn, :index, page: @page_data[:last_page] %>">[last page]</a>
+    <% end %>
+  <% end %>
+</div>

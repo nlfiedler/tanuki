@@ -1,31 +1,19 @@
 defmodule TanukiWeb.PageController do
   use TanukiWeb.Web, :controller
 
+  # pages of thumbnails are limited to 3 by 6
+  @page_size 18
+
   plug :fetch_tags
 
   def index(conn, params) do
-    conn = if Map.has_key?(params, "add_tag") do
-      new_tag = params["add_tag"]
-      selected_tags = get_selected_tags(conn)
-      if new_tag in selected_tags do
-        conn
-      else
-        put_session(conn, :selected_tags, selected_tags ++ [new_tag])
-      end
-    else
-      conn
-    end
-    conn = if Map.has_key?(params, "del_tag") do
-      selected_tags = get_selected_tags(conn) -- [params["del_tag"]]
-      put_session(conn, :selected_tags, selected_tags)
-    else
-      conn
-    end
-    selected_tags = get_selected_tags(conn)
-    tag_info = collect_asset_info(selected_tags)
+    # order matters here
     conn
-    |> assign(:selected_tags, selected_tags)
-    |> assign(:tag_info, tag_info)
+    |> tag_selection(params)
+    |> tag_unselection(params)
+    |> page_selection(params)
+    |> assign_assets_and_tags()
+    |> assign_pagination_data()
     |> render(:index)
   end
 
@@ -133,6 +121,35 @@ defmodule TanukiWeb.PageController do
     assign(conn, :tags, tags)
   end
 
+  defp tag_selection(conn, params) do
+    if Map.has_key?(params, "add_tag") do
+      new_tag = params["add_tag"]
+      selected_tags = get_selected_tags(conn)
+      if new_tag in selected_tags do
+        conn
+      else
+        conn
+        |> put_session(:selected_tags, selected_tags ++ [new_tag])
+        # changing the tags must reset the current page
+        |> put_session(:curr_page, nil)
+      end
+    else
+      conn
+    end
+  end
+
+  defp tag_unselection(conn, params) do
+    if Map.has_key?(params, "del_tag") do
+      selected_tags = get_selected_tags(conn) -- [params["del_tag"]]
+      conn
+      |> put_session(:selected_tags, selected_tags)
+      # changing the tags must reset the current page
+      |> put_session(:curr_page, nil)
+    else
+      conn
+    end
+  end
+
   defp get_selected_tags(conn) do
     selected_tags = get_session(conn, :selected_tags)
     if selected_tags == nil do
@@ -142,11 +159,68 @@ defmodule TanukiWeb.PageController do
     end
   end
 
-  defp collect_asset_info(tags) do
-    tags_as_charlist = for tag <- tags, do: to_charlist(tag)
-    rows = :tanuki_backend.by_tags(tags_as_charlist)
-    rows = Enum.sort(rows, &asset_row_sorter/2)
-    for row <- rows, do: build_asset_info(row)
+  defp page_selection(conn, params) do
+    if Map.has_key?(params, "page") do
+      put_session(conn, :curr_page, params["page"])
+    else
+      conn
+    end
+  end
+
+  defp assign_pagination_data(conn) do
+    tag_info = conn.assigns[:tag_info]
+    if length(tag_info) > @page_size do
+      curr_page = get_current_page(conn)
+      page_count = round(Float.ceil(length(tag_info) / @page_size))
+      #
+      # Compute the lower and upper page numbers, clipping to whatever is
+      # possible given the number of pages we have. Hence the combination
+      # of 'cond', 'min', and 'max' below.
+      #
+      desired_lower = curr_page - 10
+      desired_upper = curr_page + 9
+      {lower, upper} = cond do
+        desired_lower <= 1 ->
+          {2, min(desired_upper + abs(desired_lower), page_count - 1)}
+        desired_upper >= page_count ->
+          {max(desired_lower - (desired_upper - page_count), 2), page_count - 1}
+        true -> {desired_lower, desired_upper}
+      end
+      pages = Enum.into(Range.new(lower, upper), [])
+      page_data = %{
+        :first_page => 1,
+        :pages => pages,
+        :last_page => page_count
+      }
+      start = (curr_page - 1) * @page_size
+      tag_info = Enum.slice(tag_info, start, @page_size)
+      conn
+      |> assign(:page_data, page_data)
+      |> assign(:curr_page, curr_page)
+      |> assign(:tag_info, tag_info)
+    else
+      assign(conn, :page_data, %{})
+    end
+  end
+
+  defp get_current_page(conn) do
+    curr_page = get_session(conn, :curr_page)
+    if curr_page == nil do
+      1
+    else
+      {value, _Rest} = Integer.parse(curr_page)
+      value
+    end
+  end
+
+  defp assign_assets_and_tags(conn) do
+    selected_tags = get_selected_tags(conn)
+    tags_as_charlist = for tag <- selected_tags, do: to_charlist(tag)
+    rows = :tanuki_backend.by_tags(tags_as_charlist, &asset_row_sorter/2)
+    tag_info = for row <- rows, do: build_asset_info(row)
+    conn
+    |> assign(:selected_tags, selected_tags)
+    |> assign(:tag_info, tag_info)
   end
 
   defp asset_row_sorter(a, b) do

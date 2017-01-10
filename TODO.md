@@ -2,10 +2,7 @@
 
 ## General Items
 
-1. Change `tanuki_backend:by_tags/1` to cache the results
-    - Cache the results in ETS, keyed by the set of tags (sorted and joined?)
-    - If the next request asks for the same set of tags, return the cached result
-    - Otherwise, clear the cached results, fetch anew, and cache
+1. Allow browsing by year, the month
 1. Add an "/admin" scope for various functions
     - Renaming a tag across all documents
     - Renaming a topic across all documents
@@ -30,11 +27,9 @@
     - Seems like `mix ct` doesn't run the tests in test env mode, despite code being in place
 1. Write a test for `fetch_document` in `tanuki_backend`
 1. Ensure QuickTime videos play in the browser
-1. Add pagination support to tags list
-    * Handle the pagination in `tanuki_web`, always fetching the (cached) results from the backend
-1. Allow browsing by dates (year, then months)
 1. Produce thumbnails for the videos and cache them
     * https://github.com/emedia-project/erlffmpeg
+1. Can we produce thumbnails for AVI files?
 1. Show list of known locations
 1. Show list of known topics
 
