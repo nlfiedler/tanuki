@@ -219,12 +219,12 @@ retrieve_thumbnail(Checksum) ->
         case mnesia:read(thumbnails, Checksum) of
             [#thumbnails{sha256=_C, binary=Binary}] ->
                 % record the time this thumbnail was accessed
-                lager:info("cache hit for thumbnail ~w", [Checksum]),
+                lager:info("cache hit for thumbnail ~s", [Checksum]),
                 T = seconds_since_epoch(),
                 ok = mnesia:write(#thumbnail_dates{timestamp=T, sha256=Checksum}),
                 Binary;
             [] ->
-                lager:info("cache miss for thumbnail ~w", [Checksum]),
+                lager:info("cache miss for thumbnail ~s", [Checksum]),
                 % producing a thumbnail in a transaction is not ideal...
                 Binary = generate_thumbnail(Checksum, thumbnail),
                 ok = mnesia:write(#thumbnails{sha256=Checksum, binary=Binary}),
