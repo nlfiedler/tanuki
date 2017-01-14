@@ -4,22 +4,30 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 
 ## Current Status
 
-The incoming processor, backend application, and web interface are written in a combination of Erlang and Elixir, with everything being built using [mix](https://hexdocs.pm/mix/Mix.html). Some of the dependencies require [Rust](https://www.rust-lang.org/).
+The incoming processor, backend application, and web interface are written in a combination of Erlang and Elixir, with everything being built using [mix](https://hexdocs.pm/mix/Mix.html). Some of the dependencies require Rust.
 
 ## Building and Testing
 
 ### Prerequisites
 
-* Erlang/OTP R18 or higher
-    - Homebrew: `brew install erlang`
-    - FreeBSD: `pkg install erlang`
-* Elixir 1.3 or higher
-    - Homebrew: `brew install elixir`
-* CouchDB 1.6.1 or higher
-    - Homebrew: `brew install couchdb`
-    - FreeBSD: `pkg install couchdb`
-* ImageMagick 6.9.x
-* Rust 1.10 or higher
+* [Erlang/OTP](http://www.erlang.org) R18 or higher
+* [Elixir](http://elixir-lang.org) 1.3 or higher
+* [CouchDB](http://couchdb.apache.org) 1.6.1 or higher
+* [ImageMagick](http://www.imagemagick.org) 6.9.x
+* [Rust](https://www.rust-lang.org) 1.10 or higher
+
+#### Example for MacOS
+
+This example asssumes you are using [Homebrew](http://brew.sh) to install the dependencies, which provides up-to-date versions of everything needed. The `xcode-select --install` is there just because the command-line tools sometimes get out of date, and some of the dependencies will fail to build without them.
+
+```
+$ xcode-select --install
+$ brew install erlang
+$ brew install elixir
+$ brew install couchdb
+$ brew install imagemagick
+$ brew install rust
+```
 
 ### Configuration
 
