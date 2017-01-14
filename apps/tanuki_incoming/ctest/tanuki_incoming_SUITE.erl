@@ -127,10 +127,10 @@ single_image_test(Config) ->
     Mapping = checksum_by_filename(Db, [<<"img_015.JPG">>]),
     verify_stored_assets(Config, Mapping),
     % check that each field of each new document is the correct value
-    Rows = tanuki_backend:by_tags(["yellow"]),
+    Rows = 'Elixir.TanukiBackend':by_tags([<<"yellow">>]),
     ?assertEqual(1, length(Rows)),
     DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
-    {ok, Doc} = tanuki_backend:fetch_document(DocId),
+    {ok, Doc} = 'Elixir.TanukiBackend':fetch_document(DocId),
     CurrentUser = list_to_binary(os:getenv("USER")),
     % Because the image may be rotated, the checksum may vary from one
     % system to the next, so we must retrieve the checksum for the file.
@@ -172,10 +172,10 @@ non_image_test(Config) ->
     Mapping = checksum_by_filename(Db, [<<"LICENSE.txt">>]),
     verify_stored_assets(Config, Mapping),
     % check that each field of each new document is the correct value
-    Rows = tanuki_backend:by_tags(["text"]),
+    Rows = 'Elixir.TanukiBackend':by_tags([<<"text">>]),
     ?assertEqual(1, length(Rows)),
     DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
-    {ok, Doc} = tanuki_backend:fetch_document(DocId),
+    {ok, Doc} = 'Elixir.TanukiBackend':fetch_document(DocId),
     CurrentUser = list_to_binary(os:getenv("USER")),
     Checksum = maps:get(<<"LICENSE.txt">>, Mapping),
     ExpectedValues = #{
@@ -214,10 +214,10 @@ rotated_image_test(Config) ->
     Mapping = checksum_by_filename(Db, [<<"fighting_kittens.jpg">>]),
     verify_stored_assets(Config, Mapping),
     % check that each field of each new document is the correct value
-    Rows = tanuki_backend:by_tags(["rotated"]),
+    Rows = 'Elixir.TanukiBackend':by_tags([<<"rotated">>]),
     ?assertEqual(1, length(Rows)),
     DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
-    {ok, Doc} = tanuki_backend:fetch_document(DocId),
+    {ok, Doc} = 'Elixir.TanukiBackend':fetch_document(DocId),
     Checksum = maps:get(<<"fighting_kittens.jpg">>, Mapping),
     ExpectedValues = #{
         <<"exif_date">> => null,
@@ -253,10 +253,10 @@ topical_image_test(Config) ->
     Mapping = checksum_by_filename(Db, [<<"dcp_1069.jpg">>]),
     verify_stored_assets(Config, Mapping),
     % check that each field of each new document is the correct value
-    Rows = tanuki_backend:by_tags(["cows"]),
+    Rows = 'Elixir.TanukiBackend':by_tags([<<"cows">>]),
     ?assertEqual(1, length(Rows)),
     DocId = couchbeam_doc:get_value(<<"id">>, hd(Rows)),
-    {ok, Doc} = tanuki_backend:fetch_document(DocId),
+    {ok, Doc} = 'Elixir.TanukiBackend':fetch_document(DocId),
     CurrentUser = list_to_binary(os:getenv("USER")),
     Checksum = maps:get(<<"dcp_1069.jpg">>, Mapping),
     ExpectedValues = #{
@@ -335,11 +335,11 @@ multiple_image_test(Config) ->
         <<"img_015.JPG">> => FlowerValues,
         <<"IMG_5745.JPG">> => ValleyValues
     },
-    Rows = tanuki_backend:by_tags(["multiple"]),
+    Rows = 'Elixir.TanukiBackend':by_tags([<<"multiple">>]),
     ?assertEqual(3, length(Rows)),
     ValidateRow = fun(Row) ->
         DocId = couchbeam_doc:get_value(<<"id">>, Row),
-        {ok, Doc} = tanuki_backend:fetch_document(DocId),
+        {ok, Doc} = 'Elixir.TanukiBackend':fetch_document(DocId),
         Filename = couchbeam_doc:get_value(<<"file_name">>, Doc),
         ExpectedValues = maps:get(Filename, FilenameToValues),
         maps:fold(fun(Key, Value, Elem) ->
@@ -366,7 +366,7 @@ empty_folder_test(Config) ->
     % check that empty incoming directory is removed
     ?assertEqual({ok, []}, file:list_dir(IncomingDir)),
     % check that no assets were imported by those tags
-    Rows = tanuki_backend:by_tags(["empty"]),
+    Rows = 'Elixir.TanukiBackend':by_tags([<<"empty">>]),
     ?assertEqual(0, length(Rows)),
     ok.
 

@@ -66,7 +66,7 @@ handle_cast(process, State) ->
     #state{database=Db, incoming_dir=Incoming, blob_store=Store} = State,
     % Filter function to ensure the given directory is at least an hour old.
     FilterFun = fun(Path) ->
-        NowSecs = tanuki_backend:seconds_since_epoch(),
+        NowSecs = seconds_since_epoch(),
         {ok, #file_info{ctime = CTime}} = file:read_file_info(Path, [{time, posix}]),
         NowSecs - CTime > 3600
     end,
@@ -314,7 +314,7 @@ update_document(Db, DocId, Filename, Tags, Topic, Location) ->
     Doc2 = maybe_set_topic(Doc1, Topic),
     BinTags = [list_to_binary(Tag) || Tag <- Tags],
     lager:info("new tags: ~p", [BinTags]),
-    case tanuki_backend:get_field_value(<<"tags">>, Doc2) of
+    case 'Elixir.TanukiBackend':get_field_value(<<"tags">>, Doc2) of
         none ->
             Doc3 = couchbeam_doc:set_value(<<"tags">>, BinTags, Doc2);
         OldTags ->
@@ -335,7 +335,7 @@ maybe_set_location(Doc, Location) ->
         undefined -> null;
         V -> list_to_binary(V)
     end,
-    NewDoc = case tanuki_backend:get_field_value(<<"location">>, Doc) of
+    NewDoc = case 'Elixir.TanukiBackend':get_field_value(<<"location">>, Doc) of
         none -> couchbeam_doc:set_value(<<"location">>, Value, Doc);
         _V -> Doc
     end,
@@ -348,7 +348,7 @@ maybe_set_topic(Doc, Topic) ->
         undefined -> null;
         V -> list_to_binary(V)
     end,
-    NewDoc = case tanuki_backend:get_field_value(<<"topic">>, Doc) of
+    NewDoc = case 'Elixir.TanukiBackend':get_field_value(<<"topic">>, Doc) of
         none -> couchbeam_doc:set_value(<<"topic">>, Value, Doc);
         _V -> Doc
     end,
@@ -497,3 +497,8 @@ datetime(Plist) ->
 
 datetime(_, Plist) ->
     datetime(Plist).
+
+% TODO: replace this with DateTime.to_unix(DateTime.utc_now()) in Elixir
+seconds_since_epoch() ->
+    {Mega, Sec, _Micro} = os:timestamp(),
+    Mega * 1000000 + Sec.

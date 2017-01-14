@@ -18,8 +18,7 @@ defmodule TanukiWeb.PageController do
   end
 
   def detail(conn, params) do
-    row_id = to_charlist(params["id"])
-    {:ok, document} = :tanuki_backend.fetch_document(row_id)
+    {:ok, document} = TanukiBackend.fetch_document(params["id"])
     asset_info = read_doc(document)
     conn
     |> assign(:asset_info, asset_info)
@@ -27,9 +26,8 @@ defmodule TanukiWeb.PageController do
   end
 
   def thumbnail(conn, params) do
-    sha256 = to_charlist(params["id"])
-    {:ok, binary, mimetype} = :tanuki_backend.retrieve_thumbnail(sha256)
-    etag = :crypto.hash(:sha, binary) |> Base.encode16 |> String.downcase
+    {:ok, binary, mimetype} = TanukiBackend.retrieve_thumbnail(params["id"])
+    etag = Base.encode16(:crypto.hash(:sha, binary), case: :lower)
     conn
     |> put_resp_content_type(mimetype)
     |> put_resp_header("etag", etag)
@@ -37,9 +35,8 @@ defmodule TanukiWeb.PageController do
   end
 
   def preview(conn, params) do
-    sha256 = to_charlist(params["id"])
-    binary = :tanuki_backend.generate_thumbnail(sha256, :preview)
-    etag = :crypto.hash(:sha, binary) |> Base.encode16 |> String.downcase
+    binary = TanukiBackend.generate_thumbnail(params["id"], :preview)
+    etag = Base.encode16(:crypto.hash(:sha, binary), case: :lower)
     conn
     |> put_resp_content_type("image/jpeg")
     |> put_resp_header("etag", etag)
@@ -47,9 +44,8 @@ defmodule TanukiWeb.PageController do
   end
 
   def asset(conn, params) do
-    sha256 = to_charlist(params["id"])
-    filepath = to_string(:tanuki_backend.checksum_to_asset_path(sha256))
-    mimetype = case :tanuki_backend.by_checksum(sha256) do
+    filepath = to_string(TanukiBackend.checksum_to_asset_path(params["id"]))
+    mimetype = case TanukiBackend.by_checksum(params["id"]) do
         [] ->
           "application/octet-stream"
         [doc|_t] ->
@@ -67,8 +63,7 @@ defmodule TanukiWeb.PageController do
   end
 
   def edit(conn, params) do
-    row_id = to_charlist(params["id"])
-    {:ok, document} = :tanuki_backend.fetch_document(row_id)
+    {:ok, document} = TanukiBackend.fetch_document(params["id"])
     asset_info = read_doc(document)
     conn
     |> assign(:asset_info, asset_info)
@@ -76,15 +71,14 @@ defmodule TanukiWeb.PageController do
   end
 
   def update(conn, params) do
-    row_id = to_charlist(params["id"])
     # Field values are strings, which in Elixir are already binaries, so no
     # need to convert before sending to couchbeam.
-    {:ok, document} = :tanuki_backend.fetch_document(row_id)
+    {:ok, document} = TanukiBackend.fetch_document(params["id"])
     newdoc = :couchbeam_doc.set_value("location", params["location"], document)
     newdoc = :couchbeam_doc.set_value("topic", params["topic"], newdoc)
     tags = for t <- String.split(params["tags"], ","), do: String.trim(t)
     newdoc = :couchbeam_doc.set_value("tags", tags, newdoc)
-    {:ok, updated} = :tanuki_backend.update_document(newdoc)
+    {:ok, updated} = TanukiBackend.update_document(newdoc)
     asset_info = read_doc(updated)
     conn
     |> assign(:asset_info, asset_info)
@@ -99,8 +93,8 @@ defmodule TanukiWeb.PageController do
     location = to_string(:couchbeam_doc.get_value("location", document))
     topic = to_string(:couchbeam_doc.get_value("topic", document))
     tags = for t <- :couchbeam_doc.get_value("tags", document), do: to_string(t)
-    datetime_list = :tanuki_backend.get_best_date(document)
-    datetime_str = :tanuki_backend.date_list_to_string(datetime_list)
+    datetime_list = TanukiBackend.get_best_date(document)
+    datetime_str = TanukiBackend.date_list_to_string(datetime_list)
     %{
       :id => row_id,
       :fname => filename,
@@ -116,7 +110,7 @@ defmodule TanukiWeb.PageController do
   # Fetches the known tags and assigns the list to the connection as
   # `tags`, to be rendered by the "keys.html" template.
   defp fetch_tags(conn, _opts) do
-    results = :tanuki_backend.all_tags()
+    results = TanukiBackend.all_tags()
     tags = for row <- results, do: :couchbeam_doc.get_value("key", row)
     assign(conn, :tags, tags)
   end
@@ -215,8 +209,7 @@ defmodule TanukiWeb.PageController do
 
   defp assign_assets_and_tags(conn) do
     selected_tags = get_selected_tags(conn)
-    tags_as_charlist = for tag <- selected_tags, do: to_charlist(tag)
-    rows = :tanuki_backend.by_tags(tags_as_charlist, &asset_row_sorter/2)
+    rows = TanukiBackend.by_tags(selected_tags, &asset_row_sorter/2)
     tag_info = for row <- rows, do: build_asset_info(row)
     conn
     |> assign(:selected_tags, selected_tags)
@@ -237,7 +230,7 @@ defmodule TanukiWeb.PageController do
     # values is a list of [date, file_name, sha256], where 'date' is exif,
     # file, or import date in that preferred order. The date value itself
     # is a list of integers (e.g. [2014, 7, 4, 12, 1] ~> "2014/7/4 12:01").
-    date_string = :tanuki_backend.date_list_to_string(hd(values), :date_only)
+    date_string = TanukiBackend.date_list_to_string(hd(values), :date_only)
     filename = to_string(hd(tl(values)))
     checksum = to_string(hd(tl(tl(values))))
     %{

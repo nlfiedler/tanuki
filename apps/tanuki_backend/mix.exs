@@ -8,10 +8,9 @@ defmodule TanukiBackend.Mixfile do
      config_path: "../../config/config.exs",
      deps_path: "../../deps",
      lockfile: "../../mix.lock",
-     compilers: [:erlang, :app],
-     erlc_options: [:debug_info,
-                    :fail_on_warning,
-                    {:parse_transform, :lager_transform}],
+     elixir: "~> 1.4",
+     build_embedded: Mix.env == :prod,
+     start_permanent: Mix.env == :prod,
      deps: deps()]
   end
 
@@ -19,17 +18,17 @@ defmodule TanukiBackend.Mixfile do
     [applications: [
       :kernel,
       :stdlib,
-      :lager,
       :mnesia,
       :jsx,
       :couchbeam],
-     mod: {:tanuki_backend_app, []},
+     extra_applications: [:logger],
+     mod: {TanukiBackend.Application, []},
      description: 'Data access and caching layer.']
   end
 
   defp deps do
     [{:couchbeam, github: "benoitc/couchbeam", tag: "1.3.1"},
      {:emagick_rs, github: "nlfiedler/emagick.rs", tag: "0.4.4"},
-     {:lager, github: "basho/lager", tag: "3.2.1"}]
+     {:temp, "~> 0.4.2", only: [:test]}]
   end
 end
