@@ -2,12 +2,6 @@
 
 ## General Items
 
-1. Remove all Erlang code
-    - Save the old conversion app code for later translation to Elixir
-    - Update the `.gitignore` file ("logs")
-    - Remove all references to `lager`
-    - Remove the erlang tasks mix plugin
-1. Allow browsing by year, then month
 1. Update to latest `couchbeam` tag (1.4.2 or higher)
 1. Consider renaming the "topic" field to "caption"
     - Cannot figure out how to use "topic" anyway
@@ -15,6 +9,7 @@
 1. Maybe have "location" be a tag, too
     - To help reduce tag clutter, hide those whose count falls below a threshold
     - Show all of the tags dynamically using JavaScript (via a link)
+1. Allow browsing by year, then month
 1. Add an "/admin" scope for various functions
     - Renaming a tag across all documents
     - Renaming a topic across all documents
@@ -43,6 +38,7 @@
 1. Can we produce thumbnails for AVI files?
 1. Show list of known locations
 1. Show list of known topics
+1. Add a button to the /admin page to kick off the incoming processor
 1. Write tests for the `tanuki_web` application
 
 ## Documentation

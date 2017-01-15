@@ -11,7 +11,6 @@ defmodule Tanuki.Mixfile do
   # Dependencies listed here are available only for this project and cannot
   # be accessed from applications inside the apps folder
   defp deps do
-    [{:distillery, "~> 1.0"},
-     {:mix_erlang_tasks, github: "heroku/mix-erlang-tasks", branch: "umbrella_support"}]
+    [{:distillery, "~> 1.0"}]
   end
 end

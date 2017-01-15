@@ -44,7 +44,6 @@ $ cat apps/tanuki_incoming/config/dev.exs
 use Mix.Config
 
 config :tanuki_incoming,
-  assets_dir: '/Users/samiam/Downloads/tanuki',
   incoming_dir: '/Users/samiam/Downloads/incoming'
 ```
 
@@ -55,7 +54,7 @@ Once the configuration is in place, you can run build everything and run the tes
 ```
 $ mix deps.get
 $ mix compile
-$ mix ct
+$ mix test
 ```
 
 To start an instance configured for development, run the commands shown below. While it would be nice to invoke `mix phoenix.server` from the umbrella project, Phoenix insists on trying to reload the Erlang applications, and fails. For now, just run the web app.
