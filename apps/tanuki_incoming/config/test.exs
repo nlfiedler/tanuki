@@ -11,6 +11,3 @@ use Mix.Config
 # mercy, since that is exactly what the test suite will do.
 config :tanuki_incoming,
   database: 'tanuki_test'
-
-config :lager,
-  lager_common_test_backend: :debug

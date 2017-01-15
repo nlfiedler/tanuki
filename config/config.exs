@@ -2,15 +2,6 @@
 # dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :lager,
-  log_root: 'log',
-  handlers: [
-    lager_console_backend: :info,
-    lager_file_backend: [file: 'error.log', level: :error],
-    lager_file_backend: [file: 'console.log', level: :info]
-  ],
-  error_logger_hwm: 500
-
 # By default, the umbrella project as well as each child application will
 # require this configuration file, ensuring they all use the same
 # configuration. While one could configure all applications here, we prefer

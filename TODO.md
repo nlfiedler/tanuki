@@ -2,15 +2,19 @@
 
 ## General Items
 
-1. Rewrite `tanuki_incoming` in Elixir
-    - Update the `.gitignore` file ("logs")
-    - Remove the `ctest` and `src` directories
-    - Remove all references to `lager`
 1. Remove all Erlang code
     - Save the old conversion app code for later translation to Elixir
     - Update the `.gitignore` file ("logs")
     - Remove all references to `lager`
+    - Remove the erlang tasks mix plugin
 1. Allow browsing by year, then month
+1. Update to latest `couchbeam` tag (1.4.2 or higher)
+1. Consider renaming the "topic" field to "caption"
+    - Cannot figure out how to use "topic" anyway
+    - Incoming processor needs to no longer consider the ^ character in folder names
+1. Maybe have "location" be a tag, too
+    - To help reduce tag clutter, hide those whose count falls below a threshold
+    - Show all of the tags dynamically using JavaScript (via a link)
 1. Add an "/admin" scope for various functions
     - Renaming a tag across all documents
     - Renaming a topic across all documents
@@ -19,9 +23,6 @@
     - Changing a tag to a location across all documents
     - Changing a tag to a topic across all documents
     - After all that is done, remove all of the corresponding apps
-1. Consider renaming the "topic" field to "caption"
-    - Cannot figure out how to use "topic" anyway
-    - Incoming processor needs to no longer consider the ^ character in folder names
 1. Might be nice to reduce the console output when running `mix ct`
 1. Get the overlays working in the release (see `rel/config.exs`)
 1. See if there is an easy way to get the `Version` file working again
