@@ -4,13 +4,12 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 
 ## Current Status
 
-The incoming processor, backend application, and web interface are written in a combination of Erlang and Elixir, with everything being built using [mix](https://hexdocs.pm/mix/Mix.html). Some of the dependencies require Rust.
+The incoming processor, backend application, and web interface are written in Elixir, with everything being built using [mix](https://hexdocs.pm/mix/Mix.html). Some of the dependencies require Rust.
 
 ## Building and Testing
 
 ### Prerequisites
 
-* [Erlang/OTP](http://www.erlang.org) R18 or higher
 * [Elixir](http://elixir-lang.org) 1.3 or higher
 * [CouchDB](http://couchdb.apache.org) 1.6.1 or higher
 * [ImageMagick](http://www.imagemagick.org) 6.9.x
@@ -22,7 +21,6 @@ This example asssumes you are using [Homebrew](http://brew.sh) to install the de
 
 ```
 $ xcode-select --install
-$ brew install erlang
 $ brew install elixir
 $ brew install couchdb
 $ brew install imagemagick
@@ -57,14 +55,13 @@ $ mix compile
 $ mix test
 ```
 
-To start an instance configured for development, run the commands shown below. While it would be nice to invoke `mix phoenix.server` from the umbrella project, Phoenix insists on trying to reload the Erlang applications, and fails. For now, just run the web app.
+To start an instance configured for development, run the following command.
 
 ```
-$ cd apps/tanuki_web
 $ mix phoenix.server
 ```
 
-The web server will be listening on port 4000. Be sure to have a CouchDB instance running.
+The web server will be listening on port `4000`. Be sure to have a CouchDB instance running.
 
 ### Triggering Processing
 
