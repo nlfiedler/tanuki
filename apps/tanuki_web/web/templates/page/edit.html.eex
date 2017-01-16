@@ -21,15 +21,15 @@
     <table>
       <tr>
         <td class="detail">Location:</td>
-        <td><input type="text" name="location" value="<%= @asset_info[:location] %>"/></td>
+        <td><input type="text" name="location" size="80" value="<%= @asset_info[:location] %>"/></td>
       </tr>
       <tr>
-        <td class="detail">Topic:</td>
-        <td><input type="text" name="topic" value="<%= @asset_info[:topic] %>"/></td>
+        <td class="detail">Caption:</td>
+        <td><input type="text" name="caption" size="80" value="<%= @asset_info[:caption] %>"/></td>
       </tr>
       <tr>
         <td class="detail">Tags:</td>
-        <td><input type="text" name="tags" value="<%= Enum.join(@asset_info[:tags], ", ") %>"/></td>
+        <td><input type="text" name="tags" size="80" value="<%= Enum.join(@asset_info[:tags], ", ") %>"/></td>
       </tr>
     </table>
     <input type="hidden" name="_csrf_token" value="<%= get_csrf_token() %>">

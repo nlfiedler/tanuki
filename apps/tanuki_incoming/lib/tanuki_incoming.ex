@@ -86,7 +86,7 @@ defmodule TanukiIncoming do
 
   """
   def process_path(path, db) do
-    {topic, tags, location} = convert_path_to_details(path)
+    {tags, location} = convert_path_to_details(path)
     Logger.info("processing assest with tags #{tags}, location #{location}")
     :ok = delete_extraneous_files(path)
     process_fn = fn(name) ->
@@ -96,8 +96,8 @@ defmodule TanukiIncoming do
         {:ok, checksum} = compute_checksum(filepath)
         # Either insert or update a document in the database.
         case find_document(db, checksum) do
-          :undefined -> create_document(db, filepath, tags, topic, location, checksum)
-          doc_id -> update_document(db, doc_id, tags, topic, location)
+          :undefined -> create_document(db, filepath, tags, location, checksum)
+          doc_id -> update_document(db, doc_id, tags, location)
         end
         # Move the asset into place, or remove it if duplicate.
         store_asset(filepath, checksum)
@@ -116,28 +116,22 @@ defmodule TanukiIncoming do
 
   @doc """
 
-  Convert the path to a topic, set of tags, and a location. Topic, if any,
-  is separated by a circumflex (^) and starts at the beginning of the path.
-  Location, if any, starts with an at sign (@) and goes to the end of the
-  path. Tags are required and are separated by underscore (_). Any
-  underscores in topic and location are replaced with spaces.
+  Convert the path to a set of tags and a location. Location, if any,
+  starts with an at sign (@) and goes to the end of the path. Tags must be
+  separated by underscore (_). Any underscores in location are replaced
+  with spaces.
 
   """
   def convert_path_to_details(path) do
     asset_folder = String.downcase(Path.basename(path))
-    [maybetopic | rest] = String.split(asset_folder, "^")
-    {topic, nottopic} = case rest do
-      [] -> {nil, maybetopic}
-      [r | _] -> {String.replace(maybetopic, "_", " "), r}
-    end
-    [tags | tail] = String.split(nottopic, "@")
+    [tags | tail] = String.split(asset_folder, "@")
     location = case tail do
       [] -> nil
       [l | _] -> String.replace(l, "_", " ")
     end
-    taglist = String.split(tags, "_")
-    validtags = Enum.filter(taglist, fn(tag) -> String.length(tag) > 0 end)
-    {topic, validtags, location}
+    tag_list = String.split(tags, "_")
+    non_empty_tags = Enum.filter(tag_list, fn(tag) -> String.length(tag) > 0 end)
+    {non_empty_tags, location}
   end
 
   @doc """
@@ -255,7 +249,7 @@ defmodule TanukiIncoming do
   Create a new document in the CouchDB database.
 
   """
-  def create_document(db, fullpath, tags, topic, location, checksum) do
+  def create_document(db, fullpath, tags, location, checksum) do
     filename = Path.basename(fullpath)
     Logger.info("creating document for #{filename}")
     fstat = File.stat!(fullpath)
@@ -271,8 +265,7 @@ defmodule TanukiIncoming do
       {"location", location},
       {"mimetype", hd(:mimetypes.filename(String.downcase(filename)))},
       {"sha256", checksum},
-      {"tags", Enum.sort(tags)},
-      {"topic", topic}
+      {"tags", Enum.sort(tags)}
     ]}
     # Fail fast if insertion failed, so we do not then move the asset out
     # of the incoming directory and fail to process it properly.
@@ -285,22 +278,15 @@ defmodule TanukiIncoming do
   @doc """
 
   Merge the given tags with existing document's tags.
-  If missing topic field, set to Topic argument.
   If missing location field, set to Location argument.
 
   """
-  def update_document(db, doc_id, tags, topic, location) do
+  def update_document(db, doc_id, tags, location) do
     Logger.info("updating document #{doc_id}")
     {:ok, doc} = :couchbeam.open_doc(db, doc_id)
     # set the location field in the document, if not already set
     doc = if TanukiBackend.get_field_value("location", doc) == :none do
       :couchbeam_doc.set_value("location", location, doc)
-    else
-      doc
-    end
-    # set the topic field in the document, if not already set
-    doc = if TanukiBackend.get_field_value("topic", doc) == :none do
-      :couchbeam_doc.set_value("topic", topic, doc)
     else
       doc
     end

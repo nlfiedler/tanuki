@@ -61,14 +61,13 @@ defmodule TanukiIncomingTest do
   end
 
   test "folder name to fields conversion" do
-    assert TanukiIncoming.convert_path_to_details("") == {nil, [], nil}
-    assert TanukiIncoming.convert_path_to_details("foo") == {nil, ["foo"], nil}
-    assert TanukiIncoming.convert_path_to_details("foo__bar") == {nil, ["foo", "bar"], nil}
-    assert TanukiIncoming.convert_path_to_details("bar^foo@home") == {"bar", ["foo"], "home"}
-    assert TanukiIncoming.convert_path_to_details("singing_in_the_rain^foo_bar_baz@out_on_the_town") ==
-      {"singing in the rain", ["foo", "bar", "baz"], "out on the town"}
-    assert TanukiIncoming.convert_path_to_details("foo^") == {"foo", [], nil}
-    assert TanukiIncoming.convert_path_to_details("@home") == {nil, [], "home"}
+    assert TanukiIncoming.convert_path_to_details("") == {[], nil}
+    assert TanukiIncoming.convert_path_to_details("foo") == {["foo"], nil}
+    assert TanukiIncoming.convert_path_to_details("foo__bar") == {["foo", "bar"], nil}
+    assert TanukiIncoming.convert_path_to_details("foo@home") == {["foo"], "home"}
+    assert TanukiIncoming.convert_path_to_details("foo_bar_baz@out_on_the_town") ==
+      {["foo", "bar", "baz"], "out on the town"}
+    assert TanukiIncoming.convert_path_to_details("@home") == {[], "home"}
   end
 
   test "image orientation correction" do
@@ -81,14 +80,12 @@ defmodule TanukiIncomingTest do
     db = context[:db]
     fullpath = "./test/fixtures/IMG_5745.JPG"
     tags = ["foo", "bar"]
-    topic = "whatever"
     location = "outside"
     sha = "cafebabe"
-    {:ok, id} = TanukiIncoming.create_document(db, fullpath, tags, topic, location, sha)
+    {:ok, id} = TanukiIncoming.create_document(db, fullpath, tags, location, sha)
     {:ok, doc} = :couchbeam.open_doc(db, id)
     assert :couchbeam_doc.get_value("file_name", doc) == "IMG_5745.JPG"
     assert :couchbeam_doc.get_value("file_size", doc) == 107302
-    assert :couchbeam_doc.get_value("topic", doc) == topic
     assert :couchbeam_doc.get_value("location", doc) == location
     # the tags will get sorted on the way in
     assert :couchbeam_doc.get_value("tags", doc) == ["bar", "foo"]
@@ -98,23 +95,20 @@ defmodule TanukiIncomingTest do
     db = context[:db]
     fullpath = "./test/fixtures/IMG_5745.JPG"
     tags = ["foo", "bar"]
-    topic = "whatever"
     location = "outside"
     sha = "cafebabe007"
-    {:ok, id} = TanukiIncoming.create_document(db, fullpath, tags, topic, location, sha)
+    {:ok, id} = TanukiIncoming.create_document(db, fullpath, tags, location, sha)
     {:ok, doc} = :couchbeam.open_doc(db, id)
     assert :couchbeam_doc.get_value("file_name", doc) == "IMG_5745.JPG"
     assert :couchbeam_doc.get_value("file_size", doc) == 107302
-    assert :couchbeam_doc.get_value("topic", doc) == topic
     assert :couchbeam_doc.get_value("location", doc) == location
     # the tags will get sorted on the way in
     assert :couchbeam_doc.get_value("tags", doc) == ["bar", "foo"]
 
     tags = ["foo", "bar", "quux", "baz"]
-    TanukiIncoming.update_document(db, id, tags, "something", "home")
+    TanukiIncoming.update_document(db, id, tags, "home")
     {:ok, doc} = :couchbeam.open_doc(db, id)
-    # these were already set, so they do not get set again
-    assert :couchbeam_doc.get_value("topic", doc) == topic
+    # location was already set, so it does not get set again
     assert :couchbeam_doc.get_value("location", doc) == location
     # the tags will get sorted and merged on the way in
     assert :couchbeam_doc.get_value("tags", doc) == ["bar", "baz", "foo", "quux"]
@@ -124,10 +118,9 @@ defmodule TanukiIncomingTest do
     db = context[:db]
     fullpath = "./test/fixtures/IMG_5745.JPG"
     tags = ["foo", "bar"]
-    topic = "whatever"
     location = "outside"
     sha = "cafebabea113"
-    {:ok, id} = TanukiIncoming.create_document(db, fullpath, tags, topic, location, sha)
+    {:ok, id} = TanukiIncoming.create_document(db, fullpath, tags, location, sha)
     {:ok, _doc} = :couchbeam.open_doc(db, id)
     assert TanukiIncoming.find_document(db, sha) == id
     assert TanukiIncoming.find_document(db, "doesnotexist") == :undefined

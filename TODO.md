@@ -2,10 +2,6 @@
 
 ## General Items
 
-1. Rename the "topic" field to "caption"
-    - Cannot figure out how to use "topic" anyway
-    - Incoming processor needs to no longer consider the ^ character in folder names
-    - Rename field and title in web pages
 1. Allow browsing by year, then month
 1. Add an "/admin" scope for various functions
     - Renaming a tag across all documents

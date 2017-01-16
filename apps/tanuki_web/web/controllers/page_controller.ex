@@ -75,7 +75,7 @@ defmodule TanukiWeb.PageController do
     # need to convert before sending to couchbeam.
     {:ok, document} = TanukiBackend.fetch_document(params["id"])
     newdoc = :couchbeam_doc.set_value("location", params["location"], document)
-    newdoc = :couchbeam_doc.set_value("topic", params["topic"], newdoc)
+    newdoc = :couchbeam_doc.set_value("caption", params["caption"], newdoc)
     tags = for t <- String.split(params["tags"], ","), do: String.trim(t)
     newdoc = :couchbeam_doc.set_value("tags", tags, newdoc)
     {:ok, updated} = TanukiBackend.update_document(newdoc)
@@ -91,7 +91,7 @@ defmodule TanukiWeb.PageController do
     filename = to_string(:couchbeam_doc.get_value("file_name", document))
     filesize = to_string(:couchbeam_doc.get_value("file_size", document))
     location = to_string(:couchbeam_doc.get_value("location", document))
-    topic = to_string(:couchbeam_doc.get_value("topic", document))
+    caption = to_string(:couchbeam_doc.get_value("caption", document))
     tags = for t <- :couchbeam_doc.get_value("tags", document), do: to_string(t)
     datetime_list = TanukiBackend.get_best_date(document)
     datetime_str = TanukiBackend.date_list_to_string(datetime_list)
@@ -101,7 +101,7 @@ defmodule TanukiWeb.PageController do
       :size => filesize,
       :datetime => datetime_str,
       :sha => sha256,
-      :topic => topic,
+      :caption => caption,
       :location => location,
       :tags => tags
     }
