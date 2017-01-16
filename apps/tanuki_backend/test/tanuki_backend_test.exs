@@ -88,6 +88,22 @@ defmodule TanukiBackendTest do
       assert length(rows) == 3
       for {row, id} <- Enum.zip(rows, ids), do: validate_fn.(row, id)
     end) =~ "cache hit for"
+
+    # Invoke by_tags/2 to test the sorting function support.
+    # Passing a (different) sort function causes a cache miss.
+    assert capture_log(fn ->
+      rows = TanukiBackend.by_tags(["christina", "joseph"], fn(a, b) ->
+        # The date is the first value in the list of "value" in the row in the
+        # 'by_tag' CouchDB view. By default sort newer assets before older.
+        a_date = hd(:couchbeam_doc.get_value("value", a))
+        b_date = hd(:couchbeam_doc.get_value("value", b))
+        a_date >= b_date
+      end)
+      assert length(rows) == 3
+      for {row, id} <- Enum.zip(rows, ids), do: validate_fn.(row, id)
+    end) =~ "cache miss for"
+
+    # restore the logger configuration
     Logger.configure(level: level)
 
     # negative case, no such tags
