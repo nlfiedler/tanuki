@@ -9,15 +9,22 @@ defmodule TanukiBackend do
 
   # Mnesia record for storing image thumbnails keyed by checksum.
   Record.defrecord :thumbnails, [sha256: nil, binary: nil]
-  @type thumbnails :: record(:thumbnails, sha256: String.t, binary: binary)
 
   # Mnesia record for tracking the age of individual thumbnails.
   Record.defrecord :thumbnail_dates, [timestamp: nil, sha256: nil]
-  @type thumbnail_dates :: record(:thumbnail_dates, timestamp: integer, sha256: String.t)
 
   # Mnesia record for limiting the number of cached thumbnails.
   Record.defrecord :thumbnail_counter, [id: 0, ver: 1]
-  @type thumbnail_counter :: record(:thumbnail_counter, id: integer, ver: integer)
+
+  # Mnesia record for caching "by_tags" queries.
+  Record.defrecord :by_tags_cache, [key: nil, results: nil]
+
+  @mnesia_tables [
+    :thumbnails,
+    :thumbnail_dates,
+    :thumbnail_counter,
+    :by_tags_cache
+  ]
 
   @doc """
 
@@ -29,7 +36,7 @@ defmodule TanukiBackend do
     nodes = [:erlang.node()]
     ensure_schema(nodes)
     ensure_mnesia(nodes)
-    :ok = :mnesia.wait_for_tables([:thumbnails, :thumbnail_dates, :thumbnail_counter], 5000)
+    :ok = :mnesia.wait_for_tables(@mnesia_tables, 5000)
   end
 
   @doc """
@@ -99,46 +106,47 @@ defmodule TanukiBackend do
   """
   @spec by_tags(tags, sort_fn) :: [any()] when tags: [String.t], sort_fn: (any(), any() -> boolean())
   def by_tags(tags, sort_fn) when is_list(tags) do
-    # Ensure the results cache table exists for this process.
-    if :ets.info(:by_tags) == :undefined do
-      Logger.info("creating by_tags ETS table")
-      :ets.new(:by_tags, [:set, :named_table, :compressed])
-    end
     # Produce a key based on the requested tags and the sorting function
     # such that if either change, the key changes.
     key = {Enum.join(Enum.sort(tags), ""), sort_fn}
-    case :ets.lookup(:by_tags, key) do
-      [] ->
-        Logger.info("cache miss for #{inspect key}")
-        all_rows = GenServer.call(TanukiDatabase, {:by_tags, tags})
-        # Reduce the results to those that have all of the given tags.
-        tag_counts = List.foldl(all_rows, %{}, fn(row, acc_in) ->
-          docid = :couchbeam_doc.get_value("id", row)
-          count = Map.get(acc_in, docid, 0)
-          Map.put(acc_in, docid, count + 1)
-        end)
-        matching_rows = Enum.filter(all_rows, fn(row) ->
-          docid = :couchbeam_doc.get_value("id", row)
-          Map.get(tag_counts, docid) == length(tags)
-        end)
-        # Remove the duplicate rows by sorting on the document identifier
-        # in a unique fashion.
-        unsorted_results = :lists.usort(fn(a, b) ->
-          id_a = :couchbeam_doc.get_value("id", a)
-          id_b = :couchbeam_doc.get_value("id", b)
-          id_a <= id_b
-        end, matching_rows)
-        # Now sort the rows according to the given sorting function.
-        results = Enum.sort(unsorted_results, sort_fn)
-        # Save the results in ETS to avoid doing the same work again if
-        # a repeated request is made, replacing any previous values.
-        :ets.delete_all_objects(:by_tags)
-        :ets.insert(:by_tags, {key, results})
-        results
-      [{_key, rows}] ->
-        Logger.info("cache hit for #{inspect key}")
-        rows
+    tags_cache_query_fn = fn() ->
+      case :mnesia.read(:by_tags_cache, key) do
+        [] ->
+          Logger.info("cache miss for #{inspect key}")
+          all_rows = GenServer.call(TanukiDatabase, {:by_tags, tags})
+          # Reduce the results to those that have all of the given tags.
+          tag_counts = List.foldl(all_rows, %{}, fn(row, acc_in) ->
+            docid = :couchbeam_doc.get_value("id", row)
+            count = Map.get(acc_in, docid, 0)
+            Map.put(acc_in, docid, count + 1)
+          end)
+          matching_rows = Enum.filter(all_rows, fn(row) ->
+            docid = :couchbeam_doc.get_value("id", row)
+            Map.get(tag_counts, docid) == length(tags)
+          end)
+          # Remove the duplicate rows by sorting on the document identifier
+          # in a unique fashion.
+          unsorted_results = :lists.usort(fn(a, b) ->
+            id_a = :couchbeam_doc.get_value("id", a)
+            id_b = :couchbeam_doc.get_value("id", b)
+            id_a <= id_b
+          end, matching_rows)
+          # Now sort the rows according to the given sorting function.
+          results = Enum.sort(unsorted_results, sort_fn)
+          # Save the results in mnesia to avoid doing the same work again
+          # if a repeated request is made, replacing any previous values.
+          case :mnesia.first(:by_tags_cache) do
+            :'$end_of_table' -> :ok
+            first_key -> :ok = :mnesia.delete({:by_tags_cache, first_key})
+          end
+          :ok = :mnesia.write(by_tags_cache(key: key, results: results))
+          results
+        [by_tags_cache(results: rows)] ->
+          Logger.info("cache hit for #{inspect key}")
+          rows
+      end
     end
+    :mnesia.activity(:transaction, tags_cache_query_fn)
   end
 
   @doc """
@@ -356,47 +364,49 @@ defmodule TanukiBackend do
   """
   def ensure_schema(nodes) do
     # Create the schema if it does not exist
-    case :mnesia.system_info(:schema_version) do
-      {0, 0} -> :ok = :mnesia.create_schema(nodes)
-      {_, _} -> :ok
+    if :mnesia.system_info(:schema_version) == {0, 0} do
+      :ok = :mnesia.create_schema(nodes)
     end
     ensure_tables = fn() ->
       tables = :mnesia.system_info(:tables)
-      case :lists.member(:thumbnails, tables) do
-        false ->
-          {:atomic, :ok} = :mnesia.create_table(:thumbnails, [
-            # first field of the record is the table key
-            {:attributes, Keyword.keys(thumbnails(thumbnails()))}
-          ])
-          {:atomic, :ok} = :mnesia.create_table(:thumbnail_dates, [
-            # first field of the record is the table key
-            {:attributes, Keyword.keys(thumbnail_dates(thumbnail_dates()))},
-            {:type, :ordered_set}
-          ])
-          {:atomic, :ok} = :mnesia.create_table(:thumbnail_counter, [
-            {:attributes, Keyword.keys(thumbnail_counter(thumbnail_counter()))}
-          ])
-          :ok
-        true ->
-          :ok
+      if not Enum.member?(tables, :thumbnails) do
+        {:atomic, :ok} = :mnesia.create_table(:thumbnails, [
+          # first field of the record is the table key
+          {:attributes, Keyword.keys(thumbnails(thumbnails()))}
+        ])
+      end
+      if not Enum.member?(tables, :thumbnail_dates) do
+        {:atomic, :ok} = :mnesia.create_table(:thumbnail_dates, [
+          # first field of the record is the table key
+          {:attributes, Keyword.keys(thumbnail_dates(thumbnail_dates()))},
+          {:type, :ordered_set}
+        ])
+      end
+      if not Enum.member?(tables, :thumbnail_counter) do
+        {:atomic, :ok} = :mnesia.create_table(:thumbnail_counter, [
+          {:attributes, Keyword.keys(thumbnail_counter(thumbnail_counter()))}
+        ])
+      end
+      if not Enum.member?(tables, :by_tags_cache) do
+        {:atomic, :ok} = :mnesia.create_table(:by_tags_cache, [
+          {:attributes, Keyword.keys(by_tags_cache(by_tags_cache()))}
+        ])
       end
     end
     # Create our table if it does not exist
-    case :mnesia.system_info(:is_running) do
-      :no ->
-        :rpc.multicall(nodes, :application, :start, [:mnesia])
-        ensure_tables.()
-        :rpc.multicall(nodes, :application, :stop, [:mnesia])
-      _ ->
-        ensure_tables.()
+    if :mnesia.system_info(:is_running) == :no do
+      :rpc.multicall(nodes, :application, :start, [:mnesia])
+      ensure_tables.()
+      :rpc.multicall(nodes, :application, :stop, [:mnesia])
+    else
+      ensure_tables.()
     end
   end
 
   # Ensure the mnesia application is running.
   defp ensure_mnesia(nodes) do
-    case :mnesia.system_info(:is_running) do
-      :no -> :rpc.multicall(nodes, :application, :start, [:mnesia])
-      _ -> :ok
+    if :mnesia.system_info(:is_running) == :no do
+      :rpc.multicall(nodes, :application, :start, [:mnesia])
     end
   end
 
