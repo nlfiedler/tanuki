@@ -28,7 +28,7 @@ defmodule TanukiIncoming.Mixfile do
   end
 
   defp deps do
-    [{:couchbeam, github: "benoitc/couchbeam", tag: "1.3.1"},
+    [{:couchbeam, github: "benoitc/couchbeam", tag: "1.4.2"},
      {:emagick_rs, github: "nlfiedler/emagick.rs", tag: "0.4.4"},
      {:epwd_rs, github: "nlfiedler/epwd.rs", tag: "0.1.7"},
      {:mimetypes, github: "spawngrid/mimetypes", ref: "47d37a9"},

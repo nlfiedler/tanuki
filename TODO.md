@@ -2,7 +2,6 @@
 
 ## General Items
 
-1. Update to latest `couchbeam` tag (1.4.2 or higher)
 1. Consider renaming the "topic" field to "caption"
     - Cannot figure out how to use "topic" anyway
     - Incoming processor needs to no longer consider the ^ character in folder names
