@@ -1,19 +1,9 @@
-<strong>Available tags:</strong>
-<%= render "tags.html", conn: @conn, tags: @tags %>
-
-<strong>Selected tags:</strong>
-<div>
-<%= for tag <- @selected_tags do %>
-  [x] <a href="<%= page_path @conn, :index, del_tag: tag %>"><%= tag %></a>
-<% end %>
-</div>
-
 <strong>Available years:</strong>
 <%= render "years.html", conn: @conn, years: @years %>
 
 <table>
   <tr>
-    <%= for {info, index} <- Enum.with_index(@tag_info, 1) do %>
+    <%= for {info, index} <- Enum.with_index(@year_info, 1) do %>
       <td class="thumb">
         <a href="<%= page_path @conn, :detail, info[:id] %>">
         <img src="<%= page_path @conn, :thumbnail, info[:sha] %>"
@@ -33,19 +23,19 @@
     <%= if @curr_page == @page_data[:first_page] do %>
       &lt;first page&gt;
     <% else %>
-      <a href="<%= page_path @conn, :index, page: @page_data[:first_page] %>">[first page]</a>
+      <a href="<%= page_path @conn, :year, @year, page: @page_data[:first_page] %>">[first page]</a>
     <% end %>
     <%= for page_num <- @page_data[:pages] do %>
       <%= if @curr_page == page_num do %>
         &lt;<%= page_num %>&gt;
       <% else %>
-        <a href="<%= page_path @conn, :index, page: page_num %>"><%= page_num %></a>
+        <a href="<%= page_path @conn, :year, @year, page: page_num %>"><%= page_num %></a>
       <% end %>
     <% end %>
     <%= if @curr_page == @page_data[:last_page] do %>
       &lt;last page&gt;
     <% else %>
-      <a href="<%= page_path @conn, :index, page: @page_data[:last_page] %>">[last page]</a>
+      <a href="<%= page_path @conn, :year, @year, page: @page_data[:last_page] %>">[last page]</a>
     <% end %>
   <% end %>
 </div>

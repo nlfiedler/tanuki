@@ -25,18 +25,20 @@
 
 // reduce: none
 var by_date_map = function (doc) {
-	if (doc.exif_date) {
-		emit(doc.exif_date, null);
-	} else if (doc.file_date) {
-		emit(doc.file_date, null);
-	} else {
-		emit(doc.import_date, null);
-	}
+    var date = null;
+    if (doc.exif_date) {
+        date = doc.exif_date;
+    } else if (doc.file_date) {
+        date = doc.file_date;
+    } else {
+        date = doc.import_date;
+    }
+    emit(date, [doc.file_name, doc.sha256]);
 };
 
 // reduce: none
 var by_tag_map = function (doc) {
-	if (doc.tags && Array.isArray(doc.tags)) {
+    if (doc.tags && Array.isArray(doc.tags)) {
         var date = null;
         if (doc.exif_date) {
             date = doc.exif_date;
@@ -47,8 +49,8 @@ var by_tag_map = function (doc) {
         }
         doc.tags.forEach(function (tag) {
             emit(tag.toLowerCase(), [date, doc.file_name, doc.sha256]);
-	    });
-	}
+        });
+    }
 };
 
 // reduce: _count
@@ -57,6 +59,17 @@ var tags_map = function (doc) {
         doc.tags.forEach(function (tag) {
             emit(tag.toLowerCase(), 1);
         });
+    }
+};
+
+// reduce: _count
+var years_map = function (doc) {
+    if (doc.exif_date) {
+        emit(doc.exif_date[0], 1);
+    } else if (doc.file_date) {
+        emit(doc.file_date[0], 1);
+    } else {
+        emit(doc.import_date[0], 1);
     }
 };
 

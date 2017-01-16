@@ -4,16 +4,16 @@ defmodule TanukiWeb.PageController do
   # pages of thumbnails are limited to 3 by 6
   @page_size 18
 
-  plug :fetch_tags
-
   def index(conn, params) do
     # order matters here
     conn
+    |> load_all_tags()
+    |> load_all_years()
     |> tag_selection(params)
     |> tag_unselection(params)
     |> page_selection(params)
-    |> assign_assets_and_tags()
-    |> assign_pagination_data()
+    |> assign_tag_info()
+    |> assign_pagination_data(:tag_info)
     |> render(:index)
   end
 
@@ -85,6 +85,31 @@ defmodule TanukiWeb.PageController do
     |> render(:detail)
   end
 
+  def year(conn, params) do
+    {year, _rest} = Integer.parse(params["id"])
+    conn
+    |> load_all_years()
+    |> year_selection(year)
+    |> page_selection(params)
+    |> assign_year_info(year)
+    |> assign_pagination_data(:year_info)
+    |> assign(:year, year)
+    |> render(:year)
+  end
+
+  defp year_selection(conn, year) do
+    selected_year = get_session(conn, :selected_year)
+    # when not set, the session value will be nil
+    if selected_year != year do
+      conn
+      |> put_session(:selected_year, year)
+      # reset the current page if the year selection changed (even from nil)
+      |> put_session(:curr_page, nil)
+    else
+      conn
+    end
+  end
+
   defp read_doc(document) do
     row_id = to_string(:couchbeam_doc.get_id(document))
     sha256 = to_string(:couchbeam_doc.get_value("sha256", document))
@@ -108,11 +133,23 @@ defmodule TanukiWeb.PageController do
   end
 
   # Fetches the known tags and assigns the list to the connection as
-  # `tags`, to be rendered by the "keys.html" template.
-  defp fetch_tags(conn, _opts) do
+  # `tags`, to be rendered by the "tags.html" template.
+  defp load_all_tags(conn) do
     results = TanukiBackend.all_tags()
     tags = for row <- results, do: :couchbeam_doc.get_value("key", row)
+    # the number of documents with that tag...
+    # count = :couchbeam_doc.get_value("value", row)
     assign(conn, :tags, tags)
+  end
+
+  # Fetches the known years and assigns the list to the connection as
+  # `years`, to be rendered by the "years.html" template.
+  defp load_all_years(conn) do
+    results = TanukiBackend.all_years()
+    years = for row <- results, do: :couchbeam_doc.get_value("key", row)
+    # the number of documents with that year...
+    # count = :couchbeam_doc.get_value("value", row)
+    assign(conn, :years, years)
   end
 
   defp tag_selection(conn, params) do
@@ -161,37 +198,43 @@ defmodule TanukiWeb.PageController do
     end
   end
 
-  defp assign_pagination_data(conn) do
-    tag_info = conn.assigns[:tag_info]
-    if length(tag_info) > @page_size do
+  defp assign_pagination_data(conn, keyname) do
+    data_set = conn.assigns[keyname]
+    if length(data_set) > @page_size do
       curr_page = get_current_page(conn)
-      page_count = round(Float.ceil(length(tag_info) / @page_size))
-      #
-      # Compute the lower and upper page numbers, clipping to whatever is
-      # possible given the number of pages we have. Hence the combination
-      # of 'cond', 'min', and 'max' below.
-      #
-      desired_lower = curr_page - 10
-      desired_upper = curr_page + 9
-      {lower, upper} = cond do
-        desired_lower <= 1 ->
-          {2, min(desired_upper + abs(desired_lower), page_count - 1)}
-        desired_upper >= page_count ->
-          {max(desired_lower - (desired_upper - page_count), 2), page_count - 1}
-        true -> {desired_lower, desired_upper}
+      page_count = round(Float.ceil(length(data_set) / @page_size))
+      pages = if page_count > 2 do
+        #
+        # Compute the lower and upper page numbers, clipping to whatever is
+        # possible given the number of pages we have. Hence the combination
+        # of 'cond', 'min', and 'max' below.
+        #
+        desired_lower = curr_page - 10
+        desired_upper = curr_page + 9
+        {lower, upper} = cond do
+          desired_lower <= 1 ->
+            {2, min(desired_upper + abs(desired_lower), page_count - 1)}
+          desired_upper >= page_count ->
+            {max(desired_lower - (desired_upper - page_count), 2), page_count - 1}
+          true -> {desired_lower, desired_upper}
+        end
+        Enum.into(Range.new(lower, upper), [])
+      else
+        # Special case for just two pages, no need for the convoluted math
+        # that ends up producing goofy page links.
+        []
       end
-      pages = Enum.into(Range.new(lower, upper), [])
       page_data = %{
         :first_page => 1,
         :pages => pages,
         :last_page => page_count
       }
       start = (curr_page - 1) * @page_size
-      tag_info = Enum.slice(tag_info, start, @page_size)
+      data_set = Enum.slice(data_set, start, @page_size)
       conn
       |> assign(:page_data, page_data)
       |> assign(:curr_page, curr_page)
-      |> assign(:tag_info, tag_info)
+      |> assign(keyname, data_set)
     else
       assign(conn, :page_data, %{})
     end
@@ -202,21 +245,21 @@ defmodule TanukiWeb.PageController do
     if curr_page == nil do
       1
     else
-      {value, _Rest} = Integer.parse(curr_page)
+      {value, _rest} = Integer.parse(curr_page)
       value
     end
   end
 
-  defp assign_assets_and_tags(conn) do
+  defp assign_tag_info(conn) do
     selected_tags = get_selected_tags(conn)
-    rows = TanukiBackend.by_tags(selected_tags, &asset_row_sorter/2)
-    tag_info = for row <- rows, do: build_asset_info(row)
+    rows = TanukiBackend.by_tags(selected_tags, &tag_row_sorter/2)
+    tag_info = for row <- rows, do: build_tag_info(row)
     conn
     |> assign(:selected_tags, selected_tags)
     |> assign(:tag_info, tag_info)
   end
 
-  defp asset_row_sorter(a, b) do
+  defp tag_row_sorter(a, b) do
     # The date is the first value in the list of "value" in the row in the
     # 'by_tag' CouchDB view. By default sort newer assets before older.
     a_date = hd(:couchbeam_doc.get_value("value", a))
@@ -224,7 +267,7 @@ defmodule TanukiWeb.PageController do
     a_date >= b_date
   end
 
-  defp build_asset_info(row) do
+  defp build_tag_info(row) do
     row_id = to_string(:couchbeam_doc.get_value("id", row))
     values = :couchbeam_doc.get_value("value", row)
     # values is a list of [date, file_name, sha256], where 'date' is exif,
@@ -233,6 +276,28 @@ defmodule TanukiWeb.PageController do
     date_string = TanukiBackend.date_list_to_string(hd(values), :date_only)
     filename = to_string(hd(tl(values)))
     checksum = to_string(hd(tl(tl(values))))
+    %{
+      :id => row_id,
+      :fname => filename,
+      :date => date_string,
+      :sha => checksum
+    }
+  end
+
+  defp assign_year_info(conn, year) do
+    rows = TanukiBackend.by_date(year)
+    year_info = for row <- rows, do: build_year_info(row)
+    assign(conn, :year_info, year_info)
+  end
+
+  defp build_year_info(row) do
+    row_id = :couchbeam_doc.get_value("id", row)
+    key = :couchbeam_doc.get_value("key", row)
+    date_string = TanukiBackend.date_list_to_string(key, :date_only)
+    values = :couchbeam_doc.get_value("value", row)
+    # values is a list of [file_name, sha256]
+    filename = to_string(hd(values))
+    checksum = to_string(hd(tl(values)))
     %{
       :id => row_id,
       :fname => filename,

@@ -17,6 +17,7 @@ defmodule TanukiWeb.Router do
     pipe_through :browser # Use the default browser stack
 
     get "/", PageController, :index
+    get "/year/:id", PageController, :year
     get "/detail/:id", PageController, :detail
     get "/asset/:id", PageController, :asset
     get "/asset/:id/edit", PageController, :edit

@@ -56,6 +56,19 @@ defmodule TanukiBackendTest do
     for {row, key, value} <- expected, do: validate_fn.(row, key, value)
   end
 
+  test "fetching list of all years" do
+    rows = TanukiBackend.all_years()
+    assert length(rows) == 3
+    validate_fn = fn(row, key, value) ->
+      assert :couchbeam_doc.get_value("key", row) == key
+      assert :couchbeam_doc.get_value("value", row) == value
+    end
+    keys = [2013, 2014, 2015]
+    values = [1, 2, 3]
+    expected = Enum.zip([rows, keys, values])
+    for {row, key, value} <- expected, do: validate_fn.(row, key, value)
+  end
+
   test "fetching metadata by checksum" do
     checksum = "39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100"
     rows = TanukiBackend.by_checksum(checksum)

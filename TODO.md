@@ -2,7 +2,18 @@
 
 ## General Items
 
-1. Allow browsing by year, then month
+1. Change `install_designs/1` to read `*.js` files instead of `*.json`
+    - Any `//!reduce:...` comment indicates if and how reduce occurs
+    - The non-comment lines are processed thusly:
+        + Remove leading whitespace
+        + Replace newlines with spaces
+        + Sort the entries by name of file (minus extension), hereafter called `filename`
+        + Store resulting text into `views`: `#{filename}`: `map`
+        + The "reduce" value, if any, goes in `views`: `#{filename}`: `reduce`
+    - Generate the rest of the fields thusly:
+        + `_id`: `_design/assets`
+        + `language`: `javascript`
+1. Are the many `to_string/1` calls in `page_controller` really necessary?
 1. Add an "/admin" scope for various functions
     - Renaming a tag across all documents
     - Renaming a location across all documents
@@ -28,6 +39,7 @@
 1. Write tests for the `tanuki_web` application
 1. To help reduce tag clutter, hide the tags whose count falls below a threshold
     - Show the full list of tags dynamically using JavaScript (via a link)
+1. Consider supporting browsing by year and month (likely without query caching or paging).
 
 ## Documentation
 

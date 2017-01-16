@@ -19,11 +19,15 @@ defmodule TanukiBackend do
   # Mnesia record for caching "by_tags" queries.
   Record.defrecord :by_tags_cache, [key: nil, results: nil]
 
+  # Mnesia record for caching "by_date" queries.
+  Record.defrecord :by_date_cache, [key: nil, results: nil]
+
   @mnesia_tables [
     :thumbnails,
     :thumbnail_dates,
     :thumbnail_counter,
-    :by_tags_cache
+    :by_tags_cache,
+    :by_date_cache
   ]
 
   @doc """
@@ -69,6 +73,16 @@ defmodule TanukiBackend do
   @spec all_tags() :: [any()]
   def all_tags() do
     GenServer.call(TanukiDatabase, :all_tags)
+  end
+
+  @doc """
+
+  Retrieves all known years as `couchbeam` view results.
+
+  """
+  @spec all_years() :: [any()]
+  def all_years() do
+    GenServer.call(TanukiDatabase, :all_years)
   end
 
   @doc """
@@ -158,9 +172,28 @@ defmodule TanukiBackend do
   """
   @spec by_date(year) :: [any()] when year: integer()
   def by_date(year) when is_integer(year) do
-    start_date = [year, 0, 0, 0, 0]
-    end_date = [year + 1, 0, 0, 0, 0]
-    GenServer.call(TanukiDatabase, {:by_date, start_date, end_date})
+    key = year
+    year_cache_query_fn = fn() ->
+      case :mnesia.read(:by_date_cache, key) do
+        [] ->
+          Logger.info("cache miss for #{inspect key}")
+          start_date = [year, 0, 0, 0, 0]
+          end_date = [year + 1, 0, 0, 0, 0]
+          results = GenServer.call(TanukiDatabase, {:by_date, start_date, end_date})
+          # Save the results in mnesia to avoid doing the same work again
+          # if a repeated request is made, replacing any previous values.
+          case :mnesia.first(:by_date_cache) do
+            :'$end_of_table' -> :ok
+            first_key -> :ok = :mnesia.delete({:by_date_cache, first_key})
+          end
+          :ok = :mnesia.write(by_date_cache(key: key, results: results))
+          results
+        [by_date_cache(results: rows)] ->
+          Logger.info("cache hit for #{inspect key}")
+          rows
+      end
+    end
+    :mnesia.activity(:transaction, year_cache_query_fn)
   end
 
   @doc """
@@ -392,6 +425,11 @@ defmodule TanukiBackend do
           {:attributes, Keyword.keys(by_tags_cache(by_tags_cache()))}
         ])
       end
+      if not Enum.member?(tables, :by_date_cache) do
+        {:atomic, :ok} = :mnesia.create_table(:by_date_cache, [
+          {:attributes, Keyword.keys(by_date_cache(by_date_cache()))}
+        ])
+      end
     end
     # Create our table if it does not exist
     if :mnesia.system_info(:is_running) == :no do
@@ -445,6 +483,12 @@ defmodule TanukiBackend do
       {:reply, rows, state}
     end
 
+    def handle_call(:all_years, _from, state) do
+      options = [{:group_level, 1}]
+      {:ok, rows} = :couchbeam_view.fetch(state.database, {"assets", "years"}, options)
+      {:reply, rows, state}
+    end
+
     def handle_call({:by_checksum, checksum}, _from, state) do
       options = [{:key, checksum}]
       {:ok, rows} = :couchbeam_view.fetch(state.database, {"assets", "by_checksum"}, options)
@@ -474,8 +518,16 @@ defmodule TanukiBackend do
       insert_doc_fn = fn(filename) ->
         filepath = Path.join(views_dir, filename)
         json = :couchbeam_ejson.decode(File.read!(filepath))
-        doc_id = to_charlist(:couchbeam_doc.get_id(json))
-        unless :couchbeam.doc_exists(db, doc_id) do
+        doc_id = :couchbeam_doc.get_id(json)
+        if :couchbeam.doc_exists(db, doc_id) do
+          {:ok, doc} = :couchbeam.open_doc(db, doc_id)
+          old_views = :couchbeam_doc.get_value("views", doc)
+          new_views = :couchbeam_doc.get_value("views", json)
+          if old_views != new_views do
+            doc = :couchbeam_doc.set_value("views", new_views, doc)
+            {:ok, _doc1} = :couchbeam.save_doc(db, doc)
+          end
+        else
           {:ok, _doc1} = :couchbeam.save_doc(db, json)
         end
       end

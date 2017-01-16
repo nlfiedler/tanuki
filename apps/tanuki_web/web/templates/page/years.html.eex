@@ -1,0 +1,5 @@
+<div>
+<%= for year <- @years do %>
+  [<a href="<%= page_path @conn, :year, year %>"><%= year %></a>]
+<% end %>
+</div>
