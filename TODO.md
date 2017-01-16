@@ -17,9 +17,8 @@
 1. Add an "/admin" scope for various functions
     - Renaming a tag across all documents
     - Renaming a location across all documents
-    - Finding and merging duplicate records
     - Changing a tag to a location across all documents
-    - After all that is done, remove all of the corresponding apps
+    - Button to kick off the incoming processor
 1. Get the overlays working in the release (see `rel/config.exs`)
 1. See if there is an easy way to get the `Version` file working again
     - Maybe just generate it using some code in `rel/config.exs`
@@ -35,7 +34,6 @@
     - https://github.com/emedia-project/erlffmpeg
 1. Can we produce thumbnails for AVI files?
 1. Show list of known locations
-1. Add a button to the /admin page to kick off the incoming processor
 1. Write tests for the `tanuki_web` application
 1. To help reduce tag clutter, hide the tags whose count falls below a threshold
     - Show the full list of tags dynamically using JavaScript (via a link)
