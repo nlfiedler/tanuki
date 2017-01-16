@@ -2,10 +2,6 @@
 
 A system for importing, storing, categorizing, browsing, displaying, and searching files, primarily images and videos. Attributes regarding the files are stored in a schema-less, document-oriented database. Designed to store millions of files. Primary interface is a web front-end with a simple design suitable for most web browsers.
 
-## Current Status
-
-The incoming processor, backend application, and web interface are written in Elixir, with everything being built using [mix](https://hexdocs.pm/mix/Mix.html). Some of the dependencies require Rust.
-
 ## Building and Testing
 
 ### Prerequisites
@@ -36,18 +32,18 @@ $ cat apps/tanuki_backend/config/dev.exs
 use Mix.Config
 
 config :tanuki_backend,
-  assets_dir: '/Users/samiam/Downloads/tanuki'
+  assets_dir: '/home/samiam/temp/tanuki'
 
 $ cat apps/tanuki_incoming/config/dev.exs
 use Mix.Config
 
 config :tanuki_incoming,
-  incoming_dir: '/Users/samiam/Downloads/incoming'
+  incoming_dir: '/home/samiam/temp/incoming'
 ```
 
 ### Commands
 
-Once the configuration is in place, you can run build everything and run the tests like so:
+Once the configuration is in place, you can build everything and run the tests like so:
 
 ```
 $ mix deps.get
@@ -63,15 +59,9 @@ $ mix phoenix.server
 
 The web server will be listening on port `4000`. Be sure to have a CouchDB instance running.
 
-### Triggering Processing
-
-To trigger the processing of digital assets in the "incoming" directory, without having to wait for the folders to be more than an hour old, connect to the remote node and send a message to the incoming processor, like so:
-
-```
-$ erl -noshell -sname tanuki_in@localhost -eval "rpc:call(tanuki@localhost, gen_server, call, [tanuki_incoming, process_now]), init:stop()."
-```
-
 ### Deploying
+
+**Not yet tested.**
 
 1. Write a configuration file, named `user.exs` into each `config` directory (i.e. in `tanuki_backend` and `tanuki_incoming`) to override any settings, as needed.
 1. Digest the web assets (producing unique names to aid in cache invalidation): `MIX_ENV=prod mix phoenix.digest`
