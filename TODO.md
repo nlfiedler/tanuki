@@ -19,14 +19,6 @@
     - Renaming a location across all documents
     - Changing a tag to a location across all documents
     - Button to kick off the incoming processor
-1. Get the overlays working in the release (see `rel/config.exs`)
-1. See if there is an easy way to get the `Version` file working again
-    - Maybe just generate it using some code in `rel/config.exs`
-1. Read about deployment in Phoenix:
-    - http://www.phoenixframework.org/docs/advanced-deployment
-    - https://medium.com/@brucepomeroy/create-an-elixir-umbrella-project-containing-a-phoenix-app-and-build-a-release-with-distillery-46371f2617df#.oinfggn3b
-1. Get the `COOKIE` envar thing working for `:prod` in `rel/config.exs`
-1. Look for bootstrap css guide to select a good style
 1. Fix image references in error view
 1. Find out where the Elixir apps will be writing their logs
 1. Ensure QuickTime videos play in the browser
@@ -41,7 +33,7 @@
 
 ## Documentation
 
-1. Write an architecture document that explains the components:
+1. Add to the README an explanation of the components:
     * CouchDB
         - couchbeam
     * Incoming

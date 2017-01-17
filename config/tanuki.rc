@@ -4,11 +4,12 @@
 # REQUIRE: NETWORKING couchdb
 # KEYWORD: shutdown
 #
-# Start and stop the tanuki daemon using BSD-style rc.d system. Copy this file
-# to /usr/local/etc/rc.d, make the file executable, enable the service by
-# appending 'tanuki_enable="YES"' to the end of /etc/rc.conf, and then start
-# it like so:
+# Start and stop the tanuki daemon using BSD-style rc.d system.
 #
+# $ sudo cp tanuki.rc /usr/local/etc/rc.d
+# $ sudo chmod +x /usr/local/etc/rc.d/tanuki.rc
+# $ sudo echo 'tanuki_enable="YES"' >> /etc/rc.conf
+# $ sudo echo 'tanuki_port=8000' > /etc/rc.conf.d/tanuki
 # $ sudo service tanuki start
 #
 
@@ -21,18 +22,16 @@ stop_cmd="${name}_stop"
 
 load_rc_config $name
 : ${tanuki_enable:="yes"}
+tanuki_port="${tanuki_port:-8000}"
 
 tanuki_start() {
     # With the service command, /usr/local/bin will be absent from the PATH,
     # which this script requires, otherwise it quietly fails to start.
-    PATH=/usr/local/bin:$PATH /opt/tanuki/bin/tanuki -detached
+    PATH=/usr/local/bin:$PATH PORT=${tanuki_port} /opt/tanuki/bin/tanuki start
 }
 
 tanuki_stop() {
-    # Quietly connect to the other instance and tell it to shut down. The node
-    # name must match what is found in the vm.args configuration file.
-    /usr/local/bin/erl -noshell -sname stop_tanuki@localhost \
-        -eval "rpc:call(tanuki@localhost, init, stop, []), init:stop()."
+    PATH=/usr/local/bin:$PATH /opt/tanuki/bin/tanuki stop
 }
 
 run_rc_command "$1"

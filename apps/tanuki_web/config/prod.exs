@@ -13,8 +13,8 @@ use Mix.Config
 # which you typically run after static files are built.
 config :tanuki_web, TanukiWeb.Endpoint,
   http: [port: {:system, "PORT"}],
-  url: [host: "localhost", port: 8000],
-  cache_static_manifest: "priv/static/manifest.json"
+  url: [host: System.get_env("HOST"), port: System.get_env("PORT")],
+  cache_static_manifest: "priv/static/manifest.json",
   server: true,
   version: Mix.Project.config[:version]
 
@@ -59,4 +59,4 @@ config :phoenix, :serve_endpoints, true
 
 # Finally import the config/prod.secret.exs
 # which should be versioned separately.
-import_config "prod.secret.exs"
+# import_config "prod.secret.exs"

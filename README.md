@@ -15,7 +15,7 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 
 This example asssumes you are using [Homebrew](http://brew.sh) to install the dependencies, which provides up-to-date versions of everything needed. The `xcode-select --install` is there just because the command-line tools sometimes get out of date, and some of the dependencies will fail to build without them.
 
-```
+```shell
 $ xcode-select --install
 $ brew install elixir
 $ brew install couchdb
@@ -45,7 +45,7 @@ config :tanuki_incoming,
 
 Once the configuration is in place, you can build everything and run the tests like so:
 
-```
+```shell
 $ mix deps.get
 $ mix compile
 $ mix test
@@ -53,33 +53,52 @@ $ mix test
 
 To start an instance configured for development, run the following command.
 
-```
+```shell
 $ mix phoenix.server
 ```
 
 The web server will be listening on port `4000`. Be sure to have a CouchDB instance running.
 
-### Deploying
+## Deploying
 
-**Not yet tested.**
+**Not yet tested in production, but probably works.**
 
-1. Write a configuration file, named `user.exs` into each `config` directory (i.e. in `tanuki_backend` and `tanuki_incoming`) to override any settings, as needed.
-1. Digest the web assets (producing unique names to aid in cache invalidation): `MIX_ENV=prod mix phoenix.digest`
-1. Build the release: `MIX_ENV=prod mix release --env=prod`
+1. Edit the `prod.exs` in each `config` directory to modify any settings, as needed.
+1. Digest the web assets (enables cache invalidation): `mix phoenix.digest`
+1. Build the release: `mix release`
+    * You will need to provide several environment variables:
+        - `COOKIE` to set the cookie for connecting to the node. Must be atom-compatible.
+        - `HOST` is the name of the externally visible host (e.g. `example.com`).
+        - `PORT` is the number of the externally visible port, typically `80`.
 1. Copy the contents of `_build/prod/rel` to the desired installation location (e.g. `/opt`).
-1. Start it up, likely using `sudo`.
-1. Occasionally check the log files in `/opt/tanuki/log`.
+1. Start it up, likely using `sudo`. Be sure to specify the `PORT` on which Phoenix will bind, which may be different than the externally visible port mentioned above (i.e. if Phoenix is setting behind another web server, such as nginx).
+1. Occasionally check the log files in `log` directory.
 
 For example:
 
 ```shell
 $ MIX_ENV=prod mix phoenix.digest
-$ MIX_ENV=prod mix release --env=prod
-$ sudo mkdir -p /opt
-$ sudo cp -R _build/default/rel/tanuki /opt
-$ sudo /opt/tanuki/bin/tanuki -detached
+$ COOKIE=monster HOST=example.com PORT=80 MIX_ENV=prod mix release --env=prod
+$ sudo mkdir -p /opt/tanuki
+$ sudo tar -C /opt/tanuki -zxf _build/prod/rel/tanuki/releases/*/tanuki.tar.gz
+$ sudo PORT=8080 /opt/tanuki/bin/tanuki start
+```
+
+To test that the node has started successfully, invoke the `ping` command like so:
+
+```shell
+$ /opt/tanuki/bin/tanuki ping
+pong
 ```
 
 ### BSD daemon
 
-See the `config/tanuki.rc` file for an example of managing the tanuki application as a daemon via `rc.d` in BSD systems (in particular FreeBSD, and likely NetBSD as well). You will need to build and deploy the application as described above, and then use the `service` command to start it, as illustrated in `tanuki.rc`.
+See the `config/tanuki.rc` file for an example of managing the tanuki application as a daemon via `rc.d` in BSD systems (in particular FreeBSD, and likely NetBSD as well). You will need to build and deploy the application as described above, and then use the `service` command to start it, as illustrated in the comments at the top of the file.
+
+### Remote Console
+
+You can open a console to the running node like so (assuming tanuki is in `/opt`):
+
+```shell
+$ /opt/tanuki/bin/tanuki remote_console
+```

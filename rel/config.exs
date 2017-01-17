@@ -21,9 +21,7 @@ end
 environment :prod do
   set include_erts: false
   set include_src: false
-  set cookie: :"pikachu"
-  # This would be nice, but probably need a fallback when COOKIE is not defined.
-  # set cookie: :"#{:crypto.hash(:sha256, System.get_env("COOKIE"))}"
+  set cookie: :"#{System.get_env("COOKIE") || "pikachu"}"
 end
 
 # You may define one or more releases in this file. If you have not set a
@@ -39,10 +37,4 @@ release :tanuki do
     emagick_rs: :load,
     epwd_rs: :load
   ]
-  set vm_args: "config/vm.args"
-  # Need to figure this one out; may need to set overlay_vars as well.
-  # set overlays: [
-  #   copy: {"{{root_dir}}/apps/tanuki_backend/priv/views", "{{output_dir}}/priv/views"},
-  #   copy: {"_build/prod/lib/tanuki_backend/Version", "{{output_dir}}/Version"}
-  # ]
 end
