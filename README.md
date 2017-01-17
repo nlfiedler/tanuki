@@ -59,6 +59,40 @@ $ mix phoenix.server
 
 The web server will be listening on port `4000`. Be sure to have a CouchDB instance running.
 
+## Architecture
+
+* Set of Erlang/OTP applications written in Elixir.
+    - `TanukiIncoming` incorporates digital assets into the system.
+        + Reads from an `incoming_dir` any file that is within a directory.
+        + The format of the directories is `tagA_tagB_tagC...@some_location`.
+        + The asset checksum (SHA256) is used to shard it into storage.
+        + Storage location is defined by `assets_dir`.
+        + The tags, location, checksum, and other details are stored in CouchDB.
+    - `TanukiBackend` provides the interface to the CouchDB documents and views.
+        + Handles most of the common database and asset operations.
+        + Defines a set of views to query the assets.
+        + Caches query results to improve pagination in the web interface.
+    - `TanukiWeb` is the Phoenix web interface of the system.
+        + [Cowboy](https://github.com/ninenines/cowboy) is the web server.
+        + [Plug](https://hexdocs.pm/plug/readme.html) is the backbone.
+        + [Phoenix](http://www.phoenixframework.org) is the web framework.
+* CouchDB
+    - Where the documents describing the assets live.
+    - Builds the searchable indices used to query the documents.
+    - [couchbeam](https://github.com/benoitc/couchbeam) is the Erlang client library.
+
+### Why Elixir
+
+Cross-platform, scalable, fault-tolerant, distributed. The language makes coding mistakes less likely through single-assignment variables, immutable data structures, no shared mutable data (granted, mnesia violates this in a sense), and simple control structures. The "let it crash" philosophy encourages a style of programming that leads to more robust software.
+
+This applies to [Erlang](http://www.erlang.org) as well, of course, which is the underpinning of Elixir. Tanuki was initially written in Erlang, but Elixir and Phoenix became increasingly irresistible.
+
+### Why CouchDB
+
+It is built with a strategy very similar to [ZFS](https://en.wikipedia.org/wiki/ZFS) in that it never overwrites live data, meaning it can crash at any time and not corrupt the data. It's schema-less, document-oriented design makes adding or changing data later very easy. But mostly it was about the incredible robustness of the application.
+
+Of course, this all works really well if you deploy on a robust system. ZFS should be obvious, and [FreeBSD](https://www.freebsd.org) comes with ZFS built-in, and also happens to provide the latest of everything. Hence the [Vagrant](https://www.vagrantup.com) image is for FreeBSD, and most testing and deployment happens on FreeBSD.
+
 ## Deploying
 
 **Not yet tested in production, but probably works.**

@@ -30,21 +30,3 @@
 1. To help reduce tag clutter, hide the tags whose count falls below a threshold
     - Show the full list of tags dynamically using JavaScript (via a link)
 1. Consider supporting browsing by year and month (likely without query caching or paging).
-
-## Documentation
-
-1. Add to the README an explanation of the components:
-    * CouchDB
-        - couchbeam
-    * Incoming
-    * Backend
-    * Frontend
-        - Phoenix
-            + Cowboy
-            + Plug
-        - Elixir
-    * Describe how pages are rendered (Phoenix endpoints, router, controllers, views)
-    * Describe how the incoming processor works
-        - Configuring incoming directory
-        - Naming of folder
-        - Where assets end up
