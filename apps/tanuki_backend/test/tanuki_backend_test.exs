@@ -138,6 +138,17 @@ defmodule TanukiBackendTest do
       ["test_AD", "test_AE", "test_AF"]
     ]
     for {i, c, e} <- Enum.zip([inputs, counts, ids]), do: validate_fn.(i, c, e)
+
+    # verify hit/miss of the by_date cache
+    level = Logger.level()
+    Logger.configure(level: :info)
+    assert capture_log(fn ->
+      TanukiBackend.by_date(2013)
+    end) =~ "cache miss for"
+    assert capture_log(fn ->
+      TanukiBackend.by_date(2013)
+    end) =~ "cache hit for"
+    Logger.configure(level: level)
   end
 
   test "retrieving by year and month" do
