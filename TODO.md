@@ -2,23 +2,13 @@
 
 ## General Items
 
-1. Change `install_designs/1` to read `*.js` files instead of `*.json`
-    - Any `//!reduce:...` comment indicates if and how reduce occurs
-    - The non-comment lines are processed thusly:
-        + Remove leading whitespace
-        + Replace newlines with spaces
-        + Sort the entries by name of file (minus extension), hereafter called `filename`
-        + Store resulting text into `views`: `#{filename}`: `map`
-        + The "reduce" value, if any, goes in `views`: `#{filename}`: `reduce`
-    - Generate the rest of the fields thusly:
-        + `_id`: `_design/assets`
-        + `language`: `javascript`
 1. Are the many `to_string/1` calls in `page_controller` really necessary?
 1. Add an "/admin" scope for various functions
     - Renaming a tag across all documents
     - Renaming a location across all documents
     - Changing a tag to a location across all documents
     - Button to kick off the incoming processor
+    - Button to perform database compaction
 1. Fix image references in error view
 1. Find out where the Elixir apps will be writing their logs
 1. Ensure QuickTime videos play in the browser

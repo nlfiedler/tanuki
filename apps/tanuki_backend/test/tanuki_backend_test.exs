@@ -25,7 +25,7 @@ defmodule TanukiBackendTest do
     TanukiBackend.ensure_schema([:erlang.node()])
     # now that everything is properly configured, start the application
     {:ok, _started2} = Application.ensure_all_started(:tanuki_backend)
-    :ok
+    {:ok, db: db}
   end
 
   test "fetch documents" do
@@ -217,6 +217,59 @@ defmodule TanukiBackendTest do
     assert capture_log(fn ->
       {:ok, _binary, _mimetype} = TanukiBackend.retrieve_thumbnail(checksum)
     end) =~ "cache hit for thumbnail"
+    Logger.configure(level: level)
+  end
+
+  test "converting JavaScript to view map" do
+    # without a reduce function
+    result = TanukiBackend.Server.read_view_js("./test/fixtures/by_checksum.js")
+    expected = {
+      "by_checksum", {[
+        {"map", "function(doc) { if (doc.sha256) { emit(doc.sha256, doc.mimetype); } }"}
+      ]}
+    }
+    assert result == expected
+
+    # with a reduce function
+    result = TanukiBackend.Server.read_view_js("./test/fixtures/tags.js")
+    expected = {
+      "tags", {[
+        {"map", "function (doc) { if (doc.tags && Array.isArray(doc.tags)) { " <>
+                 "doc.tags.forEach(function (tag) { emit(tag.toLowerCase(), 1); }); } }"},
+        {"reduce", "_count"}
+      ]}
+    }
+    assert result == expected
+  end
+
+  test "installing views", context do
+    db = context[:db]
+    doc_id = "_design/assets"
+    # Make sure the designs document exists at rev '1', then delete it
+    # which will result in another revision (visible in the history).
+    assert :couchbeam.doc_exists(db, doc_id)
+    {:ok, doc} = :couchbeam.open_doc(db, doc_id)
+    rev = :couchbeam_doc.get_rev(doc)
+    assert String.starts_with?(rev, "1-")
+    :couchbeam.delete_doc(db, doc)
+
+    # install the designs and ensure the revision is now '3'
+    level = Logger.level()
+    Logger.configure(level: :info)
+    assert capture_log(fn ->
+      :ok = TanukiBackend.Server.install_designs(db)
+    end) =~ "created _design/assets document"
+    {:ok, doc} = :couchbeam.open_doc(db, doc_id)
+    rev = :couchbeam_doc.get_rev(doc)
+    assert String.starts_with?(rev, "3-")
+
+    # do it again and ensure the revision is still '3'
+    assert capture_log(fn ->
+      :ok = TanukiBackend.Server.install_designs(db)
+    end) == ""
+    {:ok, doc} = :couchbeam.open_doc(db, doc_id)
+    rev = :couchbeam_doc.get_rev(doc)
+    assert String.starts_with?(rev, "3-")
     Logger.configure(level: level)
   end
 

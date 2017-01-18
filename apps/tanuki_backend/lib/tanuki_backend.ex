@@ -510,31 +510,64 @@ defmodule TanukiBackend do
       {:reply, rows, state}
     end
 
-    defp install_designs(db) do
-      # Look for .json files in our private views directory and insert them
-      # directly into CouchDB. They are presumed to be our design documents
-      # and thus needed for general operation.
+    @doc """
+
+    Locate the JavaScript view definitions in the priv directory and load
+    them into CouchDB, if they differ from what is already there.
+
+    """
+    @spec install_designs(any()) :: :ok
+    def install_designs(db) do
+      # Look for .js files in our private views directory and insert them
+      # into CouchDB as views for performing queries.
       views_dir = Path.join(:code.priv_dir(:tanuki_backend), "views")
-      insert_doc_fn = fn(filename) ->
-        filepath = Path.join(views_dir, filename)
-        json = :couchbeam_ejson.decode(File.read!(filepath))
-        doc_id = :couchbeam_doc.get_id(json)
-        if :couchbeam.doc_exists(db, doc_id) do
-          {:ok, doc} = :couchbeam.open_doc(db, doc_id)
-          old_views = :couchbeam_doc.get_value("views", doc)
-          new_views = :couchbeam_doc.get_value("views", json)
-          if old_views != new_views do
-            doc = :couchbeam_doc.set_value("views", new_views, doc)
-            {:ok, _doc1} = :couchbeam.save_doc(db, doc)
-          end
-        else
-          {:ok, _doc1} = :couchbeam.save_doc(db, json)
+      doc_id = "_design/assets"
+      js_selector_fn = fn(fname) -> Path.extname(fname) == ".js" end
+      js_files = Enum.filter(File.ls!(views_dir), js_selector_fn)
+      view_tuples = for fname <- js_files, do: read_view_js(Path.join(views_dir, fname))
+      if :couchbeam.doc_exists(db, doc_id) do
+        {:ok, doc} = :couchbeam.open_doc(db, doc_id)
+        {old_views} = :couchbeam_doc.get_value("views", doc)
+        if :lists.keysort(1, old_views) != :lists.keysort(1, view_tuples) do
+          doc = :couchbeam_doc.set_value("views", {view_tuples}, doc)
+          {:ok, _doc1} = :couchbeam.save_doc(db, doc)
+          Logger.info("updated _design/assets document")
         end
+      else
+        doc = {[
+          {"_id", doc_id},
+          {"language", "javascript"},
+          {"views", {view_tuples}}
+        ]}
+        {:ok, _doc1} = :couchbeam.save_doc(db, doc)
+        Logger.info("created _design/assets document")
       end
-      json_selector_fn = fn(name) -> Path.extname(name) == ".json" end
-      json_files = Enum.filter(File.ls!(views_dir), json_selector_fn)
-      for filename <- json_files, do: insert_doc_fn.(filename)
       :ok
+    end
+
+    @doc """
+
+    Read the named JavaScript file and produce a tuple suitable for an
+    entry in the "views" field of a CouchDB design document. If the file
+    contains a comment line "//!reduce:" then the value after the colon
+    will be the value for the "reduce" function of the view.
+
+    For example: {"file": {"map": "code...", "reduce": "_count"}}
+
+    """
+    @spec read_view_js(String.t) :: list()
+    def read_view_js(filename) do
+      text = File.open!(filename, [:read, :utf8], &IO.read(&1, :all))
+      lines = Enum.map(String.split(text, "\n", trim: true), &String.trim(&1))
+      {comments, code} = Enum.split_with(lines, &String.starts_with?(&1, "//"))
+      result = [{"map", Enum.join(code, " ")}]
+      result = case Enum.find(comments, &String.starts_with?(&1, "//!reduce:")) do
+        nil -> result
+        reduce ->
+          trimmed = String.trim(String.replace_leading(reduce, "//!reduce:", ""))
+          result ++ [{"reduce", trimmed}]
+      end
+      {Path.rootname(Path.basename(filename)), {result}}
     end
   end
 end
