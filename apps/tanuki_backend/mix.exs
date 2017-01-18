@@ -18,10 +18,10 @@ defmodule TanukiBackend.Mixfile do
     [applications: [
       :kernel,
       :stdlib,
+      :logger,
       :mnesia,
       :jsx,
       :couchbeam],
-     extra_applications: [:logger],
      mod: {TanukiBackend.Application, []},
      description: 'Data access and caching layer.']
   end

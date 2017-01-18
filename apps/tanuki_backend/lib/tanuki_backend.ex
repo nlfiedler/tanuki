@@ -559,7 +559,10 @@ defmodule TanukiBackend do
     def read_view_js(filename) do
       text = File.open!(filename, [:read, :utf8], &IO.read(&1, :all))
       lines = Enum.map(String.split(text, "\n", trim: true), &String.trim(&1))
-      {comments, code} = Enum.split_with(lines, &String.starts_with?(&1, "//"))
+      # Not available in Elixir 1.3.x
+      # {comments, code} = Enum.split_with(lines, &String.starts_with?(&1, "//"))
+      comments = Enum.filter(lines, &String.starts_with?(&1, "//"))
+      code = Enum.reject(lines, &String.starts_with?(&1, "//"))
       result = [{"map", Enum.join(code, " ")}]
       result = case Enum.find(comments, &String.starts_with?(&1, "//!reduce:")) do
         nil -> result

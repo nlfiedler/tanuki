@@ -18,11 +18,11 @@ defmodule TanukiIncoming.Mixfile do
     [applications: [
       :kernel,
       :stdlib,
+      :logger,
       :mnesia,
       :mimetypes,
       :jsx,
       :couchbeam],
-     extra_applications: [:logger],
      mod: {TanukiIncoming.Application, []},
      description: 'Digital assets import application.']
   end
