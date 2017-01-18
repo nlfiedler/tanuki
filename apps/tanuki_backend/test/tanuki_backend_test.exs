@@ -46,40 +46,43 @@ defmodule TanukiBackendTest do
   test "fetching list of all tags" do
     rows = TanukiBackend.all_tags()
     assert length(rows) == 6
-    validate_fn = fn(row, key, value) ->
+    validate_fn = fn(row, {key, value}) ->
       assert :couchbeam_doc.get_value("key", row) == key
       assert :couchbeam_doc.get_value("value", row) == value
     end
-    keys = ["cat", "cheeseburger", "christina", "dog", "joseph", "picnic"]
-    values = [2, 1, 3, 1, 3, 2]
-    expected = Enum.zip([rows, keys, values])
-    for {row, key, value} <- expected, do: validate_fn.(row, key, value)
+    key_values = [
+      {"cat", 2},
+      {"cheeseburger", 1},
+      {"christina", 3},
+      {"dog", 1},
+      {"joseph", 3},
+      {"picnic", 2}]
+    expected = Enum.zip(rows, key_values)
+    for {row, key_value} <- expected, do: validate_fn.(row, key_value)
   end
 
   test "fetching list of all years" do
     rows = TanukiBackend.all_years()
     assert length(rows) == 3
-    validate_fn = fn(row, key, value) ->
+    validate_fn = fn(row, {key, value}) ->
       assert :couchbeam_doc.get_value("key", row) == key
       assert :couchbeam_doc.get_value("value", row) == value
     end
-    keys = [2013, 2014, 2015]
-    values = [1, 2, 3]
-    expected = Enum.zip([rows, keys, values])
-    for {row, key, value} <- expected, do: validate_fn.(row, key, value)
+    key_values = [{2013, 1}, {2014, 2}, {2015, 3}]
+    expected = Enum.zip(rows, key_values)
+    for {row, key_value} <- expected, do: validate_fn.(row, key_value)
   end
 
   test "fetching metadata by checksum" do
     checksum = "39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100"
     rows = TanukiBackend.by_checksum(checksum)
     assert length(rows) == 1
-    validate_fn = fn(row, id, value) ->
+    validate_fn = fn(row, {id, value}) ->
       assert :couchbeam_doc.get_value("id", row) == id
       assert :couchbeam_doc.get_value("value", row) == value
     end
-    ids = ["test_AA"]
-    values = ["image/jpeg"]
-    for {row, id, value} <- Enum.zip([rows, ids, values]), do: validate_fn.(row, id, value)
+    id_values = [{"test_AA", "image/jpeg"}]
+    for {row, id_value} <- Enum.zip(rows, id_values), do: validate_fn.(row, id_value)
     # negative case, no matching checksum
     assert TanukiBackend.by_checksum("cafebabe") == []
   end
@@ -124,20 +127,18 @@ defmodule TanukiBackendTest do
   end
 
   test "retrieving by year" do
-    validate_fn = fn(input, count, expected_ids) ->
+    validate_fn = fn({input, count, expected_ids}) ->
       rows = TanukiBackend.by_date(input)
       assert length(rows) == count
       for {id, row} <- Enum.zip(expected_ids, rows),
         do: assert :couchbeam_doc.get_value("id", row) == id
     end
-    inputs = [2013, 2014, 2015]
-    counts = [1, 2, 3]
-    ids = [
-      ["test_AA"],
-      ["test_AC", "test_AB"],
-      ["test_AD", "test_AE", "test_AF"]
+    inputs = [
+      {2013, 1, ["test_AA"]},
+      {2014, 2, ["test_AC", "test_AB"]},
+      {2015, 3, ["test_AD", "test_AE", "test_AF"]}
     ]
-    for {i, c, e} <- Enum.zip([inputs, counts, ids]), do: validate_fn.(i, c, e)
+    for input <- inputs, do: validate_fn.(input)
 
     # verify hit/miss of the by_date cache
     level = Logger.level()
@@ -152,20 +153,18 @@ defmodule TanukiBackendTest do
   end
 
   test "retrieving by year and month" do
-    validate_fn = fn({year, month}, count, expected_ids) ->
+    validate_fn = fn({{year, month}, count, expected_ids}) ->
       rows = TanukiBackend.by_date(year, month)
       assert length(rows) == count
       for {id, row} <- Enum.zip(expected_ids, rows),
         do: :couchbeam_doc.get_value("id", row) == id
     end
-    inputs = [{2014, 7}, {2014, 10}, {2015, 4}]
-    counts = [1, 1, 3]
-    ids = [
-      ["test_AC"],
-      ["test_AB"],
-      ["test_AD", "test_AE", "test_AF"]
+    inputs = [
+      {{2014, 7}, 1, ["test_AC"]},
+      {{2014, 10}, 1, ["test_AB"]},
+      {{2015, 4}, 3, ["test_AD", "test_AE", "test_AF"]}
     ]
-    for {i, c, e} <- Enum.zip([inputs, counts, ids]), do: validate_fn.(i, c, e)
+    for input <- inputs, do: validate_fn.(input)
   end
 
   test "date/time formatting" do
