@@ -2,7 +2,6 @@
 
 ## General Items
 
-1. Are the many `to_string/1` calls in `page_controller` really necessary?
 1. Add an "/admin" scope for various functions
     - Renaming a tag across all documents
     - Renaming a location across all documents

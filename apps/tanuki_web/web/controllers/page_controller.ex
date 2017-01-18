@@ -44,12 +44,10 @@ defmodule TanukiWeb.PageController do
   end
 
   def asset(conn, params) do
-    filepath = to_string(TanukiBackend.checksum_to_asset_path(params["id"]))
+    filepath = TanukiBackend.checksum_to_asset_path(params["id"])
     mimetype = case TanukiBackend.by_checksum(params["id"]) do
-        [] ->
-          "application/octet-stream"
-        [doc|_t] ->
-          to_string(:couchbeam_doc.get_value("value", doc))
+        [] -> "application/octet-stream"
+        [doc|_t] -> :couchbeam_doc.get_value("value", doc)
     end
     # The Etag is just the checksum, which is already the best possible
     # value for this asset.
@@ -111,13 +109,13 @@ defmodule TanukiWeb.PageController do
   end
 
   defp read_doc(document) do
-    row_id = to_string(:couchbeam_doc.get_id(document))
-    sha256 = to_string(:couchbeam_doc.get_value("sha256", document))
-    filename = to_string(:couchbeam_doc.get_value("file_name", document))
-    filesize = to_string(:couchbeam_doc.get_value("file_size", document))
-    location = to_string(:couchbeam_doc.get_value("location", document))
-    caption = to_string(:couchbeam_doc.get_value("caption", document))
-    tags = for t <- :couchbeam_doc.get_value("tags", document), do: to_string(t)
+    row_id = :couchbeam_doc.get_id(document)
+    sha256 = :couchbeam_doc.get_value("sha256", document)
+    filename = :couchbeam_doc.get_value("file_name", document)
+    filesize = :couchbeam_doc.get_value("file_size", document)
+    location = :couchbeam_doc.get_value("location", document)
+    caption = :couchbeam_doc.get_value("caption", document)
+    tags = :couchbeam_doc.get_value("tags", document)
     datetime_list = TanukiBackend.get_best_date(document)
     datetime_str = TanukiBackend.date_list_to_string(datetime_list)
     %{
@@ -268,14 +266,14 @@ defmodule TanukiWeb.PageController do
   end
 
   defp build_tag_info(row) do
-    row_id = to_string(:couchbeam_doc.get_value("id", row))
+    row_id = :couchbeam_doc.get_value("id", row)
     values = :couchbeam_doc.get_value("value", row)
     # values is a list of [date, file_name, sha256], where 'date' is exif,
     # file, or import date in that preferred order. The date value itself
     # is a list of integers (e.g. [2014, 7, 4, 12, 1] ~> "2014/7/4 12:01").
     date_string = TanukiBackend.date_list_to_string(hd(values), :date_only)
-    filename = to_string(hd(tl(values)))
-    checksum = to_string(hd(tl(tl(values))))
+    filename = hd(tl(values))
+    checksum = hd(tl(tl(values)))
     %{
       :id => row_id,
       :fname => filename,
@@ -296,8 +294,8 @@ defmodule TanukiWeb.PageController do
     date_string = TanukiBackend.date_list_to_string(key, :date_only)
     values = :couchbeam_doc.get_value("value", row)
     # values is a list of [file_name, sha256]
-    filename = to_string(hd(values))
-    checksum = to_string(hd(tl(values)))
+    filename = hd(values)
+    checksum = hd(tl(values))
     %{
       :id => row_id,
       :fname => filename,
