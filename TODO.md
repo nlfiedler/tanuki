@@ -9,7 +9,6 @@
     - Button to kick off the incoming processor
     - Button to perform database compaction
 1. Fix image references in error view
-1. Find out where the Elixir apps will be writing their logs
 1. Ensure QuickTime videos play in the browser
 1. Produce thumbnails for the videos and cache them
     - https://github.com/emedia-project/erlffmpeg

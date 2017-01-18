@@ -95,8 +95,6 @@ Of course, this all works really well if you deploy on a robust system. ZFS shou
 
 ## Deploying
 
-**Not yet tested in production, but probably works.**
-
 1. Edit the `prod.exs` in each `config` directory to modify any settings, as needed.
 1. Digest the web assets (enables cache invalidation): `mix phoenix.digest`
 1. Build the release: `mix release`
