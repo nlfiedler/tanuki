@@ -22,7 +22,7 @@ defmodule TanukiIncoming do
       opts = Application.get_env(:tanuki_incoming, :couchdb_opts)
       db_name = Application.get_env(:tanuki_incoming, :database)
       server = :couchbeam.server_connection(url, opts)
-      case :couchbeam.open_or_create_db(server, db_name, []) do
+      case :couchbeam.open_or_create_db(server, db_name) do
         {:ok, db} ->
           {:ok, _tref} = :timer.apply_interval(
             1000 * 60 * 60, :gen_server, :cast, [TanukiIncoming, :process])

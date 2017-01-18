@@ -460,7 +460,7 @@ defmodule TanukiBackend do
       opts = Application.get_env(:tanuki_backend, :couchdb_opts)
       db_name = Application.get_env(:tanuki_backend, :database)
       server = :couchbeam.server_connection(url, opts)
-      {:ok, db} = :couchbeam.open_or_create_db(server, db_name, [])
+      {:ok, db} = :couchbeam.open_or_create_db(server, db_name)
       :ok = install_designs(db)
       {:ok, %State{server: server, database: db}}
     end

@@ -20,7 +20,7 @@ defmodule TanukiIncomingTest do
     if :couchbeam.db_exists(server, database) do
       {:ok, _wat} = :couchbeam.delete_db(server, database)
     end
-    {:ok, db} = :couchbeam.create_db(server, database, [])
+    {:ok, db} = :couchbeam.create_db(server, database)
     # now that everything is properly configured, start the applications
     {:ok, _started} = Application.ensure_all_started(:tanuki_backend)
     {:ok, _started} = Application.ensure_all_started(:tanuki_incoming)

@@ -16,7 +16,7 @@ defmodule TanukiBackendTest do
     if :couchbeam.db_exists(server, database) do
       {:ok, _wat} = :couchbeam.delete_db(server, database)
     end
-    {:ok, db} = :couchbeam.create_db(server, database, [])
+    {:ok, db} = :couchbeam.create_db(server, database)
     add_test_docs(db)
     # set up mnesia
     :ok = Application.stop(:mnesia)
