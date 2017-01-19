@@ -23,18 +23,15 @@ stop_cmd="${name}_stop"
 load_rc_config $name
 : ${tanuki_enable:="yes"}
 tanuki_port="${tanuki_port:-8000}"
-# Need to set utf8 for Elixir.
-# Need to include elixir in the PATH.
-tanuki_env="LANG=en_US.UTF-8 PATH=/usr/local/bin:$PATH"
 
 tanuki_start() {
     # With the service command, /usr/local/bin will be absent from the PATH,
     # which this script requires, otherwise it quietly fails to start.
-    ${tanuki_env} PORT=${tanuki_port} /opt/tanuki/bin/tanuki start
+    LANG=en_US.UTF-8 PATH=/usr/local/bin:$PATH PORT=${tanuki_port} /opt/tanuki/bin/tanuki start
 }
 
 tanuki_stop() {
-    ${tanuki_env} /opt/tanuki/bin/tanuki stop
+    LANG=en_US.UTF-8 PATH=/usr/local/bin:$PATH /opt/tanuki/bin/tanuki stop
 }
 
 run_rc_command "$1"
