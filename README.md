@@ -19,7 +19,7 @@ This example asssumes you are using [Homebrew](http://brew.sh) to install the de
 $ xcode-select --install
 $ brew install elixir
 $ brew install couchdb
-$ brew install imagemagick
+$ brew install imagemagick@6
 $ brew install rust
 ```
 
