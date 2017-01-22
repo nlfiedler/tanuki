@@ -2,6 +2,9 @@
 
 ## General Items
 
+1. For large numbers of pages, maybe some "skip" links
+    - On the `year` page, show links to jump to the page with the first asset in each month
+    - On the `index` page, show links to jump by 10 or 100 pages at a time.
 1. Add an "/admin" scope for various functions
     - Renaming a tag across all documents
     - Renaming a location across all documents
