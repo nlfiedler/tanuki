@@ -17,6 +17,7 @@
         <nav role="navigation">
           <ul class="nav nav-pills pull-right">
             <li><a href="<%= static_path(@conn, "/") %>">Home</a></li>
+            <li><a href="<%= static_path(@conn, "/upload") %>">Upload</a></li>
           </ul>
         </nav>
         <span class="logo"></span>

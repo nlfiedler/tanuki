@@ -76,11 +76,50 @@ defmodule TanukiWeb.PageController do
     newdoc = :couchbeam_doc.set_value("caption", params["caption"], newdoc)
     tags = for t <- String.split(params["tags"], ","), do: String.trim(t)
     newdoc = :couchbeam_doc.set_value("tags", tags, newdoc)
+    newdoc = if String.length(params["user_date"]) > 0 do
+      # the expected format of the optional date string is mm/dd/yyyy
+      parts = String.split(params["user_date"], "/")
+      year = elem(Integer.parse(hd(tl(tl(parts)))), 0)
+      day = elem(Integer.parse(hd(tl(parts))), 0)
+      month = elem(Integer.parse(hd(parts)), 0)
+      # add the given date to the time from the best available date/time
+      datetime_list = TanukiBackend.get_best_date(document)
+      new_dt_list = [year, month, day] ++ Enum.slice(datetime_list, 3, 2)
+      :couchbeam_doc.set_value("user_date", new_dt_list, newdoc)
+    else
+      newdoc
+    end
     {:ok, updated} = TanukiBackend.update_document(newdoc)
     asset_info = read_doc(updated)
     conn
     |> assign(:asset_info, asset_info)
     |> render(:detail)
+  end
+
+  def upload(conn, _params) do
+    render(conn, :upload)
+  end
+
+  def import(conn, params) do
+    plug_upload = params["asset"]
+    {:ok, checksum} = TanukiIncoming.compute_checksum(plug_upload.path)
+    exif_date = TanukiIncoming.get_original_exif_date(plug_upload.path)
+    fstat = File.stat!(plug_upload.path)
+    import_date = TanukiIncoming.time_tuple_to_list(:calendar.universal_time())
+    doc = {[
+      {"exif_date", exif_date},
+      {"file_name", plug_upload.filename},
+      {"file_size", fstat.size},
+      {"import_date", import_date},
+      {"mimetype", plug_upload.content_type},
+      {"sha256", checksum},
+      # everything generally assumes the tags field is not undefined
+      {"tags", []}
+    ]}
+    {:ok, new_doc} = TanukiBackend.update_document(doc)
+    doc_id = :couchbeam_doc.get_id(new_doc)
+    TanukiIncoming.store_asset(plug_upload.path, checksum)
+    redirect conn, to: "/asset/#{doc_id}/edit"
   end
 
   def year(conn, params) do

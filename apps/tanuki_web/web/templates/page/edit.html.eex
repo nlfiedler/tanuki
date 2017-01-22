@@ -20,6 +20,14 @@
   <form action="<%= page_path @conn, :update, @asset_info[:id] %>" method="post">
     <table>
       <tr>
+        <td class="detail">Custom Date:</td>
+        <td>
+          <input type="date" name="user_date"/>
+          <span class="label label-default">format mm/dd/yyyy</span>
+          <span class="label label-info">optional</span>
+        </td>
+      </tr>
+      <tr>
         <td class="detail">Location:</td>
         <td><input type="text" name="location" size="80" value="<%= @asset_info[:location] %>"/></td>
       </tr>

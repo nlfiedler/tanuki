@@ -356,7 +356,9 @@ defmodule TanukiIncoming do
         {:error, _reason} ->
           # Reasons vary, and it has already been logged.
           Logger.info("moving #{filepath} to #{dst_path}")
-          :ok = File.rename(filepath, dst_path)
+          # use copy to handle crossing file systems
+          {:ok, _bytes_copied} = File.copy(filepath, dst_path)
+          File.rm!(filepath)
       end
     end
   end
@@ -486,7 +488,13 @@ defmodule TanukiIncoming do
     datetime(plist)
   end
 
-  defp time_tuple_to_list({{y, mo, d}, {h, mi, _s}}) do
+  @doc """
+
+  Convert the common Erlang date/time tuple into an array of integers,
+  ignoring the seconds (since tanuki does not bother with seconds).
+
+  """
+  def time_tuple_to_list({{y, mo, d}, {h, mi, _s}}) do
     [y, mo, d, h, mi]
   end
 end

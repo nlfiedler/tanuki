@@ -3,7 +3,9 @@
 //
 function (doc) {
     var date = null;
-    if (doc.exif_date) {
+    if (doc.user_date) {
+        date = doc.user_date;
+    } else if (doc.exif_date) {
         date = doc.exif_date;
     } else if (doc.file_date) {
         date = doc.file_date;

@@ -24,6 +24,8 @@ defmodule TanukiWeb.Router do
     post "/asset/:id", PageController, :update
     get "/thumbnail/:id", PageController, :thumbnail
     get "/preview/:id", PageController, :preview
+    get "/upload", PageController, :upload
+    post "/import", PageController, :import
   end
 
   # Other scopes may use custom stacks.
