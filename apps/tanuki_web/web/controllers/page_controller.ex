@@ -46,8 +46,8 @@ defmodule TanukiWeb.PageController do
   def asset(conn, params) do
     filepath = TanukiBackend.checksum_to_asset_path(params["id"])
     mimetype = case TanukiBackend.by_checksum(params["id"]) do
-        [] -> "application/octet-stream"
-        [doc|_t] -> :couchbeam_doc.get_value("value", doc)
+      [] -> "application/octet-stream"
+      [doc|_t] -> :couchbeam_doc.get_value("value", doc)
     end
     # The Etag is just the checksum, which is already the best possible
     # value for this asset.
@@ -103,22 +103,29 @@ defmodule TanukiWeb.PageController do
   def import(conn, params) do
     plug_upload = params["asset"]
     {:ok, checksum} = TanukiIncoming.compute_checksum(plug_upload.path)
-    exif_date = TanukiIncoming.get_original_exif_date(plug_upload.path)
-    fstat = File.stat!(plug_upload.path)
-    import_date = TanukiIncoming.time_tuple_to_list(:calendar.universal_time())
-    doc = {[
-      {"exif_date", exif_date},
-      {"file_name", plug_upload.filename},
-      {"file_size", fstat.size},
-      {"import_date", import_date},
-      {"mimetype", plug_upload.content_type},
-      {"sha256", checksum},
-      # everything generally assumes the tags field is not undefined
-      {"tags", []}
-    ]}
-    {:ok, new_doc} = TanukiBackend.update_document(doc)
-    doc_id = :couchbeam_doc.get_id(new_doc)
-    TanukiIncoming.store_asset(plug_upload.path, checksum)
+    # check if an asset with this checksum already exists
+    doc_id = case TanukiBackend.by_checksum(checksum) do
+      [] ->
+        exif_date = TanukiIncoming.get_original_exif_date(plug_upload.path)
+        fstat = File.stat!(plug_upload.path)
+        import_date = TanukiIncoming.time_tuple_to_list(:calendar.universal_time())
+        doc_values = {[
+          {"exif_date", exif_date},
+          {"file_name", plug_upload.filename},
+          {"file_size", fstat.size},
+          {"import_date", import_date},
+          {"mimetype", plug_upload.content_type},
+          {"sha256", checksum},
+          # everything generally assumes the tags field is not undefined
+          {"tags", []}
+        ]}
+        {:ok, new_doc} = TanukiBackend.update_document(doc_values)
+        TanukiIncoming.store_asset(plug_upload.path, checksum)
+        :couchbeam_doc.get_id(new_doc)
+      [doc|_t] ->
+        # this asset already exists, simply forward to the edit page
+        :couchbeam_doc.get_value("id", doc)
+    end
     redirect conn, to: "/asset/#{doc_id}/edit"
   end
 
