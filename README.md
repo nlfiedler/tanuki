@@ -20,6 +20,7 @@ $ xcode-select --install
 $ brew install elixir
 $ brew install couchdb
 $ brew install imagemagick@6
+$ brew link --force imagemagick@6
 $ brew install rust
 ```
 
