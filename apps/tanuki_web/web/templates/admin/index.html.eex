@@ -1,0 +1,49 @@
+<div>
+  <h3>Rename a tag in all documents</h3>
+  <form action="<%= admin_path @conn, :rename_tag %>" method="post">
+    <table>
+      <tr>
+        <td class="detail">Old tag:</td>
+        <td><input type="text" name="old_tag" size="40"/></td>
+      </tr>
+      <tr>
+        <td class="detail">New tag:</td>
+        <td><input type="text" name="new_tag" size="40"/></td>
+      </tr>
+    </table>
+    <input type="hidden" name="_csrf_token" value="<%= get_csrf_token() %>">
+    <input type="submit" value="Rename"/>
+  </form>
+</div>
+
+<div>
+  <h3>Rename a location in all documents</h3>
+  <form action="<%= admin_path @conn, :rename_location %>" method="post">
+    <table>
+      <tr>
+        <td class="detail">Old location:</td>
+        <td><input type="text" name="old_location" size="40"/></td>
+      </tr>
+      <tr>
+        <td class="detail">New location:</td>
+        <td><input type="text" name="new_location" size="40"/></td>
+      </tr>
+    </table>
+    <input type="hidden" name="_csrf_token" value="<%= get_csrf_token() %>">
+    <input type="submit" value="Rename"/>
+  </form>
+</div>
+
+<div>
+  <h3>Extract tag and set as location in all documents</h3>
+  <form action="<%= admin_path @conn, :tag_to_location %>" method="post">
+    <table>
+      <tr>
+        <td class="detail">Tag:</td>
+        <td><input type="text" name="tag" size="40"/></td>
+      </tr>
+    </table>
+    <input type="hidden" name="_csrf_token" value="<%= get_csrf_token() %>">
+    <input type="submit" value="Modify"/>
+  </form>
+</div>

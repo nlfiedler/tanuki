@@ -32,4 +32,13 @@ defmodule TanukiWeb.Router do
   # scope "/api", TanukiWeb do
   #   pipe_through :api
   # end
+
+  scope "/admin", TanukiWeb do
+    pipe_through :browser # Use the default browser stack
+
+    get "/", AdminController, :index
+    post "/rename_tag", AdminController, :rename_tag
+    post "/rename_location", AdminController, :rename_location
+    post "/tag_to_location", AdminController, :tag_to_location
+  end
 end
