@@ -22,7 +22,7 @@ defmodule TanukiWeb.AdminController do
       doc_id = :couchbeam_doc.get_value("id", row)
       {:ok, doc} = :couchbeam.open_doc(db, doc_id)
       old_tags = :couchbeam_doc.get_value("tags", doc)
-      new_tags = Enum.sort(List.delete(old_tags, old_tag) ++ [new_tag])
+      new_tags = Enum.uniq(Enum.sort(List.delete(old_tags, old_tag) ++ [new_tag]))
       new_doc = :couchbeam_doc.set_value("tags", new_tags, doc)
       {:ok, _doc1} = :couchbeam.save_doc(db, new_doc)
     end)
