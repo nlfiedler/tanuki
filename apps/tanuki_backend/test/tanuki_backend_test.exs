@@ -73,6 +73,18 @@ defmodule TanukiBackendTest do
     for {row, key_value} <- expected, do: validate_fn.(row, key_value)
   end
 
+  test "fetching list of all locations" do
+    rows = TanukiBackend.all_locations()
+    assert length(rows) == 3
+    validate_fn = fn(row, {key, value}) ->
+      assert :couchbeam_doc.get_value("key", row) == key
+      assert :couchbeam_doc.get_value("value", row) == value
+    end
+    key_values = [{"carmel", 1}, {"san francisco", 2}, {"santa cruz", 2}]
+    expected = Enum.zip(rows, key_values)
+    for {row, key_value} <- expected, do: validate_fn.(row, key_value)
+  end
+
   test "fetching metadata by checksum" do
     checksum = "39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100"
     rows = TanukiBackend.by_checksum(checksum)
@@ -150,6 +162,38 @@ defmodule TanukiBackendTest do
       TanukiBackend.by_date(2013)
     end) =~ "cache hit for"
     Logger.configure(level: level)
+
+    # negative case, no such year
+    assert TanukiBackend.by_date(1973) == []
+  end
+
+  test "retrieving by location" do
+    validate_fn = fn({input, count, expected_ids}) ->
+      rows = TanukiBackend.by_location(input)
+      assert length(rows) == count
+      for {id, row} <- Enum.zip(expected_ids, rows),
+        do: assert :couchbeam_doc.get_value("id", row) == id
+    end
+    inputs = [
+      {"carmel", 1, ["test_AD"]},
+      {"san francisco", 2, ["test_AA", "test_AB"]},
+      {"santa cruz", 2, ["test_AE", "test_AF"]}
+    ]
+    for input <- inputs, do: validate_fn.(input)
+
+    # verify hit/miss of the by_location cache
+    level = Logger.level()
+    Logger.configure(level: :info)
+    assert capture_log(fn ->
+      TanukiBackend.by_location("carmel")
+    end) =~ "cache miss for"
+    assert capture_log(fn ->
+      TanukiBackend.by_location("carmel")
+    end) =~ "cache hit for"
+    Logger.configure(level: level)
+
+    # negative case, no such location
+    assert TanukiBackend.by_location("philadelphia") == []
   end
 
   test "retrieving by year and month" do

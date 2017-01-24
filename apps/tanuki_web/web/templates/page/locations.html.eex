@@ -1,0 +1,5 @@
+<div>
+<%= for location <- @locations do %>
+  [<a href="<%= page_path @conn, :location, location %>"><%= location %></a>]
+<% end %>
+</div>

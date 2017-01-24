@@ -22,12 +22,16 @@ defmodule TanukiBackend do
   # Mnesia record for caching "by_date" queries.
   Record.defrecord :by_date_cache, [key: nil, results: nil]
 
+  # Mnesia record for caching "by_location" queries.
+  Record.defrecord :by_location_cache, [key: nil, results: nil]
+
   @mnesia_tables [
     :thumbnails,
     :thumbnail_dates,
     :thumbnail_counter,
     :by_tags_cache,
-    :by_date_cache
+    :by_date_cache,
+    :by_location_cache
   ]
 
   @doc """
@@ -83,6 +87,16 @@ defmodule TanukiBackend do
   @spec all_years() :: [any()]
   def all_years() do
     GenServer.call(TanukiDatabase, :all_years)
+  end
+
+  @doc """
+
+  Retrieves all known locations as `couchbeam` view results.
+
+  """
+  @spec all_locations() :: [any()]
+  def all_locations() do
+    GenServer.call(TanukiDatabase, :all_locations)
   end
 
   @doc """
@@ -208,6 +222,37 @@ defmodule TanukiBackend do
     start_date = [year, month, 0, 0, 0]
     end_date = [year, month + 1, 0, 0, 0]
     GenServer.call(TanukiDatabase, {:by_date, start_date, end_date})
+  end
+
+  @doc """
+
+  Retrieves all documents whose most relevant location is within the given
+  year. The date used will be user_date, exif_date, or file_date, or
+  import_date, in that order. Results are as from couchbeam_view:fetch/3.
+
+  """
+  @spec by_location(String.t) :: [any()]
+  def by_location(location) do
+    key = location
+    location_cache_query_fn = fn() ->
+      case :mnesia.read(:by_location_cache, key) do
+        [] ->
+          Logger.info("cache miss for #{inspect key}")
+          results = GenServer.call(TanukiDatabase, {:by_location, location})
+          # Save the results in mnesia to avoid doing the same work again
+          # if a repeated request is made, replacing any previous values.
+          case :mnesia.first(:by_location_cache) do
+            :'$end_of_table' -> :ok
+            first_key -> :ok = :mnesia.delete({:by_location_cache, first_key})
+          end
+          :ok = :mnesia.write(by_location_cache(key: key, results: results))
+          results
+        [by_location_cache(results: rows)] ->
+          Logger.info("cache hit for #{inspect key}")
+          rows
+      end
+    end
+    :mnesia.activity(:transaction, location_cache_query_fn)
   end
 
   @doc """
@@ -434,6 +479,11 @@ defmodule TanukiBackend do
           {:attributes, Keyword.keys(by_date_cache(by_date_cache()))}
         ])
       end
+      if not Enum.member?(tables, :by_location_cache) do
+        {:atomic, :ok} = :mnesia.create_table(:by_location_cache, [
+          {:attributes, Keyword.keys(by_location_cache(by_location_cache()))}
+        ])
+      end
     end
     # Create our table if it does not exist
     if :mnesia.system_info(:is_running) == :no do
@@ -493,6 +543,12 @@ defmodule TanukiBackend do
       {:reply, rows, state}
     end
 
+    def handle_call(:all_locations, _from, state) do
+      options = [{:group_level, 1}]
+      {:ok, rows} = :couchbeam_view.fetch(state.database, {"assets", "locations"}, options)
+      {:reply, rows, state}
+    end
+
     def handle_call({:by_checksum, checksum}, _from, state) do
       options = [{:key, checksum}]
       {:ok, rows} = :couchbeam_view.fetch(state.database, {"assets", "by_checksum"}, options)
@@ -511,6 +567,12 @@ defmodule TanukiBackend do
         {:end_key, end_date}
       ]
       {:ok, rows} = :couchbeam_view.fetch(state.database, {"assets", "by_date"}, options)
+      {:reply, rows, state}
+    end
+
+    def handle_call({:by_location, location}, _from, state) do
+      options = [{:key, location}]
+      {:ok, rows} = :couchbeam_view.fetch(state.database, {"assets", "by_location"}, options)
       {:reply, rows, state}
     end
 

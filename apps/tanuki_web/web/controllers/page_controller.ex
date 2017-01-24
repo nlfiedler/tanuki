@@ -9,6 +9,7 @@ defmodule TanukiWeb.PageController do
     conn
     |> load_all_tags()
     |> load_all_years()
+    |> load_all_locations()
     |> tag_selection(params)
     |> tag_unselection(params)
     |> page_selection(params)
@@ -154,6 +155,31 @@ defmodule TanukiWeb.PageController do
     end
   end
 
+  def location(conn, params) do
+    location = params["id"]
+    conn
+    |> load_all_locations()
+    |> location_selection(location)
+    |> page_selection(params)
+    |> assign_location_info(location)
+    |> assign_pagination_data(:location_info)
+    |> assign(:location, location)
+    |> render(:location)
+  end
+
+  defp location_selection(conn, location) do
+    selected_location = get_session(conn, :selected_location)
+    # when not set, the session value will be nil
+    if selected_location != location do
+      conn
+      |> put_session(:selected_location, location)
+      # reset the current page if the location selection changed (even from nil)
+      |> put_session(:curr_page, nil)
+    else
+      conn
+    end
+  end
+
   defp read_doc(document) do
     row_id = :couchbeam_doc.get_id(document)
     sha256 = :couchbeam_doc.get_value("sha256", document)
@@ -194,6 +220,16 @@ defmodule TanukiWeb.PageController do
     # the number of documents with that year...
     # count = :couchbeam_doc.get_value("value", row)
     assign(conn, :years, years)
+  end
+
+  # Fetches the known locations and assigns the list to the connection as
+  # `locations`, to be rendered by the "locations.html" template.
+  defp load_all_locations(conn) do
+    results = TanukiBackend.all_locations()
+    locations = for row <- results, do: :couchbeam_doc.get_value("key", row)
+    # the number of documents with that location...
+    # count = :couchbeam_doc.get_value("value", row)
+    assign(conn, :locations, locations)
   end
 
   defp tag_selection(conn, params) do
@@ -342,6 +378,29 @@ defmodule TanukiWeb.PageController do
     # values is a list of [file_name, sha256]
     filename = hd(values)
     checksum = hd(tl(values))
+    %{
+      :id => row_id,
+      :fname => filename,
+      :date => date_string,
+      :sha => checksum
+    }
+  end
+
+  defp assign_location_info(conn, location) do
+    rows = TanukiBackend.by_location(location)
+    location_info = for row <- rows, do: build_location_info(row)
+    assign(conn, :location_info, location_info)
+  end
+
+  defp build_location_info(row) do
+    row_id = :couchbeam_doc.get_value("id", row)
+    values = :couchbeam_doc.get_value("value", row)
+    # values is a list of [date, file_name, sha256], where 'date' is user,
+    # exif, file, or import date in that preferred order. The date value
+    # itself is a list of integers (e.g. [2014, 7, 4, 12, 1]).
+    date_string = TanukiBackend.date_list_to_string(hd(values), :date_only)
+    filename = hd(tl(values))
+    checksum = hd(tl(tl(values)))
     %{
       :id => row_id,
       :fname => filename,
