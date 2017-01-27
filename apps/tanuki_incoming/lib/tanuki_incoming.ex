@@ -184,39 +184,34 @@ defmodule TanukiIncoming do
 
   @doc """
 
-  Load the named asset file, correct its orientation if applicable, and
-  return the binary data. Does not modify the asset if the auto-orientation
-  is not successful. An image that does not require orientation correction
-  is treated as an error.
+  Return true if the image does not require orientation correction, and
+  false otherwise. If the asset is not an image, or the orientation field
+  is missing, then true is returned (i.e. there is nothing that can be
+  done).
 
   """
-  @spec correct_orientation(String.t) :: {:ok, binary()} | {:error, any()}
-  def correct_orientation(filepath) do
+  @spec correct_orientation?(String.t) :: boolean()
+  def correct_orientation?(filepath) do
     # We can only correct the orientation for images, which for the time
     # being, are assumed to be JPEG images.
     case jpeg?(filepath) do
       true ->
-        {:ok, binary0} = File.read(filepath)
-        case :emagick_rs.requires_orientation(binary0) do
-          false ->
-            # Return the original binary, rather than the one that has been
-            # handled by ImageMagick, which invariably modifies the data,
-            # and thus changes the checksum.
-            {:error, :not_necessary}
-          true ->
-            # Attempt to auto-orient the image, but tolerate assets that
-            # are not images, and hence cannot be rotated.
-            case :emagick_rs.auto_orient(binary0) do
-              {:ok, binary1} -> {:ok, binary1}
-              {:error, reason} ->
-                Logger.warn("unable to auto-orient asset: #{reason}")
-                {:error, reason}
-            end
+        case :exif.read(to_charlist(filepath)) do
           {:error, reason} ->
-            Logger.warn("unable to detect asset orientation: #{reason}")
-            {:error, reason}
+            Logger.info("unable to detect orientation of #{filepath}, #{reason}")
+            false
+          {:ok, exif_data} ->
+            case :dict.find(:orientation, exif_data) do
+              {:ok, 1} ->
+                false
+              {:ok, _n} ->
+                true
+              :error ->
+                Logger.info("no orientation setting in #{filepath}")
+                false
+            end
         end
-      false -> {:error, :not_an_image}
+      false -> true
     end
   end
 
@@ -230,14 +225,18 @@ defmodule TanukiIncoming do
     # Exif data only exists in JPEG files, and no use loading a large video
     # file into memory only to find it isn't an image at all.
     if jpeg?(filepath) do
-      image_data = File.read!(filepath)
-      exif_dto = to_charlist("exif:DateTimeOriginal")
-      case :emagick_rs.image_get_property(image_data, exif_dto) do
+      case :exif.read(to_charlist(filepath)) do
         {:error, reason} ->
-          Logger.warn("unable to read EXIF data: #{reason}")
+          Logger.error("unable to read EXIF data from #{filepath}, #{reason}")
           :null
-        {:ok, original_date} ->
-          time_tuple_to_list(date_parse(original_date))
+        {:ok, exif_data} ->
+          case :dict.find(:date_time_original, exif_data) do
+            {:ok, original_date} ->
+              time_tuple_to_list(date_parse(original_date))
+            :error ->
+              Logger.info("no original date available from #{filepath}")
+              :null
+          end
       end
     else
       :null
@@ -348,19 +347,25 @@ defmodule TanukiIncoming do
       File.rm!(filepath)
     else
       File.mkdir_p!(Path.dirname(dst_path))
-      case correct_orientation(filepath) do
-        {:ok, binary} ->
-          Logger.info("corrected orientation for #{filepath}, saved to #{dst_path}")
-          File.write!(dst_path, binary)
-          File.rm!(filepath)
-        {:error, _reason} ->
-          # Reasons vary, and it has already been logged.
-          Logger.info("moving #{filepath} to #{dst_path}")
-          # use copy to handle crossing file systems
-          {:ok, _bytes_copied} = File.copy(filepath, dst_path)
-          File.rm!(filepath)
+      if correct_orientation?(filepath) do
+        Logger.info("moving #{filepath} to #{dst_path}")
+        # use copy to handle crossing file systems
+        {:ok, _bytes_copied} = File.copy(filepath, dst_path)
+        File.rm!(filepath)
+      else
+        auto_orient(filepath, dst_path)
+        Logger.info("corrected orientation for #{filepath}, saved to #{dst_path}")
+        File.rm!(filepath)
       end
     end
+  end
+
+  # Use ImageMagick convert command to read the source file and correct its
+  # orientation, writing to the given destination path.
+  defp auto_orient(source, destination) do
+    cmd = Enum.join(["convert", source, "-auto-orient", destination], " ")
+    port = Port.open({:spawn, cmd}, [:exit_status])
+    {:ok, 0} = TanukiBackend.wait_for_port(port)
   end
 
   @doc """

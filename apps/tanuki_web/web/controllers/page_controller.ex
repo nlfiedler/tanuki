@@ -27,32 +27,35 @@ defmodule TanukiWeb.PageController do
   end
 
   def thumbnail(conn, params) do
-    {:ok, binary, mimetype} = TanukiBackend.retrieve_thumbnail(params["id"])
-    etag = Base.encode16(:crypto.hash(:sha, binary), case: :lower)
-    conn
-    |> put_resp_content_type(mimetype)
-    |> put_resp_header("etag", etag)
-    |> send_resp(200, binary)
-  end
-
-  def preview(conn, params) do
-    binary = TanukiBackend.generate_thumbnail(params["id"], :preview)
-    etag = Base.encode16(:crypto.hash(:sha, binary), case: :lower)
+    checksum = params["id"]
+    filepath = TanukiBackend.generate_thumbnail(checksum, :thumbnail)
+    etag = checksum <> ".thumb"
+    # Use send_file and let the OS and browser cache the binary.
     conn
     |> put_resp_content_type("image/jpeg")
     |> put_resp_header("etag", etag)
-    |> send_resp(200, binary)
+    |> send_file(200, filepath)
+  end
+
+  def preview(conn, params) do
+    checksum = params["id"]
+    filepath = TanukiBackend.generate_thumbnail(checksum, :preview)
+    etag = checksum <> ".preview"
+    # Use send_file and let the OS and browser cache the binary.
+    conn
+    |> put_resp_content_type("image/jpeg")
+    |> put_resp_header("etag", etag)
+    |> send_file(200, filepath)
   end
 
   def asset(conn, params) do
-    filepath = TanukiBackend.checksum_to_asset_path(params["id"])
+    checksum = params["id"]
+    filepath = TanukiBackend.checksum_to_asset_path(checksum)
     mimetype = case TanukiBackend.by_checksum(params["id"]) do
       [] -> "application/octet-stream"
       [doc|_t] -> :couchbeam_doc.get_value("value", doc)
     end
-    # The Etag is just the checksum, which is already the best possible
-    # value for this asset.
-    etag = params["id"]
+    etag = checksum <> ".asset"
     # Use the send_file function to avoid loading the entire asset into
     # memory, since it could be an enormous video.
     conn

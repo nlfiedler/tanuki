@@ -44,9 +44,12 @@ defmodule TanukiIncomingTest do
     assert TanukiIncoming.get_original_exif_date("./test/fixtures/IMG_5745.JPG") == [2014, 4, 23, 13, 33]
     assert TanukiIncoming.get_original_exif_date("./test/fixtures/dcp_1069.jpg") == [2003, 9, 3, 17, 24]
     # an image that lacks the original date field
+    level = Logger.level()
+    Logger.configure(level: :info)
     assert capture_log(fn ->
       assert TanukiIncoming.get_original_exif_date("./test/fixtures/fighting_kittens.jpg") == :null
-    end) =~ "unable to read EXIF data"
+    end) =~ "no original date available"
+    Logger.configure(level: level)
     # something that is not a jpeg file
     assert TanukiIncoming.get_original_exif_date("./test/fixtures/LICENSE.txt") == :null
   end
@@ -71,9 +74,9 @@ defmodule TanukiIncomingTest do
   end
 
   test "image orientation correction" do
-    {:error, :not_necessary} = TanukiIncoming.correct_orientation("./test/fixtures/img_015.JPG")
-    {:ok, _binary} = TanukiIncoming.correct_orientation("./test/fixtures/fighting_kittens.jpg")
-    {:error, :not_an_image} = TanukiIncoming.correct_orientation("./test/fixtures/LICENSE.txt")
+    assert TanukiIncoming.correct_orientation?("./test/fixtures/img_015.JPG")
+    refute TanukiIncoming.correct_orientation?("./test/fixtures/fighting_kittens.jpg")
+    assert TanukiIncoming.correct_orientation?("./test/fixtures/LICENSE.txt")
   end
 
   test "create new document", context do
@@ -189,9 +192,12 @@ defmodule TanukiIncomingTest do
     # all the usual cases covered, so the fact that this does not blow up
     # and apparently made a bunch of assets go somewhere means it almost
     # certainly worked.
+    level = Logger.level()
+    Logger.configure(level: :info)
     assert capture_log(fn ->
       :ok = GenServer.call(TanukiIncoming, :process_now)
-    end) =~ "unable to read EXIF data"
+    end) =~ "no original date available"
+    Logger.configure(level: level)
     assert File.ls!(incoming_dir) == []
     rows = TanukiBackend.by_tags(["sundry"])
     assert length(rows) == 5

@@ -7,15 +7,6 @@ defmodule TanukiBackend do
   require Logger
   require Record
 
-  # Mnesia record for storing image thumbnails keyed by checksum.
-  Record.defrecord :thumbnails, [sha256: nil, binary: nil]
-
-  # Mnesia record for tracking the age of individual thumbnails.
-  Record.defrecord :thumbnail_dates, [timestamp: nil, sha256: nil]
-
-  # Mnesia record for limiting the number of cached thumbnails.
-  Record.defrecord :thumbnail_counter, [id: 0, ver: 1]
-
   # Mnesia record for caching "by_tags" queries.
   Record.defrecord :by_tags_cache, [key: nil, results: nil]
 
@@ -26,9 +17,6 @@ defmodule TanukiBackend do
   Record.defrecord :by_location_cache, [key: nil, results: nil]
 
   @mnesia_tables [
-    :thumbnails,
-    :thumbnail_dates,
-    :thumbnail_counter,
     :by_tags_cache,
     :by_date_cache,
     :by_location_cache
@@ -295,110 +283,124 @@ defmodule TanukiBackend do
 
   @doc """
 
-  Either retrieve the thumbnail produced earlier, or generate one now and
-  cache for later use. Returns {:ok, binary, mimetype}, where mimetype will
-  always be "image/jpeg".
-
-  """
-  @spec retrieve_thumbnail(String.t) :: {:ok, binary(), String.t}
-  def retrieve_thumbnail(checksum) do
-    # look for thumbnail cached in mnesia, producing and storing, if needed
-    thumbnail_fn = fn() ->
-      case :mnesia.read(:thumbnails, checksum) do
-        [thumbnails(binary: binary)] ->
-          # record the time this thumbnail was accessed
-          Logger.info("cache hit for thumbnail #{checksum}")
-          now = DateTime.to_unix(DateTime.utc_now())
-          :ok = :mnesia.write(thumbnail_dates(timestamp: now, sha256: checksum))
-          binary
-        [] ->
-          Logger.info("cache miss for thumbnail #{checksum}")
-          # producing a thumbnail in a transaction is not ideal...
-          binary = generate_thumbnail(checksum, :thumbnail)
-          :ok = :mnesia.write(thumbnails(sha256: checksum, binary: binary))
-          now = DateTime.to_unix(DateTime.utc_now())
-          :ok = :mnesia.write(thumbnail_dates(timestamp: now, sha256: checksum))
-          # update the count of thumbnails currently cached
-          count = :mnesia.dirty_update_counter(:thumbnail_counter, :id, 1)
-          # prune oldest record if we reached our limit
-          if count > 1000 do
-            # this finds the oldest thumbnail, where age is determined by
-            # either when it was generated or when it was last retrieved
-            Logger.info("discarding oldest cached thumbnail")
-            oldest_key = :mnesia.first(:thumbnail_dates)
-            [thumbnail_dates(sha256: oldest)] = :mnesia.read(:thumbnail_dates, oldest_key)
-            :ok = :mnesia.delete({:thumbnails, oldest})
-            :ok = :mnesia.delete({:thumbnail_dates, oldest_key})
-            :mnesia.dirty_update_counter(:thumbnail_counter, :id, -1)
-          end
-          binary
-      end
-    end
-    binary = :mnesia.activity(:transaction, thumbnail_fn)
-    {:ok, binary, "image/jpeg"}
-  end
-
-  @doc """
-
   Produce a jpeg thumbnail of the image file designated by the given SHA256
-  checksum. Two convenient sizes are available, either :thumbnail which
-  resizes the image to a box of 240 by 240 pixels, or :preview, which
-  resizes the image to a box of 640 by 640 pixels. Or you can provide an
-  integer value of your own choosing.
+  checksum and return the path to the generated thumbnail. Two convenient
+  sizes are available, either :thumbnail which resizes the image to a box
+  of 240 by 240 pixels, or :preview, which resizes the image to a box of
+  640 by 640 pixels.
 
   """
-  @spec generate_thumbnail(String.t, :thumbnail | :preview | integer()) :: binary()
-  def generate_thumbnail(checksum, :thumbnail) do
-    generate_thumbnail(checksum, 240)
-  end
-
-  def generate_thumbnail(checksum, :preview) do
-    generate_thumbnail(checksum, 640)
-  end
-
-  def generate_thumbnail(checksum, size) when is_integer(size) do
-    source_file = checksum_to_asset_path(checksum)
-    # Avoid attempting to generate a thumbnail for large files, which are
-    # very likely not image files at all (e.g. videos). The value of 10MB
-    # was arrived at by examining a collection of images and videos that
-    # represent typical usage. That is, most images are less than 10MB and
-    # most videos are over 10MB; the overlap is acceptable, such that some
-    # large images will not get thumbnails, and some videos will be pulled
-    # into memory only to result in an error.
-    case File.stat(source_file) do
-      {:ok, fstat} ->
-        if fstat.size < 10485760 do
-          case File.read(source_file) do
-            {:ok, image_data} ->
-              case :emagick_rs.image_fit(image_data, size, size) do
-                {:ok, resized} -> resized
-                {:error, reason} ->
-                  Logger.warn("unable to resize asset #{checksum}: #{reason}")
-                  broken_image_placeholder()
-              end
-            {:error, reason} ->
-              Logger.warn("unable to read asset file #{source_file}: #{reason}")
-              broken_image_placeholder()
-          end
-        else
-          broken_image_placeholder()
+  @spec generate_thumbnail(String.t, :thumbnail | :preview) :: String.t()
+  def generate_thumbnail(checksum, size) do
+    infile = checksum_to_asset_path(checksum)
+    if File.exists?(infile) do
+      pixels = image_size(size)
+      outfile = checksum_to_thumbs_path(checksum, pixels)
+      if File.exists?(outfile) do
+        Logger.info("cache hit for thumbnail #{checksum}")
+        outfile
+      else
+        Logger.info("cache miss for thumbnail #{checksum}")
+        File.mkdir_p!(Path.dirname(outfile))
+        dimensions = "'#{pixels}x#{pixels}>'"
+        cmd = ["convert", infile, "-thumbnail", dimensions, "-unsharp", "0x.5", outfile]
+        port = Port.open({:spawn, Enum.join(cmd, " ")}, [:exit_status])
+        case wait_for_port(port) do
+          {:ok, 0} -> outfile
+          {:ok, _n} ->
+            Logger.warn("unable to resize asset #{checksum}")
+            broken_image_placeholder()
         end
-      {:error, reason} ->
-        Logger.warn("unable to stat asset file #{source_file}: #{reason}")
-        broken_image_placeholder()
+      end
+    else
+      Logger.warn("no such asset #{checksum}")
+      broken_image_placeholder()
     end
   end
 
   @doc """
 
-  Return the image data for the broken image placeholder thumbnail.
+  Return the pixel size that corresponds to the logical image size.
+
+  """
+  def image_size(:thumbnail), do: 240
+  def image_size(:preview), do: 640
+
+  @doc """
+
+  Return the path to the broken image placeholder thumbnail.
 
   """
   @spec broken_image_placeholder() :: binary()
   def broken_image_placeholder() do
     priv_dir = :code.priv_dir(:tanuki_backend)
-    image_path = Path.join(priv_dir, "images/broken_image.jpg")
-    File.read!(image_path)
+    Path.join([priv_dir, "images", "broken_image.jpg"])
+  end
+
+  @doc """
+
+  For a given SHA256 checksum, return the path to the thumbnail, which may
+  not yet have been generated. The filename extension will always be .jpg
+  because thumbnails are always JPEG images.
+
+  """
+  @spec checksum_to_thumbs_path(String.t, integer()) :: String.t
+  def checksum_to_thumbs_path(checksum, size) when is_integer(size) do
+    thumbs_dir = Application.get_env(:tanuki_backend, :thumbnails_dir)
+    # By adding the extension, we signal to the convert command that the
+    # desired thumbnail image format should be JPEG.
+    extension = ".jpg"
+    # For now all thumbnails will be in one directory, with a level that
+    # separates the "thumbnail" images from the "preview" images.
+    Path.join([thumbs_dir, Integer.to_string(size), checksum <> extension])
+  end
+
+  # Remove enough images to stay within the limit.
+  def prune_old_thumbnails(size, limit) do
+    dirname = Path.dirname(checksum_to_thumbs_path("cafebabe", size))
+    filetimes = for name <- File.ls!(dirname) do
+      fpath = Path.join(dirname, name)
+      atime = File.stat!(fpath).atime
+      {fpath, atime}
+    end
+    if length(filetimes) > limit do
+      sorted = List.keysort(filetimes, 1)
+      oldest = Enum.slice(sorted, 0, length(sorted) - limit)
+      for {fpath, _atime} <- oldest do
+        Logger.info("pruning cached thumbnail #{fpath}")
+        File.rm!(fpath)
+      end
+    end
+  end
+
+  @doc """
+
+  Wait for the given port to complete and return the exit code in the form
+  of {:ok, status}. If the port experiences an error, returns {:error,
+  reason}.
+
+  """
+  @spec wait_for_port(port()) :: {:ok, integer()} | {:error, any()}
+  def wait_for_port(port) do
+    receive do
+      {^port, {:exit_status, status}} ->
+        ensure_port_closed(port)
+        {:ok, status}
+      {^port, {:data, _data}} ->
+        Logger.info("output from port ignored")
+        wait_for_port(port)
+      {:EXIT, ^port, reason} ->
+        Logger.error("port #{port} had an error: #{reason}")
+        {:error, reason}
+    end
+  end
+
+  # Ensure that the given Port has been properly closed. Does nothing if
+  # the port is not open.
+  defp ensure_port_closed(port) do
+    unless Port.info(port) == nil do
+      Port.close(port)
+    end
   end
 
   @doc """
@@ -451,24 +453,6 @@ defmodule TanukiBackend do
     end
     ensure_tables = fn() ->
       tables = :mnesia.system_info(:tables)
-      if not Enum.member?(tables, :thumbnails) do
-        {:atomic, :ok} = :mnesia.create_table(:thumbnails, [
-          # first field of the record is the table key
-          {:attributes, Keyword.keys(thumbnails(thumbnails()))}
-        ])
-      end
-      if not Enum.member?(tables, :thumbnail_dates) do
-        {:atomic, :ok} = :mnesia.create_table(:thumbnail_dates, [
-          # first field of the record is the table key
-          {:attributes, Keyword.keys(thumbnail_dates(thumbnail_dates()))},
-          {:type, :ordered_set}
-        ])
-      end
-      if not Enum.member?(tables, :thumbnail_counter) do
-        {:atomic, :ok} = :mnesia.create_table(:thumbnail_counter, [
-          {:attributes, Keyword.keys(thumbnail_counter(thumbnail_counter()))}
-        ])
-      end
       if not Enum.member?(tables, :by_tags_cache) do
         {:atomic, :ok} = :mnesia.create_table(:by_tags_cache, [
           {:attributes, Keyword.keys(by_tags_cache(by_tags_cache()))}
@@ -516,6 +500,8 @@ defmodule TanukiBackend do
       server = :couchbeam.server_connection(url, opts)
       {:ok, db} = :couchbeam.open_or_create_db(server, db_name)
       :ok = install_designs(db)
+      # set up a timer to thin the thumbnails directory every 5 minutes
+      :timer.apply_interval(300000, :gen_server, :cast, [TanukiDatabase, :thin_thumbnails])
       {:ok, %State{server: server, database: db}}
     end
 
@@ -574,6 +560,14 @@ defmodule TanukiBackend do
       options = [{:key, location}]
       {:ok, rows} = :couchbeam_view.fetch(state.database, {"assets", "by_location"}, options)
       {:reply, rows, state}
+    end
+
+    def handle_cast(:thin_thumbnails, state) do
+      thumbnails_limit = Application.get_env(:tanuki_backend, :thumbnails_limit)
+      TanukiBackend.prune_old_thumbnails(TanukiBackend.image_size(:thumbnail), thumbnails_limit)
+      previews_limit = Application.get_env(:tanuki_backend, :previews_limit)
+      TanukiBackend.prune_old_thumbnails(TanukiBackend.image_size(:preview), previews_limit)
+      {:noreply, state}
     end
 
     @doc """

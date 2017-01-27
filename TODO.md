@@ -2,6 +2,15 @@
 
 ## General Items
 
+1. Race condition in thinning of thumbnails may cause a request to fail
+1. Instead of a "topic" field, perhaps an "occasion" field instead.
+    - For instance, "christina birthday".
+    - Add back to incoming processor using the "^" separator.
+    - Would be on details/edit page for benefit of uploading.
+    - Maybe don't bother exposing on main page, just another field like caption.
+1. Request caching should be keyed by some unique value per browser session
+    - With some upper limit on simultaneous cached queries
+1. `year` page should show the selected year as a heading
 1. For large numbers of pages, maybe some "skip" links
     - On the `year` page, show links to jump to the page with the first asset in each month
     - On the `index` page, show links to jump to 10% mark, 20% mark, and so on
