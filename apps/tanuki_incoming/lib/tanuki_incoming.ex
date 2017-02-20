@@ -96,7 +96,7 @@ defmodule TanukiIncoming do
         {:ok, checksum} = compute_checksum(filepath)
         # Either insert or update a document in the database.
         case find_document(db, checksum) do
-          :undefined -> create_document(db, filepath, tags, location, checksum)
+          nil -> create_document(db, filepath, tags, location, checksum)
           doc_id -> update_document(db, doc_id, tags, location)
         end
         # Move the asset into place, or remove it if duplicate.
@@ -307,7 +307,7 @@ defmodule TanukiIncoming do
   @doc """
 
   Determine if the given checksum already exists in the database.
-  Returns the document id (binary), or :undefined if not found.
+  Returns the document id (binary), or nil if not found.
 
   """
   def find_document(db, checksum) do
@@ -323,9 +323,9 @@ defmodule TanukiIncoming do
         # immediate attention.
         case length(rows) do
           1 -> :couchbeam_doc.get_value("id", hd(rows))
-          0 -> :undefined
+          0 -> nil
         end
-      false -> :undefined
+      false -> nil
     end
   end
 

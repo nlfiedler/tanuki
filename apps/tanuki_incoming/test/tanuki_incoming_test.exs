@@ -126,7 +126,7 @@ defmodule TanukiIncomingTest do
     {:ok, id} = TanukiIncoming.create_document(db, fullpath, tags, location, sha)
     {:ok, _doc} = :couchbeam.open_doc(db, id)
     assert TanukiIncoming.find_document(db, sha) == id
-    assert TanukiIncoming.find_document(db, "doesnotexist") == :undefined
+    assert TanukiIncoming.find_document(db, "doesnotexist") == nil
   end
 
   test "deleting extraneous files" do
