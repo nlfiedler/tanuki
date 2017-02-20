@@ -1,6 +1,8 @@
 <strong>Available locations:</strong>
 <%= render "locations.html", conn: @conn, locations: @locations %>
 
+<h4><%= @location %></h4>
+
 <table>
   <tr>
     <%= for {info, index} <- Enum.with_index(@location_info, 1) do %>

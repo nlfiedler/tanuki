@@ -1,6 +1,8 @@
 <strong>Available years:</strong>
 <%= render "years.html", conn: @conn, years: @years %>
 
+<h4><%= @year %></h4>
+
 <table>
   <tr>
     <%= for {info, index} <- Enum.with_index(@year_info, 1) do %>
