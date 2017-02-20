@@ -88,4 +88,35 @@ defmodule TanukiWeb.AdminController do
     |> put_flash(:info, "Updated #{count} documents")
     |> render(:index)
   end
+
+  def sort_tags(conn, _params) do
+    # establish a connection for the work we will be doing
+    url = Application.get_env(:tanuki_backend, :couchdb_url)
+    opts = Application.get_env(:tanuki_backend, :couchdb_opts)
+    db_name = Application.get_env(:tanuki_backend, :database)
+    server = :couchbeam.server_connection(url, opts)
+    {:ok, db} = :couchbeam.open_or_create_db(server, db_name)
+
+    count = :couchbeam_view.fold(fn(row, acc) ->
+      doc_id = :couchbeam_doc.get_value("id", row)
+      {:ok, doc} = :couchbeam.open_doc(db, doc_id)
+      current_tags = TanukiBackend.get_field_value("tags", doc)
+      if not is_nil(current_tags) do
+        sorted_tags = Enum.sort(current_tags)
+        if current_tags != sorted_tags do
+          new_doc = :couchbeam_doc.set_value("tags", sorted_tags, doc)
+          {:ok, _doc1} = :couchbeam.save_doc(db, new_doc)
+          acc + 1
+        else
+          acc
+        end
+      else
+        acc
+      end
+    end, 0, db, :all_docs)
+
+    conn
+    |> put_flash(:info, "Updated #{count} documents")
+    |> render(:index)
+  end
 end

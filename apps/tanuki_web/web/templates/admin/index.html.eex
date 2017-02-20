@@ -47,3 +47,11 @@
     <input type="submit" value="Modify"/>
   </form>
 </div>
+
+<div>
+  <h3>Sort all tags in all documents</h3>
+  <form action="<%= admin_path @conn, :sort_tags %>" method="post">
+    <input type="hidden" name="_csrf_token" value="<%= get_csrf_token() %>">
+    <input type="submit" value="Sort"/>
+  </form>
+</div>
