@@ -410,14 +410,14 @@ defmodule TanukiBackend do
   The date is the format stored in the database (a list of integers).
 
   """
-  @spec get_best_date(any()) :: list() | :none
+  @spec get_best_date(any()) :: list() | nil
   def get_best_date(doc) do
     case get_field_value("user_date", doc) do
-      :none ->
+      nil ->
         case get_field_value("exif_date", doc) do
-          :none ->
+          nil ->
             case get_field_value("file_date", doc) do
-              :none -> get_field_value("import_date", doc)
+              nil -> get_field_value("import_date", doc)
               date -> date
             end
           date -> date
@@ -428,15 +428,15 @@ defmodule TanukiBackend do
 
   @doc """
 
-  Extract the value of the named field in the given document, or :none if
+  Extract the value of the named field in the given document, or nil if
   the value is :undefined or :null.
 
   """
-  @spec get_field_value(String.t, any()) :: any() | :none
+  @spec get_field_value(String.t, any()) :: any() | nil
   def get_field_value(field, document) do
     case :couchbeam_doc.get_value(field, document) do
-      :undefined -> :none
-      :null -> :none
+      :undefined -> nil
+      :null -> nil
       value -> value
     end
   end

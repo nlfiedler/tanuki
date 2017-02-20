@@ -72,7 +72,7 @@ defmodule TanukiWeb.AdminController do
       doc_id = :couchbeam_doc.get_value("id", row)
       {:ok, doc} = :couchbeam.open_doc(db, doc_id)
       # if the doc has a location already, do not make any changes
-      if TanukiBackend.get_field_value("location", doc) == :none do
+      if TanukiBackend.get_field_value("location", doc) == nil do
         old_tags = :couchbeam_doc.get_value("tags", doc)
         new_tags = List.delete(old_tags, tag)
         new_doc = :couchbeam_doc.set_value("tags", new_tags, doc)

@@ -218,7 +218,8 @@ defmodule TanukiIncoming do
   @doc """
 
   Attempt to read the original datetime from the EXIF tags, returning :null
-  if not available, or the date time as a list of integers.
+  if not available, or the date time as a list of integers. Uses :null since
+  the value will be inserted directly into CouchDB.
 
   """
   def get_original_exif_date(filepath) do
@@ -284,14 +285,14 @@ defmodule TanukiIncoming do
     Logger.info("updating document #{doc_id}")
     {:ok, doc} = :couchbeam.open_doc(db, doc_id)
     # set the location field in the document, if not already set
-    doc = if TanukiBackend.get_field_value("location", doc) == :none do
+    doc = if TanukiBackend.get_field_value("location", doc) == nil do
       :couchbeam_doc.set_value("location", location, doc)
     else
       doc
     end
     Logger.info("new tags: #{tags}")
     doc = case TanukiBackend.get_field_value("tags", doc) do
-      :none -> :couchbeam_doc.set_value("tags", tags, doc)
+      nil -> :couchbeam_doc.set_value("tags", tags, doc)
       old_tags ->
         Logger.info("original tags: #{old_tags}")
         merged_tags = :lists.umerge(Enum.sort(old_tags), Enum.sort(tags))
