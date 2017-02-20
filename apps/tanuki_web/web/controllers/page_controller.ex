@@ -79,7 +79,7 @@ defmodule TanukiWeb.PageController do
     newdoc = :couchbeam_doc.set_value("location", params["location"], document)
     newdoc = :couchbeam_doc.set_value("caption", params["caption"], newdoc)
     tags = for t <- String.split(params["tags"], ","), do: String.trim(t)
-    newdoc = :couchbeam_doc.set_value("tags", tags, newdoc)
+    newdoc = :couchbeam_doc.set_value("tags", Enum.sort(tags), newdoc)
     newdoc = if String.length(params["user_date"]) > 0 do
       # the expected format of the optional date string is mm/dd/yyyy
       parts = String.split(params["user_date"], "/")
