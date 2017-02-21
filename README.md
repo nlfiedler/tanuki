@@ -9,6 +9,7 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 * [Elixir](http://elixir-lang.org) 1.3 or higher
 * [CouchDB](http://couchdb.apache.org) 1.6.1 or higher
 * [ImageMagick](http://www.imagemagick.org) 6.8 or higher
+* [FFmpeg](https://ffmpeg.org) 3.2 or higher
 * [Rust](https://www.rust-lang.org) 1.10 or higher
 
 #### Example for MacOS
@@ -20,6 +21,7 @@ $ xcode-select --install
 $ brew install elixir
 $ brew install couchdb
 $ brew install imagemagick
+$ brew install ffmpeg
 $ brew install rust
 ```
 

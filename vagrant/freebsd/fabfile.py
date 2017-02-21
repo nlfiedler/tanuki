@@ -42,7 +42,9 @@ def all():
     sudo("pkg install -q -y rust")
     sudo("pkg install -q -y cargo")
     sudo("pkg install -q -y ImageMagick-nox11")
+    sudo("pkg install -q -y ffmpeg")
     sudo("pkg install -q -y erlang")
+    sudo("pkg install -q -y elixir")
     sudo('pkg install -q -y rebar')
     sudo('pkg install -q -y relx')
     install_clang()
@@ -59,7 +61,7 @@ def install_clang():
 
 @task
 def install_couchdb():
-    """Install Erlang/OTP and Apache CouchDB."""
+    """Install Apache CouchDB."""
     sudo("pkg install -q -y couchdb")
     couchdb_ini = 'couchdb.ini'
     if os.path.exists('user_couchdb.ini'):

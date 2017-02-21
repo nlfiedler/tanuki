@@ -302,13 +302,36 @@ defmodule TanukiBackend do
       else
         Logger.info("cache miss for thumbnail #{checksum}")
         File.mkdir_p!(Path.dirname(outfile))
-        dimensions = "'#{pixels}x#{pixels}>'"
-        cmd = ["convert", infile, "-thumbnail", dimensions, "-unsharp", "0x.5", outfile]
-        port = Port.open({:spawn, Enum.join(cmd, " ")}, [:exit_status])
-        case wait_for_port(port) do
-          {:ok, 0} -> outfile
-          {:ok, _n} ->
-            Logger.warn("unable to resize asset #{checksum}")
+        mimetype = case TanukiBackend.by_checksum(checksum) do
+          [] -> "application/octet-stream"
+          [doc|_t] -> :couchbeam_doc.get_value("value", doc)
+        end
+        cond do
+          String.starts_with?(mimetype, "video/") ->
+            cmd = [
+              "ffmpeg", "-loglevel", "quiet", "-n",
+              "-i", infile, "-vframes", "1", "-an",
+              "-filter:v", "scale=w=#{pixels}:h=#{pixels}:force_original_aspect_ratio=decrease",
+              outfile
+            ]
+            port = Port.open({:spawn, Enum.join(cmd, " ")}, [:exit_status])
+            case wait_for_port(port) do
+              {:ok, 0} -> outfile
+              {:ok, _n} ->
+                Logger.warn("unable to resize asset #{checksum}")
+                broken_image_placeholder()
+            end
+          String.starts_with?(mimetype, "image/") ->
+            dimensions = "'#{pixels}x#{pixels}>'"
+            cmd = ["convert", infile, "-thumbnail", dimensions, "-unsharp", "0x.5", outfile]
+            port = Port.open({:spawn, Enum.join(cmd, " ")}, [:exit_status])
+            case wait_for_port(port) do
+              {:ok, 0} -> outfile
+              {:ok, _n} ->
+                Logger.warn("unable to resize asset #{checksum}")
+                broken_image_placeholder()
+            end
+          true ->
             broken_image_placeholder()
         end
       end

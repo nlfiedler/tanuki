@@ -47,7 +47,7 @@ defmodule TanukiBackendTest do
 
   test "fetching list of all tags" do
     rows = TanukiBackend.all_tags()
-    assert length(rows) == 6
+    assert length(rows) == 7
     validate_fn = fn(row, {key, value}) ->
       assert :couchbeam_doc.get_value("key", row) == key
       assert :couchbeam_doc.get_value("value", row) == value
@@ -58,6 +58,7 @@ defmodule TanukiBackendTest do
       {"christina", 3},
       {"dog", 1},
       {"joseph", 3},
+      {"kittens", 1},
       {"picnic", 2}]
     expected = Enum.zip(rows, key_values)
     for {row, key_value} <- expected, do: validate_fn.(row, key_value)
@@ -65,24 +66,24 @@ defmodule TanukiBackendTest do
 
   test "fetching list of all years" do
     rows = TanukiBackend.all_years()
-    assert length(rows) == 3
+    assert length(rows) == 4
     validate_fn = fn(row, {key, value}) ->
       assert :couchbeam_doc.get_value("key", row) == key
       assert :couchbeam_doc.get_value("value", row) == value
     end
-    key_values = [{2013, 1}, {2014, 2}, {2015, 3}]
+    key_values = [{2013, 1}, {2014, 2}, {2015, 3}, {2017, 1}]
     expected = Enum.zip(rows, key_values)
     for {row, key_value} <- expected, do: validate_fn.(row, key_value)
   end
 
   test "fetching list of all locations" do
     rows = TanukiBackend.all_locations()
-    assert length(rows) == 3
+    assert length(rows) == 4
     validate_fn = fn(row, {key, value}) ->
       assert :couchbeam_doc.get_value("key", row) == key
       assert :couchbeam_doc.get_value("value", row) == value
     end
-    key_values = [{"carmel", 1}, {"san francisco", 2}, {"santa cruz", 2}]
+    key_values = [{"carmel", 1}, {"outside", 1}, {"san francisco", 2}, {"santa cruz", 2}]
     expected = Enum.zip(rows, key_values)
     for {row, key_value} <- expected, do: validate_fn.(row, key_value)
   end
