@@ -34,6 +34,7 @@ release :tanuki do
     tanuki_backend: :permanent,
     tanuki_incoming: :permanent,
     tanuki_web: :permanent,
-    epwd_rs: :load
+    epwd_rs: :load,
+    exif: :load
   ]
 end
