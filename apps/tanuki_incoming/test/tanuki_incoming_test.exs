@@ -74,9 +74,20 @@ defmodule TanukiIncomingTest do
   end
 
   test "image orientation correction" do
-    assert TanukiIncoming.correct_orientation?("./test/fixtures/img_015.JPG")
-    refute TanukiIncoming.correct_orientation?("./test/fixtures/fighting_kittens.jpg")
+    # correctly oriented ("Top-left")
+    assert TanukiIncoming.correct_orientation?("./test/fixtures/IMG_5745.JPG")
+    # not correctly oriented ("Bottom-right")
+    refute TanukiIncoming.correct_orientation?("./test/fixtures/IMG_8841.JPG")
+    # not an image so "correctly" oriented
     assert TanukiIncoming.correct_orientation?("./test/fixtures/LICENSE.txt")
+
+    level = Logger.level()
+    Logger.configure(level: :info)
+    assert capture_log(fn ->
+      # missing EXIF data, assume correct orientation
+      assert TanukiIncoming.correct_orientation?("./test/fixtures/fighting_kittens.jpg")
+    end) =~ "no orientation setting"
+    Logger.configure(level: level)
   end
 
   test "create new document", context do

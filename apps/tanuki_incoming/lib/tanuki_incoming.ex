@@ -198,17 +198,17 @@ defmodule TanukiIncoming do
       true ->
         case :exif.read(to_charlist(filepath)) do
           {:error, reason} ->
-            Logger.info("unable to detect orientation of #{filepath}, #{reason}")
-            false
+            Logger.warn("unable to read EXIF data in #{filepath}: #{reason}")
+            true
           {:ok, exif_data} ->
             case :dict.find(:orientation, exif_data) do
-              {:ok, 1} ->
-                false
-              {:ok, _n} ->
+              {:ok, "Top-left"} ->
                 true
+              {:ok, _n} ->
+                false
               :error ->
                 Logger.info("no orientation setting in #{filepath}")
-                false
+                true
             end
         end
       false -> true
