@@ -206,7 +206,7 @@ defmodule TanukiIncomingTest do
     level = Logger.level()
     Logger.configure(level: :info)
     assert capture_log(fn ->
-      :ok = GenServer.call(TanukiIncoming, :process_now)
+      {:ok, 5} = GenServer.call(TanukiIncoming, :process_now)
     end) =~ "no original date available"
     Logger.configure(level: level)
     assert File.ls!(incoming_dir) == []

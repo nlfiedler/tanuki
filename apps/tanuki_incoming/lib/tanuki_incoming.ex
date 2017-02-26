@@ -35,14 +35,17 @@ defmodule TanukiIncoming do
       end
     end
 
-    # Primarily for testing, so the test code can block until a (useless)
-    # response is received.
+    # Primarily for testing, so the test code can block until a response is
+    # received. Returns {:ok, count} where count is the number of new
+    # assets added to the database.
     def handle_call(:process_now, _from, state) do
       # All directories are old enough as we want to process them now.
       filter_fn = fn(_path) -> true end
       incoming_dir = Application.get_env(:tanuki_incoming, :incoming_dir)
+      before_count = :couchbeam_view.count(state.database)
       TanukiIncoming.process_incoming(incoming_dir, state.database, filter_fn)
-      {:reply, :ok, state}
+      after_count = :couchbeam_view.count(state.database)
+      {:reply, {:ok, after_count - before_count}, state}
     end
 
     def handle_cast(:process, state) do

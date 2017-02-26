@@ -119,4 +119,11 @@ defmodule TanukiWeb.AdminController do
     |> put_flash(:info, "Updated #{count} documents")
     |> render(:index)
   end
+
+  def incoming(conn, _params) do
+    {:ok, count} = GenServer.call(TanukiIncoming, :process_now)
+    conn
+    |> put_flash(:info, "Added #{count} assets")
+    |> render(:index)
+  end
 end
