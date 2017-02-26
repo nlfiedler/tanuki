@@ -55,13 +55,10 @@ defmodule TanukiWeb.PageController do
       [] -> "application/octet-stream"
       [doc|_t] -> :couchbeam_doc.get_value("value", doc)
     end
-    etag = checksum <> ".asset"
-    # Use the send_file function to avoid loading the entire asset into
-    # memory, since it could be an enormous video.
     conn
     |> put_resp_content_type(mimetype)
-    |> put_resp_header("etag", etag)
-    |> send_file(200, filepath)
+    |> put_resp_header("etag", checksum <> ".asset")
+    |> send_asset(filepath)
   end
 
   def edit(conn, params) do
@@ -79,7 +76,7 @@ defmodule TanukiWeb.PageController do
     newdoc = :couchbeam_doc.set_value("location", params["location"], document)
     newdoc = :couchbeam_doc.set_value("caption", params["caption"], newdoc)
     tags = for t <- String.split(params["tags"], ","), do: String.trim(t)
-    newdoc = :couchbeam_doc.set_value("tags", Enum.sort(tags), newdoc)
+    newdoc = :couchbeam_doc.set_value("tags", Enum.uniq(Enum.sort(tags)), newdoc)
     newdoc = if String.length(params["user_date"]) > 0 do
       # the expected format of the optional date string is mm/dd/yyyy
       parts = String.split(params["user_date"], "/")
@@ -190,6 +187,7 @@ defmodule TanukiWeb.PageController do
     filesize = :couchbeam_doc.get_value("file_size", document)
     location = TanukiBackend.get_field_value("location", document)
     caption = TanukiBackend.get_field_value("caption", document)
+    mimetype = :couchbeam_doc.get_value("mimetype", document)
     tags = :couchbeam_doc.get_value("tags", document)
     datetime_list = TanukiBackend.get_best_date(document)
     datetime_str = TanukiBackend.date_list_to_string(datetime_list)
@@ -197,6 +195,7 @@ defmodule TanukiWeb.PageController do
       :id => row_id,
       :fname => filename,
       :size => filesize,
+      :mimetype => mimetype,
       :datetime => datetime_str,
       :sha => sha256,
       :caption => caption,
@@ -410,5 +409,32 @@ defmodule TanukiWeb.PageController do
       :date => date_string,
       :sha => checksum
     }
+  end
+
+  defp send_asset(conn, filepath) do
+    # Send the asset file back as requested by the client, either with a
+    # specific content range, or the entire file all at once. This is
+    # required for video playback to work in Safari. This does not handle
+    # multi-range specs but that seems to have no practical impact.
+    if List.keymember?(conn.req_headers, "range", 0) do
+      fstat = File.stat!(filepath)
+      {first_byte, last_byte} = case List.keyfind(conn.req_headers, "range", 0) do
+        {"range", "bytes=-" <> suffix_len} ->
+          {max(0, fstat.size - String.to_integer(suffix_len)), fstat.size - 1}
+        {"range", "bytes=" <> byte_range_spec} ->
+          if String.ends_with?(byte_range_spec, "-") do
+            {String.split(byte_range_spec, "-") |> hd |> String.to_integer, fstat.size - 1}
+          else
+            range = for n <- String.split(byte_range_spec, "-"), do: String.to_integer(n)
+            {hd(range), hd(tl(range))}
+          end
+      end
+      length = last_byte - first_byte + 1
+      conn
+      |> put_resp_header("content-range", "bytes #{first_byte}-#{last_byte}/#{fstat.size}")
+      |> send_file(206, filepath, first_byte, length)
+    else
+      send_file(conn, 200, filepath)
+    end
   end
 end
