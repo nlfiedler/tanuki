@@ -1,5 +1,6 @@
 defmodule TanukiWeb.PageController do
   use TanukiWeb.Web, :controller
+  require Logger
 
   # pages of thumbnails are limited to 3 by 6
   @page_size 18
@@ -23,6 +24,7 @@ defmodule TanukiWeb.PageController do
     asset_info = read_doc(document)
     conn
     |> assign(:asset_info, asset_info)
+    |> assign_duration(asset_info)
     |> render(:detail)
   end
 
@@ -409,6 +411,28 @@ defmodule TanukiWeb.PageController do
       :date => date_string,
       :sha => checksum
     }
+  end
+
+  defp assign_duration(conn, asset_info) do
+    duration = if String.starts_with?(asset_info[:mimetype], "video/") do
+      checksum = asset_info[:sha]
+      filepath = TanukiBackend.checksum_to_asset_path(checksum)
+      ffprobe_args = [
+        "-loglevel", "quiet", "-show_entries",
+        "format=duration", "-of", "default=noprint_wrappers=1:nokey=1",
+        filepath
+      ]
+      case System.cmd("ffprobe", ffprobe_args) do
+        {output, 0} ->
+          round(String.to_float(String.trim(output)))
+        {output, code} ->
+          Logger.warn("ffprobe exited non-zero (#{code}): #{output}")
+          nil
+      end
+    else
+      nil
+    end
+    assign(conn, :duration, duration)
   end
 
   defp send_asset(conn, filepath) do

@@ -25,6 +25,12 @@
       <td class="detail">Size:</td>
       <td><%= @asset_info[:size] %></td>
     </tr>
+    <%= unless is_nil @duration do %>
+    <tr>
+      <td class="detail">Duration:</td>
+      <td><%= @duration %> seconds</td>
+    </tr>
+    <% end %>
     <tr>
       <td class="detail">SHA256:</td>
       <td><%= @asset_info[:sha] %></td>
