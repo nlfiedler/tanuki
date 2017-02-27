@@ -82,9 +82,9 @@ defmodule TanukiWeb.PageController do
     newdoc = if String.length(params["user_date"]) > 0 do
       # the expected format of the optional date string is mm/dd/yyyy
       parts = String.split(params["user_date"], "/")
-      year = elem(Integer.parse(hd(tl(tl(parts)))), 0)
-      day = elem(Integer.parse(hd(tl(parts))), 0)
-      month = elem(Integer.parse(hd(parts)), 0)
+      year = String.to_integer(hd(tl(tl(parts))))
+      day = String.to_integer(hd(tl(parts)))
+      month = String.to_integer(hd(parts))
       # add the given date to the time from the best available date/time
       datetime_list = TanukiBackend.get_best_date(document)
       new_dt_list = [year, month, day] ++ Enum.slice(datetime_list, 3, 2)
@@ -133,7 +133,7 @@ defmodule TanukiWeb.PageController do
   end
 
   def year(conn, params) do
-    {year, _rest} = Integer.parse(params["id"])
+    year = String.to_integer(params["id"])
     conn
     |> load_all_years()
     |> year_selection(year)
@@ -329,8 +329,7 @@ defmodule TanukiWeb.PageController do
     if curr_page == nil do
       1
     else
-      {value, _rest} = Integer.parse(curr_page)
-      value
+      String.to_integer(curr_page)
     end
   end
 

@@ -18,9 +18,6 @@
 1. Option on `edit` page to rotate an image (some images lack orientation data)
 1. To help reduce tag clutter, hide the tags whose count falls below a threshold
     - Show the full list of tags dynamically using JavaScript (via a link)
-1. Use `FFprobe.duration("/path/to/input.avi")` to get duration of vides during import
-    - Add 1-off script to add the "duration" field to all existing video documents
-    - Show duration value on asset detail page
 1. Write tests for the `tanuki_web` application
 1. Consider supporting browsing by year and month (likely without query caching or paging)
 1. Fix image references in error view
