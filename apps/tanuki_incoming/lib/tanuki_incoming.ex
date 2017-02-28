@@ -21,11 +21,13 @@ defmodule TanukiIncoming do
       url = Application.get_env(:tanuki_incoming, :couchdb_url)
       opts = Application.get_env(:tanuki_incoming, :couchdb_opts)
       db_name = Application.get_env(:tanuki_incoming, :database)
+      frequency = Application.get_env(:tanuki_incoming, :frequency)
       server = :couchbeam.server_connection(url, opts)
       case :couchbeam.open_or_create_db(server, db_name) do
         {:ok, db} ->
+          millis = frequency * 60000
           {:ok, _tref} = :timer.apply_interval(
-            1000 * 60 * 60, :gen_server, :cast, [TanukiIncoming, :process])
+            millis, :gen_server, :cast, [TanukiIncoming, :process])
           {:ok, %State{
             server: server,
             database: db
@@ -49,11 +51,13 @@ defmodule TanukiIncoming do
     end
 
     def handle_cast(:process, state) do
-      # Filter function to ensure the given directory is at least an hour old.
+      # Filter function to ensure the given directory is sufficiently old.
+      frequency = Application.get_env(:tanuki_incoming, :frequency)
+      min_secs = frequency * 60
       filter_fun = fn(path) ->
-        nowsecs = DateTime.to_unix(DateTime.utc_now())
+        now_secs = DateTime.to_unix(DateTime.utc_now())
         fstat = File.stat!(path, time: :posix)
-        (nowsecs - fstat.ctime) > 3600
+        (now_secs - fstat.ctime) > min_secs
       end
       incoming_dir = Application.get_env(:tanuki_incoming, :incoming_dir)
       TanukiIncoming.process_incoming(incoming_dir, state.database, filter_fun)
