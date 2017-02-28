@@ -105,7 +105,7 @@ Of course, this all works really well if you deploy on a robust system. ZFS shou
         - `HOST` is the name of the externally visible host (e.g. `example.com`).
         - `PORT` is the number of the externally visible port, typically `80`.
 1. Copy the contents of `_build/prod/rel` to the desired installation location (e.g. `/opt`).
-1. Start it up, likely using `sudo`. Be sure to specify the `PORT` on which Phoenix will bind, which may be different than the externally visible port mentioned above (i.e. if Phoenix is setting behind another web server, such as nginx).
+1. Start it up, likely using `sudo`. Be sure to specify the `PORT` on which Phoenix will bind, which may be different than the externally visible port mentioned above (i.e. if Phoenix is sitting behind another web server, such as nginx).
 1. Occasionally check the log files in `log` directory.
 
 For example:
