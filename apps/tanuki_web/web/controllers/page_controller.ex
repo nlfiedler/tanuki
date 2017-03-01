@@ -24,7 +24,6 @@ defmodule TanukiWeb.PageController do
     asset_info = read_doc(document)
     conn
     |> assign(:asset_info, asset_info)
-    |> assign_duration(asset_info)
     |> render(:detail)
   end
 
@@ -193,6 +192,7 @@ defmodule TanukiWeb.PageController do
     tags = :couchbeam_doc.get_value("tags", document)
     datetime_list = TanukiBackend.get_best_date(document)
     datetime_str = TanukiBackend.date_list_to_string(datetime_list)
+    duration = get_duration(mimetype, sha256)
     %{
       :id => row_id,
       :fname => filename,
@@ -202,6 +202,7 @@ defmodule TanukiWeb.PageController do
       :sha => sha256,
       :caption => caption,
       :location => location,
+      :duration => duration,
       :tags => tags
     }
   end
@@ -412,9 +413,8 @@ defmodule TanukiWeb.PageController do
     }
   end
 
-  defp assign_duration(conn, asset_info) do
-    duration = if String.starts_with?(asset_info[:mimetype], "video/") do
-      checksum = asset_info[:sha]
+  defp get_duration(mimetype, checksum) do
+    if String.starts_with?(mimetype, "video/") do
       filepath = TanukiBackend.checksum_to_asset_path(checksum)
       ffprobe_args = [
         "-loglevel", "quiet", "-show_entries",
@@ -431,7 +431,6 @@ defmodule TanukiWeb.PageController do
     else
       nil
     end
-    assign(conn, :duration, duration)
   end
 
   defp send_asset(conn, filepath) do
