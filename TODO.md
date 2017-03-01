@@ -2,7 +2,13 @@
 
 ## General Items
 
-1. Pagination links should have "..." where additional pages exist.
+1. Find a way to parameterize the pagination links
+    - need the `@conn`, `@page_data`, `@route`, and `@id`
+    - `<%= page_path @conn, @route, @id, page: @page_data[:first_page] %>`
+    - except for `index` which does not have an `@id`...
+1. For large numbers of pages, maybe some "skip" links
+    - Have `&laquo;` and `&raquo;` links that move back/forward ~10 pages
+1. AVI videos do not play in the browser (see earliest "joseph" asset)
 1. Race condition in thinning of thumbnails may cause a request to fail
 1. Instead of a "topic" field, perhaps an "occasion" field instead.
     - For instance, "christina birthday".
@@ -11,10 +17,6 @@
     - Maybe don't bother exposing on main page, just another field like caption.
 1. Request caching should be keyed by some unique value per browser session
     - With some upper limit on simultaneous cached queries
-1. For large numbers of pages, maybe some "skip" links
-    - On the `year` page, show links to jump to the page with the first asset in each month
-    - On the `index` page, show links to jump to 10% mark, 20% mark, and so on
-    - On the `location` page, show links to jump to 10% mark, 20% mark, and so on
 1. Option on `edit` page to rotate an image (some images lack orientation data)
 1. To help reduce tag clutter, hide the tags whose count falls below a threshold
     - Show the full list of tags dynamically using JavaScript (via a link)

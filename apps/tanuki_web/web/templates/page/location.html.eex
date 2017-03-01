@@ -6,12 +6,12 @@
 <table>
   <tr>
     <%= for {info, index} <- Enum.with_index(@location_info, 1) do %>
-      <td class="thumb">
+      <td><div class="thumbnail">
         <a href="<%= page_path @conn, :detail, info[:id] %>">
         <img src="<%= page_path @conn, :thumbnail, info[:sha] %>"
              alt="<%= info[:fname] %>"/></a><br/>
-        <%= info[:date] %> -- <%= info[:fname] %>
-      </td>
+        <div class="caption"><%= info[:date] %> -- <%= info[:fname] %></div>
+      </div></td>
       <%= if rem(index, 3) == 0 do %>
         </tr>
         <tr>
@@ -20,24 +20,34 @@
   </tr>
 </table>
 
-<div style="text-align: center">
-  <%= if not Enum.empty?(@page_data) do %>
-    <%= if @curr_page == @page_data[:first_page] do %>
-      &lt;first page&gt;
-    <% else %>
-      <a href="<%= page_path @conn, :location, @location, page: @page_data[:first_page] %>">[first page]</a>
-    <% end %>
-    <%= for page_num <- @page_data[:pages] do %>
-      <%= if @curr_page == page_num do %>
-        &lt;<%= page_num %>&gt;
+<%= if not Enum.empty?(@page_data) do %>
+  <nav aria-label="Page navigation" style="text-align: center">
+    <ul class="pagination">
+      <%= if @curr_page == @page_data[:first_page] do %>
+        <li class="active"><span>first</span></li>
       <% else %>
-        <a href="<%= page_path @conn, :location, @location, page: page_num %>"><%= page_num %></a>
+        <li><a href="<%= page_path @conn, :location, @location, page: @page_data[:first_page] %>">first</a></li>
       <% end %>
-    <% end %>
-    <%= if @curr_page == @page_data[:last_page] do %>
-      &lt;last page&gt;
-    <% else %>
-      <a href="<%= page_path @conn, :location, @location, page: @page_data[:last_page] %>">[last page]</a>
-    <% end %>
-  <% end %>
-</div>
+      <%= if length(@page_data[:pages]) > 1 and hd(@page_data[:pages]) > 2 do %>
+        <li class="disabled"><span>...</span></li>
+      <% end %>
+      <%= for page_num <- @page_data[:pages] do %>
+        <%= if @curr_page == page_num do %>
+          <li class="active">
+            <span><%= page_num %></span>
+          </li>
+        <% else %>
+          <li><a href="<%= page_path @conn, :location, @location, page: page_num %>"><%= page_num %></a></li>
+        <% end %>
+      <% end %>
+      <%= if List.last(@page_data[:pages]) < (@page_data[:last_page] - 1) do %>
+        <li class="disabled"><span>...</span></li>
+      <% end %>
+      <%= if @curr_page == @page_data[:last_page] do %>
+        <li class="active"><span>last</span></li>
+      <% else %>
+        <li><a href="<%= page_path @conn, :location, @location, page: @page_data[:last_page] %>">last</a></li>
+      <% end %>
+    </ul>
+  </nav>
+<% end %>

@@ -294,8 +294,8 @@ defmodule TanukiWeb.PageController do
         # possible given the number of pages we have. Hence the combination
         # of 'cond', 'min', and 'max' below.
         #
-        desired_lower = curr_page - 10
-        desired_upper = curr_page + 9
+        desired_lower = curr_page - 5
+        desired_upper = curr_page + 4
         {lower, upper} = cond do
           desired_lower <= 1 ->
             {2, min(desired_upper + abs(desired_lower), page_count - 1)}
