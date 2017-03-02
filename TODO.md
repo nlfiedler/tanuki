@@ -2,10 +2,6 @@
 
 ## General Items
 
-1. Find a way to parameterize the pagination links
-    - need the `@conn`, `@page_data`, `@route`, and `@id`
-    - `<%= page_path @conn, @route, @id, page: @page_data[:first_page] %>`
-    - except for `index` which does not have an `@id`...
 1. For large numbers of pages, maybe some "skip" links
     - Have `&laquo;` and `&raquo;` links that move back/forward ~10 pages
 1. AVI videos do not play in the browser (see earliest "joseph" asset)

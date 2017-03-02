@@ -21,33 +21,6 @@
 </table>
 
 <%= if not Enum.empty?(@page_data) do %>
-  <nav aria-label="Page navigation" style="text-align: center">
-    <ul class="pagination">
-      <%= if @curr_page == @page_data[:first_page] do %>
-        <li class="active"><span>first</span></li>
-      <% else %>
-        <li><a href="<%= page_path @conn, :year, @year, page: @page_data[:first_page] %>">first</a></li>
-      <% end %>
-      <%= if length(@page_data[:pages]) > 1 and hd(@page_data[:pages]) > 2 do %>
-        <li class="disabled"><span>...</span></li>
-      <% end %>
-      <%= for page_num <- @page_data[:pages] do %>
-        <%= if @curr_page == page_num do %>
-          <li class="active">
-            <span><%= page_num %></span>
-          </li>
-        <% else %>
-          <li><a href="<%= page_path @conn, :year, @year, page: page_num %>"><%= page_num %></a></li>
-        <% end %>
-      <% end %>
-      <%= if List.last(@page_data[:pages]) < (@page_data[:last_page] - 1) do %>
-        <li class="disabled"><span>...</span></li>
-      <% end %>
-      <%= if @curr_page == @page_data[:last_page] do %>
-        <li class="active"><span>last</span></li>
-      <% else %>
-        <li><a href="<%= page_path @conn, :year, @year, page: @page_data[:last_page] %>">last</a></li>
-      <% end %>
-    </ul>
-  </nav>
+  <%= render "pagination.html", conn: @conn, curr_page: @curr_page, page_data: @page_data,
+             page_link_fn: fn(page) -> page_path @conn, :year, @year, page: page end %>
 <% end %>
