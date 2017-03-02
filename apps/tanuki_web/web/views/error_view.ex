@@ -5,8 +5,15 @@ defmodule TanukiWeb.ErrorView do
     "Page not found"
   end
 
-  def render("500.html", _assigns) do
-    "Internal server error"
+  def render("500.html", assigns) do
+    # Try to get the error details, if possible; sometimes the reason is
+    # nil, and sometimes it is an atom, so no message is available.
+    try do
+      reason = assigns[:reason]
+      "Internal server error: #{reason.message}"
+    rescue
+      _e -> "Internal server error"
+    end
   end
 
   # In case no render clause matches or no
