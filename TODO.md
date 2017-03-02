@@ -2,8 +2,6 @@
 
 ## General Items
 
-1. For large numbers of pages, maybe some "skip" links
-    - Have `&laquo;` and `&raquo;` links that move back/forward ~10 pages
 1. AVI videos do not play in the browser (see earliest "joseph" asset)
 1. Race condition in thinning of thumbnails may cause a request to fail
 1. Instead of a "topic" field, perhaps an "occasion" field instead.
@@ -22,3 +20,4 @@
     - When Phoenix has an error, it tries to refer to default images
 1. Add functions to admin page:
     - Button to perform database compaction
+1. Completion for tags, location

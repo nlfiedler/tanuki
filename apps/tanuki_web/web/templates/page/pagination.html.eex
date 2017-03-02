@@ -5,9 +5,15 @@
     <% else %>
       <li><a href="<%= @page_link_fn.(@page_data[:first_page]) %>">first</a></li>
     <% end %>
+
+    <%= unless is_nil @page_data[:prev] do %>
+      <li><a href="<%= @page_link_fn.(@page_data[:prev]) %>">&laquo;</a></li>
+    <% end %>
+
     <%= if length(@page_data[:pages]) > 1 and hd(@page_data[:pages]) > 2 do %>
       <li class="disabled"><span>...</span></li>
     <% end %>
+
     <%= for page_num <- @page_data[:pages] do %>
       <%= if @curr_page == page_num do %>
         <li class="active">
@@ -17,9 +23,15 @@
         <li><a href="<%= @page_link_fn.(page_num) %>"><%= page_num %></a></li>
       <% end %>
     <% end %>
+
     <%= if List.last(@page_data[:pages]) < (@page_data[:last_page] - 1) do %>
       <li class="disabled"><span>...</span></li>
     <% end %>
+
+    <%= unless is_nil @page_data[:next] do %>
+      <li><a href="<%= @page_link_fn.(@page_data[:next]) %>">&raquo;</a></li>
+    <% end %>
+
     <%= if @curr_page == @page_data[:last_page] do %>
       <li class="active"><span>last</span></li>
     <% else %>

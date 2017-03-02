@@ -288,7 +288,7 @@ defmodule TanukiWeb.PageController do
     if length(data_set) > @page_size do
       curr_page = get_current_page(conn)
       page_count = round(Float.ceil(length(data_set) / @page_size))
-      pages = if page_count > 2 do
+      {pages, prev, next} = if page_count > 2 do
         #
         # Compute the lower and upper page numbers, clipping to whatever is
         # possible given the number of pages we have. Hence the combination
@@ -303,15 +303,29 @@ defmodule TanukiWeb.PageController do
             {max(desired_lower - (desired_upper - page_count), 2), page_count - 1}
           true -> {desired_lower, desired_upper}
         end
-        Enum.into(Range.new(lower, upper), [])
+        desired_prev = curr_page - 10
+        desired_next = curr_page + 10
+        prev = if desired_prev <= 1 do
+          nil
+        else
+          desired_prev
+        end
+        next = if desired_next >= page_count do
+          nil
+        else
+          desired_next
+        end
+        {Enum.into(Range.new(lower, upper), []), prev, next}
       else
         # Special case for just two pages, no need for the convoluted math
         # that ends up producing goofy page links.
-        []
+        {[], nil, nil}
       end
       page_data = %{
         :first_page => 1,
+        :prev => prev,
         :pages => pages,
+        :next => next,
         :last_page => page_count
       }
       start = (curr_page - 1) * @page_size
