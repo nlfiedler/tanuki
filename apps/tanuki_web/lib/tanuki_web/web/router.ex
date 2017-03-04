@@ -1,4 +1,4 @@
-defmodule TanukiWeb.Router do
+defmodule TanukiWeb.Web.Router do
   use TanukiWeb.Web, :router
 
   pipeline :browser do
@@ -13,7 +13,7 @@ defmodule TanukiWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", TanukiWeb do
+  scope "/", TanukiWeb.Web do
     pipe_through :browser # Use the default browser stack
 
     get "/", PageController, :index
@@ -34,7 +34,7 @@ defmodule TanukiWeb.Router do
   #   pipe_through :api
   # end
 
-  scope "/admin", TanukiWeb do
+  scope "/admin", TanukiWeb.Web do
     pipe_through :browser # Use the default browser stack
 
     get "/", AdminController, :index

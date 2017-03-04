@@ -1,4 +1,4 @@
-defmodule TanukiWeb.PageView do
+defmodule TanukiWeb.Web.PageView do
   use TanukiWeb.Web, :view
 
   # Because Chrome refuses to play Quicktime videos as-is and Quicktime

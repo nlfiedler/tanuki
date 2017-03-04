@@ -6,10 +6,10 @@
 use Mix.Config
 
 # Configures the endpoint
-config :tanuki_web, TanukiWeb.Endpoint,
+config :tanuki_web, TanukiWeb.Web.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "lTg3Sg1iLSweeD2P6WlyyTdB7eiTj0Iq911WRy9ftKB8QkkH9R6/lmD8D/oXG6vf",
-  render_errors: [view: TanukiWeb.ErrorView, accepts: ~w(html json)],
+  render_errors: [view: TanukiWeb.Web.ErrorView, accepts: ~w(html json)],
   pubsub: [name: TanukiWeb.PubSub,
            adapter: Phoenix.PubSub.PG2]
 

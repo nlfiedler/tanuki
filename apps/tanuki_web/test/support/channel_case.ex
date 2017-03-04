@@ -1,4 +1,4 @@
-defmodule TanukiWeb.ChannelCase do
+defmodule TanukiWeb.Web.ChannelCase do
   @moduledoc """
   This module defines the test case to be used by
   channel tests.
@@ -22,7 +22,7 @@ defmodule TanukiWeb.ChannelCase do
 
 
       # The default endpoint for testing
-      @endpoint TanukiWeb.Endpoint
+      @endpoint TanukiWeb.Web.Endpoint
     end
   end
 

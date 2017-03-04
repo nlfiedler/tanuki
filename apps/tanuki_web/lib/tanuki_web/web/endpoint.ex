@@ -1,7 +1,7 @@
-defmodule TanukiWeb.Endpoint do
+defmodule TanukiWeb.Web.Endpoint do
   use Phoenix.Endpoint, otp_app: :tanuki_web
 
-  socket "/socket", TanukiWeb.UserSocket
+  socket "/socket", TanukiWeb.Web.UserSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -38,5 +38,5 @@ defmodule TanukiWeb.Endpoint do
     key: "_tanuki_web_key",
     signing_salt: "lmXuHblr"
 
-  plug TanukiWeb.Router
+  plug TanukiWeb.Web.Router
 end

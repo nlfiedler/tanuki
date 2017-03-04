@@ -1,4 +1,4 @@
-defmodule TanukiWeb.ErrorHelpers do
+defmodule TanukiWeb.Web.ErrorHelpers do
   @moduledoc """
   Conveniences for translating and building error messages.
   """
@@ -32,9 +32,9 @@ defmodule TanukiWeb.ErrorHelpers do
     #     dgettext "errors", "is invalid"
     #
     if count = opts[:count] do
-      Gettext.dngettext(TanukiWeb.Gettext, "errors", msg, msg, count, opts)
+      Gettext.dngettext(TanukiWeb.Web.Gettext, "errors", msg, msg, count, opts)
     else
-      Gettext.dgettext(TanukiWeb.Gettext, "errors", msg, opts)
+      Gettext.dgettext(TanukiWeb.Web.Gettext, "errors", msg, opts)
     end
   end
 end

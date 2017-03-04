@@ -1,4 +1,4 @@
-defmodule TanukiWeb.PageController do
+defmodule TanukiWeb.Web.PageController do
   use TanukiWeb.Web, :controller
   require Logger
 

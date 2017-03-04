@@ -1,4 +1,4 @@
-defmodule TanukiWeb.ErrorView do
+defmodule TanukiWeb.Web.ErrorView do
   use TanukiWeb.Web, :view
 
   def render("404.html", _assigns) do

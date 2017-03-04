@@ -1,5 +1,5 @@
-defmodule TanukiWeb.PageControllerTest do
-  use TanukiWeb.ConnCase
+defmodule TanukiWeb.Web.PageControllerTest do
+  use TanukiWeb.Web.ConnCase
 
   test "GET /", %{conn: conn} do
     conn = get conn, "/"

@@ -1,3 +1,3 @@
-defmodule TanukiWeb.LayoutViewTest do
-  use TanukiWeb.ConnCase, async: true
+defmodule TanukiWeb.Web.LayoutViewTest do
+  use TanukiWeb.Web.ConnCase, async: true
 end

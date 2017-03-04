@@ -1,4 +1,4 @@
-defmodule TanukiWeb.AdminController do
+defmodule TanukiWeb.Web.AdminController do
   use TanukiWeb.Web, :controller
 
   def index(conn, _params) do
