@@ -20,9 +20,11 @@ defmodule TanukiIncoming.Mixfile do
       :stdlib,
       :logger,
       :mnesia,
-      :mimetypes,
       :jsx,
       :couchbeam],
+     included_applications: [
+      :mimerl
+     ],
      mod: {TanukiIncoming.Application, []},
      description: 'Digital assets import application.']
   end
@@ -31,7 +33,8 @@ defmodule TanukiIncoming.Mixfile do
     [{:couchbeam, github: "benoitc/couchbeam", tag: "1.4.2"},
      {:exif, github: "nlfiedler/erlang-exif", tag: "2.0.3"},
      {:epwd_rs, github: "nlfiedler/epwd.rs", tag: "0.1.8"},
-     {:mimetypes, github: "spawngrid/mimetypes", ref: "47d37a9"},
+     # hackney uses an older mimerl, but should be okay to use a newer release
+     {:mimerl, github: "benoitc/mimerl", tag: "1.1.1", override: true},
      {:tanuki_backend, in_umbrella: true}]
   end
 end

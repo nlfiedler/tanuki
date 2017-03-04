@@ -270,7 +270,7 @@ defmodule TanukiIncoming do
       {"file_size", fstat.size},
       {"import_date", time_tuple_to_list(:calendar.universal_time())},
       {"location", location},
-      {"mimetype", hd(:mimetypes.filename(String.downcase(filename)))},
+      {"mimetype", :mimerl.filename(String.downcase(filename))},
       {"sha256", checksum},
       {"tags", Enum.sort(tags)}
     ]}
