@@ -167,14 +167,14 @@ defmodule TanukiIncomingTest do
     names = [
       "img_015.JPG",
       "LICENSE.txt",
-      "fighting_kittens.jpg",
-      "fighting_kittens.jpg"
+      "IMG_8841.JPG",
+      "IMG_8841.JPG"
     ]
     checksums = [
       "d09fd659423e71bb1b5e20d78a1ab7ce393e74e463f2dface3634d78ec155397",
       "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
-      "82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09",
-      "82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09"
+      "a1f33723e44f23168edee008a148846accc04f20274037742b17956e40fc7fde",
+      "a1f33723e44f23168edee008a148846accc04f20274037742b17956e40fc7fde"
     ]
     expected = Enum.zip(names, checksums)
     for {name, checksum} <- expected, do: test_asset_fn.(name, checksum)
