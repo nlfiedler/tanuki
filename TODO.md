@@ -2,6 +2,8 @@
 
 ## General Items
 
+1. Upgrade to latest release of Phoenix
+1. Switch from `mimetypes` to `https://github.com/benoitc/mimerl`
 1. AVI videos do not play in the browser (see earliest "joseph" asset)
 1. Race condition in thinning of thumbnails may cause a request to fail
 1. Instead of a "topic" field, perhaps an "occasion" field instead.
