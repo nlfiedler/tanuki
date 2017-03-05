@@ -43,6 +43,7 @@ defmodule TanukiWeb.Web.Router do
     post "/tag_to_location", AdminController, :tag_to_location
     post "/sort_tags", AdminController, :sort_tags
     post "/creation_time", AdminController, :creation_time
+    post "/original_date", AdminController, :original_date
     post "/incoming", AdminController, :incoming
   end
 end

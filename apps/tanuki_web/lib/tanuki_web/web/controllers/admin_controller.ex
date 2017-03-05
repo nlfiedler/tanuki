@@ -143,9 +143,9 @@ defmodule TanukiWeb.Web.AdminController do
         sha256 = :couchbeam_doc.get_value("sha256", doc)
         filepath = TanukiBackend.checksum_to_asset_path(sha256)
         original_date = TanukiIncoming.get_original_date(filepath)
-        old_date = TanukiBackend.get_field_value("exif_date", doc)
+        old_date = TanukiBackend.get_field_value("original_date", doc)
         if original_date != :null and original_date != old_date do
-          new_doc = :couchbeam_doc.set_value("exif_date", original_date, doc)
+          new_doc = :couchbeam_doc.set_value("original_date", original_date, doc)
           {:ok, _doc1} = :couchbeam.save_doc(db, new_doc)
           acc + 1
         else
@@ -154,6 +154,29 @@ defmodule TanukiWeb.Web.AdminController do
       else
         acc
       end
+    end, 0, db, :all_docs)
+
+    conn
+    |> put_flash(:info, "Updated #{count} documents")
+    |> render(:index)
+  end
+
+  def original_date(conn, _params) do
+    # establish a connection for the work we will be doing
+    url = Application.get_env(:tanuki_backend, :couchdb_url)
+    opts = Application.get_env(:tanuki_backend, :couchdb_opts)
+    db_name = Application.get_env(:tanuki_backend, :database)
+    server = :couchbeam.server_connection(url, opts)
+    {:ok, db} = :couchbeam.open_or_create_db(server, db_name)
+
+    count = :couchbeam_view.fold(fn(row, acc) ->
+      doc_id = :couchbeam_doc.get_value("id", row)
+      {:ok, doc} = :couchbeam.open_doc(db, doc_id)
+      date_value = :couchbeam_doc.get_value("exif_date", doc)
+      new_doc = :couchbeam_doc.delete_value("exif_date", doc)
+      new_doc = :couchbeam_doc.set_value("original_date", date_value, new_doc)
+      {:ok, _doc1} = :couchbeam.save_doc(db, new_doc)
+      acc + 1
     end, 0, db, :all_docs)
 
     conn

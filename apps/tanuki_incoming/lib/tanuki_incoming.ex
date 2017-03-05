@@ -299,7 +299,7 @@ defmodule TanukiIncoming do
     {:ok, file_date} = time_tuple_to_list(fstat.mtime)
     {:ok, import_date} = time_tuple_to_list(:calendar.universal_time())
     doc = {[
-      {"exif_date", get_original_date(fullpath)},
+      {"original_date", get_original_date(fullpath)},
       {"file_date", file_date},
       {"file_name", filename},
       {"file_owner", file_owner},

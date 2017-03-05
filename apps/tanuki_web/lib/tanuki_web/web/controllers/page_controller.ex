@@ -108,11 +108,11 @@ defmodule TanukiWeb.Web.PageController do
     # check if an asset with this checksum already exists
     doc_id = case TanukiBackend.by_checksum(checksum) do
       [] ->
-        exif_date = TanukiIncoming.get_original_date(plug_upload.path)
+        original_date = TanukiIncoming.get_original_date(plug_upload.path)
         fstat = File.stat!(plug_upload.path)
         {:ok, import_date} = TanukiIncoming.time_tuple_to_list(:calendar.universal_time())
         doc_values = {[
-          {"exif_date", exif_date},
+          {"original_date", original_date},
           {"file_name", plug_upload.filename},
           {"file_size", fstat.size},
           {"import_date", import_date},

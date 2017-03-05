@@ -168,7 +168,7 @@ defmodule TanukiBackend do
   @doc """
 
   Retrieves all documents whose most relevant date is within the given
-  year. The date used will be user_date, exif_date, or file_date, or
+  year. The date used will be user_date, original_date, or file_date, or
   import_date, in that order. Results are as from couchbeam_view:fetch/3.
 
   """
@@ -201,7 +201,7 @@ defmodule TanukiBackend do
   @doc """
 
   Retrieves all documents whose most relevant date is within the given
-  month. The date used will be user_date, exif_date, or file_date, or
+  month. The date used will be user_date, original_date, or file_date, or
   import_date, in that order. Results are as from couchbeam_view:fetch/3.
 
   """
@@ -215,7 +215,7 @@ defmodule TanukiBackend do
   @doc """
 
   Retrieves all documents whose most relevant location is within the given
-  year. The date used will be user_date, exif_date, or file_date, or
+  year. The date used will be user_date, original_date, or file_date, or
   import_date, in that order. Results are as from couchbeam_view:fetch/3.
 
   """
@@ -437,7 +437,7 @@ defmodule TanukiBackend do
   def get_best_date(doc) do
     case get_field_value("user_date", doc) do
       nil ->
-        case get_field_value("exif_date", doc) do
+        case get_field_value("original_date", doc) do
           nil ->
             case get_field_value("file_date", doc) do
               nil -> get_field_value("import_date", doc)
