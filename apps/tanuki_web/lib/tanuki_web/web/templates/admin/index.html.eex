@@ -57,6 +57,14 @@
 </div>
 
 <div>
+  <h3>Extract creation time from all videos</h3>
+  <form action="<%= admin_path @conn, :creation_time %>" method="post">
+    <input type="hidden" name="_csrf_token" value="<%= get_csrf_token() %>">
+    <input type="submit" value="Extract"/>
+  </form>
+</div>
+
+<div>
   <h3>Perform incoming asset processing <strong>now</strong></h3>
   <form action="<%= admin_path @conn, :incoming %>" method="post">
     <input type="hidden" name="_csrf_token" value="<%= get_csrf_token() %>">

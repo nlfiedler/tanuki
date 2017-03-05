@@ -126,4 +126,38 @@ defmodule TanukiWeb.Web.AdminController do
     |> put_flash(:info, "Added #{count} assets")
     |> render(:index)
   end
+
+  def creation_time(conn, _params) do
+    # establish a connection for the work we will be doing
+    url = Application.get_env(:tanuki_backend, :couchdb_url)
+    opts = Application.get_env(:tanuki_backend, :couchdb_opts)
+    db_name = Application.get_env(:tanuki_backend, :database)
+    server = :couchbeam.server_connection(url, opts)
+    {:ok, db} = :couchbeam.open_or_create_db(server, db_name)
+
+    count = :couchbeam_view.fold(fn(row, acc) ->
+      doc_id = :couchbeam_doc.get_value("id", row)
+      {:ok, doc} = :couchbeam.open_doc(db, doc_id)
+      mimetype = :couchbeam_doc.get_value("mimetype", doc)
+      if mimetype != :undefined and String.starts_with?(mimetype, "video/") do
+        sha256 = :couchbeam_doc.get_value("sha256", doc)
+        filepath = TanukiBackend.checksum_to_asset_path(sha256)
+        original_date = TanukiIncoming.get_original_date(filepath)
+        old_date = TanukiBackend.get_field_value("exif_date", doc)
+        if original_date != :null and original_date != old_date do
+          new_doc = :couchbeam_doc.set_value("exif_date", original_date, doc)
+          {:ok, _doc1} = :couchbeam.save_doc(db, new_doc)
+          acc + 1
+        else
+          acc
+        end
+      else
+        acc
+      end
+    end, 0, db, :all_docs)
+
+    conn
+    |> put_flash(:info, "Updated #{count} documents")
+    |> render(:index)
+  end
 end

@@ -224,30 +224,64 @@ defmodule TanukiIncoming do
 
   @doc """
 
-  Attempt to read the original datetime from the EXIF tags, returning :null
-  if not available, or the date time as a list of integers. Uses :null since
+  Attempt to read the original date/time from the asset, returning :null if
+  not available, or the date time as a list of integers. Uses :null since
   the value will be inserted directly into CouchDB.
 
   """
-  def get_original_exif_date(filepath) do
-    # Exif data only exists in JPEG files, and no use loading a large video
-    # file into memory only to find it isn't an image at all.
+  def get_original_date(filepath) do
+    # EXIF data only exists in JPEG files.
     if jpeg?(filepath) do
-      case :exif.read(to_charlist(filepath)) do
-        {:error, reason} ->
-          Logger.error("unable to read EXIF data from #{filepath}, #{reason}")
-          :null
-        {:ok, exif_data} ->
-          case :dict.find(:date_time_original, exif_data) do
-            {:ok, original_date} ->
-              time_tuple_to_list(date_parse(original_date))
-            :error ->
-              Logger.info("no original date available from #{filepath}")
-              :null
-          end
-      end
+      get_exif_original_date(filepath)
     else
-      :null
+      get_creation_time(filepath)
+    end
+  end
+
+  # Attempt to read the original datetime from the EXIF tags, returning :null
+  # if not available, or the date time as a list of integers. Uses :null
+  # since the value will be inserted directly into CouchDB.
+  defp get_exif_original_date(filepath) do
+    value =
+      with {:ok, exif_data} <- :exif.read(to_charlist(filepath)),
+           {:ok, original_date} <- :dict.find(:date_time_original, exif_data),
+           {:ok, parsed_date} <- date_parse(original_date),
+           do: time_tuple_to_list(parsed_date)
+    # unpack the result or return :null if error
+    case value do
+      {:ok, result} -> result
+      error ->
+        Logger.warn("unable to read EXIF data from #{filepath}: #{error}")
+        :null
+    end
+  end
+
+  # Attempt to read the creation time from the video metadata, returning
+  # :null if not available, or the date time as a list of integers. Uses
+  # :null since the value will be inserted directly into CouchDB.
+  defp get_creation_time(filepath) do
+    ffprobe_args = [
+      "-loglevel", "quiet", "-print_format", "json", "-show_format", filepath
+    ]
+    case System.cmd("ffprobe", ffprobe_args) do
+      {output, 0} ->
+        value =
+          with {:ok, values} <- Poison.decode(output),
+               {:ok, format} <- Map.fetch(values, "format"),
+               {:ok, tags} <- Map.fetch(format, "tags"),
+               {:ok, ctime} <- Map.fetch(tags, "creation_time"),
+               {:ok, parsed_date} <- date_parse(ctime),
+               do: time_tuple_to_list(parsed_date)
+        # unpack the result or return :null if error
+        case value do
+          {:ok, result} -> result
+          error ->
+            Logger.warn("unable to read creation_time for #{filepath}: #{error}")
+            :null
+        end
+      {output, code} ->
+        Logger.warn("ffprobe exited non-zero (#{code}): #{output}")
+        :null
     end
   end
 
@@ -262,13 +296,15 @@ defmodule TanukiIncoming do
     fstat = File.stat!(fullpath)
     {:ok, uid_details} = :epwd_rs.getpwuid(fstat.uid)
     file_owner = to_string(Keyword.get(uid_details, :pw_name))
+    {:ok, file_date} = time_tuple_to_list(fstat.mtime)
+    {:ok, import_date} = time_tuple_to_list(:calendar.universal_time())
     doc = {[
-      {"exif_date", get_original_exif_date(fullpath)},
-      {"file_date", time_tuple_to_list(fstat.mtime)},
+      {"exif_date", get_original_date(fullpath)},
+      {"file_date", file_date},
       {"file_name", filename},
       {"file_owner", file_owner},
       {"file_size", fstat.size},
-      {"import_date", time_tuple_to_list(:calendar.universal_time())},
+      {"import_date", import_date},
       {"location", location},
       {"mimetype", :mimerl.filename(String.downcase(filename))},
       {"sha256", checksum},
@@ -399,9 +435,20 @@ defmodule TanukiIncoming do
   end
 
   @doc """
+
   Parse a simple date/time string into a date/time tuple. Specifically
   this is suitable for handling the EXIF date/time values. For instance,
-  "2014:10:11 13:28:00" would become {{2014,10,11},{13,28,0}}.
+  "2014:10:11 13:28:00" would become {:ok, {{2014,10,11},{13,28,0}}}.
+
+  Strings with only the date (e.g. "2014:10:11") will return zeros for
+  the time tuple (i.e. {:ok, {{2014,10,11},{0,0,0}}}).
+
+  Will parse dates separated by dash (-) instead of colon (:), and a
+  letter "T" between the date and time (e.g. "2015-08-11T02:25:11"). Also
+  allows extraneous matter after the seconds (e.g. "02:25:11.000000Z").
+
+  Returns :error if the string does not match the expected format.
+
   """
   def date_parse(bin) when is_binary(bin) do
     parse_year(to_charlist(bin), [])
@@ -416,7 +463,7 @@ defmodule TanukiIncoming do
   end
 
   defp parse_year(_, _) do
-    raise ArgumentError, message: "invalid year (must be 4 digits)"
+    :error
   end
 
   defp parse_month([], acc) do
@@ -427,8 +474,12 @@ defmodule TanukiIncoming do
     acc([m1, m2], rest, :month, acc, &parse_day/2)
   end
 
+  defp parse_month([?-, m1, m2 | rest], acc) do
+    acc([m1, m2], rest, :month, acc, &parse_day/2)
+  end
+
   defp parse_month(_, _) do
-    raise ArgumentError, message: "missing : before month"
+    :error
   end
 
   defp parse_day([], acc) do
@@ -439,8 +490,12 @@ defmodule TanukiIncoming do
     acc([d1, d2], rest, :day, acc, &parse_hour/2)
   end
 
+  defp parse_day([?-, d1, d2 | rest], acc) do
+    acc([d1, d2], rest, :day, acc, &parse_hour/2)
+  end
+
   defp parse_day(_, _) do
-    raise ArgumentError, message: "missing : before day"
+    :error
   end
 
   defp parse_hour([], acc) do
@@ -451,8 +506,12 @@ defmodule TanukiIncoming do
     acc([h1, h2], rest, :hour, acc, &parse_minute/2)
   end
 
+  defp parse_hour([?T, h1, h2 | rest], acc) do
+    acc([h1, h2], rest, :hour, acc, &parse_minute/2)
+  end
+
   defp parse_hour(_, _) do
-    raise ArgumentError, message: "missing ' ' before day"
+    :error
   end
 
   defp parse_minute([], acc) do
@@ -464,7 +523,7 @@ defmodule TanukiIncoming do
   end
 
   defp parse_minute(_, _) do
-    raise ArgumentError, message: "missing : before minute"
+    :error
   end
 
   defp parse_second([], acc) do
@@ -475,17 +534,22 @@ defmodule TanukiIncoming do
     acc([s1, s2], rest, :second, acc, &datetime/2)
   end
 
-  defp parse_second(_, _) do
-    raise ArgumentError, message: "missing : before second"
+  # leniently allow extra stuff after the seconds (e.g. "02:25:11.000000Z")
+  defp parse_second(_, acc) do
+    datetime(acc)
   end
 
   defp acc(intstr, rest, key, acc, nextf) do
-    acc1 = [{key, List.to_integer(intstr)} | acc]
-    nextf.(rest, acc1)
+    try do
+      acc1 = [{key, List.to_integer(intstr)} | acc]
+      nextf.(rest, acc1)
+    rescue
+      ArgumentError -> :error
+    end
   end
 
   defp datetime(plist) do
-    {{
+    {:ok, {{
       Keyword.get(plist, :year, 0),
       Keyword.get(plist, :month, 0),
       Keyword.get(plist, :day, 0)
@@ -494,7 +558,7 @@ defmodule TanukiIncoming do
       Keyword.get(plist, :hour, 0),
       Keyword.get(plist, :minute, 0),
       Keyword.get(plist, :second, 0)
-    }}
+    }}}
   end
 
   defp datetime(_, plist) do
@@ -506,8 +570,15 @@ defmodule TanukiIncoming do
   Convert the common Erlang date/time tuple into an array of integers,
   ignoring the seconds (since tanuki does not bother with seconds).
 
+  Returns {:ok, value} if successful, or :error otherwise.
+
   """
   def time_tuple_to_list({{y, mo, d}, {h, mi, _s}}) do
-    [y, mo, d, h, mi]
+    {:ok, [y, mo, d, h, mi]}
+  end
+
+  def time_tuple_to_list(_invalid) do
+    # for easy use with the "with" construct...
+    :error
   end
 end

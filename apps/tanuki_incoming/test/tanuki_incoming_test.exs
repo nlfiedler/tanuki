@@ -32,26 +32,36 @@ defmodule TanukiIncomingTest do
     refute TanukiIncoming.jpeg?("./test/fixtures/LICENSE.txt")
   end
 
-  test "parsing exif date/time" do
-    assert TanukiIncoming.date_parse("2014:10:11 13:28:00") == {{2014, 10, 11}, {13, 28, 0}}
-    assert_raise ArgumentError, fn -> TanukiIncoming.date_parse("2014-10-11T13:28:00Z") end
-    assert_raise ArgumentError, fn -> TanukiIncoming.date_parse("not a date") end
+  test "parsing date/time strings" do
+    assert TanukiIncoming.date_parse("2014:10:11 13:28:16") == {:ok, {{2014, 10, 11}, {13, 28, 16}}}
+    assert TanukiIncoming.date_parse("2014:10:11 13:28") == {:ok, {{2014, 10, 11}, {13, 28, 0}}}
+    assert TanukiIncoming.date_parse("2014:10:11 13") == {:ok, {{2014, 10, 11}, {13, 0, 0}}}
+    assert TanukiIncoming.date_parse("2014:10:11") == {:ok, {{2014, 10, 11}, {0, 0, 0}}}
+    assert TanukiIncoming.date_parse("2014:10") == {:ok, {{2014, 10, 0}, {0, 0, 0}}}
+    assert TanukiIncoming.date_parse("2014") == {:ok, {{2014, 0, 0}, {0, 0, 0}}}
+    assert TanukiIncoming.date_parse("2014-10-11 13:28:00") == {:ok, {{2014, 10, 11}, {13, 28, 0}}}
+    assert TanukiIncoming.date_parse("2014-10-11T13:28:00Z") == {:ok, {{2014, 10, 11}, {13, 28, 0}}}
+    assert TanukiIncoming.date_parse("2014-10-11T13:28:14.000Z") == {:ok, {{2014, 10, 11}, {13, 28, 14}}}
+    assert TanukiIncoming.date_parse("2014/10/11 01:28") == :error
+    assert TanukiIncoming.date_parse("not a date") == :error
   end
 
   test "reading exif date from file" do
     # images with Exif data and an original date
-    assert TanukiIncoming.get_original_exif_date("./test/fixtures/img_015.JPG") == [2011, 10, 7, 16, 18]
-    assert TanukiIncoming.get_original_exif_date("./test/fixtures/IMG_5745.JPG") == [2014, 4, 23, 13, 33]
-    assert TanukiIncoming.get_original_exif_date("./test/fixtures/dcp_1069.jpg") == [2003, 9, 3, 17, 24]
+    assert TanukiIncoming.get_original_date("./test/fixtures/img_015.JPG") == [2011, 10, 7, 16, 18]
+    assert TanukiIncoming.get_original_date("./test/fixtures/IMG_5745.JPG") == [2014, 4, 23, 13, 33]
+    assert TanukiIncoming.get_original_date("./test/fixtures/dcp_1069.jpg") == [2003, 9, 3, 17, 24]
     # an image that lacks the original date field
     level = Logger.level()
     Logger.configure(level: :info)
     assert capture_log(fn ->
-      assert TanukiIncoming.get_original_exif_date("./test/fixtures/fighting_kittens.jpg") == :null
-    end) =~ "no original date available"
-    Logger.configure(level: level)
+      assert TanukiIncoming.get_original_date("./test/fixtures/fighting_kittens.jpg") == :null
+    end) =~ "unable to read EXIF data"
     # something that is not a jpeg file
-    assert TanukiIncoming.get_original_exif_date("./test/fixtures/LICENSE.txt") == :null
+    assert capture_log(fn ->
+      assert TanukiIncoming.get_original_date("./test/fixtures/LICENSE.txt") == :null
+    end) =~ "unable to read creation_time"
+    Logger.configure(level: level)
   end
 
   test "compute SHA256 checksum" do
@@ -207,7 +217,7 @@ defmodule TanukiIncomingTest do
     Logger.configure(level: :info)
     assert capture_log(fn ->
       {:ok, 5} = GenServer.call(TanukiIncoming, :process_now)
-    end) =~ "no original date available"
+    end) =~ "unable to read EXIF data"
     Logger.configure(level: level)
     assert File.ls!(incoming_dir) == []
     rows = TanukiBackend.by_tags(["sundry"])

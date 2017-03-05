@@ -35,6 +35,7 @@ defmodule TanukiIncoming.Mixfile do
      {:epwd_rs, github: "nlfiedler/epwd.rs", tag: "0.1.8"},
      # hackney uses an older mimerl, but should be okay to use a newer release
      {:mimerl, github: "benoitc/mimerl", tag: "1.1.1", override: true},
+     {:poison, "~> 3.1"},
      {:tanuki_backend, in_umbrella: true}]
   end
 end

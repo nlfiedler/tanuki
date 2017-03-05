@@ -2,7 +2,8 @@
 
 ## General Items
 
-1. AVI videos do not play in the browser (see earliest "joseph" asset)
+1. Rename the `exif_date` field to `original_date`
+1. Fix all of the documents whose `mimetype` is undefined
 1. Race condition in thinning of thumbnails may cause a request to fail
 1. Instead of a "topic" field, perhaps an "occasion" field instead.
     - For instance, "christina birthday".
@@ -21,3 +22,17 @@
 1. Add functions to admin page:
     - Button to perform database compaction
 1. Completion for tags, location
+1. Bulk edit feature
+    - from the tag/location/year page...
+    - multi-select assets...
+    - form for changing one or more fields
+
+1. Make sure the list of ignored things is up to date
+```
+./.gitignore
+./apps/tanuki_backend/config/.gitignore
+./apps/tanuki_incoming/config/.gitignore
+./apps/tanuki_web/.gitignore
+./apps/tanuki_web/config/.gitignore
+./vagrant/freebsd/.gitignore
+```
