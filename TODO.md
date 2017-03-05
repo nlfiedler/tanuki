@@ -2,7 +2,6 @@
 
 ## General Items
 
-1. Fix all of the documents whose `mimetype` is undefined
 1. Race condition in thinning of thumbnails may cause a request to fail
 1. Instead of a "topic" field, perhaps an "occasion" field instead.
     - For instance, "christina birthday".

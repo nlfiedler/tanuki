@@ -101,6 +101,8 @@ defmodule TanukiWeb.Web.AdminController do
       doc_id = :couchbeam_doc.get_value("id", row)
       {:ok, doc} = :couchbeam.open_doc(db, doc_id)
       current_tags = TanukiBackend.get_field_value("tags", doc)
+      # The designs are also "documents", so only consider those with the
+      # field we are concerned with.
       if not is_nil(current_tags) do
         sorted_tags = Enum.sort(current_tags)
         if current_tags != sorted_tags do
@@ -138,8 +140,10 @@ defmodule TanukiWeb.Web.AdminController do
     count = :couchbeam_view.fold(fn(row, acc) ->
       doc_id = :couchbeam_doc.get_value("id", row)
       {:ok, doc} = :couchbeam.open_doc(db, doc_id)
-      mimetype = :couchbeam_doc.get_value("mimetype", doc)
-      if mimetype != :undefined and String.starts_with?(mimetype, "video/") do
+      mimetype = TanukiBackend.get_field_value("mimetype", doc)
+      # The designs are also "documents", so only consider those with the
+      # field we are concerned with.
+      if not is_nil(mimetype) and String.starts_with?(mimetype, "video/") do
         sha256 = :couchbeam_doc.get_value("sha256", doc)
         filepath = TanukiBackend.checksum_to_asset_path(sha256)
         original_date = TanukiIncoming.get_original_date(filepath)
@@ -172,11 +176,16 @@ defmodule TanukiWeb.Web.AdminController do
     count = :couchbeam_view.fold(fn(row, acc) ->
       doc_id = :couchbeam_doc.get_value("id", row)
       {:ok, doc} = :couchbeam.open_doc(db, doc_id)
-      date_value = :couchbeam_doc.get_value("exif_date", doc)
-      new_doc = :couchbeam_doc.delete_value("exif_date", doc)
-      new_doc = :couchbeam_doc.set_value("original_date", date_value, new_doc)
-      {:ok, _doc1} = :couchbeam.save_doc(db, new_doc)
-      acc + 1
+      # The designs are also "documents", so only consider those with the
+      # field we are concerned with.
+      date_value = :couchbeam_doc.take_value("exif_date", doc)
+      if date_value != :undefined do
+        new_doc = :couchbeam_doc.set_value("original_date", date_value, doc)
+        {:ok, _doc1} = :couchbeam.save_doc(db, new_doc)
+        acc + 1
+      else
+        acc
+      end
     end, 0, db, :all_docs)
 
     conn
