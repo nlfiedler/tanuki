@@ -22,9 +22,10 @@ defmodule TanukiIncoming.Mixfile do
       :mnesia,
       :jsx,
       :couchbeam],
-     included_applications: [
-      :mimerl
-     ],
+     # see relx bug #57 (https://github.com/erlware/relx/issues/57)
+     # included_applications: [
+     #  :mimerl
+     # ],
      mod: {TanukiIncoming.Application, []},
      description: 'Digital assets import application.']
   end
