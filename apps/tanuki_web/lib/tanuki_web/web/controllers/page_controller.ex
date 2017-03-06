@@ -79,11 +79,11 @@ defmodule TanukiWeb.Web.PageController do
     tags = for t <- String.split(params["tags"], ","), do: String.trim(t)
     newdoc = :couchbeam_doc.set_value("tags", Enum.uniq(Enum.sort(tags)), newdoc)
     newdoc = if String.length(params["user_date"]) > 0 do
-      # the expected format of the optional date string is mm/dd/yyyy
+      # the expected format of the optional date string is yyyy/mm/dd
       parts = String.split(params["user_date"], "/")
-      year = String.to_integer(hd(tl(tl(parts))))
-      day = String.to_integer(hd(tl(parts)))
-      month = String.to_integer(hd(parts))
+      day = String.to_integer(hd(tl(tl(parts))))
+      month = String.to_integer(hd(tl(parts)))
+      year = String.to_integer(hd(parts))
       # add the given date to the time from the best available date/time
       datetime_list = TanukiBackend.get_best_date(document)
       new_dt_list = [year, month, day] ++ Enum.slice(datetime_list, 3, 2)

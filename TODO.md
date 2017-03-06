@@ -2,7 +2,6 @@
 
 ## General Items
 
-1. Fix the edit page to expect "yyyy/mm/dd" date format for consistency.
 1. Race condition in thinning of thumbnails may cause a request to fail
 1. Instead of a "topic" field, perhaps an "occasion" field instead.
     - For instance, "christina birthday".
@@ -25,3 +24,4 @@
     - from the tag/location/year page...
     - multi-select assets...
     - form for changing one or more fields
+1. Client-side validation of the custom date field on edit page.

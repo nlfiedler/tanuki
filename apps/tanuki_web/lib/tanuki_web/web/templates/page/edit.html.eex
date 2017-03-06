@@ -16,7 +16,7 @@
       <label for="customDate" class="col-sm-2 control-label">Custom Date</label>
       <div class="col-sm-10">
         <input id="customDate" class="form-control" type="date" name="user_date"/>
-        <span class="label label-default">format mm/dd/yyyy</span>
+        <span class="label label-default">format yyyy/mm/dd</span>
         <span class="label label-info">optional</span>
       </div>
     </div>
