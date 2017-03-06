@@ -1,4 +1,3 @@
-<strong>Available years:</strong>
 <%= render "years.html", conn: @conn, years: @years %>
 
 <h4><%= @year %></h4>

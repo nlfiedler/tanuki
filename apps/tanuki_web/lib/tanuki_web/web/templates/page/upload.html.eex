@@ -1,18 +1,18 @@
 <div>
-  <form action="<%= page_path @conn, :import %>" method="post" enctype="multipart/form-data">
-    <table>
-      <tr>
-        <td class="detail">File:</td>
-        <td><input type="file" name="asset"/></td>
-      </tr>
-    </table>
-    <div>
-      <span class="label label-info">You can drag &amp; drop files onto the select button.</span>
+  <form action="<%= page_path @conn, :import %>" method="post" enctype="multipart/form-data"
+        class="form-horizontal">
+    <div class="form-group">
+      <label for="inputFile" class="col-sm-2 control-label">File to upload</label>
+      <div class="col-sm-10">
+        <input id="inputFile" type="file" name="asset"/>
+        <span class="label label-info">You can drag &amp; drop files onto the select button.</span>
+      </div>
     </div>
-    <div style="padding-top: 15px">
-      <input type="hidden" name="_csrf_token" value="<%= get_csrf_token() %>">
-      <input type="submit" value="Upload" style="margin-right: 100px"/>
-      <a href="<%= page_path @conn, :index %>">Cancel</a>
+    <div class="form-group">
+      <div class="col-sm-offset-2 col-sm-10">
+        <input type="hidden" name="_csrf_token" value="<%= get_csrf_token() %>">
+        <input class="btn btn-default" type="submit" value="Upload"/>
+      </div>
     </div>
   </form>
 </div>

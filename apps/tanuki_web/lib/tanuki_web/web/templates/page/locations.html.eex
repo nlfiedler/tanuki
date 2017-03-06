@@ -1,5 +1,6 @@
-<div>
+<ul class="list-inline">
+  <li><strong>Locations:</strong></li>
 <%= for location <- @locations do %>
-  [<a href="<%= page_path @conn, :location, location %>"><%= location %></a>]
+  <li><a href="<%= page_path @conn, :location, location %>"><%= location %></a></li>
 <% end %>
-</div>
+</ul>

@@ -1,55 +1,43 @@
 <div>
-  <%= if String.starts_with?(@asset_info[:mimetype], "video/") do %>
-    <video width="100%" height="100%" controls preload="auto" >
-      <source src="<%= page_path @conn, :asset, @asset_info[:sha] %>"
-              type="<%= mimetype @asset_info[:mimetype] %>">
-      Bummer, your browser does not support the HTML5 <code>video</code> tag.
-    </video>
-  <% else %>
-    <a href="<%= page_path @conn, :asset, @asset_info[:sha] %>">
-      <img class="asset" src="<%= page_path @conn, :preview, @asset_info[:sha] %>"
-           alt="<%= @asset_info[:fname] %>"/>
-    </a>
-  <% end %>
-
-  <table>
-    <tr>
-      <td class="detail">Filename:</td>
-      <td><%= @asset_info[:fname] %></td>
-    </tr>
-    <tr>
-      <td class="detail">Date/time:</td>
-      <td><%= @asset_info[:datetime] %></td>
-    </tr>
-    <tr>
-      <td class="detail">Size:</td>
-      <td><%= @asset_info[:size] %></td>
-    </tr>
-    <%= unless is_nil @asset_info[:duration] do %>
-    <tr>
-      <td class="detail">Duration:</td>
-      <td><%= @asset_info[:duration] %> seconds</td>
-    </tr>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title"><%= @asset_info[:fname] %></h3>
+    </div>
+    <div class="panel-body">
+    <%= if String.starts_with?(@asset_info[:mimetype], "video/") do %>
+      <video width="100%" height="100%" controls preload="auto" >
+        <source src="<%= page_path @conn, :asset, @asset_info[:sha] %>"
+                type="<%= mimetype @asset_info[:mimetype] %>">
+        Bummer, your browser does not support the HTML5 <code>video</code> tag.
+      </video>
+    <% else %>
+      <a href="<%= page_path @conn, :asset, @asset_info[:sha] %>">
+        <img class="asset" src="<%= page_path @conn, :preview, @asset_info[:sha] %>"
+             alt="<%= @asset_info[:fname] %>"/>
+      </a>
     <% end %>
-    <tr>
-      <td class="detail">SHA256:</td>
-      <td><%= @asset_info[:sha] %></td>
-    </tr>
-    <tr>
-      <td class="detail">Location:</td>
-      <td><%= @asset_info[:location] %></td>
-    </tr>
-    <tr>
-      <td class="detail">Caption:</td>
-      <td><%= @asset_info[:caption] %></td>
-    </tr>
-    <tr>
-      <td class="detail">Tags:</td>
-      <td><%= Enum.join(@asset_info[:tags], ", ") %></td>
-    </tr>
-  </table>
+    </div>
+    <div class="panel-footer"><%= @asset_info[:datetime] %></div>
+  </div>
+
+  <dl class="dl-horizontal">
+    <dt>Size</dt>
+    <dd><%= @asset_info[:size] %></dd>
+    <%= unless is_nil @asset_info[:duration] do %>
+      <dt>Duration</dt>
+      <dd><%= @asset_info[:duration] %> seconds</dd>
+    <% end %>
+    <dt>SHA256</dt>
+    <dd><%= @asset_info[:sha] %></dd>
+    <dt>Location</dt>
+    <dd><%= @asset_info[:location] %></dd>
+    <dt>Caption</dt>
+    <dd><%= @asset_info[:caption] %></dd>
+    <dt>Tags</dt>
+    <dd><%= Enum.join(@asset_info[:tags], ", ") %></dd>
+  </dl>
 </div>
 
 <div>
-  [<a href="<%= page_path @conn, :edit, @asset_info[:id] %>">edit</a>]
+  <a class="btn btn-default" href="<%= page_path @conn, :edit, @asset_info[:id] %>">Edit</a>
 </div>

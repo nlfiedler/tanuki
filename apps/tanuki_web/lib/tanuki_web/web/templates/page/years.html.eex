@@ -1,5 +1,6 @@
-<div>
+<ul class="list-inline">
+  <li><strong>Years:</strong></li>
 <%= for year <- @years do %>
-  [<a href="<%= page_path @conn, :year, year %>"><%= year %></a>]
+  <li><a href="<%= page_path @conn, :year, year %>"><%= year %></a></li>
 <% end %>
-</div>
+</ul>

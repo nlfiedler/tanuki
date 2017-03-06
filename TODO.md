@@ -2,6 +2,7 @@
 
 ## General Items
 
+1. Fix the edit page to expect "yyyy/mm/dd" date format for consistency.
 1. Race condition in thinning of thumbnails may cause a request to fail
 1. Instead of a "topic" field, perhaps an "occasion" field instead.
     - For instance, "christina birthday".

@@ -1,5 +1,6 @@
-<div>
+<ul class="list-inline">
+  <li><strong>Tags:</strong></li>
 <%= for tag <- @tags do %>
-  [<a href="<%= page_path @conn, :index, add_tag: tag %>"><%= tag %></a>]
+  <li><a href="<%= page_path @conn, :index, add_tag: tag %>"><%= tag %></a></li>
 <% end %>
-</div>
+</ul>

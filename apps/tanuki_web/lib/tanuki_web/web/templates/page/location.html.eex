@@ -1,4 +1,3 @@
-<strong>Available locations:</strong>
 <%= render "locations.html", conn: @conn, locations: @locations %>
 
 <h4><%= @location %></h4>

@@ -1,37 +1,38 @@
-<strong>Available tags:</strong>
 <%= render "tags.html", conn: @conn, tags: @tags %>
 
-<strong>Selected tags:</strong>
-<div>
-<%= for tag <- @selected_tags do %>
-  [x] <a href="<%= page_path @conn, :index, del_tag: tag %>"><%= tag %></a>
-<% end %>
-</div>
-
-<strong>Available locations:</strong>
-<%= render "locations.html", conn: @conn, locations: @locations %>
-
-<strong>Available years:</strong>
-<%= render "years.html", conn: @conn, years: @years %>
-
-<table>
-  <tr>
-    <%= for {info, index} <- Enum.with_index(@tag_info, 1) do %>
-      <td><div class="thumbnail">
-        <a href="<%= page_path @conn, :detail, info[:id] %>">
-        <img src="<%= page_path @conn, :thumbnail, info[:sha] %>"
-             alt="<%= info[:fname] %>"/></a><br/>
-        <div class="caption"><%= info[:date] %> -- <%= info[:fname] %></div>
-      </div></td>
-      <%= if rem(index, 3) == 0 do %>
-        </tr>
-        <tr>
-      <% end %>
+<%= if length(@selected_tags) > 0 do %>
+  <ul class="list-inline">
+    <li><strong>Selected:</strong></li>
+    <%= for tag <- @selected_tags do %>
+      <li>[x] <a href="<%= page_path @conn, :index, del_tag: tag %>"><%= tag %></a></li>
     <% end %>
-  </tr>
-</table>
+  </ul>
+<% end %>
+
+<%= if length(@tag_info) > 0 do %>
+  <table>
+    <tr>
+      <%= for {info, index} <- Enum.with_index(@tag_info, 1) do %>
+        <td><div class="thumbnail">
+          <a href="<%= page_path @conn, :detail, info[:id] %>">
+          <img src="<%= page_path @conn, :thumbnail, info[:sha] %>"
+               alt="<%= info[:fname] %>"/></a><br/>
+          <div class="caption"><%= info[:date] %> -- <%= info[:fname] %></div>
+        </div></td>
+        <%= if rem(index, 3) == 0 do %>
+          </tr>
+          <tr>
+        <% end %>
+      <% end %>
+    </tr>
+  </table>
+<% end %>
 
 <%= if not Enum.empty?(@page_data) do %>
   <%= render "pagination.html", conn: @conn, curr_page: @curr_page, page_data: @page_data,
              page_link_fn: fn(page) -> page_path @conn, :index, page: page end %>
 <% end %>
+
+<%= render "locations.html", conn: @conn, locations: @locations %>
+
+<%= render "years.html", conn: @conn, years: @years %>
