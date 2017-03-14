@@ -1,10 +1,7 @@
-/*
- * This file is for your main application css.
- */
-/*
- * Includes Bootstrap as well as some default style for the starter
+/* Includes Bootstrap as well as some default style for the starter
  * application. This can be safely deleted to start fresh.
  */
+
 /*!
  * Bootstrap v3.3.5 (http://getbootstrap.com)
  * Copyright 2011-2015 Twitter, Inc.
@@ -30,12 +27,12 @@ form.link, form.button {
   border-bottom: 1px solid #e5e5e5;
 }
 .logo {
-  width: 520px;
-  height: 100px;
+  width: 519px;
+  height: 71px;
   display: inline-block;
   margin-bottom: 1em;
-  background-image: url("/images/tanuki.png");
-  background-size: 520px 100px;
+  background-image: url("/images/phoenix.png");
+  background-size: 519px 71px;
 }
 
 /* Everything but the jumbotron gets side spacing for mobile first views */
@@ -64,17 +61,6 @@ form.link, form.button {
 /* Supporting marketing content */
 .marketing {
   margin: 35px 0;
-}
-
-td.detail {
-  padding-right: 15px;
-  text-align: right;
-  font-weight: bold;
-}
-
-img.asset {
-  display: block;
-  margin: auto;
 }
 
 /* Responsive: Portrait tablets and up */

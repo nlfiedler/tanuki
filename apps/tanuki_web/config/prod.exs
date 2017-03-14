@@ -14,7 +14,7 @@ use Mix.Config
 config :tanuki_web, TanukiWeb.Web.Endpoint,
   http: [port: {:system, "PORT"}],
   url: [host: System.get_env("HOST"), port: System.get_env("PORT")],
-  cache_static_manifest: "priv/static/manifest.json",
+  cache_static_manifest: "priv/static/cache_manifest.json",
   server: true,
   version: Mix.Project.config[:version]
 

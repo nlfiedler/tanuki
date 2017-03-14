@@ -1,0 +1,21 @@
+/* This file is for your main application css. */
+
+.logo {
+  width: 520px;
+  height: 100px;
+  display: inline-block;
+  margin-bottom: 1em;
+  background-image: url("/images/tanuki.png");
+  background-size: 520px 100px;
+}
+
+td.detail {
+  padding-right: 15px;
+  text-align: right;
+  font-weight: bold;
+}
+
+img.asset {
+  display: block;
+  margin: auto;
+}
