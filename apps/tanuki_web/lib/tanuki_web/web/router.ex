@@ -29,10 +29,11 @@ defmodule TanukiWeb.Web.Router do
     post "/import", PageController, :import
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", TanukiWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", TanukiWeb.Web do
+    pipe_through :api
+
+    get "/tags", ApiController, :tags
+  end
 
   scope "/admin", TanukiWeb.Web do
     pipe_through :browser # Use the default browser stack
