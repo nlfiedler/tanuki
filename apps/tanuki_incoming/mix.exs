@@ -32,7 +32,7 @@ defmodule TanukiIncoming.Mixfile do
   defp deps do
     [{:couchbeam, github: "benoitc/couchbeam", tag: "1.4.2"},
      {:exif, github: "nlfiedler/erlang-exif", tag: "2.0.3"},
-     {:epwd_rs, github: "nlfiedler/epwd.rs", tag: "0.1.8"},
+     {:epwd_rs, github: "nlfiedler/epwd.rs", tag: "0.1.9"},
      # hackney uses an older mimerl, but should be okay to use a newer release
      {:mimerl, github: "benoitc/mimerl", tag: "1.1.1", override: true},
      {:poison, "~> 3.1"},

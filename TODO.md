@@ -2,26 +2,24 @@
 
 ## General Items
 
-1. Set up Elm
-    - Use `apps/tanuki_web/lib/tanuki_web/web` in place of `web`
-        + see https://gist.github.com/chrismccord/71ab10d433c98b714b75c886eff17357
-    - https://medium.com/@diamondgfx/writing-a-full-site-in-phoenix-and-elm-a100804c9499
-    - https://medium.com/@diamondgfx/writing-a-full-site-in-phoenix-and-elm-a4622c5130f5
-    - http://www.cultivatehq.com/posts/phoenix-elm-2/
-    - Edit the `elm-package.json` to hold relevant information
-
-```
-$ cd apps/tanuki_web/lib/tanuki_web
-$ mkdir web/elm
-$ cd web/elm
-$ elm-package install
-```
-1. Build tag list in Elm, fetching list via `/api/tags`
-    - Need an `/api/tags` handler
-    - Returned JSON includes tag names and asset counts
-    - Elm displays (in alpha order) those tags whose counts exceed a threshold
-    - Add a `>>` button that then shows the rest of the tags (in alpha order)
-1. Consider using Elm to replace the guts of the `.eex` pages
+1. Replace all/most of the `.eex` pages with Elm components
+    - Tags should show high ranking entries initially
+        + Expander link/button to show all tags
+        + Selected tags are always shown
+    - Need to read `apiUrlPrefix` from configuration
+    - Check how everything looks in Chrome and Firefox
+1. Cherry-pick `5e8352f` from `tanuki/master` branch to fix asset digest steps
+1. Update emagick.rs to use latest magick-rust code; use that instead of invoking `convert`
+    - Basically reversing commit `174fc11`
+    - This includes removing the need to cache thumbnails on disk
+    - Also removes the auto pruning of cached thumbnails
+1. Ensure tags are unique, not just sorted
+1. Add a "people" field
+    - How to set this in import?
+    - Need an admin screen to move a tag from "tags" to "people"
+1. Change "locations" to "places" in the interface
+1. Look for Rust bindings for FFmpeg libraries
+1. Show video thumbnails using video HTML tag so they can play directly
 1. Race condition in thinning of thumbnails may cause a request to fail
 1. Instead of a "topic" field, perhaps an "occasion" field instead.
     - For instance, "christina birthday".
@@ -31,16 +29,18 @@ $ elm-package install
 1. Request caching should be keyed by some unique value per browser session
     - With some upper limit on simultaneous cached queries
 1. Option on `edit` page to rotate an image (some images lack orientation data)
-1. Write tests for the `tanuki_web` application
+    - How can Elm help with this feature?
 1. Consider supporting browsing by year and month (likely without query caching or paging)
 1. Fix image references in error view
     - When Phoenix has an error, it tries to refer to default images
 1. Add functions to admin page:
     - Button to perform database compaction
-1. Completion for tags, location
+1. Completion for tags, people, places
 1. Bulk edit feature
     - Design a query page that allows searching on several fields (tags, date, location)
     - Use a temporary view (http://docs.couchdb.org/en/1.6.1/api/database/temp-views.html)
     - Multi-select the displayed results
     - Present a form for changing one or more fields of the selected assets
-1. Client-side validation of the custom date field on edit page.
+1. Update build instructions, or the build scripts
+    - cd apps/tanuki_web/assets/elm && elm-package install -y
+    - Does `npm install` need to be part of the build instructions in the `README`?

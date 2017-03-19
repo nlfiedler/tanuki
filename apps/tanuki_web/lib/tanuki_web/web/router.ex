@@ -13,22 +13,6 @@ defmodule TanukiWeb.Web.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", TanukiWeb.Web do
-    pipe_through :browser # Use the default browser stack
-
-    get "/", PageController, :index
-    get "/year/:id", PageController, :year
-    get "/location/:id", PageController, :location
-    get "/detail/:id", PageController, :detail
-    get "/asset/:id", PageController, :asset
-    get "/asset/:id/edit", PageController, :edit
-    post "/asset/:id", PageController, :update
-    get "/thumbnail/:id", PageController, :thumbnail
-    get "/preview/:id", PageController, :preview
-    get "/upload", PageController, :upload
-    post "/import", PageController, :import
-  end
-
   scope "/api", TanukiWeb.Web do
     pipe_through :api
 
@@ -49,5 +33,26 @@ defmodule TanukiWeb.Web.Router do
     post "/creation_time", AdminController, :creation_time
     post "/original_date", AdminController, :original_date
     post "/incoming", AdminController, :incoming
+  end
+
+  # This goes last because of the glob match at the end.
+  scope "/", TanukiWeb.Web do
+    pipe_through :browser # Use the default browser stack
+
+    # These two methods are still needed until the Elm http module supports
+    # blob/file parts for POST requests. As of 0.18 it only supports string
+    # parts for multipart bodies.
+    get "/upload", PageController, :upload
+    post "/import", PageController, :import
+
+    # These three could go in ApiController, probably, but historically
+    # they have been in the PageController.
+    get "/asset/:id", PageController, :asset
+    get "/thumbnail/:id", PageController, :thumbnail
+    get "/preview/:id", PageController, :preview
+
+    # This glob match goes last to catch everything else and direct it to
+    # the Elm application.
+    get "/*path", PageController, :index
   end
 end

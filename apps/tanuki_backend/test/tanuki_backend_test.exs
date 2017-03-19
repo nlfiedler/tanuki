@@ -259,10 +259,10 @@ defmodule TanukiBackendTest do
   end
 
   test "date/time formatting" do
-    assert TanukiBackend.date_list_to_string([2014, 12, 23, 22, 28]) == "2014/12/23 22:28"
-    assert TanukiBackend.date_list_to_string([2016, 12, 23, 8, 5]) == "2016/12/23 8:05"
-    assert TanukiBackend.date_list_to_string([33, 5, 2, 8, 5]) == "33/5/2 8:05"
-    assert TanukiBackend.date_list_to_string([2017, 1, 14, 1, 1], :date_only) == "2017/1/14"
+    assert TanukiBackend.date_list_to_string([2014, 12, 23, 22, 28]) == "2014-12-23 22:28"
+    assert TanukiBackend.date_list_to_string([2016, 12, 23, 8, 5]) == "2016-12-23 08:05"
+    assert TanukiBackend.date_list_to_string([33, 5, 2, 8, 5]) == "0033-05-02 08:05"
+    assert TanukiBackend.date_list_to_string([2017, 1, 14, 1, 1], :date_only) == "2017-01-14"
   end
 
   test "checksum to asset path" do

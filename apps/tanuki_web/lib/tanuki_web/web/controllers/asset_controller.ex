@@ -3,33 +3,43 @@ defmodule TanukiWeb.Web.AssetController do
   require Logger
 
   def index(conn, params) do
-    # TODO: support "location" parameter to filter by location (exact)
-    # TODO: support "year" parameter to filter by year (exact)
     # TODO: support "order" parameter to sort the results
     tags = params["tags"]
-    cond do
-      is_nil(tags) ->
-        # Return the total number of assets, and an empty list because we
-        # are not going to return all of them in a single request.
-        count = TanukiBackend.count_assets()
-        json conn, %{:assets => [], :count => count}
-      not is_list(tags) ->
+    locations = params["locations"]
+    case parse_years(params["years"]) do
+      {:ok, years} ->
+        cond do
+          is_nil(tags) and is_nil(years) and is_nil(locations) ->
+            # Return the total number of assets, and an empty list because we
+            # are not going to return all of them in a single request.
+            count = TanukiBackend.count_assets()
+            json conn, %{:assets => [], :count => count}
+          not is_nil(tags) and not is_list(tags) ->
+            conn
+            |> put_resp_content_type("application/json")
+            |> send_resp(400, ~s({"error": "tags must be list"}))
+          not is_nil(locations) and not is_list(locations) ->
+            conn
+            |> put_resp_content_type("application/json")
+            |> send_resp(400, ~s({"error": "locations must be list"}))
+          true ->
+            rows = TanukiBackend.query(tags, years, locations)
+            sorted_rows = Enum.sort(rows, &by_tags_sorter/2)
+            tag_info = for row <- sorted_rows, do: build_query_results(row)
+            # count is the number of _all_ matching results
+            count = length(tag_info)
+            # handle pagination with certain defaults and bounds
+            page_size = bounded_int_value(params["page_size"], 10, 1, 100)
+            page_limit = trunc(Float.ceil(count / page_size))
+            page = bounded_int_value(params["page"], 1, 1, page_limit)
+            start = (page - 1) * page_size
+            results = Enum.slice(tag_info, start, page_size)
+            json conn, %{:assets => results, :count => count}
+        end
+      {:error, reason} ->
         conn
         |> put_resp_content_type("application/json")
-        |> send_resp(400, ~s({"error": "tags must be list"}))
-      true ->
-        rows = TanukiBackend.by_tags(tags)
-        sorted_rows = Enum.sort(rows, &by_tags_sorter/2)
-        tag_info = for row <- sorted_rows, do: build_asset_info(row)
-        # count is the number of _all_ matching results
-        count = length(tag_info)
-        # handle pagination with certain defaults and bounds
-        page_size = bounded_int_value(params["page_size"], 10, 1, 100)
-        page_limit = trunc(Float.ceil(count / page_size))
-        page = bounded_int_value(params["page"], 1, 1, page_limit)
-        start = (page - 1) * page_size
-        results = Enum.slice(tag_info, start, page_size)
-        json conn, %{:assets => results, :count => count}
+        |> send_resp(400, ~s({"error": "#{reason}"}))
     end
   end
 
@@ -54,6 +64,8 @@ defmodule TanukiWeb.Web.AssetController do
         tags = :couchbeam_doc.get_value("tags", document)
         datetime_list = TanukiBackend.get_best_date(document)
         datetime_str = TanukiBackend.date_list_to_string(datetime_list)
+        user_date = :couchbeam_doc.get_value("user_date", document)
+        user_date_str = TanukiBackend.date_list_to_string(user_date)
         duration = get_duration(mimetype, sha256)
         json conn, %{
           :id => row_id,
@@ -61,6 +73,7 @@ defmodule TanukiWeb.Web.AssetController do
           :size => filesize,
           :mimetype => mimetype,
           :datetime => datetime_str,
+          :user_date => user_date_str,
           :checksum => sha256,
           :caption => caption,
           :location => location,
@@ -115,17 +128,11 @@ defmodule TanukiWeb.Web.AssetController do
         tags = for t <- String.split(params["tags"], ","), do: String.trim(t)
         newdoc = :couchbeam_doc.set_value("tags", Enum.uniq(Enum.sort(tags)), newdoc)
         newdoc = if String.length(params["user_date"]) > 0 do
-          # the expected format of the optional date string is yyyy/mm/dd
-          parts = String.split(params["user_date"], "/")
-          day = String.to_integer(hd(tl(tl(parts))))
-          month = String.to_integer(hd(tl(parts)))
-          year = String.to_integer(hd(parts))
-          # add the given date to the time from the best available date/time
-          datetime_list = TanukiBackend.get_best_date(document)
-          new_dt_list = [year, month, day] ++ Enum.slice(datetime_list, 3, 2)
+          new_dt_list = parse_user_date(params["user_date"], newdoc)
           :couchbeam_doc.set_value("user_date", new_dt_list, newdoc)
         else
-          newdoc
+          # wipe out the user date field if no value is given
+          :couchbeam_doc.set_value("user_date", :null, newdoc)
         end
         {:ok, _updated} = TanukiBackend.update_document(newdoc)
         json conn, %{:status => "success"}
@@ -160,20 +167,25 @@ defmodule TanukiWeb.Web.AssetController do
     a_date >= b_date
   end
 
-  defp build_asset_info(row) do
+  defp build_query_results(row) do
     row_id = :couchbeam_doc.get_value("id", row)
+    # "key" can vary depending on the input (i.e. year, tags, location)
+    # so we must ignore it here
     values = :couchbeam_doc.get_value("value", row)
-    # values is a list of [date, file_name, sha256], where 'date' is exif,
-    # file, or import date in that preferred order. The date value itself
-    # is a list of integers (e.g. [2014, 7, 4, 12, 1] ~> "2014/7/4 12:01").
+    # values is a list of [date, file_name, sha256, location], where 'date'
+    # is user, exif, file, or import date in that preferred order. The date
+    # value itself is a list of integers (e.g. [2014, 7, 4, 12, 1] ~>
+    # "2014-07-04 12:01").
     date_string = TanukiBackend.date_list_to_string(hd(values), :date_only)
     filename = hd(tl(values))
     checksum = hd(tl(tl(values)))
+    location = hd(tl(tl(tl(values))))
     %{
       :id => row_id,
       :filename => filename,
       :date => date_string,
-      :checksum => checksum
+      :checksum => checksum,
+      :location => location
     }
   end
 
@@ -196,5 +208,38 @@ defmodule TanukiWeb.Web.AssetController do
         end
     end
     min(max(v, minimum), maximum)
+  end
+
+  defp parse_user_date(value, document) do
+    # the expected format of the optional date string is yyyy-mm-dd
+    parts = String.split(value, "-")
+    day = String.to_integer(hd(tl(tl(parts))))
+    month = String.to_integer(hd(tl(parts)))
+    year = String.to_integer(hd(parts))
+    # add the given date to the time from the best available date/time
+    datetime_list = TanukiBackend.get_best_date(document)
+    [year, month, day] ++ Enum.slice(datetime_list, 3, 2)
+  end
+
+  def parse_years(nil) do
+    {:ok, nil}
+  end
+
+  def parse_years(years) when is_list(years) do
+    parse_int_fn = fn
+      i when is_integer(i) -> {i, ""}
+      s when is_binary(s) -> Integer.parse(s)
+      _ -> {:error, "years must parse as integer"}
+    end
+    results = Enum.map(years, parse_int_fn)
+    cond do
+       Enum.any?(results, &(&1 == :error)) -> {:error, "years must parse as integer"}
+       Enum.any?(results, &elem(&1, 1) != "") -> {:error, "years must parse as integer"}
+       true -> {:ok, Enum.map(results, &elem(&1, 0))}
+    end
+  end
+
+  def parse_years(_years) do
+    {:error, "years must be a list"}
   end
 end

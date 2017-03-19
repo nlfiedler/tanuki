@@ -210,23 +210,29 @@ defmodule TanukiBackend do
 
   Converts a date-list (list of integers representing a date) of the form
   [<year>, <month>, <day>, <hour>, <minutes>] to a string. For example, the
-  list [2014, 7, 4, 12, 1] would become "2014/7/4 12:01".
+  list [2014, 7, 4, 12, 1] would become "2014-07-04 12:01".
+
+  If the parameter is :undefined or :null, returns the empty string.
 
   """
   @spec date_list_to_string(date_list) :: String.t when date_list: [integer()]
+  def date_list_to_string(empty) when empty == :undefined or empty == :null do
+    ""
+  end
+
   def date_list_to_string(date_list) do
-    to_string(List.flatten(:io_lib.format("~B/~B/~B ~B:~2.10.0B", date_list)))
+    to_string(List.flatten(:io_lib.format("~4.10.0B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B", date_list)))
   end
 
   @doc """
 
   Converts a date-list (list of integers representing a date) of the
-  form [2014, 7, 4, 12, 1] to a string, with only the date: 2014/7/4.
+  form [2014, 7, 4, 12, 1] to a string, with only the date: 2014-07-04.
 
   """
   @spec date_list_to_string(date_list, :date_only) :: String.t when date_list: [integer()]
   def date_list_to_string(date_list, :date_only) do
-    to_string(List.flatten(:io_lib.format("~B/~B/~B", Enum.slice(date_list, 0, 3))))
+    to_string(List.flatten(:io_lib.format("~4.10.0B-~2.10.0B-~2.10.0B", Enum.slice(date_list, 0, 3))))
   end
 
   @doc """

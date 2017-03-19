@@ -44,6 +44,14 @@ defmodule TanukiWeb.Web.ApiControllerTest do
     assert TanukiWeb.Web.AssetController.bounded_int_value(1, 5, 5, 10) == 5
   end
 
+  test "parse years" do
+    assert TanukiWeb.Web.AssetController.parse_years(nil) == {:ok, nil}
+    assert TanukiWeb.Web.AssetController.parse_years(["2017", "2015"]) == {:ok, [2017, 2015]}
+    assert TanukiWeb.Web.AssetController.parse_years(["2017", "2017ad"]) == {:error, "years must parse as integer"}
+    assert TanukiWeb.Web.AssetController.parse_years(["2017", "abc"]) == {:error, "years must parse as integer"}
+    assert TanukiWeb.Web.AssetController.parse_years("2017") == {:error, "years must be a list"}
+  end
+
   test "GET /api/tags", %{conn: conn} do
     conn = get conn, "/api/tags"
     tags = json_response(conn, 200)
@@ -100,6 +108,76 @@ defmodule TanukiWeb.Web.ApiControllerTest do
     assert length(body["assets"]) == 2
     assert body["count"] == 2
     assert Enum.any?(body["assets"], fn m -> Map.get(m, "filename") == "img0315.jpg" end)
+  end
+
+  test "GET /api/assets matching locations", %{conn: conn} do
+    conn = get conn, "/api/assets", [locations: ["carmel", "santa cruz"]]
+    body = json_response(conn, 200)
+    assert length(body["assets"]) == 3
+    assert body["count"] == 3
+    found_ids = for a <- body["assets"], do: Map.get(a, "id")
+    assert found_ids == [
+      "test_AD", "test_AE", "test_AF"
+    ]
+  end
+
+  test "GET /api/assets matching years", %{conn: conn} do
+    # mix and match strings and integers just for giggles
+    conn = get conn, "/api/assets", [years: [2015, "2016"]]
+    body = json_response(conn, 200)
+    assert length(body["assets"]) == 6
+    assert body["count"] == 6
+    found_ids = for a <- body["assets"], do: Map.get(a, "id")
+    assert found_ids == [
+      "test_BF", "test_BE", "test_BD", "test_AD", "test_AE", "test_AF"
+    ]
+  end
+
+  test "GET /api/assets matching locations and years", %{conn: conn} do
+    # mix and match strings and integers just for giggles
+    conn = get conn, "/api/assets", [years: [2015, "2016"], locations: ["carmel", "santa cruz"]]
+    body = json_response(conn, 200)
+    assert length(body["assets"]) == 3
+    assert body["count"] == 3
+    found_ids = for a <- body["assets"], do: Map.get(a, "id")
+    assert found_ids == [
+      "test_AD", "test_AE", "test_AF"
+    ]
+  end
+
+  test "GET /api/assets matching tags and locations", %{conn: conn} do
+    conn = get conn, "/api/assets", [tags: ["cat"], locations: ["san francisco"]]
+    body = json_response(conn, 200)
+    assert length(body["assets"]) == 1
+    assert body["count"] == 1
+    found_ids = for a <- body["assets"], do: Map.get(a, "id")
+    assert found_ids == [
+      "test_AA"
+    ]
+  end
+
+  test "GET /api/assets matching tags and years", %{conn: conn} do
+    # mix and match strings and integers just for giggles
+    conn = get conn, "/api/assets", [tags: ["cat"], years: [2013]]
+    body = json_response(conn, 200)
+    assert length(body["assets"]) == 1
+    assert body["count"] == 1
+    found_ids = for a <- body["assets"], do: Map.get(a, "id")
+    assert found_ids == [
+      "test_AA"
+    ]
+  end
+
+  test "GET /api/assets matching tags, locations, and years", %{conn: conn} do
+    # mix and match strings and integers just for giggles
+    conn = get conn, "/api/assets", [tags: ["joseph"], years: [2015], locations: ["santa cruz"]]
+    body = json_response(conn, 200)
+    assert length(body["assets"]) == 2
+    assert body["count"] == 2
+    found_ids = for a <- body["assets"], do: Map.get(a, "id")
+    assert found_ids == [
+      "test_AE", "test_AF"
+    ]
   end
 
   test "GET /api/assets paging", %{conn: conn} do
