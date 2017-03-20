@@ -33,6 +33,9 @@ defmodule TanukiWeb.Web.Router do
     pipe_through :api
 
     get "/tags", ApiController, :tags
+    get "/locations", ApiController, :locations
+    get "/years", ApiController, :years
+    resources "/assets", AssetController, except: [:edit, :new, :delete]
   end
 
   scope "/admin", TanukiWeb.Web do

@@ -1,0 +1,12 @@
+{
+    "_id": "test_AC",
+    "original_date": null,
+    "file_date": [2014, 7, 15, 3, 13],
+    "file_name": "img0315.jpg",
+    "file_owner": "nfiedler",
+    "file_size": 431671,
+    "import_date": [2014, 7, 21, 5, 34],
+    "mimetype": "image/jpeg",
+    "sha256": "9594b84f1d0db2762d1c53b7ee1a12d03adad33d3193d8b5ed1a50fab2bbff15",
+    "tags": ["cat", "picnic"]
+}
