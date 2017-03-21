@@ -23,7 +23,7 @@ defmodule TanukiWeb.Web.AssetController do
         count = length(tag_info)
         # handle pagination with certain defaults and bounds
         page_size = bounded_int_value(params["page_size"], 10, 1, 100)
-        page_limit = max(1, round(count / page_size))
+        page_limit = trunc(Float.ceil(count / page_size))
         page = bounded_int_value(params["page"], 1, 1, page_limit)
         start = (page - 1) * page_size
         results = Enum.slice(tag_info, start, page_size)
