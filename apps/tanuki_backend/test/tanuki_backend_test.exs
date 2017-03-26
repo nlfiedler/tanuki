@@ -37,6 +37,10 @@ defmodule TanukiBackendTest do
     assert filename == "img0315.jpg"
   end
 
+  test "count assets" do
+    assert TanukiBackend.count_assets() == 8
+  end
+
   test "update document" do
     # this test may run before the one above, so use a different document
     {:ok, doc} = TanukiBackend.fetch_document("test_AC")

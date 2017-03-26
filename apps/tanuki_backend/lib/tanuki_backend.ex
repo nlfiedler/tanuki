@@ -59,6 +59,15 @@ defmodule TanukiBackend do
 
   @doc """
 
+  Return the total number of assets stored in the database.
+
+  """
+  def count_assets() do
+    GenServer.call(TanukiDatabase, :count_assets)
+  end
+
+  @doc """
+
   Retrieves all known tags as `couchbeam` view results.
 
   """
@@ -538,6 +547,11 @@ defmodule TanukiBackend do
 
     def handle_call({:update_document, doc}, _from, state) do
       {:reply, :couchbeam.save_doc(state.database, doc), state}
+    end
+
+    def handle_call(:count_assets, _from, state) do
+      count = :couchbeam_view.count(state.database)
+      {:reply, count, state}
     end
 
     def handle_call(:all_tags, _from, state) do
