@@ -9,9 +9,10 @@ defmodule TanukiWeb.Web.AssetController do
     tags = params["tags"]
     cond do
       is_nil(tags) ->
-        conn
-        |> put_resp_content_type("application/json")
-        |> send_resp(400, ~s({"error": "missing required tags argument"}))
+        # Return the total number of assets, and an empty list because we
+        # are not going to return all of them in a single request.
+        count = TanukiBackend.count_assets()
+        json conn, %{:assets => [], :count => count}
       not is_list(tags) ->
         conn
         |> put_resp_content_type("application/json")

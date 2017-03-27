@@ -81,8 +81,9 @@ defmodule TanukiWeb.Web.ApiControllerTest do
 
   test "GET /api/assets no tags", %{conn: conn} do
     conn = get conn, "/api/assets"
-    body = json_response(conn, 400)
-    assert body["error"] =~ "missing required tags"
+    body = json_response(conn, 200)
+    # some tests add documents, so we cannot assert a specific value
+    assert body["count"] > 10
   end
 
   test "GET /api/assets tag non-list", %{conn: conn} do
