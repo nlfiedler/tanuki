@@ -287,7 +287,7 @@ defmodule TanukiWeb.Web.PageController do
     data_set = conn.assigns[keyname]
     if length(data_set) > @page_size do
       curr_page = get_current_page(conn)
-      page_count = round(Float.ceil(length(data_set) / @page_size))
+      page_count = trunc(Float.ceil(length(data_set) / @page_size))
       {pages, prev, next} = if page_count > 2 do
         #
         # Compute the lower and upper page numbers, clipping to whatever is
