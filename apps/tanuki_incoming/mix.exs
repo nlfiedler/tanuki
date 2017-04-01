@@ -19,7 +19,6 @@ defmodule TanukiIncoming.Mixfile do
       :kernel,
       :stdlib,
       :logger,
-      :mnesia,
       :jsx,
       :couchbeam],
      # see relx bug #57 (https://github.com/erlware/relx/issues/57)
