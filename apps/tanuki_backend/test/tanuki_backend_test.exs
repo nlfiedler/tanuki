@@ -70,7 +70,7 @@ defmodule TanukiBackendTest do
       assert :couchbeam_doc.get_value("key", row) == key
       assert :couchbeam_doc.get_value("value", row) == value
     end
-    key_values = [{2013, 1}, {2014, 2}, {2015, 3}, {2017, 1}]
+    key_values = [{2013, 1}, {2014, 2}, {2015, 2}, {2017, 2}]
     expected = Enum.zip(rows, key_values)
     for {row, key_value} <- expected, do: validate_fn.(row, key_value)
   end
@@ -110,8 +110,51 @@ defmodule TanukiBackendTest do
     ids = ["test_AD", "test_AE", "test_AF"]
     for {row, id} <- Enum.zip(rows, ids), do: validate_fn.(row, id)
 
+    # use the identical api called query/3
+    rows = TanukiBackend.query(["christina", "joseph"], nil, nil)
+    for {row, id} <- Enum.zip(rows, ids), do: validate_fn.(row, id)
+
     # negative case, no such tags
     assert TanukiBackend.by_tags(["foo", "bar"]) == []
+  end
+
+  test "retrieving results by tags and years" do
+    rows = TanukiBackend.query(["christina", "joseph"], [2015], nil)
+    assert length(rows) == 2
+    validate_fn = fn(row, id) ->
+      assert :couchbeam_doc.get_value("id", row) == id
+    end
+    ids = ["test_AD", "test_AE"]
+    for {row, id} <- Enum.zip(rows, ids), do: validate_fn.(row, id)
+
+    # negative case, no such tags
+    assert TanukiBackend.query(["foo", "bar"], [2015], nil) == []
+  end
+
+  test "retrieving results by tags and locations" do
+    rows = TanukiBackend.query(["christina", "joseph"], nil, ["carmel", "santa cruz"])
+    assert length(rows) == 3
+    validate_fn = fn(row, id) ->
+      assert :couchbeam_doc.get_value("id", row) == id
+    end
+    ids = ["test_AD", "test_AE", "test_AF"]
+    for {row, id} <- Enum.zip(rows, ids), do: validate_fn.(row, id)
+
+    # negative case, no such tags
+    assert TanukiBackend.query(["foo", "bar"], nil, ["nowhere"]) == []
+  end
+
+  test "retrieving results by tags, years, and locations" do
+    rows = TanukiBackend.query(["christina", "joseph"], [2015], ["carmel"])
+    assert length(rows) == 1
+    validate_fn = fn(row, id) ->
+      assert :couchbeam_doc.get_value("id", row) == id
+    end
+    ids = ["test_AD"]
+    for {row, id} <- Enum.zip(rows, ids), do: validate_fn.(row, id)
+
+    # negative case, no such tags
+    assert TanukiBackend.query(["foo", "bar"], [2015], ["nowhere"]) == []
   end
 
   test "retrieving by year" do
@@ -124,12 +167,45 @@ defmodule TanukiBackendTest do
     inputs = [
       {2013, 1, ["test_AA"]},
       {2014, 2, ["test_AC", "test_AB"]},
-      {2015, 3, ["test_AD", "test_AE", "test_AF"]}
+      {2015, 2, ["test_AD", "test_AE", "test_AF"]}
     ]
     for input <- inputs, do: validate_fn.(input)
 
     # negative case, no such year
     assert TanukiBackend.by_date(1973) == []
+  end
+
+  test "retrieving by multiple years" do
+    validate_fn = fn({input, count, expected_ids}) ->
+      rows = TanukiBackend.query(nil, input, nil)
+      assert length(rows) == count
+      for {id, row} <- Enum.zip(expected_ids, rows),
+        do: assert :couchbeam_doc.get_value("id", row) == id
+    end
+    inputs = [
+      {[2013, 2014], 3, ["test_AA", "test_AC", "test_AB"]},
+      {[2015], 2, ["test_AD", "test_AE"]}
+    ]
+    for input <- inputs, do: validate_fn.(input)
+
+    # negative case, no such year
+    assert TanukiBackend.query(nil, [1973], nil) == []
+  end
+
+  test "retrieving by years and locations" do
+    validate_fn = fn({years, locations, count, expected_ids}) ->
+      rows = TanukiBackend.query(nil, years, locations)
+      assert length(rows) == count
+      for {id, row} <- Enum.zip(expected_ids, rows),
+        do: assert :couchbeam_doc.get_value("id", row) == id
+    end
+    inputs = [
+      {[2013, 2014], ["san francisco"], 2, ["test_AA", "test_AB"]}
+    ]
+    for input <- inputs, do: validate_fn.(input)
+
+    # negative case, no such year, location
+    assert TanukiBackend.query(nil, [1973], ["nowhere"]) == []
   end
 
   test "retrieving by location" do
@@ -150,6 +226,23 @@ defmodule TanukiBackendTest do
     assert TanukiBackend.by_location("philadelphia") == []
   end
 
+  test "retrieving by multiple locations" do
+    validate_fn = fn({input, count, expected_ids}) ->
+      rows = TanukiBackend.query(nil, nil, input)
+      assert length(rows) == count
+      for {id, row} <- Enum.zip(expected_ids, rows),
+        do: assert :couchbeam_doc.get_value("id", row) == id
+    end
+    inputs = [
+      {["carmel", "san francisco"], 3, ["test_AD", "test_AA", "test_AB"]},
+      {["santa cruz"], 2, ["test_AE", "test_AF"]}
+    ]
+    for input <- inputs, do: validate_fn.(input)
+
+    # negative case, no such location
+    assert TanukiBackend.query(nil, nil, ["philadelphia"]) == []
+  end
+
   test "retrieving by year and month" do
     validate_fn = fn({{year, month}, count, expected_ids}) ->
       rows = TanukiBackend.by_date(year, month)
@@ -160,7 +253,7 @@ defmodule TanukiBackendTest do
     inputs = [
       {{2014, 7}, 1, ["test_AC"]},
       {{2014, 10}, 1, ["test_AB"]},
-      {{2015, 4}, 3, ["test_AD", "test_AE", "test_AF"]}
+      {{2015, 4}, 2, ["test_AD", "test_AE"]}
     ]
     for input <- inputs, do: validate_fn.(input)
   end

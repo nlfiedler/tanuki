@@ -80,6 +80,65 @@ defmodule TanukiBackend do
 
   @doc """
 
+  Query assets by tags, or years, or locations, or any combination of
+  those. Each argument is a list of values on which to select assets.
+
+  """
+  def query(nil, nil, locations) do
+    query_by_location_fn = fn(location) ->
+      GenServer.call(TanukiDatabase, {:by_location, location})
+    end
+    Enum.flat_map(locations, query_by_location_fn)
+  end
+
+  def query(nil, years, nil) do
+    query_by_year_fn = fn(year) ->
+      start_date = [year, 0, 0, 0, 0]
+      end_date = [year + 1, 0, 0, 0, 0]
+      GenServer.call(TanukiDatabase, {:by_date, start_date, end_date})
+    end
+    Enum.flat_map(years, query_by_year_fn)
+  end
+
+  def query(tags, nil, nil) do
+    by_tags(tags)
+  end
+
+  def query(nil, years, locations) do
+    by_years = query(nil, years, nil)
+    Enum.filter(by_years, &filter_by_location(locations, 2, &1))
+  end
+
+  def query(tags, years, nil) do
+    rows_by_tags = by_tags(tags)
+    Enum.filter(rows_by_tags, &filter_by_year(years, &1))
+  end
+
+  def query(tags, nil, locations) do
+    rows_by_tags = by_tags(tags)
+    Enum.filter(rows_by_tags, &filter_by_location(locations, 3, &1))
+  end
+
+  def query(tags, years, locations) do
+    rows_by_tags = by_tags(tags)
+    filtered_by_years = Enum.filter(rows_by_tags, &filter_by_year(years, &1))
+    Enum.filter(filtered_by_years, &filter_by_location(locations, 3, &1))
+  end
+
+  defp filter_by_year(years, row) do
+    values = :couchbeam_doc.get_value("value", row)
+    year = hd(hd(values))
+    Enum.any?(years, &(year == &1))
+  end
+
+  defp filter_by_location(locations, pos, row) do
+    values = :couchbeam_doc.get_value("value", row)
+    location = Enum.at(values, pos)
+    Enum.any?(locations, &(location == &1))
+  end
+
+  @doc """
+
   Retrieves all documents with the given tags, as couchbeam view results.
   Only those documents containing all of the given tags will be returned.
   Ordering is non-deterministic.
