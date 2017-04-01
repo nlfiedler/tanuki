@@ -18,5 +18,6 @@ function (doc) {
     } else {
         location = "";
     }
-    emit(date, [doc.file_name, doc.sha256, location]);
+    // keep the included values the same across by_date, by_location, by_tag
+    emit(date, [date, doc.file_name, doc.sha256, location]);
 }

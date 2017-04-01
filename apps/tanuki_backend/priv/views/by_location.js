@@ -13,6 +13,8 @@ function (doc) {
         } else {
             date = doc.import_date;
         }
-        emit(doc.location.toLowerCase(), [date, doc.file_name, doc.sha256]);
+        var location = doc.location.toLowerCase();
+        // keep the included values the same across by_date, by_location, by_tag
+        emit(location, [date, doc.file_name, doc.sha256, location]);
     }
 }

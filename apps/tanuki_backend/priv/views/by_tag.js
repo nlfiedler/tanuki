@@ -20,6 +20,7 @@ function (doc) {
             location = "";
         }
         doc.tags.forEach(function (tag) {
+            // keep the included values the same across by_date, by_location, by_tag
             emit(tag.toLowerCase(), [date, doc.file_name, doc.sha256, location]);
         });
     }

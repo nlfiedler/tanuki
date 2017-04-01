@@ -106,7 +106,7 @@ defmodule TanukiBackend do
 
   def query(nil, years, locations) do
     by_years = query(nil, years, nil)
-    Enum.filter(by_years, &filter_by_location(locations, 2, &1))
+    Enum.filter(by_years, &filter_by_location(locations, &1))
   end
 
   def query(tags, years, nil) do
@@ -116,13 +116,13 @@ defmodule TanukiBackend do
 
   def query(tags, nil, locations) do
     rows_by_tags = by_tags(tags)
-    Enum.filter(rows_by_tags, &filter_by_location(locations, 3, &1))
+    Enum.filter(rows_by_tags, &filter_by_location(locations, &1))
   end
 
   def query(tags, years, locations) do
     rows_by_tags = by_tags(tags)
     filtered_by_years = Enum.filter(rows_by_tags, &filter_by_year(years, &1))
-    Enum.filter(filtered_by_years, &filter_by_location(locations, 3, &1))
+    Enum.filter(filtered_by_years, &filter_by_location(locations, &1))
   end
 
   defp filter_by_year(years, row) do
@@ -131,9 +131,9 @@ defmodule TanukiBackend do
     Enum.any?(years, &(year == &1))
   end
 
-  defp filter_by_location(locations, pos, row) do
+  defp filter_by_location(locations, row) do
     values = :couchbeam_doc.get_value("value", row)
-    location = Enum.at(values, pos)
+    location = Enum.at(values, 3)
     Enum.any?(locations, &(location == &1))
   end
 
