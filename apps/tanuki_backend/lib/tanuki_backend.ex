@@ -5,35 +5,6 @@ defmodule TanukiBackend do
 
   """
   require Logger
-  require Record
-
-  # Mnesia record for caching "by_tags" queries.
-  Record.defrecord :by_tags_cache, [key: nil, results: nil]
-
-  # Mnesia record for caching "by_date" queries.
-  Record.defrecord :by_date_cache, [key: nil, results: nil]
-
-  # Mnesia record for caching "by_location" queries.
-  Record.defrecord :by_location_cache, [key: nil, results: nil]
-
-  @mnesia_tables [
-    :by_tags_cache,
-    :by_date_cache,
-    :by_location_cache
-  ]
-
-  @doc """
-
-  Initialize the mnesia tables for caching thumbnails. Should be called by
-  the application at startup.
-
-  """
-  def init_schema() do
-    nodes = [:erlang.node()]
-    ensure_schema(nodes)
-    ensure_mnesia(nodes)
-    :ok = :mnesia.wait_for_tables(@mnesia_tables, 5000)
-  end
 
   @doc """
 
@@ -113,65 +84,27 @@ defmodule TanukiBackend do
   Only those documents containing all of the given tags will be returned.
   Ordering is non-deterministic.
 
-  Results are cached based on the tags, so any changes in the database will
-  not be reflected by repeated queries for the same set of tags. However,
-  this serves repeated requests very well, such as for allowing efficient
-  pagination of many results.
-
   """
   @spec by_tags(tags) :: [any()] when tags: String.t
   def by_tags(tags) when is_list(tags) do
-    by_tags(tags, fn(_a, _b) -> true end)
-  end
-
-  @doc """
-
-  Like by_tags/1 with the results sorted according to the given function.
-
-  """
-  @spec by_tags(tags, sort_fn) :: [any()] when tags: [String.t], sort_fn: (any(), any() -> boolean())
-  def by_tags(tags, sort_fn) when is_list(tags) do
-    # Produce a key based on the requested tags and the sorting function
-    # such that if either change, the key changes.
-    key = {Enum.join(Enum.sort(tags), ""), sort_fn}
-    tags_cache_query_fn = fn() ->
-      case :mnesia.read(:by_tags_cache, key) do
-        [] ->
-          Logger.info("cache miss for #{inspect key}")
-          all_rows = GenServer.call(TanukiDatabase, {:by_tags, tags})
-          # Reduce the results to those that have all of the given tags.
-          tag_counts = List.foldl(all_rows, %{}, fn(row, acc_in) ->
-            docid = :couchbeam_doc.get_value("id", row)
-            count = Map.get(acc_in, docid, 0)
-            Map.put(acc_in, docid, count + 1)
-          end)
-          matching_rows = Enum.filter(all_rows, fn(row) ->
-            docid = :couchbeam_doc.get_value("id", row)
-            Map.get(tag_counts, docid) == length(tags)
-          end)
-          # Remove the duplicate rows by sorting on the document identifier
-          # in a unique fashion.
-          unsorted_results = :lists.usort(fn(a, b) ->
-            id_a = :couchbeam_doc.get_value("id", a)
-            id_b = :couchbeam_doc.get_value("id", b)
-            id_a <= id_b
-          end, matching_rows)
-          # Now sort the rows according to the given sorting function.
-          results = Enum.sort(unsorted_results, sort_fn)
-          # Save the results in mnesia to avoid doing the same work again
-          # if a repeated request is made, replacing any previous values.
-          case :mnesia.first(:by_tags_cache) do
-            :'$end_of_table' -> :ok
-            first_key -> :ok = :mnesia.delete({:by_tags_cache, first_key})
-          end
-          :ok = :mnesia.write(by_tags_cache(key: key, results: results))
-          results
-        [by_tags_cache(results: rows)] ->
-          Logger.info("cache hit for #{inspect key}")
-          rows
-      end
-    end
-    :mnesia.activity(:transaction, tags_cache_query_fn)
+    all_rows = GenServer.call(TanukiDatabase, {:by_tags, tags})
+    # Reduce the results to those that have all of the given tags.
+    tag_counts = List.foldl(all_rows, %{}, fn(row, acc_in) ->
+      docid = :couchbeam_doc.get_value("id", row)
+      count = Map.get(acc_in, docid, 0)
+      Map.put(acc_in, docid, count + 1)
+    end)
+    matching_rows = Enum.filter(all_rows, fn(row) ->
+      docid = :couchbeam_doc.get_value("id", row)
+      Map.get(tag_counts, docid) == length(tags)
+    end)
+    # Remove the duplicate rows by sorting on the document identifier
+    # in a unique fashion.
+    :lists.usort(fn(a, b) ->
+      id_a = :couchbeam_doc.get_value("id", a)
+      id_b = :couchbeam_doc.get_value("id", b)
+      id_a <= id_b
+    end, matching_rows)
   end
 
   @doc """
@@ -183,28 +116,9 @@ defmodule TanukiBackend do
   """
   @spec by_date(year) :: [any()] when year: integer()
   def by_date(year) when is_integer(year) do
-    key = year
-    year_cache_query_fn = fn() ->
-      case :mnesia.read(:by_date_cache, key) do
-        [] ->
-          Logger.info("cache miss for #{inspect key}")
-          start_date = [year, 0, 0, 0, 0]
-          end_date = [year + 1, 0, 0, 0, 0]
-          results = GenServer.call(TanukiDatabase, {:by_date, start_date, end_date})
-          # Save the results in mnesia to avoid doing the same work again
-          # if a repeated request is made, replacing any previous values.
-          case :mnesia.first(:by_date_cache) do
-            :'$end_of_table' -> :ok
-            first_key -> :ok = :mnesia.delete({:by_date_cache, first_key})
-          end
-          :ok = :mnesia.write(by_date_cache(key: key, results: results))
-          results
-        [by_date_cache(results: rows)] ->
-          Logger.info("cache hit for #{inspect key}")
-          rows
-      end
-    end
-    :mnesia.activity(:transaction, year_cache_query_fn)
+    start_date = [year, 0, 0, 0, 0]
+    end_date = [year + 1, 0, 0, 0, 0]
+    GenServer.call(TanukiDatabase, {:by_date, start_date, end_date})
   end
 
   @doc """
@@ -230,26 +144,7 @@ defmodule TanukiBackend do
   """
   @spec by_location(String.t) :: [any()]
   def by_location(location) do
-    key = location
-    location_cache_query_fn = fn() ->
-      case :mnesia.read(:by_location_cache, key) do
-        [] ->
-          Logger.info("cache miss for #{inspect key}")
-          results = GenServer.call(TanukiDatabase, {:by_location, location})
-          # Save the results in mnesia to avoid doing the same work again
-          # if a repeated request is made, replacing any previous values.
-          case :mnesia.first(:by_location_cache) do
-            :'$end_of_table' -> :ok
-            first_key -> :ok = :mnesia.delete({:by_location_cache, first_key})
-          end
-          :ok = :mnesia.write(by_location_cache(key: key, results: results))
-          results
-        [by_location_cache(results: rows)] ->
-          Logger.info("cache hit for #{inspect key}")
-          rows
-      end
-    end
-    :mnesia.activity(:transaction, location_cache_query_fn)
+    GenServer.call(TanukiDatabase, {:by_location, location})
   end
 
   @doc """
@@ -470,51 +365,6 @@ defmodule TanukiBackend do
       :undefined -> nil
       :null -> nil
       value -> value
-    end
-  end
-
-  @doc """
-
-  Ensure the schema and our table is installed in mnesia.
-
-  """
-  def ensure_schema(nodes) do
-    # Create the schema if it does not exist
-    if :mnesia.system_info(:schema_version) == {0, 0} do
-      :ok = :mnesia.create_schema(nodes)
-    end
-    ensure_tables = fn() ->
-      tables = :mnesia.system_info(:tables)
-      if not Enum.member?(tables, :by_tags_cache) do
-        {:atomic, :ok} = :mnesia.create_table(:by_tags_cache, [
-          {:attributes, Keyword.keys(by_tags_cache(by_tags_cache()))}
-        ])
-      end
-      if not Enum.member?(tables, :by_date_cache) do
-        {:atomic, :ok} = :mnesia.create_table(:by_date_cache, [
-          {:attributes, Keyword.keys(by_date_cache(by_date_cache()))}
-        ])
-      end
-      if not Enum.member?(tables, :by_location_cache) do
-        {:atomic, :ok} = :mnesia.create_table(:by_location_cache, [
-          {:attributes, Keyword.keys(by_location_cache(by_location_cache()))}
-        ])
-      end
-    end
-    # Create our table if it does not exist
-    if :mnesia.system_info(:is_running) == :no do
-      :rpc.multicall(nodes, :application, :start, [:mnesia])
-      ensure_tables.()
-      :rpc.multicall(nodes, :application, :stop, [:mnesia])
-    else
-      ensure_tables.()
-    end
-  end
-
-  # Ensure the mnesia application is running.
-  defp ensure_mnesia(nodes) do
-    if :mnesia.system_info(:is_running) == :no do
-      :rpc.multicall(nodes, :application, :start, [:mnesia])
     end
   end
 

@@ -18,8 +18,9 @@ defmodule TanukiWeb.Web.AssetController do
         |> put_resp_content_type("application/json")
         |> send_resp(400, ~s({"error": "tags must be list"}))
       true ->
-        rows = TanukiBackend.by_tags(tags, &by_tags_sorter/2)
-        tag_info = for row <- rows, do: build_asset_info(row)
+        rows = TanukiBackend.by_tags(tags)
+        sorted_rows = Enum.sort(rows, &by_tags_sorter/2)
+        tag_info = for row <- sorted_rows, do: build_asset_info(row)
         # count is the number of _all_ matching results
         count = length(tag_info)
         # handle pagination with certain defaults and bounds

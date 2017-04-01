@@ -350,8 +350,9 @@ defmodule TanukiWeb.Web.PageController do
 
   defp assign_tag_info(conn) do
     selected_tags = get_selected_tags(conn)
-    rows = TanukiBackend.by_tags(selected_tags, &tag_row_sorter/2)
-    tag_info = for row <- rows, do: build_tag_info(row)
+    rows = TanukiBackend.by_tags(selected_tags)
+    sorted_rows = Enum.sort(rows, &tag_row_sorter/2)
+    tag_info = for row <- sorted_rows, do: build_tag_info(row)
     conn
     |> assign(:selected_tags, selected_tags)
     |> assign(:tag_info, tag_info)

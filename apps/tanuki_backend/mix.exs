@@ -19,7 +19,6 @@ defmodule TanukiBackend.Mixfile do
       :kernel,
       :stdlib,
       :logger,
-      :mnesia,
       :jsx,
       :couchbeam],
      mod: {TanukiBackend.Application, []},

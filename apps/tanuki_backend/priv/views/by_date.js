@@ -1,5 +1,5 @@
 //
-// View from the best available date to the checksum.
+// View from the best available date to the filename, checksum, and location.
 //
 function (doc) {
     var date = null;
@@ -12,5 +12,11 @@ function (doc) {
     } else {
         date = doc.import_date;
     }
-    emit(date, [doc.file_name, doc.sha256]);
+    var location = null;
+    if (doc.location) {
+        location = doc.location.toLowerCase();
+    } else {
+        location = "";
+    }
+    emit(date, [doc.file_name, doc.sha256, location]);
 }

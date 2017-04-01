@@ -20,11 +20,6 @@ defmodule TanukiBackendTest do
     end
     {:ok, db} = :couchbeam.create_db(server, database)
     add_test_docs(db)
-    # set up mnesia
-    :ok = Application.stop(:mnesia)
-    :ok = Application.put_env(:mnesia, :dir, priv_dir)
-    :ok = Application.start(:mnesia)
-    TanukiBackend.ensure_schema([:erlang.node()])
     # now that everything is properly configured, start the application
     {:ok, _started2} = Application.ensure_all_started(:tanuki_backend)
     {:ok, db: db}
@@ -115,32 +110,6 @@ defmodule TanukiBackendTest do
     ids = ["test_AD", "test_AE", "test_AF"]
     for {row, id} <- Enum.zip(rows, ids), do: validate_fn.(row, id)
 
-    # request the same set of tags again to ensure caching is not broken
-    level = Logger.level()
-    Logger.configure(level: :info)
-    assert capture_log(fn ->
-      rows = TanukiBackend.by_tags(["christina", "joseph"])
-      assert length(rows) == 3
-      for {row, id} <- Enum.zip(rows, ids), do: validate_fn.(row, id)
-    end) =~ "cache hit for"
-
-    # Invoke by_tags/2 to test the sorting function support.
-    # Passing a (different) sort function causes a cache miss.
-    assert capture_log(fn ->
-      rows = TanukiBackend.by_tags(["christina", "joseph"], fn(a, b) ->
-        # The date is the first value in the list of "value" in the row in the
-        # 'by_tag' CouchDB view. By default sort newer assets before older.
-        a_date = hd(:couchbeam_doc.get_value("value", a))
-        b_date = hd(:couchbeam_doc.get_value("value", b))
-        a_date >= b_date
-      end)
-      assert length(rows) == 3
-      for {row, id} <- Enum.zip(rows, ids), do: validate_fn.(row, id)
-    end) =~ "cache miss for"
-
-    # restore the logger configuration
-    Logger.configure(level: level)
-
     # negative case, no such tags
     assert TanukiBackend.by_tags(["foo", "bar"]) == []
   end
@@ -159,17 +128,6 @@ defmodule TanukiBackendTest do
     ]
     for input <- inputs, do: validate_fn.(input)
 
-    # verify hit/miss of the by_date cache
-    level = Logger.level()
-    Logger.configure(level: :info)
-    assert capture_log(fn ->
-      TanukiBackend.by_date(2013)
-    end) =~ "cache miss for"
-    assert capture_log(fn ->
-      TanukiBackend.by_date(2013)
-    end) =~ "cache hit for"
-    Logger.configure(level: level)
-
     # negative case, no such year
     assert TanukiBackend.by_date(1973) == []
   end
@@ -187,17 +145,6 @@ defmodule TanukiBackendTest do
       {"santa cruz", 2, ["test_AE", "test_AF"]}
     ]
     for input <- inputs, do: validate_fn.(input)
-
-    # verify hit/miss of the by_location cache
-    level = Logger.level()
-    Logger.configure(level: :info)
-    assert capture_log(fn ->
-      TanukiBackend.by_location("carmel")
-    end) =~ "cache miss for"
-    assert capture_log(fn ->
-      TanukiBackend.by_location("carmel")
-    end) =~ "cache hit for"
-    Logger.configure(level: level)
 
     # negative case, no such location
     assert TanukiBackend.by_location("philadelphia") == []

@@ -1,5 +1,5 @@
 //
-// View from each tag to the best date, filename, and checksum.
+// View from each tag to the best date, filename, checksum, and location.
 //
 function (doc) {
     if (doc.tags && Array.isArray(doc.tags)) {
@@ -13,8 +13,14 @@ function (doc) {
         } else {
             date = doc.import_date;
         }
+        var location = null;
+        if (doc.location) {
+            location = doc.location.toLowerCase();
+        } else {
+            location = "";
+        }
         doc.tags.forEach(function (tag) {
-            emit(tag.toLowerCase(), [date, doc.file_name, doc.sha256]);
+            emit(tag.toLowerCase(), [date, doc.file_name, doc.sha256, location]);
         });
     }
 }
