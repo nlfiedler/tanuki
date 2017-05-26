@@ -1,7 +1,7 @@
 {
   "description": "Elixir/Elm digital asset management application",
   "repository": {},
-  "license": "MIT",
+  "license": "Apache",
   "scripts": {
     "deploy": "brunch build --production",
     "watch": "brunch watch --stdin"

@@ -11,6 +11,7 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 * [ImageMagick](http://www.imagemagick.org) 6.8 or higher
 * [FFmpeg](https://ffmpeg.org) 3.2 or higher
 * [Rust](https://www.rust-lang.org) 1.10 or higher
+* [Node](https://nodejs.org/) 7.x or higher
 
 #### Example for MacOS
 
@@ -98,7 +99,7 @@ Of course, this all works really well if you deploy on a robust system. ZFS shou
 ## Deploying
 
 1. Edit the `prod.exs` in each `config` directory to modify any settings, as needed.
-1. Digest the web assets (enables cache invalidation): `mix phoenix.digest`
+1. Digest the web assets (enables cache invalidation): `mix phx.digest`
 1. Build the release: `mix release`
     * You will need to provide several environment variables:
         - `COOKIE` to set the cookie for connecting to the node. Must be atom-compatible.
@@ -111,7 +112,11 @@ Of course, this all works really well if you deploy on a robust system. ZFS shou
 For example:
 
 ```shell
-$ MIX_ENV=prod mix phoenix.digest
+$ cd assets
+$ npm install
+$ node node_modules/.bin/brunch build
+$ cd ..
+$ MIX_ENV=prod mix phx.digest
 $ COOKIE=monster HOST=example.com PORT=80 MIX_ENV=prod mix release --env=prod
 $ sudo mkdir -p /opt/tanuki
 $ sudo tar -C /opt/tanuki -zxf _build/prod/rel/tanuki/releases/*/tanuki.tar.gz
