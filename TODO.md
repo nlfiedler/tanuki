@@ -8,12 +8,10 @@
         + Selected tags are always shown
     - Need to read `apiUrlPrefix` from configuration
     - Check how everything looks in Chrome and Firefox
-1. Cherry-pick `5e8352f` from `tanuki/master` branch to fix asset digest steps
 1. Update emagick.rs to use latest magick-rust code; use that instead of invoking `convert`
     - Basically reversing commit `174fc11`
     - This includes removing the need to cache thumbnails on disk
     - Also removes the auto pruning of cached thumbnails
-1. Ensure tags are unique, not just sorted
 1. Add a "people" field
     - How to set this in import?
     - Need an admin screen to move a tag from "tags" to "people"

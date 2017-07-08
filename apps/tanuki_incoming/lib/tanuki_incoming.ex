@@ -308,7 +308,7 @@ defmodule TanukiIncoming do
       {"location", location},
       {"mimetype", :mimerl.filename(String.downcase(filename))},
       {"sha256", checksum},
-      {"tags", Enum.sort(tags)}
+      {"tags", Enum.uniq(Enum.sort(tags))}
     ]}
     # Fail fast if insertion failed, so we do not then move the asset out
     # of the incoming directory and fail to process it properly.
@@ -338,7 +338,9 @@ defmodule TanukiIncoming do
       nil -> :couchbeam_doc.set_value("tags", tags, doc)
       old_tags ->
         Logger.info("original tags: #{old_tags}")
-        merged_tags = :lists.umerge(Enum.sort(old_tags), Enum.sort(tags))
+        old_tags_uniq = Enum.uniq(Enum.sort(old_tags))
+        new_tags_uniq = Enum.uniq(Enum.sort(tags))
+        merged_tags = :lists.umerge(old_tags_uniq, new_tags_uniq)
         Logger.info("merged tags: #{merged_tags}")
         :couchbeam_doc.set_value("tags", merged_tags, doc)
     end
