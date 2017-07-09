@@ -15,7 +15,7 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 
 #### Example for MacOS
 
-This example asssumes you are using [Homebrew](http://brew.sh) to install the dependencies, which provides up-to-date versions of everything needed. The `xcode-select --install` is there just because the command-line tools sometimes get out of date, and some of the dependencies will fail to build without them.
+This example assumes you are using [Homebrew](http://brew.sh) to install the dependencies, which provides up-to-date versions of everything needed. The `xcode-select --install` is there just because the command-line tools sometimes get out of date, and some of the dependencies will fail to build without them.
 
 ```shell
 $ xcode-select --install
@@ -24,6 +24,7 @@ $ brew install couchdb
 $ brew install imagemagick
 $ brew install ffmpeg
 $ brew install rust
+$ brew install node
 ```
 
 ### Configuration
@@ -79,9 +80,10 @@ The web server will be listening on port `4000`. Be sure to have a CouchDB insta
         + [Cowboy](https://github.com/ninenines/cowboy) is the web server.
         + [Plug](https://hexdocs.pm/plug/readme.html) is the backbone.
         + [Phoenix](http://www.phoenixframework.org) is the web framework.
+        + [Elm](http://elm-lang.org) is the web front-end language and runtime.
 * CouchDB
     - Where the documents describing the assets live.
-    - Builds the searchable indices used to query the documents.
+    - Builds the search-able indexes used to query the documents.
     - [couchbeam](https://github.com/benoitc/couchbeam) is the Erlang client library.
 
 ### Why Elixir
@@ -95,6 +97,10 @@ This applies to [Erlang](http://www.erlang.org) as well, of course, which is the
 It is built with a strategy very similar to [ZFS](https://en.wikipedia.org/wiki/ZFS) in that it never overwrites live data, meaning it can crash at any time and not corrupt the data. It's schema-less, document-oriented design makes adding or changing data later very easy. But mostly it was about the incredible robustness of the application.
 
 Of course, this all works really well if you deploy on a robust system. ZFS should be obvious, and [FreeBSD](https://www.freebsd.org) comes with ZFS built-in, and also happens to provide the latest of everything. Hence the [Vagrant](https://www.vagrantup.com) image is for FreeBSD, and most testing and deployment happens on FreeBSD.
+
+### Why Elm
+
+The Elm language compiler and runtime make it nearly impossible to have runtime exceptions. The language is very clean, well defined, easy to learn, and produces fast JavaScript code. Like Elixir, Elm data is immutable, leading to safer code. All actions are performed via commands to the runtime, and updates are delivered via messages to the application. This leads to an architecture that scales well with the application. The Elm "time-traveling" debugger makes finding the few mistakes that are made quite easy.
 
 ## Deploying
 
