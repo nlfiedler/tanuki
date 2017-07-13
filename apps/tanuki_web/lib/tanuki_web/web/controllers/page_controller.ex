@@ -8,30 +8,26 @@ defmodule TanukiWeb.Web.PageController do
 
   def thumbnail(conn, params) do
     checksum = params["id"]
-    filepath = TanukiBackend.generate_thumbnail(checksum, :thumbnail)
-    etag = checksum <> ".thumb"
-    # Use send_file and let the OS and browser cache the binary.
+    {:ok, binary, mimetype} = TanukiBackend.retrieve_thumbnail(checksum)
     conn
-    |> put_resp_content_type("image/jpeg")
-    |> put_resp_header("etag", etag)
-    |> send_file(200, filepath)
+    |> put_resp_content_type(mimetype)
+    |> put_resp_header("etag", checksum <> ".thumb")
+    |> send_resp(200, binary)
   end
 
   def preview(conn, params) do
     checksum = params["id"]
-    filepath = TanukiBackend.generate_thumbnail(checksum, :preview)
-    etag = checksum <> ".preview"
-    # Use send_file and let the OS and browser cache the binary.
+    {:ok, binary, mimetype} = TanukiBackend.generate_thumbnail(checksum, :preview)
     conn
-    |> put_resp_content_type("image/jpeg")
-    |> put_resp_header("etag", etag)
-    |> send_file(200, filepath)
+    |> put_resp_content_type(mimetype)
+    |> put_resp_header("etag", checksum <> ".preview")
+    |> send_resp(200, binary)
   end
 
   def asset(conn, params) do
     checksum = params["id"]
     filepath = TanukiBackend.checksum_to_asset_path(checksum)
-    mimetype = case TanukiBackend.by_checksum(params["id"]) do
+    mimetype = case TanukiBackend.by_checksum(checksum) do
       [] -> "application/octet-stream"
       [doc|_t] -> :couchbeam_doc.get_value("value", doc)
     end

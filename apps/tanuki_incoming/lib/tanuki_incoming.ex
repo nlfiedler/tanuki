@@ -203,21 +203,8 @@ defmodule TanukiIncoming do
     # being, are assumed to be JPEG images.
     case jpeg?(filepath) do
       true ->
-        case :exif.read(to_charlist(filepath)) do
-          {:error, reason} ->
-            Logger.warn("unable to read EXIF data in #{filepath}: #{reason}")
-            true
-          {:ok, exif_data} ->
-            case :dict.find(:orientation, exif_data) do
-              {:ok, "Top-left"} ->
-                true
-              {:ok, _n} ->
-                false
-              :error ->
-                Logger.info("no orientation setting in #{filepath}")
-                true
-            end
-        end
+        {:ok, binary0} = File.read(filepath)
+        not :emagick_rs.requires_orientation(binary0)
       false -> true
     end
   end
@@ -242,17 +229,16 @@ defmodule TanukiIncoming do
   # if not available, or the date time as a list of integers. Uses :null
   # since the value will be inserted directly into CouchDB.
   defp get_exif_original_date(filepath) do
-    value =
-      with {:ok, exif_data} <- :exif.read(to_charlist(filepath)),
-           {:ok, original_date} <- :dict.find(:date_time_original, exif_data),
-           {:ok, parsed_date} <- date_parse(original_date),
-           do: time_tuple_to_list(parsed_date)
-    # unpack the result or return :null if error
-    case value do
-      {:ok, result} -> result
-      error ->
-        Logger.warn("unable to read EXIF data from #{filepath}: #{error}")
+    image_data = File.read!(filepath)
+    exif_dto = to_charlist("exif:DateTimeOriginal")
+    case :emagick_rs.image_get_property(image_data, exif_dto) do
+      {:error, reason} ->
+        Logger.warn("unable to read EXIF data from #{filepath}: #{reason}")
         :null
+      {:ok, original_date} ->
+        {:ok, parsed_date} = date_parse(original_date)
+        {:ok, result} = time_tuple_to_list(parsed_date)
+        result
     end
   end
 
@@ -397,21 +383,27 @@ defmodule TanukiIncoming do
         Logger.info("moving #{filepath} to #{dst_path}")
         # use copy to handle crossing file systems
         {:ok, _bytes_copied} = File.copy(filepath, dst_path)
-        File.rm!(filepath)
       else
         auto_orient(filepath, dst_path)
         Logger.info("corrected orientation for #{filepath}, saved to #{dst_path}")
-        File.rm!(filepath)
       end
+      File.rm!(filepath)
     end
   end
 
-  # Use ImageMagick convert command to read the source file and correct its
-  # orientation, writing to the given destination path.
+  # Attempt to auto-orient the image, but tolerate assets that are not
+  # images, and hence cannot be rotated. In any case, the image will be
+  # copied to the specified destination.
   defp auto_orient(source, destination) do
-    cmd = Enum.join(["convert", source, "-auto-orient", destination], " ")
-    port = Port.open({:spawn, cmd}, [:exit_status])
-    {:ok, 0} = TanukiBackend.wait_for_port(port)
+    {:ok, binary0} = File.read(source)
+    case :emagick_rs.auto_orient(binary0) do
+      {:ok, binary1} ->
+        File.write!(destination, binary1)
+      {:error, reason} ->
+        Logger.warn("unable to auto-orient asset: #{reason}")
+        # use copy to handle crossing file systems
+        {:ok, _bytes_copied} = File.copy(source, destination)
+    end
   end
 
   @doc """

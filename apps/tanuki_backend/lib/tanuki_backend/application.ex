@@ -5,6 +5,9 @@ defmodule TanukiBackend.Application do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
+    # Initialize the mnesia tables when our application starts.
+    TanukiBackend.init_schema()
+
     children = [
       # Arguments include the initial server state and the arguments to the
       # GenServer.start_link/3, which the server module invokes.

@@ -90,14 +90,8 @@ defmodule TanukiIncomingTest do
     refute TanukiIncoming.correct_orientation?("./test/fixtures/IMG_8841.JPG")
     # not an image so "correctly" oriented
     assert TanukiIncoming.correct_orientation?("./test/fixtures/LICENSE.txt")
-
-    level = Logger.level()
-    Logger.configure(level: :info)
-    assert capture_log(fn ->
-      # missing EXIF data, assume correct orientation
-      assert TanukiIncoming.correct_orientation?("./test/fixtures/fighting_kittens.jpg")
-    end) =~ "no orientation setting"
-    Logger.configure(level: level)
+    # missing EXIF data, but ImageMagick still detects rotation
+    refute TanukiIncoming.correct_orientation?("./test/fixtures/fighting_kittens.jpg")
   end
 
   test "create new document", context do

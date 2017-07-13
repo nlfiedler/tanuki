@@ -8,8 +8,6 @@ defmodule TanukiBackendTest do
     on_exit(:tmp_dir_rm, fn() -> File.rm_rf(priv_dir) end)
     assets_dir = Path.join(priv_dir, "assets")
     :ok = Application.put_env(:tanuki_backend, :assets_dir, assets_dir)
-    thumbnails_dir = Path.join(priv_dir, "thumbnails")
-    :ok = Application.put_env(:tanuki_backend, :thumbnails_dir, thumbnails_dir)
     url = Application.get_env(:tanuki_backend, :couchdb_url)
     opts = Application.get_env(:tanuki_backend, :couchdb_opts)
     server = :couchbeam.server_connection(url, opts)
@@ -20,6 +18,11 @@ defmodule TanukiBackendTest do
     end
     {:ok, db} = :couchbeam.create_db(server, database)
     add_test_docs(db)
+    # set up mnesia
+    :ok = Application.stop(:mnesia)
+    :ok = Application.put_env(:mnesia, :dir, priv_dir)
+    :ok = Application.start(:mnesia)
+    TanukiBackend.ensure_schema([:erlang.node()])
     # now that everything is properly configured, start the application
     {:ok, _started2} = Application.ensure_all_started(:tanuki_backend)
     {:ok, db: db}
@@ -277,27 +280,36 @@ defmodule TanukiBackendTest do
     # some reason should still return a binary, as well as log the error.
     checksum = "cafebabe"
     assert capture_log(fn ->
-      filepath = TanukiBackend.generate_thumbnail(checksum, :thumbnail)
-      assert String.ends_with?(filepath, "broken_image.jpg")
-    end) =~ "no such asset cafebabe"
+      {:ok, binary, _mimetype} = TanukiBackend.generate_thumbnail(checksum, :thumbnail)
+      assert is_binary(binary)
+      assert byte_size(binary) < 20000
+    end) =~ "unable to stat asset file"
   end
 
   test "generating thumbnail" do
     checksum = install_asset("fighting_kittens.jpg")
-    level = Logger.level()
+    {:ok, binary, mimetype} = TanukiBackend.generate_thumbnail(checksum, :thumbnail)
+    assert "image/jpeg" == mimetype
+    assert is_binary(binary)
+    assert byte_size(binary) < 20000
+  end
+
+  test "retrieving cached thumbnail" do
+    checksum = install_asset("fighting_kittens.jpg")
     # Reset the logger level to :info so we can capture the logging about
     # the thumbnail cache. Other applications under the umbrella project
     # may configure the level differently, hence this override.
+    level = Logger.level()
     Logger.configure(level: :info)
     assert capture_log(fn ->
-      filepath = TanukiBackend.generate_thumbnail(checksum, :thumbnail)
-      assert String.ends_with?(filepath, ".jpg")
-      fstat = File.stat!(filepath)
-      assert fstat.size < 20000
+      {:ok, binary, mimetype} = TanukiBackend.retrieve_thumbnail(checksum)
+      assert "image/jpeg" == mimetype
+      assert is_binary(binary)
+      assert byte_size(binary) < 20000
     end) =~ "cache miss for thumbnail"
     # multiple requests for the same asset should hit the cache
     assert capture_log(fn ->
-      TanukiBackend.generate_thumbnail(checksum, :thumbnail)
+      {:ok, _binary, _mimetype} = TanukiBackend.retrieve_thumbnail(checksum)
     end) =~ "cache hit for thumbnail"
     Logger.configure(level: level)
   end

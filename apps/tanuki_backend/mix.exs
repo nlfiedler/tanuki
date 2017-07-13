@@ -18,6 +18,7 @@ defmodule TanukiBackend.Mixfile do
     [applications: [
       :kernel,
       :stdlib,
+      :mnesia,
       :logger,
       :jsx,
       :couchbeam],
@@ -27,6 +28,7 @@ defmodule TanukiBackend.Mixfile do
 
   defp deps do
     [{:couchbeam, github: "benoitc/couchbeam", tag: "1.4.2"},
-     {:temp, "~> 0.4.2", only: [:test]}]
+     {:emagick_rs, github: "nlfiedler/emagick.rs", tag: "0.4.8"},
+     {:temp, "~> 0.4.3", only: [:test]}]
   end
 end

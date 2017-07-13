@@ -28,6 +28,11 @@ defmodule TanukiWeb.Web.ApiControllerTest do
     end
     {:ok, db} = :couchbeam.create_db(server, database)
     add_test_docs(db)
+    # set up mnesia
+    :ok = Application.stop(:mnesia)
+    :ok = Application.put_env(:mnesia, :dir, priv_dir)
+    :ok = Application.start(:mnesia)
+    TanukiBackend.ensure_schema([:erlang.node()])
     # now that everything is properly configured, start the application
     {:ok, _started2} = Application.ensure_all_started(:tanuki_backend)
     {:ok, db: db}
