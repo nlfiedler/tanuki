@@ -358,7 +358,7 @@ defmodule TanukiBackend do
                 {:ok, resized} ->
                   # ImageMagick returns a format akin to 'JPEG', which we
                   # must convert to a proper string and mime type.
-                  {:ok, format} = :emagick_rs.image_get_format(image_data)
+                  {:ok, format} = :emagick_rs.image_get_format(resized)
                   mimetype = "image/" <> String.downcase(to_string(format))
                   {:ok, resized, mimetype}
                 {:error, reason} ->
