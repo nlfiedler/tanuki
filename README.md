@@ -58,6 +58,10 @@ $ mix test
 To start an instance configured for development, run the following command.
 
 ```shell
+$ cd apps/tanuki_web/assets
+$ npm install
+$ node node_modules/.bin/brunch build
+$ cd ..
 $ mix phoenix.server
 ```
 

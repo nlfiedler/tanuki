@@ -39,6 +39,3 @@
     - Use a temporary view (http://docs.couchdb.org/en/1.6.1/api/database/temp-views.html)
     - Multi-select the displayed results
     - Present a form for changing one or more fields of the selected assets
-1. Update build instructions, or the build scripts
-    - cd apps/tanuki_web/assets/elm && elm-package install -y
-    - Does `npm install` need to be part of the build instructions in the `README`?

@@ -2,7 +2,7 @@
   "description": "Elixir/Elm digital asset management application",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nlfiedler/tanuki.git"
+    "url": "https://github.com/nlfiedler/racoondog.git"
   },
   "license": "Apache",
   "scripts": {
