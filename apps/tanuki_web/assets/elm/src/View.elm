@@ -181,7 +181,7 @@ viewThumbnails model =
                     List.map (div [ class "row" ]) groups
                 paging =
                     -- skip the pagination links if there is nothing to page
-                    if list.total_entries > pageSize && List.length rows > 1 then
+                    if list.total_entries > pageSize && List.length list.entries > 0 then
                         paginationList model.pageNumber list
                     else
                         [ text "" ]
