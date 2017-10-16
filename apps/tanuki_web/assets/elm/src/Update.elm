@@ -51,6 +51,12 @@ update msg model =
                 -- Reset the page number when the query has changed.
                 ( { model | locationList = updatedLocations, pageNumber = 1 }, cmd )
 
+        ToggleAllTags ->
+            ( { model | showingAllTags = not model.showingAllTags }, Cmd.none )
+
+        ToggleAllLocations ->
+            ( { model | showingAllLocations = not model.showingAllLocations }, Cmd.none )
+
         QueryAssets response ->
             ( { model | assetList = response }, Cmd.none )
 

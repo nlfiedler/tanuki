@@ -13,6 +13,8 @@ type Msg
     | ToggleTag String
     | ToggleYear Int
     | ToggleLocation String
+    | ToggleAllTags
+    | ToggleAllLocations
     | QueryAssets (WebData AssetList)
     | Paginate Int
     | FetchAsset (WebData AssetDetails)

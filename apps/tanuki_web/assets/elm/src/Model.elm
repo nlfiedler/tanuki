@@ -15,6 +15,8 @@ type alias Model =
     , asset : WebData AssetDetails
     , route : Route
     , assetEditForm : Forms.Form
+    , showingAllTags : Bool
+    , showingAllLocations : Bool
     }
 
 
@@ -91,6 +93,8 @@ initialModel route =
     , asset = RemoteData.NotAsked
     , route = route
     , assetEditForm = initialAssetEditForm
+    , showingAllTags = False
+    , showingAllLocations = False
     }
 
 

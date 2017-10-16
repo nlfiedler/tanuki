@@ -1,5 +1,6 @@
 module View exposing (..)
 
+import Dict
 import Forms
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -44,15 +45,31 @@ tagSelector model =
     let
         header =
             li [ ] [ strong [ ] [ text "Tags:" ] ]
+        footer =
+            allTagsToggle model
         entries =
-            header :: viewTagList ToggleTag model.tagList
+            (header :: viewTagList ToggleTag model) ++ [footer]
     in
         ul [ class "list-inline" ] entries
 
 
-viewTagList : (String -> msg) -> WebData TagList -> List (Html msg)
-viewTagList msg entries =
-    case entries of
+allTagsToggle : Model -> Html Msg
+allTagsToggle model =
+    if model.showingAllTags then
+        li [ ]
+            [ a [ href "#"
+                , title "Hide some tags"
+                , onClick ToggleAllTags ] [ text "<<" ] ]
+    else
+        li [ ]
+            [ a [ href "#"
+                , title "Show all tags"
+                , onClick ToggleAllTags ] [ text ">>" ] ]
+
+
+viewTagList : (String -> msg) -> Model -> List (Html msg)
+viewTagList msg model =
+    case model.tagList of
         RemoteData.NotAsked ->
             [ text "Initializing..." ]
 
@@ -63,7 +80,51 @@ viewTagList msg entries =
             [ text (toString error) ]
 
         RemoteData.Success list ->
-            List.map (viewTagItem msg) list
+            let
+                -- filter tags by their count, if hiding, else include all
+                tags =
+                    if model.showingAllTags || (List.length list <= 25) then
+                        list
+                    else
+                        selectTopTags list
+            in
+                List.map (viewTagItem msg) tags
+
+
+{- Return tags that match several criteria.
+
+Returns the top 25 tags sorted by the number of assets they select, and then
+sorted by the label. Tags that are currently selected by the user are always
+included in the result.
+
+A clever alternative would be to find the elbow/knee of the data but that
+requires a lot more math than Elm is really suitable for.
+
+-}
+selectTopTags : TagList -> TagList
+selectTopTags tags =
+    let
+        -- Get the selected tags into a dict.
+        selectedTags =
+            List.filter (.selected) tags
+        mapInserter v d =
+            Dict.insert v.label v d
+        selectedTagsDict =
+            List.foldl mapInserter Dict.empty selectedTags
+        -- Get the top N tags by count.
+        tagSorter a b =
+            case compare a.count b.count of
+                LT -> GT
+                EQ -> EQ
+                GT -> LT
+        sortedTopTags =
+            List.take 25 (List.sortWith tagSorter tags)
+        -- Merge those two sets into one.
+        mergedTagsDict =
+            List.foldl mapInserter selectedTagsDict sortedTopTags
+    in
+        -- Extract the values and sort by label.
+        List.sortBy .label (Dict.values mergedTagsDict)
 
 
 viewTagItem : (String -> msg) -> Tag -> Html msg
@@ -76,7 +137,9 @@ viewTagItem msg entry =
                 text entry.label
     in
         li [ ]
-            [ a [ href "#", onClick (msg entry.label) ] [ linkBody ] ]
+            [ a [ href "#"
+                , title (toString entry.count)
+                , onClick (msg entry.label) ] [ linkBody ] ]
 
 
 yearSelector : Model -> Html Msg
@@ -124,15 +187,31 @@ locationSelector model =
     let
         header =
             li [ ] [ strong [ ] [ text "Locations:" ] ]
+        footer =
+            allLocationsToggle model
         entries =
-            header :: viewLocationList ToggleLocation model.locationList
+            (header :: viewLocationList ToggleLocation model) ++ [footer]
     in
         ul [ class "list-inline" ] entries
 
 
-viewLocationList : (String -> msg) -> WebData LocationList -> List (Html msg)
-viewLocationList msg entries =
-    case entries of
+allLocationsToggle : Model -> Html Msg
+allLocationsToggle model =
+    if model.showingAllLocations then
+        li [ ]
+            [ a [ href "#"
+                , title "Hide some locations"
+                , onClick ToggleAllLocations ] [ text "<<" ] ]
+    else
+        li [ ]
+            [ a [ href "#"
+                , title "Show all locations"
+                , onClick ToggleAllLocations ] [ text ">>" ] ]
+
+
+viewLocationList : (String -> msg) -> Model -> List (Html msg)
+viewLocationList msg model =
+    case model.locationList of
         RemoteData.NotAsked ->
             [ text "Initializing..." ]
 
@@ -143,7 +222,51 @@ viewLocationList msg entries =
             [ text (toString error) ]
 
         RemoteData.Success list ->
-            List.map (viewLocationItem msg) list
+            let
+                -- filter location by their count, if hiding, else include all
+                locations =
+                    if model.showingAllLocations || (List.length list <= 25) then
+                        list
+                    else
+                        selectTopLocations list
+            in
+                List.map (viewLocationItem msg) locations
+
+
+{- Return locations that match several criteria.
+
+Returns the top 25 locations sorted by the number of assets they select, and
+then sorted by the label. Locations that are currently selected by the user are
+always included in the result.
+
+A clever alternative would be to find the elbow/knee of the data but that
+requires a lot more math than Elm is really suitable for.
+
+-}
+selectTopLocations : LocationList -> LocationList
+selectTopLocations locations =
+    let
+        -- Get the selected locations into a dict.
+        selectedLocations =
+            List.filter (.selected) locations
+        mapInserter v d =
+            Dict.insert v.label v d
+        selectedLocationsDict =
+            List.foldl mapInserter Dict.empty selectedLocations
+        -- Get the top N locations by count.
+        locationSorter a b =
+            case compare a.count b.count of
+                LT -> GT
+                EQ -> EQ
+                GT -> LT
+        sortedTopLocations =
+            List.take 25 (List.sortWith locationSorter locations)
+        -- Merge those two sets into one.
+        mergedLocationsDict =
+            List.foldl mapInserter selectedLocationsDict sortedTopLocations
+    in
+        -- Extract the values and sort by label.
+        List.sortBy .label (Dict.values mergedLocationsDict)
 
 
 viewLocationItem : (String -> msg) -> Location -> Html msg
@@ -156,7 +279,9 @@ viewLocationItem msg entry =
                 text entry.label
     in
         li [ ]
-            [ a [ href "#", onClick (msg entry.label) ] [ linkBody ] ]
+            [ a [ href "#"
+                , title (toString entry.count)
+                , onClick (msg entry.label) ] [ linkBody ] ]
 
 
 viewThumbnails : Model -> Html Msg
