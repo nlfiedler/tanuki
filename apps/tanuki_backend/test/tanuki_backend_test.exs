@@ -283,7 +283,7 @@ defmodule TanukiBackendTest do
       {:ok, binary, _mimetype} = TanukiBackend.generate_thumbnail(checksum, :thumbnail)
       assert is_binary(binary)
       assert byte_size(binary) < 20000
-    end) =~ "unable to stat asset file"
+    end) =~ "asset file does not exist"
   end
 
   test "generating thumbnail" do

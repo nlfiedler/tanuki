@@ -340,40 +340,71 @@ defmodule TanukiBackend do
     generate_thumbnail(checksum, 640)
   end
 
-  def generate_thumbnail(checksum, size) when is_integer(size) do
+  def generate_thumbnail(checksum, pixels) when is_integer(pixels) do
     source_file = checksum_to_asset_path(checksum)
-    # Avoid attempting to generate a thumbnail for large files, which are
-    # very likely not image files at all (e.g. videos). The value of 10MB
-    # was arrived at by examining a collection of images and videos that
-    # represent typical usage. That is, most images are less than 10MB and
-    # most videos are over 10MB; the overlap is acceptable, such that some
-    # large images will not get thumbnails, and some videos will be pulled
-    # into memory only to result in an error.
-    case File.stat(source_file) do
-      {:ok, fstat} ->
-        if fstat.size < 10485760 do
-          case File.read(source_file) do
-            {:ok, image_data} ->
-              case :emagick_rs.image_fit(image_data, size, size) do
-                {:ok, resized} ->
-                  # ImageMagick returns a format akin to 'JPEG', which we
-                  # must convert to a proper string and mime type.
-                  {:ok, format} = :emagick_rs.image_get_format(resized)
-                  mimetype = "image/" <> String.downcase(to_string(format))
-                  {:ok, resized, mimetype}
-                {:error, reason} ->
-                  Logger.warn("unable to resize asset #{checksum}: #{reason}")
-                  broken_image_placeholder()
-              end
-            {:error, reason} ->
-              Logger.warn("unable to read asset file #{source_file}: #{reason}")
-              broken_image_placeholder()
-          end
-        else
+    if File.exists?(source_file) do
+      mimetype = case by_checksum(checksum) do
+        [] -> "application/octet-stream"
+        [doc|_t] -> :couchbeam_doc.get_value("value", doc)
+      end
+      cond do
+        String.starts_with?(mimetype, "video/") ->
+          generate_video_thumbnail(source_file, mimetype, pixels)
+        String.starts_with?(mimetype, "image/") ->
+          generate_image_thumbnail(source_file, mimetype, pixels)
+        true ->
           broken_image_placeholder()
+      end
+    else
+      Logger.warn("asset file does not exist: #{source_file}")
+      broken_image_placeholder()
+    end
+  end
+
+  #
+  # Generate a thumbnail for an image. Returns {:ok, binary, mimetype}
+  #
+  defp generate_image_thumbnail(infile, mimetype, pixels) do
+    case File.read(infile) do
+      {:ok, image_data} ->
+        case :emagick_rs.image_fit(image_data, pixels, pixels) do
+          {:ok, resized} ->
+            # ImageMagick returns a format akin to 'JPEG', which we
+            # must convert to a proper string and mime type.
+            {:ok, format} = :emagick_rs.image_get_format(resized)
+            mimetype = "image/" <> String.downcase(to_string(format))
+            {:ok, resized, mimetype}
+          {:error, reason} ->
+            Logger.warn("unable to resize asset #{infile}: #{reason}")
+            broken_image_placeholder()
         end
       {:error, reason} ->
-        Logger.warn("unable to stat asset file #{source_file}: #{reason}")
+        Logger.warn("unable to read asset file #{infile}: #{reason}")
+        broken_image_placeholder()
+    end
+  end
+
+  #
+  # Generate a thumbnail for a video. Returns {:ok, binary, mimetype}
+  #
+  defp generate_video_thumbnail(infile, mimetype, pixels) do
+    # ffmpeg needs the extension to know what to generate
+    {:ok, outfile} = Temp.path(suffix: ".jpg")
+    cmd = [
+      "ffmpeg", "-loglevel", "quiet", "-n",
+      "-i", infile, "-vframes", "1", "-an",
+      "-filter:v", "scale=w=#{pixels}:h=#{pixels}:force_original_aspect_ratio=decrease",
+      outfile
+    ]
+    port = Port.open({:spawn, Enum.join(cmd, " ")}, [:exit_status])
+    case wait_for_port(port) do
+      {:ok, 0} ->
+        resized = File.read!(outfile)
+        File.rm(outfile)
+        {:ok, resized, mimetype}
+      {:ok, _n} ->
+        File.rm(outfile)
+        Logger.warn("unable to generate thumbnail for asset #{infile}")
         broken_image_placeholder()
     end
   end
@@ -390,6 +421,36 @@ defmodule TanukiBackend do
     image_path = Path.join(priv_dir, "images/broken_image.jpg")
     binary = File.read!(image_path)
     {:ok, binary, "image/jpeg"}
+  end
+
+  @doc """
+
+  Wait for the given port to complete and return the exit code in the form
+  of {:ok, status}. If the port experiences an error, returns {:error,
+  reason}.
+
+  """
+  @spec wait_for_port(port()) :: {:ok, integer()} | {:error, any()}
+  def wait_for_port(port) do
+    receive do
+      {^port, {:exit_status, status}} ->
+        ensure_port_closed(port)
+	{:ok, status}
+      {^port, {:data, _data}} ->
+        Logger.info("output from port ignored")
+	wait_for_port(port)
+      {:EXIT, ^port, reason} ->
+        Logger.error("port #{port} had an error: #{reason}")
+        {:error, reason}
+    end
+  end
+
+  # Ensure that the given Port has been properly closed. Does nothing if
+  # the port is not open.
+  defp ensure_port_closed(port) do
+    unless Port.info(port) == nil do
+      Port.close(port)
+    end
   end
 
   @doc """

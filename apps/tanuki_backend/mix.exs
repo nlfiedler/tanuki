@@ -29,6 +29,6 @@ defmodule TanukiBackend.Mixfile do
   defp deps do
     [{:couchbeam, github: "benoitc/couchbeam", tag: "1.4.2"},
      {:emagick_rs, github: "nlfiedler/emagick.rs", tag: "0.5.0"},
-     {:temp, "~> 0.4.3", only: [:test]}]
+     {:temp, "~> 0.4.3"}]
   end
 end
