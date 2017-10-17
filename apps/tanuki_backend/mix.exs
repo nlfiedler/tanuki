@@ -21,7 +21,8 @@ defmodule TanukiBackend.Mixfile do
       :mnesia,
       :logger,
       :jsx,
-      :couchbeam],
+      :couchbeam,
+      :temp],
      mod: {TanukiBackend.Application, []},
      description: 'Data access and caching layer.']
   end
