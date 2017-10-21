@@ -27,9 +27,12 @@ defmodule TanukiIncomingTest do
     {:ok, db: db, incoming_dir: incoming_dir}
   end
 
-  test "is file a jpeg?" do
-    assert TanukiIncoming.jpeg?("./test/fixtures/img_015.JPG")
-    refute TanukiIncoming.jpeg?("./test/fixtures/LICENSE.txt")
+  test "is file an image?" do
+    assert TanukiIncoming.image?("./test/fixtures/img_015.JPG")
+    refute TanukiIncoming.image?("./test/fixtures/LICENSE.txt")
+    # TODO: for now, ImageMagick does not support HEIC
+    #       https://github.com/ImageMagick/ImageMagick/issues/507
+    # assert TanukiIncoming.image?("./test/fixtures/IMG_0639.HEIC")
   end
 
   test "parsing date/time strings" do
@@ -51,13 +54,16 @@ defmodule TanukiIncomingTest do
     assert TanukiIncoming.get_original_date("./test/fixtures/img_015.JPG") == [2011, 10, 7, 16, 18]
     assert TanukiIncoming.get_original_date("./test/fixtures/IMG_5745.JPG") == [2014, 4, 23, 13, 33]
     assert TanukiIncoming.get_original_date("./test/fixtures/dcp_1069.jpg") == [2003, 9, 3, 17, 24]
+    # TODO: for now, ImageMagick does not support HEIC
+    #       https://github.com/ImageMagick/ImageMagick/issues/507
+    # assert TanukiIncoming.get_original_date("./test/fixtures/IMG_0639.HEIC") == [2017, 10, 5, 15, 27]
     # an image that lacks the original date field
     level = Logger.level()
     Logger.configure(level: :info)
     assert capture_log(fn ->
       assert TanukiIncoming.get_original_date("./test/fixtures/fighting_kittens.jpg") == :null
     end) =~ "unable to read EXIF data"
-    # something that is not a jpeg file
+    # something that is not an image file
     assert capture_log(fn ->
       assert TanukiIncoming.get_original_date("./test/fixtures/LICENSE.txt") == :null
     end) =~ "unable to read creation_time"
@@ -84,10 +90,14 @@ defmodule TanukiIncomingTest do
   end
 
   test "image orientation correction" do
-    # correctly oriented ("Top-left")
+    # correctly oriented ("Top-left") 1
     assert TanukiIncoming.correct_orientation?("./test/fixtures/IMG_5745.JPG")
-    # not correctly oriented ("Bottom-right")
+    # not correctly oriented ("Bottom-right") 3
     refute TanukiIncoming.correct_orientation?("./test/fixtures/IMG_8841.JPG")
+    # not correctly oriented ("Top-right"?) 6
+    # TODO: for now, ImageMagick does not support HEIC
+    #       https://github.com/ImageMagick/ImageMagick/issues/507
+    # refute TanukiIncoming.correct_orientation?("./test/fixtures/IMG_0639.HEIC")
     # not an image so "correctly" oriented
     assert TanukiIncoming.correct_orientation?("./test/fixtures/LICENSE.txt")
     # missing EXIF data, but ImageMagick still detects rotation

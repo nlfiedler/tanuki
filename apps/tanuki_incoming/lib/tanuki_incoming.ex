@@ -175,18 +175,23 @@ defmodule TanukiIncoming do
 
   @doc """
 
-  Determine if the name file is a JPEG encoded image by scanning the first
-  and last two bytes.
+  Return the primary mimetype of the given filename.
 
   """
-  def jpeg?(filepath) do
-    # JPEG files start with 0xFFD8 and end with 0xFFD9.
-    file = File.open!(filepath, [:read])
-    first_bytes = IO.binread(file, 2)
-    {:ok, _np} = :file.position(file, {:eof, -2})
-    last_bytes = IO.binread(file, 2)
-    File.close(file)
-    <<255, 216>> == first_bytes and <<255, 217>> == last_bytes
+  @spec detect_mimetype(String.t) :: String.t
+  def detect_mimetype(filename) do
+    hd(:mimetypes.filename(String.downcase(filename)))
+  end
+
+  @doc """
+
+  Determine if the filename represents an image, using the miemtype.
+
+  """
+  @spec image?(String.t) :: boolean()
+  def image?(filepath) do
+    mimetype = detect_mimetype(filepath)
+    String.starts_with?(mimetype, "image/")
   end
 
   @doc """
@@ -199,9 +204,7 @@ defmodule TanukiIncoming do
   """
   @spec correct_orientation?(String.t) :: boolean()
   def correct_orientation?(filepath) do
-    # We can only correct the orientation for images, which for the time
-    # being, are assumed to be JPEG images.
-    case jpeg?(filepath) do
+    case image?(filepath) do
       true ->
         {:ok, binary0} = File.read(filepath)
         not :emagick_rs.requires_orientation(binary0)
@@ -217,8 +220,7 @@ defmodule TanukiIncoming do
 
   """
   def get_original_date(filepath) do
-    # EXIF data only exists in JPEG files.
-    if jpeg?(filepath) do
+    if image?(filepath) do
       get_exif_original_date(filepath)
     else
       get_creation_time(filepath)
@@ -292,7 +294,7 @@ defmodule TanukiIncoming do
       {"file_size", fstat.size},
       {"import_date", import_date},
       {"location", location},
-      {"mimetype", :mimerl.filename(String.downcase(filename))},
+      {"mimetype", detect_mimetype(filename)},
       {"sha256", checksum},
       {"tags", Enum.uniq(Enum.sort(tags))}
     ]}

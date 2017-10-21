@@ -2,11 +2,11 @@
 
 ## General Items
 
-1. Tags should show high ranking entries initially
-    - Expander link/button to show all tags
-    - Selected tags are always shown
-    - Check how everything looks in Chrome and Firefox
+1. Replace old couchbeam with `{:couchbeam_amuino, "~> 1.4.3-amuino.8"}`
+1. Browse photos by groups taken around the same date
 1. Need to read `apiUrlPrefix` in Elm code from configuration file
+1. Support HEIC/HEIF file formats
+    - Need ImageMagick support, see issue #507 on GitHub
 1. Add a "people" field
     - How to set this in import?
     - Need an admin screen to move a tag from "tags" to "people"
