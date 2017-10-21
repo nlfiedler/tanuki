@@ -2,7 +2,6 @@
 
 ## General Items
 
-1. Replace old couchbeam with `{:couchbeam_amuino, "~> 1.4.3-amuino.8"}`
 1. Browse photos by groups taken around the same date
 1. Need to read `apiUrlPrefix` in Elm code from configuration file
 1. Support HEIC/HEIF file formats

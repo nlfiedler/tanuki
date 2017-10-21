@@ -20,14 +20,14 @@ defmodule TanukiIncoming.Mixfile do
       :stdlib,
       :logger,
       :jsx,
-      :couchbeam,
+      :couchbeam_amuino,
       :mimetypes],
      mod: {TanukiIncoming.Application, []},
      description: 'Digital assets import application.']
   end
 
   defp deps do
-    [{:couchbeam, github: "benoitc/couchbeam", tag: "1.4.2"},
+    [{:couchbeam_amuino, "~> 1.4.3-amuino.8"},
      {:emagick_rs, github: "nlfiedler/emagick.rs", tag: "0.5.0"},
      {:epwd_rs, github: "nlfiedler/epwd.rs", tag: "0.1.9"},
      {:mimetypes, "~> 1.1"},

@@ -21,14 +21,14 @@ defmodule TanukiBackend.Mixfile do
       :mnesia,
       :logger,
       :jsx,
-      :couchbeam,
+      :couchbeam_amuino,
       :temp],
      mod: {TanukiBackend.Application, []},
      description: 'Data access and caching layer.']
   end
 
   defp deps do
-    [{:couchbeam, github: "benoitc/couchbeam", tag: "1.4.2"},
+    [{:couchbeam_amuino, "~> 1.4.3-amuino.8"},
      {:emagick_rs, github: "nlfiedler/emagick.rs", tag: "0.5.0"},
      {:temp, "~> 0.4.3"}]
   end
