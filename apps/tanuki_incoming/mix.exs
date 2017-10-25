@@ -15,13 +15,7 @@ defmodule TanukiIncoming.Mixfile do
   end
 
   def application do
-    [applications: [
-      :kernel,
-      :stdlib,
-      :logger,
-      :jsx,
-      :couchbeam_amuino,
-      :mimetypes],
+    [extra_applications: [:logger],
      mod: {TanukiIncoming.Application, []},
      description: 'Digital assets import application.']
   end
@@ -29,7 +23,7 @@ defmodule TanukiIncoming.Mixfile do
   defp deps do
     [{:couchbeam_amuino, "~> 1.4.3-amuino.8"},
      {:emagick_rs, github: "nlfiedler/emagick.rs", tag: "0.5.0"},
-     {:epwd_rs, github: "nlfiedler/epwd.rs", tag: "0.1.9"},
+     {:epwd_rs, github: "nlfiedler/epwd.rs", tag: "0.1.9", runtime: false},
      {:mimetypes, "~> 1.1"},
      {:poison, "~> 3.1"},
      {:tanuki_backend, in_umbrella: true}]

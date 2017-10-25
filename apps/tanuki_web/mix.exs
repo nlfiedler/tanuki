@@ -22,14 +22,7 @@ defmodule TanukiWeb.Mixfile do
   def application do
     [mod: {TanukiWeb.Application, []},
      description: 'Web interface',
-     applications: [
-      :phoenix,
-      :phoenix_pubsub,
-      :phoenix_html,
-      :cowboy,
-      :logger,
-      :gettext,
-      :tanuki_backend]]
+     extra_applications: [:logger]]
   end
 
   # Specifies which paths to compile per environment.
