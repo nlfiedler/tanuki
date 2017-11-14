@@ -7,6 +7,14 @@ const path = require('path')
 const logger = require('morgan')
 const apiRoutes = require('routes/api')
 const pageRoutes = require('routes/pages')
+const backend = require('backend')
+
+// Initialize the database asynchronously.
+backend.initDatabase().then(function (res) {
+  console.info('database initialization result:', res)
+}).catch(function (err) {
+  console.error('database initialization error:', err)
+})
 
 const app = express()
 

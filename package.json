@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node ./bin/www",
-    "test": "mocha"
+    "test": "NODE_CONFIG_ENV=test mocha --delay"
   },
   "repository": {
     "type": "git",
@@ -26,11 +26,14 @@
   "dependencies": {
     "app-module-path": "^2.2.0",
     "body-parser": "~1.18.2",
+    "config": "^1.28.1",
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.9",
     "ejs": "~2.5.7",
     "express": "^4.16.2",
+    "fs-extra": "^4.0.2",
     "morgan": "~1.9.0",
+    "pouchdb": "^6.3.4",
     "serve-favicon": "~2.4.5"
   },
   "devDependencies": {
@@ -41,7 +44,6 @@
     "gulp-nodemon": "^2.2.1",
     "gulp-uglify": "^3.0.0",
     "mocha": "^4.0.1",
-    "request": "^2.83.0",
     "supertest": "^3.0.0"
   }
 }

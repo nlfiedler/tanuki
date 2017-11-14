@@ -24,3 +24,8 @@ package-lock.json
 #
 elm-stuff
 public/javascripts/Main.js
+
+#
+# temporary
+#
+tmp

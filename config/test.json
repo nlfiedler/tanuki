@@ -1,0 +1,6 @@
+{
+  "backend": {
+    "dbPath": "test/tmp/db",
+    "assestPath": "test/tmp/assets"
+  }
+}
