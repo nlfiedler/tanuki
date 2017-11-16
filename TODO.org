@@ -18,11 +18,7 @@
 - [DONE] Set up basic backend with PouchDB
   - [DONE] create the "tanuki" database in an appropriate location
   - [DONE] install design documents (e.g. by_tags)
-- [TODO] Change all of the console output to logging statements
-  - use https://github.com/winstonjs/winston
-  - set exitOnError to false
-  - use config to establish the settings
-  - look for winston-daily-rotate-file
+- [DONE] Change all of the console output to winston logging statements
 - [TODO] Looks like put() is better than post() for PouchDB
   - use original sha256 for the document id
   - no need for the by_checksum view
@@ -46,6 +42,10 @@
   - Sails.js somehow manages to have real layouts with EJS
 - [TODO] Set the `production` flag in `gulpfile.js` based on environment
 - [TODO] How to handle errors in the backend? Using console.error() for now
+- [TODO] Configure morgan based on our configuration file
+  - dev/test: write to stdout
+  - production: write to a file
+  - see https://github.com/expressjs/morgan for an example of setting the "stream"
 
 ** General Items
 
@@ -80,3 +80,4 @@
 ** Custom queries
 
 - [TODO] Once a user has removed a custom query, invoke PouchDB's `db.viewCleanup()` to clean them up
+  - Otherwise you get stale query results

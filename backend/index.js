@@ -3,6 +3,7 @@
 //
 const config = require('config')
 const fs = require('fs-extra')
+const logger = require('winston')
 const PouchDB = require('pouchdb')
 
 /* global emit */
@@ -163,11 +164,11 @@ async function primeIndices (index) {
 async function initDatabase () {
   let indexCreated = await createIndices(assetsDefinition)
   if (indexCreated) {
-    console.info('database indices created')
+    logger.info('database indices created')
   }
   if (indexCreated) {
     await primeIndices(assetsDefinition)
-    console.info('database indices primed')
+    logger.info('database indices primed')
   }
   return 'ok'
 }
@@ -182,7 +183,7 @@ async function reinitDatabase () {
   let allDocs = await db.allDocs({include_docs: true})
   let promises = allDocs.rows.map((row) => db.remove(row.doc))
   let results = await Promise.all(promises)
-  console.info(`removed all ${results.length} documents`)
+  logger.info(`removed all ${results.length} documents`)
   // ensure the now stale views are removed as well
   await db.viewCleanup()
   return initDatabase()
@@ -218,9 +219,9 @@ async function updateDocumentAsync (newDoc) {
 function updateDocument (newDoc) {
   return updateDocumentAsync(newDoc).then(function (res) {
     let action = res ? 'updated existing' : 'inserted new'
-    console.info(`${action} document ${newDoc._id}`)
+    logger.info(`${action} document ${newDoc._id}`)
   }).catch(function (err) {
-    console.error(err)
+    logger.error(err)
   })
 }
 
@@ -235,7 +236,7 @@ function allTags () {
   }).then(function (res) {
     return res['rows']
   }).catch(function (err) {
-    console.error('allTags error:', err)
+    logger.error('allTags error:', err)
     return []
   })
 }
@@ -251,7 +252,7 @@ function allLocations () {
   }).then(function (res) {
     return res['rows']
   }).catch(function (err) {
-    console.error('allLocations error:', err)
+    logger.error('allLocations error:', err)
     return []
   })
 }
@@ -267,7 +268,7 @@ function allYears () {
   }).then(function (res) {
     return res['rows']
   }).catch(function (err) {
-    console.error('allYears error:', err)
+    logger.error('allYears error:', err)
     return []
   })
 }

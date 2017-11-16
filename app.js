@@ -8,12 +8,29 @@ const logger = require('morgan')
 const apiRoutes = require('routes/api')
 const pageRoutes = require('routes/pages')
 const backend = require('backend')
+const config = require('config')
+const winston = require('winston')
+
+// Configure the logging not related to HTTP, which is handled using morgan. The
+// winston README is a little out of date as of 2017/11/15, and the console is
+// attached to the default logger, and transports are not constructors.
+winston.exitOnError = false
+winston.level = config.get('backend.logger.level')
+if (config.has('backend.logger.file')) {
+  const filename = config.get('backend.logger.file')
+  winston.add(winston.transports.File, {
+    filename,
+    maxsize: 1048576,
+    maxFiles: 4
+  })
+  winston.remove(winston.transports.Console)
+}
 
 // Initialize the database asynchronously.
 backend.initDatabase().then(function (res) {
-  console.info('database initialization result:', res)
+  winston.info('database initialization result:', res)
 }).catch(function (err) {
-  console.error('database initialization error:', err)
+  winston.error('database initialization error:', err)
 })
 
 const app = express()
