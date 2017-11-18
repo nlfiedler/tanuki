@@ -27,6 +27,22 @@ setTimeout(function () {
       await backend.reinitDatabase()
     })
 
+    describe('assets', function () {
+      it('should return 0', function (done) {
+        request(app)
+          .get('/api/assets')
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect('{"assets":[],"count":0}')
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
     describe('tags', function () {
       it('should return nothing', function (done) {
         request(app)
@@ -124,6 +140,40 @@ setTimeout(function () {
       for (let doc of testData) {
         await backend.updateDocument(doc)
       }
+    })
+
+    describe('assets', function () {
+      it('should return 3', function (done) {
+        request(app)
+          .get('/api/assets')
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect('{"assets":[],"count":3}')
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('assets by tag', function () {
+      it('should return list of matching tags', function (done) {
+        request(app)
+          .get('/api/assets')
+          .query({'tags[]': ['picnic']})
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect(/"filename":"img0315.jpg"/)
+          .expect(/"location":"san francisco"/)
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
     })
 
     describe('tags', function () {

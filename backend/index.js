@@ -6,6 +6,12 @@ const fs = require('fs-extra')
 const logger = require('winston')
 const PouchDB = require('pouchdb')
 
+//
+// Basic information on the schema:
+//
+// * Asset record _id is the SHA256 checksum of the original asset.
+//
+
 /* global emit */
 
 const dbPath = config.get('backend.dbPath')
@@ -32,7 +38,7 @@ let assetsDefinition = {
         }
         let location = doc.location ? doc.location.toLowerCase() : ''
         // keep the included values the same across by_date, by_location, by_tag
-        emit(date, [date, doc.file_name, doc._id, location])
+        emit(date, [date, doc.file_name, location])
       }.toString()
     },
     by_location: {
@@ -50,7 +56,7 @@ let assetsDefinition = {
           }
           let location = doc.location.toLowerCase()
           // keep the included values the same across by_date, by_location, by_tag
-          emit(location, [date, doc.file_name, doc._id, location])
+          emit(location, [date, doc.file_name, location])
         }
       }.toString()
     },
@@ -70,7 +76,7 @@ let assetsDefinition = {
           let location = doc.location ? doc.location.toLowerCase() : ''
           doc.tags.forEach(function (tag) {
             // keep the included values the same across by_date, by_location, by_tag
-            emit(tag.toLowerCase(), [date, doc.file_name, doc._id, location])
+            emit(tag.toLowerCase(), [date, doc.file_name, location])
           })
         }
       }.toString()
@@ -165,8 +171,6 @@ async function initDatabase () {
   let indexCreated = await createIndices(assetsDefinition)
   if (indexCreated) {
     logger.info('database indices created')
-  }
-  if (indexCreated) {
     await primeIndices(assetsDefinition)
     logger.info('database indices primed')
   }
@@ -273,10 +277,75 @@ function allYears () {
   })
 }
 
+/**
+ * Return the number of assets stored in the database.
+ *
+ * @returns {Promise<number>} Promise resolving to total count of assets.
+ */
+async function assetCount () {
+  let allDocs = await db.allDocs()
+  // Count those documents that have id starting with "_design/" then subtract
+  // that from the total_rows to find the true asset count.
+  const designCount = allDocs.rows.reduce((acc, row) => {
+    return row.id.startsWith('_design/') ? acc + 1 : acc
+  }, 0)
+  return allDocs.total_rows - designCount
+}
+
+/**
+ * Retrieve asset summaries for those assets whose tags match those given.
+ *
+ * @returns {Promise<Array>} Promise resolving to list of asset summaries.
+ */
+async function byTags (tags) {
+  let queryResults = await db.query('assets/by_tag', {
+    keys: Array.from(tags).sort()
+  })
+  // Reduce the results to those that have all of the given tags.
+  let tagCounts = queryResults.rows.reduce((acc, row) => {
+    let docId = row['id']
+    let count = acc.has(docId) ? acc.get(docId) : 0
+    acc.set(docId, count + 1)
+    return acc
+  }, new Map())
+  let matchingRows = queryResults.rows.filter((row) => {
+    return tagCounts.get(row['id']) === tags.length
+  })
+  // Remove the duplicate rows by sorting on the document identifier and
+  // removing any duplicates.
+  let rawResults = matchingRows.sort((a, b) => {
+    return a['id'].localeCompare(b['id'])
+  }).filter((row, idx, arr) => idx === 0 || row !== arr[idx - 1])
+  // Convert the date/time array into the UTC milliseconds that the Date object
+  // prefers, which makes sorting easier, and the caller can format as desired.
+  // The values are adjusted for the local time zone. The assumption is that the
+  // values in the database are all "local" time, for some definition of local.
+  let tzMillisOffset = new Date().getTimezoneOffset() * 60000
+  let results = rawResults.map((row) => {
+    let epochDateTime = Date.UTC(
+      row['value'][0][0],
+      // Convert to zero-based Date object months
+      row['value'][0][1] - 1,
+      row['value'][0][2],
+      row['value'][0][3],
+      row['value'][0][4]
+    ) + tzMillisOffset
+    return {
+      id: row['id'],
+      filename: row['value'][1],
+      date: epochDateTime,
+      location: row['value'][2]
+    }
+  })
+  return results
+}
+
 module.exports = {
   allLocations,
   allTags,
   allYears,
+  assetCount,
+  byTags,
   initDatabase,
   reinitDatabase,
   updateDocument

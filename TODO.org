@@ -23,6 +23,7 @@
   - use original sha256 for the document id
   - no need for the by_checksum view
 - [TODO] Port backend code from Elixir to JavaScript
+  - [TODO] Backend code should probably surface the errors rather than just logging
   - [TODO] https://www.npmjs.com/package/mime
   - [TODO] https://github.com/sindresorhus/passwd-user
   - [TODO] https://github.com/lovell/sharp
