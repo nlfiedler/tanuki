@@ -23,7 +23,11 @@ router.get('/assets', wrap(async function (req, res, next) {
       let date = new Date(row['date']).toLocaleString()
       return {...row, date}
     })
-    res.json(formattedRows)
+    res.json({
+      assets: formattedRows,
+      // include total count of all matching rows
+      count: rows.length
+    })
   } else {
     // when no params are given, return count of assets
     let count = await backend.assetCount()

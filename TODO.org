@@ -30,8 +30,7 @@
   - [TODO] https://github.com/mattiasw/ExifReader
   - [TODO] https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
   - [TODO] Use [catbox](https://github.com/hapijs/catbox) for thumbnail caching
-- [TODO] Invoke `query()` with a `limit` of zero to populate the index after creating it
-  - see https://pouchdb.com/guides/queries.html
+- [DONE] Invoke `query()` with a `limit` of zero to populate the index after creating it
 - [TODO] Port incoming code from Elixir to JavaScript
 - [TODO] add `image/heic` and `image/heif` to custom mimetypes
 - [TODO] Implement the "import" route for the upload page to use
@@ -47,6 +46,7 @@
   - dev/test: write to stdout
   - production: write to a file
   - see https://github.com/expressjs/morgan for an example of setting the "stream"
+- [TODO] Look at https://moment.github.io/luxon/docs/ for a nice date/time library
 
 ** General Items
 

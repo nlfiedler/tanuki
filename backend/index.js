@@ -230,6 +230,15 @@ function updateDocument (newDoc) {
 }
 
 /**
+ * Retrieve the document with the given identifier.
+ *
+ * @returns {Promise<Object>} Promise resolving to document object.
+ */
+async function fetchDocument (docId) {
+  return db.get(docId)
+}
+
+/**
  * Retrieves all of the tags, as an array of objects.
  *
  * @returns {Promise<Array>} Promise resolving to array of tag objects.
@@ -346,6 +355,7 @@ module.exports = {
   allYears,
   assetCount,
   byTags,
+  fetchDocument,
   initDatabase,
   reinitDatabase,
   updateDocument
