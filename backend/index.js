@@ -196,6 +196,8 @@ async function reinitDatabase () {
 /**
  * Update the existing document, if any, or insert as a new document.
  *
+ * @param {object} newDoc - new document
+ * @param {string} newDoc._id - document identifier
  * @returns {Promise<Boolean>} true if document was updated, false if inserted.
  */
 async function updateDocumentAsync (newDoc) {
@@ -232,6 +234,7 @@ function updateDocument (newDoc) {
 /**
  * Retrieve the document with the given identifier.
  *
+ * @param {string} docId - identifier of document to retrieve.
  * @returns {Promise<Object>} Promise resolving to document object.
  */
 async function fetchDocument (docId) {
@@ -301,36 +304,15 @@ async function assetCount () {
   return allDocs.total_rows - designCount
 }
 
-/**
- * Retrieve asset summaries for those assets whose tags match those given.
- *
- * @returns {Promise<Array>} Promise resolving to list of asset summaries.
- */
-async function byTags (tags) {
-  let queryResults = await db.query('assets/by_tag', {
-    keys: Array.from(tags).sort()
-  })
-  // Reduce the results to those that have all of the given tags.
-  let tagCounts = queryResults.rows.reduce((acc, row) => {
-    let docId = row['id']
-    let count = acc.has(docId) ? acc.get(docId) : 0
-    acc.set(docId, count + 1)
-    return acc
-  }, new Map())
-  let matchingRows = queryResults.rows.filter((row) => {
-    return tagCounts.get(row['id']) === tags.length
-  })
-  // Remove the duplicate rows by sorting on the document identifier and
-  // removing any duplicates.
-  let rawResults = matchingRows.sort((a, b) => {
-    return a['id'].localeCompare(b['id'])
-  }).filter((row, idx, arr) => idx === 0 || row !== arr[idx - 1])
+// Convert the raw results from the database query into something resembling
+// what the client would expect.
+function buildSummaries (queryResults) {
   // Convert the date/time array into the UTC milliseconds that the Date object
   // prefers, which makes sorting easier, and the caller can format as desired.
   // The values are adjusted for the local time zone. The assumption is that the
   // values in the database are all "local" time, for some definition of local.
   let tzMillisOffset = new Date().getTimezoneOffset() * 60000
-  let results = rawResults.map((row) => {
+  let results = queryResults.map((row) => {
     let epochDateTime = Date.UTC(
       row['value'][0][0],
       // Convert to zero-based Date object months
@@ -349,15 +331,144 @@ async function byTags (tags) {
   return results
 }
 
+/**
+ * Retrieve asset summaries for those assets whose location matches the one given.
+ *
+ * @param {string} location - the location to query.
+ * @returns {Promise<Array>} Promise resolving to list of asset summaries.
+ */
+async function byLocation (location) {
+  let queryResults = await db.query('assets/by_location', {
+    key: location
+  })
+  return buildSummaries(queryResults.rows)
+}
+
+// Query multiple locations and combine the results into a single array.
+async function byLocations (locations) {
+  let allResults = []
+  for (let location of locations) {
+    allResults = allResults.concat(await byLocation(location))
+  }
+  return allResults
+}
+
+/**
+ * Retrieve asset summaries for those assets whose year matches the one given.
+ *
+ * @param {number} year - the year to query.
+ * @param {boolean} summarize - true to convert results to summaries, false to leave in raw form.
+ * @returns {Promise<Array>} Promise resolving to list of asset summaries.
+ */
+async function byYear (year, summarize = true) {
+  let queryResults = await db.query('assets/by_date', {
+    start_key: [year, 0, 0, 0, 0],
+    end_key: [year + 1, 0, 0, 0, 0]
+  })
+  return summarize ? buildSummaries(queryResults.rows) : queryResults.rows
+}
+
+// Query multiple years and combine the results into a single array.
+async function byYears (years, summarize = true) {
+  let allResults = []
+  for (let year of years) {
+    allResults = allResults.concat(await byYear(year, summarize))
+  }
+  return allResults
+}
+
+/**
+ * Retrieve asset summaries for those assets whose tags match those given.
+ *
+ * @param {Array} tags - list of tags by which to query.
+ * @param {boolean} summarize - true to convert results to summaries, false to leave in raw form.
+ * @returns {Promise<Array>} Promise resolving to list of asset summaries.
+ */
+async function byTags (tags, summarize = true) {
+  let queryResults = await db.query('assets/by_tag', {
+    keys: Array.from(tags).sort()
+  })
+  // Reduce the results to those that have all of the given tags.
+  let tagCounts = queryResults.rows.reduce((acc, row) => {
+    let docId = row['id']
+    let count = acc.has(docId) ? acc.get(docId) : 0
+    acc.set(docId, count + 1)
+    return acc
+  }, new Map())
+  let matchingRows = queryResults.rows.filter((row) => {
+    return tagCounts.get(row['id']) === tags.length
+  })
+  // Remove the duplicate rows by sorting on the document identifier and
+  // removing any duplicates.
+  let rawResults = matchingRows.sort((a, b) => {
+    return a['id'].localeCompare(b['id'])
+  }).filter((row, idx, arr) => idx === 0 || row !== arr[idx - 1])
+  return summarize ? buildSummaries(rawResults) : rawResults
+}
+
+// Filter query results by the given locations.
+function filterByLocation (locations, rows) {
+  return rows.filter((row) => locations.findIndex((l) => l === row['value'][2]) !== -1)
+}
+
+// Filter query results by the given years.
+function filterByYear (years, rows) {
+  return rows.filter((row) => years.findIndex((y) => y === row['value'][0][0]) !== -1)
+}
+
+/**
+ * Query assets by tags, or years, or locations, or any combination of
+ * those. Each argument is a list of values on which to select assets.
+ *
+ * @param {Array} tags - list of tags to search for, if any.
+ * @param {Array} years - list of years to search for, if any.
+ * @param {Array} locations - list of locations to search for, if any.
+ * @returns {Promise<Array>} Promise resolving to list of asset summaries.
+ */
+async function query (tags, years, locations) {
+  // poor man's pattern matching...
+  let b3 = tags ? 4 : 0
+  let b2 = years ? 2 : 0
+  let b1 = locations ? 1 : 0
+  switch (b3 | b2 | b1) {
+    case 4:
+      return byTags(tags)
+    case 2:
+      return byYears(years)
+    case 1:
+      return byLocations(locations)
+    case 6: {
+      let unfiltered = await byTags(tags, false)
+      return buildSummaries(filterByYear(years, unfiltered))
+    }
+    case 3: {
+      let unfiltered = await byYears(years, false)
+      return buildSummaries(filterByLocation(locations, unfiltered))
+    }
+    case 5: {
+      let unfiltered = await byTags(tags, false)
+      return buildSummaries(filterByLocation(locations, unfiltered))
+    }
+    case 7: {
+      let unfiltered = await byTags(tags, false)
+      let filtered = filterByYear(years, unfiltered)
+      return buildSummaries(filterByLocation(locations, filtered))
+    }
+  }
+}
+
 module.exports = {
   allLocations,
   allTags,
   allYears,
   assetCount,
+  byLocation,
   byTags,
+  byYear,
   fetchDocument,
   initDatabase,
   reinitDatabase,
+  query,
   updateDocument
 }
 

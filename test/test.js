@@ -277,11 +277,17 @@ setTimeout(function () {
           file_size: Math.floor(Math.random() * 1048576) + 1048576,
           location: sampleOne(locations),
           mimetype: 'image/jpeg',
-          tags: [
-            sampleOne(tagList1),
-            sampleOne(tagList2),
-            sampleOne(tagList3)
-          ]
+          tags: [sampleOne(tagList1), sampleOne(tagList2), sampleOne(tagList3)]
+        }
+        if (n === 5) {
+          // make one with several attributes that we can check for later
+          doc.file_date[0] = 2012
+          doc.location = 'osaka'
+          doc.tags = ['cat', 'dog', 'hot']
+        } else if (n === 10) {
+          // some queries rely on multiple year and location values
+          doc.file_date[0] = 2013
+          doc.location = 'kyoto'
         }
         await backend.updateDocument(doc)
       }
@@ -290,7 +296,9 @@ setTimeout(function () {
       await backend.allLocations()
       await backend.allTags()
       await backend.allYears()
+      await backend.byLocation('osaka')
       await backend.byTags(['foobar'])
+      await backend.byYear(2012)
     })
 
     describe('assets', function () {
@@ -326,10 +334,11 @@ setTimeout(function () {
       })
     })
 
-    describe('assets by a tag', function () {
+    describe('assets by one tag', function () {
       // With async/await let's go directly against the backend.
       it('should return list of matching assets', async function () {
         let rows = await backend.byTags(['dipstick'])
+        assert.isNotEmpty(rows)
         for (let row of rows) {
           let doc = await backend.fetchDocument(row.id)
           assert.include(doc.tags, 'dipstick')
@@ -337,9 +346,159 @@ setTimeout(function () {
       })
     })
 
-    // TODO: perform asset queries with years, locations, and tags
-    // TODO: ensure results contain the expected years, locations, tags
+    describe('assets by multiple tags', function () {
+      // With async/await let's go directly against the backend.
+      it('should return list of matching assets', async function () {
+        let rows = await backend.byTags(['cat', 'dog', 'hot'])
+        assert.isNotEmpty(rows)
+        for (let row of rows) {
+          let doc = await backend.fetchDocument(row.id)
+          assert.include(doc.tags, 'cat')
+          assert.include(doc.tags, 'dog')
+          assert.include(doc.tags, 'hot')
+        }
+      })
+    })
+
+    describe('assets by one year', function () {
+      // With async/await let's go directly against the backend.
+      it('should return list of matching assets', function (done) {
+        request(app)
+          .get('/api/assets')
+          .query({'years[]': [2012]})
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect((res) => {
+            assert.isNotEmpty(res.body.assets)
+            for (let row of res.body.assets) {
+              let date = new Date(row.date)
+              assert.equal(date.getFullYear(), 2012)
+            }
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('assets with an invalid year', function () {
+      it('should return an error', function (done) {
+        request(app)
+          .get('/api/assets')
+          .query({'years[]': ['alpha']})
+          .expect(400)
+          .expect(/years must be integers/)
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('assets by multiple years', function () {
+      it('should return list of matching assets', function (done) {
+        request(app)
+          .get('/api/assets')
+          .query({'years[]': [2012, 2013]})
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect((res) => {
+            assert.isNotEmpty(res.body.assets)
+            for (let row of res.body.assets) {
+              let date = new Date(row.date)
+              assert.oneOf(date.getFullYear(), [2012, 2013])
+            }
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('assets by one location', function () {
+      // With async/await let's go directly against the backend.
+      it('should return list of matching assets', function (done) {
+        request(app)
+          .get('/api/assets')
+          .query({'locations[]': ['osaka']})
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect((res) => {
+            assert.isNotEmpty(res.body.assets)
+            for (let row of res.body.assets) {
+              assert.equal(row.location, 'osaka')
+            }
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
     // TODO: test pagination
+
+    describe('assets by multiple locations', function () {
+      it('should return list of matching assets', function (done) {
+        request(app)
+          .get('/api/assets')
+          .query({'locations[]': ['kyoto', 'osaka']})
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect((res) => {
+            assert.isNotEmpty(res.body.assets)
+            for (let row of res.body.assets) {
+              assert.oneOf(row.location, ['kyoto', 'osaka'])
+            }
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('assets by tag, location, and year', function () {
+      it('should return list of matching assets', function (done) {
+        request(app)
+          .get('/api/assets')
+          .query({
+            'locations[]': ['osaka'],
+            'tags[]': ['cat', 'hot'],
+            'years[]': [2012]
+          })
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect((res) => {
+            assert.isNotEmpty(res.body.assets)
+            for (let row of res.body.assets) {
+              assert.equal(row.location, 'osaka')
+              let date = new Date(row.date)
+              assert.equal(date.getFullYear(), 2012)
+              // The tags are not included in the results, but very likely it is
+              // working correctly given all of the other tests.
+            }
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
 
     describe('tags', function () {
       it('should return list of tags in JSON format', function (done) {
