@@ -446,8 +446,6 @@ setTimeout(function () {
       })
     })
 
-    // TODO: test pagination
-
     describe('assets by multiple locations', function () {
       it('should return list of matching assets', function (done) {
         request(app)
@@ -539,6 +537,167 @@ setTimeout(function () {
           .expect('Content-Type', /json/)
           .expect(200)
           .expect(/"key":2014/)
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+  })
+
+  //
+  // pagination tests
+  //
+  describe('Pagination', function () {
+    before(async function () {
+      await backend.reinitDatabase()
+      const userList = ['akemi', 'chise', 'homura', 'kyoko', 'madoka', 'midori', 'sayaka']
+      for (let n = 0; n < 16; n++) {
+        // The file date will be used to cause the results to appear in the
+        // desired order, making the pagination easier to test (by looking at
+        // the file name which is cheaper than parsing dates again).
+        const fileName = `IMG_${1000 + n}.JPG`
+        const fileOwner = sampleOne(userList)
+        // produce identifiers that have decent entropy and distribution
+        const id = pouchCollate.toIndexableString([fileName, fileOwner])
+        let doc = {
+          _id: id,
+          file_date: [2000 + n, 5, 13, 5, 26],
+          file_name: fileName,
+          import_date: [2017, 11, 18, 17, 3],
+          file_owner: fileOwner,
+          file_size: 1048576,
+          location: 'kamakura',
+          mimetype: 'image/jpeg',
+          tags: ['cat']
+        }
+        await backend.updateDocument(doc)
+      }
+      // Prime the indices so the tests appear to run faster and do not show
+      // duration values in red, which looks bad.
+      await backend.byTags(['foobar'])
+    })
+
+    describe('page size of 6, default page 1', function () {
+      it('should return 6 assets', function (done) {
+        request(app)
+          .get('/api/assets')
+          .query({
+            'tags[]': ['cat'],
+            'page_size': 6
+          })
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.count, 16)
+            assert.isNotEmpty(res.body.assets)
+            assert.equal(res.body.assets.length, 6)
+            assert.equal(res.body.assets[0].filename, 'IMG_1015.JPG')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('page size of 6, page 2', function () {
+      it('should return 6 assets', function (done) {
+        request(app)
+          .get('/api/assets')
+          .query({
+            'tags[]': ['cat'],
+            'page_size': 6,
+            'page': 2
+          })
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.count, 16)
+            assert.isNotEmpty(res.body.assets)
+            assert.equal(res.body.assets.length, 6)
+            assert.equal(res.body.assets[0].filename, 'IMG_1009.JPG')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('page size of 6, last page', function () {
+      it('should return fewer than page_size assets', function (done) {
+        request(app)
+          .get('/api/assets')
+          .query({
+            'tags[]': ['cat'],
+            'page_size': 6,
+            'page': 3
+          })
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.count, 16)
+            assert.isNotEmpty(res.body.assets)
+            assert.equal(res.body.assets.length, 4)
+            assert.equal(res.body.assets[3].filename, 'IMG_1000.JPG')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('page size of 6, out of range page', function () {
+      it('should return assets for last page', function (done) {
+        request(app)
+          .get('/api/assets')
+          .query({
+            'tags[]': ['cat'],
+            'page_size': 6,
+            'page': 10
+          })
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.count, 16)
+            assert.isNotEmpty(res.body.assets)
+            assert.equal(res.body.assets.length, 4)
+            assert.equal(res.body.assets[3].filename, 'IMG_1000.JPG')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('page size of 500', function () {
+      it('should return all 16 assets', function (done) {
+        request(app)
+          .get('/api/assets')
+          .query({
+            'tags[]': ['cat'],
+            'page_size': 500
+          })
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.count, 16)
+            assert.isNotEmpty(res.body.assets)
+            assert.equal(res.body.assets.length, 16)
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)

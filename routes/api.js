@@ -8,6 +8,15 @@ const router = express.Router()
 // wrapper that directs errors to the appropriate handler
 let wrap = fn => (...args) => fn(...args).catch(args[2])
 
+// Return an integer given the input value. If value is nil, then return
+// default. If value is an integer, return that, bounded by the minimum and
+// maximum values. If value is a string, parse as an integer and ensure it
+// falls within the minimum and maximum bounds.
+function boundedIntValue (value, fallback, minimum, maximum) {
+  let v = parseInt(value)
+  return Math.min(Math.max(isNaN(v) ? fallback : v, minimum), maximum)
+}
+
 // Ensure the years parameter can be parsed as integers.
 router.use(function (req, res, next) {
   if (req.query['years'] !== undefined) {
@@ -29,15 +38,13 @@ router.use(function (req, res, next) {
 })
 
 router.get('/assets', wrap(async function (req, res, next) {
-  // TODO: param: page=N
-  // TODO: param: page_size=M (within range 1 to 100)
   // TODO: param: order (for sorting results)
   let tags = req.query['tags']
   let years = req.queryYears
   let locations = req.query['locations']
   if (!tags && !years && !locations) {
     // when no params are given, return count of assets
-    let count = await backend.assetCount()
+    const count = await backend.assetCount()
     res.json({
       assets: [],
       count
@@ -51,14 +58,22 @@ router.get('/assets', wrap(async function (req, res, next) {
     // Perform some default sorting, with newer assets appearing earlier in the
     // list of results.
     rows.sort((a, b) => b['date'] - a['date'])
-    let formattedRows = rows.map((row) => {
+    // count is the number of _all_ matching results
+    const count = rows.length
+    // handle pagination with certain defaults and bounds
+    const pageSize = boundedIntValue(req.query['page_size'], 10, 1, 100)
+    const pageLimit = Math.ceil(count / pageSize)
+    const page = boundedIntValue(req.query['page'], 1, 1, pageLimit)
+    const start = (page - 1) * pageSize
+    let pageRows = rows.slice(start, start + pageSize)
+    let formattedRows = pageRows.map((row) => {
       let date = new Date(row['date']).toLocaleString()
       return {...row, date}
     })
     res.json({
       assets: formattedRows,
       // include total count of all matching rows
-      count: rows.length
+      count
     })
   }
 }))
