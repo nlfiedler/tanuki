@@ -10,10 +10,9 @@ const pageRoutes = require('routes/pages')
 const backend = require('backend')
 const config = require('config')
 const winston = require('winston')
+const rfs = require('rotating-file-stream')
 
-// Configure the logging not related to HTTP, which is handled using morgan. The
-// winston README is a little out of date as of 2017/11/15, and the console is
-// attached to the default logger, and transports are not constructors.
+// Configure the logging not related to HTTP, which is handled using morgan.
 winston.exitOnError = false
 winston.level = config.get('backend.logger.level')
 if (config.has('backend.logger.file')) {
@@ -39,7 +38,18 @@ const app = express()
 app.set('views', path.join(__dirname, 'views'))
 app.set('view engine', 'ejs')
 
-app.use(logger('dev'))
+// Configure the HTTP logging.
+if (config.has('morgan.logger.logPath')) {
+  const logDirectory = config.get('morgan.logger.logPath')
+  const accessLogStream = rfs('access.log', {
+    size: '1M',
+    maxFiles: 4,
+    path: logDirectory
+  })
+  app.use(logger('combined', {stream: accessLogStream}))
+} else {
+  app.use(logger('dev'))
+}
 
 app.use('/api', apiRoutes)
 app.use('/', pageRoutes)

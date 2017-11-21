@@ -42,10 +42,7 @@
   - Sails.js somehow manages to have real layouts with EJS
 - [TODO] Set the `production` flag in `gulpfile.js` based on environment
 - [TODO] How to handle errors in the backend? Using console.error() for now
-- [TODO] Configure morgan based on our configuration file
-  - dev/test: write to stdout
-  - production: write to a file
-  - see https://github.com/expressjs/morgan for an example of setting the "stream"
+- [DONE] Configure morgan based on our configuration file
 - [TODO] Look at https://moment.github.io/luxon/docs/ for a nice date/time library
 
 ** General Items
@@ -72,6 +69,7 @@
   - http://expressjs.com/en/advanced/pm.html
 - [TODO] Review express.js performance guidelines
   - http://expressjs.com/en/advanced/best-practice-performance.html
+- [TODO] Define a production configuration (i.e. for the logging)
 
 ** Migration
 
