@@ -77,7 +77,16 @@ router.get('/assets', wrap(async function (req, res, next) {
     })
   }
 }))
-// asset_path  GET   /api/assets/:id  TanukiWeb.Web.AssetController :show
+
+router.get('/assets/:id', wrap(async function (req, res, next) {
+  try {
+    let asset = await backend.fetchDocument(req.params['id'])
+    res.json(asset)
+  } catch (err) {
+    // PouchDB errors are basically HTTP errors and work fine here.
+    res.status(err.status).send(err.message)
+  }
+}))
 // asset_path  POST  /api/assets      TanukiWeb.Web.AssetController :create
 // asset_path  PUT   /api/assets/:id  TanukiWeb.Web.AssetController :update
 

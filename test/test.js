@@ -708,5 +708,66 @@ setTimeout(function () {
     })
   })
 
+  //
+  // fetching assets by identifier
+  //
+  describe('Asset retrieval', function () {
+    const docId = '37665f499b5ddb74ddc297e89dfad4f06a6c8a90'
+
+    before(async function () {
+      await backend.reinitDatabase()
+      let doc = {
+        _id: docId,
+        file_date: [2017, 5, 13, 5, 26],
+        file_name: 'IMG_1001.JPG',
+        import_date: [2017, 11, 18, 17, 3],
+        file_owner: 'homura',
+        file_size: 1048576,
+        location: 'kyoto',
+        mimetype: 'image/jpeg',
+        tags: ['puella', 'magi', 'madoka', 'magica']
+      }
+      await backend.updateDocument(doc)
+    })
+
+    describe('no such asset', function () {
+      it('should return an error', function (done) {
+        request(app)
+          .get('/api/assets/nosuch')
+          .expect('Content-Type', /text/)
+          .expect(404)
+          .expect(/missing/)
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('asset by correct identifier', function () {
+      it('should return all asset details', function (done) {
+        request(app)
+          .get(`/api/assets/${docId}`)
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.file_name, 'IMG_1001.JPG')
+            assert.equal(res.body.file_owner, 'homura')
+            assert.equal(res.body.file_size, 1048576)
+            assert.equal(res.body.location, 'kyoto')
+            assert.equal(res.body.mimetype, 'image/jpeg')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+  })
+
   run()
 }, 500)
