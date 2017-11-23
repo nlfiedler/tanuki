@@ -10,9 +10,9 @@ const pouchCollate = require('pouchdb-collate')
 const dbPath = config.get('backend.dbPath')
 fs.removeSync(dbPath)
 
-// start the server
+// start the server, which also modifies the module path
 const app = require('../app.js')
-const backend = require('backend')
+const backend = require('lib/backend')
 
 function sampleOne (arr) {
   return arr[Math.floor(Math.random() * arr.length)]

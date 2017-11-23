@@ -19,11 +19,8 @@
   - [DONE] create the "tanuki" database in an appropriate location
   - [DONE] install design documents (e.g. by_tags)
 - [DONE] Change all of the console output to winston logging statements
-- [TODO] Looks like put() is better than post() for PouchDB
-  - use original sha256 for the document id
-  - no need for the by_checksum view
-- [TODO] Rename `backend` to `lib`, and `index.js` to `backend.js`
-  - change app-module-path() to add `lib`
+- [DONE] Looks like put() is better than post() for PouchDB
+- [DONE] Rename `backend` to `lib`, and `index.js` to `backend.js`
 - [TODO] Port backend code from Elixir to JavaScript
   - [TODO] Backend code should probably surface the errors rather than just logging
   - [TODO] https://www.npmjs.com/package/mime
