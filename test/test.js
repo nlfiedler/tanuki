@@ -769,5 +769,152 @@ setTimeout(function () {
     })
   })
 
+  describe('Asset creation and update', function () {
+    const docId = 'a763b2691009e9ed618bf532576d8c7be8a34ae091689a553eb0ba49412fab1d'
+
+    before(async function () {
+      await backend.reinitDatabase()
+    })
+
+    describe('upload an asset', function () {
+      it('should create a new document', function (done) {
+        request(app)
+          .post('/api/assets')
+          .attach('asset', './test/fixtures/ash_tree.jpg')
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.status, 'success')
+            assert.equal(res.body.id, docId)
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should serve the new asset', function (done) {
+        request(app)
+          .get(`/api/assets/${docId}`)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.file_name, 'ash_tree.jpg')
+            assert.equal(res.body.mimetype, 'image/jpeg')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should permit updating asset fields', function (done) {
+        request(app)
+          .put(`/api/assets/${docId}`)
+          .send({
+            location: 'outside',
+            caption: 'how interesting',
+            tags: 'picnic,outside,grass'
+          })
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.status, 'success')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should serve the updated values', function (done) {
+        request(app)
+          .get(`/api/assets/${docId}`)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.caption, 'how interesting')
+            assert.equal(res.body.location, 'outside')
+            assert.equal(res.body.tags[0], 'grass')
+            assert.equal(res.body.tags[1], 'outside')
+            assert.equal(res.body.tags[2], 'picnic')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should parse optional user dates', function (done) {
+        request(app)
+          .put(`/api/assets/${docId}`)
+          .send({user_date: '2003-08-30'})
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.status, 'success')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should serve the custom user date', function (done) {
+        request(app)
+          .get(`/api/assets/${docId}`)
+          .expect(200)
+          .expect((res) => {
+            let date = new Date(res.body.user_date)
+            assert.equal(date.getFullYear(), 2003)
+            assert.equal(date.getMonth() + 1, 8)
+            assert.equal(date.getDate(), 30)
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should permit clearing the user date', function (done) {
+        request(app)
+          .put(`/api/assets/${docId}`)
+          .send({user_date: null})
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.status, 'success')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should serve the cleared user date', function (done) {
+        request(app)
+          .get(`/api/assets/${docId}`)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.user_date, '')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+  })
+
   run()
 }, 500)

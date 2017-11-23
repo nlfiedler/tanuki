@@ -1,7 +1,8 @@
 {
   "backend": {
     "dbPath": "test/tmp/db",
-    "assestPath": "test/tmp/assets",
+    "uploadPath": "test/tmp/uploads",
+    "assetPath": "test/tmp/assets",
     "logger": {
       "level": "debug",
       "file": "test/tmp/log.txt"

@@ -3,6 +3,7 @@
 //
 const config = require('config')
 const fs = require('fs-extra')
+const path = require('path')
 const logger = require('winston')
 const PouchDB = require('pouchdb')
 
@@ -14,6 +15,7 @@ const PouchDB = require('pouchdb')
 
 /* global emit */
 
+const assetsPath = config.get('backend.assetPath')
 const dbPath = config.get('backend.dbPath')
 fs.ensureDirSync(dbPath)
 const db = new PouchDB(dbPath)
@@ -457,11 +459,24 @@ async function query (tags, years, locations) {
   }
 }
 
+/**
+ * Convert the SHA256 checksum to the full path of the asset.
+ *
+ * @returns {string} full path of asset.
+ */
+function assetPath (checksum) {
+  const part1 = checksum.slice(0, 2)
+  const part2 = checksum.slice(2, 4)
+  const part3 = checksum.slice(4)
+  return path.join(assetsPath, part1, part2, part3)
+}
+
 module.exports = {
   allLocations,
   allTags,
   allYears,
   assetCount,
+  assetPath,
   byLocation,
   byTags,
   byYear,

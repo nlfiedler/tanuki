@@ -22,6 +22,8 @@
 - [TODO] Looks like put() is better than post() for PouchDB
   - use original sha256 for the document id
   - no need for the by_checksum view
+- [TODO] Rename `backend` to `lib`, and `index.js` to `backend.js`
+  - change app-module-path() to add `lib`
 - [TODO] Port backend code from Elixir to JavaScript
   - [TODO] Backend code should probably surface the errors rather than just logging
   - [TODO] https://www.npmjs.com/package/mime
@@ -42,8 +44,10 @@
   - Sails.js somehow manages to have real layouts with EJS
 - [TODO] Set the `production` flag in `gulpfile.js` based on environment
 - [TODO] How to handle errors in the backend? Using console.error() for now
+  - Instead of logging errors, raise the exceptions
 - [DONE] Configure morgan based on our configuration file
 - [TODO] Look at https://moment.github.io/luxon/docs/ for a nice date/time library
+- [TODO] Implement the periodic running of the file importer
 
 ** General Items
 
