@@ -40,8 +40,7 @@
   - apparently EJS uses partials instead of a layout
   - Sails.js somehow manages to have real layouts with EJS
 - [TODO] Set the `production` flag in `gulpfile.js` based on environment
-- [TODO] How to handle errors in the backend? Using console.error() for now
-  - Instead of logging errors, raise the exceptions
+- [DONE] Let backend errors bubble up to the caller
 - [DONE] Configure morgan based on our configuration file
 - [TODO] Look at https://moment.github.io/luxon/docs/ for a nice date/time library
 - [TODO] Implement the periodic running of the file importer
