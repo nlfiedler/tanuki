@@ -187,8 +187,28 @@ setTimeout(function () {
           .query({'tags[]': ['picnic']})
           .expect('Content-Type', /json/)
           .expect(200)
-          .expect(/"filename":"img0315.jpg"/)
+          .expect(/"file_name":"img0315.jpg"/)
           .expect(/"location":"san francisco"/)
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('asset by multiple tags', function () {
+      it('should return exactly the one matching asset', function (done) {
+        request(app)
+          .get('/api/assets')
+          .query({'tags[]': ['cat', 'cheeseburger']})
+          .expect('Content-Type', /json/)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.count, 1)
+            assert.equal(res.body.assets[0].file_name, 'IMG_6005.JPG')
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -204,8 +224,8 @@ setTimeout(function () {
           .get('/api/tags')
           .expect('Content-Type', /json/)
           .expect(200)
-          .expect(/{"value":1,"key":"cheeseburger"}/)
-          .expect(/{"value":2,"key":"picnic"}/)
+          .expect(/{"tag":"cheeseburger","count":1}/)
+          .expect(/{"tag":"picnic","count":2}/)
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -221,7 +241,7 @@ setTimeout(function () {
           .get('/api/locations')
           .expect('Content-Type', /json/)
           .expect(200)
-          .expect(/{"value":2,"key":"san francisco"}/)
+          .expect(/{"location":"san francisco","count":2}/)
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -237,7 +257,7 @@ setTimeout(function () {
           .get('/api/years')
           .expect('Content-Type', /json/)
           .expect(200)
-          .expect(/{"value":2,"key":2014}/)
+          .expect(/{"year":2014,"count":2}/)
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -340,7 +360,7 @@ setTimeout(function () {
         let rows = await backend.byTags(['dipstick'])
         assert.isNotEmpty(rows)
         for (let row of rows) {
-          let doc = await backend.fetchDocument(row.id)
+          let doc = await backend.fetchDocument(row.checksum)
           assert.include(doc.tags, 'dipstick')
         }
       })
@@ -352,7 +372,7 @@ setTimeout(function () {
         let rows = await backend.byTags(['cat', 'dog', 'hot'])
         assert.isNotEmpty(rows)
         for (let row of rows) {
-          let doc = await backend.fetchDocument(row.id)
+          let doc = await backend.fetchDocument(row.checksum)
           assert.include(doc.tags, 'cat')
           assert.include(doc.tags, 'dog')
           assert.include(doc.tags, 'hot')
@@ -504,7 +524,7 @@ setTimeout(function () {
           .get('/api/tags')
           .expect('Content-Type', /json/)
           .expect(200)
-          .expect(/"key":"huddle"/)
+          .expect(/"tag":"huddle"/)
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -520,7 +540,7 @@ setTimeout(function () {
           .get('/api/locations')
           .expect('Content-Type', /json/)
           .expect(200)
-          .expect(/"key":"osaka"/)
+          .expect(/"location":"osaka"/)
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -536,7 +556,7 @@ setTimeout(function () {
           .get('/api/years')
           .expect('Content-Type', /json/)
           .expect(200)
-          .expect(/"key":2014/)
+          .expect(/"year":2014/)
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -594,7 +614,7 @@ setTimeout(function () {
             assert.equal(res.body.count, 16)
             assert.isNotEmpty(res.body.assets)
             assert.equal(res.body.assets.length, 6)
-            assert.equal(res.body.assets[0].filename, 'IMG_1015.JPG')
+            assert.equal(res.body.assets[0].file_name, 'IMG_1015.JPG')
           })
           .end(function (err, res) {
             if (err) {
@@ -620,7 +640,7 @@ setTimeout(function () {
             assert.equal(res.body.count, 16)
             assert.isNotEmpty(res.body.assets)
             assert.equal(res.body.assets.length, 6)
-            assert.equal(res.body.assets[0].filename, 'IMG_1009.JPG')
+            assert.equal(res.body.assets[0].file_name, 'IMG_1009.JPG')
           })
           .end(function (err, res) {
             if (err) {
@@ -646,7 +666,7 @@ setTimeout(function () {
             assert.equal(res.body.count, 16)
             assert.isNotEmpty(res.body.assets)
             assert.equal(res.body.assets.length, 4)
-            assert.equal(res.body.assets[3].filename, 'IMG_1000.JPG')
+            assert.equal(res.body.assets[3].file_name, 'IMG_1000.JPG')
           })
           .end(function (err, res) {
             if (err) {
@@ -672,7 +692,7 @@ setTimeout(function () {
             assert.equal(res.body.count, 16)
             assert.isNotEmpty(res.body.assets)
             assert.equal(res.body.assets.length, 4)
-            assert.equal(res.body.assets[3].filename, 'IMG_1000.JPG')
+            assert.equal(res.body.assets[3].file_name, 'IMG_1000.JPG')
           })
           .end(function (err, res) {
             if (err) {
@@ -905,6 +925,82 @@ setTimeout(function () {
           .expect(200)
           .expect((res) => {
             assert.equal(res.body.user_date, '')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+  })
+
+  describe('Asset content serving', function () {
+    const docId = 'a763b2691009e9ed618bf532576d8c7be8a34ae091689a553eb0ba49412fab1d'
+
+    before(async function () {
+      await backend.reinitDatabase()
+    })
+
+    describe('upload an asset', function () {
+      it('should create a new document', function (done) {
+        request(app)
+          .post('/import')
+          .attach('asset', './test/fixtures/ash_tree.jpg')
+          .expect(302)
+          .expect('Content-Type', /text/)
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should serve the thumbnail', function (done) {
+        request(app)
+          .get(`/thumbnail/${docId}`)
+          .expect(200)
+          .expect('Content-Type', /image/)
+          .expect((res) => {
+            assert.instanceOf(res.body, Buffer)
+            assert.approximately(res.body.byteLength, 13000, 1000)
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should serve the preview', function (done) {
+        request(app)
+          .get(`/preview/${docId}`)
+          .expect(200)
+          .expect('Content-Type', /image/)
+          .expect((res) => {
+            assert.instanceOf(res.body, Buffer)
+            assert.approximately(res.body.byteLength, 20000, 1000)
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should serve the asset content', function (done) {
+        request(app)
+          .get(`/asset/${docId}`)
+          .expect(200)
+          .expect('Content-Type', /image/)
+          .expect('Content-Length', '21738')
+          .expect((res) => {
+            assert.instanceOf(res.body, Buffer)
+            assert.equal(res.body.byteLength, 21738)
           })
           .end(function (err, res) {
             if (err) {

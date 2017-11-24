@@ -6,7 +6,18 @@ const path = require('path')
 const favicon = require('serve-favicon')
 const cookieParser = require('cookie-parser')
 const bodyParser = require('body-parser')
+const multer = require('multer')
+const config = require('config')
+const assets = require('lib/assets')
+const backend = require('lib/backend')
+const incoming = require('lib/incoming')
+
 const router = express.Router()
+const uploadPath = config.get('backend.uploadPath')
+const upload = multer({ dest: uploadPath })
+
+// wrapper that directs errors to the appropriate handler
+let wrap = fn => (...args) => fn(...args).catch(args[2])
 
 router.use(favicon(path.join(__dirname, '..', 'public', 'favicon.ico')))
 router.use(bodyParser.json())
@@ -14,16 +25,86 @@ router.use(bodyParser.urlencoded({ extended: false }))
 router.use(cookieParser())
 router.use(express.static(path.join(__dirname, '..', 'public')))
 
-// page_path  GET   /upload         TanukiWeb.Web.PageController :upload
-// page_path  POST  /import         TanukiWeb.Web.PageController :import
-// page_path  GET   /asset/:id      TanukiWeb.Web.PageController :asset
-// page_path  GET   /thumbnail/:id  TanukiWeb.Web.PageController :thumbnail
-// page_path  GET   /preview/:id    TanukiWeb.Web.PageController :preview
-// page_path  GET   /*path          TanukiWeb.Web.PageController :index
+router.get('/thumbnail/:id', wrap(async function (req, res, next) {
+  let checksum = req.params['id']
+  let {binary, mimetype} = await assets.retrieveThumbnail(checksum)
+  res.set({
+    'Content-Type': mimetype,
+    'ETag': checksum + '.thumb'
+  })
+  // res.send() handles Content-Length and cache freshness support
+  res.send(binary)
+}))
 
-// GET home page
-router.get('/', function (req, res, next) {
-  res.render('index', {title: 'Tanuki'})
+router.get('/preview/:id', wrap(async function (req, res, next) {
+  let checksum = req.params['id']
+  let {binary, mimetype} = await assets.generatePreview(checksum)
+  res.set({
+    'Content-Type': mimetype,
+    'ETag': checksum + '.preview'
+  })
+  // res.send() handles Content-Length and cache freshness support
+  res.send(binary)
+}))
+
+router.get('/asset/:id', wrap(async function (req, res, next) {
+  let checksum = req.params['id']
+  let filepath = assets.assetPath(checksum)
+  let doc = await backend.fetchDocument(checksum)
+  let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
+  // res.sendFile() handles Content-Length and cache freshness support
+  res.sendFile(filepath, {
+    headers: {
+      'Content-Type': mimetype,
+      'ETag': checksum + '.asset'
+    },
+    immutable: true,
+    maxAge: 86400000
+  }, function (err) {
+    // cannot unconditionally invoke the next handler...
+    if (err) {
+      next(err)
+    }
+  })
+}))
+
+router.post('/import', upload.single('asset'), wrap(async function (req, res, next) {
+  let checksum = await incoming.computeChecksum(req.file.path)
+  try {
+    // check if an asset with this checksum already exists
+    await backend.fetchDocument(checksum)
+    res.redirect(`/assets/${checksum}/edit`)
+  } catch (err) {
+    if (err.status === 404) {
+      let originalDate = incoming.getOriginalDate(req.file.path)
+      let importDate = incoming.dateToList(new Date())
+      let doc = {
+        _id: checksum,
+        file_name: req.file.originalname,
+        file_size: req.file.size,
+        import_date: importDate,
+        mimetype: req.file.mimetype,
+        original_date: originalDate,
+        // everything generally assumes the tags field is not undefined
+        tags: []
+      }
+      await backend.updateDocument(doc)
+      incoming.storeAsset(req.file.path, checksum)
+      res.redirect(`/assets/${checksum}/edit`)
+    } else {
+      // some other error occurred
+      res.status(err.status).send(err.message)
+    }
+  }
+}))
+
+router.get('/upload', function (req, res, next) {
+  res.render('upload', {title: 'Asset Upload'})
+})
+
+// Last of all, map everything else to the Elm appliation.
+router.get('/*', function (req, res, next) {
+  res.render('index', {title: 'Browse Assets'})
 })
 
 module.exports = router

@@ -325,15 +325,15 @@ viewThumbnailItem entry =
         -- for now they look okay.
         div [ class "col-sm-6 col-md-4" ]
             [ div [ class "thumbnail"
-                  , onClick <| NavigateTo <| ShowAssetRoute entry.id
+                  , onClick <| NavigateTo <| ShowAssetRoute entry.checksum
                   ]
                 [ img [ src ("/thumbnail/" ++ entry.checksum)
-                      , alt entry.filename
+                      , alt entry.file_name
                       ] [ ]
                 , div [ class "caption" ]
                     [ text entry.date
                     , separator
-                    , text entry.filename ]
+                    , text entry.file_name ]
                 ]
             ]
 
@@ -441,7 +441,7 @@ viewAsset model =
                 , dl [ class "dl-horizontal" ] (viewAssetDetails asset)
                 , div [ class "col-sm-offset-2 col-sm-10" ]
                     [ a [ class "btn btn-default"
-                        , onClick <| NavigateTo <| EditAssetRoute asset.id ] [ text "Edit" ]
+                        , onClick <| NavigateTo <| EditAssetRoute asset.checksum ] [ text "Edit" ]
                     ]
                 , backToHomeLink
                 ]
@@ -451,7 +451,7 @@ viewAssetPreviewPanel : AssetDetails -> Html Msg
 viewAssetPreviewPanel asset =
     div [ class "panel panel-default" ]
         [ div [ class "panel-heading" ]
-            [ h3 [ class "panel-title" ] [ text asset.filename ] ]
+            [ h3 [ class "panel-title" ] [ text asset.file_name ] ]
         , div [ class "panel-body" ] [ viewAssetPreview asset ]
         , div [ class "panel-footer" ] [ text asset.datetime ]
         ]
@@ -472,7 +472,7 @@ viewAssetPreview asset =
         a [ href ("/asset/" ++ asset.checksum) ]
             [ img [ class "asset"
                   , src ("/preview/" ++ asset.checksum)
-                  , alt asset.filename ] [ ]
+                  , alt asset.file_name ] [ ]
             ]
 
 
@@ -480,7 +480,7 @@ viewAssetDetails : AssetDetails -> List (Html Msg)
 viewAssetDetails asset =
     let
         part1 =
-            [ ( "Size", (toString asset.size) )
+            [ ( "Size", (toString asset.file_size) )
             , ( "SHA256", asset.checksum )
             ]
         -- The duration will be placed in the middle since it seems to fit
@@ -574,7 +574,7 @@ editAssetForm form asset =
         -- Apparently the "on submit" on the form works better than using "on
         -- click" on a particular form input/button.
         Html.form [ class "form-horizontal"
-                  , onSubmit (SubmitAsset asset.id)
+                  , onSubmit (SubmitAsset asset.checksum)
                   ]
             [ div [ class "form-group" ]
                 [ editAssetFormGroup form "user_date" "Custom Date" userDate "date" "yyyy-mm-dd"

@@ -22,28 +22,28 @@
 - [DONE] Looks like put() is better than post() for PouchDB
 - [DONE] Rename `backend` to `lib`, and `index.js` to `backend.js`
 - [TODO] Port backend code from Elixir to JavaScript
-  - [TODO] Backend code should probably surface the errors rather than just logging
-  - [TODO] https://www.npmjs.com/package/mime
-  - [TODO] https://github.com/sindresorhus/passwd-user
-  - [TODO] https://github.com/lovell/sharp
-  - [TODO] https://github.com/mattiasw/ExifReader
+  - [DONE] Let backend errors bubble up to the caller
+  - [DONE] https://github.com/lovell/sharp
   - [TODO] https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
   - [TODO] Use [catbox](https://github.com/hapijs/catbox) for thumbnail caching
 - [DONE] Invoke `query()` with a `limit` of zero to populate the index after creating it
 - [TODO] Port incoming code from Elixir to JavaScript
-- [TODO] add `image/heic` and `image/heif` to custom mimetypes
-- [TODO] Implement the "import" route for the upload page to use
-- [TODO] Use https://github.com/pillarjs/send for file streaming and partial responses
-- [TODO] Ensure the Elm interface is working
+  - [TODO] https://github.com/mattiasw/ExifReader
+  - [TODO] https://github.com/sindresorhus/passwd-user
+  - [TODO] use https://github.com/broofa/node-mime
+  - [TODO] add `image/heic` and `image/heif` to custom mimetypes
+- [DONE] Implement the "import" route for the upload page to use
+- [DONE] Ensure the Elm interface is working
+- [DONE] Express is caching API requests, but should not
 - [TODO] Elm interface should not show the >> expander when there are not enough attributes
 - [TODO] Figure out how to use layouts with EJS and express.js
   - apparently EJS uses partials instead of a layout
   - Sails.js somehow manages to have real layouts with EJS
 - [TODO] Set the `production` flag in `gulpfile.js` based on environment
-- [DONE] Let backend errors bubble up to the caller
 - [DONE] Configure morgan based on our configuration file
 - [TODO] Look at https://moment.github.io/luxon/docs/ for a nice date/time library
 - [TODO] Implement the periodic running of the file importer
+- [TODO] Maybe use https://github.com/expressjs/csurf for CSRF protection
 
 ** General Items
 

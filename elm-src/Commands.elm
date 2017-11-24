@@ -4,6 +4,7 @@ import Decoders exposing (..)
 import Forms
 import Http
 import Json.Decode as Decode
+import Json.Encode as Encode
 import Messages exposing (Msg(..))
 import Model exposing (..)
 import RemoteData exposing (WebData)
@@ -76,16 +77,14 @@ fetchAsset id =
 updateAsset : String -> Model -> Cmd Msg
 updateAsset id model =
     let
-        location_param =
-            "location=" ++ (Forms.formValue model.assetEditForm "location")
-        caption_param =
-            "caption=" ++ (Forms.formValue model.assetEditForm "caption")
-        tags_param =
-            "tags=" ++ (Forms.formValue model.assetEditForm "tags")
-        date_param =
-            "user_date=" ++ (Forms.formValue model.assetEditForm "user_date")
-        params =
-            String.join "&" [location_param, caption_param, tags_param, date_param]
+        attributes =
+            [ ("location", Encode.string (Forms.formValue model.assetEditForm "location"))
+            , ("caption", Encode.string (Forms.formValue model.assetEditForm "caption"))
+            , ("tags", Encode.string (Forms.formValue model.assetEditForm "tags"))
+            , ("user_date", Encode.string (Forms.formValue model.assetEditForm "user_date"))
+            ]
+        encodedBody =
+            Encode.object attributes
     in
         -- The decoder is not really used here, as the response from the
         -- backend is nothing more than a "status" message. But we need to do
@@ -93,8 +92,8 @@ updateAsset id model =
         Http.request
                 { method = "PUT"
                 , headers = []
-                , url = (apiUrlPrefix ++ "/assets/" ++ id ++ "?" ++ params)
-                , body = Http.emptyBody
+                , url = (apiUrlPrefix ++ "/assets/" ++ id)
+                , body = encodedBody |> Http.jsonBody
                 , expect = Http.expectJson assetDecoder
                 , timeout = Nothing
                 , withCredentials = False

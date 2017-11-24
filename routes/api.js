@@ -17,6 +17,13 @@ router.use(bodyParser.json())
 // wrapper that directs errors to the appropriate handler
 let wrap = fn => (...args) => fn(...args).catch(args[2])
 
+router.use(function (req, res, next) {
+  // Disable automatic caching in express. See pending pull request:
+  // https://github.com/expressjs/express/pull/2841
+  req.headers['if-none-match'] = 'no-match-for-this'
+  next()
+})
+
 // Ensure the years parameter can be parsed as integers.
 router.use(function (req, res, next) {
   if (req.query['years'] !== undefined) {
@@ -112,11 +119,16 @@ router.post('/assets', upload.single('asset'), wrap(async function (req, res, ne
 router.get('/assets/:id', wrap(async function (req, res, next) {
   try {
     let asset = await backend.fetchDocument(req.params['id'])
-    // TODO: if file is a video, get the duration and set as 'duration' field
+    let defaults = {
+      caption: null,
+      location: null
+    }
     res.json({
+      ...defaults,
       ...asset,
       checksum: asset['_id'],
       datetime: dateListToString(getBestDate(asset)),
+      duration: getDuration(asset),
       user_date: dateListToString(asset['user_date'])
     })
   } catch (err) {
@@ -157,17 +169,29 @@ router.put('/assets/:id', wrap(async function (req, res, next) {
 
 router.get('/tags', wrap(async function (req, res, next) {
   let tags = await backend.allTags()
-  res.json(tags)
+  // convert the field names to something sensible
+  let renamed = tags.map((v) => {
+    return {tag: v.key, count: v.value}
+  })
+  res.json(renamed)
 }))
 
 router.get('/locations', wrap(async function (req, res, next) {
   let locations = await backend.allLocations()
-  res.json(locations)
+  // convert the field names to something sensible
+  let renamed = locations.map((v) => {
+    return {location: v.key, count: v.value}
+  })
+  res.json(renamed)
 }))
 
 router.get('/years', wrap(async function (req, res, next) {
   let years = await backend.allYears()
-  res.json(years)
+  // convert the field names to something sensible
+  let renamed = years.map((v) => {
+    return {year: v.key, count: v.value}
+  })
+  res.json(renamed)
 }))
 
 // Return an integer given the input value. If value is nil, then return
@@ -205,6 +229,28 @@ function tagStringToList (tags) {
   let list = tags.split(',').map((t) => t.trim())
   let uniq = list.sort().filter((t, i, a) => i === 0 || t !== a[i - 1])
   return uniq
+}
+
+function getDuration (asset) {
+  let mimetype = asset.mimetype ? asset.mimetype : ''
+  if (mimetype.startsWith('video/')) {
+    // TODO: get the duration of the video file
+    // filepath = TanukiBackend.checksum_to_asset_path(checksum)
+    // ffprobe_args = [
+    //   "-loglevel", "quiet", "-show_entries",
+    //   "format=duration", "-of", "default=noprint_wrappers=1:nokey=1",
+    //   filepath
+    // ]
+    // case System.cmd("ffprobe", ffprobe_args) do
+    //   {output, 0} ->
+    //     round(String.to_float(String.trim(output)))
+    //   {output, code} ->
+    //     Logger.warn("ffprobe exited non-zero (#{code}): #{output}")
+    //     nil
+    // end
+    return null
+  }
+  return null
 }
 
 // The field names of the date/time values in their preferred order. That is,

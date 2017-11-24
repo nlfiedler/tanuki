@@ -37,10 +37,10 @@ assetsDecoder =
         -- decoder for an assets query entry
         entry =
             decode AssetSummary
-                |> required "id" string
-                |> required "filename" string
-                |> required "date" string
                 |> required "checksum" string
+                |> required "file_name" string
+                |> required "date" string
+                |> required "location" string
     in
         decode AssetList
             |> required "count" int
@@ -51,13 +51,12 @@ assetsDecoder =
 assetDecoder : Decoder AssetDetails
 assetDecoder =
     decode AssetDetails
-        |> required "id" string
-        |> required "filename" string
-        |> required "size" int
+        |> required "checksum" string
+        |> required "file_name" string
+        |> required "file_size" int
         |> required "mimetype" string
         |> required "datetime" string
         |> required "user_date" (nullable string)
-        |> required "checksum" string
         |> required "caption" (nullable string)
         |> required "location" (nullable string)
         |> required "duration" (nullable int)

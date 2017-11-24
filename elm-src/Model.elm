@@ -60,22 +60,21 @@ type alias AssetList =
 
 -- The information returned from an assets query.
 type alias AssetSummary =
-    { id : String
-    , filename : String
+    { checksum : String
+    , file_name : String
     , date : String
-    , checksum : String
+    , location : String
     }
 
 
 -- Detailed information on a single asset.
 type alias AssetDetails =
-    { id : String
-    , filename : String
-    , size : Int
+    { checksum : String
+    , file_name : String
+    , file_size : Int
     , mimetype : String
     , datetime : String
     , userDate : Maybe String
-    , checksum : String
     , caption : Maybe String
     , location : Maybe String
     , duration : Maybe Int
@@ -107,6 +106,7 @@ pageSize =
 initialAssetEditForm : Forms.Form
 initialAssetEditForm =
     Forms.initForm assetEditFormFields
+
 
 -- Fields for the asset edit screen.
 assetEditFormFields : List ( String, List Forms.FieldValidator )
