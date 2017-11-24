@@ -790,7 +790,7 @@ setTimeout(function () {
   })
 
   describe('Asset creation and update', function () {
-    const docId = 'a763b2691009e9ed618bf532576d8c7be8a34ae091689a553eb0ba49412fab1d'
+    const docId = 'dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07'
 
     before(async function () {
       await backend.reinitDatabase()
@@ -800,7 +800,7 @@ setTimeout(function () {
       it('should create a new document', function (done) {
         request(app)
           .post('/api/assets')
-          .attach('asset', './test/fixtures/ash_tree.jpg')
+          .attach('asset', './test/fixtures/dcp_1069.jpg')
           .expect(200)
           .expect((res) => {
             assert.equal(res.body.status, 'success')
@@ -819,8 +819,14 @@ setTimeout(function () {
           .get(`/api/assets/${docId}`)
           .expect(200)
           .expect((res) => {
-            assert.equal(res.body.file_name, 'ash_tree.jpg')
+            assert.equal(res.body.file_name, 'dcp_1069.jpg')
             assert.equal(res.body.mimetype, 'image/jpeg')
+            let date = new Date(res.body.datetime)
+            assert.equal(date.getFullYear(), 2003)
+            assert.equal(date.getMonth() + 1, 9)
+            assert.equal(date.getDate(), 3)
+            assert.equal(date.getHours(), 17)
+            assert.equal(date.getMinutes(), 24)
           })
           .end(function (err, res) {
             if (err) {
@@ -834,9 +840,9 @@ setTimeout(function () {
         request(app)
           .put(`/api/assets/${docId}`)
           .send({
-            location: 'outside',
-            caption: 'how interesting',
-            tags: 'picnic,outside,grass'
+            location: 'hawaii',
+            caption: 'a mild mannered cow',
+            tags: 'cow,fence,grass'
           })
           .expect(200)
           .expect((res) => {
@@ -855,11 +861,11 @@ setTimeout(function () {
           .get(`/api/assets/${docId}`)
           .expect(200)
           .expect((res) => {
-            assert.equal(res.body.caption, 'how interesting')
-            assert.equal(res.body.location, 'outside')
-            assert.equal(res.body.tags[0], 'grass')
-            assert.equal(res.body.tags[1], 'outside')
-            assert.equal(res.body.tags[2], 'picnic')
+            assert.equal(res.body.caption, 'a mild mannered cow')
+            assert.equal(res.body.location, 'hawaii')
+            assert.equal(res.body.tags[0], 'cow')
+            assert.equal(res.body.tags[1], 'fence')
+            assert.equal(res.body.tags[2], 'grass')
           })
           .end(function (err, res) {
             if (err) {
@@ -937,7 +943,7 @@ setTimeout(function () {
   })
 
   describe('Asset content serving', function () {
-    const docId = 'a763b2691009e9ed618bf532576d8c7be8a34ae091689a553eb0ba49412fab1d'
+    const docId = 'dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07'
 
     before(async function () {
       await backend.reinitDatabase()
@@ -947,7 +953,7 @@ setTimeout(function () {
       it('should create a new document', function (done) {
         request(app)
           .post('/import')
-          .attach('asset', './test/fixtures/ash_tree.jpg')
+          .attach('asset', './test/fixtures/dcp_1069.jpg')
           .expect(302)
           .expect('Content-Type', /text/)
           .end(function (err, res) {
@@ -965,7 +971,7 @@ setTimeout(function () {
           .expect('Content-Type', /image/)
           .expect((res) => {
             assert.instanceOf(res.body, Buffer)
-            assert.approximately(res.body.byteLength, 13000, 1000)
+            assert.approximately(res.body.byteLength, 11000, 1000)
           })
           .end(function (err, res) {
             if (err) {
@@ -982,7 +988,7 @@ setTimeout(function () {
           .expect('Content-Type', /image/)
           .expect((res) => {
             assert.instanceOf(res.body, Buffer)
-            assert.approximately(res.body.byteLength, 20000, 1000)
+            assert.approximately(res.body.byteLength, 39000, 1000)
           })
           .end(function (err, res) {
             if (err) {
@@ -997,11 +1003,49 @@ setTimeout(function () {
           .get(`/asset/${docId}`)
           .expect(200)
           .expect('Content-Type', /image/)
-          .expect('Content-Length', '21738')
+          .expect('Content-Length', '80977')
           .expect((res) => {
             assert.instanceOf(res.body, Buffer)
-            assert.equal(res.body.byteLength, 21738)
+            assert.equal(res.body.byteLength, 80977)
           })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('no such asset', function () {
+      it('should return 404 for thumbnail', function (done) {
+        request(app)
+          .get('/thumbnail/nosuchid')
+          .expect(404)
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should return 404 for preview', function (done) {
+        request(app)
+          .get('/preview/nosuchid')
+          .expect(404)
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should return 404 for asset', function (done) {
+        request(app)
+          .get('/asset/nosuchid')
+          .expect(404)
           .end(function (err, res) {
             if (err) {
               return done(err)

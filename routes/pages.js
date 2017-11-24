@@ -27,24 +27,32 @@ router.use(express.static(path.join(__dirname, '..', 'public')))
 
 router.get('/thumbnail/:id', wrap(async function (req, res, next) {
   let checksum = req.params['id']
-  let {binary, mimetype} = await assets.retrieveThumbnail(checksum)
-  res.set({
-    'Content-Type': mimetype,
-    'ETag': checksum + '.thumb'
-  })
-  // res.send() handles Content-Length and cache freshness support
-  res.send(binary)
+  let result = await assets.retrieveThumbnail(checksum)
+  if (result === null) {
+    res.status(404).send('no such asset')
+  } else {
+    res.set({
+      'Content-Type': result.mimetype,
+      'ETag': checksum + '.thumb'
+    })
+    // res.send() handles Content-Length and cache freshness support
+    res.send(result.binary)
+  }
 }))
 
 router.get('/preview/:id', wrap(async function (req, res, next) {
   let checksum = req.params['id']
-  let {binary, mimetype} = await assets.generatePreview(checksum)
-  res.set({
-    'Content-Type': mimetype,
-    'ETag': checksum + '.preview'
-  })
-  // res.send() handles Content-Length and cache freshness support
-  res.send(binary)
+  let result = await assets.generatePreview(checksum)
+  if (result === null) {
+    res.status(404).send('no such asset')
+  } else {
+    res.set({
+      'Content-Type': result.mimetype,
+      'ETag': checksum + '.preview'
+    })
+    // res.send() handles Content-Length and cache freshness support
+    res.send(result.binary)
+  }
 }))
 
 router.get('/asset/:id', wrap(async function (req, res, next) {

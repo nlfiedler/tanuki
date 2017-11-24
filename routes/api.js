@@ -266,7 +266,7 @@ const bestDateOrder = [
 // Retrieve the preferred date/time value from the document.
 function getBestDate (doc) {
   for (let field of bestDateOrder) {
-    if (field in doc && doc.field) {
+    if (field in doc && doc[field]) {
       return doc[field]
     }
   }
