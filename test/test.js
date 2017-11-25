@@ -1113,7 +1113,7 @@ setTimeout(function () {
           .expect('Content-Type', /image/)
           .expect((res) => {
             assert.instanceOf(res.body, Buffer)
-            assert.approximately(res.body.byteLength, 84000, 1000)
+            assert.approximately(res.body.byteLength, 9000, 1000)
           })
           .end(function (err, res) {
             if (err) {
