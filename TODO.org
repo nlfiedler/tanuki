@@ -26,6 +26,7 @@
   - [DONE] https://github.com/lovell/sharp
   - [DONE] https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
   - [TODO] Use [catbox](https://github.com/hapijs/catbox) for thumbnail caching
+  - [TODO] Serve the broken image placeholder when necessary
 - [DONE] Invoke `query()` with a `limit` of zero to populate the index after creating it
 - [TODO] Port incoming code from Elixir to JavaScript
   - [DONE] https://github.com/mattiasw/ExifReader

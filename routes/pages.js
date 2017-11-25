@@ -27,7 +27,9 @@ router.use(express.static(path.join(__dirname, '..', 'public')))
 
 router.get('/thumbnail/:id', wrap(async function (req, res, next) {
   let checksum = req.params['id']
-  let result = await assets.retrieveThumbnail(checksum)
+  let doc = await backend.fetchDocument(checksum)
+  let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
+  let result = await assets.retrieveThumbnail(mimetype, checksum)
   if (result === null) {
     res.status(404).send('no such asset')
   } else {
