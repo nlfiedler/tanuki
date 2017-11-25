@@ -13,6 +13,8 @@ fs.removeSync(dbPath)
 // start the server, which also modifies the module path
 const app = require('../app.js')
 const backend = require('lib/backend')
+const incoming = require('lib/incoming')
+const assets = require('lib/assets')
 
 function sampleOne (arr) {
   return arr[Math.floor(Math.random() * arr.length)]
@@ -1046,6 +1048,56 @@ setTimeout(function () {
         request(app)
           .get('/asset/nosuchid')
           .expect(404)
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+  })
+
+  describe('Video file metadata', function () {
+    const docId = '4f86f7dd48474b8e6571beeabbd79111267f143c0786bcd45def0f6b33ae0423'
+
+    before(async function () {
+      await backend.reinitDatabase()
+    })
+
+    describe('upload a video asset', function () {
+      it('should create a new document', function (done) {
+        request(app)
+          .post('/api/assets')
+          .attach('asset', './test/fixtures/100_1206.MOV')
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.status, 'success')
+            assert.equal(res.body.id, docId)
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should serve video asset details', function (done) {
+        request(app)
+          .get(`/api/assets/${docId}`)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.file_name, '100_1206.MOV')
+            assert.equal(res.body.mimetype, 'video/quicktime')
+            let date = new Date(res.body.datetime)
+            assert.equal(date.getFullYear(), 2007)
+            assert.equal(date.getMonth() + 1, 9)
+            assert.equal(date.getDate(), 14)
+            assert.equal(date.getHours(), 5)
+            assert.equal(date.getMinutes(), 7)
+            assert.approximately(res.body.duration, 2, 0.5)
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)

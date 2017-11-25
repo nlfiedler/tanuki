@@ -84,7 +84,7 @@ router.post('/import', upload.single('asset'), wrap(async function (req, res, ne
     res.redirect(`/assets/${checksum}/edit`)
   } catch (err) {
     if (err.status === 404) {
-      let originalDate = incoming.getOriginalDate(req.file.path)
+      let originalDate = await incoming.getOriginalDate(req.file.mimetype, req.file.path)
       let importDate = incoming.dateToList(new Date())
       let doc = {
         _id: checksum,
@@ -97,7 +97,7 @@ router.post('/import', upload.single('asset'), wrap(async function (req, res, ne
         tags: []
       }
       await backend.updateDocument(doc)
-      incoming.storeAsset(req.file.path, checksum)
+      incoming.storeAsset(req.file.mimetype, req.file.path, checksum)
       res.redirect(`/assets/${checksum}/edit`)
     } else {
       // some other error occurred

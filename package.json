@@ -32,6 +32,7 @@
     "ejs": "~2.5.7",
     "exifreader": "^2.1.2",
     "express": "^4.16.2",
+    "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^4.0.2",
     "jdataview": "^2.5.0",
     "morgan": "~1.9.0",

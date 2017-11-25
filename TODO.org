@@ -24,11 +24,11 @@
 - [TODO] Port backend code from Elixir to JavaScript
   - [DONE] Let backend errors bubble up to the caller
   - [DONE] https://github.com/lovell/sharp
-  - [TODO] https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
+  - [DONE] https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
   - [TODO] Use [catbox](https://github.com/hapijs/catbox) for thumbnail caching
 - [DONE] Invoke `query()` with a `limit` of zero to populate the index after creating it
 - [TODO] Port incoming code from Elixir to JavaScript
-  - [TODO] https://github.com/mattiasw/ExifReader
+  - [DONE] https://github.com/mattiasw/ExifReader
   - [TODO] https://github.com/sindresorhus/passwd-user
   - [TODO] use https://github.com/broofa/node-mime
   - [TODO] add `image/heic` and `image/heif` to custom mimetypes

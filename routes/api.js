@@ -7,6 +7,7 @@ const multer = require('multer')
 const config = require('config')
 const backend = require('lib/backend')
 const incoming = require('lib/incoming')
+const assets = require('lib/assets')
 const router = express.Router()
 
 const uploadPath = config.get('backend.uploadPath')
@@ -94,7 +95,7 @@ router.post('/assets', upload.single('asset'), wrap(async function (req, res, ne
     res.json({status: 'success', id: checksum})
   } catch (err) {
     if (err.status === 404) {
-      let originalDate = incoming.getOriginalDate(req.file.path)
+      let originalDate = await incoming.getOriginalDate(req.file.mimetype, req.file.path)
       let importDate = incoming.dateToList(new Date())
       let doc = {
         _id: checksum,
@@ -107,7 +108,7 @@ router.post('/assets', upload.single('asset'), wrap(async function (req, res, ne
         tags: []
       }
       await backend.updateDocument(doc)
-      incoming.storeAsset(req.file.path, checksum)
+      incoming.storeAsset(req.file.mimetype, req.file.path, checksum)
       res.json({status: 'success', id: checksum})
     } else {
       // some other error occurred
@@ -128,7 +129,7 @@ router.get('/assets/:id', wrap(async function (req, res, next) {
       ...asset,
       checksum: asset['_id'],
       datetime: dateListToString(getBestDate(asset)),
-      duration: getDuration(asset),
+      duration: await assets.getDuration(asset.mimetype, asset['_id']),
       user_date: dateListToString(asset['user_date'])
     })
   } catch (err) {
@@ -229,28 +230,6 @@ function tagStringToList (tags) {
   let list = tags.split(',').map((t) => t.trim())
   let uniq = list.sort().filter((t, i, a) => i === 0 || t !== a[i - 1])
   return uniq
-}
-
-function getDuration (asset) {
-  let mimetype = asset.mimetype ? asset.mimetype : ''
-  if (mimetype.startsWith('video/')) {
-    // TODO: get the duration of the video file
-    // filepath = TanukiBackend.checksum_to_asset_path(checksum)
-    // ffprobe_args = [
-    //   "-loglevel", "quiet", "-show_entries",
-    //   "format=duration", "-of", "default=noprint_wrappers=1:nokey=1",
-    //   filepath
-    // ]
-    // case System.cmd("ffprobe", ffprobe_args) do
-    //   {output, 0} ->
-    //     round(String.to_float(String.trim(output)))
-    //   {output, code} ->
-    //     Logger.warn("ffprobe exited non-zero (#{code}): #{output}")
-    //     nil
-    // end
-    return null
-  }
-  return null
 }
 
 // The field names of the date/time values in their preferred order. That is,
