@@ -61,11 +61,18 @@ allTagsToggle model =
                 , title "Hide some tags"
                 , onClick ToggleAllTags ] [ text "<<" ] ]
     else
-        li [ ]
-            [ a [ href "#"
-                , title "Show all tags"
-                , onClick ToggleAllTags ] [ text ">>" ] ]
-
+        let
+            tagList =
+                RemoteData.withDefault [] model.tagList
+            liBody =
+                if (List.length tagList <= 25) then
+                    [ text "" ]
+                else
+                    [ a [ href "#"
+                        , title "Show all tags"
+                        , onClick ToggleAllTags ] [ text ">>" ] ]
+        in
+            li [ ] liBody
 
 viewTagList : (String -> msg) -> Model -> List (Html msg)
 viewTagList msg model =
@@ -203,10 +210,18 @@ allLocationsToggle model =
                 , title "Hide some locations"
                 , onClick ToggleAllLocations ] [ text "<<" ] ]
     else
-        li [ ]
-            [ a [ href "#"
-                , title "Show all locations"
-                , onClick ToggleAllLocations ] [ text ">>" ] ]
+        let
+            locationList =
+                RemoteData.withDefault [] model.locationList
+            liBody =
+                if (List.length locationList <= 25) then
+                    [ text "" ]
+                else
+                    [ a [ href "#"
+                        , title "Show all locations"
+                        , onClick ToggleAllLocations ] [ text ">>" ] ]
+        in
+            li [ ] liBody
 
 
 viewLocationList : (String -> msg) -> Model -> List (Html msg)
