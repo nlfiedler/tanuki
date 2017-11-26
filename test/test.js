@@ -13,8 +13,6 @@ fs.removeSync(dbPath)
 // start the server, which also modifies the module path
 const app = require('../app.js')
 const backend = require('lib/backend')
-const incoming = require('lib/incoming')
-const assets = require('lib/assets')
 
 function sampleOne (arr) {
   return arr[Math.floor(Math.random() * arr.length)]
