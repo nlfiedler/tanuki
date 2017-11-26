@@ -30,7 +30,7 @@
 - [DONE] Implement the "import" route for the upload page to use
 - [DONE] Ensure the Elm interface is working
 - [DONE] Express is caching API requests, but should not
-- [TODO] Elm interface should not show the >> expander when there are not enough attributes
+- [DONE] Elm interface should not show the >> expander when there are not enough attributes
 - [TODO] Show appropriate placeholders for assets that do not have thumbnails
   - using font-awesome CSS
   - file-image-o for images that cannot make a thumbnail for whatever reason
@@ -53,7 +53,13 @@
   - the sha256 value becomes the document _id
 - [TODO] Need to read `apiUrlPrefix` in Elm code from configuration file
   - currently it is modified at deployment time using `sed`
+- [TODO] Look for means of ensuring LevelDB data integrity
+  - Look into enabling extra LevelDB checks (`paranoidChecks`, `verifyChecksums`)
+- [TODO] Use PouchDB/CouchDB replication to keep a local backup
+  - Recovery is to replace corrupted DB with backup
+  - Could just be something that is manually invoked as needed
 - [TODO] Support HEIC/HEIF file formats
+- [TODO] When performing image manipulations, invoke `sharp.withMetadata()` to preserve metadata
 - [TODO] Add a "people" field
   - Need an admin screen to move a tag from "tags" to "people"
   - Maybe a generic "move" action:
