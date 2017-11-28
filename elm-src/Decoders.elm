@@ -1,6 +1,6 @@
 module Decoders exposing (..)
 
-import Json.Decode exposing (int, list, nullable, string, Decoder)
+import Json.Decode exposing (float, int, list, nullable, string, Decoder)
 import Json.Decode.Pipeline exposing (decode, hardcoded, required)
 import Model exposing (..)
 
@@ -59,5 +59,5 @@ assetDecoder =
         |> required "user_date" (nullable string)
         |> required "caption" (nullable string)
         |> required "location" (nullable string)
-        |> required "duration" (nullable int)
+        |> required "duration" (nullable float)
         |> required "tags" (list string)

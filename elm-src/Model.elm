@@ -77,7 +77,7 @@ type alias AssetDetails =
     , userDate : Maybe String
     , caption : Maybe String
     , location : Maybe String
-    , duration : Maybe Int
+    , duration : Maybe Float
     , tags : List String
     }
 

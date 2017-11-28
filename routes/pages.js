@@ -23,7 +23,8 @@ router.use(favicon(path.join(__dirname, '..', 'public', 'favicon.ico')))
 router.use(bodyParser.json())
 router.use(bodyParser.urlencoded({ extended: false }))
 router.use(cookieParser())
-router.use(express.static(path.join(__dirname, '..', 'public')))
+const staticRoot = path.join(__dirname, '..', 'public')
+router.use(express.static(staticRoot))
 
 router.get('/thumbnail/:id', wrap(async function (req, res, next) {
   let checksum = req.params['id']
@@ -31,7 +32,15 @@ router.get('/thumbnail/:id', wrap(async function (req, res, next) {
   let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
   let result = await assets.retrieveThumbnail(mimetype, checksum)
   if (result === null) {
-    res.status(404).send('no such asset')
+    const imgFile = mimetypeToFilename(mimetype)
+    res.sendFile(`images/${imgFile}`, {
+      root: staticRoot
+    }, function (err) {
+      // cannot unconditionally invoke the next handler...
+      if (err) {
+        next(err)
+      }
+    })
   } else {
     res.set({
       'Content-Type': result.mimetype,
@@ -44,9 +53,19 @@ router.get('/thumbnail/:id', wrap(async function (req, res, next) {
 
 router.get('/preview/:id', wrap(async function (req, res, next) {
   let checksum = req.params['id']
-  let result = await assets.generatePreview(checksum)
+  let doc = await backend.fetchDocument(checksum)
+  let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
+  let result = await assets.generatePreview(mimetype, checksum)
   if (result === null) {
-    res.status(404).send('no such asset')
+    const imgFile = mimetypeToFilename(mimetype)
+    res.sendFile(`images/${imgFile}`, {
+      root: staticRoot
+    }, function (err) {
+      // cannot unconditionally invoke the next handler...
+      if (err) {
+        next(err)
+      }
+    })
   } else {
     res.set({
       'Content-Type': result.mimetype,
@@ -116,5 +135,22 @@ router.get('/upload', function (req, res, next) {
 router.get('/*', function (req, res, next) {
   res.render('index', {title: 'Browse Assets'})
 })
+
+// Return the name of the an image to be used in place of the thumbnail
+// for images that lack a thumbnail, for whatever reason.
+function mimetypeToFilename (mimetype) {
+  if (mimetype.startsWith('video/')) {
+    return 'file-video-2.png'
+  } else if (mimetype.startsWith('image/')) {
+    return 'file-picture.png'
+  } else if (mimetype.startsWith('audio/')) {
+    return 'file-music-3.png'
+  } else if (mimetype.startsWith('text/')) {
+    return 'file-new-2.png'
+  } else if (mimetype === 'application/pdf') {
+    return 'file-acrobat.png'
+  }
+  return 'file-new-1.png'
+}
 
 module.exports = router

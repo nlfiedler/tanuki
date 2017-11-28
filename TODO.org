@@ -31,14 +31,7 @@
 - [DONE] Ensure the Elm interface is working
 - [DONE] Express is caching API requests, but should not
 - [DONE] Elm interface should not show the >> expander when there are not enough attributes
-- [TODO] Show appropriate placeholders for assets that do not have thumbnails
-  - using font-awesome CSS
-  - file-image-o for images that cannot make a thumbnail for whatever reason
-  - file-video-o for videos that cannot make a thumbnail for whatever reason
-  - file-text-o for text files
-  - file-audio-o for audio files
-  - file-pdf-o for pdf files
-  - file-o for everything else
+- [DONE] Show appropriate placeholders for assets that do not have thumbnails
 - [TODO] Figure out how to use layouts with EJS and express.js
   - apparently EJS uses partials instead of a layout
   - Sails.js somehow manages to have real layouts with EJS
@@ -49,6 +42,12 @@
 
 ** General Items
 
+- [TODO] Decide on the overall architecture
+  - A) Rich desktop app, with data stored locally or on a remote drive
+  - B) Lite desktop app, with backend running locally or on a remote host
+- [TODO] Design the new import mechanism to replace incoming processor
+  - Drag & drop and/or file selector
+  - How to apply attributes to multiple assets
 - [TODO] migrate the old data over to the new document format
   - the sha256 value becomes the document _id
 - [TODO] Need to read `apiUrlPrefix` in Elm code from configuration file
@@ -88,6 +87,11 @@
 - [TODO] Once a user has removed a custom query, invoke PouchDB's `db.viewCleanup()` to clean them up
   - Otherwise you get stale query results
 
+** Web Interface
+
+- [TODO] After changing an asset, need to refresh the tags, locations, years
+- [TODO] Get the page border looking the same as before (banner is too close to the top)
+
 ** Incoming Processor
 
 - [TODO] Consider whether we need the old incoming processor functionality
@@ -96,3 +100,9 @@
 - [TODO] https://github.com/sindresorhus/passwd-user
 - [TODO] use https://github.com/broofa/node-mime
 - [TODO] add `image/heic` and `image/heif` to custom mimetypes
+
+** Productization
+
+- [TODO] Replace the web banner with something that looks good
+- [TODO] Include list of all dependencies and their copyright/license as appropriate
+  - fontawesome.io
