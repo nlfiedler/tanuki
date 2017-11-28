@@ -1,5 +1,16 @@
 /* This file is for your main application css. */
 
+body, form, ul, table {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.header {
+  border-bottom: 1px solid #e5e5e5;
+  padding-right: 15px;
+  padding-left: 15px;
+}
+
 .logo {
   width: 520px;
   height: 100px;
