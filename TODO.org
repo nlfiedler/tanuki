@@ -89,7 +89,7 @@
 
 ** Web Interface
 
-- [TODO] After changing an asset, need to refresh the tags, locations, years
+- [DONE] After changing an asset, need to refresh the tags, locations, years
 - [DONE] Get the page border looking the same as before (banner is too close to the top)
 
 ** Incoming Processor

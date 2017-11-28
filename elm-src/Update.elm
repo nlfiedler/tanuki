@@ -91,7 +91,13 @@ update msg model =
 
         PostSubmitAsset assetId response ->
             -- The asset id is expected simply for convenience.
-            ( model, Navigation.newUrl <| toPath (ShowAssetRoute assetId) )
+            let
+                navCmd =
+                    Navigation.newUrl <| toPath (ShowAssetRoute assetId)
+            in
+                -- need to refresh the attribute lists in case of significant changes
+                -- (i.e. a new tag, location, etc)
+                ( model, Cmd.batch [getTags, getYears, getLocations, navCmd] )
 
         UrlChange location ->
             let
