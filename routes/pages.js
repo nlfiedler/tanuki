@@ -32,15 +32,7 @@ router.get('/thumbnail/:id', wrap(async function (req, res, next) {
   let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
   let result = await assets.retrieveThumbnail(mimetype, checksum)
   if (result === null) {
-    const imgFile = mimetypeToFilename(mimetype)
-    res.sendFile(`images/${imgFile}`, {
-      root: staticRoot
-    }, function (err) {
-      // cannot unconditionally invoke the next handler...
-      if (err) {
-        next(err)
-      }
-    })
+    res.status(404).send('no such asset')
   } else {
     res.set({
       'Content-Type': result.mimetype,
@@ -57,15 +49,7 @@ router.get('/preview/:id', wrap(async function (req, res, next) {
   let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
   let result = await assets.generatePreview(mimetype, checksum)
   if (result === null) {
-    const imgFile = mimetypeToFilename(mimetype)
-    res.sendFile(`images/${imgFile}`, {
-      root: staticRoot
-    }, function (err) {
-      // cannot unconditionally invoke the next handler...
-      if (err) {
-        next(err)
-      }
-    })
+    res.status(404).send('no such asset')
   } else {
     res.set({
       'Content-Type': result.mimetype,
@@ -135,22 +119,5 @@ router.get('/upload', function (req, res, next) {
 router.get('/*', function (req, res, next) {
   res.render('index', {title: 'Browse Assets'})
 })
-
-// Return the name of the an image to be used in place of the thumbnail
-// for images that lack a thumbnail, for whatever reason.
-function mimetypeToFilename (mimetype) {
-  if (mimetype.startsWith('video/')) {
-    return 'file-video-2.png'
-  } else if (mimetype.startsWith('image/')) {
-    return 'file-picture.png'
-  } else if (mimetype.startsWith('audio/')) {
-    return 'file-music-3.png'
-  } else if (mimetype.startsWith('text/')) {
-    return 'file-new-2.png'
-  } else if (mimetype === 'application/pdf') {
-    return 'file-acrobat.png'
-  }
-  return 'file-new-1.png'
-}
 
 module.exports = router

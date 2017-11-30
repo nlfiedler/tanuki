@@ -16,6 +16,7 @@ type Msg
     | ToggleAllTags
     | ToggleAllLocations
     | QueryAssets (WebData AssetList)
+    | ThumblessAsset String
     | Paginate Int
     | FetchAsset (WebData AssetDetails)
     | UpdateFormAssetEdit String String

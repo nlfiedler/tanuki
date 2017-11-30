@@ -60,6 +60,9 @@ update msg model =
         QueryAssets response ->
             ( { model | assetList = response }, Cmd.none )
 
+        ThumblessAsset checksum ->
+            ( { model | assetList = markThumbless model.assetList checksum }, Cmd.none )
+
         Paginate pageNumber ->
             -- We need the tags in order to update the page selection, but
             -- otherwise the updated list is not used.
@@ -306,3 +309,19 @@ updateAssetEditForm response =
                     Forms.updateFormInput form3 "tags" (String.join ", " asset.tags)
             in
                 finalForm
+
+
+{- Mark the asset with the given checksum as missing its thumbnail.
+-}
+markThumbless : WebData AssetList -> String -> WebData AssetList
+markThumbless assetList checksum =
+    let
+        thumbmarker asset =
+            if asset.checksum == checksum && asset.thumbless == False then
+                { asset | thumbless = True}
+            else
+                asset
+        processList list =
+            { list | entries = List.map thumbmarker list.entries}
+    in
+        RemoteData.map processList assetList

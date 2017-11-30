@@ -4,11 +4,13 @@ import Dict
 import Forms
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput, onSubmit)
+import Html.Events exposing (on, onClick, onInput, onSubmit)
 import Html.Keyed
+import Json.Decode
 import Json.Encode exposing (string)
 import List.Extra exposing (greedyGroupsOf)
 import Messages exposing (..)
+import Mimetypes
 import Model exposing (..)
 import RemoteData exposing (WebData)
 import Routing exposing (Route(..))
@@ -335,6 +337,20 @@ viewThumbnailItem entry =
         -- trick to put in a nice separator for the thumbnail caption
         separator =
             span [ property "innerHTML" <| string "&mdash;" ] [ ]
+        -- any asset that fails to produce a thumbnail will get a placeholder
+        imgSrc =
+            if entry.thumbless then
+                "/images/" ++ brokenThumbnailPlaceholder entry.file_name
+            else
+                "/thumbnail/" ++ entry.checksum
+        baseImgAttrs =
+            [ src imgSrc
+            , alt entry.file_name ]
+        imgAttrs =
+            if entry.thumbless then
+                baseImgAttrs
+            else
+                baseImgAttrs ++ [ on "error" (Json.Decode.succeed (ThumblessAsset entry.checksum)) ]
     in
         -- The images are likely being resized to fit the container, but
         -- for now they look okay.
@@ -342,15 +358,32 @@ viewThumbnailItem entry =
             [ div [ class "thumbnail"
                   , onClick <| NavigateTo <| ShowAssetRoute entry.checksum
                   ]
-                [ img [ src ("/thumbnail/" ++ entry.checksum)
-                      , alt entry.file_name
-                      ] [ ]
+                [ img imgAttrs [ ]
                 , div [ class "caption" ]
                     [ text entry.date
                     , separator
                     , text entry.file_name ]
                 ]
             ]
+
+
+-- Map the asset filename to the filename of an image known to be available
+-- on the backend (in public/images).
+brokenThumbnailPlaceholder : String -> String
+brokenThumbnailPlaceholder filename =
+    case Mimetypes.filenameToMimetype filename of
+        Mimetypes.Image ->
+            "file-picture.png"
+        Mimetypes.Video ->
+            "file-video-2.png"
+        Mimetypes.Pdf ->
+            "file-acrobat.png"
+        Mimetypes.Audio ->
+            "file-music-3.png"
+        Mimetypes.Text ->
+            "file-new-2.png"
+        Mimetypes.Unknown ->
+            "file-new-1.png"
 
 
 paginationList : Int -> AssetList -> List (Html Msg)

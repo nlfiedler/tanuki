@@ -64,6 +64,7 @@ type alias AssetSummary =
     , file_name : String
     , date : String
     , location : String
+    , thumbless : Bool  -- if True, thumbnail request had an error
     }
 
 

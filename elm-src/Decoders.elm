@@ -41,6 +41,7 @@ assetsDecoder =
                 |> required "file_name" string
                 |> required "date" string
                 |> required "location" string
+                |> hardcoded False
     in
         decode AssetList
             |> required "count" int

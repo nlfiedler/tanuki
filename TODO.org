@@ -42,12 +42,13 @@
 
 ** General Items
 
-- [TODO] Decide on the overall architecture
-  - A) Rich desktop app, with data stored locally or on a remote drive
-  - B) Lite desktop app, with backend running locally or on a remote host
+- [DONE] Decide on the overall architecture
+  - Lite desktop app, with backend running locally or on a remote host
+  - Desktop app will cache to improve responsiveness and functionality
 - [TODO] Design the new import mechanism to replace incoming processor
   - Drag & drop and/or file selector
   - How to apply attributes to multiple assets
+- [TODO] Get the new backend running on the server
 - [TODO] migrate the old data over to the new document format
   - the sha256 value becomes the document _id
 - [TODO] Need to read `apiUrlPrefix` in Elm code from configuration file
