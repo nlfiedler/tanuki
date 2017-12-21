@@ -45,6 +45,12 @@
 - [DONE] Decide on the overall architecture
   - Lite desktop app, with backend running locally or on a remote host
   - Desktop app will cache to improve responsiveness and functionality
+- [DONE] Consider codifying the asset identifier using base64url
+  - it should shorten the displayed value
+  - see crypto Hash.digest('base64'); not base64url but good proof of concept
+  - e.g. 3YyXwFchsOJPLUWJ4Xv6ob8qb4M8SQxUvJ9P2uQjGwc=
+  - v.s. dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07
+  - does not offer much advantage, 44 vs 64 characters
 - [TODO] Design the new import mechanism to replace incoming processor
   - Drag & drop and/or file selector
   - How to apply attributes to multiple assets

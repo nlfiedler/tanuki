@@ -1,9 +1,11 @@
-const assert = require('chai').assert
+//
+// Copyright (c) 2017 Nathan Fiedler
+//
+const {assert} = require('chai')
+const {before, describe, it, run} = require('mocha')
 const request = require('supertest')
 const fs = require('fs-extra')
 const config = require('config')
-
-/* eslint-env mocha */
 
 // clean up from previous test runs before starting the server
 const dbPath = config.get('backend.dbPath')
