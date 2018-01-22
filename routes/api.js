@@ -128,7 +128,7 @@ router.get('/assets/:id', wrap(async function (req, res, next) {
       ...defaults,
       ...asset,
       checksum: asset['_id'],
-      datetime: dateListToString(getBestDate(asset)),
+      datetime: dateListToString(assets.getBestDate(asset)),
       duration: await assets.getDuration(asset.mimetype, asset['_id']),
       user_date: dateListToString(asset['user_date'])
     })
@@ -140,26 +140,9 @@ router.get('/assets/:id', wrap(async function (req, res, next) {
 
 router.put('/assets/:id', wrap(async function (req, res, next) {
   try {
-    let asset = await backend.fetchDocument(req.params['id'])
+    const asset = await backend.fetchDocument(req.params['id'])
     // merge the new values into the existing document
-    let updated = {
-      ...asset,
-      ...req.body
-    }
-    // perform special field value handling
-    if ('tags' in req.body) {
-      updated.tags = tagStringToList(req.body.tags)
-    }
-    if ('user_date' in req.body) {
-      if (req.body.user_date && req.body.user_date.length > 0) {
-        // pass the original asset for getting the best date, otherwise
-        // you get the 'user_date', which we are trying to set right now
-        updated.user_date = mergeUserDateWithBest(req.body.user_date, asset)
-      } else {
-        // wipe out the user date field if no value is given
-        updated.user_date = null
-      }
-    }
+    const updated = incoming.updateAssetFields(asset, req.body)
     await backend.updateDocument(updated)
     res.json({status: 'success'})
   } catch (err) {
@@ -211,45 +194,6 @@ function dateListToString (dl) {
   }
   // need to adjust the month for Date object
   return new Date(dl[0], dl[1] - 1, dl[2], dl[3], dl[4]).toLocaleString()
-}
-
-// Parse the user date (e.g. '2003-08-30') into an array of numbers, merging the
-// time from the best available date in the asset.
-function mergeUserDateWithBest (userDate, doc) {
-  let [y, m, d] = userDate.split('-').map((x) => parseInt(x))
-  let bestDate = getBestDate(doc)
-  if (bestDate) {
-    return [y, m, d, bestDate[3], bestDate[4]]
-  }
-  return [y, m, d, 0, 0]
-}
-
-// Convert the string of comma-separated tags into an array of sorted and unique
-// values.
-function tagStringToList (tags) {
-  let list = tags.split(',').map((t) => t.trim())
-  let uniq = list.sort().filter((t, i, a) => i === 0 || t !== a[i - 1])
-  return uniq
-}
-
-// The field names of the date/time values in their preferred order. That is,
-// the user-provided value is considered the best, with the Exif original being
-// second, and so on.
-const bestDateOrder = [
-  'user_date',
-  'original_date',
-  'file_date',
-  'import_date'
-]
-
-// Retrieve the preferred date/time value from the document.
-function getBestDate (doc) {
-  for (let field of bestDateOrder) {
-    if (field in doc && doc[field]) {
-      return doc[field]
-    }
-  }
-  return null
 }
 
 module.exports = router

@@ -110,5 +110,146 @@ setTimeout(function () {
     })
   })
 
+  describe('Special metadata handling', function () {
+    const docId = '095964d07f3e821659d4eb27ed9e20cd5160c53385562df727e98eb815bb371f'
+
+    before(async function () {
+      await backend.reinitDatabase()
+    })
+
+    describe('update tags and location via caption', function () {
+      it('should create a new document successfully', function (done) {
+        request(app)
+          .post('/api/assets')
+          .attach('asset', './test/fixtures/lorem-ipsum.txt')
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.status, 'success')
+            assert.equal(res.body.id, docId)
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should permit updating asset fields', function (done) {
+        request(app)
+          .put(`/api/assets/${docId}`)
+          .send({
+            tags: 'fence'
+          })
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.status, 'success')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should serve the updated values', function (done) {
+        request(app)
+          .get(`/api/assets/${docId}`)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.tags.length, 1)
+            assert.equal(res.body.tags[0], 'fence')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should extract tags and location from caption', function (done) {
+        request(app)
+          .put(`/api/assets/${docId}`)
+          .send({
+            caption: 'a mild mannered #cow in @hawaii eating #grass'
+          })
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.status, 'success')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should serve the updated values', function (done) {
+        request(app)
+          .get(`/api/assets/${docId}`)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.caption, 'a mild mannered #cow in @hawaii eating #grass')
+            // sets the location which was previously blank
+            assert.equal(res.body.location, 'hawaii')
+            assert.equal(res.body.tags.length, 3)
+            // merges and sorts tags
+            assert.equal(res.body.tags[0], 'cow')
+            assert.equal(res.body.tags[1], 'fence')
+            assert.equal(res.body.tags[2], 'grass')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should not overwrite location or clobber tags', function (done) {
+        request(app)
+          .put(`/api/assets/${docId}`)
+          .send({
+            caption: 'a #mild mannered #cow in @field eating #grass'
+          })
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.status, 'success')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should serve the updated values', function (done) {
+        request(app)
+          .get(`/api/assets/${docId}`)
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.caption, 'a #mild mannered #cow in @field eating #grass')
+            // does _NOT_ overwrite the existing location information
+            assert.equal(res.body.location, 'hawaii')
+            assert.equal(res.body.tags.length, 4)
+            assert.equal(res.body.tags[0], 'cow')
+            assert.equal(res.body.tags[1], 'fence')
+            assert.equal(res.body.tags[2], 'grass')
+            assert.equal(res.body.tags[3], 'mild')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+  })
+
   run()
 }, 500)

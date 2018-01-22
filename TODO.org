@@ -2,55 +2,15 @@
 
 ** Node.js Rewrite
 
-- [DONE] Create a basic express.js application and get it running
-- [DONE] Build a basic web interface with a simple Elm page (POC)
-  - [DONE] Set up EJS template engine
-  - [DONE] Learn express.js routing, set up / to an EJS view
-  - [DONE] Copy the static assets from the old web app
-  - [DONE] Set up mocha.js and chai for testing
-  - [DONE] Use https://github.com/patrick-steele-idem/app-module-path-node
-  - [DONE] Put dummy API controller in place, with tests
-  - [DONE] Put web middleware on the "pages" router rather than the app
-  - [DONE] Set up gulp build pipeline
-  - [DONE] Ensure Elm code gets watched and automatically compiled
-  - [DONE] Ensure the bootstrap CSS, fonts, and icons are working
-  - [DONE] Remove everything referring to "phoenix"
-- [DONE] Set up basic backend with PouchDB
-  - [DONE] create the "tanuki" database in an appropriate location
-  - [DONE] install design documents (e.g. by_tags)
-- [DONE] Change all of the console output to winston logging statements
-- [DONE] Looks like put() is better than post() for PouchDB
-- [DONE] Rename `backend` to `lib`, and `index.js` to `backend.js`
-- [DONE] Port backend code from Elixir to JavaScript
-  - [DONE] Let backend errors bubble up to the caller
-  - [DONE] https://github.com/lovell/sharp
-  - [DONE] https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
-  - [DONE] Use node-lru-cache for thumbnail caching
-- [DONE] Invoke `query()` with a `limit` of zero to populate the index after creating it
-- [DONE] Implement the "import" route for the upload page to use
-- [DONE] Ensure the Elm interface is working
-- [DONE] Express is caching API requests, but should not
-- [DONE] Elm interface should not show the >> expander when there are not enough attributes
-- [DONE] Show appropriate placeholders for assets that do not have thumbnails
 - [TODO] Figure out how to use layouts with EJS and express.js
   - apparently EJS uses partials instead of a layout
   - Sails.js somehow manages to have real layouts with EJS
 - [TODO] Set the `production` flag in `gulpfile.js` based on environment
-- [DONE] Configure morgan based on our configuration file
 - [TODO] Look at https://moment.github.io/luxon/docs/ for a nice date/time library
 - [TODO] Maybe use https://github.com/expressjs/csurf for CSRF protection
 
 ** General Items
 
-- [DONE] Decide on the overall architecture
-  - Lite desktop app, with backend running locally or on a remote host
-  - Desktop app will cache to improve responsiveness and functionality
-- [DONE] Consider codifying the asset identifier using base64url
-  - it should shorten the displayed value
-  - see crypto Hash.digest('base64'); not base64url but good proof of concept
-  - e.g. 3YyXwFchsOJPLUWJ4Xv6ob8qb4M8SQxUvJ9P2uQjGwc=
-  - v.s. dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07
-  - does not offer much advantage, 44 vs 64 characters
 - [TODO] Design the new import mechanism to replace incoming processor
   - Drag & drop and/or file selector
   - How to apply attributes to multiple assets
@@ -94,16 +54,10 @@
 - [TODO] Once a user has removed a custom query, invoke PouchDB's `db.viewCleanup()` to clean them up
   - Otherwise you get stale query results
 
-** Web Interface
-
-- [DONE] After changing an asset, need to refresh the tags, locations, years
-- [DONE] Get the page border looking the same as before (banner is too close to the top)
-
 ** Incoming Processor
 
 - [TODO] Consider whether we need the old incoming processor functionality
 - [TODO] Implement the periodic running of the file importer
-- [DONE] https://github.com/mattiasw/ExifReader
 - [TODO] https://github.com/sindresorhus/passwd-user
 - [TODO] use https://github.com/broofa/node-mime
 - [TODO] add `image/heic` and `image/heif` to custom mimetypes
