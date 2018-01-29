@@ -134,7 +134,7 @@ router.get('/assets/:id', wrap(async function (req, res, next) {
     })
   } catch (err) {
     // PouchDB errors are basically HTTP errors and work fine here.
-    res.status(err.status).send(err.message)
+    res.status(err.status || 400).send(err.message)
   }
 }))
 
@@ -147,7 +147,7 @@ router.put('/assets/:id', wrap(async function (req, res, next) {
     res.json({status: 'success'})
   } catch (err) {
     // PouchDB errors are basically HTTP errors and work fine here.
-    res.status(err.status).send(err.message)
+    res.status(err.status || 400).send(err.message)
   }
 }))
 
