@@ -8,6 +8,7 @@
 - [TODO] Set the `production` flag in `gulpfile.js` based on environment
 - [TODO] Look at https://moment.github.io/luxon/docs/ for a nice date/time library
 - [TODO] Maybe use https://github.com/expressjs/csurf for CSRF protection
+- [TODO] Consider whether server needs a SIGINT handler (as described in pm2 docs)
 
 ** General Items
 

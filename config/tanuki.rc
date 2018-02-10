@@ -1,46 +1,48 @@
 #!/bin/sh
 #
-# PROVIDE: tanuki
-# REQUIRE: NETWORKING couchdb
+# PROVIDE: tanuki_new
+# REQUIRE: NETWORKING
 # KEYWORD: shutdown
 #
 # Start and stop the tanuki daemon using BSD-style rc.d system.
 #
-# $ sudo cp tanuki.rc /usr/local/etc/rc.d
-# $ sudo chmod +x /usr/local/etc/rc.d/tanuki.rc
-# $ sudo echo 'tanuki_enable="YES"' >> /etc/rc.conf
-# $ sudo service tanuki start
+# $ sudo cp tanuki_new.rc /usr/local/etc/rc.d
+# $ sudo chmod +x /usr/local/etc/rc.d/tanuki_new.rc
+# $ sudo echo 'tanuki_new_enable="YES"' >> /etc/rc.conf
+# $ sudo service tanuki_new start
 #
 
 . /etc/rc.subr
 
-name=tanuki
-rcvar=tanuki_enable
+name=tanuki_new
+rcvar="${name}_enable"
 start_cmd="${name}_start"
 stop_cmd="${name}_stop"
+reload_cmd="${name}_reload"
+status_cmd="${name}_status"
+extra_commands="reload status"
 
 load_rc_config $name
-: ${tanuki_enable:="yes"}
-tanuki_port="${tanuki_port:-8000}"
-tanuki_lang="${tanuki_lang:-en_US.UTF-8}"
-tanuki_log_size="${tanuki_log_size:-1000000}"
+: ${tanuki_new_enable:="yes"}
 
-tanuki_start() {
-    #
-    # LANG: Elixir wants to have utf8 encoding, so explicity set that.
-    #
-    # PATH: The service command does not include /usr/local/bin in the PATH, and
-    # there is a good chance that 'elixir' is there.
-    #
-    # PORT: the port on which the web server will be listening.
-    #
-    # RUN_ERL_LOG_MAXSIZE: size in bytes before the log is rotated.
-    #
-    LANG=${tanuki_lang} PATH=/usr/local/bin:$PATH PORT=${tanuki_port} RUN_ERL_LOG_MAXSIZE=${tanuki_log_size} /opt/tanuki/bin/tanuki start
+pm2() {
+    env PATH="$PATH:/usr/local/bin" PM2_HOME='/root/.pm2' "/usr/local/bin/pm2 $*"
 }
 
-tanuki_stop() {
-    LANG=${tanuki_lang} PATH=/usr/local/bin:$PATH /opt/tanuki/bin/tanuki stop
+tanuki_new_start() {
+    pm2 resurrect
+}
+
+tanuki_new_stop() {
+    pm2 kill
+}
+
+tanuki_new_reload() {
+    pm2 reload all
+}
+
+tanuki_new_status() {
+    pm2 list
 }
 
 run_rc_command "$1"
