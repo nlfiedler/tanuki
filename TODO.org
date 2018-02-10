@@ -43,7 +43,6 @@
   - http://expressjs.com/en/advanced/pm.html
 - [TODO] Review express.js performance guidelines
   - http://expressjs.com/en/advanced/best-practice-performance.html
-- [TODO] Define a production configuration (i.e. for the logging)
 
 ** Migration
 

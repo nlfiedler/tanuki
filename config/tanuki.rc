@@ -9,6 +9,8 @@
 # $ sudo cp tanuki_new.rc /usr/local/etc/rc.d
 # $ sudo chmod +x /usr/local/etc/rc.d/tanuki_new.rc
 # $ sudo echo 'tanuki_new_enable="YES"' >> /etc/rc.conf
+# $ pm2 start ...
+# $ pm2 save
 # $ sudo service tanuki_new start
 #
 
@@ -26,7 +28,7 @@ load_rc_config $name
 : ${tanuki_new_enable:="yes"}
 
 pm2() {
-    env PATH="$PATH:/usr/local/bin" PM2_HOME='/root/.pm2' "/usr/local/bin/pm2 $*"
+    env PATH="$PATH:/usr/local/bin" PM2_HOME='/root/.pm2' /usr/local/bin/pm2 $*
 }
 
 tanuki_new_start() {
