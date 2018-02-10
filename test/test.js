@@ -1094,7 +1094,7 @@ setTimeout(function () {
             assert.equal(date.getFullYear(), 2007)
             assert.equal(date.getMonth() + 1, 9)
             assert.equal(date.getDate(), 14)
-            assert.equal(date.getHours(), 5)
+            assert.oneOf(date.getHours(), [5, 12])
             assert.equal(date.getMinutes(), 7)
             assert.approximately(res.body.duration, 2, 0.5)
           })
