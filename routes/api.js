@@ -95,10 +95,12 @@ router.post('/assets', upload.single('asset'), wrap(async function (req, res, ne
     res.json({status: 'success', id: checksum})
   } catch (err) {
     if (err.status === 404) {
-      let originalDate = await incoming.getOriginalDate(req.file.mimetype, req.file.path)
-      let importDate = incoming.dateToList(new Date())
+      const originalDate = await incoming.getOriginalDate(req.file.mimetype, req.file.path)
+      const importDate = incoming.dateToList(new Date())
+      const duration = await assets.getDuration(req.file.mimetype, req.file.path)
       let doc = {
         _id: checksum,
+        duration,
         file_name: req.file.originalname,
         file_size: req.file.size,
         import_date: importDate,
@@ -122,6 +124,7 @@ router.get('/assets/:id', wrap(async function (req, res, next) {
     let asset = await backend.fetchDocument(req.params['id'])
     let defaults = {
       caption: null,
+      duration: null,
       location: null
     }
     res.json({
@@ -129,7 +132,6 @@ router.get('/assets/:id', wrap(async function (req, res, next) {
       ...asset,
       checksum: asset['_id'],
       datetime: dateListToString(assets.getBestDate(asset)),
-      duration: await assets.getDuration(asset.mimetype, asset['_id']),
       user_date: dateListToString(asset['user_date'])
     })
   } catch (err) {

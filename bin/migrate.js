@@ -44,7 +44,8 @@ async function convertDocument (old) {
   // remove file_owner
   delete updated.file_owner
   // get duration from videos
-  const duration = await assets.getDuration(updated.mimetype, updated._id)
+  const filepath = assets.assetPath(updated._id)
+  const duration = await assets.getDuration(updated.mimetype, filepath)
   if (duration) {
     updated.duration = duration
   }
