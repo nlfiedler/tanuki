@@ -102,7 +102,7 @@ router.post('/import', upload.single('asset'), wrap(async function (req, res, ne
         tags: []
       }
       await backend.updateDocument(doc)
-      incoming.storeAsset(req.file.mimetype, req.file.path, checksum)
+      await incoming.storeAsset(req.file.mimetype, req.file.path, checksum)
       res.redirect(`/assets/${checksum}/edit`)
     } else {
       // some other error occurred

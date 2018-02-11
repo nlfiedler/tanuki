@@ -110,7 +110,7 @@ router.post('/assets', upload.single('asset'), wrap(async function (req, res, ne
         tags: []
       }
       await backend.updateDocument(doc)
-      incoming.storeAsset(req.file.mimetype, req.file.path, checksum)
+      await incoming.storeAsset(req.file.mimetype, req.file.path, checksum)
       res.json({status: 'success', id: checksum})
     } else {
       // some other error occurred
