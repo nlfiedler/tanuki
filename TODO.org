@@ -12,12 +12,6 @@
 
 ** General Items
 
-- [TODO] Design the new import mechanism to replace incoming processor
-  - Drag & drop and/or file selector
-  - How to apply attributes to multiple assets
-- [TODO] Get the new backend running on the server
-- [TODO] migrate the old data over to the new document format
-  - the sha256 value becomes the document _id
 - [TODO] Need to read `apiUrlPrefix` in Elm code from configuration file
   - currently it is modified at deployment time using `sed`
 - [TODO] Look for means of ensuring LevelDB data integrity
@@ -29,38 +23,19 @@
 - [TODO] When performing image manipulations, invoke `sharp.withMetadata()` to preserve metadata
 - [TODO] Add a "people" field
   - Need an admin screen to move a tag from "tags" to "people"
-  - Maybe a generic "move" action:
-    + Given a list of tags to be moved...
-    + And the name of a field (e.g. "people")...
-    + Move the given tags to the named field
-- [TODO] Instead of a "topic" field, perhaps an "occasion" field instead.
-  - For instance, "christina birthday".
-  - Add back to incoming processor using the "^" separator.
-  - Would be on details/edit page for benefit of uploading.
-  - Maybe don't bother exposing on main page, just another field like caption.
+- [TODO] Support an "album" for the assets
+  - Would be on details/edit page for benefit of uploading
+  - Expose on main page as a selector
+  - Assets can belong to multiple albums
+  - Eventually support "smart" albums based on asset attributes
 - [TODO] api to perform database compaction
-- [TODO] Decide what process manager to use; possibly launchd on macOS
-  - http://expressjs.com/en/advanced/pm.html
 - [TODO] Review express.js performance guidelines
   - http://expressjs.com/en/advanced/best-practice-performance.html
-
-** Migration
-
-- [TODO] Consider extracting more information from videos and images into database
-  - Like the sorts of attributes that Photos uses to make smart albums
 
 ** Custom queries
 
 - [TODO] Once a user has removed a custom query, invoke PouchDB's `db.viewCleanup()` to clean them up
   - Otherwise you get stale query results
-
-** Incoming Processor
-
-- [TODO] Consider whether we need the old incoming processor functionality
-- [TODO] Implement the periodic running of the file importer
-- [TODO] https://github.com/sindresorhus/passwd-user
-- [TODO] use https://github.com/broofa/node-mime
-- [TODO] add `image/heic` and `image/heif` to custom mimetypes
 
 ** Productization
 
