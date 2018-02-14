@@ -1,22 +1,22 @@
 #!/bin/sh
 #
-# PROVIDE: tanuki_new
+# PROVIDE: tanuki
 # REQUIRE: NETWORKING
 # KEYWORD: shutdown
 #
 # Start and stop the tanuki daemon using BSD-style rc.d system.
 #
-# $ sudo cp tanuki_new.rc /usr/local/etc/rc.d
-# $ sudo chmod +x /usr/local/etc/rc.d/tanuki_new.rc
-# $ sudo echo 'tanuki_new_enable="YES"' >> /etc/rc.conf
+# $ sudo cp tanuki.rc /usr/local/etc/rc.d
+# $ sudo chmod +x /usr/local/etc/rc.d/tanuki.rc
+# $ sudo echo 'tanuki_enable="YES"' >> /etc/rc.conf
 # $ pm2 start ...
 # $ pm2 save
-# $ sudo service tanuki_new start
+# $ sudo service tanuki start
 #
 
 . /etc/rc.subr
 
-name=tanuki_new
+name=tanuki
 rcvar="${name}_enable"
 start_cmd="${name}_start"
 stop_cmd="${name}_stop"
@@ -25,25 +25,25 @@ status_cmd="${name}_status"
 extra_commands="reload status"
 
 load_rc_config $name
-: ${tanuki_new_enable:="yes"}
+: ${tanuki_enable:="yes"}
 
 pm2() {
     env PATH="$PATH:/usr/local/bin" PM2_HOME='/root/.pm2' /usr/local/bin/pm2 $*
 }
 
-tanuki_new_start() {
+tanuki_start() {
     pm2 resurrect
 }
 
-tanuki_new_stop() {
+tanuki_stop() {
     pm2 kill
 }
 
-tanuki_new_reload() {
+tanuki_reload() {
     pm2 reload all
 }
 
-tanuki_new_status() {
+tanuki_status() {
     pm2 list
 }
 
