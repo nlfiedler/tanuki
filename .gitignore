@@ -1,19 +1,4 @@
 #
-# Elixir/Erlang files
-#
-*.beam
-*.o
-*.plt
-*.pyc
-_build
-deps
-erl_crash.dump
-log
-logs
-mix.lock
-rebar.lock
-
-#
 # Node.js files
 #
 node_modules
