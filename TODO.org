@@ -17,6 +17,7 @@
 - [TODO] Look for means of ensuring LevelDB data integrity
   - Look into enabling extra LevelDB checks (`paranoidChecks`, `verifyChecksums`)
 - [TODO] Use PouchDB/CouchDB replication to keep a local backup
+  - Perform backup after N operations, or every T minutes
   - Recovery is to replace corrupted DB with backup
   - Could just be something that is manually invoked as needed
 - [TODO] Support HEIC/HEIF file formats

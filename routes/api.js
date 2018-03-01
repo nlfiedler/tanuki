@@ -69,7 +69,7 @@ router.get('/assets', wrap(async function (req, res, next) {
     // count is the number of _all_ matching results
     const count = rows.length
     // handle pagination with certain defaults and bounds
-    const pageSize = boundedIntValue(req.query['page_size'], 10, 1, 100)
+    const pageSize = boundedIntValue(req.query['page_size'], 10, 1, 10000)
     const pageLimit = Math.ceil(count / pageSize)
     const page = boundedIntValue(req.query['page'], 1, 1, pageLimit)
     const start = (page - 1) * pageSize
