@@ -7,10 +7,12 @@ const path = require('path')
 const logger = require('morgan')
 const apiRoutes = require('routes/api')
 const pageRoutes = require('routes/pages')
+const gqlRoutes = require('routes/graphql')
 const backend = require('lib/backend')
 const config = require('config')
 const winston = require('winston')
 const rfs = require('rotating-file-stream')
+const {graphiqlExpress} = require('apollo-server-express')
 
 // Configure the logging not related to HTTP, which is handled using morgan.
 winston.exitOnError = false
@@ -51,6 +53,10 @@ if (config.has('morgan.logger.logPath')) {
   app.use(logger('dev'))
 }
 
+app.use('/graphql', gqlRoutes)
+// "graphical" interface for GraphQL development and testing
+// endpointURL must match the prefix for the GraphQL route
+app.use('/graphiql', graphiqlExpress({endpointURL: '/graphql'}))
 app.use('/api', apiRoutes)
 app.use('/', pageRoutes)
 

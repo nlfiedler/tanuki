@@ -21,32 +21,50 @@ const backend = require('lib/backend')
 // A better solution is desired.
 //
 setTimeout(function () {
-  describe('Asset without Exif original date', function () {
-    const docId = '82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09'
+  describe('Asset retrieval', function () {
+    const docId = '37665f499b5ddb74ddc297e89dfad4f06a6c8a90'
 
     before(async function () {
       await backend.reinitDatabase()
+      let doc = {
+        _id: docId,
+        file_date: [2017, 5, 13, 5, 26],
+        file_name: 'IMG_1001.JPG',
+        import_date: [2017, 11, 18, 17, 3],
+        file_owner: 'homura',
+        file_size: 1048576,
+        location: 'kyoto',
+        mimetype: 'image/jpeg',
+        tags: ['puella', 'magi', 'madoka', 'magica']
+      }
+      await backend.updateDocument(doc)
     })
 
-    describe('upload an asset without date', function () {
-      it('should create a new document successfully', function (done) {
-        request(app)
-          .post('/api/assets')
-          .attach('asset', './test/fixtures/fighting_kittens.jpg')
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.status, 'success')
-            assert.equal(res.body.id, docId)
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
+    // Exception gets logged to the console, kind of ugly.
+    // describe('no such asset', function () {
+    //   it('should return an error', function (done) {
+    //     request(app)
+    //       .post(`/graphql`)
+    //       .send({
+    //         query: `query {
+    //           asset(id: "nosuch") {
+    //             id
+    //           }
+    //         }`
+    //       })
+    //       .expect(200)
+    //       .expect(/missing/)
+    //       .end(function (err, res) {
+    //         if (err) {
+    //           return done(err)
+    //         }
+    //         done()
+    //       })
+    //   })
+    // })
 
-      it('should serve the new asset', function (done) {
+    describe('asset by correct identifier', function () {
+      it('should return all asset details', function (done) {
         request(app)
           .post(`/graphql`)
           .send({
@@ -54,20 +72,18 @@ setTimeout(function () {
               asset(id: "${docId}") {
                 filename
                 filesize
-                mimetype
-                caption
                 location
+                mimetype
               }
             }`
           })
           .expect(200)
           .expect((res) => {
             const asset = res.body.data.asset
-            assert.equal(asset.filename, 'fighting_kittens.jpg')
-            assert.equal(asset.filesize, 39932)
+            assert.equal(asset.filename, 'IMG_1001.JPG')
+            assert.equal(asset.filesize, 1048576)
+            assert.equal(asset.location, 'kyoto')
             assert.equal(asset.mimetype, 'image/jpeg')
-            assert.isNull(asset.caption)
-            assert.isNull(asset.location)
           })
           .end(function (err, res) {
             if (err) {
@@ -79,18 +95,18 @@ setTimeout(function () {
     })
   })
 
-  describe('Asset without any Exif data', function () {
-    const docId = '095964d07f3e821659d4eb27ed9e20cd5160c53385562df727e98eb815bb371f'
+  describe('Asset creation and update', function () {
+    const docId = 'dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07'
 
     before(async function () {
       await backend.reinitDatabase()
     })
 
-    describe('upload an asset without date', function () {
-      it('should create a new document successfully', function (done) {
+    describe('upload an asset', function () {
+      it('should create a new document', function (done) {
         request(app)
           .post('/api/assets')
-          .attach('asset', './test/fixtures/lorem-ipsum.txt')
+          .attach('asset', './test/fixtures/dcp_1069.jpg')
           .expect(200)
           .expect((res) => {
             assert.equal(res.body.status, 'success')
@@ -111,6 +127,7 @@ setTimeout(function () {
             query: `query {
               asset(id: "${docId}") {
                 filename
+                datetime
                 mimetype
               }
             }`
@@ -118,35 +135,14 @@ setTimeout(function () {
           .expect(200)
           .expect((res) => {
             const asset = res.body.data.asset
-            assert.equal(asset.filename, 'lorem-ipsum.txt')
-            assert.equal(asset.mimetype, 'text/plain')
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-    })
-  })
-
-  describe('Special metadata handling', function () {
-    const docId = '095964d07f3e821659d4eb27ed9e20cd5160c53385562df727e98eb815bb371f'
-
-    before(async function () {
-      await backend.reinitDatabase()
-    })
-
-    describe('update tags and location via caption', function () {
-      it('should create a new document successfully', function (done) {
-        request(app)
-          .post('/api/assets')
-          .attach('asset', './test/fixtures/lorem-ipsum.txt')
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.status, 'success')
-            assert.equal(res.body.id, docId)
+            assert.equal(asset.filename, 'dcp_1069.jpg')
+            assert.equal(asset.mimetype, 'image/jpeg')
+            let date = new Date(asset.datetime)
+            assert.equal(date.getFullYear(), 2003)
+            assert.equal(date.getMonth() + 1, 9)
+            assert.equal(date.getDate(), 3)
+            assert.equal(date.getHours(), 17)
+            assert.equal(date.getMinutes(), 24)
           })
           .end(function (err, res) {
             if (err) {
@@ -156,52 +152,21 @@ setTimeout(function () {
           })
       })
 
-      it('should update the asset', function (done) {
+      it('should permit updating asset fields', function (done) {
         request(app)
           .post(`/graphql`)
           .send({
             variables: `{
               "input": {
-                "tags": ["fence"]
-              }
-            }`,
-            operationName: 'Update',
-            query: `mutation Update($input: AssetInput!) {
-              update(id: "${docId}", asset: $input) {
-                filename
-                tags
-              }
-            }`
-          })
-          .expect(200)
-          .expect((res) => {
-            const asset = res.body.data.update
-            assert.equal(asset.filename, 'lorem-ipsum.txt')
-            assert.equal(asset.tags.length, 1)
-            assert.equal(asset.tags[0], 'fence')
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should extract tags and location from caption', function (done) {
-        request(app)
-          .post(`/graphql`)
-          .send({
-            variables: `{
-              "input": {
-                "caption": "a mild mannered #cow in @hawaii eating #grass"
+                "caption": "a mild mannered cow",
+                "location": "hawaii",
+                "tags": ["cow", "fence", "grass"]
               }
             }`,
             operationName: 'Update',
             query: `mutation Update($input: AssetInput!) {
               update(id: "${docId}", asset: $input) {
                 caption
-                filename
                 location
                 tags
               }
@@ -210,8 +175,7 @@ setTimeout(function () {
           .expect(200)
           .expect((res) => {
             const asset = res.body.data.update
-            assert.equal(asset.caption, 'a mild mannered #cow in @hawaii eating #grass')
-            assert.equal(asset.filename, 'lorem-ipsum.txt')
+            assert.equal(asset.caption, 'a mild mannered cow')
             assert.equal(asset.location, 'hawaii')
             assert.equal(asset.tags.length, 3)
             assert.equal(asset.tags[0], 'cow')
@@ -226,36 +190,61 @@ setTimeout(function () {
           })
       })
 
-      it('should not overwrite location or clobber tags', function (done) {
+      it('should parse optional user dates', function (done) {
         request(app)
           .post(`/graphql`)
           .send({
             variables: `{
               "input": {
-                "caption": "a #mild mannered #cow in @field eating #grass"
+                "date": "2003-08-30"
               }
             }`,
             operationName: 'Update',
             query: `mutation Update($input: AssetInput!) {
               update(id: "${docId}", asset: $input) {
-                caption
-                filename
-                location
-                tags
+                datetime
               }
             }`
           })
           .expect(200)
           .expect((res) => {
             const asset = res.body.data.update
-            assert.equal(asset.caption, 'a #mild mannered #cow in @field eating #grass')
-            assert.equal(asset.filename, 'lorem-ipsum.txt')
-            assert.equal(asset.location, 'hawaii')
-            assert.equal(asset.tags.length, 4)
-            assert.equal(asset.tags[0], 'cow')
-            assert.equal(asset.tags[1], 'fence')
-            assert.equal(asset.tags[2], 'grass')
-            assert.equal(asset.tags[3], 'mild')
+            let date = new Date(asset.datetime)
+            assert.equal(date.getFullYear(), 2003)
+            assert.equal(date.getMonth() + 1, 8)
+            assert.equal(date.getDate(), 30)
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should permit clearing the user date', function (done) {
+        request(app)
+          .post(`/graphql`)
+          .send({
+            variables: `{
+              "input": {
+                "date": ""
+              }
+            }`,
+            operationName: 'Update',
+            query: `mutation Update($input: AssetInput!) {
+              update(id: "${docId}", asset: $input) {
+                datetime
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const asset = res.body.data.update
+            let date = new Date(asset.datetime)
+            assert.equal(date.getFullYear(), 2003)
+            assert.equal(date.getMonth() + 1, 9)
+            assert.equal(date.getDate(), 3)
           })
           .end(function (err, res) {
             if (err) {

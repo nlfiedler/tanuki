@@ -1,0 +1,121 @@
+#
+# Copyright (c) 2018 Nathan Fiedler
+#
+
+# An `Asset` defines a single entity in the storage system. This typically
+# refers to an image or video, but could by any type of file.
+type Asset {
+  # The unique asset identifier.
+  id: ID!
+  # The original filename of the asset when it was imported.
+  filename: String!
+  # The size in bytes of the asset.
+  filesize: Int!
+  # The date and time that best represents the asset. For images
+  # with EXIF data, this may be the original date-time, while for
+  # videos, it may be the creation time.
+  datetime: String!
+  # The MIME type of the asset (e.g. "image/jpeg").
+  mimetype: String!
+  # The list of tags associated with this asset.
+  tags: [String!]!
+  # The date provided by the user, overrides any other dates.
+  userdate: String
+  # A caption attributed to the asset.
+  caption: String
+  # For video assets, the duration in seconds.
+  duration: Float
+  # Location information for the asset.
+  location: String
+}
+
+# `TagCount` indicates the number of assets with a given tag.
+type TagCount {
+  # The unique name of the tag.
+  value: String!
+  # The count of assets with this tag.
+  count: Int!
+}
+
+# `YearCount` indicates the number of assets with a given year.
+type YearCount {
+  # The unique value for the year.
+  value: Int!
+  # The count of assets with this year.
+  count: Int!
+}
+
+# `LocationCount` indicates the number of assets with a given location.
+type LocationCount {
+  # The unique value for the location.
+  value: String!
+  # The count of assets with this location.
+  count: Int!
+}
+
+# `SearchResult` represents a single result from a query.
+type SearchResult {
+  # The identifier of the matching asset.
+  id: ID!
+  # The date for the matching asset.
+  date: String!
+  # The filename for the matching asset.
+  filename: String!
+  # The location for the matching asset, if available.
+  location: String
+}
+
+# `SearchMeta` is returned from the search query.
+type SearchMeta {
+  # The list of results retrieved via the query.
+  results: [SearchResult]
+  # The total number of matching assets in the system, useful for pagination.
+  count: Int!
+}
+
+type Query {
+  # Find an asset by its unique identifier.
+  asset(id: ID!): Asset
+  # Return the total number of assets in the system.
+  count: Int
+  # Search for assets by the given tags, locations, and years.
+  #
+  # The count indicates how many results to return in a single query,
+  # limited to a maximum of 10,000.
+  #
+  # The offset is useful for pagination.
+  search(tags: [String] = [], locations: [String] = [], years: [Int] = [],
+         count: Int = 10, offset: Int = 0): SearchMeta
+  # Retrieve the list of locations and their associated asset count.
+  locations: [LocationCount]
+  # Retrieve the list of tags and their associated asset count.
+  tags: [TagCount]
+  # Retrieve the list of years and their associated asset count.
+  years: [YearCount]
+}
+
+# `AssetInput` is used to create or update an asset.
+input AssetInput {
+  # New set of tags.
+  tags: [String]
+  # New caption.
+  caption: String
+  # New location.
+  location: String
+  # Date that overrides intrinsic values; an empty string clears the
+  # custom field and reverts back to the intrinsic value.
+  date: String
+}
+
+type Mutation {
+  # Update the asset with the given tags, caption, and date.
+  #
+  # The given date will override any dates already associated with the asset
+  # (e.g. original date, imported date).
+  update(id: ID!, asset: AssetInput!): Asset!
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}

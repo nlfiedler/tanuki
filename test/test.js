@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 Nathan Fiedler
+// Copyright (c) 2018 Nathan Fiedler
 //
 const {assert} = require('chai')
 const {before, describe, it, run} = require('mocha')
@@ -34,13 +34,19 @@ setTimeout(function () {
       await backend.reinitDatabase()
     })
 
-    describe('assets', function () {
+    describe('asset count', function () {
       it('should return 0', function (done) {
         request(app)
-          .get('/api/assets')
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              count
+            }`
+          })
           .expect(200)
-          .expect('{"assets":[],"count":0}')
+          .expect(res => {
+            assert.equal(res.body.data.count, 0)
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -50,14 +56,55 @@ setTimeout(function () {
       })
     })
 
-    describe('assets by tag', function () {
+    describe('asset search', function () {
       it('should return nothing', function (done) {
         request(app)
-          .get('/api/assets')
-          .query({'tags[]': ['picnic']})
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              search {
+                results {
+                  id
+                }
+                count
+              }
+            }`
+          })
           .expect(200)
-          .expect('{"assets":[],"count":0}')
+          .expect(res => {
+            const search = res.body.data.search
+            assert.equal(search.results.length, 0)
+            assert.equal(search.count, 0)
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('asset search by tag', function () {
+      it('should return nothing', function (done) {
+        request(app)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              search(tags: ["picnic"]) {
+                results {
+                  id
+                }
+                count
+              }
+            }`
+          })
+          .expect(200)
+          .expect(res => {
+            const search = res.body.data.search
+            assert.equal(search.results.length, 0)
+            assert.equal(search.count, 0)
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -70,11 +117,20 @@ setTimeout(function () {
     describe('tags', function () {
       it('should return nothing', function (done) {
         request(app)
-          .get('/api/tags')
-          .expect('Content-Type', /json/)
-          .expect('Content-Length', '2')
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              tags {
+                value
+                count
+              }
+            }`
+          })
           .expect(200)
-          .expect('[]')
+          .expect(res => {
+            const tags = res.body.data.tags
+            assert.equal(tags.length, 0)
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -87,11 +143,20 @@ setTimeout(function () {
     describe('locations', function () {
       it('should return nothing', function (done) {
         request(app)
-          .get('/api/locations')
-          .expect('Content-Type', /json/)
-          .expect('Content-Length', '2')
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              locations {
+                value
+                count
+              }
+            }`
+          })
           .expect(200)
-          .expect('[]')
+          .expect(res => {
+            const locations = res.body.data.locations
+            assert.equal(locations.length, 0)
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -104,11 +169,20 @@ setTimeout(function () {
     describe('years', function () {
       it('should return nothing', function (done) {
         request(app)
-          .get('/api/years')
-          .expect('Content-Type', /json/)
-          .expect('Content-Length', '2')
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              years {
+                value
+                count
+              }
+            }`
+          })
           .expect(200)
-          .expect('[]')
+          .expect(res => {
+            const years = res.body.data.years
+            assert.equal(years.length, 0)
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -169,10 +243,17 @@ setTimeout(function () {
     describe('assets', function () {
       it('should return count of 3', function (done) {
         request(app)
-          .get('/api/assets')
-          .expect('Content-Type', /json/)
+        request(app)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              count
+            }`
+          })
           .expect(200)
-          .expect('{"assets":[],"count":3}')
+          .expect(res => {
+            assert.equal(res.body.data.count, 3)
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -185,12 +266,31 @@ setTimeout(function () {
     describe('assets by tag', function () {
       it('should return assets with matching tags', function (done) {
         request(app)
-          .get('/api/assets')
-          .query({'tags[]': ['picnic']})
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              search(tags: ["picnic"]) {
+                results {
+                  filename
+                  location
+                }
+                count
+              }
+            }`
+          })
           .expect(200)
-          .expect(/"file_name":"img0315.jpg"/)
-          .expect(/"location":"san francisco"/)
+          .expect((res) => {
+            const search = res.body.data.search
+            assert.equal(search.count, 2)
+            assert.include([
+              search.results[0].filename,
+              search.results[1].filename
+            ], 'img0315.jpg')
+            assert.include([
+              search.results[0].location,
+              search.results[1].location
+            ], 'san francisco')
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -203,13 +303,22 @@ setTimeout(function () {
     describe('asset by multiple tags', function () {
       it('should return exactly the one matching asset', function (done) {
         request(app)
-          .get('/api/assets')
-          .query({'tags[]': ['cat', 'cheeseburger']})
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              search(tags: ["cat","cheeseburger"]) {
+                results {
+                  filename
+                }
+                count
+              }
+            }`
+          })
           .expect(200)
           .expect((res) => {
-            assert.equal(res.body.count, 1)
-            assert.equal(res.body.assets[0].file_name, 'IMG_6005.JPG')
+            const search = res.body.data.search
+            assert.equal(search.count, 1)
+            assert.equal(search.results[0].filename, 'IMG_6005.JPG')
           })
           .end(function (err, res) {
             if (err) {
@@ -221,13 +330,26 @@ setTimeout(function () {
     })
 
     describe('tags', function () {
-      it('should return list of tags in JSON format', function (done) {
+      it('should return list of tags', function (done) {
         request(app)
-          .get('/api/tags')
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              tags {
+                value
+                count
+              }
+            }`
+          })
           .expect(200)
-          .expect(/{"tag":"cheeseburger","count":1}/)
-          .expect(/{"tag":"picnic","count":2}/)
+          .expect(res => {
+            const tags = res.body.data.tags
+            assert.equal(tags.length, 4)
+            assert.deepEqual(tags[0], {value: 'cat', count: 2})
+            assert.deepEqual(tags[1], {value: 'cheeseburger', count: 1})
+            assert.deepEqual(tags[2], {value: 'dog', count: 1})
+            assert.deepEqual(tags[3], {value: 'picnic', count: 2})
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -238,12 +360,23 @@ setTimeout(function () {
     })
 
     describe('locations', function () {
-      it('should return list of locations in JSON format', function (done) {
+      it('should return list of locations', function (done) {
         request(app)
-          .get('/api/locations')
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              locations {
+                value
+                count
+              }
+            }`
+          })
           .expect(200)
-          .expect(/{"location":"san francisco","count":2}/)
+          .expect(res => {
+            const locations = res.body.data.locations
+            assert.equal(locations.length, 1)
+            assert.deepEqual(locations[0], {value: 'san francisco', count: 2})
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -254,12 +387,24 @@ setTimeout(function () {
     })
 
     describe('years', function () {
-      it('should return list of years in JSON format', function (done) {
+      it('should return list of years', function (done) {
         request(app)
-          .get('/api/years')
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              years {
+                value
+                count
+              }
+            }`
+          })
           .expect(200)
-          .expect(/{"year":2014,"count":2}/)
+          .expect(res => {
+            const years = res.body.data.years
+            assert.equal(years.length, 2)
+            assert.deepEqual(years[0], {value: 2013, count: 1})
+            assert.deepEqual(years[1], {value: 2014, count: 2})
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -324,12 +469,19 @@ setTimeout(function () {
     })
 
     describe('assets', function () {
-      it('should return count of 100', function (done) {
+      it('should return a large count', function (done) {
         request(app)
-          .get('/api/assets')
-          .expect('Content-Type', /json/)
+        request(app)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              count
+            }`
+          })
           .expect(200)
-          .expect('{"assets":[],"count":49}')
+          .expect(res => {
+            assert.equal(res.body.data.count, 49)
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -342,11 +494,22 @@ setTimeout(function () {
     describe('assets by unknown tag', function () {
       it('should return nothing', function (done) {
         request(app)
-          .get('/api/assets')
-          .query({'tags[]': ['not_in_here']})
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              search(tags: ["not_in_here"]) {
+                results {
+                  id
+                }
+                count
+              }
+            }`
+          })
           .expect(200)
-          .expect('{"assets":[],"count":0}')
+          .expect((res) => {
+            const search = res.body.data.search
+            assert.equal(search.count, 0)
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -383,16 +546,24 @@ setTimeout(function () {
     })
 
     describe('assets by one year', function () {
-      // With async/await let's go directly against the backend.
       it('should return list of matching assets', function (done) {
         request(app)
-          .get('/api/assets')
-          .query({'years[]': [2012]})
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              search(years: [2012]) {
+                results {
+                  date
+                }
+                count
+              }
+            }`
+          })
           .expect(200)
           .expect((res) => {
-            assert.isNotEmpty(res.body.assets)
-            for (let row of res.body.assets) {
+            const search = res.body.data.search
+            assert.isNotEmpty(search.results)
+            for (let row of search.results) {
               let date = new Date(row.date)
               assert.equal(date.getFullYear(), 2012)
             }
@@ -409,10 +580,19 @@ setTimeout(function () {
     describe('assets with an invalid year', function () {
       it('should return an error', function (done) {
         request(app)
-          .get('/api/assets')
-          .query({'years[]': ['alpha']})
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              search(years: ["foo"]) {
+                results {
+                  date
+                }
+                count
+              }
+            }`
+          })
           .expect(400)
-          .expect(/years must be integers/)
+          .expect(/Expected type Int/)
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -425,13 +605,22 @@ setTimeout(function () {
     describe('assets by multiple years', function () {
       it('should return list of matching assets', function (done) {
         request(app)
-          .get('/api/assets')
-          .query({'years[]': [2012, 2013]})
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              search(years: [2012, 2013]) {
+                results {
+                  date
+                }
+                count
+              }
+            }`
+          })
           .expect(200)
           .expect((res) => {
-            assert.isNotEmpty(res.body.assets)
-            for (let row of res.body.assets) {
+            const search = res.body.data.search
+            assert.isNotEmpty(search.results)
+            for (let row of search.results) {
               let date = new Date(row.date)
               assert.oneOf(date.getFullYear(), [2012, 2013])
             }
@@ -449,13 +638,22 @@ setTimeout(function () {
       // With async/await let's go directly against the backend.
       it('should return list of matching assets', function (done) {
         request(app)
-          .get('/api/assets')
-          .query({'locations[]': ['osaka']})
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              search(locations: ["osaka"]) {
+                results {
+                  location
+                }
+                count
+              }
+            }`
+          })
           .expect(200)
           .expect((res) => {
-            assert.isNotEmpty(res.body.assets)
-            for (let row of res.body.assets) {
+            const search = res.body.data.search
+            assert.isNotEmpty(search.results)
+            for (let row of search.results) {
               assert.equal(row.location, 'osaka')
             }
           })
@@ -471,13 +669,22 @@ setTimeout(function () {
     describe('assets by multiple locations', function () {
       it('should return list of matching assets', function (done) {
         request(app)
-          .get('/api/assets')
-          .query({'locations[]': ['kyoto', 'osaka']})
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              search(locations: ["kyoto", "osaka"]) {
+                results {
+                  location
+                }
+                count
+              }
+            }`
+          })
           .expect(200)
           .expect((res) => {
-            assert.isNotEmpty(res.body.assets)
-            for (let row of res.body.assets) {
+            const search = res.body.data.search
+            assert.isNotEmpty(search.results)
+            for (let row of search.results) {
               assert.oneOf(row.location, ['kyoto', 'osaka'])
             }
           })
@@ -493,22 +700,27 @@ setTimeout(function () {
     describe('assets by tag, location, and year', function () {
       it('should return list of matching assets', function (done) {
         request(app)
-          .get('/api/assets')
-          .query({
-            'locations[]': ['osaka'],
-            'tags[]': ['cat', 'hot'],
-            'years[]': [2012]
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              search(tags: ["cat", "hot"], locations: ["osaka"], years: [2012]) {
+                results {
+                  date
+                  location
+                }
+                count
+              }
+            }`
           })
-          .expect('Content-Type', /json/)
           .expect(200)
           .expect((res) => {
-            assert.isNotEmpty(res.body.assets)
-            for (let row of res.body.assets) {
+            const search = res.body.data.search
+            assert.isNotEmpty(search.results)
+            for (let row of search.results) {
               assert.equal(row.location, 'osaka')
               let date = new Date(row.date)
               assert.equal(date.getFullYear(), 2012)
-              // The tags are not included in the results, but very likely it is
-              // working correctly given all of the other tests.
+              // The tags are not included in the results.
             }
           })
           .end(function (err, res) {
@@ -521,12 +733,23 @@ setTimeout(function () {
     })
 
     describe('tags', function () {
-      it('should return list of tags in JSON format', function (done) {
+      it('should return list of tags', function (done) {
         request(app)
-          .get('/api/tags')
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              tags {
+                value
+              }
+            }`
+          })
           .expect(200)
-          .expect(/"tag":"huddle"/)
+          .expect(res => {
+            const tags = res.body.data.tags
+            assert.equal(tags.length, 21)
+            assert.equal(tags[0].value, 'cat')
+            assert.equal(tags[20].value, 'huddle')
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -537,12 +760,23 @@ setTimeout(function () {
     })
 
     describe('locations', function () {
-      it('should return list of locations in JSON format', function (done) {
+      it('should return list of locations', function (done) {
         request(app)
-          .get('/api/locations')
-          .expect('Content-Type', /json/)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              locations {
+                value
+              }
+            }`
+          })
           .expect(200)
-          .expect(/"location":"osaka"/)
+          .expect(res => {
+            const locations = res.body.data.locations
+            assert.equal(locations.length, 7)
+            assert.equal(locations[0].value, 'kamakura')
+            assert.equal(locations[6].value, 'yokohama')
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)
@@ -553,567 +787,27 @@ setTimeout(function () {
     })
 
     describe('years', function () {
-      it('should return list of years in JSON format', function (done) {
+      it('should return list of years', function (done) {
         request(app)
-          .get('/api/years')
-          .expect('Content-Type', /json/)
-          .expect(200)
-          .expect(/"year":2014/)
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-    })
-  })
-
-  //
-  // pagination tests
-  //
-  describe('Pagination', function () {
-    before(async function () {
-      await backend.reinitDatabase()
-      const userList = ['akemi', 'chise', 'homura', 'kyoko', 'madoka', 'midori', 'sayaka']
-      for (let n = 0; n < 16; n++) {
-        // The file date will be used to cause the results to appear in the
-        // desired order, making the pagination easier to test (by looking at
-        // the file name which is cheaper than parsing dates again).
-        const fileName = `IMG_${1000 + n}.JPG`
-        const fileOwner = sampleOne(userList)
-        // produce identifiers that have decent entropy and distribution
-        const id = pouchCollate.toIndexableString([fileName, fileOwner])
-        let doc = {
-          _id: id,
-          file_date: [2000 + n, 5, 13, 5, 26],
-          file_name: fileName,
-          import_date: [2017, 11, 18, 17, 3],
-          file_owner: fileOwner,
-          file_size: 1048576,
-          location: 'kamakura',
-          mimetype: 'image/jpeg',
-          tags: ['cat']
-        }
-        await backend.updateDocument(doc)
-      }
-      // Prime the indices so the tests appear to run faster and do not show
-      // duration values in red, which looks bad.
-      await backend.byTags(['foobar'])
-    })
-
-    describe('page size of 6, default page 1', function () {
-      it('should return 6 assets', function (done) {
-        request(app)
-          .get('/api/assets')
-          .query({
-            'tags[]': ['cat'],
-            'page_size': 6
-          })
-          .expect('Content-Type', /json/)
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.count, 16)
-            assert.isNotEmpty(res.body.assets)
-            assert.equal(res.body.assets.length, 6)
-            assert.equal(res.body.assets[0].file_name, 'IMG_1015.JPG')
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-    })
-
-    describe('page size of 6, page 2', function () {
-      it('should return 6 assets', function (done) {
-        request(app)
-          .get('/api/assets')
-          .query({
-            'tags[]': ['cat'],
-            'page_size': 6,
-            'page': 2
-          })
-          .expect('Content-Type', /json/)
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.count, 16)
-            assert.isNotEmpty(res.body.assets)
-            assert.equal(res.body.assets.length, 6)
-            assert.equal(res.body.assets[0].file_name, 'IMG_1009.JPG')
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-    })
-
-    describe('page size of 6, last page', function () {
-      it('should return fewer than page_size assets', function (done) {
-        request(app)
-          .get('/api/assets')
-          .query({
-            'tags[]': ['cat'],
-            'page_size': 6,
-            'page': 3
-          })
-          .expect('Content-Type', /json/)
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.count, 16)
-            assert.isNotEmpty(res.body.assets)
-            assert.equal(res.body.assets.length, 4)
-            assert.equal(res.body.assets[3].file_name, 'IMG_1000.JPG')
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-    })
-
-    describe('page size of 6, out of range page', function () {
-      it('should return assets for last page', function (done) {
-        request(app)
-          .get('/api/assets')
-          .query({
-            'tags[]': ['cat'],
-            'page_size': 6,
-            'page': 10
-          })
-          .expect('Content-Type', /json/)
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.count, 16)
-            assert.isNotEmpty(res.body.assets)
-            assert.equal(res.body.assets.length, 4)
-            assert.equal(res.body.assets[3].file_name, 'IMG_1000.JPG')
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-    })
-
-    describe('page size of 500', function () {
-      it('should return all 16 assets', function (done) {
-        request(app)
-          .get('/api/assets')
-          .query({
-            'tags[]': ['cat'],
-            'page_size': 500
-          })
-          .expect('Content-Type', /json/)
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.count, 16)
-            assert.isNotEmpty(res.body.assets)
-            assert.equal(res.body.assets.length, 16)
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-    })
-  })
-
-  //
-  // fetching assets by identifier
-  //
-  describe('Asset retrieval', function () {
-    const docId = '37665f499b5ddb74ddc297e89dfad4f06a6c8a90'
-
-    before(async function () {
-      await backend.reinitDatabase()
-      let doc = {
-        _id: docId,
-        file_date: [2017, 5, 13, 5, 26],
-        file_name: 'IMG_1001.JPG',
-        import_date: [2017, 11, 18, 17, 3],
-        file_owner: 'homura',
-        file_size: 1048576,
-        location: 'kyoto',
-        mimetype: 'image/jpeg',
-        tags: ['puella', 'magi', 'madoka', 'magica']
-      }
-      await backend.updateDocument(doc)
-    })
-
-    describe('no such asset', function () {
-      it('should return an error', function (done) {
-        request(app)
-          .get('/api/assets/nosuch')
-          .expect('Content-Type', /text/)
-          .expect(404)
-          .expect(/missing/)
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-    })
-
-    describe('asset by correct identifier', function () {
-      it('should return all asset details', function (done) {
-        request(app)
-          .get(`/api/assets/${docId}`)
-          .expect('Content-Type', /json/)
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.file_name, 'IMG_1001.JPG')
-            assert.equal(res.body.file_owner, 'homura')
-            assert.equal(res.body.file_size, 1048576)
-            assert.equal(res.body.location, 'kyoto')
-            assert.equal(res.body.mimetype, 'image/jpeg')
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-    })
-  })
-
-  describe('Asset creation and update', function () {
-    const docId = 'dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07'
-
-    before(async function () {
-      await backend.reinitDatabase()
-    })
-
-    describe('upload an asset', function () {
-      it('should create a new document', function (done) {
-        request(app)
-          .post('/api/assets')
-          .attach('asset', './test/fixtures/dcp_1069.jpg')
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.status, 'success')
-            assert.equal(res.body.id, docId)
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should serve the new asset', function (done) {
-        request(app)
-          .get(`/api/assets/${docId}`)
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.file_name, 'dcp_1069.jpg')
-            assert.equal(res.body.mimetype, 'image/jpeg')
-            let date = new Date(res.body.datetime)
-            assert.equal(date.getFullYear(), 2003)
-            assert.equal(date.getMonth() + 1, 9)
-            assert.equal(date.getDate(), 3)
-            assert.equal(date.getHours(), 17)
-            assert.equal(date.getMinutes(), 24)
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should permit updating asset fields', function (done) {
-        request(app)
-          .put(`/api/assets/${docId}`)
+          .post(`/graphql`)
           .send({
-            location: 'hawaii',
-            caption: 'a mild mannered cow',
-            tags: 'cow,fence,grass'
+            query: `query {
+              years {
+                value
+              }
+            }`
           })
           .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.status, 'success')
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
+          .expect(res => {
+            const years = res.body.data.years
+            assert.isNotEmpty(years)
+            let found = false
+            for (let tag of years) {
+              if (tag.value === 2014) {
+                found = true
+              }
             }
-            done()
-          })
-      })
-
-      it('should serve the updated values', function (done) {
-        request(app)
-          .get(`/api/assets/${docId}`)
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.caption, 'a mild mannered cow')
-            assert.equal(res.body.location, 'hawaii')
-            assert.equal(res.body.tags[0], 'cow')
-            assert.equal(res.body.tags[1], 'fence')
-            assert.equal(res.body.tags[2], 'grass')
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should parse optional user dates', function (done) {
-        request(app)
-          .put(`/api/assets/${docId}`)
-          .send({user_date: '2003-08-30'})
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.status, 'success')
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should serve the custom user date', function (done) {
-        request(app)
-          .get(`/api/assets/${docId}`)
-          .expect(200)
-          .expect((res) => {
-            let date = new Date(res.body.user_date)
-            assert.equal(date.getFullYear(), 2003)
-            assert.equal(date.getMonth() + 1, 8)
-            assert.equal(date.getDate(), 30)
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should permit clearing the user date', function (done) {
-        request(app)
-          .put(`/api/assets/${docId}`)
-          .send({user_date: null})
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.status, 'success')
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should serve the cleared user date', function (done) {
-        request(app)
-          .get(`/api/assets/${docId}`)
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.user_date, '')
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-    })
-  })
-
-  describe('Asset content serving', function () {
-    const docId = 'dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07'
-
-    before(async function () {
-      await backend.reinitDatabase()
-    })
-
-    describe('upload an asset', function () {
-      it('should create a new document', function (done) {
-        request(app)
-          .post('/import')
-          .attach('asset', './test/fixtures/dcp_1069.jpg')
-          .expect(302)
-          .expect('Content-Type', /text/)
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should serve the thumbnail', function (done) {
-        request(app)
-          .get(`/thumbnail/${docId}`)
-          .expect(200)
-          .expect('Content-Type', /image/)
-          .expect((res) => {
-            assert.instanceOf(res.body, Buffer)
-            assert.approximately(res.body.byteLength, 11000, 1000)
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should serve the preview', function (done) {
-        request(app)
-          .get(`/preview/${docId}`)
-          .expect(200)
-          .expect('Content-Type', /image/)
-          .expect((res) => {
-            assert.instanceOf(res.body, Buffer)
-            assert.approximately(res.body.byteLength, 39000, 1000)
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should serve the asset content', function (done) {
-        request(app)
-          .get(`/asset/${docId}`)
-          .expect(200)
-          .expect('Content-Type', /image/)
-          .expect('Content-Length', '80977')
-          .expect((res) => {
-            assert.instanceOf(res.body, Buffer)
-            assert.equal(res.body.byteLength, 80977)
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-    })
-
-    describe('no such asset', function () {
-      it('should return 404 for thumbnail', function (done) {
-        request(app)
-          .get('/thumbnail/nosuchid')
-          .expect(404)
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should return 404 for preview', function (done) {
-        request(app)
-          .get('/preview/nosuchid')
-          .expect(404)
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should return 404 for asset', function (done) {
-        request(app)
-          .get('/asset/nosuchid')
-          .expect(404)
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-    })
-  })
-
-  describe('Video file metadata', function () {
-    const docId = '4f86f7dd48474b8e6571beeabbd79111267f143c0786bcd45def0f6b33ae0423'
-
-    before(async function () {
-      await backend.reinitDatabase()
-    })
-
-    describe('upload a video asset', function () {
-      it('should create a new document', function (done) {
-        request(app)
-          .post('/api/assets')
-          .attach('asset', './test/fixtures/100_1206.MOV')
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.status, 'success')
-            assert.equal(res.body.id, docId)
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should serve video asset details', function (done) {
-        request(app)
-          .get(`/api/assets/${docId}`)
-          .expect(200)
-          .expect((res) => {
-            assert.equal(res.body.file_name, '100_1206.MOV')
-            assert.equal(res.body.mimetype, 'video/quicktime')
-            let date = new Date(res.body.datetime)
-            assert.equal(date.getFullYear(), 2007)
-            assert.equal(date.getMonth() + 1, 9)
-            assert.equal(date.getDate(), 14)
-            assert.oneOf(date.getHours(), [5, 12])
-            assert.equal(date.getMinutes(), 7)
-            assert.approximately(res.body.duration, 2, 0.5)
-          })
-          .end(function (err, res) {
-            if (err) {
-              return done(err)
-            }
-            done()
-          })
-      })
-
-      it('should serve the thumbnail', function (done) {
-        request(app)
-          .get(`/thumbnail/${docId}`)
-          .expect(200)
-          .expect('Content-Type', /image/)
-          .expect((res) => {
-            assert.instanceOf(res.body, Buffer)
-            assert.approximately(res.body.byteLength, 9000, 1000)
+            assert.isTrue(found, 'found year 2014')
           })
           .end(function (err, res) {
             if (err) {

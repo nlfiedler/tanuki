@@ -1,5 +1,21 @@
 * TODO
 
+** GraphQL Rewrite
+
+- [TODO] Rewrite the Elm frontend to issue GraphQL queries
+  - https://github.com/jamesmacaulay/elm-graphql
+- [TODO] Remove the REST API
+- [TODO] Rename the document fields to match GraphQL schema
+  - do away with the field renaming in resolvers.js
+  - do away with the "file_owner" field, it's useless now
+  - consider removing "userdate" from Asset type, seems useless
+- [TODO] Perform migration on production
+- [TODO] mujina must use "id" instead of "checksum" in asset queries
+- [TODO] consider defining a DateTime type for datetime, userdate
+  - c.f. https://www.apollographql.com/docs/graphql-tools/scalars.html
+- [TODO] consider whether "original" date should be in schema
+  - test/metadata.js used to check that original_date was null for image w/o EXIF
+
 ** Node.js Rewrite
 
 - [TODO] Figure out how to use layouts with EJS and express.js
