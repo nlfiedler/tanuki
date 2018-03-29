@@ -12,7 +12,7 @@ import List.Extra exposing (greedyGroupsOf)
 import Messages exposing (..)
 import Mimetypes
 import Model exposing (..)
-import RemoteData exposing (WebData)
+import RemoteData
 import Routing exposing (Route(..))
 
 
@@ -162,7 +162,7 @@ yearSelector model =
         ul [ class "list-inline" ] entries
 
 
-viewYearList : (Int -> msg) -> WebData YearList -> List (Html msg)
+viewYearList : (Int -> msg) -> GraphData YearList -> List (Html msg)
 viewYearList msg entries =
     case entries of
         RemoteData.NotAsked ->
@@ -342,7 +342,7 @@ viewThumbnailItem entry =
             if entry.thumbless then
                 "/images/" ++ brokenThumbnailPlaceholder entry.file_name
             else
-                "/thumbnail/" ++ entry.checksum
+                "/thumbnail/" ++ entry.id
         baseImgAttrs =
             [ src imgSrc
             , alt entry.file_name ]
@@ -350,13 +350,13 @@ viewThumbnailItem entry =
             if entry.thumbless then
                 baseImgAttrs
             else
-                baseImgAttrs ++ [ on "error" (Json.Decode.succeed (ThumblessAsset entry.checksum)) ]
+                baseImgAttrs ++ [ on "error" (Json.Decode.succeed (ThumblessAsset entry.id)) ]
     in
         -- The images are likely being resized to fit the container, but
         -- for now they look okay.
         div [ class "col-sm-6 col-md-4" ]
             [ div [ class "thumbnail"
-                  , onClick <| NavigateTo <| ShowAssetRoute entry.checksum
+                  , onClick <| NavigateTo <| ShowAssetRoute entry.id
                   ]
                 [ img imgAttrs [ ]
                 , div [ class "caption" ]
@@ -489,7 +489,7 @@ viewAsset model =
                 , dl [ class "dl-horizontal" ] (viewAssetDetails asset)
                 , div [ class "col-sm-offset-2 col-sm-10" ]
                     [ a [ class "btn btn-default"
-                        , onClick <| NavigateTo <| EditAssetRoute asset.checksum ] [ text "Edit" ]
+                        , onClick <| NavigateTo <| EditAssetRoute asset.id ] [ text "Edit" ]
                     ]
                 , backToHomeLink
                 ]
@@ -510,16 +510,16 @@ viewAssetPreview asset =
     if String.startsWith "video/" asset.mimetype then
         video [ style [ ("width", "100%"), ("height", "100%") ]
               , controls True, preload "auto" ]
-            [ source [ src ("/asset/" ++ asset.checksum)
+            [ source [ src ("/asset/" ++ asset.id)
                      , type_ (assetMimeType asset.mimetype) ] [ ]
             , text "Bummer, your browser does not support the HTML5"
             , code [ ] [ text "video" ]
             , text "tag."
             ]
     else
-        a [ href ("/asset/" ++ asset.checksum) ]
+        a [ href ("/asset/" ++ asset.id) ]
             [ img [ class "asset"
-                  , src ("/preview/" ++ asset.checksum)
+                  , src ("/preview/" ++ asset.id)
                   , alt asset.file_name ] [ ]
             ]
 
@@ -529,7 +529,7 @@ viewAssetDetails asset =
     let
         part1 =
             [ ( "Size", (toString asset.file_size) )
-            , ( "SHA256", asset.checksum )
+            , ( "SHA256", asset.id )
             ]
         -- The duration will be placed in the middle since it seems to fit
         -- better there than after the tags, even though that would have
@@ -622,7 +622,7 @@ editAssetForm form asset =
         -- Apparently the "on submit" on the form works better than using "on
         -- click" on a particular form input/button.
         Html.form [ class "form-horizontal"
-                  , onSubmit (SubmitAsset asset.checksum)
+                  , onSubmit (SubmitAsset asset.id)
                   ]
             [ div [ class "form-group" ]
                 [ editAssetFormGroup form "user_date" "Custom Date" userDate "date" "yyyy-mm-dd"

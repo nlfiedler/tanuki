@@ -12,14 +12,14 @@ import Routing exposing (Route(..), parse, toPath)
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        FetchTags response ->
-            ( { model | tagList = response }, Cmd.none )
+        TagsResponse response ->
+            ( { model | tagList = unwrapResponse response }, Cmd.none )
 
-        FetchYears response ->
-            ( { model | yearList = response }, Cmd.none )
+        YearsResponse response ->
+            ( { model | yearList = unwrapResponse response }, Cmd.none )
 
-        FetchLocations response ->
-            ( { model | locationList = response }, Cmd.none )
+        LocationsResponse response ->
+            ( { model | locationList = unwrapResponse response }, Cmd.none )
 
         ToggleTag label ->
             let
@@ -57,11 +57,11 @@ update msg model =
         ToggleAllLocations ->
             ( { model | showingAllLocations = not model.showingAllLocations }, Cmd.none )
 
-        QueryAssets response ->
-            ( { model | assetList = response }, Cmd.none )
+        AssetsResponse response ->
+            ( { model | assetList = unwrapResponse response }, Cmd.none )
 
-        ThumblessAsset checksum ->
-            ( { model | assetList = markThumbless model.assetList checksum }, Cmd.none )
+        ThumblessAsset id ->
+            ( { model | assetList = markThumbless model.assetList id }, Cmd.none )
 
         Paginate pageNumber ->
             -- We need the tags in order to update the page selection, but
@@ -72,10 +72,10 @@ update msg model =
             in
                 ( { model | pageNumber = pageNumber }, cmd )
 
-        FetchAsset response ->
+        AssetResponse response ->
             ( { model |
-                  asset = response,
-                  assetEditForm = updateAssetEditForm response
+                  asset = unwrapResponse response,
+                  assetEditForm = updateAssetEditForm (unwrapResponse response)
               }, Cmd.none )
 
         UpdateFormAssetEdit fieldName value ->
@@ -92,15 +92,18 @@ update msg model =
             -- The asset id is expected simply for convenience.
             ( model, updateAsset assetId model )
 
-        PostSubmitAsset assetId response ->
+        SubmitResponse assetId response ->
             -- The asset id is expected simply for convenience.
             let
                 navCmd =
                     Navigation.newUrl <| toPath (ShowAssetRoute assetId)
             in
-                -- need to refresh the attribute lists in case of significant changes
-                -- (i.e. a new tag, location, etc)
-                ( model, Cmd.batch [getTags, getYears, getLocations, navCmd] )
+                -- receive and update the asset model as the backend may have
+                -- changed some values from what was submitted
+                ( { model | asset = unwrapResponse response }
+                -- refresh attribute lists in case of attribute changes
+                , Cmd.batch [sendTagsQuery, sendYearsQuery, sendLocationsQuery, navCmd]
+                )
 
         UrlChange location ->
             let
@@ -133,7 +136,7 @@ updateTagSelection model label page tags =
             getSelectedLocations model
     in
         -- empty selection is okay
-        ( updatedTags, getAssets page selectedTags selectedYears selectedLocations )
+        ( updatedTags, sendAssetsQuery page selectedTags selectedYears selectedLocations )
 
 
 -- Invoked via RemoteData.update() to update the year list and construct a
@@ -156,7 +159,7 @@ updateYearSelection model year page years =
             getSelectedLocations model
     in
         -- empty selection is okay
-        ( updatedYears, getAssets page selectedTags selectedYears selectedLocations )
+        ( updatedYears, sendAssetsQuery page selectedTags selectedYears selectedLocations )
 
 
 -- Invoked via RemoteData.update() to update the location list and
@@ -179,7 +182,7 @@ updateLocationSelection model location page locations =
             List.filter (.selected) updatedLocations
     in
         -- empty selection is okay
-        ( updatedLocations, getAssets page selectedTags selectedYears selectedLocations )
+        ( updatedLocations, sendAssetsQuery page selectedTags selectedYears selectedLocations )
 
 
 -- Invoked via RemoteData.update() to construct a command to fetch the
@@ -195,7 +198,7 @@ updatePageSelection model page tags =
             getSelectedLocations model
     in
         -- empty selection is okay
-        ( tags, getAssets page selectedTags selectedYears selectedLocations )
+        ( tags, sendAssetsQuery page selectedTags selectedYears selectedLocations )
 
 
 urlUpdate : Model -> ( Model, Cmd Msg )
@@ -271,24 +274,24 @@ refreshModelCommands model =
             if RemoteData.isSuccess model.tagList then
                 Cmd.none
             else
-                getTags
+                sendTagsQuery
         cmd2 =
             if RemoteData.isSuccess model.yearList then
                 Cmd.none
             else
-                getYears
+                sendYearsQuery
         cmd3 =
             if RemoteData.isSuccess model.locationList then
                 Cmd.none
             else
-                getLocations
+                sendLocationsQuery
     in
         Cmd.batch [cmd1, cmd2, cmd3]
 
 
 {- Ensure the asset edit form fields are populated with values from the model.
 -}
-updateAssetEditForm : WebData AssetDetails -> Forms.Form
+updateAssetEditForm : GraphData AssetDetails -> Forms.Form
 updateAssetEditForm response =
     case response of
         RemoteData.NotAsked ->
@@ -311,13 +314,13 @@ updateAssetEditForm response =
                 finalForm
 
 
-{- Mark the asset with the given checksum as missing its thumbnail.
+{- Mark the asset with the given identifier as missing its thumbnail.
 -}
-markThumbless : WebData AssetList -> String -> WebData AssetList
-markThumbless assetList checksum =
+markThumbless : GraphData AssetList -> String -> GraphData AssetList
+markThumbless assetList id =
     let
         thumbmarker asset =
-            if asset.checksum == checksum && asset.thumbless == False then
+            if asset.id == id && asset.thumbless == False then
                 { asset | thumbless = True}
             else
                 asset

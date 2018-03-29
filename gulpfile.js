@@ -5,6 +5,7 @@ const nodemon = require('gulp-nodemon')
 const elm = require('gulp-elm')
 
 let production = false
+let debug = false
 
 gulp.task('serve', function (cb) {
   let called = false
@@ -24,7 +25,7 @@ gulp.task('elm-init', elm.init)
 
 gulp.task('elm-compile', ['elm-init'], function () {
   return gulp.src('elm-src/Main.elm')
-    .pipe(elm({'warn': true}))
+    .pipe(elm({'warn': true, debug}))
     .pipe(gulpif(production, uglify()))
     .pipe(gulp.dest('public/javascripts'))
 })

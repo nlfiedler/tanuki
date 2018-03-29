@@ -2,33 +2,24 @@
 
 ** GraphQL Rewrite
 
-- [TODO] Rewrite the Elm frontend to issue GraphQL queries
-  - https://github.com/jamesmacaulay/elm-graphql
-- [TODO] Remove the REST API
 - [TODO] Rename the document fields to match GraphQL schema
   - do away with the field renaming in resolvers.js
   - do away with the "file_owner" field, it's useless now
   - consider removing "userdate" from Asset type, seems useless
-- [TODO] Perform migration on production
-- [TODO] mujina must use "id" instead of "checksum" in asset queries
 - [TODO] consider defining a DateTime type for datetime, userdate
   - c.f. https://www.apollographql.com/docs/graphql-tools/scalars.html
 - [TODO] consider whether "original" date should be in schema
   - test/metadata.js used to check that original_date was null for image w/o EXIF
-
-** Node.js Rewrite
-
-- [TODO] Figure out how to use layouts with EJS and express.js
-  - apparently EJS uses partials instead of a layout
-  - Sails.js somehow manages to have real layouts with EJS
-- [TODO] Set the `production` flag in `gulpfile.js` based on environment
-- [TODO] Look at https://moment.github.io/luxon/docs/ for a nice date/time library
-- [TODO] Maybe use https://github.com/expressjs/csurf for CSRF protection
-- [TODO] Consider whether server needs a SIGINT handler (as described in pm2 docs)
+- [TODO] Deployment must change http://localhost:3000/graphql instead of /api
+- [TODO] Perform migration on production
+  - ensure the migration procedure is documented
+- [TODO] Replace bootstrap with bulman in the Elm interface
+- [TODO] mujina must use "id" instead of "checksum" in asset queries
 
 ** General Items
 
-- [TODO] Need to read `apiUrlPrefix` in Elm code from configuration file
+- [TODO] design the user login and comments system
+- [TODO] Need to read `graphqlEndpoint` in Elm code from configuration file
   - currently it is modified at deployment time using `sed`
 - [TODO] Look for means of ensuring LevelDB data integrity
   - Look into enabling extra LevelDB checks (`paranoidChecks`, `verifyChecksums`)
@@ -48,6 +39,16 @@
 - [TODO] api to perform database compaction
 - [TODO] Review express.js performance guidelines
   - http://expressjs.com/en/advanced/best-practice-performance.html
+
+** Node.js Rewrite
+
+- [TODO] Figure out how to use layouts with EJS and express.js
+  - apparently EJS uses partials instead of a layout
+  - Sails.js somehow manages to have real layouts with EJS
+- [TODO] Set the `production` flag in `gulpfile.js` based on environment
+- [TODO] Look at https://moment.github.io/luxon/docs/ for a nice date/time library
+- [TODO] Maybe use https://github.com/expressjs/csurf for CSRF protection
+- [TODO] Consider whether server needs a SIGINT handler (as described in pm2 docs)
 
 ** Custom queries
 

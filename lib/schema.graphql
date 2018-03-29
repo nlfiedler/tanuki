@@ -68,7 +68,7 @@ type SearchResult {
 # `SearchMeta` is returned from the search query.
 type SearchMeta {
   # The list of results retrieved via the query.
-  results: [SearchResult]
+  results: [SearchResult]!
   # The total number of matching assets in the system, useful for pagination.
   count: Int!
 }

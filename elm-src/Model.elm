@@ -1,18 +1,29 @@
 module Model exposing (..)
 
 import Forms
+import GraphQL.Client.Http as GraphQLClient
 import Regex
-import RemoteData exposing (WebData)
+import RemoteData
 import Routing exposing (Route)
 
 
+-- Instead of RemoteData.WebData, we define our own data type that represents
+-- the response from the GraphQL endpoint, with a GraphQL error type.
+type alias GraphData a =
+    RemoteData.RemoteData GraphQLClient.Error a
+
+
+-- Convenience for the thing returned from a GraphQL query.
+type alias GraphResult a = Result GraphQLClient.Error a
+
+
 type alias Model =
-    { tagList : WebData TagList
-    , yearList : WebData YearList
-    , locationList : WebData LocationList
-    , assetList : WebData AssetList
+    { tagList : GraphData TagList
+    , yearList : GraphData YearList
+    , locationList : GraphData LocationList
+    , assetList : GraphData AssetList
     , pageNumber : Int
-    , asset : WebData AssetDetails
+    , asset : GraphData AssetDetails
     , route : Route
     , assetEditForm : Forms.Form
     , showingAllTags : Bool
@@ -60,17 +71,17 @@ type alias AssetList =
 
 -- The information returned from an assets query.
 type alias AssetSummary =
-    { checksum : String
-    , file_name : String
+    { id : String
     , date : String
-    , location : String
+    , file_name : String
+    , location : Maybe String
     , thumbless : Bool  -- if True, thumbnail request had an error
     }
 
 
 -- Detailed information on a single asset.
 type alias AssetDetails =
-    { checksum : String
+    { id : String
     , file_name : String
     , file_size : Int
     , mimetype : String
