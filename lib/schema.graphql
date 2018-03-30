@@ -19,7 +19,7 @@ type Asset {
   mimetype: String!
   # The list of tags associated with this asset.
   tags: [String!]!
-  # The date provided by the user, overrides any other dates.
+  # The date provided by the user.
   userdate: String
   # A caption attributed to the asset.
   caption: String
@@ -102,9 +102,9 @@ input AssetInput {
   caption: String
   # New location.
   location: String
-  # Date that overrides intrinsic values; an empty string clears the
+  # A date/time that overrides intrinsic values; an empty string clears the
   # custom field and reverts back to the intrinsic value.
-  date: String
+  datetime: String
 }
 
 type Mutation {

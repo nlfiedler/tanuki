@@ -303,7 +303,7 @@ updateAssetEditForm response =
         RemoteData.Success asset ->
             let
                 form1 =
-                    Forms.updateFormInput initialAssetEditForm "user_date" (extractUserDate asset)
+                    Forms.updateFormInput initialAssetEditForm "user_date" (Maybe.withDefault "" asset.userDate)
                 form2 =
                     Forms.updateFormInput form1 "location" (Maybe.withDefault "" asset.location)
                 form3 =

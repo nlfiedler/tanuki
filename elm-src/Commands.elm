@@ -244,7 +244,7 @@ updateAsset id model =
                     [ Var.field "tags" .tags (Var.list Var.string)
                     , Var.field "caption" .caption Var.string
                     , Var.field "location" .location Var.string
-                    , Var.field "date" .date Var.string
+                    , Var.field "datetime" .datetime Var.string
                     ]
                 )
         updateRequest =
@@ -262,7 +262,7 @@ updateAsset id model =
                         { tags = tagsList
                         , caption = (Forms.formValue model.assetEditForm "caption")
                         , location = (Forms.formValue model.assetEditForm "location")
-                        , date = (Forms.formValue model.assetEditForm "user_date")
+                        , datetime = (Forms.formValue model.assetEditForm "user_date")
                         }
                     }
     in

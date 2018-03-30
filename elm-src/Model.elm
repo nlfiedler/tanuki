@@ -139,25 +139,11 @@ userDateValidations =
 validateUserDate : String -> Maybe String
 validateUserDate input =
     let
-        -- allow either empty string or yyyy-mm-dd
+        -- allow either empty string or 'yyyy-mm-dd HH:MM'
         dateRegex =
-            "^$|^\\d{1,4}-\\d{1,2}-\\d{1,2}$"
+            "^$|^\\d{1,4}-\\d{1,2}-\\d{1,2} \\d{1,2}:\\d{2}$"
     in
         if Regex.contains (Regex.regex dateRegex) input then
             Nothing
         else
-            Just "date format must be yyyy-mm-dd"
-
-
-extractUserDate : AssetDetails -> String
-extractUserDate asset =
-    let
-        userDate =
-            case asset.userDate of
-                Just date ->
-                    -- strip off the artificial time value from the backend
-                    Maybe.withDefault "" (List.head (String.split " " date))
-                Nothing ->
-                    ""
-    in
-        userDate
+            Just "date/time format must be yyyy-mm-dd HH:MM"

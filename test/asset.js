@@ -194,7 +194,7 @@ setTimeout(function () {
           .send({
             variables: `{
               "input": {
-                "date": "2003-08-30"
+                "datetime": "2003-08-30 12:45"
               }
             }`,
             operationName: 'Update',
@@ -211,6 +211,8 @@ setTimeout(function () {
             assert.equal(date.getFullYear(), 2003)
             assert.equal(date.getMonth() + 1, 8)
             assert.equal(date.getDate(), 30)
+            assert.equal(date.getHours(), 12)
+            assert.equal(date.getMinutes(), 45)
           })
           .end(function (err, res) {
             if (err) {
@@ -226,7 +228,7 @@ setTimeout(function () {
           .send({
             variables: `{
               "input": {
-                "date": ""
+                "datetime": ""
               }
             }`,
             operationName: 'Update',

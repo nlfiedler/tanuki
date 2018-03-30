@@ -2,11 +2,8 @@
 
 ** GraphQL Rewrite
 
-- [TODO] consider removing "userdate" from Asset type, seems useless
-- [TODO] consider defining a DateTime type for datetime, userdate
+- [TODO] consider defining a DateTime type for datetime
   - c.f. https://www.apollographql.com/docs/graphql-tools/scalars.html
-- [TODO] consider whether "original" date should be in schema
-  - test/metadata.js used to check that original_date was null for image w/o EXIF
 - [TODO] Deployment must change http://localhost:3000/graphql instead of /api
 - [TODO] Perform migration on production
   - save a permanent backup of the production data for later testing

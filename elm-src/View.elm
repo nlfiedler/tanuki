@@ -615,7 +615,7 @@ editAssetForm form asset =
         caption =
             Forms.formValueWithDefault (Maybe.withDefault "" asset.caption) form "caption"
         userDate =
-            Forms.formValueWithDefault (extractUserDate asset) form "user_date"
+            Forms.formValueWithDefault (Maybe.withDefault "" asset.userDate) form "user_date"
         tags =
             Forms.formValueWithDefault (String.join ", " asset.tags) form "tags"
     in
@@ -625,7 +625,7 @@ editAssetForm form asset =
                   , onSubmit (SubmitAsset asset.id)
                   ]
             [ div [ class "form-group" ]
-                [ editAssetFormGroup form "user_date" "Custom Date" userDate "date" "yyyy-mm-dd"
+                [ editAssetFormGroup form "user_date" "Custom Date" userDate "date" "yyyy-mm-dd HH:MM"
                 , editAssetFormGroup form "location" "Location" location "text" ""
                 , editAssetFormGroup form "caption" "Caption" caption "text" ""
                 , editAssetFormGroup form "tags" "Tags" tags "text" "(comma-separated)"
