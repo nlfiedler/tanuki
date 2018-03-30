@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 Nathan Fiedler
+// Copyright (c) 2018 Nathan Fiedler
 //
 const {assert} = require('chai')
 const {before, describe, it, run} = require('mocha')
@@ -28,11 +28,9 @@ setTimeout(function () {
       await backend.reinitDatabase()
       let doc = {
         _id: docId,
-        file_date: [2017, 5, 13, 5, 26],
-        file_name: 'IMG_1001.JPG',
+        filename: 'IMG_1001.JPG',
         import_date: [2017, 11, 18, 17, 3],
-        file_owner: 'homura',
-        file_size: 1048576,
+        filesize: 1048576,
         location: 'kyoto',
         mimetype: 'image/jpeg',
         tags: ['puella', 'magi', 'madoka', 'magica']

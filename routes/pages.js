@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 Nathan Fiedler
+// Copyright (c) 2018 Nathan Fiedler
 //
 const express = require('express')
 const path = require('path')
@@ -27,16 +27,16 @@ const staticRoot = path.join(__dirname, '..', 'public')
 router.use(express.static(staticRoot))
 
 router.get('/thumbnail/:id', wrap(async function (req, res, next) {
-  let checksum = req.params['id']
-  let doc = await backend.fetchDocument(checksum)
+  let id = req.params['id']
+  let doc = await backend.fetchDocument(id)
   let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
-  let result = await assets.retrieveThumbnail(mimetype, checksum)
+  let result = await assets.retrieveThumbnail(mimetype, id)
   if (result === null) {
     res.status(404).send('no such asset')
   } else {
     res.set({
       'Content-Type': result.mimetype,
-      'ETag': checksum + '.thumb'
+      'ETag': id + '.thumb'
     })
     // res.send() handles Content-Length and cache freshness support
     res.send(result.binary)
@@ -44,16 +44,16 @@ router.get('/thumbnail/:id', wrap(async function (req, res, next) {
 }))
 
 router.get('/preview/:id', wrap(async function (req, res, next) {
-  let checksum = req.params['id']
-  let doc = await backend.fetchDocument(checksum)
+  let id = req.params['id']
+  let doc = await backend.fetchDocument(id)
   let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
-  let result = await assets.generatePreview(mimetype, checksum)
+  let result = await assets.generatePreview(mimetype, id)
   if (result === null) {
     res.status(404).send('no such asset')
   } else {
     res.set({
       'Content-Type': result.mimetype,
-      'ETag': checksum + '.preview'
+      'ETag': id + '.preview'
     })
     // res.send() handles Content-Length and cache freshness support
     res.send(result.binary)
@@ -61,15 +61,15 @@ router.get('/preview/:id', wrap(async function (req, res, next) {
 }))
 
 router.get('/asset/:id', wrap(async function (req, res, next) {
-  let checksum = req.params['id']
-  let filepath = assets.assetPath(checksum)
-  let doc = await backend.fetchDocument(checksum)
+  let id = req.params['id']
+  let filepath = assets.assetPath(id)
+  let doc = await backend.fetchDocument(id)
   let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
   // res.sendFile() handles Content-Length and cache freshness support
   res.sendFile(filepath, {
     headers: {
       'Content-Type': mimetype,
-      'ETag': checksum + '.asset'
+      'ETag': id + '.asset'
     },
     immutable: true,
     maxAge: 86400000
@@ -82,19 +82,19 @@ router.get('/asset/:id', wrap(async function (req, res, next) {
 }))
 
 router.post('/import', upload.single('asset'), wrap(async function (req, res, next) {
-  let checksum = await incoming.computeChecksum(req.file.path)
+  let id = await incoming.computeChecksum(req.file.path)
   try {
-    // check if an asset with this checksum already exists
-    await backend.fetchDocument(checksum)
-    res.redirect(`/assets/${checksum}/edit`)
+    // check if an asset with this identifier already exists
+    await backend.fetchDocument(id)
+    res.redirect(`/assets/${id}/edit`)
   } catch (err) {
     if (err.status === 404) {
       let originalDate = await incoming.getOriginalDate(req.file.mimetype, req.file.path)
       let importDate = incoming.dateToList(new Date())
       let doc = {
-        _id: checksum,
-        file_name: req.file.originalname,
-        file_size: req.file.size,
+        _id: id,
+        filename: req.file.originalname,
+        filesize: req.file.size,
         import_date: importDate,
         mimetype: req.file.mimetype,
         original_date: originalDate,
@@ -102,8 +102,8 @@ router.post('/import', upload.single('asset'), wrap(async function (req, res, ne
         tags: []
       }
       await backend.updateDocument(doc)
-      await incoming.storeAsset(req.file.mimetype, req.file.path, checksum)
-      res.redirect(`/assets/${checksum}/edit`)
+      await incoming.storeAsset(req.file.mimetype, req.file.path, id)
+      res.redirect(`/assets/${id}/edit`)
     } else {
       // some other error occurred
       res.status(err.status).send(err.message)

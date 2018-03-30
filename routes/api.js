@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 Nathan Fiedler
+// Copyright (c) 2018 Nathan Fiedler
 //
 const express = require('express')
 const bodyParser = require('body-parser')
@@ -26,21 +26,21 @@ router.use(function (req, res, next) {
 })
 
 router.post('/assets', upload.single('asset'), wrap(async function (req, res, next) {
-  let checksum = await incoming.computeChecksum(req.file.path)
+  let id = await incoming.computeChecksum(req.file.path)
   try {
-    // check if an asset with this checksum already exists
-    await backend.fetchDocument(checksum)
-    res.json({status: 'success', id: checksum})
+    // check if an asset with this identifier already exists
+    await backend.fetchDocument(id)
+    res.json({status: 'success', id: id})
   } catch (err) {
     if (err.status === 404) {
       const originalDate = await incoming.getOriginalDate(req.file.mimetype, req.file.path)
       const importDate = incoming.dateToList(new Date())
       const duration = await assets.getDuration(req.file.mimetype, req.file.path)
       let doc = {
-        _id: checksum,
+        _id: id,
         duration,
-        file_name: req.file.originalname,
-        file_size: req.file.size,
+        filename: req.file.originalname,
+        filesize: req.file.size,
         import_date: importDate,
         mimetype: req.file.mimetype,
         original_date: originalDate,
@@ -48,8 +48,8 @@ router.post('/assets', upload.single('asset'), wrap(async function (req, res, ne
         tags: []
       }
       await backend.updateDocument(doc)
-      await incoming.storeAsset(req.file.mimetype, req.file.path, checksum)
-      res.json({status: 'success', id: checksum})
+      await incoming.storeAsset(req.file.mimetype, req.file.path, id)
+      res.json({status: 'success', id: id})
     } else {
       // some other error occurred
       res.status(err.status).send(err.message)

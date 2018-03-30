@@ -40,11 +40,9 @@ setTimeout(function () {
         const id = pouchCollate.toIndexableString([fileName, fileOwner])
         let doc = {
           _id: id,
-          file_date: [2000 + n, 5, 13, 5, 26],
-          file_name: fileName,
-          import_date: [2017, 11, 18, 17, 3],
-          file_owner: fileOwner,
-          file_size: 1048576,
+          filename: fileName,
+          import_date: [2000 + n, 11, 18, 17, 3],
+          filesize: 1048576,
           location: 'kamakura',
           mimetype: 'image/jpeg',
           tags: ['cat']

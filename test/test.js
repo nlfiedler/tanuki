@@ -202,10 +202,8 @@ setTimeout(function () {
       const testData = [
         {
           '_id': '39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100',
-          'file_date': [2013, 1, 31, 5, 26],
-          'file_name': 'IMG_6005.JPG',
-          'file_owner': 'akwok',
-          'file_size': 159675,
+          'filename': 'IMG_6005.JPG',
+          'filesize': 159675,
           'import_date': [2014, 1, 21, 17, 8],
           'location': 'san francisco',
           'mimetype': 'image/jpeg',
@@ -213,22 +211,18 @@ setTimeout(function () {
         },
         {
           '_id': 'b8fc5da331100390929c2f323accc5686075e3150cb91d6dde424191780ea7ea',
-          'file_date': [2014, 11, 2, 5, 26],
-          'file_name': 'IMG_6005.MOV',
-          'file_owner': 'nfiedler',
-          'file_size': 159612075,
+          'filename': 'IMG_6005.MOV',
+          'filesize': 159612075,
           'import_date': [2014, 11, 2, 6, 1],
           'location': 'san francisco',
           'mimetype': 'video/quicktime',
-          'original_date': [2014, 10, 24, 15, 9],
+          'original_date': [2013, 10, 24, 15, 9],
           'tags': ['dog', 'picnic']
         },
         {
           '_id': '9594b84f1d0db2762d1c53b7ee1a12d03adad33d3193d8b5ed1a50fab2bbff15',
-          'file_date': [2014, 7, 15, 3, 13],
-          'file_name': 'img0315.jpg',
-          'file_owner': 'nfiedler',
-          'file_size': 431671,
+          'filename': 'img0315.jpg',
+          'filesize': 431671,
           'import_date': [2014, 7, 21, 5, 34],
           'mimetype': 'image/jpeg',
           'original_date': null,
@@ -435,25 +429,24 @@ setTimeout(function () {
         let doc = {
           _id: id,
           // we only search on the year (for now), the rest is meaningless
-          file_date: [year, 5, 13, 5, 26],
-          file_name: fileName,
-          // file date overrides import date in terms of significance,
+          original_date: [year, 5, 13, 5, 26],
+          filename: fileName,
+          // original date overrides import date in terms of significance,
           // so anything at all is fine here
           import_date: [2017, 11, 18, 17, 3],
-          file_owner: fileOwner,
-          file_size: Math.floor(Math.random() * 1048576) + 1048576,
+          filesize: Math.floor(Math.random() * 1048576) + 1048576,
           location: sampleOne(locations),
           mimetype: 'image/jpeg',
           tags: [sampleOne(tagList1), sampleOne(tagList2), sampleOne(tagList3)]
         }
         if (n === 5) {
           // make one with several attributes that we can check for later
-          doc.file_date[0] = 2012
+          doc.original_date[0] = 2012
           doc.location = 'osaka'
           doc.tags = ['cat', 'dog', 'hot']
         } else if (n === 10) {
           // some queries rely on multiple year and location values
-          doc.file_date[0] = 2013
+          doc.original_date[0] = 2013
           doc.location = 'kyoto'
         }
         await backend.updateDocument(doc)
@@ -525,7 +518,7 @@ setTimeout(function () {
         let rows = await backend.byTags(['dipstick'])
         assert.isNotEmpty(rows)
         for (let row of rows) {
-          let doc = await backend.fetchDocument(row.checksum)
+          let doc = await backend.fetchDocument(row.id)
           assert.include(doc.tags, 'dipstick')
         }
       })
@@ -537,7 +530,7 @@ setTimeout(function () {
         let rows = await backend.byTags(['cat', 'dog', 'hot'])
         assert.isNotEmpty(rows)
         for (let row of rows) {
-          let doc = await backend.fetchDocument(row.checksum)
+          let doc = await backend.fetchDocument(row.id)
           assert.include(doc.tags, 'cat')
           assert.include(doc.tags, 'dog')
           assert.include(doc.tags, 'hot')
