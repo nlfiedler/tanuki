@@ -192,9 +192,10 @@ setTimeout(function () {
         request(app)
           .post(`/graphql`)
           .send({
+            // datetime is 2003-08-30 12:45
             variables: `{
               "input": {
-                "datetime": "2003-08-30 12:45"
+                "datetime": 1062272700000
               }
             }`,
             operationName: 'Update',
@@ -228,7 +229,7 @@ setTimeout(function () {
           .send({
             variables: `{
               "input": {
-                "datetime": ""
+                "datetime": null
               }
             }`,
             operationName: 'Update',

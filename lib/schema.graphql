@@ -2,6 +2,10 @@
 # Copyright (c) 2018 Nathan Fiedler
 #
 
+# Our custom date/time that is represented as the number of milliseconds since
+# January 1, 1970, 00:00:00 UTC, with leap seconds ignored.
+scalar Date
+
 # An `Asset` defines a single entity in the storage system. This typically
 # refers to an image or video, but could by any type of file.
 type Asset {
@@ -12,15 +16,15 @@ type Asset {
   # The size in bytes of the asset.
   filesize: Int!
   # The date and time that best represents the asset. For images
-  # with EXIF data, this may be the original date-time, while for
+  # with EXIF data, this may be the original date/time, while for
   # videos, it may be the creation time.
-  datetime: String!
+  datetime: Date!
   # The MIME type of the asset (e.g. "image/jpeg").
   mimetype: String!
   # The list of tags associated with this asset.
   tags: [String!]!
   # The date provided by the user.
-  userdate: String
+  userdate: Date
   # A caption attributed to the asset.
   caption: String
   # For video assets, the duration in seconds.
@@ -57,8 +61,8 @@ type LocationCount {
 type SearchResult {
   # The identifier of the matching asset.
   id: ID!
-  # The date for the matching asset.
-  date: String!
+  # The date/time for the matching asset.
+  datetime: Date!
   # The filename for the matching asset.
   filename: String!
   # The location for the matching asset, if available.
@@ -102,9 +106,9 @@ input AssetInput {
   caption: String
   # New location.
   location: String
-  # A date/time that overrides intrinsic values; an empty string clears the
+  # A date/time that overrides intrinsic values; a null value clears the
   # custom field and reverts back to the intrinsic value.
-  datetime: String
+  datetime: Date
 }
 
 type Mutation {

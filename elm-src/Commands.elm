@@ -57,7 +57,7 @@ summarySpec : ValueSpec NonNull ObjectType AssetSummary vars
 summarySpec =
     object AssetSummary
         |> with (field "id" [] id)
-        |> with (field "date" [] string)
+        |> with (field "datetime" [] int)
         |> with (field "filename" [] string)
         |> with (field "location" [] (nullable string))
         |> withLocalConstant False
@@ -81,8 +81,8 @@ assetSpec =
         |> with (field "filename" [] string)
         |> with (field "filesize" [] int)
         |> with (field "mimetype" [] string)
-        |> with (field "datetime" [] string)
-        |> with (field "userdate" [] (nullable string))
+        |> with (field "datetime" [] int)
+        |> with (field "userdate" [] (nullable int))
         |> with (field "caption" [] (nullable string))
         |> with (field "location" [] (nullable string))
         |> with (field "duration" [] (nullable float))
@@ -239,12 +239,11 @@ updateAsset id model =
         assetVar =
             Var.required "asset" .asset
                 (Var.object "AssetInput"
-                    -- could use Var.optionalField but an empty form field may
-                    -- mean that the user wants to clear that value
                     [ Var.field "tags" .tags (Var.list Var.string)
                     , Var.field "caption" .caption Var.string
                     , Var.field "location" .location Var.string
-                    , Var.field "datetime" .datetime Var.string
+                    -- allow a nullable datetime so we can erase the value
+                    , Var.optionalField "datetime" .datetime (Var.nullable Var.int)
                     ]
                 )
         updateRequest =
@@ -262,7 +261,9 @@ updateAsset id model =
                         { tags = tagsList
                         , caption = (Forms.formValue model.assetEditForm "caption")
                         , location = (Forms.formValue model.assetEditForm "location")
-                        , datetime = (Forms.formValue model.assetEditForm "user_date")
+                        -- double-wrap the user date so we can send null values,
+                        -- otherwise we cannot remove the previously set value
+                        , datetime = Just (userDateStrToInt (Forms.formValue model.assetEditForm "user_date"))
                         }
                     }
     in

@@ -360,7 +360,7 @@ viewThumbnailItem entry =
                   ]
                 [ img imgAttrs [ ]
                 , div [ class "caption" ]
-                    [ text entry.date
+                    [ text (intToDateString entry.date)
                     , separator
                     , text entry.file_name ]
                 ]
@@ -501,7 +501,7 @@ viewAssetPreviewPanel asset =
         [ div [ class "panel-heading" ]
             [ h3 [ class "panel-title" ] [ text asset.file_name ] ]
         , div [ class "panel-body" ] [ viewAssetPreview asset ]
-        , div [ class "panel-footer" ] [ text asset.datetime ]
+        , div [ class "panel-footer" ] [ text (intToDateString asset.datetime) ]
         ]
 
 
@@ -615,7 +615,7 @@ editAssetForm form asset =
         caption =
             Forms.formValueWithDefault (Maybe.withDefault "" asset.caption) form "caption"
         userDate =
-            Forms.formValueWithDefault (Maybe.withDefault "" asset.userDate) form "user_date"
+            Forms.formValueWithDefault (userDateToString asset.userDate) form "user_date"
         tags =
             Forms.formValueWithDefault (String.join ", " asset.tags) form "tags"
     in

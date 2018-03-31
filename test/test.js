@@ -441,12 +441,12 @@ setTimeout(function () {
         }
         if (n === 5) {
           // make one with several attributes that we can check for later
-          doc.original_date[0] = 2012
+          doc.original_date = [2012, 5, 13, 5, 26]
           doc.location = 'osaka'
           doc.tags = ['cat', 'dog', 'hot']
         } else if (n === 10) {
           // some queries rely on multiple year and location values
-          doc.original_date[0] = 2013
+          doc.original_date = [2013, 5, 13, 5, 26]
           doc.location = 'kyoto'
         }
         await backend.updateDocument(doc)
@@ -546,7 +546,7 @@ setTimeout(function () {
             query: `query {
               search(years: [2012]) {
                 results {
-                  date
+                  datetime
                 }
                 count
               }
@@ -557,7 +557,8 @@ setTimeout(function () {
             const search = res.body.data.search
             assert.isNotEmpty(search.results)
             for (let row of search.results) {
-              let date = new Date(row.date)
+              assert.isNotNull(row)
+              let date = new Date(row.datetime)
               assert.equal(date.getFullYear(), 2012)
             }
           })
@@ -578,7 +579,7 @@ setTimeout(function () {
             query: `query {
               search(years: ["foo"]) {
                 results {
-                  date
+                  datetime
                 }
                 count
               }
@@ -603,7 +604,7 @@ setTimeout(function () {
             query: `query {
               search(years: [2012, 2013]) {
                 results {
-                  date
+                  datetime
                 }
                 count
               }
@@ -614,7 +615,8 @@ setTimeout(function () {
             const search = res.body.data.search
             assert.isNotEmpty(search.results)
             for (let row of search.results) {
-              let date = new Date(row.date)
+              assert.isNotNull(row)
+              let date = new Date(row.datetime)
               assert.oneOf(date.getFullYear(), [2012, 2013])
             }
           })
@@ -698,7 +700,7 @@ setTimeout(function () {
             query: `query {
               search(tags: ["cat", "hot"], locations: ["osaka"], years: [2012]) {
                 results {
-                  date
+                  datetime
                   location
                 }
                 count
@@ -710,8 +712,9 @@ setTimeout(function () {
             const search = res.body.data.search
             assert.isNotEmpty(search.results)
             for (let row of search.results) {
+              assert.isNotNull(row)
               assert.equal(row.location, 'osaka')
-              let date = new Date(row.date)
+              let date = new Date(row.datetime)
               assert.equal(date.getFullYear(), 2012)
               // The tags are not included in the results.
             }
