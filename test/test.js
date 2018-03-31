@@ -204,7 +204,7 @@ setTimeout(function () {
           '_id': '39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100',
           'filename': 'IMG_6005.JPG',
           'filesize': 159675,
-          'import_date': [2014, 1, 21, 17, 8],
+          'import_date': Date.UTC(2014, 0, 21, 17, 8),
           'location': 'san francisco',
           'mimetype': 'image/jpeg',
           'tags': ['cat', 'cheeseburger']
@@ -213,17 +213,17 @@ setTimeout(function () {
           '_id': 'b8fc5da331100390929c2f323accc5686075e3150cb91d6dde424191780ea7ea',
           'filename': 'IMG_6005.MOV',
           'filesize': 159612075,
-          'import_date': [2014, 11, 2, 6, 1],
+          'import_date': Date.UTC(2014, 10, 2, 6, 1),
           'location': 'san francisco',
           'mimetype': 'video/quicktime',
-          'original_date': [2013, 10, 24, 15, 9],
+          'original_date': Date.UTC(2013, 9, 24, 15, 9),
           'tags': ['dog', 'picnic']
         },
         {
           '_id': '9594b84f1d0db2762d1c53b7ee1a12d03adad33d3193d8b5ed1a50fab2bbff15',
           'filename': 'img0315.jpg',
           'filesize': 431671,
-          'import_date': [2014, 7, 21, 5, 34],
+          'import_date': Date.UTC(2014, 6, 21, 5, 34),
           'mimetype': 'image/jpeg',
           'original_date': null,
           'tags': ['cat', 'picnic']
@@ -429,11 +429,11 @@ setTimeout(function () {
         let doc = {
           _id: id,
           // we only search on the year (for now), the rest is meaningless
-          original_date: [year, 5, 13, 5, 26],
+          original_date: Date.UTC(year, 4, 13, 5, 26),
           filename: fileName,
           // original date overrides import date in terms of significance,
           // so anything at all is fine here
-          import_date: [2017, 11, 18, 17, 3],
+          import_date: Date.UTC(2017, 10, 18, 17, 3),
           filesize: Math.floor(Math.random() * 1048576) + 1048576,
           location: sampleOne(locations),
           mimetype: 'image/jpeg',
@@ -441,12 +441,12 @@ setTimeout(function () {
         }
         if (n === 5) {
           // make one with several attributes that we can check for later
-          doc.original_date = [2012, 5, 13, 5, 26]
+          doc.original_date = Date.UTC(2012, 4, 13, 5, 26)
           doc.location = 'osaka'
           doc.tags = ['cat', 'dog', 'hot']
         } else if (n === 10) {
           // some queries rely on multiple year and location values
-          doc.original_date = [2013, 5, 13, 5, 26]
+          doc.original_date = Date.UTC(2013, 4, 13, 5, 26)
           doc.location = 'kyoto'
         }
         await backend.updateDocument(doc)

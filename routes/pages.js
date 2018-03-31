@@ -89,10 +89,12 @@ router.post('/import', upload.single('asset'), wrap(async function (req, res, ne
     res.redirect(`/assets/${id}/edit`)
   } catch (err) {
     if (err.status === 404) {
-      let originalDate = await incoming.getOriginalDate(req.file.mimetype, req.file.path)
-      let importDate = incoming.dateToList(new Date())
+      const originalDate = await incoming.getOriginalDate(req.file.mimetype, req.file.path)
+      const importDate = new Date().getTime()
+      const duration = await assets.getDuration(req.file.mimetype, req.file.path)
       let doc = {
         _id: id,
+        duration,
         filename: req.file.originalname,
         filesize: req.file.size,
         import_date: importDate,

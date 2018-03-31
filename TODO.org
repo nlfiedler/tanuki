@@ -2,20 +2,6 @@
 
 ** GraphQL Rewrite
 
-- [TODO] Schema change: date/time should be UTC millis, not int array
-  - no need to convert in resolvers.js, just send/recv the raw number
-  - no need for backend.buildSummaries() to convert
-  - all dateToList() calls become Date.getTime()
-    - dateToList() then goes away
-  - ordering and searching should still work
-    - convert year values to UTC millis: new Date(year, 0, 0, 0, 0).getTime()
-- [TODO] should we convert dates to local time zone on input?
-  - import date should be Date.UTC() instead of new Date()
-  - parseExifDate() should return Date.UTC() instead of int array
-  - creation date/time for videos should be converted to UTC
-    - call Date.getTime() instead of dateToList()
-  - user date should be documented as local time zone, gets converted to UTC
-    - and converted back to local on the way out
 - [TODO] Deployment must change http://localhost:3000/graphql instead of /api
 - [TODO] Perform migration on production
   - save a permanent backup of the production data for later testing

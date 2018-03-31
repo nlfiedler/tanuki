@@ -29,7 +29,7 @@ setTimeout(function () {
       let doc = {
         _id: docId,
         filename: 'IMG_1001.JPG',
-        import_date: [2017, 11, 18, 17, 3],
+        import_date: Date.UTC(2017, 10, 18, 17, 3),
         filesize: 1048576,
         location: 'kyoto',
         mimetype: 'image/jpeg',
@@ -139,7 +139,7 @@ setTimeout(function () {
             assert.equal(date.getFullYear(), 2003)
             assert.equal(date.getMonth() + 1, 9)
             assert.equal(date.getDate(), 3)
-            assert.equal(date.getHours(), 17)
+            assert.equal(date.getHours(), 10) // UTC timezone for 17
             assert.equal(date.getMinutes(), 24)
           })
           .end(function (err, res) {

@@ -41,7 +41,7 @@ setTimeout(function () {
         let doc = {
           _id: id,
           filename: fileName,
-          import_date: [2000 + n, 11, 18, 17, 3],
+          import_date: Date.UTC(2000 + n, 10, 18, 17, 3),
           filesize: 1048576,
           location: 'kamakura',
           mimetype: 'image/jpeg',
