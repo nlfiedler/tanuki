@@ -16,8 +16,6 @@
     - call Date.getTime() instead of dateToList()
   - user date should be documented as local time zone, gets converted to UTC
     - and converted back to local on the way out
-- [TODO] incoming.updateAssetFields() should become resolvers.receiveAssetInput()
-- [TODO] assets.getBestDate() should become resolvers.getBestDate()
 - [TODO] Deployment must change http://localhost:3000/graphql instead of /api
 - [TODO] Perform migration on production
   - save a permanent backup of the production data for later testing
