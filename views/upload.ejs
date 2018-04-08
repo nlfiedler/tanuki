@@ -5,41 +5,53 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/bootstrap.min.css'/>
+    <link rel='stylesheet' href='/stylesheets/fontawesome-all.min.css'/>
+    <link rel='stylesheet' href='/stylesheets/bulma.min.css'/>
     <link rel='stylesheet' href='/stylesheets/style.css'/>
   </head>
   <body>
     <div class="container">
-      <header class="header">
-        <nav role="navigation">
-          <ul class="nav nav-pills pull-right">
-            <li><a href="/">
-              <span class="glyphicon glyphicon-home" aria-hidden="true"></span>
-              <span class="sr-only">Home</span>
-            </a></li>
-            <li><a href="/upload">
-              <span class="glyphicon glyphicon-upload" aria-hidden="true"></span>
-              <span class="sr-only">Upload</span>
-            </a></li>
-          </ul>
-        </nav>
-        <span class="logo"></span>
-      </header>
+      <nav id="navbar" class="navbar is-transparent" role="navigation">
+        <div class="navbar-brand">
+          <img src="/images/tanuki.png" width="520" height="100">
+          <div class="navbar-burger" data-target="navMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+        <div class="navbar-menu" id="navMenu">
+          <div class="navbar-end">
+            <a class="navbar-item" href="/">
+              <span class="icon"><i class="fas fa-lg fa-home"></i></span>
+            </a>
+            <a class="navbar-item" href="/upload">
+              <span class="icon"><i class="fas fa-lg fa-upload"></i></span>
+            </a>
+          </div>
+        </div>
+      </nav>
 
       <div>
-        <form action="/import" method="post" enctype="multipart/form-data"
-              class="form-horizontal">
-          <div class="form-group">
-            <label for="inputFile" class="col-sm-2 control-label">File to upload</label>
-            <div class="col-sm-10">
-              <input id="inputFile" type="file" name="asset"/>
-              <span class="help-block">You can drag &amp; drop files onto the select button.</span>
+        <form action="/import" method="post" enctype="multipart/form-data">
+          <div class="control">
+            <div class="file is-large">
+              <label class="file-label">
+                <input class="file-input" type="file" name="asset">
+                <span class="file-cta">
+                  <span class="file-icon">
+                    <i class="fas fa-upload"></i>
+                  </span>
+                  <span class="file-label">
+                    Choose a file…
+                  </span>
+                </span>
+              </label>
             </div>
           </div>
-          <div class="form-group">
-            <div class="col-sm-offset-2 col-sm-10">
-              <input class="btn btn-default" type="submit" value="Upload"/>
-            </div>
+          <p class="help">You can drag and drop a file on the above control</p>
+          <div class="control">
+            <input class="button is-primary" type="submit" value="Upload"/>
           </div>
         </form>
       </div>

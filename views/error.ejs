@@ -5,26 +5,32 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Error Occurred</title>
-    <link rel='stylesheet' href='/stylesheets/bootstrap.min.css'/>
+    <link rel='stylesheet' href='/stylesheets/fontawesome-all.min.css'/>
+    <link rel='stylesheet' href='/stylesheets/bulma.min.css'/>
     <link rel='stylesheet' href='/stylesheets/style.css'/>
   </head>
   <body>
     <div class="container">
-      <header class="header">
-        <nav role="navigation">
-          <ul class="nav nav-pills pull-right">
-            <li><a href="/">
-              <span class="glyphicon glyphicon-home" aria-hidden="true"></span>
-              <span class="sr-only">Home</span>
-            </a></li>
-            <li><a href="/upload">
-              <span class="glyphicon glyphicon-upload" aria-hidden="true"></span>
-              <span class="sr-only">Upload</span>
-            </a></li>
-          </ul>
-        </nav>
-        <span class="logo"></span>
-      </header>
+      <nav id="navbar" class="navbar is-transparent" role="navigation">
+        <div class="navbar-brand">
+          <img src="/images/tanuki.png" width="520" height="100">
+          <div class="navbar-burger" data-target="navMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+        <div class="navbar-menu" id="navMenu">
+          <div class="navbar-end">
+            <a class="navbar-item" href="/">
+              <span class="icon"><i class="fas fa-lg fa-home"></i></span>
+            </a>
+            <a class="navbar-item" href="/upload">
+              <span class="icon"><i class="fas fa-lg fa-upload"></i></span>
+            </a>
+          </div>
+        </div>
+      </nav>
 
       <main>
         <h1><%= message %></h1>

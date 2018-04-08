@@ -2,18 +2,18 @@
 
 ** GraphQL Rewrite
 
+- [TODO] Upload page should show the file name (does nothing when a file is selected)
+- [TODO] Upload page no longer receives dropped files
+- [TODO] Upload page button should be disabled until form is valid
+  - btw, the error page that is displayed should be using bulma styles
 - [TODO] Deployment must change http://localhost:3000/graphql instead of /api
 - [TODO] Perform migration on production
   - save a permanent backup of the production data for later testing
   - ensure the migration procedure is documented
-- [TODO] Replace bootstrap with bulman in the Elm interface
-- [TODO] mujina must use "id" instead of "checksum" in asset queries
 
 ** General Items
 
 - [TODO] design the user login and comments system
-- [TODO] Need to read `graphqlEndpoint` in Elm code from configuration file
-  - currently it is modified at deployment time using `sed`
 - [TODO] Look for means of ensuring LevelDB data integrity
   - Look into enabling extra LevelDB checks (`paranoidChecks`, `verifyChecksums`)
 - [TODO] Use PouchDB/CouchDB replication to keep a local backup

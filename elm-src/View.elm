@@ -46,35 +46,38 @@ tagSelector : Model -> Html Msg
 tagSelector model =
     let
         header =
-            li [ ] [ strong [ ] [ text "Tags:" ] ]
+            span [ class "tag is-info" ] [ text "Tags" ]
         footer =
             allTagsToggle model
         entries =
             (header :: viewTagList ToggleTag model) ++ [footer]
     in
-        ul [ class "list-inline" ] entries
+        div [ class "tags" ] entries
 
 
 allTagsToggle : Model -> Html Msg
 allTagsToggle model =
     if model.showingAllTags then
-        li [ ]
-            [ a [ href "#"
-                , title "Hide some tags"
-                , onClick ToggleAllTags ] [ text "<<" ] ]
+        a
+            [ class "tag is-light"
+            , href "#"
+            , title "Hide some tags"
+            , onClick ToggleAllTags ] [ text "<<" ]
     else
         let
             tagList =
                 RemoteData.withDefault [] model.tagList
-            liBody =
+            result =
                 if (List.length tagList <= 25) then
-                    [ text "" ]
+                    text ""
                 else
-                    [ a [ href "#"
+                    a
+                        [ class "tag is-light"
+                        , href "#"
                         , title "Show all tags"
-                        , onClick ToggleAllTags ] [ text ">>" ] ]
+                        , onClick ToggleAllTags ] [ text ">>" ]
         in
-            li [ ] liBody
+            result
 
 viewTagList : (String -> msg) -> Model -> List (Html msg)
 viewTagList msg model =
@@ -139,27 +142,29 @@ selectTopTags tags =
 viewTagItem : (String -> msg) -> Tag -> Html msg
 viewTagItem msg entry =
     let
-        linkBody =
+        tagClass =
             if entry.selected then
-                strong [ ] [ text entry.label ]
+                "tag is-dark"
             else
-                text entry.label
+                "tag is-light"
     in
-        li [ ]
-            [ a [ href "#"
-                , title (toString entry.count)
-                , onClick (msg entry.label) ] [ linkBody ] ]
+        a
+            [ class tagClass
+            , href "#"
+            , title (toString entry.count)
+            , onClick (msg entry.label)
+            ] [ text entry.label ]
 
 
 yearSelector : Model -> Html Msg
 yearSelector model =
     let
         header =
-            li [ ] [ strong [ ] [ text "Years:" ] ]
+            span [ class "tag is-info" ] [ text "Years" ]
         entries =
             header :: viewYearList ToggleYear model.yearList
     in
-        ul [ class "list-inline" ] entries
+        div [ class "tags" ] entries
 
 
 viewYearList : (Int -> msg) -> GraphData YearList -> List (Html msg)
@@ -181,49 +186,58 @@ viewYearList msg entries =
 viewYearItem : (Int -> msg) -> Year -> Html msg
 viewYearItem msg entry =
     let
-        linkBody =
+        tagClass =
             if entry.selected then
-                strong [ ] [ text (toString entry.year) ]
+                "tag is-dark"
             else
-                text (toString entry.year)
+                "tag is-light"
     in
-        li [ ]
-            [ a [ href "#", onClick (msg entry.year) ] [ linkBody ] ]
+        a
+            [ class tagClass
+            , href "#"
+            , title (toString entry.count)
+            , onClick (msg entry.year)
+            ] [ text (toString entry.year) ]
 
 
 locationSelector : Model -> Html Msg
 locationSelector model =
     let
         header =
-            li [ ] [ strong [ ] [ text "Locations:" ] ]
+            span [ class "tag is-info" ] [ text "Locations" ]
         footer =
             allLocationsToggle model
         entries =
             (header :: viewLocationList ToggleLocation model) ++ [footer]
     in
-        ul [ class "list-inline" ] entries
+        div [ class "tags" ] entries
 
 
 allLocationsToggle : Model -> Html Msg
 allLocationsToggle model =
     if model.showingAllLocations then
-        li [ ]
-            [ a [ href "#"
-                , title "Hide some locations"
-                , onClick ToggleAllLocations ] [ text "<<" ] ]
+        a
+            [ class "tag is-light"
+            , href "#"
+            , title "Hide some locations"
+            , onClick ToggleAllLocations
+            ] [ text "<<" ]
     else
         let
             locationList =
                 RemoteData.withDefault [] model.locationList
-            liBody =
+            result =
                 if (List.length locationList <= 25) then
-                    [ text "" ]
+                    text ""
                 else
-                    [ a [ href "#"
+                    a
+                        [ class "tag is-light"
+                        , href "#"
                         , title "Show all locations"
-                        , onClick ToggleAllLocations ] [ text ">>" ] ]
+                        , onClick ToggleAllLocations
+                        ] [ text ">>" ]
         in
-            li [ ] liBody
+            result
 
 
 viewLocationList : (String -> msg) -> Model -> List (Html msg)
@@ -289,23 +303,26 @@ selectTopLocations locations =
 viewLocationItem : (String -> msg) -> Location -> Html msg
 viewLocationItem msg entry =
     let
-        linkBody =
+        tagClass =
             if entry.selected then
-                strong [ ] [ text entry.label ]
+                "tag is-dark"
             else
-                text entry.label
+                "tag is-light"
     in
-        li [ ]
-            [ a [ href "#"
-                , title (toString entry.count)
-                , onClick (msg entry.label) ] [ linkBody ] ]
+        a
+            [ class tagClass
+            , href "#"
+            , title (toString entry.count)
+            , onClick (msg entry.label)
+            ] [ text entry.label ]
 
 
 viewThumbnails : Model -> Html Msg
 viewThumbnails model =
     case model.assetList of
         RemoteData.NotAsked ->
-            text "Make a selection above to display assets."
+            div [ class "notification" ]
+                [ text "Make a selection above to display assets." ]
 
         RemoteData.Loading ->
             text "Loading thumbnails..."
@@ -315,12 +332,17 @@ viewThumbnails model =
 
         RemoteData.Success list ->
             let
+                -- Use the awesome, flexible bulma columns and then force them
+                -- to be thirds, so we avoid the images shrinking needlessly.
+                -- Then wrap the individual column elements in a "columns",
+                -- one for each row, and that is collected in a container.
+                -- Basically a primitive table.
                 cells =
                     List.map viewThumbnailItem list.entries
                 groups =
                     greedyGroupsOf 3 cells
                 rows =
-                    List.map (div [ class "row" ]) groups
+                    List.map (div [ class "columns" ]) groups
                 paging =
                     -- skip the pagination links if there is nothing to page
                     if list.total_entries > pageSize && List.length list.entries > 0 then
@@ -328,7 +350,7 @@ viewThumbnails model =
                     else
                         [ text "" ]
             in
-                div [ ] (rows ++ paging)
+                div [ class "container" ] (rows ++ paging)
 
 
 viewThumbnailItem : AssetSummary -> Html Msg
@@ -345,24 +367,30 @@ viewThumbnailItem entry =
                 "/thumbnail/" ++ entry.id
         baseImgAttrs =
             [ src imgSrc
-            , alt entry.file_name ]
+            , alt entry.file_name
+            , style [ ("width", "auto") ]
+            ]
         imgAttrs =
             if entry.thumbless then
                 baseImgAttrs
             else
                 baseImgAttrs ++ [ on "error" (Json.Decode.succeed (ThumblessAsset entry.id)) ]
     in
-        -- The images are likely being resized to fit the container, but
-        -- for now they look okay.
-        div [ class "col-sm-6 col-md-4" ]
-            [ div [ class "thumbnail"
-                  , onClick <| NavigateTo <| ShowAssetRoute entry.id
-                  ]
-                [ img imgAttrs [ ]
-                , div [ class "caption" ]
-                    [ text (intToDateString entry.date)
-                    , separator
-                    , text entry.file_name ]
+        div [ class "column is-one-third" ]
+            [ div [ class "card" ]
+                [ div [ class "card-content"
+                      , onClick <| NavigateTo <| ShowAssetRoute entry.id
+                      ]
+                    -- overflow only works on block elements, so apply it here;
+                    -- long file names with "break" characters (e.g. '-') will
+                    -- wrap automatically anyway
+                    [ figure [ class "image", style [("overflow", "hidden")] ]
+                        [ img imgAttrs [ ]
+                        , small [ ] [ text (intToDateString entry.date) ]
+                        , br [ ] [ ]
+                        , small [ ] [ text entry.file_name ]
+                        ]
+                    ]
                 ]
             ]
 
@@ -412,14 +440,16 @@ paginationList currentPage list =
                 Nothing
             else
                 namedPaginationLink "«" (currentPage - 10)
+        ellipsis =
+            span [ property "innerHTML" <| string "&hellip;" ] [ ]
         preDots =
             if lower > 2 then
-                Just ( ",...", li [ class "disabled" ] [ span [ ] [ text "..." ] ] )
+                Just ( ",...", li [ class "pagination-ellipsis" ] [ span [ ] [ ellipsis ] ] )
             else
                 Nothing
         postDots =
             if upper < (totalPages - 1) then
-                Just ( "...,", li [ class "disabled" ] [ span [ ] [ text "..." ] ] )
+                Just ( "...,", li [ class "pagination-ellipsis" ] [ span [ ] [ ellipsis ] ] )
             else
                 Nothing
         nextLink =
@@ -432,9 +462,12 @@ paginationList currentPage list =
         maybeLinks =
             [firstLink, prevLink, preDots] ++ numberedLinks ++ [postDots, nextLink, lastLink]
         linkList =
-            Html.Keyed.ul [ class "pagination" ] (justLinksExtractor maybeLinks)
+            Html.Keyed.ul [ class "pagination-list" ] (justLinksExtractor maybeLinks)
     in
-        [nav [ class "text-center" ] [ linkList ] ]
+        [ nav
+            [ class "pagination is-centered"
+            , attribute "role" "navigation"
+            ] [ linkList ] ]
 
 
 namedPaginationLink : String -> Int -> Maybe ( String, Html Msg )
@@ -446,11 +479,14 @@ paginationLink : Int -> Int -> Maybe ( String, Html Msg )
 paginationLink currentPage page =
     let
         classes =
-            classList [ ( "active", currentPage == page ) ]
+            classList
+                [ ("pagination-link", True)
+                , ( "is-current", currentPage == page )
+                ]
     in
         Just ( toString page
-            , li [ classes ]
-                [ a [ onClick <| Paginate page ] [ text (toString page) ] ]
+            , li [ ]
+                [ a [ classes, onClick <| Paginate page ] [ text (toString page) ] ]
             )
 
 
@@ -484,24 +520,22 @@ viewAsset model =
             warningMessage (toString error) backToHomeLink
 
         RemoteData.Success asset ->
-            div [ ]
-                [ (viewAssetPreviewPanel asset)
-                , dl [ class "dl-horizontal" ] (viewAssetDetails asset)
-                , div [ class "col-sm-offset-2 col-sm-10" ]
-                    [ a [ class "btn btn-default"
-                        , onClick <| NavigateTo <| EditAssetRoute asset.id ] [ text "Edit" ]
-                    ]
-                , backToHomeLink
-                ]
+            div [ class "container" ]
+                [ (viewAssetPreviewPanel asset) ]
 
 
 viewAssetPreviewPanel : AssetDetails -> Html Msg
 viewAssetPreviewPanel asset =
-    div [ class "panel panel-default" ]
-        [ div [ class "panel-heading" ]
-            [ h3 [ class "panel-title" ] [ text asset.file_name ] ]
-        , div [ class "panel-body" ] [ viewAssetPreview asset ]
-        , div [ class "panel-footer" ] [ text (intToDateString asset.datetime) ]
+    div [ class "card" ]
+        [ div [ class "card-header" ]
+            [ p [ class "card-header-title" ] [ text asset.file_name ]
+            , a [ class "card-header-icon"
+                , onClick <| NavigateTo <| EditAssetRoute asset.id
+                ]
+                [ span [ class "icon" ] [ i [ class "fa fa-edit" ] [ ] ] ]
+            ]
+        , div [ class "card-image has-text-centered" ] [ viewAssetPreview asset ]
+        , div [ class "card-content" ] [ viewAssetDetails asset ]
         ]
 
 
@@ -518,17 +552,21 @@ viewAssetPreview asset =
             ]
     else
         a [ href ("/asset/" ++ asset.id) ]
-            [ img [ class "asset"
-                  , src ("/preview/" ++ asset.id)
-                  , alt asset.file_name ] [ ]
+            [ figure [ class "image" ]
+                -- styles for getting the image to center and not resize
+                [ img [ style [("display", "inline"), ("width", "auto")]
+                      , src ("/preview/" ++ asset.id)
+                      , alt asset.file_name ] [ ]
+                ]
             ]
 
 
-viewAssetDetails : AssetDetails -> List (Html Msg)
+viewAssetDetails : AssetDetails -> Html Msg
 viewAssetDetails asset =
     let
         part1 =
-            [ ( "Size", (toString asset.file_size) )
+            [ ( "Date", (intToDateString asset.datetime) )
+            , ( "Size", (toString asset.file_size) )
             , ( "SHA256", asset.id )
             ]
         -- The duration will be placed in the middle since it seems to fit
@@ -546,12 +584,16 @@ viewAssetDetails asset =
 
                 Nothing ->
                     part1 ++ part2
-        dt_dd ( t, d ) =
-            [ dt [ ] [ text t ]
-            , dd [ ] [ text d ]
+        table_maker ( label, data ) =
+            [ tr [ ]
+                [ th [ ] [ text label ]
+                , td [ ] [ text data ]
+                ]
             ]
     in
-        List.concatMap (dt_dd) rows
+        table [ class "table is-striped is-fullwidth" ]
+            [ tbody [ ] (List.concatMap (table_maker) rows) ]
+
 
 
 notFoundView : Html Msg
@@ -561,8 +603,13 @@ notFoundView =
 
 warningMessage : String -> Html Msg -> Html Msg
 warningMessage message content =
-    div [ class "alert alert-warning" ]
-        [ text message
+    div [ class "container" ]
+        [ article [ class "message is-warning" ]
+            [ div [ class "message-header" ] [ text "Warning" ]
+            , div [ class "message-body" ]
+                [ div [ class "content", style [("font-family", "monospace")] ]
+                    [ text message ] ]
+            ]
         , content
         ]
 
@@ -600,11 +647,18 @@ editAsset model =
             warningMessage (toString error) backToHomeLink
 
         RemoteData.Success asset ->
-            div [ ]
-                [ (viewAssetPreviewPanel asset)
-                , editAssetForm model.assetEditForm asset
-                , backToHomeLink
-                ]
+            div [ class "container" ]
+                [ (editAssetPanel model.assetEditForm asset) ]
+
+
+editAssetPanel : Forms.Form -> AssetDetails -> Html Msg
+editAssetPanel form asset =
+    div [ class "card" ]
+        [ div [ class "card-header" ]
+            [ p [ class "card-header-title" ] [ text asset.file_name ] ]
+        , div [ class "card-image has-text-centered" ] [ viewAssetPreview asset ]
+        , div [ class "card-content" ] [ (editAssetForm form asset) ]
+        ]
 
 
 editAssetForm : Forms.Form -> AssetDetails -> Html Msg
@@ -621,17 +675,15 @@ editAssetForm form asset =
     in
         -- Apparently the "on submit" on the form works better than using "on
         -- click" on a particular form input/button.
-        Html.form [ class "form-horizontal"
-                  , onSubmit (SubmitAsset asset.id)
-                  ]
-            [ div [ class "form-group" ]
-                [ editAssetFormGroup form "user_date" "Custom Date" userDate "date" "yyyy-mm-dd HH:MM"
+        Html.form [ onSubmit (SubmitAsset asset.id) ]
+            [ div [ class "container", style [("width", "auto"), ("padding-right", "3em")] ]
+                [ editAssetFormGroup form "user_date" "Custom Date" userDate "text" "yyyy-mm-dd HH:MM"
                 , editAssetFormGroup form "location" "Location" location "text" ""
                 , editAssetFormGroup form "caption" "Caption" caption "text" ""
                 , editAssetFormGroup form "tags" "Tags" tags "text" "(comma-separated)"
-                , div [ class "form-group" ]
-                    [ div [ class "col-sm-offset-2 col-sm-10" ]
-                        [ assetEditSaveButton form asset ]
+                , div [ class "field is-horizontal" ]
+                    [ div [ class "field-label" ] [ ]
+                    , div [ class "field-body" ] [ assetEditSaveButton form asset ]
                     ]
                 ]
             ]
@@ -644,32 +696,36 @@ editAssetFormGroup form idString labelText value inputType placeholderText =
             Forms.errorString form idString
         formIsValid =
             validateMsg == "no errors"
-        formGroupClass =
+        inputClass =
             if formIsValid then
-                "form-group"
+                "input"
             else
-                "form-group has-error"
+                "input is-danger"
         inputField =
-            input
-                [ id idString
-                , class "form-control"
-                , type_ inputType
-                , Html.Attributes.name idString
-                , Html.Attributes.value value
-                , onInput (UpdateFormAssetEdit idString)
-                , placeholder placeholderText
-                ] [ ]
+            div [ class "control" ]
+                [ input
+                    [ id idString
+                    , class inputClass
+                    , type_ inputType
+                    , Html.Attributes.name idString
+                    , Html.Attributes.value value
+                    , onInput (UpdateFormAssetEdit idString)
+                    , placeholder placeholderText
+                    ] [ ]
+                ]
         validationTextDiv =
-            div [ class "help-block" ] [ text (Forms.errorString form idString) ]
+            p [ class "help is-danger" ] [ text validateMsg ]
         formGroupElems =
             if formIsValid then
                 [ inputField ]
             else
                 [ inputField, validationTextDiv ]
     in
-        div [ class formGroupClass ]
-            [ Html.label [ for idString, class "col-sm-2 control-label" ] [ text labelText ]
-            , div [ class "col-sm-10" ] formGroupElems
+        div [ class "field is-horizontal" ]
+            [ div [ class "field-label is-normal" ]
+                [ Html.label [ for idString, class "label" ] [ text labelText ] ]
+            , div [ class "field-body" ]
+                [ div [ class "field" ] formGroupElems ]
             ]
 
 
@@ -678,8 +734,8 @@ assetEditSaveButton form asset =
     let
         attrs =
             if Forms.validateStatus form then
-                [ type_ "submit", value "Save", class "btn btn-default" ]
+                [ type_ "submit", value "Save", class "button is-primary" ]
             else
-                [ type_ "submit", value "Save", class "btn", disabled True ]
+                [ type_ "submit", value "Save", class "button", disabled True ]
     in
         input attrs [ ]

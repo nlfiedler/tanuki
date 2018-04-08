@@ -1,32 +1,10 @@
 /* This file is for your main application css. */
 
-body, form, ul, table {
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
-
-.header {
+#navbar {
   border-bottom: 1px solid #e5e5e5;
-  padding-right: 15px;
-  padding-left: 15px;
-}
-
-.logo {
-  width: 520px;
-  height: 100px;
-  display: inline-block;
+  margin-right: 1em;
+  margin-left: 1em;
+  margin-top: 1em;
   margin-bottom: 1em;
-  background-image: url("/images/tanuki.png");
-  background-size: 520px 100px;
-}
-
-td.detail {
-  padding-right: 15px;
-  text-align: right;
-  font-weight: bold;
-}
-
-img.asset {
-  display: block;
-  margin: auto;
+  padding-bottom: 1em;
 }
