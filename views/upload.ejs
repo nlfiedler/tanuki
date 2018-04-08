@@ -35,9 +35,9 @@
       <div>
         <form action="/import" method="post" enctype="multipart/form-data">
           <div class="control">
-            <div class="file is-large">
+            <div class="file has-name is-boxed">
               <label class="file-label">
-                <input class="file-input" type="file" name="asset">
+                <input class="file-input" type="file" name="asset" id="fileInput" required>
                 <span class="file-cta">
                   <span class="file-icon">
                     <i class="fas fa-upload"></i>
@@ -46,16 +46,35 @@
                     Choose a file…
                   </span>
                 </span>
+                <span class="file-name" id="filename"></span>
               </label>
             </div>
           </div>
-          <p class="help">You can drag and drop a file on the above control</p>
+          <p id="dragHelp" class="help" style="display: none;">
+            You can drag and drop a file on the above control
+          </p>
           <div class="control">
-            <input class="button is-primary" type="submit" value="Upload"/>
+            <input class="button is-primary" type="submit" value="Upload" id="upload" disabled/>
           </div>
         </form>
       </div>
 
     </div>
+    <script>
+      if ('draggable' in document.createElement('span')) {
+        var helpElem = document.getElementById('dragHelp');
+        helpElem.style.display = 'block';
+      }
+      var fileElem = document.getElementById('fileInput');
+      fileElem.onchange = function () {
+        if (fileElem.files.length > 0) {
+          document.getElementById('filename').innerHTML = fileElem.files[0].name;
+          document.getElementById('upload').disabled = false;
+        } else {
+          document.getElementById('filename').innerHTML = '';
+          document.getElementById('upload').disabled = true;
+        }
+      };
+    </script>
   </body>
 </html>
