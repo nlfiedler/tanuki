@@ -1,6 +1,7 @@
 module Model exposing (..)
 
-import Date
+import Date exposing (Month(..))
+import Date.Extra as Date
 import Forms
 import GraphQL.Client.Http as GraphQLClient
 import Regex
@@ -151,55 +152,27 @@ validateUserDate input =
     if String.length input == 0 then
         Nothing
     else if Regex.contains (Regex.regex userDateRegex) input then
-        case Date.fromString (String.join "T" (String.split " " input)) of
+        case Date.fromIsoString (String.join "T" (String.split " " input)) of
             Ok value ->
                 Nothing
             Err msg ->
                 Just msg
     else
-        Just "date/time format must be yyyy-mm-dd HH:MM"
+        Just "date/time format must be yyyy-MM-dd HH:mm"
 
 
 {-| Convert UTC milliseconds to our date/time string.
 -}
 intToDateString : Int -> String
 intToDateString num =
-    let
-        zeroPad len num =
-            String.padLeft len '0' (toString num)
-        date =
-            Date.fromTime (toFloat num)
-        month =
-            case Date.month date of
-                Date.Jan -> "01"
-                Date.Feb -> "02"
-                Date.Mar -> "03"
-                Date.Apr -> "04"
-                Date.May -> "05"
-                Date.Jun -> "06"
-                Date.Jul -> "07"
-                Date.Aug -> "08"
-                Date.Sep -> "09"
-                Date.Oct -> "10"
-                Date.Nov -> "11"
-                Date.Dec -> "12"
-        dateStr =
-            String.join "-"
-                [ zeroPad 4 (Date.year date)
-                , month
-                , zeroPad 2 (Date.day date)
-                ]
-        timeStr =
-            String.join ":"
-                [ zeroPad 2 (Date.hour date)
-                , zeroPad 2 (Date.minute date)
-                ]
-    in
-        String.join " " [dateStr, timeStr]
+    -- toFormattedString uses local time
+    Date.toFormattedString
+        "yyyy-MM-dd HH:mm"
+        (Date.fromTime (toFloat num))
 
 
 {-| Convert an optional user date/time value from UTC milliseconds to our
-date string (e.g. "2003/05/26 08:30").
+date string (e.g. "2003-05-26 08:30").
 -}
 userDateToString : Maybe Int -> String
 userDateToString userDate =
@@ -217,8 +190,11 @@ userDateStrToInt : String -> Maybe Int
 userDateStrToInt userDate =
     let
         dateResult =
-            -- convert user input to ISO 8601 which Elm's Date expects
-            Date.fromString (String.join "T" (String.split " " userDate))
+            -- Convert user input to ISO 8601 format, without a trailing Z, so
+            -- that the date will be treated as local time. Date.Extra
+            -- represents the time as UTC plus an offset, so using Date.toTime
+            -- will return the UTC time.
+            Date.fromIsoString (String.join "T" (String.split " " userDate))
     in
         case dateResult of
             Ok value ->

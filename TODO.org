@@ -1,15 +1,8 @@
 * TODO
 
-** GraphQL Rewrite
-
-- [TODO] Deployment must change http://localhost:3000/graphql instead of /api
-- [TODO] Perform migration on production
-  - save a permanent backup of the production data for later testing
-  - ensure the migration procedure is documented
-
 ** General Items
 
-- [TODO] design the user login and comments system
+- [TODO] design the user login and comments system (see "families")
 - [TODO] Look for means of ensuring LevelDB data integrity
   - Look into enabling extra LevelDB checks (`paranoidChecks`, `verifyChecksums`)
 - [TODO] Use PouchDB/CouchDB replication to keep a local backup
@@ -49,3 +42,40 @@
 - [TODO] Replace the web banner with something that looks good
 - [TODO] Include list of all dependencies and their copyright/license as appropriate
   - fontawesome.io
+
+** Use Cases
+
+*** Families
+
+- How might families use the app/web to interact?
+- Need user accounts
+  - Default to "admin party" like CouchDB
+    - That is, default user is 'admin' with no password
+  - Admin can change the user name and password in app preferences
+    - At that point, default login must be disabled
+  - Allow blank passwords for simplicity?
+  - Need password reminder facility
+  - Special permissions on adult vs child accounts?
+  - App preferences allows admin to manage accounts
+  - App preferences for non-admins would be edit own account only
+  - App has trusted access based on OS login (i.e. single-sign-on)
+    - Use a cryptographically secure key, not just a username in a config file
+    - Without the key, user must log in with credentials
+- Comments on assets
+  - Format: comment text, user name, date/time
+  - Comments are stored in the asset document
+  - Search would include comments
+  - Edit/Delete for comment author, admin
+  - Like for non-authors
+- Likes on assets
+- Albums/Projects must have permissions
+  - Default editable by creator only
+- Private albums/projects
+  - Flag to indicate visibility only to owner
+
+** Documentation
+
+*** Date/Time values
+
+- Use 24 hour clock, local time zone (stored as UTC)
+- http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns
