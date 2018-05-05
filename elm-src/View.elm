@@ -356,9 +356,6 @@ viewThumbnails model =
 viewThumbnailItem : AssetSummary -> Html Msg
 viewThumbnailItem entry =
     let
-        -- trick to put in a nice separator for the thumbnail caption
-        separator =
-            span [ property "innerHTML" <| string "&mdash;" ] [ ]
         -- any asset that fails to produce a thumbnail will get a placeholder
         imgSrc =
             if entry.thumbless then
@@ -655,7 +652,12 @@ editAssetPanel : Forms.Form -> AssetDetails -> Html Msg
 editAssetPanel form asset =
     div [ class "card" ]
         [ div [ class "card-header" ]
-            [ p [ class "card-header-title" ] [ text asset.file_name ] ]
+            [ p [ class "card-header-title" ]
+                [ text (intToDateString asset.datetime)
+                , text ", "
+                , text asset.file_name
+                ]
+            ]
         , div [ class "card-image has-text-centered" ] [ viewAssetPreview asset ]
         , div [ class "card-content" ] [ (editAssetForm form asset) ]
         ]
