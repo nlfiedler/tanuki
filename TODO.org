@@ -2,7 +2,13 @@
 
 ** General Items
 
-- [TODO] design the user login and comments system (see "families")
+- [TODO] Additional GraphQL search parameters
+  - "before:" (e.g. "before:2017-05")
+  - "after:" (e.g. "after:2015")
+  - "mimetype:" (likely w/o index, scan all documents)
+  - "filename:" (likely w/o index, scan all documents)
+- [TODO] Need a query to find image assets whose orientation is incorrect/unknown
+- [TODO] Design the user login and comments system (see "families")
 - [TODO] Look for means of ensuring LevelDB data integrity
   - Look into enabling extra LevelDB checks (`paranoidChecks`, `verifyChecksums`)
 - [TODO] Use PouchDB/CouchDB replication to keep a local backup
@@ -21,6 +27,7 @@
 - [TODO] api to perform database compaction
 - [TODO] Review express.js performance guidelines
   - http://expressjs.com/en/advanced/best-practice-performance.html
+- [TODO] Extract ID3 tags on incoming audio files
 
 ** Node.js Rewrite
 
@@ -47,8 +54,13 @@
 
 *** Families
 
+- [TODO] design the GraphQL schema for:
+  - users
+  - comments
+  - likes
 - How might families use the app/web to interact?
 - Need user accounts
+  - Look for a Node.js/Express middleware to handle authentication
   - Default to "admin party" like CouchDB
     - That is, default user is 'admin' with no password
   - Admin can change the user name and password in app preferences

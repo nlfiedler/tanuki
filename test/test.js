@@ -227,6 +227,15 @@ setTimeout(function () {
           'mimetype': 'image/jpeg',
           'original_date': null,
           'tags': ['cat', 'picnic']
+        },
+        {
+          '_id': 'e4f78c848a4ebcf180c68e2a80e117f3c710577994e337454177a80f0c9d6042',
+          'filename': 'tagless.jpg',
+          'filesize': 123456,
+          'import_date': Date.UTC(2015, 6, 9, 10, 15),
+          'mimetype': 'image/jpeg',
+          'original_date': null,
+          'tags': [] // tags should never be null, just an empty list
         }
       ]
       for (let doc of testData) {
@@ -235,7 +244,7 @@ setTimeout(function () {
     })
 
     describe('assets', function () {
-      it('should return count of 3', function (done) {
+      it('should return count of 4', function (done) {
         request(app)
         request(app)
           .post(`/graphql`)
@@ -246,7 +255,7 @@ setTimeout(function () {
           })
           .expect(200)
           .expect(res => {
-            assert.equal(res.body.data.count, 3)
+            assert.equal(res.body.data.count, 4)
           })
           .end(function (err, res) {
             if (err) {
@@ -284,6 +293,71 @@ setTimeout(function () {
               search.results[0].location,
               search.results[1].location
             ], 'san francisco')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('assets without any tags', function () {
+      it('should return assets with no tags', function (done) {
+        request(app)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              search(tags: [null]) {
+                results {
+                  filename
+                }
+                count
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const search = res.body.data.search
+            assert.equal(search.count, 1)
+            assert.equal(search.results[0].filename, 'tagless.jpg')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('assets without any location', function () {
+      it('should return assets with no location', function (done) {
+        request(app)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              search(locations: [null]) {
+                results {
+                  filename
+                }
+                count
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const search = res.body.data.search
+            assert.equal(search.count, 2)
+            assert.include([
+              search.results[0].filename,
+              search.results[1].filename
+            ], 'img0315.jpg')
+            assert.include([
+              search.results[0].filename,
+              search.results[1].filename
+            ], 'tagless.jpg')
           })
           .end(function (err, res) {
             if (err) {
@@ -395,9 +469,10 @@ setTimeout(function () {
           .expect(200)
           .expect(res => {
             const years = res.body.data.years
-            assert.equal(years.length, 2)
+            assert.equal(years.length, 3)
             assert.deepEqual(years[0], {value: 2013, count: 1})
             assert.deepEqual(years[1], {value: 2014, count: 2})
+            assert.deepEqual(years[2], {value: 2015, count: 1})
           })
           .end(function (err, res) {
             if (err) {
@@ -456,7 +531,7 @@ setTimeout(function () {
       await backend.allLocations()
       await backend.allTags()
       await backend.allYears()
-      await backend.byLocation('osaka')
+      await backend.byLocations(['osaka'])
       await backend.byTags(['foobar'])
       await backend.byYear(2012)
     })
