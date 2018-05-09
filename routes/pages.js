@@ -90,7 +90,7 @@ router.post('/import', upload.single('asset'), wrap(async function (req, res, ne
   } catch (err) {
     if (err.status === 404) {
       const originalDate = await incoming.getOriginalDate(req.file.mimetype, req.file.path)
-      const importDate = new Date().getTime()
+      const importDate = Date.now()
       const duration = await assets.getDuration(req.file.mimetype, req.file.path)
       let doc = {
         _id: id,
@@ -117,7 +117,7 @@ router.get('/upload', function (req, res, next) {
   res.render('upload', {title: 'Asset Upload'})
 })
 
-// Last of all, map everything else to the Elm appliation.
+// Last of all, map everything else to the Elm application.
 router.get('/*', function (req, res, next) {
   res.render('index', {title: 'Browse Assets'})
 })

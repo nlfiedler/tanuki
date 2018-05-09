@@ -34,7 +34,7 @@ router.post('/assets', upload.single('asset'), wrap(async function (req, res, ne
   } catch (err) {
     if (err.status === 404) {
       const originalDate = await incoming.getOriginalDate(req.file.mimetype, req.file.path)
-      const importDate = new Date().getTime()
+      const importDate = Date.now()
       const duration = await assets.getDuration(req.file.mimetype, req.file.path)
       let doc = {
         _id: id,
