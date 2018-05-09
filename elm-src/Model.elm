@@ -161,6 +161,18 @@ validateUserDate input =
         Just "date/time format must be yyyy-MM-dd HH:mm"
 
 
+{-| Create a Date for the given year, as January 1st at midnight.
+Returns the UTC milliseconds.
+-}
+dateForYear : Int -> Maybe Int
+dateForYear year =
+    let
+        value =
+            Date.fromParts year Jan 1 0 0 0 0
+    in
+        Just (round (Time.inMilliseconds (Date.toTime value)))
+
+
 {-| Convert UTC milliseconds to our date/time string.
 -}
 intToDateString : Int -> String

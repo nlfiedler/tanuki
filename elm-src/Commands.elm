@@ -171,22 +171,38 @@ Any combination of tags, years, and locations can be used to query assets.
 sendAssetsQuery : Int -> TagList -> YearList -> LocationList -> Cmd Msg
 sendAssetsQuery page tags years locations =
     let
-        tagsVar =
-            Var.optional "tags" .tags (Var.list Var.string) []
-        locationsVar =
-            Var.optional "locations" .locations (Var.list Var.string) []
-        yearsVar =
-            Var.optional "years" .years (Var.list Var.int) []
+        afterYear =
+            case List.minimum (List.map .year years) of
+                Just lowest ->
+                    dateForYear lowest
+                Nothing ->
+                    Nothing
+        beforeYear =
+            case List.maximum (List.map .year years) of
+                Just highest ->
+                    dateForYear (highest + 1)
+                Nothing ->
+                    Nothing
         countVar =
             Var.optional "count" .count Var.int 10
         offsetVar =
             Var.optional "offset" .offset Var.int 0
+        paramsVar =
+            -- For whatever reason, the query works better if we use an 'input'
+            -- instead of arguments to a function field. Probably the Elm
+            -- module built a weird query, but with the input type it's okay.
+            Var.required "params" .params
+                (Var.object "SearchParams"
+                    [ Var.optionalField "tags" .tags (Var.nullable (Var.list Var.string))
+                    , Var.optionalField "locations" .locations (Var.nullable (Var.list Var.string))
+                    , Var.optionalField "after" .after (Var.nullable Var.int)
+                    , Var.optionalField "before" .before (Var.nullable Var.int)
+                    ]
+                )
         assetsRequest =
             extract
                 (field "search"
-                    [ ("tags", Arg.variable tagsVar)
-                    , ("locations", Arg.variable locationsVar)
-                    , ("years", Arg.variable yearsVar)
+                    [ ("params", Arg.variable paramsVar)
                     , ("count", Arg.variable countVar)
                     , ("offset", Arg.variable offsetVar)
                     ]
@@ -194,9 +210,13 @@ sendAssetsQuery page tags years locations =
                 )
                 |> queryDocument
                 |> request
-                    { tags = Just (List.map .label tags)
-                    , locations = Just (List.map .label locations)
-                    , years = Just (List.map .year years)
+                    { params =
+                        -- double wrap the optional fields so we can send null
+                        { tags = Just (Just (List.map .label tags))
+                        , locations = Just (Just (List.map .label locations))
+                        , after = Just afterYear
+                        , before = Just beforeYear
+                        }
                     , count = Just pageSize
                     , offset = Just ((page - 1) * pageSize)
                     }

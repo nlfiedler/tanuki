@@ -59,8 +59,14 @@ setTimeout(function () {
         request(app)
           .post(`/graphql`)
           .send({
-            query: `query {
-              search(tags: ["cat"], count: 6) {
+            variables: `{
+              "params": {
+                "tags": ["cat"]
+              }
+            }`,
+            operationName: 'Search',
+            query: `query Search($params: SearchParams!) {
+              search(params: $params, count: 6) {
                 results {
                   filename
                 }
@@ -89,8 +95,14 @@ setTimeout(function () {
         request(app)
           .post(`/graphql`)
           .send({
-            query: `query {
-              search(tags: ["cat"], count: 6, offset: 6) {
+            variables: `{
+              "params": {
+                "tags": ["cat"]
+              }
+            }`,
+            operationName: 'Search',
+            query: `query Search($params: SearchParams!) {
+              search(params: $params, count: 6, offset: 6) {
                 results {
                   filename
                 }
@@ -119,8 +131,14 @@ setTimeout(function () {
         request(app)
           .post(`/graphql`)
           .send({
-            query: `query {
-              search(tags: ["cat"], count: 6, offset: 12) {
+            variables: `{
+              "params": {
+                "tags": ["cat"]
+              }
+            }`,
+            operationName: 'Search',
+            query: `query Search($params: SearchParams!) {
+              search(params: $params, count: 6, offset: 12) {
                 results {
                   filename
                 }
@@ -149,8 +167,14 @@ setTimeout(function () {
         request(app)
           .post(`/graphql`)
           .send({
-            query: `query {
-              search(tags: ["cat"], count: 6, offset: 60) {
+            variables: `{
+              "params": {
+                "tags": ["cat"]
+              }
+            }`,
+            operationName: 'Search',
+            query: `query Search($params: SearchParams!) {
+              search(params: $params, count: 6, offset: 60) {
                 results {
                   id
                 }
@@ -178,8 +202,14 @@ setTimeout(function () {
         request(app)
           .post(`/graphql`)
           .send({
-            query: `query {
-              search(tags: ["cat"], count: 50) {
+            variables: `{
+              "params": {
+                "tags": ["cat"]
+              }
+            }`,
+            operationName: 'Search',
+            query: `query Search($params: SearchParams!) {
+              search(params: $params, count: 50) {
                 results {
                   id
                 }
