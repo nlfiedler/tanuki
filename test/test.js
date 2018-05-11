@@ -37,7 +37,7 @@ setTimeout(function () {
     describe('asset count', function () {
       it('should return 0', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               count
@@ -59,7 +59,7 @@ setTimeout(function () {
     describe('asset search', function () {
       it('should return nothing', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {}
@@ -92,7 +92,7 @@ setTimeout(function () {
     describe('asset search by tag', function () {
       it('should return nothing', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -127,7 +127,7 @@ setTimeout(function () {
     describe('tags', function () {
       it('should return nothing', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               tags {
@@ -153,7 +153,7 @@ setTimeout(function () {
     describe('locations', function () {
       it('should return nothing', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               locations {
@@ -179,7 +179,7 @@ setTimeout(function () {
     describe('years', function () {
       it('should return nothing', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               years {
@@ -257,7 +257,7 @@ setTimeout(function () {
       it('should return count of 4', function (done) {
         request(app)
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               count
@@ -279,7 +279,7 @@ setTimeout(function () {
     describe('assets by tag', function () {
       it('should return assets with matching tags', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -322,7 +322,7 @@ setTimeout(function () {
     describe('assets without any tags', function () {
       it('should return assets with no tags', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -357,7 +357,7 @@ setTimeout(function () {
     describe('assets without any location', function () {
       it('should return assets with no location', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -399,7 +399,7 @@ setTimeout(function () {
     describe('asset by multiple tags', function () {
       it('should return exactly the one matching asset', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -434,7 +434,7 @@ setTimeout(function () {
     describe('tags', function () {
       it('should return list of tags', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               tags {
@@ -464,7 +464,7 @@ setTimeout(function () {
     describe('locations', function () {
       it('should return list of locations', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               locations {
@@ -491,7 +491,7 @@ setTimeout(function () {
     describe('years', function () {
       it('should return list of years', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               years {
@@ -530,16 +530,16 @@ setTimeout(function () {
       const userList = ['akemi', 'chise', 'homura', 'kyoko', 'madoka', 'midori', 'sayaka']
       const locations = ['kamakura', 'kanazawa', 'kyoto', 'osaka', 'sapporo', 'tokyo', 'yokohama']
       for (let n = 0; n < 49; n++) {
-        const fileName = `IMG_${1000 + n}.JPG`
-        const fileOwner = sampleOne(userList)
+        const filename = `IMG_${1000 + n}.JPG`
+        const username = sampleOne(userList)
         // produce identifiers that have decent entropy and distribution
-        const id = pouchCollate.toIndexableString([fileName, fileOwner])
+        const id = pouchCollate.toIndexableString([filename, username])
         const year = Math.floor(Math.random() * 7) + 2010
         let doc = {
           _id: id,
           // we only search on the year (for now), the rest is meaningless
           original_date: Date.UTC(year, 4, 13, 5, 26),
-          filename: fileName,
+          filename,
           // original date overrides import date in terms of significance,
           // so anything at all is fine here
           import_date: Date.UTC(2017, 10, 18, 17, 3),
@@ -560,21 +560,13 @@ setTimeout(function () {
         }
         await backend.updateDocument(doc)
       }
-      // Prime the indices so the tests appear to run faster and do not show
-      // duration values in red, which looks bad.
-      await backend.allLocations()
-      await backend.allTags()
-      await backend.allYears()
-      await backend.byLocations(['osaka'])
-      await backend.byTags(['foobar'])
-      await backend.byDateRange(null, new Date())
     })
 
     describe('assets', function () {
       it('should return a large count', function (done) {
         request(app)
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               count
@@ -596,7 +588,7 @@ setTimeout(function () {
     describe('assets by unknown tag', function () {
       it('should return nothing', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -630,7 +622,7 @@ setTimeout(function () {
     describe('assets by one tag', function () {
       // With async/await let's go directly against the backend.
       it('should return list of matching assets', async function () {
-        let rows = await backend.byTags(['dipstick'])
+        let rows = await backend.query({tags: ['dipstick']})
         assert.isNotEmpty(rows)
         for (let row of rows) {
           let doc = await backend.fetchDocument(row.id)
@@ -642,7 +634,7 @@ setTimeout(function () {
     describe('assets by multiple tags', function () {
       // With async/await let's go directly against the backend.
       it('should return list of matching assets', async function () {
-        let rows = await backend.byTags(['cat', 'dog', 'hot'])
+        let rows = await backend.query({tags: ['cat', 'dog', 'hot']})
         assert.isNotEmpty(rows)
         for (let row of rows) {
           let doc = await backend.fetchDocument(row.id)
@@ -653,12 +645,12 @@ setTimeout(function () {
       })
     })
 
-    describe('assets by one year', function () {
+    describe('assets by date range', function () {
       it('should return list of matching assets', function (done) {
         const afterTime = new Date(2012, 0).getTime()
         const beforeTime = new Date(2013, 0).getTime()
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -696,10 +688,10 @@ setTimeout(function () {
     })
 
     // strangely this does not result in an error
-    // describe('assets with an invalid year', function () {
+    // describe('assets with an invalid date range', function () {
     //   it('should return an error', function (done) {
     //     request(app)
-    //       .post(`/graphql`)
+    //       .post('/graphql')
     //       .send({
     //         query: `query {
     //           search(after: "foo") {
@@ -721,12 +713,12 @@ setTimeout(function () {
     //   })
     // })
 
-    describe('assets by multiple years', function () {
+    describe('assets by date range spanning multiple years', function () {
       it('should return list of matching assets', function (done) {
         const afterTime = new Date(2012, 0).getTime()
         const beforeTime = new Date(2014, 0).getTime()
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -764,10 +756,9 @@ setTimeout(function () {
     })
 
     describe('assets by one location', function () {
-      // With async/await let's go directly against the backend.
       it('should return list of matching assets', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -804,7 +795,7 @@ setTimeout(function () {
     describe('assets by multiple locations', function () {
       it('should return list of matching assets', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -838,12 +829,12 @@ setTimeout(function () {
       })
     })
 
-    describe('assets by tag, location, and year', function () {
+    describe('assets by tags, location, and date range', function () {
       it('should return list of matching assets', function (done) {
         const afterTime = new Date(2012, 0).getTime()
         const beforeTime = new Date(2013, 0).getTime()
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -888,7 +879,7 @@ setTimeout(function () {
     describe('tags', function () {
       it('should return list of tags', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               tags {
@@ -915,7 +906,7 @@ setTimeout(function () {
     describe('locations', function () {
       it('should return list of locations', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               locations {
@@ -942,7 +933,7 @@ setTimeout(function () {
     describe('years', function () {
       it('should return list of years', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               years {

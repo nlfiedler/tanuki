@@ -49,9 +49,6 @@ setTimeout(function () {
         }
         await backend.updateDocument(doc)
       }
-      // Prime the indices so the tests appear to run faster and do not show
-      // duration values in red, which looks bad.
-      await backend.byTags(['foobar'])
     })
 
     describe('count of 6, default offset of 0', function () {

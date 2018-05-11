@@ -89,6 +89,10 @@ input SearchParams {
   # Date for filtering asset results. Only those assets whose canonical date
   # occurs _before_ this date will be returned.
   before: Date
+  # Find assets whose filename (e.g. img_3011.jpg) matches the one given.
+  filename: String
+  # Find assets whose mimetype (e.g. image/jpeg) matches the one given.
+  mimetype: String
 }
 
 type Query {
