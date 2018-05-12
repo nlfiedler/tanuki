@@ -7,7 +7,9 @@
   - "filename:" (likely w/o index, scan all documents)
   - write a lot more tests
     - combine looking for unset tags/locations in date range
+  - revert by_tags to use M/R index, mango is not efficient
 - [TODO] Write tests for the migration code
+  - use doc revs to ensure documents are not modified when not necessary
 - [TODO] How to handle case insensitivity in queries?
   - should not lowercase values on input, only when matching
   - mango has $regex so maybe can do case insensitive matching that way
@@ -35,6 +37,8 @@
 - [TODO] Review express.js performance guidelines
   - http://expressjs.com/en/advanced/best-practice-performance.html
 - [TODO] Extract ID3 tags on incoming audio files
+- [TODO] Find out why the mango queries are not using the index for combinators
+  - specifying use_index raises an error
 
 ** Node.js Rewrite
 
