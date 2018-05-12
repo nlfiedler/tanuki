@@ -2,12 +2,9 @@
 
 ** General Items
 
-- [TODO] Additional GraphQL search parameters
-  - "mimetype:" (likely w/o index, scan all documents)
-  - "filename:" (likely w/o index, scan all documents)
-  - write a lot more tests
-    - combine looking for unset tags/locations in date range
-  - revert by_tags to use M/R index, mango is not efficient
+- [TODO] replace image banner with a search field
+  - probably need to move the header into Elm
+  - use same query options as perkeep
 - [TODO] Write tests for the migration code
   - use doc revs to ensure documents are not modified when not necessary
 - [TODO] How to handle case insensitivity in queries?
