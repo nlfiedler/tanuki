@@ -115,7 +115,7 @@ type Query {
   years: [YearCount]
 }
 
-# `AssetInput` is used to create or update an asset.
+# `AssetInput` is used to update the details of an asset.
 input AssetInput {
   # New set of tags.
   tags: [String]
