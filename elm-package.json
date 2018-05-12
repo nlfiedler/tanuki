@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
     "summary": "Elm code for the Tanuki application",
-    "repository": "https://github.com/nlfiedler/racoondog.git",
+    "repository": "https://github.com/nlfiedler/tanuki.git",
     "license": "Apache",
     "source-directories": [
         "elm-src"

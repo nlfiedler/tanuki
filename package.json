@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nlfiedler/racoondog.git"
+    "url": "https://github.com/nlfiedler/tanuki.git"
   },
   "keywords": [
     "digital",
@@ -20,9 +20,9 @@
   "private": true,
   "license": "UNLICENSED",
   "bugs": {
-    "url": "https://github.com/nlfiedler/racoondog/issues"
+    "url": "https://github.com/nlfiedler/tanuki/issues"
   },
-  "homepage": "https://github.com/nlfiedler/racoondog",
+  "homepage": "https://github.com/nlfiedler/tanuki",
   "dependencies": {
     "apollo-server-express": "^1.3.4",
     "app-module-path": "^2.2.0",
