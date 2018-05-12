@@ -2,11 +2,11 @@
 
 ** General Items
 
-- [TODO] replace image banner with a search field
-  - probably need to move the header into Elm
-  - use same query options as perkeep
-- [TODO] Write tests for the migration code
-  - use doc revs to ensure documents are not modified when not necessary
+- [TODO] add a search form
+  - use a multi-field form with a search icon button
+    - input field for each field in SearchParams
+  - maybe replace the selectors with the form, showing the thumbnails below
+    - maybe based on the route?
 - [TODO] How to handle case insensitivity in queries?
   - should not lowercase values on input, only when matching
   - mango has $regex so maybe can do case insensitive matching that way
@@ -34,8 +34,6 @@
 - [TODO] Review express.js performance guidelines
   - http://expressjs.com/en/advanced/best-practice-performance.html
 - [TODO] Extract ID3 tags on incoming audio files
-- [TODO] Find out why the mango queries are not using the index for combinators
-  - specifying use_index raises an error
 
 ** Node.js Rewrite
 
@@ -54,7 +52,8 @@
 
 ** Productization
 
-- [TODO] Replace the web banner with something that looks good
+- [TODO] Replace the banner image with something that looks good
+  - keep in mind it should be small, for mobile devices
 - [TODO] Include list of all dependencies and their copyright/license as appropriate
   - fontawesome.io
 

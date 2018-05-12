@@ -4,7 +4,7 @@ import Dict
 import Forms
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (on, onClick, onInput, onSubmit)
+import Html.Events exposing (on, onClick, onInput, onSubmit, targetValue)
 import Html.Keyed
 import Json.Decode
 import Json.Encode exposing (string)
@@ -21,6 +21,9 @@ view model =
     case model.route of
         HomeIndexRoute ->
             indexPage model
+
+        UploadRoute ->
+            uploadPage model
 
         ShowAssetRoute id ->
             viewAsset model
@@ -40,6 +43,65 @@ indexPage model =
         , locationSelector model
         , viewThumbnails model
         ]
+
+
+uploadPage : Model -> Html Msg
+uploadPage model =
+    let
+        helpDisplay =
+            if model.hasDragSupport then
+                "block"
+            else
+                "none"
+        ( uploadDisabled, uploadFilename ) =
+            case model.uploadFilename of
+                Just fname ->
+                    ( False, fname )
+                Nothing ->
+                    ( True, "" )
+    in
+        div [ ]
+            [ Html.form
+                [ action "/import"
+                , method "post"
+                , enctype "multipart/form-data"
+                ]
+                [ div [ class "control" ]
+                    [ div [ class "file has-name is-boxed" ]
+                        [ label [ class "file-label" ]
+                            [ input
+                                [ class "file-input"
+                                , type_ "file"
+                                , multiple False
+                                , name "asset"
+                                , required True
+                                , on "change" (Json.Decode.map UploadSelection targetValue)
+                                ] [ ]
+                            , span [ class "file-cta" ]
+                                [ span [ class "file-icon" ]
+                                    [ i [ class "fas fa-upload" ] [ ] ]
+                                , span [ class "file-label" ]
+                                    [ text "Choose a file…" ]
+                                ]
+                            , span [ class "file-name" ] [ text uploadFilename ]
+                            ]
+                        ]
+                    ]
+                , p [ style [ ("display", helpDisplay) ]
+                    , class "help"
+                    ] [ text "You can drag and drop a file on the above control" ]
+                , div [ class "control" ]
+                    [ input
+                        [ class "button is-primary"
+                        , type_ "submit"
+                        , value "Upload"
+                        , disabled uploadDisabled
+                        ]
+                        [ ]
+
+                    ]
+                ]
+            ]
 
 
 tagSelector : Model -> Html Msg

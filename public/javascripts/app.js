@@ -4,7 +4,9 @@
 /* global Elm */
 const elmMain = document.getElementById('elm-main')
 if (elmMain) {
-  Elm.Main.embed(elmMain)
+  // detect if the browser has drag and drop support
+  var draggable = 'draggable' in document.createElement('span')
+  Elm.Main.embed(elmMain, {draggable: draggable})
 }
 
 document.addEventListener('DOMContentLoaded', function () {

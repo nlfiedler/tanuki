@@ -113,10 +113,6 @@ router.post('/import', upload.single('asset'), wrap(async function (req, res, ne
   }
 }))
 
-router.get('/upload', function (req, res, next) {
-  res.render('upload', {title: 'Asset Upload'})
-})
-
 // Last of all, map everything else to the Elm application.
 router.get('/*', function (req, res, next) {
   res.render('index', {title: 'Browse Assets'})

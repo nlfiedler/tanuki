@@ -31,6 +31,8 @@ type alias Model =
     , assetEditForm : Forms.Form
     , showingAllTags : Bool
     , showingAllLocations : Bool
+    , hasDragSupport : Bool
+    , uploadFilename : Maybe String
     }
 
 
@@ -97,8 +99,11 @@ type alias AssetDetails =
     }
 
 
-initialModel : Route -> Model
-initialModel route =
+{-| Create the initial model. The draggable flag indicates drag&drop support,
+as determined using native JavaScript.
+-}
+initialModel : Route -> Bool -> Model
+initialModel route draggable =
     { tagList = RemoteData.NotAsked
     , yearList = RemoteData.NotAsked
     , locationList = RemoteData.NotAsked
@@ -109,6 +114,8 @@ initialModel route =
     , assetEditForm = initialAssetEditForm
     , showingAllTags = False
     , showingAllLocations = False
+    , hasDragSupport = draggable
+    , uploadFilename = Nothing
     }
 
 

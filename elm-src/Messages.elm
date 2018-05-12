@@ -20,6 +20,7 @@ type Msg
     | AssetResponse (GraphResult AssetDetails)
     | UpdateFormAssetEdit String String
     | SubmitAsset String
+    | UploadSelection String
     | SubmitResponse String (GraphResult AssetDetails)
     | UrlChange Navigation.Location
     | NavigateTo Route

@@ -105,6 +105,19 @@ update msg model =
                 , Cmd.batch [sendTagsQuery, sendYearsQuery, sendLocationsQuery, navCmd]
                 )
 
+        UploadSelection filename ->
+            let
+                basename =
+                    -- The browser adds a fake path onto the file name; this is
+                    -- only for viewing purposes, the upload form will take care
+                    -- of reading and uploading the file.
+                    if String.startsWith "C:\\fakepath\\" filename then
+                        String.dropLeft 12 filename
+                    else
+                        filename
+            in
+                ( { model | uploadFilename = Just basename }, Cmd.none )
+
         UrlChange location ->
             let
                 currentRoute =
