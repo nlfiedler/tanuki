@@ -25,6 +25,9 @@ view model =
         UploadRoute ->
             uploadPage model
 
+        SearchRoute ->
+            searchPage model
+
         ShowAssetRoute id ->
             viewAsset model
 
@@ -41,7 +44,7 @@ indexPage model =
         [ tagSelector model
         , yearSelector model
         , locationSelector model
-        , viewThumbnails model
+        , viewThumbnails "Make a selection above to display assets" model
         ]
 
 
@@ -71,6 +74,8 @@ uploadPage model =
                         [ label [ class "file-label" ]
                             [ input
                                 [ class "file-input"
+                                -- set id so the styles take effect for this element
+                                , id "fileInput"
                                 , type_ "file"
                                 , multiple False
                                 , name "asset"
@@ -379,12 +384,12 @@ viewLocationItem msg entry =
             ] [ text entry.label ]
 
 
-viewThumbnails : Model -> Html Msg
-viewThumbnails model =
+viewThumbnails : String -> Model -> Html Msg
+viewThumbnails pendingText model =
     case model.assetList of
         RemoteData.NotAsked ->
             div [ class "notification" ]
-                [ text "Make a selection above to display assets." ]
+                [ text pendingText ]
 
         RemoteData.Loading ->
             text "Loading thumbnails..."
@@ -803,3 +808,119 @@ assetEditSaveButton form asset =
                 [ type_ "submit", value "Save", class "button", disabled True ]
     in
         input attrs [ ]
+
+
+-- The search page presents a form in place of the attribute selectors, and
+-- has a grid of thumbnails as well.
+searchPage : Model -> Html Msg
+searchPage model =
+    div [ ]
+        [ searchForm model model.assetSearchForm
+        , viewThumbnails "Use the form to find assets" model
+        ]
+
+
+-- Construct the search form, populating it with the saved values, if any,
+-- in the event that the form model has not been populated previously.
+searchForm : Model -> Forms.Form -> Html Msg
+searchForm model form =
+    let
+        tags =
+            Forms.formValueWithDefault model.savedSearch.tags form "tags"
+        locations =
+            Forms.formValueWithDefault model.savedSearch.locations form "locations"
+        afterDate =
+            Forms.formValueWithDefault model.savedSearch.after form "after"
+        beforeDate =
+            Forms.formValueWithDefault model.savedSearch.before form "before"
+        filename =
+            Forms.formValueWithDefault model.savedSearch.filename form "filename"
+        mimetype =
+            Forms.formValueWithDefault model.savedSearch.mimetype form "mimetype"
+    in
+        Html.form [ onSubmit SearchAssets ]
+            [ div
+                [ class "container"
+                , style
+                    [ ("width", "auto")
+                    , ("padding-right", "3em")
+                    , ("margin-bottom", "1rem")
+                    ]
+                ]
+                [ div [ class "field is-horizontal" ]
+                    [ div [ class "field-body" ]
+                        [ div [ class "field-label is-normal" ]
+                            [ Html.label [ class "label" ] [ text "Tags" ] ]
+                        , div [ class "field" ]
+                            (searchFormInput form "tags" "text" tags "comma-separated values" "fas fa-tags")
+                        , div [ class "field-label is-normal" ]
+                            [ Html.label [ class "label" ] [ text "Locations" ] ]
+                        , div [ class "field" ]
+                            (searchFormInput form "locations" "text" locations "comma-separated values" "fas fa-map")
+                        ]
+                    ]
+                , div [ class "field is-horizontal" ]
+                    [ div [ class "field-body" ]
+                        [ div [ class "field-label is-normal" ]
+                            [ Html.label [ class "label" ] [ text "After date" ] ]
+                        , div [ class "field" ]
+                            (searchFormInput form "after" "text" afterDate "2002-01-31" "fas fa-calendar")
+                        , div [ class "field-label is-normal" ]
+                            [ Html.label [ class "label" ] [ text "Before date" ] ]
+                        , div [ class "field" ]
+                            (searchFormInput form "before" "text" beforeDate "2003-08-30" "fas fa-calendar")
+                        ]
+                    ]
+                , div [ class "field is-horizontal" ]
+                    [ div [ class "field-body" ]
+                        [ div [ class "field-label is-normal" ]
+                            [ Html.label [ class "label" ] [ text "Filename" ] ]
+                        , div [ class "field" ]
+                            (searchFormInput form "filename" "text" filename "img_1234.jpg" "fas fa-file")
+                        , div [ class "field-label is-normal" ]
+                            [ Html.label [ class "label" ] [ text "Media type" ] ]
+                        , div [ class "field" ]
+                            (searchFormInput form "mimetype" "text" mimetype "image/jpeg" "fas fa-code")
+                        ]
+                    ]
+                , div [ class "field is-grouped is-grouped-right" ]
+                    [ div [ class "control" ]
+                        [ input [ type_ "submit", value "Search", class "button is-primary" ] [ ] ]
+                    ]
+                ]
+            ]
+
+
+searchFormInput : Forms.Form -> String -> String -> String -> String -> String -> List (Html Msg)
+searchFormInput form inputId inputType inputValue placeholderText iconClass =
+    let
+        validateMsg =
+            Forms.errorString form inputId
+        formIsValid =
+            validateMsg == "no errors"
+        inputClass =
+            if formIsValid then
+                "input"
+            else
+                "input is-danger"
+        validationTextDiv =
+            p [ class "help is-danger" ] [ text validateMsg ]
+        inputField =
+            p [ class "control is-expanded has-icons-left" ]
+                [ input
+                    [ id inputId
+                    , class inputClass
+                    , type_ inputType
+                    , Html.Attributes.name inputId
+                    , Html.Attributes.value inputValue
+                    , onInput (UpdateFormSearch inputId)
+                    , placeholder placeholderText
+                    ] [ ]
+                , span [ class "icon is-small is-left" ]
+                    [ i [ class iconClass ] [ ] ]
+                ]
+    in
+        if formIsValid then
+            [ inputField ]
+        else
+            [ inputField, validationTextDiv ]

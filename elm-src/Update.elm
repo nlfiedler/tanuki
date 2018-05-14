@@ -23,33 +23,24 @@ update msg model =
 
         ToggleTag label ->
             let
-                -- When tag selection changes, request page 1 as the
-                -- current page almost certainly does not make sense now.
-                ( updatedTags, cmd ) =
-                    RemoteData.update (updateTagSelection model label 1) model.tagList
+                newModel =
+                    updateTagSelection model label
             in
-                -- Reset the page number when the query has changed.
-                ( { model | tagList = updatedTags, pageNumber = 1 }, cmd )
+                ( newModel, fetchAssets newModel )
 
         ToggleYear year ->
             let
-                -- When year selection changes, request page 1 as the
-                -- current page almost certainly does not make sense now.
-                ( updatedYears, cmd ) =
-                    RemoteData.update (updateYearSelection model year 1) model.yearList
+                newModel =
+                    updateYearSelection model year
             in
-                -- Reset the page number when the query has changed.
-                ( { model | yearList = updatedYears, pageNumber = 1 }, cmd )
+                ( newModel, fetchAssets newModel )
 
         ToggleLocation label ->
             let
-                -- When location selection changes, request page 1 as the
-                -- current page almost certainly does not make sense now.
-                ( updatedLocations, cmd ) =
-                    RemoteData.update (updateLocationSelection model label 1) model.locationList
+                newModel =
+                    updateLocationSelection model label
             in
-                -- Reset the page number when the query has changed.
-                ( { model | locationList = updatedLocations, pageNumber = 1 }, cmd )
+                ( newModel, fetchAssets newModel )
 
         ToggleAllTags ->
             ( { model | showingAllTags = not model.showingAllTags }, Cmd.none )
@@ -63,14 +54,12 @@ update msg model =
         ThumblessAsset id ->
             ( { model | assetList = markThumbless model.assetList id }, Cmd.none )
 
-        Paginate pageNumber ->
-            -- We need the tags in order to update the page selection, but
-            -- otherwise the updated list is not used.
+        Paginate page ->
             let
-                ( updatedTags, cmd ) =
-                    RemoteData.update (updatePageSelection model pageNumber) model.tagList
+                newModel =
+                    { model | pageNumber = page }
             in
-                ( { model | pageNumber = pageNumber }, cmd )
+                ( newModel, fetchAssets newModel )
 
         AssetResponse response ->
             ( { model |
@@ -87,6 +76,17 @@ update msg model =
                     Forms.updateFormInput model.assetEditForm fieldName value
             in
                 ( { model | assetEditForm = newForm }, Cmd.none )
+
+        UpdateFormSearch fieldName value ->
+            -- A single value changed on the search form, which typically
+            -- means a single character was added or removed.
+            let
+                newForm =
+                    Forms.updateFormInput model.assetSearchForm fieldName value
+                savedSearch =
+                    saveSearchValues newForm
+            in
+                ( { model | assetSearchForm = newForm, savedSearch = savedSearch }, Cmd.none )
 
         SubmitAsset assetId ->
             -- The asset id is expected simply for convenience.
@@ -118,6 +118,14 @@ update msg model =
             in
                 ( { model | uploadFilename = Just basename }, Cmd.none )
 
+        SearchAssets ->
+            -- Reset the page number when the query has changed.
+            let
+                newModel =
+                    { model | pageNumber = 1 }
+            in
+                ( newModel, fetchAssets newModel )
+
         UrlChange location ->
             let
                 currentRoute =
@@ -129,89 +137,64 @@ update msg model =
             ( model, Navigation.newUrl <| toPath route )
 
 
--- Invoked via RemoteData.update() to update the tag list and construct a
--- command to fetch the matching assets.
-updateTagSelection : Model -> String -> Int -> TagList -> ( TagList, Cmd Msg )
-updateTagSelection model label page tags =
+{-| Update the model to reflect the change in tag selection.
+-}
+updateTagSelection : Model -> String -> Model
+updateTagSelection model label =
     let
         toggleEntry e =
             if e.label == label then
                 { e | selected = (not e.selected) }
             else
                 e
-        updatedTags =
-            List.map toggleEntry tags
-        selectedTags =
-            List.filter (.selected) updatedTags
-        selectedYears =
-            getSelectedYears model
-        selectedLocations =
-            getSelectedLocations model
+        updateList l =
+            ( List.map toggleEntry l, Cmd.none )
+        ( updatedTags, cmd ) =
+            RemoteData.update updateList model.tagList
+        newModel =
+            { model | pageNumber = 1, tagList = updatedTags }
     in
-        -- empty selection is okay
-        ( updatedTags, sendAssetsQuery page selectedTags selectedYears selectedLocations )
+        newModel
 
 
--- Invoked via RemoteData.update() to update the year list and construct a
--- command to fetch the matching assets.
-updateYearSelection : Model -> Int -> Int -> YearList -> ( YearList, Cmd Msg )
-updateYearSelection model year page years =
+{-| Update the model to reflect the change in year selection.
+-}
+updateYearSelection : Model -> Int -> Model
+updateYearSelection model year =
     let
         toggleEntry e =
             if e.year == year then
                 { e | selected = (not e.selected) }
             else
                 e
-        updatedYears =
-            List.map toggleEntry years
-        selectedTags =
-            getSelectedTags model
-        selectedYears =
-            List.filter (.selected) updatedYears
-        selectedLocations =
-            getSelectedLocations model
+        updateList l =
+            ( List.map toggleEntry l, Cmd.none )
+        ( updatedYears, cmd ) =
+            RemoteData.update updateList model.yearList
+        newModel =
+            { model | pageNumber = 1, yearList = updatedYears }
     in
-        -- empty selection is okay
-        ( updatedYears, sendAssetsQuery page selectedTags selectedYears selectedLocations )
+        newModel
 
 
--- Invoked via RemoteData.update() to update the location list and
--- construct a command to fetch the matching assets.
-updateLocationSelection : Model -> String -> Int -> LocationList -> ( LocationList, Cmd Msg )
-updateLocationSelection model location page locations =
+{-| Update the model to reflect the change in year selection.
+-}
+updateLocationSelection : Model -> String -> Model
+updateLocationSelection model location =
     let
         toggleEntry e =
             if e.label == location then
                 { e | selected = (not e.selected) }
             else
                 e
-        updatedLocations =
-            List.map toggleEntry locations
-        selectedTags =
-            getSelectedTags model
-        selectedYears =
-            getSelectedYears model
-        selectedLocations =
-            List.filter (.selected) updatedLocations
+        updateList l =
+            ( List.map toggleEntry l, Cmd.none )
+        ( updatedLocations, cmd ) =
+            RemoteData.update updateList model.locationList
+        newModel =
+            { model | pageNumber = 1, locationList = updatedLocations }
     in
-        -- empty selection is okay
-        ( updatedLocations, sendAssetsQuery page selectedTags selectedYears selectedLocations )
-
-
--- Invoked via RemoteData.update() to construct a command to fetch the
--- matching assets for the given page.
-updatePageSelection : Model -> Int -> TagList -> ( TagList, Cmd Msg )
-updatePageSelection model page tags =
-    let
-        selectedTags =
-            List.filter (.selected) tags
-        selectedYears =
-            getSelectedYears model
-        selectedLocations =
-            getSelectedLocations model
-    in
-        -- empty selection is okay
-        ( tags, sendAssetsQuery page selectedTags selectedYears selectedLocations )
+        newModel
 
 
 urlUpdate : Model -> ( Model, Cmd Msg )
@@ -224,58 +207,13 @@ urlUpdate model =
             ( { model | asset = RemoteData.Loading }, fetchAsset id )
 
         EditAssetRoute id ->
-            -- The Elixir-based upload page jumps directly to this URL, so we
-            -- need to fetch everything from scratch. It also serves to
-            -- refresh the asset model, in case of concurrent edits.
+            -- The backend redirects to this URL after an upload has completed,
+            -- and since it likely added additional details to the asset, we
+            -- fetch the values here.
             ( { model | asset = RemoteData.Loading }, fetchAsset id )
 
         _ ->
             ( model, Cmd.none )
-
-
-{- Return the selected tags.
-
-May return an empty list if the tag list has not been requested, or is
-otherwise not available at this time.
-
--}
-getSelectedTags : Model -> TagList
-getSelectedTags model =
-    let
-        tags =
-            RemoteData.withDefault [] model.tagList
-    in
-        List.filter (.selected) tags
-
-
-{- Return the selected years.
-
-May return an empty list if the year list has not been requested, or is
-otherwise not available at this time.
-
--}
-getSelectedYears : Model -> YearList
-getSelectedYears model =
-    let
-        years =
-            RemoteData.withDefault [] model.yearList
-    in
-        List.filter (.selected) years
-
-
-{- Return the selected locations.
-
-May return an empty list if the location list has not been requested, or is
-otherwise not available at this time.
-
--}
-getSelectedLocations : Model -> LocationList
-getSelectedLocations model =
-    let
-        locations =
-            RemoteData.withDefault [] model.locationList
-    in
-        List.filter (.selected) locations
 
 
 {- Generate commands to fill in the missing pieces of the model
@@ -300,6 +238,19 @@ refreshModelCommands model =
                 sendLocationsQuery
     in
         Cmd.batch [cmd1, cmd2, cmd3]
+
+
+{-| Create a new saved search record based on the updated form.
+-}
+saveSearchValues : Forms.Form -> SearchValues
+saveSearchValues form =
+    { tags = Forms.formValue form "tags"
+    , locations = Forms.formValue form "locations"
+    , before = Forms.formValue form "before"
+    , after = Forms.formValue form "after"
+    , filename = Forms.formValue form "filename"
+    , mimetype = Forms.formValue form "mimetype"
+    }
 
 
 {- Ensure the asset edit form fields are populated with values from the model.

@@ -29,6 +29,8 @@ type alias Model =
     , asset : GraphData AssetDetails
     , route : Route
     , assetEditForm : Forms.Form
+    , assetSearchForm : Forms.Form
+    , savedSearch : SearchValues
     , showingAllTags : Bool
     , showingAllLocations : Bool
     , hasDragSupport : Bool
@@ -99,6 +101,17 @@ type alias AssetDetails =
     }
 
 
+-- Saved search form field values.
+type alias SearchValues =
+    { tags : String
+    , locations : String
+    , before : String
+    , after : String
+    , filename : String
+    , mimetype : String
+    }
+
+
 {-| Create the initial model. The draggable flag indicates drag&drop support,
 as determined using native JavaScript.
 -}
@@ -112,6 +125,8 @@ initialModel route draggable =
     , asset = RemoteData.NotAsked
     , route = route
     , assetEditForm = initialAssetEditForm
+    , assetSearchForm = initialSearchForm
+    , savedSearch = initialSearchValues
     , showingAllTags = False
     , showingAllLocations = False
     , hasDragSupport = draggable
@@ -123,6 +138,75 @@ initialModel route draggable =
 pageSize : Int
 pageSize =
     18
+
+
+initialSearchForm : Forms.Form
+initialSearchForm =
+    Forms.initForm searchFormFields
+
+
+-- Fields for the asset edit screen.
+searchFormFields : List ( String, List Forms.FieldValidator )
+searchFormFields =
+    [ ( "tags", [] )
+    , ( "locations", [] )
+    , ( "before", rangeDateValidations )
+    , ( "after", rangeDateValidations )
+    , ( "filename", [] )
+    , ( "mimetype", [] )
+    ]
+
+
+rangeDateValidations : List Forms.FieldValidator
+rangeDateValidations =
+    [ validateRangeDate ]
+
+
+{-| Validates the "range" date field, which has yyyy-MM-dd only (no time).
+-}
+validateRangeDate : String -> Maybe String
+validateRangeDate input =
+    if String.length input == 0 then
+        Nothing
+    else if Regex.contains (Regex.regex "^\\d{1,4}-\\d{1,2}-\\d{1,2}$") input then
+        case (Date.fromIsoString input) of
+            Ok value ->
+                Nothing
+            Err msg ->
+                Just msg
+    else
+        Just "date format must be yyyy-MM-dd"
+
+
+{-| Parse the range date string into UTC milliseconds. Returns Nothing if
+the string cannot be parsed as a date.
+-}
+rangeDateStrToInt : String -> Maybe Int
+rangeDateStrToInt rangeDate =
+    let
+        dateResult =
+            -- Convert user input to ISO 8601 format, without a trailing Z, so
+            -- that the date will be treated as local time. Date.Extra
+            -- represents the time as UTC plus an offset, so using Date.toTime
+            -- will return the UTC time.
+            Date.fromIsoString rangeDate
+    in
+        case dateResult of
+            Ok value ->
+                Just (round (Time.inMilliseconds (Date.toTime value)))
+            Err msg ->
+                Nothing
+
+
+initialSearchValues : SearchValues
+initialSearchValues =
+    { tags = ""
+    , locations = ""
+    , before = ""
+    , after = ""
+    , filename = ""
+    , mimetype = ""
+    }
 
 
 initialAssetEditForm : Forms.Form
@@ -166,7 +250,6 @@ validateUserDate input =
                 Just msg
     else
         Just "date/time format must be yyyy-MM-dd HH:mm"
-
 
 {-| Create a Date for the given year, as January 1st at midnight.
 Returns the UTC milliseconds.
@@ -220,3 +303,48 @@ userDateStrToInt userDate =
                 Just (round (Time.inMilliseconds (Date.toTime value)))
             Err msg ->
                 Nothing
+
+
+{- Get the selected tags from the model.
+
+May return an empty list if the tag list has not been requested, or is
+otherwise not available at this time.
+
+-}
+getSelectedTags : Model -> TagList
+getSelectedTags model =
+    let
+        tags =
+            RemoteData.withDefault [] model.tagList
+    in
+        List.filter (.selected) tags
+
+
+{- Get the selected years from the model.
+
+May return an empty list if the year list has not been requested, or is
+otherwise not available at this time.
+
+-}
+getSelectedYears : Model -> YearList
+getSelectedYears model =
+    let
+        years =
+            RemoteData.withDefault [] model.yearList
+    in
+        List.filter (.selected) years
+
+
+{- Get the selected locations from the model.
+
+May return an empty list if the location list has not been requested, or is
+otherwise not available at this time.
+
+-}
+getSelectedLocations : Model -> LocationList
+getSelectedLocations model =
+    let
+        locations =
+            RemoteData.withDefault [] model.locationList
+    in
+        List.filter (.selected) locations

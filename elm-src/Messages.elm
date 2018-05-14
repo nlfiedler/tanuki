@@ -22,5 +22,7 @@ type Msg
     | SubmitAsset String
     | UploadSelection String
     | SubmitResponse String (GraphResult AssetDetails)
+    | SearchAssets
+    | UpdateFormSearch String String
     | UrlChange Navigation.Location
     | NavigateTo Route

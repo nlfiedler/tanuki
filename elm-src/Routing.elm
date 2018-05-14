@@ -8,6 +8,7 @@ type Route
     = HomeIndexRoute
     | NotFoundRoute
     | UploadRoute
+    | SearchRoute
     | ShowAssetRoute String
     | EditAssetRoute String
 
@@ -17,6 +18,7 @@ matchers =
     oneOf
         [ map HomeIndexRoute <| s ""
         , map UploadRoute    <| s "upload"
+        , map SearchRoute    <| s "search"
         , map ShowAssetRoute <| s "assets" </> string
         , map EditAssetRoute <| s "assets" </> string </> s "edit"
         ]
@@ -43,6 +45,9 @@ toPath route =
 
         UploadRoute ->
             "/upload"
+
+        SearchRoute ->
+            "/search"
 
         ShowAssetRoute id ->
             "/assets/" ++ id

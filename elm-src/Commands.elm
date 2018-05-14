@@ -13,6 +13,7 @@ import GraphQL.Client.Http as GraphQLClient
 import Messages exposing (Msg(..))
 import Model exposing (..)
 import RemoteData exposing (WebData)
+import Routing exposing (..)
 import Task exposing (Task)
 
 
@@ -163,14 +164,39 @@ sendLocationsQuery =
             |> Task.attempt LocationsResponse
 
 
-{- Request the assets that match the given criteria.
+{-| Create the command for retrieving assets based on the given model.
 
-Any combination of tags, years, and locations can be used to query assets.
+This takes the current route and page selection into account.
 
 -}
-sendAssetsQuery : Int -> TagList -> YearList -> LocationList -> Cmd Msg
-sendAssetsQuery page tags years locations =
+fetchAssets : Model -> Cmd Msg
+fetchAssets model =
+    case model.route of
+        HomeIndexRoute ->
+            sendAssetsQuery model
+
+        SearchRoute ->
+            sendSearchQuery model
+
+        _ ->
+            Cmd.none
+
+
+{-| Request the assets that match the currently selected attributes.
+
+Any combination of tags, years, and locations can be used to query assets.
+Uses the current page number to retrieve a subset of the matching assets.
+
+-}
+sendAssetsQuery : Model -> Cmd Msg
+sendAssetsQuery model =
     let
+        tags =
+            getSelectedTags model
+        years =
+            getSelectedYears model
+        locations =
+            getSelectedLocations model
         afterYear =
             case List.minimum (List.map .year years) of
                 Just lowest ->
@@ -218,7 +244,80 @@ sendAssetsQuery page tags years locations =
                         , before = Just beforeYear
                         }
                     , count = Just pageSize
-                    , offset = Just ((page - 1) * pageSize)
+                    , offset = Just ((model.pageNumber - 1) * pageSize)
+                    }
+    in
+        sendQueryRequest assetsRequest
+            |> Task.attempt AssetsResponse
+
+
+{-| Request the assets that match the criteria in the search form.
+
+Uses the current page number to retrieve a subset of the matching assets.
+
+-}
+sendSearchQuery : Model -> Cmd Msg
+sendSearchQuery model =
+    let
+        filterEmpties l =
+            List.filter (\s -> not (String.isEmpty s)) (List.map String.trim l)
+        tags =
+            filterEmpties (String.split "," (Forms.formValue model.assetSearchForm "tags"))
+        locations =
+            filterEmpties (String.split "," (Forms.formValue model.assetSearchForm "locations"))
+        afterDate =
+            rangeDateStrToInt (Forms.formValue model.assetSearchForm "after")
+        beforeDate =
+            rangeDateStrToInt (Forms.formValue model.assetSearchForm "before")
+        filename =
+            case (Forms.formValue model.assetSearchForm "filename") of
+                "" ->
+                    Nothing
+                fname ->
+                    Just fname
+        mimetype =
+            case (Forms.formValue model.assetSearchForm "mimetype") of
+                "" ->
+                    Nothing
+                mtype ->
+                    Just mtype
+        countVar =
+            Var.optional "count" .count Var.int 10
+        offsetVar =
+            Var.optional "offset" .offset Var.int 0
+        paramsVar =
+            Var.required "params" .params
+                (Var.object "SearchParams"
+                    [ Var.optionalField "tags" .tags (Var.nullable (Var.list Var.string))
+                    , Var.optionalField "locations" .locations (Var.nullable (Var.list Var.string))
+                    , Var.optionalField "after" .after (Var.nullable Var.int)
+                    , Var.optionalField "before" .before (Var.nullable Var.int)
+                    , Var.optionalField "filename" .filename (Var.nullable Var.string)
+                    , Var.optionalField "mimetype" .mimetype (Var.nullable Var.string)
+                    ]
+                )
+        assetsRequest =
+            extract
+                (field "search"
+                    [ ("params", Arg.variable paramsVar)
+                    , ("count", Arg.variable countVar)
+                    , ("offset", Arg.variable offsetVar)
+                    ]
+                    searchSpec
+                )
+                |> queryDocument
+                |> request
+                    { params =
+                        -- double wrap the optional fields so we can send null
+                        { tags = Just (Just tags)
+                        , locations = Just (Just locations)
+                        , after = Just afterDate
+                        , before = Just beforeDate
+                        , filename = Just filename
+                        , mimetype = Just mimetype
+                        }
+                    , count = Just pageSize
+                    , offset = Just ((model.pageNumber - 1) * pageSize)
                     }
     in
         sendQueryRequest assetsRequest
