@@ -7,11 +7,11 @@
   - mango has $regex so maybe can do case insensitive matching that way
 - [TODO] support wildcards in filename, mimetype (others?)
 - [TODO] Need a query to find image assets whose orientation is incorrect/unknown
-- Figure out how to handle locations with spaces in caption
+- [TODO] Figure out how to handle locations with spaces in caption
   - maybe quotes, @"kailua kona"
+- [TODO] Add a "people" field
+  - Need an admin screen to move a tag from "tags" to "people"
 - [TODO] Design the user login and comments system (see "families")
-- [TODO] Elm code should allow selecting only one year
-  - allowing multiple years requires explaining
 - [TODO] Look for means of ensuring LevelDB data integrity
   - Look into enabling extra LevelDB checks (`paranoidChecks`, `verifyChecksums`)
 - [TODO] Use PouchDB/CouchDB replication to keep a local backup
@@ -20,8 +20,6 @@
   - Could just be something that is manually invoked as needed
 - [TODO] Support HEIC/HEIF file formats
 - [TODO] When performing image manipulations, invoke `sharp.withMetadata()` to preserve metadata
-- [TODO] Add a "people" field
-  - Need an admin screen to move a tag from "tags" to "people"
 - [TODO] Support an "album" for the assets
   - Would be on details/edit page for benefit of uploading
   - Expose on main page as a selector

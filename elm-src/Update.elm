@@ -157,14 +157,20 @@ updateTagSelection model label =
         newModel
 
 
-{-| Update the model to reflect the change in year selection.
+{-| Update the model to reflect the change in year selection. Since this
+interface is rather simplistic, we only allow one year to be selected at a
+time, so any other selected year will be unselected.
 -}
 updateYearSelection : Model -> Int -> Model
 updateYearSelection model year =
     let
         toggleEntry e =
             if e.year == year then
+                -- toggle the selected year
                 { e | selected = (not e.selected) }
+            else if e.selected then
+                -- any other selection is cleared
+                { e | selected = False }
             else
                 e
         updateList l =
