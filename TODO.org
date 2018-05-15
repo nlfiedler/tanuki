@@ -2,10 +2,6 @@
 
 ** General Items
 
-- [TODO] Evaluate how to move navbar into Elm
-  - each area reached via the navbar has a different Elm state
-  - search form values reset upon entry
-  - error page would do away with navbar entirely, add "back" and "home" buttons
 - [TODO] How to handle case insensitivity in queries?
   - should not lowercase values on input, only when matching
   - mango has $regex so maybe can do case insensitive matching that way

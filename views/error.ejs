@@ -14,40 +14,28 @@
       <nav id="navbar" class="navbar is-transparent" role="navigation">
         <div class="navbar-brand">
           <img src="/images/tanuki.png" width="520" height="100">
-          <div class="navbar-burger" data-target="navMenu">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
         </div>
         <div class="navbar-menu" id="navMenu">
           <div class="navbar-end">
             <a class="navbar-item" href="/">
               <span class="icon"><i class="fas fa-lg fa-home"></i></span>
             </a>
-            <a class="navbar-item" href="/upload">
-              <span class="icon"><i class="fas fa-lg fa-upload"></i></span>
-            </a>
-            <a class="navbar-item" href="/search">
-              <span class="icon"><i class="fas fa-lg fa-search"></i></span>
-            </a>
-            <a class="navbar-item" href="/graphiql">
-              <span class="icon"><i class="fas fa-lg fa-search-plus"></i></span>
-            </a>
           </div>
         </div>
       </nav>
 
-      <div class="container">
-        <article class="message is-danger">
-          <div class="message-header"><%= message %></div>
-          <div class="message-body">
-            <div class="content" style="font-family: monospace;">
-              <%= error.stack %>
+      <main role="main">
+        <div class="container">
+          <article class="message is-danger">
+            <div class="message-header"><%= message %></div>
+            <div class="message-body">
+              <div class="content" style="font-family: monospace;">
+                <%= error.stack %>
+              </div>
             </div>
-          </div>
-        </article>
-      </div>
+          </article>
+        </div>
+      </main>
     </div>
   </body>
 </html>

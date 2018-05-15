@@ -203,6 +203,10 @@ urlUpdate model =
         HomeIndexRoute ->
             ( model, refreshModelCommands model )
 
+        SearchRoute ->
+            -- when switching views, fetch the assets to match
+            ( model, fetchAssets model )
+
         ShowAssetRoute id ->
             ( { model | asset = RemoteData.Loading }, fetchAsset id )
 
@@ -236,8 +240,11 @@ refreshModelCommands model =
                 Cmd.none
             else
                 sendLocationsQuery
+        cmd4 =
+            -- when switching views, fetch the assets to match
+            fetchAssets model
     in
-        Cmd.batch [cmd1, cmd2, cmd3]
+        Cmd.batch [cmd1, cmd2, cmd3, cmd4]
 
 
 {-| Create a new saved search record based on the updated form.

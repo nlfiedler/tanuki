@@ -16,26 +16,59 @@ import RemoteData
 import Routing exposing (Route(..))
 
 
+{-| Polyfill for the missing role attribute.
+-}
+role : String -> Attribute msg
+role name =
+    attribute "role" name
+
+
 view : Model -> Html Msg
 view model =
-    case model.route of
-        HomeIndexRoute ->
-            indexPage model
+    let
+        mainContent =
+            case model.route of
+                HomeIndexRoute ->
+                    indexPage model
 
-        UploadRoute ->
-            uploadPage model
+                UploadRoute ->
+                    uploadPage model
 
-        SearchRoute ->
-            searchPage model
+                SearchRoute ->
+                    searchPage model
 
-        ShowAssetRoute id ->
-            viewAsset model
+                ShowAssetRoute id ->
+                    viewAsset model
 
-        EditAssetRoute id ->
-            editAsset model
+                EditAssetRoute id ->
+                    editAsset model
 
-        NotFoundRoute ->
-            notFoundView
+                NotFoundRoute ->
+                    notFoundView
+    in
+        div [ class "container" ]
+            [ navbar
+            , main_ [ role "main" ] [ mainContent ] ]
+
+
+navbar : Html Msg
+navbar =
+    nav [ id "navbar", class "navbar is-transparent", role "navigation" ]
+        [ div [ class "navbar-brand" ]
+            [ img [ src "/images/tanuki.png", width 520, height 100 ] [ ] ]
+        , div [ class "navbar-menu", id "navMenu" ]
+            [ div [ class "navbar-end" ]
+                [ a [ class "navbar-item", onClick <| NavigateTo HomeIndexRoute ]
+                    [ span [ class "icon" ] [ i [ class "fas fa-lg fa-home" ] [ ] ] ]
+                , a [ class "navbar-item", onClick <| NavigateTo UploadRoute ]
+                    [ span [ class "icon" ] [ i [ class "fas fa-lg fa-upload" ] [ ] ] ]
+                , a [ class "navbar-item", onClick <| NavigateTo SearchRoute ]
+                    [ span [ class "icon" ] [ i [ class "fas fa-lg fa-search" ] [ ] ] ]
+                , a [ class "navbar-item", href "/graphiql" ]
+                    [ span [ class "icon" ] [ i [ class "fas fa-lg fa-search-plus" ] [ ] ] ]
+                ]
+            ]
+        ]
 
 
 indexPage : Model -> Html Msg
