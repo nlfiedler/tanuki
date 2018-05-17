@@ -2,9 +2,6 @@
 
 ** General Items
 
-- [TODO] How to handle case insensitivity in queries?
-  - should not lowercase values on input, only when matching
-  - mango has $regex so maybe can do case insensitive matching that way
 - [TODO] support wildcards in filename, mimetype (others?)
 - [TODO] Need a query to find image assets whose orientation is incorrect/unknown
 - [TODO] Figure out how to handle locations with spaces in caption
@@ -93,6 +90,12 @@
   - Flag to indicate visibility only to owner
 
 ** Documentation
+
+*** Case Sensitivity
+
+- Data is stored as entered (case preservative)
+- Attribute lists are all lowercased
+- Search is always case insensitive
 
 *** Date/Time values
 

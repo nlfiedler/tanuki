@@ -33,9 +33,9 @@ setTimeout(function () {
           'filename': 'IMG_6005.JPG',
           'filesize': 159675,
           'import_date': Date.UTC(2014, 0, 21, 17, 8),
-          'location': 'san francisco',
+          'location': 'San Francisco',
           'mimetype': 'image/jpeg',
-          'tags': ['cat', 'cheeseburger']
+          'tags': ['cat', 'CHEESEburger']
         },
         {
           '_id': 'b8fc5da331100390929c2f323accc5686075e3150cb91d6dde424191780ea7ea',
@@ -130,6 +130,42 @@ setTimeout(function () {
             done()
           })
       })
+
+      it('should match filenames case insensitively', function (done) {
+        request(app)
+          .post('/graphql')
+          .send({
+            variables: `{
+              "params": {
+                "filename": "IMG0315.JPG"
+              }
+            }`,
+            operationName: 'Search',
+            query: `query Search($params: SearchParams!) {
+              search(params: $params) {
+                results {
+                  id
+                }
+                count
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const search = res.body.data.search
+            assert.equal(search.count, 1)
+            assert.equal(
+              search.results[0].id,
+              '9594b84f1d0db2762d1c53b7ee1a12d03adad33d3193d8b5ed1a50fab2bbff15'
+            )
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
     })
 
     describe('assets by mimetype', function () {
@@ -140,6 +176,39 @@ setTimeout(function () {
             variables: `{
               "params": {
                 "mimetype": "video/quicktime"
+              }
+            }`,
+            operationName: 'Search',
+            query: `query Search($params: SearchParams!) {
+              search(params: $params) {
+                results {
+                  filename
+                }
+                count
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const search = res.body.data.search
+            assert.equal(search.count, 1)
+            assert.equal(search.results[0].filename, 'IMG_6005.MOV')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should match mimetypes case insensitively', function (done) {
+        request(app)
+          .post('/graphql')
+          .send({
+            variables: `{
+              "params": {
+                "mimetype": "VIDEO/QUICKTIME"
               }
             }`,
             operationName: 'Search',
@@ -207,6 +276,46 @@ setTimeout(function () {
             done()
           })
       })
+
+      it('should match locations case insensitively', function (done) {
+        request(app)
+          .post('/graphql')
+          .send({
+            variables: `{
+              "params": {
+                "locations": ["SAN FRANCISCO"]
+              }
+            }`,
+            operationName: 'Search',
+            query: `query Search($params: SearchParams!) {
+              search(params: $params) {
+                results {
+                  id
+                }
+                count
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const search = res.body.data.search
+            assert.equal(search.count, 2)
+            assert.equal(
+              search.results[0].id,
+              '39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100'
+            )
+            assert.equal(
+              search.results[1].id,
+              'b8fc5da331100390929c2f323accc5686075e3150cb91d6dde424191780ea7ea'
+            )
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
     })
 
     describe('assets by tag', function () {
@@ -242,6 +351,39 @@ setTimeout(function () {
               search.results[0].location,
               search.results[1].location
             ], 'san francisco')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should match tags case insensitively', function (done) {
+        request(app)
+          .post('/graphql')
+          .send({
+            variables: `{
+              "params": {
+                "tags": ["cheeseburger"]
+              }
+            }`,
+            operationName: 'Search',
+            query: `query Search($params: SearchParams!) {
+              search(params: $params) {
+                results {
+                  filename
+                }
+                count
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const search = res.body.data.search
+            assert.equal(search.count, 1)
+            assert.equal(search.results[0].filename, 'IMG_6005.JPG')
           })
           .end(function (err, res) {
             if (err) {
