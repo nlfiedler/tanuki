@@ -22,7 +22,7 @@ const backend = require('lib/backend')
 //
 setTimeout(function () {
   describe('Asset without Exif original date', function () {
-    const docId = '82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09'
+    let docId
 
     before(async function () {
       await backend.reinitDatabase()
@@ -36,7 +36,7 @@ setTimeout(function () {
           .expect(200)
           .expect((res) => {
             assert.equal(res.body.status, 'success')
-            assert.equal(res.body.id, docId)
+            docId = res.body.id
           })
           .end(function (err, res) {
             if (err) {
@@ -80,7 +80,7 @@ setTimeout(function () {
   })
 
   describe('Asset without any Exif data', function () {
-    const docId = '095964d07f3e821659d4eb27ed9e20cd5160c53385562df727e98eb815bb371f'
+    let docId
 
     before(async function () {
       await backend.reinitDatabase()
@@ -94,7 +94,7 @@ setTimeout(function () {
           .expect(200)
           .expect((res) => {
             assert.equal(res.body.status, 'success')
-            assert.equal(res.body.id, docId)
+            docId = res.body.id
           })
           .end(function (err, res) {
             if (err) {
@@ -132,7 +132,7 @@ setTimeout(function () {
   })
 
   describe('Special metadata handling', function () {
-    const docId = '095964d07f3e821659d4eb27ed9e20cd5160c53385562df727e98eb815bb371f'
+    let docId
 
     before(async function () {
       await backend.reinitDatabase()
@@ -146,7 +146,7 @@ setTimeout(function () {
           .expect(200)
           .expect((res) => {
             assert.equal(res.body.status, 'success')
-            assert.equal(res.body.id, docId)
+            docId = res.body.id
           })
           .end(function (err, res) {
             if (err) {

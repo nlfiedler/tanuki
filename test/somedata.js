@@ -29,7 +29,7 @@ setTimeout(function () {
       await backend.reinitDatabase()
       const testData = [
         {
-          '_id': '39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100',
+          '_id': 'opaquevalue123',
           'filename': 'IMG_6005.JPG',
           'filesize': 159675,
           'import_date': Date.UTC(2014, 0, 21, 17, 8),
@@ -38,7 +38,7 @@ setTimeout(function () {
           'tags': ['cat', 'CHEESEburger']
         },
         {
-          '_id': 'b8fc5da331100390929c2f323accc5686075e3150cb91d6dde424191780ea7ea',
+          '_id': 'opaquevalue456',
           'filename': 'IMG_6005.MOV',
           'filesize': 159612075,
           'import_date': Date.UTC(2014, 10, 2, 6, 1),
@@ -48,7 +48,7 @@ setTimeout(function () {
           'tags': ['dog', 'picnic']
         },
         {
-          '_id': '9594b84f1d0db2762d1c53b7ee1a12d03adad33d3193d8b5ed1a50fab2bbff15',
+          '_id': 'opaquevalue789',
           'filename': 'img0315.jpg',
           'filesize': 431671,
           'import_date': Date.UTC(2014, 6, 21, 5, 34),
@@ -57,7 +57,7 @@ setTimeout(function () {
           'tags': ['cat', 'picnic']
         },
         {
-          '_id': 'e4f78c848a4ebcf180c68e2a80e117f3c710577994e337454177a80f0c9d6042',
+          '_id': 'opaquevalue150',
           'filename': 'tagless.jpg',
           'filesize': 123456,
           'import_date': Date.UTC(2015, 6, 9, 10, 15),
@@ -120,7 +120,7 @@ setTimeout(function () {
             assert.equal(search.count, 1)
             assert.equal(
               search.results[0].id,
-              '9594b84f1d0db2762d1c53b7ee1a12d03adad33d3193d8b5ed1a50fab2bbff15'
+              'opaquevalue789'
             )
           })
           .end(function (err, res) {
@@ -156,7 +156,7 @@ setTimeout(function () {
             assert.equal(search.count, 1)
             assert.equal(
               search.results[0].id,
-              '9594b84f1d0db2762d1c53b7ee1a12d03adad33d3193d8b5ed1a50fab2bbff15'
+              'opaquevalue789'
             )
           })
           .end(function (err, res) {
@@ -262,11 +262,11 @@ setTimeout(function () {
             assert.equal(search.count, 2)
             assert.equal(
               search.results[0].id,
-              '39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100'
+              'opaquevalue123'
             )
             assert.equal(
               search.results[1].id,
-              'b8fc5da331100390929c2f323accc5686075e3150cb91d6dde424191780ea7ea'
+              'opaquevalue456'
             )
           })
           .end(function (err, res) {
@@ -302,11 +302,11 @@ setTimeout(function () {
             assert.equal(search.count, 2)
             assert.equal(
               search.results[0].id,
-              '39092991d6dde424191780ea7eac2f323accc5686075e3150cbb8fc5da331100'
+              'opaquevalue123'
             )
             assert.equal(
               search.results[1].id,
-              'b8fc5da331100390929c2f323accc5686075e3150cb91d6dde424191780ea7ea'
+              'opaquevalue456'
             )
           })
           .end(function (err, res) {
@@ -537,7 +537,7 @@ setTimeout(function () {
             assert.equal(search.count, 1)
             assert.equal(
               search.results[0].id,
-              'e4f78c848a4ebcf180c68e2a80e117f3c710577994e337454177a80f0c9d6042'
+              'opaquevalue150'
             )
           })
           .end(function (err, res) {
@@ -579,7 +579,7 @@ setTimeout(function () {
             assert.equal(search.count, 1)
             assert.equal(
               search.results[0].id,
-              'b8fc5da331100390929c2f323accc5686075e3150cb91d6dde424191780ea7ea'
+              'opaquevalue456'
             )
           })
           .end(function (err, res) {
@@ -622,7 +622,7 @@ setTimeout(function () {
             assert.equal(search.count, 1)
             assert.equal(
               search.results[0].id,
-              'b8fc5da331100390929c2f323accc5686075e3150cb91d6dde424191780ea7ea'
+              'opaquevalue456'
             )
           })
           .end(function (err, res) {

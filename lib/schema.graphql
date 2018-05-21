@@ -98,6 +98,8 @@ input SearchParams {
 type Query {
   # Retrieve an asset by its unique identifier.
   asset(id: ID!): Asset
+  # Look up an asset by the checksum (SHA256).
+  lookup(checksum: String!): Asset
   # Return the total number of assets in the system.
   count: Int
   # Search for assets by the given parameters.

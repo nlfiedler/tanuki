@@ -22,7 +22,7 @@ const backend = require('lib/backend')
 //
 setTimeout(function () {
   describe('Asset retrieval', function () {
-    const docId = '37665f499b5ddb74ddc297e89dfad4f06a6c8a90'
+    const docId = 'MjAxNy8xMS8xOC8xNzAzL2Q2ZmZlMTIzNTRmYjA5NTliNzhkYWRjMmU2YmRmMzc5LmpwZw=='
 
     before(async function () {
       await backend.reinitDatabase()
@@ -33,33 +33,59 @@ setTimeout(function () {
         filesize: 1048576,
         location: 'kyoto',
         mimetype: 'image/jpeg',
+        sha256: '938f831fb02b313e7317c1e0631b86108a9e4a197e33d581fb68be91a3c6ce2f',
         tags: ['puella', 'magi', 'madoka', 'magica']
       }
       await backend.updateDocument(doc)
     })
 
-    // Exception gets logged to the console, kind of ugly.
-    // describe('no such asset', function () {
-    //   it('should return an error', function (done) {
-    //     request(app)
-    //       .post(`/graphql`)
-    //       .send({
-    //         query: `query {
-    //           asset(id: "nosuch") {
-    //             id
-    //           }
-    //         }`
-    //       })
-    //       .expect(200)
-    //       .expect(/missing/)
-    //       .end(function (err, res) {
-    //         if (err) {
-    //           return done(err)
-    //         }
-    //         done()
-    //       })
-    //   })
-    // })
+    describe('no asset for identifier', function () {
+      it('should return an error', function (done) {
+        request(app)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              asset(id: "nosuch") {
+                id
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            assert.isNull(res.body.data.asset)
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+
+    describe('no asset for checksum', function () {
+      it('should return null', function (done) {
+        request(app)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              lookup(checksum: "cafebabe") {
+                id
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            assert.isNull(res.body.data.lookup)
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
 
     describe('asset by correct identifier', function () {
       it('should return all asset details', function (done) {
@@ -94,7 +120,7 @@ setTimeout(function () {
   })
 
   describe('Asset creation and update', function () {
-    const docId = 'dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07'
+    let docId
 
     before(async function () {
       await backend.reinitDatabase()
@@ -108,7 +134,7 @@ setTimeout(function () {
           .expect(200)
           .expect((res) => {
             assert.equal(res.body.status, 'success')
-            assert.equal(res.body.id, docId)
+            docId = res.body.id
           })
           .end(function (err, res) {
             if (err) {
@@ -173,6 +199,53 @@ setTimeout(function () {
           .expect(200)
           .expect((res) => {
             const asset = res.body.data.update
+            assert.equal(asset.caption, 'a mild mannered cow')
+            assert.equal(asset.location, 'hawaii')
+            assert.equal(asset.tags.length, 3)
+            assert.equal(asset.tags[0], 'cow')
+            assert.equal(asset.tags[1], 'fence')
+            assert.equal(asset.tags[2], 'grass')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should ignore duplicate file', function (done) {
+        request(app)
+          .post('/api/assets')
+          .attach('asset', './test/fixtures/dcp_1069.jpg')
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.status, 'success')
+            assert.equal(res.body.id, docId)
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should return values prior to second upload', function (done) {
+        request(app)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              asset(id: "${docId}") {
+                caption
+                location
+                tags
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const asset = res.body.data.asset
             assert.equal(asset.caption, 'a mild mannered cow')
             assert.equal(asset.location, 'hawaii')
             assert.equal(asset.tags.length, 3)

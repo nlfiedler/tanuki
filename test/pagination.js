@@ -6,7 +6,6 @@ const {before, describe, it, run} = require('mocha')
 const request = require('supertest')
 const fs = require('fs-extra')
 const config = require('config')
-const pouchCollate = require('pouchdb-collate')
 
 // clean up from previous test runs before starting the server
 const dbPath = config.get('backend.dbPath')
@@ -14,11 +13,8 @@ fs.removeSync(dbPath)
 
 // start the server, which also modifies the module path
 const app = require('../app.js')
+const assets = require('lib/assets')
 const backend = require('lib/backend')
-
-function sampleOne (arr) {
-  return arr[Math.floor(Math.random() * arr.length)]
-}
 
 //
 // Give the backend a chance to initialize the database asynchronously.
@@ -29,19 +25,17 @@ setTimeout(function () {
   describe('Pagination', function () {
     before(async function () {
       await backend.reinitDatabase()
-      const userList = ['akemi', 'chise', 'homura', 'kyoko', 'madoka', 'midori', 'sayaka']
       for (let n = 0; n < 16; n++) {
         // The file date will be used to cause the results to appear in the
         // desired order, making the pagination easier to test (by looking at
         // the file name which is cheaper than parsing dates again).
         const fileName = `IMG_${1000 + n}.JPG`
-        const fileOwner = sampleOne(userList)
-        // produce identifiers that have decent entropy and distribution
-        const id = pouchCollate.toIndexableString([fileName, fileOwner])
+        const importDate = Date.UTC(2000 + n, 10, 18, 17, 3)
+        const id = assets.makeAssetId(importDate, fileName)
         let doc = {
           _id: id,
           filename: fileName,
-          import_date: Date.UTC(2000 + n, 10, 18, 17, 3),
+          import_date: importDate,
           filesize: 1048576,
           location: 'kamakura',
           mimetype: 'image/jpeg',

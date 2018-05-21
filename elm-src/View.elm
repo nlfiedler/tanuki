@@ -664,7 +664,6 @@ viewAssetDetails asset =
         part1 =
             [ ( "Date", (intToDateString asset.datetime) )
             , ( "Size", (toString asset.file_size) )
-            , ( "SHA256", asset.id )
             ]
         -- The duration will be placed in the middle since it seems to fit
         -- better there than after the tags, even though that would have

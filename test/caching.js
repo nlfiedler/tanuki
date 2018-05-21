@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 Nathan Fiedler
+// Copyright (c) 2018 Nathan Fiedler
 //
 const {assert} = require('chai')
 const {before, describe, it, run} = require('mocha')
@@ -52,7 +52,7 @@ setTimeout(function () {
   // Ugly, but the externally visible behavior is not sufficient.
   //
   describe('Asset caching', function () {
-    const docId = 'dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07'
+    let docId
 
     before(async function () {
       await backend.reinitDatabase()
@@ -66,7 +66,7 @@ setTimeout(function () {
           .expect(200)
           .expect((res) => {
             assert.equal(res.body.status, 'success')
-            assert.equal(res.body.id, docId)
+            docId = res.body.id
           })
           .end(function (err, res) {
             if (err) {

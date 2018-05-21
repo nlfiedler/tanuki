@@ -6,7 +6,6 @@ const {before, describe, it, run} = require('mocha')
 const request = require('supertest')
 const fs = require('fs-extra')
 const config = require('config')
-const pouchCollate = require('pouchdb-collate')
 
 // clean up from previous test runs before starting the server
 const dbPath = config.get('backend.dbPath')
@@ -14,6 +13,7 @@ fs.removeSync(dbPath)
 
 // start the server, which also modifies the module path
 const app = require('../app.js')
+const assets = require('lib/assets')
 const backend = require('lib/backend')
 
 function sampleOne (arr) {
@@ -35,13 +35,11 @@ setTimeout(function () {
       const tagList1 = ['cat', 'catastrophe', 'cheddar', 'cheese', 'cheeseburger', 'cuddle', 'cutler']
       const tagList2 = ['diddle', 'dig', 'dipstick', 'dog', 'dogmatic', 'dug', 'duster']
       const tagList3 = ['hag', 'haggle', 'hamster', 'hid', 'hot', 'huckster', 'huddle']
-      const userList = ['akemi', 'chise', 'homura', 'kyoko', 'madoka', 'midori', 'sayaka']
       const locations = ['kamakura', 'kanazawa', 'kyoto', 'osaka', 'sapporo', 'tokyo', 'yokohama']
+      const importDate = Date.UTC(2017, 10, 18, 17, 3)
       for (let n = 0; n < 49; n++) {
         const filename = `IMG_${1000 + n}.JPG`
-        const username = sampleOne(userList)
-        // produce identifiers that have decent entropy and distribution
-        const id = pouchCollate.toIndexableString([filename, username])
+        const id = assets.makeAssetId(importDate, filename)
         const year = Math.floor(Math.random() * 7) + 2010
         let doc = {
           _id: id,
@@ -50,7 +48,7 @@ setTimeout(function () {
           filename,
           // original date overrides import date in terms of significance,
           // so anything at all is fine here
-          import_date: Date.UTC(2017, 10, 18, 17, 3),
+          import_date: importDate,
           filesize: Math.floor(Math.random() * 1048576) + 1048576,
           location: sampleOne(locations),
           mimetype: 'image/jpeg',

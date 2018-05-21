@@ -26,34 +26,35 @@ router.use(function (req, res, next) {
 })
 
 router.post('/assets', upload.single('asset'), wrap(async function (req, res, next) {
-  let id = await incoming.computeChecksum(req.file.path)
+  let checksum = await incoming.computeChecksum(req.file.path)
   try {
-    // check if an asset with this identifier already exists
-    await backend.fetchDocument(id)
-    res.json({status: 'success', id: id})
-  } catch (err) {
-    if (err.status === 404) {
+    // check if an asset with this checksum already exists
+    let assetId = await backend.byChecksum(checksum)
+    if (assetId === null) {
       const originalDate = await incoming.getOriginalDate(req.file.mimetype, req.file.path)
       const importDate = Date.now()
+      assetId = assets.makeAssetId(importDate, req.file.originalname)
       const duration = await assets.getDuration(req.file.mimetype, req.file.path)
       let doc = {
-        _id: id,
+        _id: assetId,
         duration,
         filename: req.file.originalname,
         filesize: req.file.size,
         import_date: importDate,
         mimetype: req.file.mimetype,
         original_date: originalDate,
+        sha256: checksum,
         // everything generally assumes the tags field is not undefined
         tags: []
       }
       await backend.updateDocument(doc)
-      await incoming.storeAsset(req.file.mimetype, req.file.path, id)
-      res.json({status: 'success', id: id})
-    } else {
-      // some other error occurred
-      res.status(err.status).send(err.message)
     }
+    // Ensure the asset is moved into position, just in case we managed
+    // to commit the database record but failed to store the asset.
+    await incoming.storeAsset(req.file.mimetype, req.file.path, assetId)
+    res.json({status: 'success', id: assetId})
+  } catch (err) {
+    res.status(err.status).send(err.message)
   }
 }))
 

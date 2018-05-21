@@ -22,7 +22,7 @@ const backend = require('lib/backend')
 //
 setTimeout(function () {
   describe('Asset content serving', function () {
-    const docId = 'dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07'
+    let docId
 
     before(async function () {
       await backend.reinitDatabase()
@@ -35,6 +35,14 @@ setTimeout(function () {
           .attach('asset', './test/fixtures/dcp_1069.jpg')
           .expect(302)
           .expect('Content-Type', /text/)
+          .expect((res) => {
+            // the asset identifier will be in the Location header
+            const paths = res.header['location'].split('/')
+            assert.equal(paths.length, 4)
+            assert.equal(paths[1], 'assets')
+            assert.equal(paths[3], 'edit')
+            docId = paths[2]
+          })
           .end(function (err, res) {
             if (err) {
               return done(err)

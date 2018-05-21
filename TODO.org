@@ -2,6 +2,13 @@
 
 ** General Items
 
+- [TODO] Additional storage changes to consider
+  - Move everything under one directory
+    - ./tanuki/assets  <- assets database (documents related only to assets)
+    - ./tanuki/masters <- raw file content
+    - ./tanuki/thumbs  <- video thumbnails
+    - ./tanuki/users   <- users database
+  - This would be a one time, manual operation
 - [TODO] support wildcards in filename, mimetype (others?)
 - [TODO] Need a query to find image assets whose orientation is incorrect/unknown
 - [TODO] Figure out how to handle locations with spaces in caption

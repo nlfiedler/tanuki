@@ -22,7 +22,7 @@ const backend = require('lib/backend')
 //
 setTimeout(function () {
   describe('Video file metadata', function () {
-    const docId = '4f86f7dd48474b8e6571beeabbd79111267f143c0786bcd45def0f6b33ae0423'
+    let docId
 
     before(async function () {
       await backend.reinitDatabase()
@@ -36,7 +36,7 @@ setTimeout(function () {
           .expect(200)
           .expect((res) => {
             assert.equal(res.body.status, 'success')
-            assert.equal(res.body.id, docId)
+            docId = res.body.id
           })
           .end(function (err, res) {
             if (err) {
