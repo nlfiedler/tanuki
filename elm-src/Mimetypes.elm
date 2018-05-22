@@ -97,6 +97,8 @@ filenameToMimetype filename =
                 Video
             "pdf" ->
                 Pdf
+            "md" ->
+                Text
             "text" ->
                 Text
             "txt" ->

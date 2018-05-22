@@ -128,6 +128,10 @@ input AssetInput {
   # A date/time that overrides intrinsic values; a null value clears the
   # custom field and reverts back to the intrinsic value.
   datetime: Date
+  # New media type, useful for fixing assets where detection guessed wrong.
+  # Beware that setting a wrong value means the asset will likely not display
+  # correctly.
+  mimetype: String
 }
 
 type Mutation {

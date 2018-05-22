@@ -285,8 +285,10 @@ updateAssetEditForm response =
                     Forms.updateFormInput form1 "location" (Maybe.withDefault "" asset.location)
                 form3 =
                     Forms.updateFormInput form2 "caption" (Maybe.withDefault "" asset.caption)
+                form4 =
+                    Forms.updateFormInput form3 "mimetype" asset.mimetype
                 finalForm =
-                    Forms.updateFormInput form3 "tags" (String.join ", " asset.tags)
+                    Forms.updateFormInput form4 "tags" (String.join ", " asset.tags)
             in
                 finalForm
 

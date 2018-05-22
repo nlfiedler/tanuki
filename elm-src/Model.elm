@@ -219,6 +219,7 @@ assetEditFormFields : List ( String, List Forms.FieldValidator )
 assetEditFormFields =
     [ ( "location", [] )
     , ( "caption", [] )
+    , ( "mimetype", [] )
     , ( "tags", [] )
     , ( "user_date", userDateValidations )
     ]

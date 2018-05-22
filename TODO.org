@@ -2,6 +2,8 @@
 
 ** General Items
 
+- [TODO] Figure out how to handle locations with spaces in caption
+  - maybe quotes, @"kailua kona" or "@kailua kona"
 - [TODO] Additional storage changes to consider
   - Move everything under one directory
     - ./tanuki/assets  <- assets database (documents related only to assets)
@@ -10,9 +12,21 @@
     - ./tanuki/users   <- users database
   - This would be a one time, manual operation
 - [TODO] support wildcards in filename, mimetype (others?)
+- [TODO] Editing images
+  - Add an "alternates" field to the documents
+  - When editing an image (via GraphQL Mutation)
+    - Generate a new ULID
+    - Add new ULID to "alternates" field in document
+    - Rename canonical file to new ULID (in same directory)
+    - Write new file to the canonical ULID (document identifier is unchanged)
+    - This new file becomes the canonical version
+  - Desktop app will facilitate the edits and such
+    - Rotate an image
+    - "Use this version"
+    - "Remove this version" (except for canonical version)
+    - Purge all alternates (show how many would be affected)
 - [TODO] Need a query to find image assets whose orientation is incorrect/unknown
-- [TODO] Figure out how to handle locations with spaces in caption
-  - maybe quotes, @"kailua kona"
+- [TODO] Asset preview page shows a broken link, should show placeholder image
 - [TODO] Add a "people" field
   - Need an admin screen to move a tag from "tags" to "people"
 - [TODO] Design the user login and comments system (see "families")
@@ -31,6 +45,10 @@
   - Eventually support "smart" albums based on asset attributes
 - [TODO] api to perform database compaction
 - [TODO] Extract ID3 tags on incoming audio files
+- [TODO] Use a webview to preview Markdown generated as HTML
+- [TODO] Health checks
+  - Scan all docs to find missing files
+  - Find files for which there are no documents
 
 ** Interface Improvements
 

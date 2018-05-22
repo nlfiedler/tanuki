@@ -773,6 +773,8 @@ editAssetForm form asset =
             Forms.formValueWithDefault (userDateToString asset.userDate) form "user_date"
         tags =
             Forms.formValueWithDefault (String.join ", " asset.tags) form "tags"
+        mimetype =
+            Forms.formValueWithDefault asset.mimetype form "mimetype"
     in
         -- Apparently the "on submit" on the form works better than using "on
         -- click" on a particular form input/button.
@@ -782,6 +784,7 @@ editAssetForm form asset =
                 , editAssetFormGroup form "location" "Location" location "text" ""
                 , editAssetFormGroup form "caption" "Caption" caption "text" ""
                 , editAssetFormGroup form "tags" "Tags" tags "text" "(comma-separated)"
+                , editAssetFormGroup form "mimetype" "Media type" mimetype "text" "image/jpeg"
                 , div [ class "field is-horizontal" ]
                     [ div [ class "field-label" ] [ ]
                     , div [ class "field-body" ] [ assetEditSaveButton form asset ]

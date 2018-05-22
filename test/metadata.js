@@ -267,5 +267,84 @@ setTimeout(function () {
     })
   })
 
+  describe('Asset with unknown media type', function () {
+    let docId
+
+    before(async function () {
+      await backend.reinitDatabase()
+    })
+
+    describe('upload an asset with unrecognized extension', function () {
+      it('should create a new document successfully', function (done) {
+        request(app)
+          .post('/api/assets')
+          .attach('asset', './test/fixtures/README.dumb')
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.status, 'success')
+            docId = res.body.id
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should indicate generic media type', function (done) {
+        request(app)
+          .post(`/graphql`)
+          .send({
+            query: `query {
+              asset(id: "${docId}") {
+                mimetype
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const asset = res.body.data.asset
+            assert.equal(asset.mimetype, 'application/octet-stream')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should permit changing the media type', function (done) {
+        request(app)
+          .post(`/graphql`)
+          .send({
+            variables: `{
+              "input": {
+                "mimetype": "text/markdown"
+              }
+            }`,
+            operationName: 'Update',
+            query: `mutation Update($input: AssetInput!) {
+              update(id: "${docId}", asset: $input) {
+                mimetype
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const asset = res.body.data.update
+            assert.equal(asset.mimetype, 'text/markdown')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+  })
+
   run()
 }, 500)

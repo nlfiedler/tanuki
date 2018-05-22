@@ -363,6 +363,7 @@ updateAsset id model =
                     , Var.field "location" .location Var.string
                     -- allow a nullable datetime so we can erase the value
                     , Var.optionalField "datetime" .datetime (Var.nullable Var.int)
+                    , Var.optionalField "mimetype" .mimetype (Var.nullable Var.string)
                     ]
                 )
         updateRequest =
@@ -383,6 +384,7 @@ updateAsset id model =
                         -- double-wrap the user date so we can send null values,
                         -- otherwise we cannot remove the previously set value
                         , datetime = Just (userDateStrToInt (Forms.formValue model.assetEditForm "user_date"))
+                        , mimetype = Just (Just (Forms.formValue model.assetEditForm "mimetype"))
                         }
                     }
     in
