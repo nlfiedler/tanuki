@@ -1,6 +1,6 @@
 {
   "backend": {
-    "dbPath": "test/tmp/db",
+    "dbPath": "test/tmp/database/leveldb",
     "uploadPath": "test/tmp/uploads",
     "assetPath": "test/tmp/assets",
     "logger": {
