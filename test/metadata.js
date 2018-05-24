@@ -267,6 +267,68 @@ setTimeout(function () {
     })
   })
 
+  describe('Special caption location handling', function () {
+    let docId
+
+    before(async function () {
+      await backend.reinitDatabase()
+    })
+
+    describe('set location with quoted string', function () {
+      it('should create a new document successfully', function (done) {
+        request(app)
+          .post('/api/assets')
+          .attach('asset', './test/fixtures/lorem-ipsum.txt')
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.status, 'success')
+            docId = res.body.id
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should extract multi-word location from caption', function (done) {
+        request(app)
+          .post(`/graphql`)
+          .send({
+            variables: `{
+              "input": {
+                "caption": "#cow on the @\\"big island\\" eating #grass"
+              }
+            }`,
+            operationName: 'Update',
+            query: `mutation Update($input: AssetInput!) {
+              update(id: "${docId}", asset: $input) {
+                caption
+                location
+                tags
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const asset = res.body.data.update
+            assert.equal(asset.caption, '#cow on the @"big island" eating #grass')
+            assert.equal(asset.location, 'big island')
+            assert.equal(asset.tags.length, 2)
+            assert.equal(asset.tags[0], 'cow')
+            assert.equal(asset.tags[1], 'grass')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+  })
+
   describe('Asset with unknown media type', function () {
     let docId
 
