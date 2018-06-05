@@ -1,39 +1,43 @@
-* TODO
+* Tanuki
+** Next
+*** DONE Rewrite this file with emacs org-mode
+*** TODO Rewrite the repo history to use a single email address
+- replace =nathanfiedler@gmail.com= with =nathanfiedler@fastmail.fm=
+*** TODO On asset update, remove old duplicate tags, ignoring case, saving new values
+*** TODO Update the provisioning script to use the new repo URL
+*** TODO Copy issues from GitHub into this org file
 
 ** General Items
-
-- [TODO] Support wildcards in filename, mimetype (others?)
-- [TODO] Need a query to find image assets whose orientation is incorrect/unknown
-- [TODO] Asset preview page shows a broken link, should show placeholder image
-- [TODO] Add a "people" field
-  - Need an admin screen to move a tag from "tags" to "people"
-- [TODO] Design the user login and comments system (see "families")
-- [TODO] Look for means of ensuring LevelDB data integrity
-  - Look into enabling extra LevelDB checks (`paranoidChecks`, `verifyChecksums`)
-- [TODO] Use PouchDB/CouchDB replication to keep a local backup
-  - Perform backup after N operations, or every T minutes
-  - Recovery is to replace corrupted DB with backup
-  - Could just be something that is manually invoked as needed
-- [TODO] Support HEIC/HEIF file formats
-- [TODO] When performing image manipulations, invoke `sharp.withMetadata()` to preserve metadata
-- [TODO] Support an "album" for the assets
-  - Would be on details/edit page for benefit of uploading
-  - Expose on main page as a selector
-  - Assets can belong to multiple albums
-  - Eventually support "smart" albums based on asset attributes
-- [TODO] Add REST API to perform database compaction
-- [TODO] Extract ID3 tags on incoming audio files
-- [TODO] Use a webview to preview Markdown generated as HTML
+*** TODO Support wildcards in filename, mimetype (others?)
+*** TODO Need a query to find image assets whose orientation is incorrect/unknown
+*** TODO Asset preview page shows a broken link, should show placeholder image
+*** TODO Add a "people" field
+- Need an admin screen to move a tag from "tags" to "people"
+*** TODO Design the user login and comments system (see "families")
+*** TODO Look for means of ensuring LevelDB data integrity
+- Look into enabling extra LevelDB checks (`paranoidChecks`, `verifyChecksums`)
+*** TODO Use PouchDB/CouchDB replication to keep a local backup
+- Perform backup after N operations, or every T minutes
+- Recovery is to replace corrupted DB with backup
+- Could just be something that is manually invoked as needed
+*** TODO Support HEIC/HEIF file formats
+*** TODO When performing image manipulations, invoke `sharp.withMetadata()` to preserve metadata
+*** TODO Support an "album" for the assets
+- Would be on details/edit page for benefit of uploading
+- Expose on main page as a selector
+- Assets can belong to multiple albums
+- Eventually support "smart" albums based on asset attributes
+*** TODO Add REST API to perform database compaction
+*** TODO Extract ID3 tags on incoming audio files
+*** TODO Use a webview to preview Markdown generated as HTML
 
 ** Documentation
 
 *** Case Sensitivity
-
 - Data is stored as entered (case preservative)
 - Attribute lists are all lowercased
 - Search is always case insensitive
 
 *** Date/Time values
-
-- Use 24 hour clock, local time zone (stored as UTC)
-- http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns
+- Uses 24 hour clock, displays using local time zone, stored as UTC
+- [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
