@@ -162,11 +162,11 @@ setTimeout(function () {
             assert.equal(asset.filename, 'dcp_1069.jpg')
             assert.equal(asset.mimetype, 'image/jpeg')
             let date = new Date(asset.datetime)
-            assert.equal(date.getFullYear(), 2003)
-            assert.equal(date.getMonth() + 1, 9)
-            assert.equal(date.getDate(), 3)
-            assert.equal(date.getHours(), 10) // UTC timezone for 17
-            assert.equal(date.getMinutes(), 24)
+            assert.equal(date.getUTCFullYear(), 2003)
+            assert.equal(date.getUTCMonth() + 1, 9)
+            assert.equal(date.getUTCDate(), 3)
+            assert.equal(date.getUTCHours(), 17)
+            assert.equal(date.getUTCMinutes(), 24)
           })
           .end(function (err, res) {
             if (err) {
@@ -282,11 +282,11 @@ setTimeout(function () {
           .expect((res) => {
             const asset = res.body.data.update
             let date = new Date(asset.datetime)
-            assert.equal(date.getFullYear(), 2003)
-            assert.equal(date.getMonth() + 1, 8)
-            assert.equal(date.getDate(), 30)
-            assert.equal(date.getHours(), 12)
-            assert.equal(date.getMinutes(), 45)
+            assert.equal(date.getUTCFullYear(), 2003)
+            assert.equal(date.getUTCMonth() + 1, 8)
+            assert.equal(date.getUTCDate(), 30)
+            assert.equal(date.getUTCHours(), 19)
+            assert.equal(date.getUTCMinutes(), 45)
           })
           .end(function (err, res) {
             if (err) {
@@ -316,9 +316,9 @@ setTimeout(function () {
           .expect((res) => {
             const asset = res.body.data.update
             let date = new Date(asset.datetime)
-            assert.equal(date.getFullYear(), 2003)
-            assert.equal(date.getMonth() + 1, 9)
-            assert.equal(date.getDate(), 3)
+            assert.equal(date.getUTCFullYear(), 2003)
+            assert.equal(date.getUTCMonth() + 1, 9)
+            assert.equal(date.getUTCDate(), 3)
           })
           .end(function (err, res) {
             if (err) {
