@@ -16,10 +16,6 @@ const app = require('../app.js')
 const assets = require('lib/assets')
 const backend = require('lib/backend')
 
-function sampleOne (arr) {
-  return arr[Math.floor(Math.random() * arr.length)]
-}
-
 //
 // Give the backend a chance to initialize the database asynchronously.
 // A timeout of zero is not sufficient, so this timing is fragile.
@@ -50,9 +46,13 @@ setTimeout(function () {
           // so anything at all is fine here
           import_date: importDate,
           filesize: Math.floor(Math.random() * 1048576) + 1048576,
-          location: sampleOne(locations),
+          location: locations[n % locations.length],
           mimetype: 'image/jpeg',
-          tags: [sampleOne(tagList1), sampleOne(tagList2), sampleOne(tagList3)]
+          tags: [
+            tagList1[n % tagList1.length],
+            tagList2[n % tagList2.length],
+            tagList3[n % tagList3.length]
+          ]
         }
         if (n === 5) {
           // make one with several attributes that we can check for later
