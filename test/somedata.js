@@ -794,6 +794,40 @@ setTimeout(function () {
           })
       })
     })
+
+    describe('update tag letter case', function () {
+      it('should permit updating tag case', function (done) {
+        request(app)
+          .post(`/graphql`)
+          .send({
+            variables: `{
+              "input": {
+                "tags": ["CAT", "picnic", "mouse"]
+              }
+            }`,
+            operationName: 'Update',
+            query: `mutation Update($input: AssetInput!) {
+              update(id: "opaquevalue789", asset: $input) {
+                tags
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const asset = res.body.data.update
+            assert.equal(asset.tags.length, 3)
+            assert.equal(asset.tags[0], 'CAT')
+            assert.equal(asset.tags[1], 'mouse')
+            assert.equal(asset.tags[2], 'picnic')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
   })
 
   run()
