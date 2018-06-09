@@ -62,7 +62,7 @@ When an asset is added to the system, several steps are performed:
 * Assets are stored in directory structure reflecting time and order of addition
     - ULID sorts by time, so order of insertion is retained
 * Number of directories and files at any particular level is reasonable
-    - at most 96 directories per yyyy/MM/dd
+    - at most 96 directories per calendar day
     - unlikely to have many files per 15 minute block
 * Can rebuild some of the metadata from the directory structure and file names
     - import date/time from file path
@@ -83,8 +83,9 @@ From the very beginning of the project, assets were stored in a directory struct
 
 However, this design had several problems:
 
-* Discarded all information about the asset
-    - file extension
+* Discarded most information about the asset:
+    - file name and extension
+    - media type cannot be guessed
     - import date/time
 * With only 256 by 256 directories, the files-per-directory scales linearly
     - for 100,000 assets, ~1.5 files in each directory
