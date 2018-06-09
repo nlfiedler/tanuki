@@ -1,11 +1,18 @@
 * Tanuki
 ** Next
-*** DONE Rewrite this file with emacs org-mode
-*** TODO Rewrite the repo history to use a single email address
-- replace =nathanfiedler@gmail.com= with =nathanfiedler@fastmail.fm=
-*** TODO On asset update, remove old duplicate tags, ignoring case, saving new values
-*** TODO Update the provisioning script to use the new repo URL
-*** TODO Copy issues from GitHub into this org file
+*** DONE Fix the failing tests on chihiro, some numbers need flexible matches
+*** DONE On asset update, remove old duplicate tags, ignoring case, saving new values
+*** TODO Prefix the checksum with the algorithm (e.g. sha256-*) [10/10]
+- [X] rename the =sha256= document field to =checksum= in =migrate.js=
+- [X] prepend algo in =incoming.computeChecksum()=
+- [X] error check in =resolvers.lookup()=
+- [X] rename =sha256= variables and comments to just =checksum=
+- [X] increment schema version to 8
+- [X] add algo prefix to checksum in =migrate.js=
+- [X] get the tests to pass
+- [X] check the Elm code
+- [X] manually test web ui
+- [X] manually test GraphiQL
 
 ** General Items
 *** TODO Support wildcards in filename, mimetype (others?)
@@ -30,6 +37,29 @@
 *** TODO Add REST API to perform database compaction
 *** TODO Extract ID3 tags on incoming audio files
 *** TODO Use a webview to preview Markdown generated as HTML
+
+*** TODO Detect time zone offset in EXIF data
+
+According to Wikipedia the 2.31 version of EXIF will support time-zone
+information. Eventually, the application should be able to detect this and
+include it in the database records.
+
+: There is no way to record time-zone information along with the time, thus
+: rendering the stored time ambiguous. However, time-zone information have
+: been introduced recently by Exif version 2.31 (July 2016). Related tags are:
+: "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
+
+*** TODO Allow *any* or *all* when selecting assets by tag
+
+By default, when selecting multiple tags, only those assets with all of the
+tags are shown. It would be good to allow switching that to "any", so the
+union of all such assets is presented. Note that this could be a lot of
+assets. This may also make sense for years and locations.
+
+*** TODO Consider testing Elm interface with =elm-test=
+
+- See [[https://github.com/elm-community/elm-test][elm-community/elm-test]] for more information.
+- Would need to have backend running and populated with sample data.
 
 ** Documentation
 

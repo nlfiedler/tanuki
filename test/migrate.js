@@ -43,7 +43,7 @@ setTimeout(function () {
           filesize: 1048576,
           location: 'kyoto',
           mimetype: 'image/jpeg',
-          sha256: '938f831fb02b313e7317c1e0631b86108a9e4a197e33d581fb68be91a3c6ce2f',
+          checksum: 'sha256-938f831fb02b313e7317c1e0631b86108a9e4a197e33d581fb68be91a3c6ce2f',
           tags: ['puella', 'magi', 'madoka', 'magica']
         }
         await backend.updateDocument(doc)
@@ -127,7 +127,8 @@ setTimeout(function () {
         let assetBefore = await db.get(oldDocId)
         let ok = await migrate.migrate(db, 0, index.version)
         assert.isTrue(ok, 'migrate() returned true')
-        const newDocId = await backend.byChecksum(oldDocId)
+        const newDocId = await backend.byChecksum('sha256-' + oldDocId)
+        assert.isNotNull(newDocId)
         let assetAfter = await db.get(newDocId)
         // lots of changes
         assert.notEqual(assetAfter._id, assetBefore._id, 'document identifier changed')
@@ -136,7 +137,8 @@ setTimeout(function () {
         assert.notProperty(assetAfter, 'file_date', 'file_date property removed')
         assert.notProperty(assetAfter, 'file_owner', 'file_owner property removed')
         assert.notProperty(assetAfter, 'exif_date', 'exif_date property removed')
-        assert.property(assetAfter, 'sha256', 'sha256 property back again')
+        assert.property(assetAfter, 'checksum', 'checksum property present')
+        assert.match(assetAfter.checksum, /^sha256-/, 'checksum has algo prefix')
         assert.property(assetAfter, 'original_date', 'original_date property defined')
         assert.isNumber(assetAfter.import_date, 'import date changed to number')
         assert.isNumber(assetAfter.original_date, 'original date changed to number')

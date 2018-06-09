@@ -43,7 +43,7 @@ router.post('/assets', upload.single('asset'), wrap(async function (req, res, ne
         import_date: importDate,
         mimetype: req.file.mimetype,
         original_date: originalDate,
-        sha256: checksum,
+        checksum,
         // everything generally assumes the tags field is not undefined
         tags: []
       }

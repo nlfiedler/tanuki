@@ -98,7 +98,9 @@ input SearchParams {
 type Query {
   # Retrieve an asset by its unique identifier.
   asset(id: ID!): Asset
-  # Look up an asset by the checksum (SHA256).
+  # Look up an asset by the checksum. The checksum value must be prefixed with
+  # the name of a hash function, such as `sha256-` (note the hyphen separator).
+  # The current function in use is SHA-256, represented as `sha256`.
   lookup(checksum: String!): Asset
   # Return the total number of assets in the system.
   count: Int

@@ -33,7 +33,7 @@ setTimeout(function () {
         filesize: 1048576,
         location: 'kyoto',
         mimetype: 'image/jpeg',
-        sha256: '938f831fb02b313e7317c1e0631b86108a9e4a197e33d581fb68be91a3c6ce2f',
+        checksum: 'sha256-938f831fb02b313e7317c1e0631b86108a9e4a197e33d581fb68be91a3c6ce2f',
         tags: ['puella', 'magi', 'madoka', 'magica']
       }
       await backend.updateDocument(doc)
@@ -69,7 +69,7 @@ setTimeout(function () {
           .post(`/graphql`)
           .send({
             query: `query {
-              lookup(checksum: "cafebabe") {
+              lookup(checksum: "sha256-cafebabe") {
                 id
               }
             }`
