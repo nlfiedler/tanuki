@@ -1,19 +1,4 @@
 * Tanuki
-** Next
-*** DONE Fix the failing tests on chihiro, some numbers need flexible matches
-*** DONE On asset update, remove old duplicate tags, ignoring case, saving new values
-*** TODO Prefix the checksum with the algorithm (e.g. sha256-*) [10/10]
-- [X] rename the =sha256= document field to =checksum= in =migrate.js=
-- [X] prepend algo in =incoming.computeChecksum()=
-- [X] error check in =resolvers.lookup()=
-- [X] rename =sha256= variables and comments to just =checksum=
-- [X] increment schema version to 8
-- [X] add algo prefix to checksum in =migrate.js=
-- [X] get the tests to pass
-- [X] check the Elm code
-- [X] manually test web ui
-- [X] manually test GraphiQL
-
 ** General Items
 *** TODO Support wildcards in filename, mimetype (others?)
 *** TODO Need a query to find image assets whose orientation is incorrect/unknown
@@ -28,6 +13,8 @@
 - Recovery is to replace corrupted DB with backup
 - Could just be something that is manually invoked as needed
 *** TODO Support HEIC/HEIF file formats
+- iOS 11 produces a 320x240 thumbnail in the image, could be useful
+
 *** TODO When performing image manipulations, invoke `sharp.withMetadata()` to preserve metadata
 *** TODO Support an "album" for the assets
 - Would be on details/edit page for benefit of uploading
