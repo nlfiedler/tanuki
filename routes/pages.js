@@ -2,6 +2,7 @@
 // Copyright (c) 2018 Nathan Fiedler
 //
 const express = require('express')
+const fs = require('fs')
 const path = require('path')
 const favicon = require('serve-favicon')
 const cookieParser = require('cookie-parser')
@@ -40,6 +41,29 @@ router.get('/thumbnail/:id', wrap(async function (req, res, next) {
     })
     // res.send() handles Content-Length and cache freshness support
     res.send(result.binary)
+  }
+}))
+
+router.get('/widethumb/:id', wrap(async function (req, res, next) {
+  let id = req.params['id']
+  const filepath = assets.assetPath(id)
+  if (fs.existsSync(filepath)) {
+    let doc = await backend.fetchDocument(id)
+    let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
+    const height = 'height' in req.query ? parseInt(req.query.height) : 300
+    let result = await assets.generateWideThumb(mimetype, filepath, height)
+    if (result === null) {
+      res.status(404).send('no such asset')
+    } else {
+      res.set({
+        'Content-Type': result.mimetype,
+        'ETag': id + '.wide'
+      })
+      // res.send() handles Content-Length and cache freshness support
+      res.send(result.binary)
+    }
+  } else {
+    res.status(404).send('no such asset')
   }
 }))
 
