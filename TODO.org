@@ -2,8 +2,16 @@
 ** General Items
 *** TODO Use same lexer/parser as mujina search for caption parsing
 *** TODO Support wildcards in filename, mimetype (others?)
+*** TODO Extract exact location information from images [0/4]
+- [ ] Write a data migration to process existing assets
+- [ ] Incoming needs to extract this information for new assets
+- [ ] Existing location values should be stored in "label" field
+- [ ] Exact location information should be stored separate from label
 *** TODO Need a query to find image assets whose orientation is incorrect/unknown
 *** TODO Asset preview page shows a broken link, should show placeholder image
+*** TODO Thumbnail size cache population is noticably slow when selecting many assets
+- Probably caching the thumbnails would help speed up the display of the results
+
 *** TODO Add a "people" field
 - Need an admin screen to move a tag from "tags" to "people"
 *** TODO Design the user login and comments system (see "families")

@@ -67,6 +67,14 @@ type SearchResult {
   filename: String!
   # The location for the matching asset, if available.
   location: String
+  # The thumbWidth is the pixel width of the wide version of the asset
+  # thumbnail. It will be -1 if no thumbnail is possible for the asset media
+  # type, and 0 if the asset does not have a thumbnail.
+  thumbWidth: Int
+  # The thumbHeight is the pixel height of the wide version of the asset
+  # thumbnail. It will be -1 if no thumbnail is possible for the asset media
+  # type, and 0 if the asset does not have a thumbnail.
+  thumbHeight: Int
 }
 
 # `SearchMeta` is returned from the search query.
