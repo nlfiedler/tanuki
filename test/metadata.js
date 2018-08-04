@@ -329,6 +329,69 @@ setTimeout(function () {
     })
   })
 
+  describe('Strip commas from tags in captions', function () {
+    let docId
+
+    before(async function () {
+      await backend.reinitDatabase()
+    })
+
+    describe('handle trailing commas on tags', function () {
+      it('should create a new document successfully', function (done) {
+        request(app)
+          .post('/api/assets')
+          .attach('asset', './test/fixtures/lorem-ipsum.txt')
+          .expect(200)
+          .expect((res) => {
+            assert.equal(res.body.status, 'success')
+            docId = res.body.id
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+
+      it('should remove trailing commas from tags', function (done) {
+        request(app)
+          .post(`/graphql`)
+          .send({
+            variables: `{
+              "input": {
+                "caption": "#cow, #grass, #fence, hot @hawaii"
+              }
+            }`,
+            operationName: 'Update',
+            query: `mutation Update($input: AssetInput!) {
+              update(id: "${docId}", asset: $input) {
+                caption
+                location
+                tags
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const asset = res.body.data.update
+            assert.equal(asset.caption, '#cow, #grass, #fence, hot @hawaii')
+            assert.equal(asset.location, 'hawaii')
+            assert.equal(asset.tags.length, 3)
+            assert.equal(asset.tags[0], 'cow')
+            assert.equal(asset.tags[1], 'fence')
+            assert.equal(asset.tags[2], 'grass')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
+    })
+  })
+
   describe('Asset with unknown media type', function () {
     let docId
 

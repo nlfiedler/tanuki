@@ -1,8 +1,5 @@
 * Tanuki
 ** General Items
-*** TODO Use same lexer/parser as mujina search for caption parsing
-- Strip trailing commas from tags, so that "#foo, #bar," becomes ['foo', 'bar']
-
 *** TODO Support wildcards in filename, mimetype (others?)
 *** TODO Extract exact location information from images [0/4]
 - [ ] Write a data migration to process existing assets
