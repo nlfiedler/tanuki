@@ -13,6 +13,10 @@ type Asset {
   id: ID!
   # The original filename of the asset when it was imported.
   filename: String!
+  # Path of the asset in storage, relative to the base directory defined in
+  # the configuration file as `assetPath`. Deleting this file will cause
+  # some features to break with respect to that asset, so be careful.
+  filepath: String!
   # The size in bytes of the asset.
   filesize: Int!
   # The date and time that best represents the asset. For images

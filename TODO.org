@@ -1,12 +1,15 @@
 * Tanuki
 ** General Items
 *** TODO Use same lexer/parser as mujina search for caption parsing
+- Strip trailing commas from tags, so that "#foo, #bar," becomes ['foo', 'bar']
+
 *** TODO Support wildcards in filename, mimetype (others?)
 *** TODO Extract exact location information from images [0/4]
 - [ ] Write a data migration to process existing assets
 - [ ] Incoming needs to extract this information for new assets
 - [ ] Existing location values should be stored in "label" field
 - [ ] Exact location information should be stored separate from label
+
 *** TODO Need a query to find image assets whose orientation is incorrect/unknown
 *** TODO Asset preview page shows a broken link, should show placeholder image
 *** TODO Thumbnail size cache population is noticably slow when selecting many assets
@@ -14,13 +17,16 @@
 
 *** TODO Add a "people" field
 - Need an admin screen to move a tag from "tags" to "people"
+
 *** TODO Design the user login and comments system (see "families")
 *** TODO Look for means of ensuring LevelDB data integrity
 - Look into enabling extra LevelDB checks (`paranoidChecks`, `verifyChecksums`)
+
 *** TODO Use PouchDB/CouchDB replication to keep a local backup
 - Perform backup after N operations, or every T minutes
 - Recovery is to replace corrupted DB with backup
 - Could just be something that is manually invoked as needed
+
 *** TODO Support HEIC/HEIF file formats
 - iOS 11 produces a 320x240 thumbnail in the image, could be useful
 
@@ -30,12 +36,11 @@
 - Expose on main page as a selector
 - Assets can belong to multiple albums
 - Eventually support "smart" albums based on asset attributes
+
 *** TODO Add REST API to perform database compaction
 *** TODO Extract ID3 tags on incoming audio files
 *** TODO Use a webview to preview Markdown generated as HTML
-
 *** TODO Detect time zone offset in EXIF data
-
 According to Wikipedia the 2.31 version of EXIF will support time-zone
 information. Eventually, the application should be able to detect this and
 include it in the database records.
@@ -46,19 +51,16 @@ include it in the database records.
 : "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
 
 *** TODO Allow *any* or *all* when selecting assets by tag
-
 By default, when selecting multiple tags, only those assets with all of the
 tags are shown. It would be good to allow switching that to "any", so the
 union of all such assets is presented. Note that this could be a lot of
 assets. This may also make sense for years and locations.
 
 *** TODO Consider testing Elm interface with =elm-test=
-
 - See [[https://github.com/elm-community/elm-test][elm-community/elm-test]] for more information.
 - Would need to have backend running and populated with sample data.
 
 ** Documentation
-
 *** Case Sensitivity
 - Data is stored as entered (case preservative)
 - Attribute lists are all lowercased
