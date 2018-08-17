@@ -1,5 +1,8 @@
 * Tanuki
 ** General Items
+*** TODO Asset preview should show the media type
+*** TODO Debounce the form input validation (i.e. asset edit and search forms)
+*** TODO Support searching the caption text
 *** TODO Support wildcards in filename, mimetype (others?)
 *** TODO Extract exact location information from images [0/4]
 - [ ] Write a data migration to process existing assets
@@ -10,32 +13,7 @@
 *** TODO Need a query to find image assets whose orientation is incorrect/unknown
 *** TODO Asset preview page shows a broken link, should show placeholder image
 *** TODO Thumbnail size cache population is noticably slow when selecting many assets
-- Probably caching the thumbnails would help speed up the display of the results
-
-*** TODO Add a "people" field
-- Need an admin screen to move a tag from "tags" to "people"
-
-*** TODO Design the user login and comments system (see "families")
-*** TODO Look for means of ensuring LevelDB data integrity
-- Look into enabling extra LevelDB checks (`paranoidChecks`, `verifyChecksums`)
-
-*** TODO Use PouchDB/CouchDB replication to keep a local backup
-- Perform backup after N operations, or every T minutes
-- Recovery is to replace corrupted DB with backup
-- Could just be something that is manually invoked as needed
-
-*** TODO Support HEIC/HEIF file formats
-- iOS 11 produces a 320x240 thumbnail in the image, could be useful
-
 *** TODO When performing image manipulations, invoke `sharp.withMetadata()` to preserve metadata
-*** TODO Support an "album" for the assets
-- Would be on details/edit page for benefit of uploading
-- Expose on main page as a selector
-- Assets can belong to multiple albums
-- Eventually support "smart" albums based on asset attributes
-
-*** TODO Add REST API to perform database compaction
-*** TODO Extract ID3 tags on incoming audio files
 *** TODO Use a webview to preview Markdown generated as HTML
 *** TODO Detect time zone offset in EXIF data
 According to Wikipedia the 2.31 version of EXIF will support time-zone
@@ -46,12 +24,6 @@ include it in the database records.
 : rendering the stored time ambiguous. However, time-zone information have
 : been introduced recently by Exif version 2.31 (July 2016). Related tags are:
 : "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
-
-*** TODO Allow *any* or *all* when selecting assets by tag
-By default, when selecting multiple tags, only those assets with all of the
-tags are shown. It would be good to allow switching that to "any", so the
-union of all such assets is presented. Note that this could be a lot of
-assets. This may also make sense for years and locations.
 
 *** TODO Consider testing Elm interface with =elm-test=
 - See [[https://github.com/elm-community/elm-test][elm-community/elm-test]] for more information.

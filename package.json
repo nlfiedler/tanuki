@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node ./bin/www",
-    "test": "NODE_CONFIG_ENV=test mocha --delay"
+    "test": "NODE_CONFIG_ENV=test mocha --delay",
+    "lick": "license-checker --production --exclude MIT,ISC,LGPL,WTFPL,Apache-2.0,BSD-3-Clause,BSD-2-Clause,MPL-2.0,Unlicense"
   },
   "repository": {
     "type": "git",
@@ -59,6 +60,7 @@
     "gulp-if": "^2.0.2",
     "gulp-nodemon": "^2.2.1",
     "gulp-uglify": "^3.0.0",
+    "license-checker": "^20.2.0",
     "mocha": "^5.2.0",
     "supertest": "^3.1.0"
   }
