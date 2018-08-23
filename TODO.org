@@ -2,6 +2,7 @@
 ** General Items
 *** TODO Asset preview should show the media type
 *** TODO Debounce the form input validation (i.e. asset edit and search forms)
+*** TODO [[https://github.com/elm/compiler/blob/master/upgrade-docs/0.19.md][Upgrade]] the web interface to Elm 0.19
 *** TODO Support searching the caption text
 *** TODO Support wildcards in filename, mimetype (others?)
 *** TODO Extract exact location information from images [0/4]
@@ -15,6 +16,7 @@
 *** TODO Thumbnail size cache population is noticably slow when selecting many assets
 *** TODO When performing image manipulations, invoke `sharp.withMetadata()` to preserve metadata
 *** TODO Use a webview to preview Markdown generated as HTML
+*** TODO Read [[https://github.com/MtDalPizzol/pouchdb-permissions][pouchdb-permissions]] for possible use in user/groups access
 *** TODO Detect time zone offset in EXIF data
 According to Wikipedia the 2.31 version of EXIF will support time-zone
 information. Eventually, the application should be able to detect this and

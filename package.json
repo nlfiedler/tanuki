@@ -54,6 +54,7 @@
     "xmldom": "^0.1.27"
   },
   "devDependencies": {
+    "@playlyfe/gql": "^2.6.0",
     "chai": "^4.1.2",
     "gulp": "^3.9.1",
     "gulp-elm": "^0.7.2",
