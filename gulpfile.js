@@ -1,4 +1,4 @@
-const exec = require('child_process').exec
+const {spawn} = require('child_process')
 const fs = require('fs-extra')
 const gulp = require('gulp')
 const gulpif = require('gulp-if')
@@ -22,29 +22,21 @@ gulp.task('serve', (cb) => {
   })
 })
 
-gulp.task('bsb-clean', (cb) => {
-  exec('bsb -clean-world', (err, stdout, stderr) => {
-    console.info(stdout)
-    console.error(stderr)
-    cb(err)
-  })
+gulp.task('bsb-clean', () => {
+  return spawn('bsb', ['-clean-world'])
 })
 
-gulp.task('clean', ['bsb-clean'], (cb) => {
+gulp.task('js-clean', (cb) => {
   fs.remove('public/javascripts/main.js', err => {
     cb(err)
   })
 })
 
-gulp.task('bsb-make', (cb) => {
-  exec('bsb -make-world', (err, stdout, stderr) => {
-    console.info(stdout)
-    console.error(stderr)
-    cb(err)
-  })
+gulp.task('bsb-make', () => {
+  return spawn('bsb', ['-make-world'])
 })
 
-gulp.task('compile', ['bsb-make'], () => {
+gulp.task('webpack', () => {
   return gulp.src('lib/js/src/main.bs.js')
     .pipe(webpack({
       mode: production ? 'production' : 'development',
@@ -56,8 +48,10 @@ gulp.task('compile', ['bsb-make'], () => {
     .pipe(gulp.dest('public/javascripts'))
 })
 
-gulp.task('watch-server', ['serve'], () => {
-  gulp.watch('src/**/*.re', ['compile'])
+gulp.task('watch-server', () => {
+  gulp.watch('src/**/*.re', gulp.series('compile'))
 })
 
-gulp.task('default', ['compile', 'watch-server'])
+gulp.task('compile', gulp.series('bsb-make', 'webpack'))
+gulp.task('clean', gulp.series('bsb-clean', 'js-clean'))
+gulp.task('default', gulp.series('compile', 'serve', 'watch-server'))

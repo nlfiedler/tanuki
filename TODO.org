@@ -1,6 +1,5 @@
 * Tanuki
 ** General Items
-*** TODO Run =npm audit= and fix the issues
 *** TODO Rewrite Elm interface using ReasonReact
 **** DONE Probably need webpack to produce a single .js file
 ***** DONE Use https://github.com/shama/webpack-stream to run webpack from gulp
@@ -28,6 +27,8 @@
 
 *** TODO Asset preview should show the media type
 *** TODO Debounce the form input validation (i.e. asset edit and search forms)
+*** TODO Can gulp-nodemon be removed/replaced? introduces several vulnerabilities
+**** Or fork the repo and fix the issue
 *** TODO Support searching the caption text
 *** TODO Support wildcards in filename, mimetype (others?)
 *** TODO Extract exact location information from images [0/4]
