@@ -1,7 +1,7 @@
 {
   "name": "tanuki",
   "version": "1.0.0",
-  "description": "Node.js/Elm digital asset management application",
+  "description": "Node.js digital asset management application",
   "main": "app.js",
   "scripts": {
     "start": "node ./bin/www",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nlfiedler/tanuki.git"
+    "url": "https://bitbucket.org/nlfiedler/tanuki.git"
   },
   "keywords": [
     "digital",
@@ -20,14 +20,12 @@
   "author": "Nathan Fiedler",
   "private": true,
   "license": "UNLICENSED",
-  "bugs": {
-    "url": "https://github.com/nlfiedler/tanuki/issues"
-  },
-  "homepage": "https://github.com/nlfiedler/tanuki",
+  "homepage": "https://bitbucket.org/nlfiedler/tanuki/",
   "dependencies": {
     "apollo-server-express": "^1.3.4",
     "app-module-path": "^2.2.0",
     "body-parser": "^1.18.3",
+    "bs-platform": "^4.0.5",
     "config": "^1.30.0",
     "cookie-parser": "~1.4.3",
     "dateformat": "^3.0.3",
@@ -46,6 +44,7 @@
     "multer": "^1.3.1",
     "pouchdb": "^6.4.3",
     "pouchdb-find": "^6.4.3",
+    "reason-react": "^0.5.3",
     "rotating-file-stream": "^1.3.6",
     "serve-favicon": "~2.5.0",
     "sharp": "^0.20.5",
@@ -57,12 +56,12 @@
     "@playlyfe/gql": "^2.6.0",
     "chai": "^4.1.2",
     "gulp": "^3.9.1",
-    "gulp-elm": "^0.7.2",
     "gulp-if": "^2.0.2",
     "gulp-nodemon": "^2.2.1",
     "gulp-uglify": "^3.0.0",
     "license-checker": "^20.2.0",
     "mocha": "^5.2.0",
-    "supertest": "^3.1.0"
+    "supertest": "^3.1.0",
+    "webpack-stream": "^5.1.1"
   }
 }

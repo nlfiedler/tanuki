@@ -1,8 +1,33 @@
 * Tanuki
 ** General Items
+*** TODO Run =npm audit= and fix the issues
+*** TODO Rewrite Elm interface using ReasonReact
+**** DONE Probably need webpack to produce a single .js file
+***** DONE Use https://github.com/shama/webpack-stream to run webpack from gulp
+***** DONE Set the output filename to something static
+***** DONE Use the watch feature with webpack
+**** TODO Use reductive for the application state management
+**** TODO Need interface with GraphQL backend
+**** TODO Get tag fetching working
+**** TODO Get location fetching working
+**** TODO Get year fetching working
+**** TODO Use Reason's router instead of Elm navigator
+**** TODO Get search working
+**** TODO Get asset fetching working
+**** TODO Get asset update working
+**** TODO Get asset upload working
+***** To detect drag support (in JS): ='draggable' in document.createElement('span')=
+**** TODO Get pagination working
+**** TODO Get broken thumbnail handling working
+**** TODO Get form validation working (edit, search)
+**** TODO Delete =elm-src=, =elm-stuff=, and =elm-package.json=
+**** TODO Before and After (Elm vs Reason)
+***** Elm
+:Bundle-size: 560kb
+:Line-count: 2624
+
 *** TODO Asset preview should show the media type
 *** TODO Debounce the form input validation (i.e. asset edit and search forms)
-*** TODO [[https://github.com/elm/compiler/blob/master/upgrade-docs/0.19.md][Upgrade]] the web interface to Elm 0.19
 *** TODO Support searching the caption text
 *** TODO Support wildcards in filename, mimetype (others?)
 *** TODO Extract exact location information from images [0/4]
@@ -26,10 +51,6 @@ include it in the database records.
 : rendering the stored time ambiguous. However, time-zone information have
 : been introduced recently by Exif version 2.31 (July 2016). Related tags are:
 : "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
-
-*** TODO Consider testing Elm interface with =elm-test=
-- See [[https://github.com/elm-community/elm-test][elm-community/elm-test]] for more information.
-- Would need to have backend running and populated with sample data.
 
 ** Documentation
 *** Case Sensitivity

@@ -5,6 +5,13 @@ node_modules
 package-lock.json
 
 #
+# ReasonML/BuckleScript
+#
+.merlin
+lib/bs
+lib/js
+
+#
 # generated elm code
 #
 elm-stuff

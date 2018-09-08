@@ -1,19 +1,20 @@
+const exec = require('child_process').exec
+const fs = require('fs-extra')
 const gulp = require('gulp')
 const gulpif = require('gulp-if')
 const uglify = require('gulp-uglify')
 const nodemon = require('gulp-nodemon')
-const elm = require('gulp-elm')
+const webpack = require('webpack-stream')
 
 let production = false
-let debug = false
 
-gulp.task('serve', function (cb) {
+gulp.task('serve', (cb) => {
   let called = false
   return nodemon({
     'script': './bin/www',
     'watch': '.',
     'ext': 'js'
-  }).on('start', function () {
+  }).on('start', () => {
     if (!called) {
       called = true
       cb()
@@ -21,23 +22,42 @@ gulp.task('serve', function (cb) {
   })
 })
 
-gulp.task('elm-init', elm.init)
+gulp.task('bsb-clean', (cb) => {
+  exec('bsb -clean-world', (err, stdout, stderr) => {
+    console.info(stdout)
+    console.error(stderr)
+    cb(err)
+  })
+})
 
-gulp.task('elm-compile', ['elm-init'], function () {
-  return gulp.src('elm-src/Main.elm')
-    .pipe(elm({'warn': true, debug}))
+gulp.task('clean', ['bsb-clean'], (cb) => {
+  fs.remove('public/javascripts/main.js', err => {
+    cb(err)
+  })
+})
+
+gulp.task('bsb-make', (cb) => {
+  exec('bsb -make-world', (err, stdout, stderr) => {
+    console.info(stdout)
+    console.error(stderr)
+    cb(err)
+  })
+})
+
+gulp.task('compile', ['bsb-make'], () => {
+  return gulp.src('lib/js/src/main.bs.js')
+    .pipe(webpack({
+      mode: production ? 'production' : 'development',
+      output: {
+        filename: 'main.js'
+      }
+    }))
     .pipe(gulpif(production, uglify()))
     .pipe(gulp.dest('public/javascripts'))
 })
 
-gulp.task('watch-server', ['serve'], function () {
-  gulp.watch('elm-src/**/*.elm', ['elm-compile'])
+gulp.task('watch-server', ['serve'], () => {
+  gulp.watch('src/**/*.re', ['compile'])
 })
 
-gulp.task('default', ['elm-compile', 'watch-server'])
-
-//
-// For more ideas and weird examples...
-//
-// https://github.com/simonh1000/elm-fullstack-starter
-//
+gulp.task('default', ['compile', 'watch-server'])
