@@ -22,11 +22,11 @@
   "license": "UNLICENSED",
   "homepage": "https://bitbucket.org/nlfiedler/tanuki/",
   "dependencies": {
-    "apollo-server-express": "^1.3.4",
+    "apollo-server-express": "^1.4.0",
     "app-module-path": "^2.2.0",
     "body-parser": "^1.18.3",
     "bs-platform": "^4.0.5",
-    "config": "^1.30.0",
+    "config": "^1.31.0",
     "cookie-parser": "~1.4.3",
     "dateformat": "^3.0.3",
     "debug": "~3.1.0",
@@ -45,11 +45,11 @@
     "pouchdb": "^6.4.3",
     "pouchdb-find": "^6.4.3",
     "reason-react": "^0.5.3",
-    "rotating-file-stream": "^1.3.6",
+    "rotating-file-stream": "^1.3.7",
     "serve-favicon": "~2.5.0",
-    "sharp": "^0.20.5",
+    "sharp": "^0.20.8",
     "ulid": "^2.3.0",
-    "winston": "^2.4.3",
+    "winston": "^2.4.4",
     "xmldom": "^0.1.27"
   },
   "devDependencies": {
@@ -58,10 +58,10 @@
     "gulp": "^3.9.1",
     "gulp-if": "^2.0.2",
     "gulp-nodemon": "^2.2.1",
-    "gulp-uglify": "^3.0.0",
+    "gulp-uglify": "^3.0.1",
     "license-checker": "^20.2.0",
     "mocha": "^5.2.0",
-    "supertest": "^3.1.0",
+    "supertest": "^3.3.0",
     "webpack-stream": "^5.1.1"
   }
 }
