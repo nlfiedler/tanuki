@@ -1,4 +1,4 @@
-const {spawn} = require('child_process')
+const {exec} = require('child_process')
 const fs = require('fs-extra')
 const gulp = require('gulp')
 const gulpif = require('gulp-if')
@@ -22,8 +22,12 @@ gulp.task('serve', (cb) => {
   })
 })
 
-gulp.task('bsb-clean', () => {
-  return spawn('bsb', ['-clean-world'])
+gulp.task('bsb-clean', (cb) => {
+  exec('bsb -clean-world', (err, stdout, stderr) => {
+    console.info(stdout)
+    console.error(stderr)
+    cb(err)
+  })
 })
 
 gulp.task('js-clean', (cb) => {
@@ -32,8 +36,12 @@ gulp.task('js-clean', (cb) => {
   })
 })
 
-gulp.task('bsb-make', () => {
-  return spawn('bsb', ['-make-world'])
+gulp.task('bsb-make', (cb) => {
+  exec('bsb -make-world', (err, stdout, stderr) => {
+    console.info(stdout)
+    console.error(stderr)
+    cb(err)
+  })
 })
 
 gulp.task('webpack', () => {
