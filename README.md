@@ -6,8 +6,8 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 
 ### Prerequisites
 
-* [Node.js](https://nodejs.org/) 8.x or higher
-* [Elm](http://elm-lang.org) 0.18 or higher
+* [Node.js](https://nodejs.org/) 8.x
+* [Elm](http://elm-lang.org) 0.18
 
 #### Example for MacOS
 
@@ -32,15 +32,7 @@ $ gulp
 
 ## Architecture
 
-A bunch of JavaScript running on Node.js, and probably some native code in there somewhere.
-
-### Why Node.js
-
-That is a long story. This application started as a set of Python scripts, then became an Erlang/Nitrogen application, then was rewritten in Elixir on Phoenix. Then, due to changing requirements, was rewritten again in JavaScript on Node.js. The Elm code from the previous generation is the only part that did not change.
-
-### Why Elm
-
-The Elm language compiler and runtime make it nearly impossible to have runtime exceptions. The language is very clean, well defined, easy to learn, and produces fast JavaScript code. Elm data is immutable, leading to safer code. All actions are performed via commands to the runtime, and updates are delivered via messages to the application. This leads to an architecture that scales well with the application. The Elm "time-traveling" debugger makes finding the few mistakes that are made quite easy.
+Assets stored as-is in date/time formatted directory structure, metadata stored in a document-oriented database, an HTTP server backend, and a single-page application for a front-end. Backend written in JavaScript running on [Node.js](https://nodejs.org/), front-end written in Elm, database is [PouchDB](https://pouchdb.com).
 
 ## Design
 
@@ -92,3 +84,37 @@ However, this design had several problems:
     - for 1,000,000 assets, ~15 files in each directory
     - for 1,000,000,000 assets, ~15,000 files in each directory
 * Looks scary to normal people
+
+## Project History
+
+Original idea was inspired by [perkeep](https://perkeep.org) (née camlistore). Since installing [Go](https://golang.org) on [Solaris](https://www.oracle.com/solaris/) was difficult, something new was needed. That is, given the operating system there would not be any readily available software to serve the purpose. Would later learn that this application space is referred to as "digital asset management."
+
+### July 2014
+
+[Python](https://www.python.org) script to ingest assets, insert records into [CouchDB](http://couchdb.apache.org). [Erlang](http://www.erlang.org)/[Nitrogen](http://nitrogenproject.com) interface to display assets by one tag, in a long, single-column list (i.e. no pagination).
+
+### March 2015
+
+Replaced the Python ingest script with Erlang, no more Python in the main application.
+
+### January 2017
+
+Replaced Erlang/Nitrogen code with [Elixir](https://elixir-lang.org) and [Phoenix](https://phoenixframework.org); support querying by multiple tags; pagination of assets; basic asset editor.
+
+### March 2017
+
+Replace static Elixir/Phoenix web pages with dynamic [Elm](http://elm-lang.org) front-end, supporting multiple tags, locations, and years. Hides less frequently used tags and locations by default, with expanders for showing everything. Form input validation for asset edit page.
+
+### November 2017
+
+[Node.js](https://nodejs.org/) rewrite of the Elixir/Phoenix backend, using [PouchDB](https://pouchdb.com) instead of CouchDB; Elm front-end still in place.
+
+### March 2018
+
+Replaced REST-like interface with [GraphQL](https://graphql.org).
+
+Introduced automatic data migration to perform database schema upgrades.
+
+### May 2018
+
+Change asset storage design from sharding by SHA256 checksum to something akin to Apple Photos (see above).
