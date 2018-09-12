@@ -10,6 +10,7 @@ package-lock.json
 .merlin
 lib/bs
 lib/js
+.graphql_ppx_cache
 
 #
 # generated elm code

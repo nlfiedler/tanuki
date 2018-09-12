@@ -5,18 +5,33 @@
 ***** DONE Use https://github.com/shama/webpack-stream to run webpack from gulp
 ***** DONE Set the output filename to something static
 ***** DONE Use the watch feature with webpack
+**** DONE Need interface with GraphQL backend
+***** DONE Install reason-apollo and all of its dependencies
+[[https://github.com/apollographql/reason-apollo][apollographql/reason-apollo]]
+
+***** DONE Build a component that displays the available tags
+**** React/GraphQL client example for future reference
+ecliptic.io [[https://blog.ecliptic.io/reasonable-react-part-1-d0cdc2f5167][part 1]] [[https://blog.ecliptic.io/reasonable-react-part-2-graphql-7e3f1be0abfa][part 2]]
+- building the ReasonReact GraphQL client
+
+**** DONE Get tag fetching working
+**** TODO Organize the code to display the home page
 **** TODO Use reductive for the application state management
-**** TODO Need interface with GraphQL backend
-**** TODO Get tag fetching working
-**** TODO Get location fetching working
-**** TODO Get year fetching working
+***** TODO Add ="reductive": "nlfiedler/reductive#render"= to =package.json=
+***** TODO Add ="reductive"= to ="bs-dependencies"= in =bsconfig.json=
+***** TODO Copy =reduxThunk.re= from reductive examples
+***** TODO Copy =middleware.re= from reductive examples
+***** TODO Leverage my todomvc example as a starting point
+**** Use reductive to hold non-GraphQL values, Apollo is caching already
 **** TODO Use Reason's router instead of Elm navigator
-**** TODO Get search working
+**** TODO Get basic search form working
 **** TODO Get asset fetching working
 **** TODO Get asset update working
 **** TODO Get asset upload working
 ***** To detect drag support (in JS): ='draggable' in document.createElement('span')=
 **** TODO Get pagination working
+**** TODO Get location fetching working
+**** TODO Get year fetching working
 **** TODO Get broken thumbnail handling working
 **** TODO Get form validation working (edit, search)
 **** TODO Delete =elm-src=, =elm-stuff=, and =elm-package.json=
@@ -24,6 +39,14 @@
 ***** Elm
 :Bundle-size: 560kb
 :Line-count: 2624
+
+*** TODO Rewrite backend code on ReasonML
+**** GraphQL portion
+[[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-1-5651f75de497][ecliptic.io part 1]], [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-2-3c3b811f7491][part 2]], [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-3-b303b375ab23][part 3]], [[https://blog.ecliptic.io/a-reasonable-graphql-followup-192f6ec29550][follow-up]]
+- shows how to write the GraphQL backend
+- uses Node/Express too
+- builds everything up, from types to encoders/decoders
+- uses [[https://github.com/glennsl/bs-json][bs-json]] for JSON encode/decode
 
 *** TODO Asset preview should show the media type
 *** TODO Debounce the form input validation (i.e. asset edit and search forms)

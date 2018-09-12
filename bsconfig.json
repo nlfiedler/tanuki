@@ -9,7 +9,11 @@
     "react-jsx": 2
   },
   "bs-dependencies": [
+    "reason-apollo",
     "reason-react"
+  ],
+  "ppx-flags": [
+    "graphql_ppx/ppx"
   ],
   "sources": [
     "src"
