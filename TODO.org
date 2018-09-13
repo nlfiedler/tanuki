@@ -15,7 +15,7 @@ ecliptic.io [[https://blog.ecliptic.io/reasonable-react-part-1-d0cdc2f5167][part
 - building the ReasonReact GraphQL client
 
 **** DONE Get tag fetching working
-**** TODO Organize the code to display the home page
+**** DONE Organize the code to display the home page
 **** TODO Use reductive for the application state management
 ***** TODO Add ="reductive": "nlfiedler/reductive#render"= to =package.json=
 ***** TODO Add ="reductive"= to ="bs-dependencies"= in =bsconfig.json=
@@ -23,6 +23,7 @@ ecliptic.io [[https://blog.ecliptic.io/reasonable-react-part-1-d0cdc2f5167][part
 ***** TODO Copy =middleware.re= from reductive examples
 ***** TODO Leverage my todomvc example as a starting point
 **** Use reductive to hold non-GraphQL values, Apollo is caching already
+**** TODO Store labels of selected tags in the reductive model
 **** TODO Use Reason's router instead of Elm navigator
 **** TODO Get basic search form working
 **** TODO Get asset fetching working
@@ -35,10 +36,16 @@ ecliptic.io [[https://blog.ecliptic.io/reasonable-react-part-1-d0cdc2f5167][part
 **** TODO Get broken thumbnail handling working
 **** TODO Get form validation working (edit, search)
 **** TODO Delete =elm-src=, =elm-stuff=, and =elm-package.json=
+**** TODO Remove =ghc= and =cabal= from server
 **** TODO Before and After (Elm vs Reason)
 ***** Elm
 :Bundle-size: 560kb
 :Line-count: 2624
+
+*** TODO URI path for thumbnails and such should be return in GraphQL data
+The front-end should not have to know how to construct the URI path for the
+assets, thumbnails, etc. Host and port _cannot_ be in the GraphQL data since
+the backend does not know how the front-end is addressing it.
 
 *** TODO Rewrite backend code on ReasonML
 **** GraphQL portion
