@@ -23,7 +23,28 @@ ecliptic.io [[https://blog.ecliptic.io/reasonable-react-part-1-d0cdc2f5167][part
 ***** TODO Copy =middleware.re= from reductive examples
 ***** TODO Leverage my todomvc example as a starting point
 **** Use reductive to hold non-GraphQL values, Apollo is caching already
-**** TODO Store labels of selected tags in the reductive model
+***** What goes in reducer components
+- route?
+- pageNumber
+- edit form
+- search form
+- showing all tags
+- showing all locations
+- upload filename
+
+***** What goes in reductive
+- selected tag values
+- selected location values
+- selected years values
+- saved search inputs
+
+***** What lives in apollo cache
+- tags
+- locations
+- years
+- asset list
+- asset details
+
 **** TODO Use Reason's router instead of Elm navigator
 **** TODO Get basic search form working
 **** TODO Get asset fetching working
