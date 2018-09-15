@@ -10,10 +10,6 @@
 [[https://github.com/apollographql/reason-apollo][apollographql/reason-apollo]]
 
 ***** DONE Build a component that displays the available tags
-**** React/GraphQL client example for future reference
-ecliptic.io [[https://blog.ecliptic.io/reasonable-react-part-1-d0cdc2f5167][part 1]] [[https://blog.ecliptic.io/reasonable-react-part-2-graphql-7e3f1be0abfa][part 2]]
-- building the ReasonReact GraphQL client
-
 **** DONE Get tag fetching working
 **** DONE Organize the code to display the home page
 **** DONE Use reductive for the application state management
@@ -66,10 +62,9 @@ ecliptic.io [[https://blog.ecliptic.io/reasonable-react-part-1-d0cdc2f5167][part
 :Bundle-size: 560kb
 :Line-count: 2624
 
-*** TODO Consider splitting the web interface into its own repo
-Need to consider how to have the ReasonML backend code separate from the
-webui code. Right now they would both live in the =src= directory? Seems
-confusing, would need some other sensible code layout.
+*** TODO Consider how to organize webui code from the backend code
+Presumably it will all eventually be written in ReasonML, how should the
+webui and backend code be separated?
 
 *** TODO URI path for thumbnails and such should be return in GraphQL data
 The front-end should not have to know how to construct the URI path for the
