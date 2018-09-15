@@ -1,7 +1,6 @@
 let component = ReasonReact.statelessComponent("Navbar");
 let make = _children => {
   ...component,
-  /* TODO: need navigation in the a tags below... */
   render: _self =>
     <nav id="navbar" className="navbar is-transparent" role="navigation">
       <div className="navbar-brand">
@@ -9,15 +8,21 @@ let make = _children => {
       </div>
       <div className="navbar-menu" id="navMenu">
         <div className="navbar-end">
-          <a className="navbar-item">
+          <a
+            className="navbar-item"
+            onClick={_ => ReasonReact.Router.push("/")}>
             <span className="icon"> <i className="fas fa-lg fa-home" /> </span>
           </a>
-          <a className="navbar-item">
+          <a
+            className="navbar-item"
+            onClick={_ => ReasonReact.Router.push("/upload")}>
             <span className="icon">
               <i className="fas fa-lg fa-upload" />
             </span>
           </a>
-          <a className="navbar-item">
+          <a
+            className="navbar-item"
+            onClick={_ => ReasonReact.Router.push("/search")}>
             <span className="icon">
               <i className="fas fa-lg fa-search" />
             </span>

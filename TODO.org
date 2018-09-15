@@ -42,7 +42,7 @@
 - asset list
 - asset details
 
-**** TODO Use Reason's router instead of Elm navigator
+**** DONE Use Reason's router instead of Elm navigator
 **** TODO Get basic search form working
 **** TODO Get asset fetching working
 **** TODO Get asset update working
