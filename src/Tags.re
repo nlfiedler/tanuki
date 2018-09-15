@@ -17,45 +17,40 @@ module GetTagsQuery = ReasonApollo.CreateQuery(GetTags);
  * Returns the top 25 tags sorted by the number of assets they select, and then
  * sorted by the label. Tags that are currently selected by the user are always
  * included in the result.
- *
- * A clever alternative would be to find the elbow/knee of the data but that
- * requires a lot more math than Elm is really suitable for.
  */
-let selectTopTags = allTags => allTags;
-/* TODO: need the selected tags to be in the reductive model */
-/* TODO: just need the tag label, not the whole object */
-/* TODO: the selected state is also used for selecting assets */
-/* {
-       let
-            /* Get the selected tags into a dict. */
-           selectedTags =
-               List.filter (.selected) tags
-           mapInserter v d =
-               Dict.insert v.label v d
-           selectedTagsDict =
-               List.foldl mapInserter Dict.empty selectedTags
-            /* Get the top N tags by count. */
-           tagSorter a b =
-               case compare a.count b.count of
-                   LT -> GT
-                   EQ -> EQ
-                   GT -> LT
-           sortedTopTags =
-               List.take 25 (List.sortWith tagSorter tags)
-            /* Merge those two sets into one. */
-           mergedTagsDict =
-               List.foldl mapInserter selectedTagsDict sortedTopTags
-       in
-           /* Extract the values and sort by label. */
-           List.sortBy .label (Dict.values mergedTagsDict)
-   }; */
+let selectTopTags = (selectedTags, allTags) => {
+  /* get the fully defined selected tags into a map keyed by name */
+  let selectedTagsMap =
+    Array.fold_right(
+      (tag, coll) =>
+        if (Belt.Set.String.has(selectedTags, tag##value)) {
+          Belt.Map.String.set(coll, tag##value, tag);
+        } else {
+          coll;
+        },
+      allTags,
+      Belt.Map.String.empty,
+    );
+  /* keep the top 25 tags by count, merge with the selected */
+  Array.sort((a, b) => a##count - b##count, Array.copy(allTags));
+  let mergedMap =
+    Array.fold_right(
+      (tag, coll) => Belt.Map.String.set(coll, tag##value, tag),
+      Array.sub(allTags, 0, 25),
+      selectedTagsMap,
+    );
+  /* extract the map values and sort by name */
+  let almostThere = Belt.Map.String.valuesToArray(mergedMap);
+  Array.sort((a, b) => compare(a##value, b##value), almostThere);
+  almostThere;
+};
 
 module Component = {
   type state = {showingAll: bool};
   type action =
     | ToggleAll;
   let component = ReasonReact.reducerComponent("Tags");
-  let make = _children => {
+  let make = (~state: Belt.Set.String.t, ~dispatch, _children) => {
     let allTagsToggle = (state, send, tags) =>
       if (state.showingAll) {
         <a
@@ -76,24 +71,26 @@ module Component = {
           {ReasonReact.string(">>")}
         </a>;
       };
-    let buildTags = (state, tags) => {
+    let buildTags = (myState, tags) => {
       let visibleTags =
-        if (state.showingAll || Array.length(tags) <= 25) {
+        if (myState.showingAll || Array.length(tags) <= 25) {
           tags;
         } else {
-          selectTopTags(tags);
+          selectTopTags(state, tags);
         };
-      /* TODO: use class "tag is-dark" for selected tags */
       Array.mapi(
-        (index, tag) =>
+        (index, tag) => {
+          let isSelected = Belt.Set.String.has(state, tag##value);
+          let className = isSelected ? "tag is-dark" : "tag is-light";
           <a
             key={string_of_int(index)}
-            className="tag is-light"
+            className
             href="#"
             title={string_of_int(tag##count)}
-            onClick={_ => ()}>
+            onClick={_ => dispatch(Redux.ToggleTag(tag##value))}>
             {ReasonReact.string(tag##value)}
-          </a>,
+          </a>;
+        },
         visibleTags,
       );
     };

@@ -16,12 +16,13 @@ ecliptic.io [[https://blog.ecliptic.io/reasonable-react-part-1-d0cdc2f5167][part
 
 **** DONE Get tag fetching working
 **** DONE Organize the code to display the home page
-**** TODO Use reductive for the application state management
-***** TODO Add ="reductive": "nlfiedler/reductive#render"= to =package.json=
-***** TODO Add ="reductive"= to ="bs-dependencies"= in =bsconfig.json=
-***** TODO Copy =reduxThunk.re= from reductive examples
-***** TODO Copy =middleware.re= from reductive examples
-***** TODO Leverage my todomvc example as a starting point
+**** DONE Use reductive for the application state management
+***** DONE Add ="reductive": "nlfiedler/reductive#render"= to =package.json=
+***** DONE Add ="reductive"= to ="bs-dependencies"= in =bsconfig.json=
+***** DONE Copy =reduxThunk.re= from reductive examples
+***** DONE Copy =middleware.re= from reductive examples
+***** DONE Leverage my todomvc example as a starting point
+***** DONE Hook provider into links to toggle tags
 **** Use reductive to hold non-GraphQL values, Apollo is caching already
 ***** What goes in reducer components
 - route?
@@ -58,10 +59,17 @@ ecliptic.io [[https://blog.ecliptic.io/reasonable-react-part-1-d0cdc2f5167][part
 **** TODO Get form validation working (edit, search)
 **** TODO Delete =elm-src=, =elm-stuff=, and =elm-package.json=
 **** TODO Remove =ghc= and =cabal= from server
+**** TODO Remove =elm= from Homebrew installation
 **** TODO Before and After (Elm vs Reason)
+***** Be sure to also compare "prodcution" output
 ***** Elm
 :Bundle-size: 560kb
 :Line-count: 2624
+
+*** TODO Consider splitting the web interface into its own repo
+Need to consider how to have the ReasonML backend code separate from the
+webui code. Right now they would both live in the =src= directory? Seems
+confusing, would need some other sensible code layout.
 
 *** TODO URI path for thumbnails and such should be return in GraphQL data
 The front-end should not have to know how to construct the URI path for the

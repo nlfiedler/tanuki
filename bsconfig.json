@@ -10,7 +10,8 @@
   },
   "bs-dependencies": [
     "reason-apollo",
-    "reason-react"
+    "reason-react",
+    "reductive"
   ],
   "ppx-flags": [
     "graphql_ppx/ppx"
