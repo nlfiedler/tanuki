@@ -43,16 +43,23 @@
 - asset details
 
 **** DONE Use Reason's router instead of Elm navigator
-**** TODO Get basic search form working
+**** DONE Get basic search form working
+***** DONE Use [[https://github.com/Astrocoders/reform][reform]] for form validation
+***** DONE Use GraphQL to query the assets
+***** DONE Show the assets as thumbnail grid
+***** DONE Multiple tag search is not working
+***** DONE Use [[https://github.com/SllyQ/bs-date-fns][bs-date-fns]] for the date validation
+**** TODO Decide where/how to define the page size
 **** TODO Get asset fetching working
 **** TODO Get asset update working
+c.f. https://github.com/Astrocoders/reform/blob/master/demo/src/PostAdd.re
+
 **** TODO Get asset upload working
 ***** To detect drag support (in JS): ='draggable' in document.createElement('span')=
 **** TODO Get pagination working
 **** TODO Get location fetching working
 **** TODO Get year fetching working
 **** TODO Get broken thumbnail handling working
-**** TODO Get form validation working (edit, search)
 **** TODO Delete =elm-src=, =elm-stuff=, and =elm-package.json=
 **** TODO Remove =ghc= and =cabal= from server
 **** TODO Remove =elm= from Homebrew installation
@@ -62,11 +69,12 @@
 :Bundle-size: 560kb
 :Line-count: 2624
 
+*** TODO Probably can use =date-fns= instead of =dateformat=
 *** TODO Consider how to organize webui code from the backend code
 Presumably it will all eventually be written in ReasonML, how should the
 webui and backend code be separated?
 
-*** TODO URI path for thumbnails and such should be return in GraphQL data
+*** TODO URI path for thumbnails and such should be returned in GraphQL data
 The front-end should not have to know how to construct the URI path for the
 assets, thumbnails, etc. Host and port _cannot_ be in the GraphQL data since
 the backend does not know how the front-end is addressing it.

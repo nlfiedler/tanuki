@@ -9,6 +9,8 @@
     "react-jsx": 2
   },
   "bs-dependencies": [
+    "bs-date-fns",
+    "bs-reform",
     "reason-apollo",
     "reason-react",
     "reductive"
