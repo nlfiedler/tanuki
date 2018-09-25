@@ -60,6 +60,7 @@ c.f. https://github.com/Astrocoders/reform/blob/master/demo/src/PostAdd.re
 **** TODO Get location fetching working
 **** TODO Get year fetching working
 **** TODO Get broken thumbnail handling working
+**** TODO Load/Save search form inputs using reductive
 **** TODO Delete =elm-src=, =elm-stuff=, and =elm-package.json=
 **** TODO Remove =ghc= and =cabal= from server
 **** TODO Remove =elm= from Homebrew installation

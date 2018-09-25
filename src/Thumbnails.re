@@ -38,7 +38,6 @@ module ThumbCard = {
        else
            baseImgAttrs ++ [ on "error" (Json.Decode.succeed (ThumblessAsset entry.id)) ]
        ] */
-
   let component = ReasonReact.statelessComponent("Thumbnail");
   let make = (~entry, _children) => {
     ...component,
@@ -46,7 +45,8 @@ module ThumbCard = {
       <div className="column is-one-third">
         <div className="card">
           <div
-            className="card-content" onClick={_ => /* TODO: show asset */ ()}>
+            className="card-content"
+            onClick={_ => ReasonReact.Router.push("/assets/" ++ entry##id)}>
             <figure
               className="image"
               style={

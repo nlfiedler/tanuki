@@ -36,7 +36,7 @@ module App = {
         switch (self.state.nowShowing) {
         | HomeRoute => <Home.Component />
         | SearchRoute => <Search.Component />
-        | ShowRoute(_id) => <ShowAsset.Component />
+        | ShowRoute(id) => <ShowAsset.Component assetId=id />
         | EditRoute(_id) => <EditAsset.Component />
         | UploadRoute => <Upload.Component />
         | NotFoundRoute => <NotFound.Component />
