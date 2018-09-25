@@ -4,8 +4,8 @@
  */
 module SearchAssets = [%graphql
   {|
-    query Search($params: SearchParams!) {
-      search(params: $params, count: 18) {
+    query Search($params: SearchParams!, $pageSize: Int) {
+      search(params: $params, count: $pageSize) {
         results {
           id
           datetime
@@ -362,7 +362,7 @@ module Component = {
             <p> {ReasonReact.string("Use the form to find assets")} </p>
           | Some(params) =>
             let queryParams = makeSearchParams(params);
-            let query = SearchAssets.make(~params=queryParams, ());
+            let query = SearchAssets.make(~params=queryParams, ~pageSize=Thumbnails.pageSize, ());
             <SearchAssetsQuery variables=query##variables>
               ...(
                    ({result}) =>

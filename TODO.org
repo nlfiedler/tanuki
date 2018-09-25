@@ -49,7 +49,7 @@
 ***** DONE Show the assets as thumbnail grid
 ***** DONE Multiple tag search is not working
 ***** DONE Use [[https://github.com/SllyQ/bs-date-fns][bs-date-fns]] for the date validation
-**** TODO Decide where/how to define the page size
+**** DONE Decide where/how to define the page size
 **** TODO Get asset fetching working
 **** TODO Get asset update working
 c.f. https://github.com/Astrocoders/reform/blob/master/demo/src/PostAdd.re

@@ -12,6 +12,9 @@ type t = {
     }),
 };
 
+let pageSize = 18;
+let rowWidth = 3;
+
 let formatDate = (datetime: Js.Json.t) =>
   switch (Js.Json.decodeNumber(datetime)) {
   | None => "INVALID DATE"
@@ -84,7 +87,7 @@ let makeRows = cards => {
   let idx = ref(0);
   let rows = ref([]);
   while (idx^ < Js.Array.length(cards)) {
-    let nextIdx = idx^ + 3;
+    let nextIdx = idx^ + rowWidth;
     let row = Js.Array.slice(~start=idx^, ~end_=nextIdx, cards);
     rows := [row, ...rows^];
     idx := nextIdx;
