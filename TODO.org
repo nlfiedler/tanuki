@@ -50,7 +50,8 @@
 ***** DONE Multiple tag search is not working
 ***** DONE Use [[https://github.com/SllyQ/bs-date-fns][bs-date-fns]] for the date validation
 **** DONE Decide where/how to define the page size
-**** TODO Get asset fetching working
+**** DONE Get asset fetching working
+**** DONE Add thumbnails to home screen
 **** TODO Get asset update working
 c.f. https://github.com/Astrocoders/reform/blob/master/demo/src/PostAdd.re
 
