@@ -37,7 +37,7 @@ module App = {
         | HomeRoute => <Home.Component />
         | SearchRoute => <Search.Component />
         | ShowRoute(id) => <ShowAsset.Component assetId=id />
-        | EditRoute(_id) => <EditAsset.Component />
+        | EditRoute(id) => <EditAsset.Component assetId=id />
         | UploadRoute => <Upload.Component />
         | NotFoundRoute => <NotFound.Component />
         };

@@ -1,6 +1,7 @@
+/* Name the query so the mutations can invoke in refetchQueries. */
 module GetTags = [%graphql
   {|
-  query {
+  query getAllTags {
     tags {
       value
       count

@@ -52,9 +52,11 @@
 **** DONE Decide where/how to define the page size
 **** DONE Get asset fetching working
 **** DONE Add thumbnails to home screen
-**** TODO Get asset update working
-c.f. https://github.com/Astrocoders/reform/blob/master/demo/src/PostAdd.re
-
+**** DONE Get asset update working
+**** TODO Move more of the duplicate search form elems into the function, like edit page
+**** TODO Progressive bug: narrow browser window causes problems
+***** navbar icons disappear
+***** padding around main content disappears
 **** TODO Get asset upload working
 ***** To detect drag support (in JS): ='draggable' in document.createElement('span')=
 **** TODO Get pagination working
@@ -63,10 +65,10 @@ c.f. https://github.com/Astrocoders/reform/blob/master/demo/src/PostAdd.re
 **** TODO Get broken thumbnail handling working
 **** TODO Load/Save search form inputs using reductive
 **** TODO Delete =elm-src=, =elm-stuff=, and =elm-package.json=
-**** TODO Remove =ghc= and =cabal= from server
-**** TODO Remove =elm= from Homebrew installation
+**** DONE Remove =ghc= and =cabal= from server
+**** DONE Remove =elm= from Homebrew installation
 **** TODO Before and After (Elm vs Reason)
-***** Be sure to also compare "prodcution" output
+***** Be sure to also compare "production" output
 ***** Elm
 :Bundle-size: 560kb
 :Line-count: 2624
@@ -81,6 +83,7 @@ The front-end should not have to know how to construct the URI path for the
 assets, thumbnails, etc. Host and port _cannot_ be in the GraphQL data since
 the backend does not know how the front-end is addressing it.
 
+*** TODO When there are no assets, display help screen for getting started
 *** TODO Rewrite backend code on ReasonML
 **** GraphQL portion
 [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-1-5651f75de497][ecliptic.io part 1]], [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-2-3c3b811f7491][part 2]], [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-3-b303b375ab23][part 3]], [[https://blog.ecliptic.io/a-reasonable-graphql-followup-192f6ec29550][follow-up]]
