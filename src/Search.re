@@ -68,6 +68,7 @@ let searchFormInput =
       handleChange,
       getErrorForField,
       fieldName,
+      labelText,
       inputId,
       inputType,
       inputValue,
@@ -97,11 +98,18 @@ let searchFormInput =
         <i className=iconClass />
       </span>
     </p>;
-  if (formIsValid) {
-    inputField;
-  } else {
-    ReasonReact.array([|inputField, validationTextDiv|]);
-  };
+  let field =
+    if (formIsValid) {
+      inputField;
+    } else {
+      ReasonReact.array([|inputField, validationTextDiv|]);
+    };
+  <>
+    <div className="field-label is-normal">
+      <label className="label"> {ReasonReact.string(labelText)} </label>
+    </div>
+    <div className="field"> field </div>
+  </>;
 };
 
 /*
@@ -154,128 +162,92 @@ module SearchFormRe = {
                    }>
                    <div className="field is-horizontal">
                      <div className="field-body">
-                       <div className="field-label is-normal">
-                         <label className="label">
-                           {ReasonReact.string("Tags")}
-                         </label>
-                       </div>
-                       <div className="field">
-                         {
-                           searchFormInput(
-                             handleChange,
-                             getErrorForField,
-                             `tags,
-                             "tags",
-                             "text",
-                             form.values.tags,
-                             "comma-separated values",
-                             "fas fa-tags",
-                           )
-                         }
-                       </div>
-                       <div className="field-label is-normal">
-                         <label className="label">
-                           {ReasonReact.string("Locations")}
-                         </label>
-                       </div>
-                       <div className="field">
-                         {
-                           searchFormInput(
-                             handleChange,
-                             getErrorForField,
-                             `locations,
-                             "locations",
-                             "text",
-                             form.values.locations,
-                             "comma-separated values",
-                             "fas fa-map",
-                           )
-                         }
-                       </div>
+                       {
+                         searchFormInput(
+                           handleChange,
+                           getErrorForField,
+                           `tags,
+                           "Tags",
+                           "tags",
+                           "text",
+                           form.values.tags,
+                           "comma-separated values",
+                           "fas fa-tags",
+                         )
+                       }
+                       {
+                         searchFormInput(
+                           handleChange,
+                           getErrorForField,
+                           `locations,
+                           "Locations",
+                           "locations",
+                           "text",
+                           form.values.locations,
+                           "comma-separated values",
+                           "fas fa-map",
+                         )
+                       }
                      </div>
                    </div>
                    <div className="field is-horizontal">
                      <div className="field-body">
-                       <div className="field-label is-normal">
-                         <label className="label">
-                           {ReasonReact.string("After date")}
-                         </label>
-                       </div>
-                       <div className="field">
-                         {
-                           searchFormInput(
-                             handleChange,
-                             getErrorForField,
-                             `afterDate,
-                             "after",
-                             "text",
-                             form.values.afterDate,
-                             "2002-01-31",
-                             "fas fa-calendar",
-                           )
-                         }
-                       </div>
-                       <div className="field-label is-normal">
-                         <label className="label">
-                           {ReasonReact.string("Before date")}
-                         </label>
-                       </div>
-                       <div className="field">
-                         {
-                           searchFormInput(
-                             handleChange,
-                             getErrorForField,
-                             `beforeDate,
-                             "before",
-                             "text",
-                             form.values.beforeDate,
-                             "2003-08-30",
-                             "fas fa-calendar",
-                           )
-                         }
-                       </div>
+                       {
+                         searchFormInput(
+                           handleChange,
+                           getErrorForField,
+                           `afterDate,
+                           "After date",
+                           "after",
+                           "text",
+                           form.values.afterDate,
+                           "2002-01-31",
+                           "fas fa-calendar",
+                         )
+                       }
+                       {
+                         searchFormInput(
+                           handleChange,
+                           getErrorForField,
+                           `beforeDate,
+                           "Before date",
+                           "before",
+                           "text",
+                           form.values.beforeDate,
+                           "2003-08-30",
+                           "fas fa-calendar",
+                         )
+                       }
                      </div>
                    </div>
                    <div className="field is-horizontal">
                      <div className="field-body">
-                       <div className="field-label is-normal">
-                         <label className="label">
-                           {ReasonReact.string("Filename")}
-                         </label>
-                       </div>
-                       <div className="field">
-                         {
-                           searchFormInput(
-                             handleChange,
-                             getErrorForField,
-                             `filename,
-                             "filename",
-                             "text",
-                             form.values.filename,
-                             "img_1234.jpg",
-                             "fas fa-file",
-                           )
-                         }
-                       </div>
-                       <div className="field-label is-normal">
-                         <label className="label">
-                           {ReasonReact.string("Media type")}
-                         </label>
-                       </div>
-                       <div className="field">
-                         {
-                           searchFormInput(
-                             handleChange,
-                             getErrorForField,
-                             `mimetype,
-                             "mimetype",
-                             "text",
-                             form.values.mimetype,
-                             "image/jpeg",
-                             "fas fa-code",
-                           )
-                         }
-                       </div>
+                       {
+                         searchFormInput(
+                           handleChange,
+                           getErrorForField,
+                           `filename,
+                           "Filename",
+                           "filename",
+                           "text",
+                           form.values.filename,
+                           "img_1234.jpg",
+                           "fas fa-file",
+                         )
+                       }
+                       {
+                         searchFormInput(
+                           handleChange,
+                           getErrorForField,
+                           `mimetype,
+                           "Media type",
+                           "mimetype",
+                           "text",
+                           form.values.mimetype,
+                           "image/jpeg",
+                           "fas fa-code",
+                         )
+                       }
                      </div>
                    </div>
                    <div className="field is-grouped is-grouped-right">
@@ -362,7 +334,12 @@ module Component = {
             <p> {ReasonReact.string("Use the form to find assets")} </p>
           | Some(params) =>
             let queryParams = makeSearchParams(params);
-            let query = SearchAssets.make(~params=queryParams, ~pageSize=Thumbnails.pageSize, ());
+            let query =
+              SearchAssets.make(
+                ~params=queryParams,
+                ~pageSize=Thumbnails.pageSize,
+                (),
+              );
             <SearchAssetsQuery variables=query##variables>
               ...(
                    ({result}) =>

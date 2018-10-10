@@ -53,7 +53,6 @@
 **** DONE Get asset fetching working
 **** DONE Add thumbnails to home screen
 **** DONE Get asset update working
-**** TODO Move more of the duplicate search form elems into the function, like edit page
 **** TODO Progressive bug: narrow browser window causes problems
 ***** navbar icons disappear
 ***** padding around main content disappears
