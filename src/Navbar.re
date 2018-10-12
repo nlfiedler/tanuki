@@ -1,12 +1,31 @@
-let component = ReasonReact.statelessComponent("Navbar");
+type state = {menuActive: bool};
+type action =
+  | ToggleMenu;
+let component = ReasonReact.reducerComponent("Navbar");
 let make = _children => {
   ...component,
-  render: _self =>
+  initialState: () => {menuActive: false},
+  reducer: (action, state) =>
+    switch (action) {
+    | ToggleMenu => ReasonReact.Update({menuActive: !state.menuActive})
+    },
+  render: self => {
+    let menuClassName =
+      self.state.menuActive ? "navbar-menu is-active" : "navbar-menu";
     <nav id="navbar" className="navbar is-transparent" role="navigation">
       <div className="navbar-brand">
-        <img src="/images/tanuki.png" width="520" height="100" />
+        <img src="/images/exposure-level.png" width="48" height="48" />
+        <a
+          role="button"
+          className="navbar-burger"
+          target="navMenu"
+          onClick={_ => self.send(ToggleMenu)}>
+          <span ariaHidden=true />
+          <span ariaHidden=true />
+          <span ariaHidden=true />
+        </a>
       </div>
-      <div className="navbar-menu" id="navMenu">
+      <div className=menuClassName id="navMenu">
         <div className="navbar-end">
           <a
             className="navbar-item"
@@ -34,5 +53,6 @@ let make = _children => {
           </a>
         </div>
       </div>
-    </nav>,
+    </nav>;
+  },
 };
