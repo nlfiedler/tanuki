@@ -53,13 +53,13 @@
 **** DONE Get asset fetching working
 **** DONE Add thumbnails to home screen
 **** DONE Get asset update working
-**** TODO Get asset upload working
-***** To detect drag support (in JS): ='draggable' in document.createElement('span')=
+**** DONE Get asset upload working
 **** TODO Get pagination working
 **** TODO Get location fetching working
 **** TODO Get year fetching working
 **** TODO Get broken thumbnail handling working
 **** TODO Load/Save search form inputs using reductive
+**** TODO Look for any lingering "elm" references in the code
 **** TODO Delete =elm-src=, =elm-stuff=, and =elm-package.json=
 **** DONE Remove =ghc= and =cabal= from server
 **** DONE Remove =elm= from Homebrew installation

@@ -9,10 +9,28 @@ module App = {
   type action =
     | Navigate(route);
   type state = {nowShowing: route};
+  let urlToShownPage = (url: ReasonReact.Router.url) =>
+    switch (url.path) {
+    | ["assets", id, "edit"] => EditRoute(id)
+    | ["assets", id] => ShowRoute(id)
+    | ["upload"] => UploadRoute
+    | ["search"] => SearchRoute
+    | [] => HomeRoute
+    | _ => NotFoundRoute
+    };
   let component = ReasonReact.reducerComponent("App");
   let make = _children => {
     ...component,
-    initialState: () => {nowShowing: HomeRoute},
+    initialState: () => {
+      nowShowing:
+        /*
+         * Need to take the given URL in order to return to where we were
+         * before; especially for uploading assets, in which the backend
+         * redirects to the asset edit page. When that happens our application
+         * is effectively reloading from scratch.
+         */
+        urlToShownPage(ReasonReact.Router.dangerouslyGetInitialUrl()),
+    },
     reducer: (action, _state) =>
       switch (action) {
       | Navigate(page) => ReasonReact.Update({nowShowing: page})
@@ -20,14 +38,7 @@ module App = {
     didMount: self => {
       let token =
         ReasonReact.Router.watchUrl(url =>
-          switch (url.path) {
-          | ["assets", id, "edit"] => self.send(Navigate(EditRoute(id)))
-          | ["assets", id] => self.send(Navigate(ShowRoute(id)))
-          | ["upload"] => self.send(Navigate(UploadRoute))
-          | ["search"] => self.send(Navigate(SearchRoute))
-          | [] => self.send(Navigate(HomeRoute))
-          | _ => self.send(Navigate(NotFoundRoute))
-          }
+          self.send(Navigate(urlToShownPage(url)))
         );
       self.onUnmount(() => ReasonReact.Router.unwatchUrl(token));
     },
