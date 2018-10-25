@@ -4,8 +4,8 @@
  */
 module SearchAssets = [%graphql
   {|
-    query Search($params: SearchParams!, $pageSize: Int) {
-      search(params: $params, count: $pageSize) {
+    query Search($params: SearchParams!, $pageSize: Int, $offset: Int) {
+      search(params: $params, count: $pageSize, offset: $offset) {
         results {
           id
           datetime
@@ -310,12 +310,12 @@ let makeSearchParams = (params: SearchFormParams.state) => {
   };
 };
 
-module Component = {
+module SearchRe = {
   type state = {params: option(SearchFormParams.state)};
   type action =
     | SetParams(SearchFormParams.state);
-  let component = ReasonReact.reducerComponent("Search");
-  let make = _children => {
+  let component = ReasonReact.reducerComponent("SearchRe");
+  let make = (~state: Redux.appState, ~dispatch, _children) => {
     ...component,
     initialState: () => {params: None},
     reducer: action =>
@@ -325,7 +325,10 @@ module Component = {
         )
       },
     render: self => {
-      let onSubmit = params => self.send(SetParams(params));
+      let onSubmit = params => {
+        dispatch(Redux.Paginate(1));
+        self.send(SetParams(params));
+      };
       <div>
         <SearchFormRe onSubmit />
         {
@@ -333,11 +336,13 @@ module Component = {
           | None =>
             <p> {ReasonReact.string("Use the form to find assets")} </p>
           | Some(params) =>
+            let offset = (state.pageNumber - 1) * Thumbnails.pageSize;
             let queryParams = makeSearchParams(params);
             let query =
               SearchAssets.make(
                 ~params=queryParams,
                 ~pageSize=Thumbnails.pageSize,
+                ~offset,
                 (),
               );
             <SearchAssetsQuery variables=query##variables>
@@ -349,7 +354,7 @@ module Component = {
                        Js.log(error);
                        <div> {ReasonReact.string(error##message)} </div>;
                      | Data(response) =>
-                       <Thumbnails.Component search=response##search />
+                       <Thumbnails.Component state dispatch search=response##search />
                      }
                  )
             </SearchAssetsQuery>;
@@ -357,5 +362,22 @@ module Component = {
         }
       </div>;
     },
+  };
+};
+
+/*
+ * Order matters: keep this module definition below SearchRe, otherwise there
+ * will be a peculiar compiler error about SearchRe.state escaping its scope.
+ */
+module SearchProvider = {
+  let lens = Reductive.Lens.make((state: Redux.appState) => state);
+  let make = Reductive.Provider.createMake(Redux.store, lens);
+};
+
+module Component = {
+  let component = ReasonReact.statelessComponent("SearchComp");
+  let make = _children => {
+    ...component,
+    render: _self => <div> <SearchProvider component=SearchRe.make /> </div>,
   };
 };

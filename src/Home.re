@@ -4,8 +4,8 @@
  */
 module QueryAssets = [%graphql
   {|
-    query Search($params: SearchParams!, $pageSize: Int) {
-      search(params: $params, count: $pageSize) {
+    query Search($params: SearchParams!, $pageSize: Int, $offset: Int) {
+      search(params: $params, count: $pageSize, offset: $offset) {
         results {
           id
           datetime
@@ -19,18 +19,6 @@ module QueryAssets = [%graphql
 ];
 
 module QueryAssetsQuery = ReasonApollo.CreateQuery(QueryAssets);
-
-module TagsProvider = {
-  let lens =
-    Reductive.Lens.make((state: Redux.appState) => state.selectedTags);
-  let make = Reductive.Provider.createMake(Redux.store, lens);
-};
-
-module SelectedProvider = {
-  /* TODO: at some point should narrow the lens to the "selected" fields */
-  let lens = Reductive.Lens.make((state: Redux.appState) => state);
-  let make = Reductive.Provider.createMake(Redux.store, lens);
-};
 
 let makeQueryParams = (state: Redux.appState) => {
   "after": None,
@@ -60,17 +48,18 @@ let makeQueryParams = (state: Redux.appState) => {
  }
  */
 
-module Main = {
-  let component = ReasonReact.statelessComponent("Main");
+module HomeRe = {
+  let component = ReasonReact.statelessComponent("HomeRe");
   let make = (~state: Redux.appState, ~dispatch, _children) => {
     ...component,
     render: _self => {
-      ignore(dispatch);
+      let offset = (state.pageNumber - 1) * Thumbnails.pageSize;
       let queryParams = makeQueryParams(state);
       let query =
         QueryAssets.make(
           ~params=queryParams,
           ~pageSize=Thumbnails.pageSize,
+          ~offset,
           (),
         );
       <QueryAssetsQuery variables=query##variables>
@@ -82,12 +71,17 @@ module Main = {
                  Js.log(error);
                  <div> {ReasonReact.string(error##message)} </div>;
                | Data(response) =>
-                 <Thumbnails.Component search=response##search />
+                 <Thumbnails.Component state dispatch search=response##search />
                }
            }
       </QueryAssetsQuery>;
     },
   };
+};
+
+module SelectedProvider = {
+  let lens = Reductive.Lens.make((state: Redux.appState) => state);
+  let make = Reductive.Provider.createMake(Redux.store, lens);
 };
 
 module Component = {
@@ -96,8 +90,8 @@ module Component = {
     ...component,
     render: _self =>
       <div>
-        <TagsProvider component=Tags.Component.make />
-        <SelectedProvider component=Main.make />
+        <Tags.Component />
+        <SelectedProvider component=HomeRe.make />
       </div>,
   };
 };

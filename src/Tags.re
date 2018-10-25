@@ -46,11 +46,11 @@ let selectTopTags = (selectedTags, allTags) => {
   almostThere;
 };
 
-module Component = {
+module TagsRe = {
   type state = {showingAll: bool};
   type action =
     | ToggleAll;
-  let component = ReasonReact.reducerComponent("Tags");
+  let component = ReasonReact.reducerComponent("TagsRe");
   let make = (~state: Belt.Set.String.t, ~dispatch, _children) => {
     let allTagsToggle = (state, send, tags) =>
       if (state.showingAll) {
@@ -130,5 +130,20 @@ module Component = {
              }
         </GetTagsQuery>,
     };
+  };
+};
+
+module TagsProvider = {
+  let lens =
+    Reductive.Lens.make((state: Redux.appState) => state.selectedTags);
+  let make = Reductive.Provider.createMake(Redux.store, lens);
+};
+
+module Component = {
+  let component = ReasonReact.statelessComponent("Tags");
+  let make = _children => {
+    ...component,
+    render: _self =>
+      <TagsProvider component=TagsRe.make />,
   };
 };

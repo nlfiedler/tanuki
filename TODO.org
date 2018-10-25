@@ -21,8 +21,6 @@
 ***** DONE Hook provider into links to toggle tags
 **** Use reductive to hold non-GraphQL values, Apollo is caching already
 ***** What goes in reducer components
-- route?
-- pageNumber
 - edit form
 - search form
 - showing all tags
@@ -30,6 +28,7 @@
 - upload filename
 
 ***** What goes in reductive
+- pageNumber
 - selected tag values
 - selected location values
 - selected years values
@@ -54,13 +53,25 @@
 **** DONE Add thumbnails to home screen
 **** DONE Get asset update working
 **** DONE Get asset upload working
-**** TODO Get pagination working
+**** DONE Get pagination working
+***** DONE Add the pageNumber to the reductive state
+***** DONE Add reductive action to set pageNumber
+***** DONE Home component runs query with offset value based on pageNumber
+***** Thumbnails.t has the "count" field which is the total number of matching assets
+***** DONE Pagination links dispatch reductive action to set pageNumber
+***** DONE Reset pageNumber to 1 when [4/4]
+- [X] tag selection changes
+- [X] year selection changes
+- [X] location selection changes
+- [X] search input changes
 **** TODO Get location fetching working
 **** TODO Get year fetching working
 **** TODO Get broken thumbnail handling working
 **** TODO Load/Save search form inputs using reductive
 **** TODO Look for any lingering "elm" references in the code
 **** TODO Delete =elm-src=, =elm-stuff=, and =elm-package.json=
+**** TODO Compare the generated =bsconfig.json= to the one we have
+- Use =bsb -init foobar -theme react= to generate the =bsconfig.json=
 **** DONE Remove =ghc= and =cabal= from server
 **** DONE Remove =elm= from Homebrew installation
 **** TODO Before and After (Elm vs Reason)
@@ -70,6 +81,9 @@
 :Line-count: 2624
 
 *** TODO Probably can use =date-fns= instead of =dateformat=
+*** TODO Consider how to make thumbnail page responsive
+**** Show 2, 3, or more depending on browser width
+**** Should be able to leverage CSS for this
 *** TODO Consider how to organize webui code from the backend code
 Presumably it will all eventually be written in ReasonML, how should the
 webui and backend code be separated?

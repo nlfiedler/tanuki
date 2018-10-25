@@ -23,6 +23,105 @@ let formatDate = (datetime: Js.Json.t) =>
     Js.Date.toLocaleString(d);
   };
 
+let namedPaginationLink = (label, page, pager) =>
+  Some((
+    string_of_int(page),
+    <li>
+      <a onClick={_ => pager(page)}> {ReasonReact.string(label)} </a>
+    </li>,
+  ));
+
+let paginationLink = (currentPage: int, page: int, pager) => {
+  let pageLabel = string_of_int(page);
+  let className =
+    "pagination-link" ++ (currentPage == page ? " is-current" : "");
+  let elem =
+    <li>
+      <a onClick={_ => pager(page)} className>
+        {ReasonReact.string(pageLabel)}
+      </a>
+    </li>;
+  Some((pageLabel, elem));
+};
+
+/* Convert the optional (label, link) tuples into a list of React elements. */
+let justLinksExtractor = maybeLinks => {
+  let somes = List.filter(e => Js.Option.isSome(e), maybeLinks);
+  let values =
+    List.map(e => Js.Option.getWithDefault(("a", <span />), e), somes);
+  let valueToElem =
+      ((key: string, value: ReasonReact.reactElement))
+      : ReasonReact.reactElement =>
+    <li key> value </li>;
+  List.map(e => valueToElem(e), values);
+};
+
+let makeLinks = (currentPage: int, totalCount: int, pager) => {
+  let totalPages =
+    int_of_float(ceil(float_of_int(totalCount) /. float_of_int(pageSize)));
+  let desiredLower = currentPage - 5;
+  let desiredUpper = currentPage + 4;
+  let (lower, upper) =
+    if (desiredLower <= 1) {
+      (2, min(desiredUpper + abs(desiredLower), totalPages - 1));
+    } else if (desiredUpper >= totalPages) {
+      (max(desiredLower - (desiredUpper - totalPages), 2), totalPages - 1);
+    } else {
+      (desiredLower, desiredUpper);
+    };
+  let numberedLinks = ref([]);
+  for (pageNum in lower to upper) {
+    let link = paginationLink(currentPage, pageNum, pager);
+    numberedLinks := [link, ...numberedLinks^];
+  };
+  let firstLink = paginationLink(currentPage, 1, pager);
+  let prevLink =
+    currentPage - 10 <= 1 ?
+      None : namedPaginationLink("«", currentPage - 10, pager);
+  let preDots =
+    lower > 2 ?
+      Some((
+        ",...",
+        <li className="pagination-ellipsis">
+          <span> {ReasonReact.string("…")} </span>
+        </li>,
+      )) :
+      None;
+  let postDots =
+    upper < totalPages - 1 ?
+      Some((
+        "...,",
+        <li className="pagination-ellipsis">
+          <span> {ReasonReact.string("…")} </span>
+        </li>,
+      )) :
+      None;
+  let nextLink =
+    currentPage + 10 >= totalPages ?
+      None : namedPaginationLink("»", currentPage + 10, pager);
+  let lastLink = paginationLink(currentPage, totalPages, pager);
+  let maybeLinks =
+    [firstLink, prevLink, preDots]
+    @ numberedLinks^
+    @ [postDots, nextLink, lastLink];
+  <ul className="pagination-list">
+    {ReasonReact.array(Array.of_list(justLinksExtractor(maybeLinks)))}
+  </ul>;
+};
+
+module Paging = {
+  let component = ReasonReact.statelessComponent("Paging");
+  let make = (~current: int, ~total: int, ~dispatch, _children) => {
+    ...component,
+    render: _self => {
+      let setPage = (page: int) => dispatch(Redux.Paginate(page));
+      <nav className="pagination is-centered" role="navigation">
+        {makeLinks(current, total, setPage)}
+      </nav>;
+    },
+  };
+};
+
 module ThumbCard = {
   /* TODO: become a reducer component, listen for onError, switch to placeholder thumbnail */
   /*
@@ -92,15 +191,15 @@ let makeRows = cards => {
     rows := [row, ...rows^];
     idx := nextIdx;
   };
-  List.map(
+  List.rev_map(
     row => <div className="columns"> {ReasonReact.array(row)} </div>,
-    List.rev(rows^),
+    rows^,
   );
 };
 
 module Component = {
   let component = ReasonReact.statelessComponent("Thumbnails");
-  let make = (~search: t, _children) => {
+  let make = (~state: Redux.appState, ~dispatch, ~search: t, _children) => {
     ...component,
     render: _self => {
       let cards = makeCards(search##results);
@@ -112,7 +211,16 @@ module Component = {
        * one for each row, and that is collected in a container.
        * Basically a primitive table.
        */
-      <div className="container"> ...{Array.of_list(rows)} </div>;
+      <div className="container">
+        {ReasonReact.array(Array.of_list(rows))}
+        {
+          if (search##count > pageSize && Array.length(search##results) > 0) {
+            <Paging current={state.pageNumber} total=search##count dispatch />;
+          } else {
+            <span />;
+          }
+        }
+      </div>;
     },
   };
 };
