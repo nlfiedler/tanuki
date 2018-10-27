@@ -80,6 +80,7 @@
 :Bundle-size: 560kb
 :Line-count: 2624
 
+*** TODO Use [[https://github.com/jaydenseric/apollo-upload-client][apollo-upload-client]] to upload files instead of using REST
 *** TODO Probably can use =date-fns= instead of =dateformat=
 *** TODO Consider how to make thumbnail page responsive
 **** Show 2, 3, or more depending on browser width
