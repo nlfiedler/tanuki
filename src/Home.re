@@ -24,9 +24,9 @@ let makeQueryParams = (state: Redux.appState) => {
   "after": None,
   "before": None,
   "filename": None,
-  "locations": None,
   "mimetype": None,
   "tags": Some(Belt.Set.String.toArray(state.selectedTags)),
+  "locations": Some(Belt.Set.String.toArray(state.selectedLocations)),
 };
 /*
  function fromSelections (selections) {
@@ -91,6 +91,7 @@ module Component = {
     render: _self =>
       <div>
         <Tags.Component />
+        <Locations.Component />
         <SelectedProvider component=HomeRe.make />
       </div>,
   };
