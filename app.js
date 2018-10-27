@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 Nathan Fiedler
+// Copyright (c) 2018 Nathan Fiedler
 //
 require('app-module-path').addPath(__dirname)
 const express = require('express')
@@ -12,7 +12,6 @@ const backend = require('lib/backend')
 const config = require('config')
 const winston = require('winston')
 const rfs = require('rotating-file-stream')
-const {graphiqlExpress} = require('apollo-server-express')
 
 // Configure the logging not related to HTTP, which is handled using morgan.
 winston.exitOnError = false
@@ -48,15 +47,12 @@ if (config.has('morgan.logger.logPath')) {
     maxFiles: 4,
     path: logDirectory
   })
-  app.use(logger('combined', {stream: accessLogStream}))
+  app.use(logger('combined', { stream: accessLogStream }))
 } else {
   app.use(logger('dev'))
 }
 
 app.use('/graphql', gqlRoutes)
-// "graphical" interface for GraphQL development and testing
-// endpointURL must match the prefix for the GraphQL route
-app.use('/graphiql', graphiqlExpress({endpointURL: '/graphql'}))
 app.use('/api', apiRoutes)
 app.use('/', pageRoutes)
 

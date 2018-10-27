@@ -46,7 +46,7 @@ let make = _children => {
               <i className="fas fa-lg fa-search" />
             </span>
           </a>
-          <a className="navbar-item" href="/graphiql">
+          <a className="navbar-item" href="/graphql">
             <span className="icon">
               <i className="fas fa-lg fa-search-plus" />
             </span>
