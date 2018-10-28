@@ -56,7 +56,7 @@
     "pouchdb": "^6.4.3",
     "pouchdb-find": "^6.4.3",
     "react-apollo": "^2.1.11",
-    "reason-apollo": "^0.14.1",
+    "reason-apollo": "^0.14.2",
     "reason-react": "^0.5.3",
     "reductive": "nlfiedler/reductive#master",
     "rotating-file-stream": "^1.3.7",
