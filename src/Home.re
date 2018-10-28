@@ -21,32 +21,27 @@ module QueryAssets = [%graphql
 module QueryAssetsQuery = ReasonApollo.CreateQuery(QueryAssets);
 
 let makeQueryParams = (state: Redux.appState) => {
-  "after": None,
-  "before": None,
-  "filename": None,
-  "mimetype": None,
-  "tags": Some(Belt.Set.String.toArray(state.selectedTags)),
-  "locations": Some(Belt.Set.String.toArray(state.selectedLocations)),
+  let (afterTime, beforeTime) =
+    if (Belt.Option.isNone(state.selectedYear)) {
+      (None, None);
+    } else {
+      let afterYear = Belt.Option.getExn(state.selectedYear);
+      let beforeYear = afterYear + 1;
+      let yearToDate = (year: int) =>
+        Js.Json.number(
+          Js.Date.utcWithYM(~year=float_of_int(year), ~month=0.0, ()),
+        );
+      (Some(yearToDate(afterYear)), Some(yearToDate(beforeYear)));
+    };
+  {
+    "after": afterTime,
+    "before": beforeTime,
+    "filename": None,
+    "mimetype": None,
+    "tags": Some(Belt.Set.String.toArray(state.selectedTags)),
+    "locations": Some(Belt.Set.String.toArray(state.selectedLocations)),
+  };
 };
-/*
- function fromSelections (selections) {
-   const locations = selections.locations.map(item => item.label)
-   const tags = selections.tags.map(item => item.label)
-   const years = selections.years.map(item => Number.parseInt(item.label))
-   let afterTime = null
-   let beforeTime = null
-   if (years.length > 0) {
-     afterTime = new Date(years[0], 0).getTime()
-     beforeTime = new Date(years[0] + 1, 0).getTime()
-   }
-   return {
-     locations,
-     tags,
-     after: afterTime,
-     before: beforeTime
-   }
- }
- */
 
 module HomeRe = {
   let component = ReasonReact.statelessComponent("HomeRe");
@@ -71,7 +66,11 @@ module HomeRe = {
                  Js.log(error);
                  <div> {ReasonReact.string(error##message)} </div>;
                | Data(response) =>
-                 <Thumbnails.Component state dispatch search=response##search />
+                 <Thumbnails.Component
+                   state
+                   dispatch
+                   search=response##search
+                 />
                }
            }
       </QueryAssetsQuery>;
@@ -92,6 +91,7 @@ module Component = {
       <div>
         <Tags.Component />
         <Locations.Component />
+        <Years.Component />
         <SelectedProvider component=HomeRe.make />
       </div>,
   };

@@ -348,7 +348,11 @@ let submitUpdate =
   };
   let update = UpdateAsset.make(~identifier=asset##id, ~input=newAsset, ());
   /* ignore the returned promise, the result will be delivered later */
-  mutate(~variables=update##variables, ~refetchQueries=[|"getAllTags"|], ())
+  mutate(
+    ~variables=update##variables,
+    ~refetchQueries=[|"getAllTags", "getAllLocations", "getAllYears"|],
+    (),
+  )
   |> ignore;
 };
 

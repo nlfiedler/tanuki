@@ -64,8 +64,8 @@
 - [X] year selection changes
 - [X] location selection changes
 - [X] search input changes
-**** TODO Get location fetching working
-**** TODO Get year fetching working
+**** DONE Get location fetching working
+**** DONE Get year fetching working
 **** TODO Get broken thumbnail handling working
 **** TODO Load/Save search form inputs using reductive
 **** TODO Look for any lingering "elm" references in the code

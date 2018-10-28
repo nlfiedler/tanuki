@@ -7,7 +7,7 @@ type appAction =
 type appState = {
   selectedTags: Belt.Set.String.t,
   selectedLocations: Belt.Set.String.t,
-  selectedYears: Belt.Set.Int.t,
+  selectedYear: option(int),
   pageNumber: int,
 };
 
@@ -32,10 +32,9 @@ let appReducer = (state, action) =>
   | ToggleYear(year) => {
       ...state,
       pageNumber: 1,
-      selectedYears:
-        Belt.Set.Int.has(state.selectedYears, year) ?
-          Belt.Set.Int.remove(state.selectedYears, year) :
-          Belt.Set.Int.add(state.selectedYears, year),
+      selectedYear:
+        Belt.Option.eq(state.selectedYear, Some(year), (a, b) => a == b) ?
+          None : Some(year),
     }
   | Paginate(page) => {...state, pageNumber: page}
   };
@@ -52,7 +51,7 @@ let store =
     ~preloadedState={
       selectedTags: Belt.Set.String.empty,
       selectedLocations: Belt.Set.String.empty,
-      selectedYears: Belt.Set.Int.empty,
+      selectedYear: None,
       pageNumber: 1,
     },
     ~enhancer=storeLogger,
