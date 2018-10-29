@@ -67,6 +67,8 @@
 **** DONE Get location fetching working
 **** DONE Get year fetching working
 **** TODO Get broken thumbnail handling working
+**** TODO Fix the pagination link nested LI elements
+**** TODO Fix the thumbnails DIV element missing key
 **** TODO Load/Save search form inputs using reductive
 **** TODO Look for any lingering "elm" references in the code
 **** TODO Delete =elm-src=, =elm-stuff=, and =elm-package.json=

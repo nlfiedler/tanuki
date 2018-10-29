@@ -122,25 +122,30 @@ module Paging = {
   };
 };
 
+let brokenThumbnailPlaceholder = filename => {
+  switch (Mimetypes.filenameToMediaType(filename)) {
+  | Mimetypes.Image => "file-picture.png"
+  | Mimetypes.Video => "file-video-2.png"
+  | Mimetypes.Pdf => "file-acrobat.png"
+  | Mimetypes.Audio => "file-music-3.png"
+  | Mimetypes.Text => "file-new-2.png"
+  | Mimetypes.Unknown => "file-new-1.png"
+  };
+};
+
 module ThumbCard = {
-  /* TODO: become a reducer component, listen for onError, switch to placeholder thumbnail */
-  /*
-   -- any asset that fails to produce a thumbnail will get a placeholder
-   imgSrc =
-       if entry.thumbless then
-           "/images/" ++ brokenThumbnailPlaceholder entry.file_name
-       else
-           "/thumbnail/" ++ entry.id
-   imgAttrs =
-       if entry.thumbless then
-           baseImgAttrs
-       else
-           baseImgAttrs ++ [ on "error" (Json.Decode.succeed (ThumblessAsset entry.id)) ]
-       ] */
-  let component = ReasonReact.statelessComponent("Thumbnail");
+  type state = {thumbless: bool};
+  type action =
+    | MarkThumbless;
+  let component = ReasonReact.reducerComponent("Thumbnail");
   let make = (~entry, _children) => {
     ...component,
-    render: _self =>
+    initialState: () => {thumbless: false},
+    reducer: action =>
+      switch (action) {
+      | MarkThumbless => (_state => ReasonReact.Update({thumbless: true}))
+      },
+    render: self =>
       <div className="column is-one-third">
         <div className="card">
           <div
@@ -159,11 +164,23 @@ module ThumbCard = {
                   (),
                 )
               }>
-              <img
-                src={"/thumbnail/" ++ entry##id}
-                alt=entry##filename
-                style={ReactDOMRe.Style.make(~width="auto", ())}
-              />
+              {
+                self.state.thumbless ?
+                  <img
+                    src={
+                      "/images/"
+                      ++ brokenThumbnailPlaceholder(entry##filename)
+                    }
+                    alt=entry##filename
+                    style={ReactDOMRe.Style.make(~width="auto", ())}
+                  /> :
+                  <img
+                    src={"/thumbnail/" ++ entry##id}
+                    alt=entry##filename
+                    onError={_ => self.send(MarkThumbless)}
+                    style={ReactDOMRe.Style.make(~width="auto", ())}
+                  />
+              }
               <small>
                 {ReasonReact.string(formatDate(entry##datetime))}
               </small>
