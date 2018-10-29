@@ -52,7 +52,7 @@ router.post('/assets', upload.single('asset'), wrap(async function (req, res, ne
     // Ensure the asset is moved into position, just in case we managed
     // to commit the database record but failed to store the asset.
     await incoming.storeAsset(req.file.mimetype, req.file.path, assetId)
-    res.json({status: 'success', id: assetId})
+    res.json({ status: 'success', id: assetId })
   } catch (err) {
     res.status(err.status).send(err.message)
   }
