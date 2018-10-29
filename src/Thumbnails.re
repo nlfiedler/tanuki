@@ -139,7 +139,7 @@ module ThumbCard = {
       | MarkThumbless => (_state => ReasonReact.Update({thumbless: true}))
       },
     render: self =>
-      <div className="column is-one-third">
+      <div key=entry##id className="column is-one-third">
         <div className="card">
           <div
             className="card-content"
@@ -201,9 +201,13 @@ let makeRows = cards => {
     rows := [row, ...rows^];
     idx := nextIdx;
   };
-  List.rev_map(
-    row => <div className="columns"> {ReasonReact.array(row)} </div>,
-    rows^,
+  /* would like to have a List.rev_mapi()... */
+  List.mapi(
+    (ii, row) =>
+      <div key={string_of_int(ii)} className="columns">
+        {ReasonReact.array(row)}
+      </div>,
+    List.rev(rows^),
   );
 };
 
