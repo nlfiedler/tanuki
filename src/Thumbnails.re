@@ -24,35 +24,31 @@ let formatDate = (datetime: Js.Json.t) =>
   };
 
 let namedPaginationLink = (label, page, pager) =>
-  Some((
-    string_of_int(page),
-    <li>
+  Some(
+    <li key={string_of_int(page)}>
       <a onClick={_ => pager(page)}> {ReasonReact.string(label)} </a>
     </li>,
-  ));
+  );
 
 let paginationLink = (currentPage: int, page: int, pager) => {
   let pageLabel = string_of_int(page);
   let className =
     "pagination-link" ++ (currentPage == page ? " is-current" : "");
-  let elem =
-    <li>
+  Some(
+    <li key=pageLabel>
       <a onClick={_ => pager(page)} className>
         {ReasonReact.string(pageLabel)}
       </a>
-    </li>;
-  Some((pageLabel, elem));
+    </li>,
+  );
 };
 
-/* Convert the optional (label, link) tuples into a list of React elements. */
+/* Convert the optional list elements into a list of React elements. */
 let justLinksExtractor = maybeLinks => {
   let somes = List.filter(e => Js.Option.isSome(e), maybeLinks);
-  let values =
-    List.map(e => Js.Option.getWithDefault(("a", <span />), e), somes);
+  let values = List.map(e => Js.Option.getWithDefault(<span />, e), somes);
   let valueToElem =
-      ((key: string, value: ReasonReact.reactElement))
-      : ReasonReact.reactElement =>
-    <li key> value </li>;
+      (value: ReasonReact.reactElement): ReasonReact.reactElement => value;
   List.map(e => valueToElem(e), values);
 };
 
@@ -80,21 +76,19 @@ let makeLinks = (currentPage: int, totalCount: int, pager) => {
       None : namedPaginationLink("«", currentPage - 10, pager);
   let preDots =
     lower > 2 ?
-      Some((
-        ",...",
-        <li className="pagination-ellipsis">
+      Some(
+        <li key="prev" className="pagination-ellipsis">
           <span> {ReasonReact.string("…")} </span>
         </li>,
-      )) :
+      ) :
       None;
   let postDots =
     upper < totalPages - 1 ?
-      Some((
-        "...,",
-        <li className="pagination-ellipsis">
+      Some(
+        <li key="next" className="pagination-ellipsis">
           <span> {ReasonReact.string("…")} </span>
         </li>,
-      )) :
+      ) :
       None;
   let nextLink =
     currentPage + 10 >= totalPages ?
@@ -122,7 +116,7 @@ module Paging = {
   };
 };
 
-let brokenThumbnailPlaceholder = filename => {
+let brokenThumbnailPlaceholder = filename =>
   switch (Mimetypes.filenameToMediaType(filename)) {
   | Mimetypes.Image => "file-picture.png"
   | Mimetypes.Video => "file-video-2.png"
@@ -131,7 +125,6 @@ let brokenThumbnailPlaceholder = filename => {
   | Mimetypes.Text => "file-new-2.png"
   | Mimetypes.Unknown => "file-new-1.png"
   };
-};
 
 module ThumbCard = {
   type state = {thumbless: bool};
