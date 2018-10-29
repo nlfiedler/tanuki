@@ -7,7 +7,6 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 ### Prerequisites
 
 * [Node.js](https://nodejs.org/) 8.x
-* [Elm](http://elm-lang.org) 0.18
 
 #### Example for MacOS
 
@@ -15,8 +14,8 @@ This example assumes you are using [Homebrew](http://brew.sh) to install the dep
 
 ```shell
 $ xcode-select --install
-$ brew install node
-$ brew install elm
+$ brew install node@8
+$ npm install -g bs-platform
 $ npm install -g gulp-cli
 ```
 
@@ -32,7 +31,7 @@ $ gulp
 
 ## Architecture
 
-Assets stored as-is in date/time formatted directory structure, metadata stored in a document-oriented database, an HTTP server backend, and a single-page application for a front-end. Backend written in JavaScript running on [Node.js](https://nodejs.org/), front-end written in Elm, database is [PouchDB](https://pouchdb.com).
+Assets stored as-is in date/time formatted directory structure, metadata stored in a document-oriented database, an HTTP server backend, and a single-page application for a front-end. Backend written in JavaScript running on [Node.js](https://nodejs.org/), front-end written in [ReasonML](https://reasonml.github.io/en/), database is [PouchDB](https://pouchdb.com).
 
 ## Design
 
@@ -118,3 +117,7 @@ Introduced automatic data migration to perform database schema upgrades.
 ### May 2018
 
 Change asset storage design from sharding by SHA256 checksum to something akin to Apple Photos (see above).
+
+### October 2018
+
+Replace front-end Elm code with [ReasonML](https://reasonml.github.io/en/).

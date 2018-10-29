@@ -1,6 +1,6 @@
 * Tanuki
 ** General Items
-*** TODO Rewrite Elm interface using ReasonReact
+*** DONE Rewrite Elm interface using ReasonReact
 **** DONE Probably need webpack to produce a single .js file
 ***** DONE Use https://github.com/shama/webpack-stream to run webpack from gulp
 ***** DONE Set the output filename to something static
@@ -68,17 +68,20 @@
 **** DONE Get year fetching working
 **** DONE Get broken thumbnail handling working
 **** DONE Load/Save search form inputs using reductive
-**** TODO Delete =elm-src=, =elm-stuff=, and =elm-package.json=
-**** TODO Look for any lingering "elm" references in the code
-**** TODO Compare the generated =bsconfig.json= to the one we have
+**** DONE Delete =elm-src=, =elm-stuff=, and =elm-package.json=
+**** DONE Look for any lingering "elm" references in the code
+**** DONE Compare the generated =bsconfig.json= to the one we have
 - Use =bsb -init foobar -theme react= to generate the =bsconfig.json=
 **** DONE Remove =ghc= and =cabal= from server
 **** DONE Remove =elm= from Homebrew installation
-**** TODO Before and After (Elm vs Reason)
+**** DONE Before and After (Elm vs Reason)
 ***** Be sure to also compare "production" output
 ***** Elm
 :Bundle-size: 560kb
 :Line-count: 2624
+***** Reason
+:Bundle-size: 2.3mb
+:Line-count: 2096
 
 *** TODO Use [[https://github.com/jaydenseric/apollo-upload-client][apollo-upload-client]] to upload files instead of using REST
 *** TODO Probably can use =date-fns= instead of =dateformat=

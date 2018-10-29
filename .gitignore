@@ -13,10 +13,9 @@ lib/js
 .graphql_ppx_cache
 
 #
-# generated elm code
+# generated ReasonML code
 #
-elm-stuff
-public/javascripts/Main.js
+public/javascripts/main.js
 
 #
 # temporary
