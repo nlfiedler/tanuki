@@ -1,14 +1,25 @@
+type searchInputs = {
+  tags: string,
+  locations: string,
+  afterDate: string,
+  beforeDate: string,
+  filename: string,
+  mimetype: string,
+};
+
 type appAction =
   | ToggleTag(string)
   | ToggleLocation(string)
   | ToggleYear(int)
-  | Paginate(int);
+  | Paginate(int)
+  | SaveSearch(searchInputs);
 
 type appState = {
   selectedTags: Belt.Set.String.t,
   selectedLocations: Belt.Set.String.t,
   selectedYear: option(int),
   pageNumber: int,
+  savedSearch: searchInputs,
 };
 
 let appReducer = (state, action) =>
@@ -37,6 +48,7 @@ let appReducer = (state, action) =>
           None : Some(year),
     }
   | Paginate(page) => {...state, pageNumber: page}
+  | SaveSearch(inputs) => {...state, savedSearch: inputs}
   };
 
 /*
@@ -53,6 +65,14 @@ let store =
       selectedLocations: Belt.Set.String.empty,
       selectedYear: None,
       pageNumber: 1,
+      savedSearch: {
+        tags: "",
+        locations: "",
+        afterDate: "",
+        beforeDate: "",
+        filename: "",
+        mimetype: "",
+      },
     },
     ~enhancer=storeLogger,
     (),

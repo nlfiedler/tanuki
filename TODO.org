@@ -67,9 +67,9 @@
 **** DONE Get location fetching working
 **** DONE Get year fetching working
 **** DONE Get broken thumbnail handling working
-**** TODO Load/Save search form inputs using reductive
-**** TODO Look for any lingering "elm" references in the code
+**** DONE Load/Save search form inputs using reductive
 **** TODO Delete =elm-src=, =elm-stuff=, and =elm-package.json=
+**** TODO Look for any lingering "elm" references in the code
 **** TODO Compare the generated =bsconfig.json= to the one we have
 - Use =bsb -init foobar -theme react= to generate the =bsconfig.json=
 **** DONE Remove =ghc= and =cabal= from server

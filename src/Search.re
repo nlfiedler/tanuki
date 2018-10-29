@@ -21,14 +21,7 @@ module SearchAssets = [%graphql
 module SearchAssetsQuery = ReasonApollo.CreateQuery(SearchAssets);
 
 module SearchFormParams = {
-  type state = {
-    tags: string,
-    locations: string,
-    afterDate: string,
-    beforeDate: string,
-    filename: string,
-    mimetype: string,
-  };
+  type state = Redux.searchInputs;
   type fields = [
     | `tags
     | `locations
@@ -39,7 +32,12 @@ module SearchFormParams = {
   ];
   /* lens: [(fieldName, getter, setter)] */
   let lens = [
-    (`tags, s => s.tags, (s, tags) => {...s, tags}),
+    /* the state type alias above requires clearly annotating these functions */
+    (
+      `tags,
+      (s: state) => (s.tags: string),
+      (s: state, tags) => {...s, tags},
+    ),
     (`locations, s => s.locations, (s, locations) => {...s, locations}),
     (`afterDate, s => s.afterDate, (s, afterDate) => {...s, afterDate}),
     (`beforeDate, s => s.beforeDate, (s, beforeDate) => {...s, beforeDate}),
@@ -112,26 +110,15 @@ let searchFormInput =
   </>;
 };
 
-/*
- * Construct the search form, populating it with the saved values, if any.
- */
-/* TODO: read the saved search values and set in the initial state */
-/* TODO: save the search inputs in reductive on submit */
+/* Construct the search form, populating it with the saved values, if any. */
 module SearchFormRe = {
   let component = ReasonReact.statelessComponent("SearchForm");
-  let make = (~onSubmit, _children) => {
+  let make = (~inputs, ~onSubmit, _children) => {
     ...component,
     render: _self =>
       <SearchForm
         onSubmit={({values}) => onSubmit(values)}
-        initialState={
-          tags: "",
-          locations: "",
-          afterDate: "",
-          beforeDate: "",
-          filename: "",
-          mimetype: "",
-        }
+        initialState=inputs
         schema=[
           (
             `afterDate,
@@ -311,54 +298,52 @@ let makeSearchParams = (params: SearchFormParams.state) => {
 };
 
 module SearchRe = {
-  type state = {params: option(SearchFormParams.state)};
+  type state = {params: SearchFormParams.state};
   type action =
     | SetParams(SearchFormParams.state);
   let component = ReasonReact.reducerComponent("SearchRe");
   let make = (~state: Redux.appState, ~dispatch, _children) => {
     ...component,
-    initialState: () => {params: None},
+    initialState: () => {params: state.savedSearch},
     reducer: action =>
       switch (action) {
-      | SetParams(params) => (
-          _state => ReasonReact.Update({params: Some(params)})
-        )
+      | SetParams(params) => (_state => ReasonReact.Update({params: params}))
       },
     render: self => {
       let onSubmit = params => {
         dispatch(Redux.Paginate(1));
+        dispatch(Redux.SaveSearch(params));
         self.send(SetParams(params));
       };
       <div>
-        <SearchFormRe onSubmit />
+        <SearchFormRe inputs={state.savedSearch} onSubmit />
         {
-          switch (self.state.params) {
-          | None =>
-            <p> {ReasonReact.string("Use the form to find assets")} </p>
-          | Some(params) =>
-            let offset = (state.pageNumber - 1) * Thumbnails.pageSize;
-            let queryParams = makeSearchParams(params);
-            let query =
-              SearchAssets.make(
-                ~params=queryParams,
-                ~pageSize=Thumbnails.pageSize,
-                ~offset,
-                (),
-              );
-            <SearchAssetsQuery variables=query##variables>
-              ...(
-                   ({result}) =>
-                     switch (result) {
-                     | Loading => <div> {ReasonReact.string("Loading")} </div>
-                     | Error(error) =>
-                       Js.log(error);
-                       <div> {ReasonReact.string(error##message)} </div>;
-                     | Data(response) =>
-                       <Thumbnails.Component state dispatch search=response##search />
-                     }
-                 )
-            </SearchAssetsQuery>;
-          }
+          let offset = (state.pageNumber - 1) * Thumbnails.pageSize;
+          let queryParams = makeSearchParams(self.state.params);
+          let query =
+            SearchAssets.make(
+              ~params=queryParams,
+              ~pageSize=Thumbnails.pageSize,
+              ~offset,
+              (),
+            );
+          <SearchAssetsQuery variables=query##variables>
+            ...{
+                 ({result}) =>
+                   switch (result) {
+                   | Loading => <div> {ReasonReact.string("Loading")} </div>
+                   | Error(error) =>
+                     Js.log(error);
+                     <div> {ReasonReact.string(error##message)} </div>;
+                   | Data(response) =>
+                     <Thumbnails.Component
+                       state
+                       dispatch
+                       search=response##search
+                     />
+                   }
+               }
+          </SearchAssetsQuery>;
         }
       </div>;
     },
