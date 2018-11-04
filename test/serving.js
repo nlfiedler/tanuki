@@ -1,8 +1,8 @@
 //
-// Copyright (c) 2017 Nathan Fiedler
+// Copyright (c) 2018 Nathan Fiedler
 //
-const {assert} = require('chai')
-const {before, describe, it, run} = require('mocha')
+const { assert } = require('chai')
+const { before, describe, it, run } = require('mocha')
 const request = require('supertest')
 const fs = require('fs-extra')
 const config = require('config')
@@ -31,17 +31,21 @@ setTimeout(function () {
     describe('upload an asset', function () {
       it('should create a new document', function (done) {
         request(app)
-          .post('/import')
-          .attach('asset', './test/fixtures/dcp_1069.jpg')
-          .expect(302)
-          .expect('Content-Type', /text/)
+          .post('/graphql')
+          // graphql-upload expects the multi-part request to look a certain way
+          // c.f. https://github.com/jaydenseric/graphql-multipart-request-spec
+          .field('operations', JSON.stringify({
+            variables: { file: null },
+            operationName: 'Upload',
+            query: `mutation Upload($file: Upload!) {
+              upload(file: $file)
+            }`
+          }))
+          .field('map', JSON.stringify({ 1: ['variables.file'] }))
+          .attach('1', './test/fixtures/dcp_1069.jpg')
+          .expect(200)
           .expect((res) => {
-            // the asset identifier will be in the Location header
-            const paths = res.header['location'].split('/')
-            assert.equal(paths.length, 4)
-            assert.equal(paths[1], 'assets')
-            assert.equal(paths[3], 'edit')
-            docId = paths[2]
+            docId = res.body.data.upload
           })
           .end(function (err, res) {
             if (err) {

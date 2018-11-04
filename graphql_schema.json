@@ -810,6 +810,37 @@
           "description": "",
           "fields": [
             {
+              "name": "upload",
+              "description": "Upload a file to the system, returning the identifier for this asset.\nIf an asset with the same checksum already exists, the identifier for\nthat asset will be returned.\n\nUpload is implemented by apollo-upload-server and apollo-upload-client.",
+              "args": [
+                {
+                  "name": "file",
+                  "description": "",
+                  "type": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "SCALAR",
+                      "name": "Upload",
+                      "ofType": null
+                    }
+                  },
+                  "defaultValue": null
+                }
+              ],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "ID",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "update",
               "description": "Update the asset with the given tags, caption, and date.\n\nThe given date will override any dates already associated with the asset\n(e.g. original date, imported date).",
               "args": [
@@ -857,6 +888,16 @@
           ],
           "inputFields": null,
           "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "SCALAR",
+          "name": "Upload",
+          "description": "The `Upload` scalar type represents a file upload promise that resolves an object containing `stream`, `filename`, `mimetype` and `encoding`.",
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
           "enumValues": null,
           "possibleTypes": null
         },

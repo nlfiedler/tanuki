@@ -31,12 +31,21 @@ setTimeout(function () {
     describe('upload an asset without date', function () {
       it('should create a new document successfully', function (done) {
         request(app)
-          .post('/api/assets')
-          .attach('asset', './test/fixtures/fighting_kittens.jpg')
+          .post('/graphql')
+          // graphql-upload expects the multi-part request to look a certain way
+          // c.f. https://github.com/jaydenseric/graphql-multipart-request-spec
+          .field('operations', JSON.stringify({
+            variables: { file: null },
+            operationName: 'Upload',
+            query: `mutation Upload($file: Upload!) {
+              upload(file: $file)
+            }`
+          }))
+          .field('map', JSON.stringify({ 1: ['variables.file'] }))
+          .attach('1', './test/fixtures/fighting_kittens.jpg')
           .expect(200)
           .expect((res) => {
-            assert.equal(res.body.status, 'success')
-            docId = res.body.id
+            docId = res.body.data.upload
           })
           .end(function (err, res) {
             if (err) {
@@ -89,12 +98,19 @@ setTimeout(function () {
     describe('upload an asset without date', function () {
       it('should create a new document successfully', function (done) {
         request(app)
-          .post('/api/assets')
-          .attach('asset', './test/fixtures/lorem-ipsum.txt')
+          .post('/graphql')
+          .field('operations', JSON.stringify({
+            variables: { file: null },
+            operationName: 'Upload',
+            query: `mutation Upload($file: Upload!) {
+              upload(file: $file)
+            }`
+          }))
+          .field('map', JSON.stringify({ 1: ['variables.file'] }))
+          .attach('1', './test/fixtures/lorem-ipsum.txt')
           .expect(200)
           .expect((res) => {
-            assert.equal(res.body.status, 'success')
-            docId = res.body.id
+            docId = res.body.data.upload
           })
           .end(function (err, res) {
             if (err) {
@@ -141,12 +157,19 @@ setTimeout(function () {
     describe('update tags and location via caption', function () {
       it('should create a new document successfully', function (done) {
         request(app)
-          .post('/api/assets')
-          .attach('asset', './test/fixtures/lorem-ipsum.txt')
+          .post('/graphql')
+          .field('operations', JSON.stringify({
+            variables: { file: null },
+            operationName: 'Upload',
+            query: `mutation Upload($file: Upload!) {
+              upload(file: $file)
+            }`
+          }))
+          .field('map', JSON.stringify({ 1: ['variables.file'] }))
+          .attach('1', './test/fixtures/lorem-ipsum.txt')
           .expect(200)
           .expect((res) => {
-            assert.equal(res.body.status, 'success')
-            docId = res.body.id
+            docId = res.body.data.upload
           })
           .end(function (err, res) {
             if (err) {
@@ -277,12 +300,19 @@ setTimeout(function () {
     describe('set location with quoted string', function () {
       it('should create a new document successfully', function (done) {
         request(app)
-          .post('/api/assets')
-          .attach('asset', './test/fixtures/lorem-ipsum.txt')
+          .post('/graphql')
+          .field('operations', JSON.stringify({
+            variables: { file: null },
+            operationName: 'Upload',
+            query: `mutation Upload($file: Upload!) {
+              upload(file: $file)
+            }`
+          }))
+          .field('map', JSON.stringify({ 1: ['variables.file'] }))
+          .attach('1', './test/fixtures/lorem-ipsum.txt')
           .expect(200)
           .expect((res) => {
-            assert.equal(res.body.status, 'success')
-            docId = res.body.id
+            docId = res.body.data.upload
           })
           .end(function (err, res) {
             if (err) {
@@ -339,12 +369,19 @@ setTimeout(function () {
     describe('handle trailing commas on tags', function () {
       it('should create a new document successfully', function (done) {
         request(app)
-          .post('/api/assets')
-          .attach('asset', './test/fixtures/lorem-ipsum.txt')
+          .post('/graphql')
+          .field('operations', JSON.stringify({
+            variables: { file: null },
+            operationName: 'Upload',
+            query: `mutation Upload($file: Upload!) {
+              upload(file: $file)
+            }`
+          }))
+          .field('map', JSON.stringify({ 1: ['variables.file'] }))
+          .attach('1', './test/fixtures/lorem-ipsum.txt')
           .expect(200)
           .expect((res) => {
-            assert.equal(res.body.status, 'success')
-            docId = res.body.id
+            docId = res.body.data.upload
           })
           .end(function (err, res) {
             if (err) {
@@ -402,12 +439,19 @@ setTimeout(function () {
     describe('upload an asset with unrecognized extension', function () {
       it('should create a new document successfully', function (done) {
         request(app)
-          .post('/api/assets')
-          .attach('asset', './test/fixtures/README.dumb')
+          .post('/graphql')
+          .field('operations', JSON.stringify({
+            variables: { file: null },
+            operationName: 'Upload',
+            query: `mutation Upload($file: Upload!) {
+              upload(file: $file)
+            }`
+          }))
+          .field('map', JSON.stringify({ 1: ['variables.file'] }))
+          .attach('1', './test/fixtures/README.dumb')
           .expect(200)
           .expect((res) => {
-            assert.equal(res.body.status, 'success')
-            docId = res.body.id
+            docId = res.body.data.upload
           })
           .end(function (err, res) {
             if (err) {

@@ -1,8 +1,8 @@
 //
 // Copyright (c) 2018 Nathan Fiedler
 //
-const {assert} = require('chai')
-const {before, describe, it, run} = require('mocha')
+const { assert } = require('chai')
+const { before, describe, it, run } = require('mocha')
 const request = require('supertest')
 const fs = require('fs-extra')
 const config = require('config')
@@ -129,12 +129,21 @@ setTimeout(function () {
     describe('upload an asset', function () {
       it('should create a new document', function (done) {
         request(app)
-          .post('/api/assets')
-          .attach('asset', './test/fixtures/dcp_1069.jpg')
+          .post('/graphql')
+          // graphql-upload expects the multi-part request to look a certain way
+          // c.f. https://github.com/jaydenseric/graphql-multipart-request-spec
+          .field('operations', JSON.stringify({
+            variables: { file: null },
+            operationName: 'Upload',
+            query: `mutation Upload($file: Upload!) {
+              upload(file: $file)
+            }`
+          }))
+          .field('map', JSON.stringify({ 1: ['variables.file'] }))
+          .attach('1', './test/fixtures/dcp_1069.jpg')
           .expect(200)
           .expect((res) => {
-            assert.equal(res.body.status, 'success')
-            docId = res.body.id
+            docId = res.body.data.upload
           })
           .end(function (err, res) {
             if (err) {
@@ -216,12 +225,19 @@ setTimeout(function () {
 
       it('should ignore duplicate file', function (done) {
         request(app)
-          .post('/api/assets')
-          .attach('asset', './test/fixtures/dcp_1069.jpg')
+          .post('/graphql')
+          .field('operations', JSON.stringify({
+            variables: { file: null },
+            operationName: 'Upload',
+            query: `mutation Upload($file: Upload!) {
+              upload(file: $file)
+            }`
+          }))
+          .field('map', JSON.stringify({ 1: ['variables.file'] }))
+          .attach('1', './test/fixtures/dcp_1069.jpg')
           .expect(200)
           .expect((res) => {
-            assert.equal(res.body.status, 'success')
-            assert.equal(res.body.id, docId)
+            assert.equal(res.body.data.upload, docId)
           })
           .end(function (err, res) {
             if (err) {

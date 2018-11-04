@@ -5,7 +5,6 @@ require('app-module-path').addPath(__dirname)
 const express = require('express')
 const path = require('path')
 const logger = require('morgan')
-const apiRoutes = require('routes/api')
 const pageRoutes = require('routes/pages')
 const gqlRoutes = require('routes/graphql')
 const backend = require('lib/backend')
@@ -53,7 +52,6 @@ if (config.has('morgan.logger.logPath')) {
 }
 
 app.use('/graphql', gqlRoutes)
-app.use('/api', apiRoutes)
 app.use('/', pageRoutes)
 
 // catch 404 and forward to error handler

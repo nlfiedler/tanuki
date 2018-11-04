@@ -6,6 +6,9 @@
 # January 1, 1970, 00:00:00 UTC, with leap seconds ignored.
 scalar Date
 
+# The Upload type is implemented by apollo-server and represents a file upload.
+scalar Upload
+
 # An `Asset` defines a single entity in the storage system. This typically
 # refers to an image or video, but could by any type of file.
 type Asset {
@@ -149,6 +152,12 @@ input AssetInput {
 }
 
 type Mutation {
+  # Upload a file to the system, returning the identifier for this asset.
+  # If an asset with the same checksum already exists, the identifier for
+  # that asset will be returned.
+  #
+  # Upload is implemented by apollo-upload-server and apollo-upload-client.
+  upload(file: Upload!): ID!
   # Update the asset with the given tags, caption, and date.
   #
   # The given date will override any dates already associated with the asset

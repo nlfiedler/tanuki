@@ -6,15 +6,10 @@ const path = require('path')
 const favicon = require('serve-favicon')
 const cookieParser = require('cookie-parser')
 const bodyParser = require('body-parser')
-const multer = require('multer')
-const config = require('config')
 const assets = require('lib/assets')
 const backend = require('lib/backend')
-const incoming = require('lib/incoming')
 
 const router = express.Router()
-const uploadPath = config.get('backend.uploadPath')
-const upload = multer({ dest: uploadPath })
 
 // wrapper that directs errors to the appropriate handler
 let wrap = fn => (...args) => fn(...args).catch(args[2])
@@ -96,40 +91,6 @@ router.get('/asset/:id', wrap(async function (req, res, next) {
       next(err)
     }
   })
-}))
-
-router.post('/import', upload.single('asset'), wrap(async function (req, res, next) {
-  let checksum = await incoming.computeChecksum(req.file.path)
-  try {
-    // check if an asset with this checksum already exists
-    let assetId = await backend.byChecksum(checksum)
-    if (assetId === null) {
-      const originalDate = await incoming.getOriginalDate(req.file.mimetype, req.file.path)
-      const importDate = Date.now()
-      assetId = assets.makeAssetId(importDate, req.file.originalname)
-      const duration = await assets.getDuration(req.file.mimetype, req.file.path)
-      let doc = {
-        _id: assetId,
-        duration,
-        filename: req.file.originalname,
-        filesize: req.file.size,
-        import_date: importDate,
-        mimetype: req.file.mimetype,
-        original_date: originalDate,
-        checksum,
-        // everything generally assumes the tags field is not undefined
-        tags: []
-      }
-      await backend.updateDocument(doc)
-    }
-    // Ensure the asset is moved into position, just in case we managed
-    // to commit the database record but failed to store the asset.
-    await incoming.storeAsset(req.file.mimetype, req.file.path, assetId)
-    res.redirect(`/assets/${assetId}/edit`)
-  } catch (err) {
-    // some other error occurred
-    res.status(err.status).send(err.message)
-  }
 }))
 
 // Last of all, map everything else to the web front-end.

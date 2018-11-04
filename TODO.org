@@ -1,10 +1,24 @@
 * Tanuki
 ** General Items
-*** TODO Use [[https://github.com/jaydenseric/apollo-upload-client][apollo-upload-client]] to upload files instead of using REST
+*** DONE Use [[https://github.com/jaydenseric/apollo-upload-client][apollo-upload-client]] to upload files instead of using REST
+**** c.f. https://www.apollographql.com/docs/guides/file-uploads.html
+**** DONE Add =UploadFile= as a separate mutation in GraphQL schema
+***** DONE Return the asset ID in the response
+**** DONE Change the unit tests to use this new GraphQL mutation
+**** DONE Change the upload page to use the GraphQL mutation
+***** DONE Need to regenerate the schema JSON file
+***** DONE Need to navigate to the asset edit page on response
+**** DONE Remove the =/import= endpoint from =pages.js= route
+**** DONE Can completely remove the =api.js= route
+**** DONE Can remove the =multer= dependency
+*** TODO Upgrade to new Node LTS (10.x)
+**** TODO Install =node= package on chihiro and test tanuki
+**** TODO Install =node= package on kohaku
 *** TODO Probably can use =date-fns= instead of =dateformat=
 *** TODO Consider how to make thumbnail page responsive
 **** Show 2, 3, or more depending on browser width
 **** Should be able to leverage CSS for this
+*** TODO Look at https://github.com/cristianoc/genType for JavaScript interop
 *** TODO Consider how to organize webui code from the backend code
 Presumably it will all eventually be written in ReasonML, how should the
 webui and backend code be separated?

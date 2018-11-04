@@ -61,12 +61,21 @@ setTimeout(function () {
     describe('thumbnails', function () {
       it('should start by uploading an asset', function (done) {
         request(app)
-          .post('/api/assets')
-          .attach('asset', './test/fixtures/dcp_1069.jpg')
+          .post('/graphql')
+          // graphql-upload expects the multi-part request to look a certain way
+          // c.f. https://github.com/jaydenseric/graphql-multipart-request-spec
+          .field('operations', JSON.stringify({
+            variables: { file: null },
+            operationName: 'Upload',
+            query: `mutation Upload($file: Upload!) {
+              upload(file: $file)
+            }`
+          }))
+          .field('map', JSON.stringify({ 1: ['variables.file'] }))
+          .attach('1', './test/fixtures/dcp_1069.jpg')
           .expect(200)
           .expect((res) => {
-            assert.equal(res.body.status, 'success')
-            docId = res.body.id
+            docId = res.body.data.upload
           })
           .end(function (err, res) {
             if (err) {
