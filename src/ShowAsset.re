@@ -123,6 +123,10 @@ let assetDetails = (asset: t) =>
         <td> {ReasonReact.string("Tags")} </td>
         <td> {ReasonReact.string(Js.Array.joinWith(", ", asset##tags))} </td>
       </tr>
+      <tr>
+        <td> {ReasonReact.string("Media type")} </td>
+        <td> {ReasonReact.string(asset##mimetype)} </td>
+      </tr>
     </tbody>
   </table>;
 
