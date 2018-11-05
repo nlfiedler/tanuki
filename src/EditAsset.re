@@ -12,6 +12,8 @@ type t = {
   "mimetype": string,
   "tags": Js.Array.t(string),
   "userdate": option(Js.Json.t),
+  "previewUrl": string,
+  "assetUrl": string,
 };
 
 module FetchAsset = [%graphql
@@ -29,6 +31,8 @@ module FetchAsset = [%graphql
         mimetype
         tags
         userdate
+        previewUrl
+        assetUrl
       }
     }
   |}
@@ -137,10 +141,7 @@ let assetPreview = (asset: t) =>
       style={ReactDOMRe.Style.make(~width="100%", ~height="100%", ())}
       controls=true
       preload="auto">
-      <source
-        src={"/asset/" ++ asset##id}
-        type_={assetMimeType(asset##mimetype)}
-      />
+      <source src=asset##assetUrl type_={assetMimeType(asset##mimetype)} />
       {ReasonReact.string("Bummer, your browser does not support the HTML5")}
       <code> {ReasonReact.string("video")} </code>
       {ReasonReact.string("tag.")}
@@ -150,7 +151,7 @@ let assetPreview = (asset: t) =>
       <figure className="image">
         <img
           style={ReactDOMRe.Style.make(~display="inline", ~width="auto", ())}
-          src={"/preview/" ++ asset##id}
+          src=asset##previewUrl
           alt=asset##filename
         />
       </figure>

@@ -9,6 +9,7 @@ type t = {
       "filename": string,
       "id": string,
       "location": option(string),
+      "thumbnailUrl": string,
     }),
 };
 
@@ -168,7 +169,7 @@ module ThumbCard = {
                     style={ReactDOMRe.Style.make(~width="auto", ())}
                   /> :
                   <img
-                    src={"/thumbnail/" ++ entry##id}
+                    src=entry##thumbnailUrl
                     alt=entry##filename
                     onError={_ => self.send(MarkThumbless)}
                     style={ReactDOMRe.Style.make(~width="auto", ())}

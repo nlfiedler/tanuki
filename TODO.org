@@ -1,8 +1,5 @@
 * Tanuki
 ** General Items
-*** TODO Upgrade to new Node LTS (10.x)
-**** TODO Install =node= package on chihiro and test tanuki
-**** TODO Install =node= package on kohaku
 *** TODO Consider how to make thumbnail page responsive
 **** Show 2, 3, or more depending on browser width
 **** Should be able to leverage CSS for this
@@ -10,11 +7,6 @@
 *** TODO Consider how to organize webui code from the backend code
 Presumably it will all eventually be written in ReasonML, how should the
 webui and backend code be separated?
-
-*** TODO URI path for thumbnails and such should be returned in GraphQL data
-The front-end should not have to know how to construct the URI path for the
-assets, thumbnails, etc. Host and port /cannot/ be in the GraphQL data since
-the backend does not know how the front-end is addressing it.
 
 *** TODO When there are no assets, display help screen for getting started
 *** TODO Update the modules with major version changes

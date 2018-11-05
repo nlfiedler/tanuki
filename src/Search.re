@@ -11,6 +11,7 @@ module SearchAssets = [%graphql
           datetime
           filename
           location
+          thumbnailUrl
         }
         count
       }

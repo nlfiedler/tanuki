@@ -38,6 +38,11 @@ type Asset {
   duration: Float
   # Location information for the asset.
   location: String
+  # URL of the "preview" version of the asset, larger than a thumbnail
+  # and generally smaller than the full sized asset.
+  previewUrl: String!
+  # URL of the full sized asset.
+  assetUrl: String!
 }
 
 # `TagCount` indicates the number of assets with a given tag.
@@ -82,6 +87,8 @@ type SearchResult {
   # thumbnail. It will be -1 if no thumbnail is possible for the asset media
   # type, and 0 if the asset does not have a thumbnail.
   thumbHeight: Int
+  # The thumbnailUrl is the URL for the "wide" thumbnail image.
+  thumbnailUrl: String!
 }
 
 # `SearchMeta` is returned from the search query.
