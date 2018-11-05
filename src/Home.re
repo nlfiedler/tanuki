@@ -1,3 +1,11 @@
+module CountAssets = [%graphql {|
+    query {
+      count
+    }
+  |}];
+
+module CountAssetsQuery = ReasonApollo.CreateQuery(CountAssets);
+
 /*
  * The home page shows selectors for the various attributes, and based on
  * user selection, shows thumbnails for matching assets.
@@ -62,7 +70,7 @@ module HomeRe = {
         ...{
              ({result}) =>
                switch (result) {
-               | Loading => <div> {ReasonReact.string("Loading")} </div>
+               | Loading => <div> {ReasonReact.string("Loading...")} </div>
                | Error(error) =>
                  Js.log(error);
                  <div> {ReasonReact.string(error##message)} </div>;
@@ -89,11 +97,35 @@ module Component = {
   let make = _children => {
     ...component,
     render: _self =>
-      <div>
-        <Tags.Component />
-        <Locations.Component />
-        <Years.Component />
-        <SelectedProvider component=HomeRe.make />
-      </div>,
+      <CountAssetsQuery>
+        ...{
+             ({result}) =>
+               switch (result) {
+               | Loading => <div> {ReasonReact.string("Loading...")} </div>
+               | Error(error) =>
+                 Js.log(error);
+                 <div> {ReasonReact.string(error##message)} </div>;
+               | Data(response) =>
+                 if (response##count > 0) {
+                   <div>
+                     <Tags.Component />
+                     <Locations.Component />
+                     <Years.Component />
+                     <SelectedProvider component=HomeRe.make />
+                   </div>;
+                 } else {
+                   <div>
+                     <p>
+                       {ReasonReact.string("Use the")}
+                       <span className="icon">
+                         <i className="fas fa-upload" />
+                       </span>
+                       {ReasonReact.string("upload feature to add assets.")}
+                     </p>
+                   </div>;
+                 }
+               }
+           }
+      </CountAssetsQuery>,
   };
 };

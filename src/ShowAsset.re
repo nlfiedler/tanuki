@@ -165,7 +165,7 @@ module Component = {
         ...{
              ({result}) =>
                switch (result) {
-               | Loading => <div> {ReasonReact.string("Loading")} </div>
+               | Loading => <div> {ReasonReact.string("Loading...")} </div>
                | Error(error) =>
                  Js.log(error);
                  <div> {ReasonReact.string(error##message)} </div>;

@@ -1,27 +1,11 @@
 * Tanuki
 ** General Items
 *** TODO Consider how to make thumbnail page responsive
-**** Show 2, 3, or more depending on browser width
+**** Show 1, 2, 3, or more depending on browser width
 **** Should be able to leverage CSS for this
-*** TODO Look at https://github.com/cristianoc/genType for JavaScript interop
-*** TODO Consider how to organize webui code from the backend code
-Presumably it will all eventually be written in ReasonML, how should the
-webui and backend code be separated?
-
-*** TODO When there are no assets, display help screen for getting started
 *** TODO Update the modules with major version changes
-*** TODO Rewrite backend code in ReasonML
-**** GraphQL portion
-[[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-1-5651f75de497][ecliptic.io part 1]], [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-2-3c3b811f7491][part 2]], [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-3-b303b375ab23][part 3]], [[https://blog.ecliptic.io/a-reasonable-graphql-followup-192f6ec29550][follow-up]]
-- shows how to write the GraphQL backend
-- uses Node/Express too
-- builds everything up, from types to encoders/decoders
-- uses [[https://github.com/glennsl/bs-json][bs-json]] for JSON encode/decode
-
 *** TODO Asset preview should show the media type
 *** TODO Debounce the form input validation (i.e. asset edit and search forms)
-*** TODO Can gulp-nodemon be removed/replaced? introduces several vulnerabilities
-**** Or fork the repo and fix the issue
 *** TODO Support searching the caption text
 *** TODO Support wildcards in filename, mimetype (others?)
 *** TODO Extract exact location information from images [0/4]
@@ -45,6 +29,20 @@ include it in the database records.
 : rendering the stored time ambiguous. However, time-zone information have
 : been introduced recently by Exif version 2.31 (July 2016). Related tags are:
 : "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
+
+** ReasonML rewrite
+*** TODO Rewrite backend code in ReasonML
+**** GraphQL portion
+[[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-1-5651f75de497][ecliptic.io part 1]], [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-2-3c3b811f7491][part 2]], [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-3-b303b375ab23][part 3]], [[https://blog.ecliptic.io/a-reasonable-graphql-followup-192f6ec29550][follow-up]]
+- shows how to write the GraphQL backend
+- uses Node/Express too
+- builds everything up, from types to encoders/decoders
+- uses [[https://github.com/glennsl/bs-json][bs-json]] for JSON encode/decode
+
+*** TODO Look at https://github.com/cristianoc/genType for JavaScript interop
+*** TODO Consider how to organize webui code from the backend code
+Presumably it will all eventually be written in ReasonML, how should the
+webui and backend code be separated?
 
 ** Documentation
 *** Case Sensitivity
