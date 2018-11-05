@@ -1,20 +1,8 @@
 * Tanuki
 ** General Items
-*** DONE Use [[https://github.com/jaydenseric/apollo-upload-client][apollo-upload-client]] to upload files instead of using REST
-**** c.f. https://www.apollographql.com/docs/guides/file-uploads.html
-**** DONE Add =UploadFile= as a separate mutation in GraphQL schema
-***** DONE Return the asset ID in the response
-**** DONE Change the unit tests to use this new GraphQL mutation
-**** DONE Change the upload page to use the GraphQL mutation
-***** DONE Need to regenerate the schema JSON file
-***** DONE Need to navigate to the asset edit page on response
-**** DONE Remove the =/import= endpoint from =pages.js= route
-**** DONE Can completely remove the =api.js= route
-**** DONE Can remove the =multer= dependency
 *** TODO Upgrade to new Node LTS (10.x)
 **** TODO Install =node= package on chihiro and test tanuki
 **** TODO Install =node= package on kohaku
-*** TODO Probably can use =date-fns= instead of =dateformat=
 *** TODO Consider how to make thumbnail page responsive
 **** Show 2, 3, or more depending on browser width
 **** Should be able to leverage CSS for this
@@ -25,12 +13,12 @@ webui and backend code be separated?
 
 *** TODO URI path for thumbnails and such should be returned in GraphQL data
 The front-end should not have to know how to construct the URI path for the
-assets, thumbnails, etc. Host and port _cannot_ be in the GraphQL data since
+assets, thumbnails, etc. Host and port /cannot/ be in the GraphQL data since
 the backend does not know how the front-end is addressing it.
 
 *** TODO When there are no assets, display help screen for getting started
-*** TODO Update the node dependencies
-*** TODO Rewrite backend code on ReasonML
+*** TODO Update the modules with major version changes
+*** TODO Rewrite backend code in ReasonML
 **** GraphQL portion
 [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-1-5651f75de497][ecliptic.io part 1]], [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-2-3c3b811f7491][part 2]], [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-3-b303b375ab23][part 3]], [[https://blog.ecliptic.io/a-reasonable-graphql-followup-192f6ec29550][follow-up]]
 - shows how to write the GraphQL backend
@@ -53,8 +41,8 @@ the backend does not know how the front-end is addressing it.
 *** TODO Need a query to find image assets whose orientation is incorrect/unknown
 *** TODO Asset preview page shows a broken link, should show placeholder image
 *** TODO Thumbnail size cache population is noticably slow when selecting many assets
-*** TODO When performing image manipulations, invoke `sharp.withMetadata()` to preserve metadata
-*** TODO Use a webview to preview Markdown generated as HTML
+*** TODO When performing image manipulations, invoke =sharp.withMetadata()= to preserve metadata
+*** TODO Use an =iframe= to preview Markdown generated as HTML
 *** TODO Read [[https://github.com/MtDalPizzol/pouchdb-permissions][pouchdb-permissions]] for possible use in user/groups access
 *** TODO Detect time zone offset in EXIF data
 According to Wikipedia the 2.31 version of EXIF will support time-zone
