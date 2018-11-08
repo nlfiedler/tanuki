@@ -798,7 +798,7 @@ setTimeout(function () {
     describe('update tag letter case', function () {
       it('should permit updating tag case', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "input": {

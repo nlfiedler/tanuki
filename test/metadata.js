@@ -57,7 +57,7 @@ setTimeout(function () {
 
       it('should serve the new asset', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               asset(id: "${docId}") {
@@ -122,7 +122,7 @@ setTimeout(function () {
 
       it('should serve the new asset', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               asset(id: "${docId}") {
@@ -181,7 +181,7 @@ setTimeout(function () {
 
       it('should update the asset', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "input": {
@@ -213,7 +213,7 @@ setTimeout(function () {
 
       it('should extract tags and location from caption', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "input": {
@@ -251,7 +251,7 @@ setTimeout(function () {
 
       it('should not overwrite location or clobber tags', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "input": {
@@ -324,7 +324,7 @@ setTimeout(function () {
 
       it('should extract multi-word location from caption', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "input": {
@@ -393,7 +393,7 @@ setTimeout(function () {
 
       it('should remove trailing commas from tags', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "input": {
@@ -463,7 +463,7 @@ setTimeout(function () {
 
       it('should indicate generic media type', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               asset(id: "${docId}") {
@@ -486,7 +486,7 @@ setTimeout(function () {
 
       it('should permit changing the media type', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "input": {

@@ -48,7 +48,7 @@ setTimeout(function () {
     describe('count of 6, default offset of 0', function () {
       it('should return 6 assets', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -84,7 +84,7 @@ setTimeout(function () {
     describe('count of 6, offset of 6', function () {
       it('should return 6 assets', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -120,7 +120,7 @@ setTimeout(function () {
     describe('count of 6, offset of 12', function () {
       it('should return fewer than count assets', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -156,7 +156,7 @@ setTimeout(function () {
     describe('count of 6, out of range offset', function () {
       it('should return nothing', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {
@@ -191,7 +191,7 @@ setTimeout(function () {
     describe('count of 50, default offset of 0', function () {
       it('should return all 16 assets', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "params": {

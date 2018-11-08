@@ -57,7 +57,7 @@ setTimeout(function () {
 
       it('should serve video asset details', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               asset(id: "${docId}") {

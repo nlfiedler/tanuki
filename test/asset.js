@@ -42,7 +42,7 @@ setTimeout(function () {
     describe('no asset for identifier', function () {
       it('should return an error', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               asset(id: "nosuch") {
@@ -66,7 +66,7 @@ setTimeout(function () {
     describe('no asset for checksum', function () {
       it('should return null', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               lookup(checksum: "sha256-cafebabe") {
@@ -90,7 +90,7 @@ setTimeout(function () {
     describe('asset by correct identifier', function () {
       it('should return all asset details', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               asset(id: "${docId}") {
@@ -155,7 +155,7 @@ setTimeout(function () {
 
       it('should serve the new asset', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               asset(id: "${docId}") {
@@ -187,7 +187,7 @@ setTimeout(function () {
 
       it('should permit updating asset fields', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "input": {
@@ -249,7 +249,7 @@ setTimeout(function () {
 
       it('should return values prior to second upload', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             query: `query {
               asset(id: "${docId}") {
@@ -279,7 +279,7 @@ setTimeout(function () {
 
       it('should parse optional user dates', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             // datetime is 2003-08-30 12:45
             variables: `{
@@ -314,7 +314,7 @@ setTimeout(function () {
 
       it('should permit clearing the user date', function (done) {
         request(app)
-          .post(`/graphql`)
+          .post('/graphql')
           .send({
             variables: `{
               "input": {
