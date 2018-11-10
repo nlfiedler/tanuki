@@ -1,4 +1,9 @@
 #
+# editors
+#
+.vscode
+
+#
 # Node.js files
 #
 node_modules
