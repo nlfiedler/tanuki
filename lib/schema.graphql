@@ -87,8 +87,11 @@ type SearchResult {
   # thumbnail. It will be -1 if no thumbnail is possible for the asset media
   # type, and 0 if the asset does not have a thumbnail.
   thumbHeight: Int
-  # The thumbnailUrl is the URL for the "wide" thumbnail image.
+  # This relative URL is for the thumbnail image fitting a 240x240 pixel box.
   thumbnailUrl: String!
+  # This relative URL is for the thumbnail image that is 240 pixels high,
+  # and whose width is determined by the image aspect ratio.
+  widethumbUrl: String!
 }
 
 # `SearchMeta` is returned from the search query.

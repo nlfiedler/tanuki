@@ -6,7 +6,7 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 
 ### Prerequisites
 
-* [Node.js](https://nodejs.org/) 8.x
+* [Node.js](https://nodejs.org/) LTS
 
 #### Example for MacOS
 
@@ -14,7 +14,7 @@ This example assumes you are using [Homebrew](http://brew.sh) to install the dep
 
 ```shell
 $ xcode-select --install
-$ brew install node@8
+$ brew install node
 $ npm install -g bs-platform
 $ npm install -g gulp-cli
 ```

@@ -703,7 +703,23 @@
             },
             {
               "name": "thumbnailUrl",
-              "description": "The thumbnailUrl is the URL for the \"wide\" thumbnail image.",
+              "description": "This URL is for the thumbnail image fitting a 240x240 pixel box.",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "widethumbUrl",
+              "description": "This URL is for the \"wide\" thumbnail image that is 240 pixels high,\nbut whose width is determined by the image aspect ratio.",
               "args": [],
               "type": {
                 "kind": "NON_NULL",
