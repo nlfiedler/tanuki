@@ -97,7 +97,7 @@ let makeLinks = (currentPage: int, totalCount: int, pager) => {
   let lastLink = paginationLink(currentPage, totalPages, pager);
   let maybeLinks =
     [firstLink, prevLink, preDots]
-    @ numberedLinks^
+    @ List.rev(numberedLinks^)
     @ [postDots, nextLink, lastLink];
   <ul className="pagination-list">
     {ReasonReact.array(Array.of_list(justLinksExtractor(maybeLinks)))}

@@ -33,11 +33,12 @@ let selectTopTags = (selectedTags, allTags) => {
       Belt.Map.String.empty,
     );
   /* keep the top 25 tags by count, merge with the selected */
-  Array.sort((a, b) => a##count - b##count, Array.copy(allTags));
+  let sortedTags = Array.copy(allTags);
+  Array.sort((a, b) => a##count - b##count, sortedTags);
   let mergedMap =
     Array.fold_right(
       (tag, coll) => Belt.Map.String.set(coll, tag##value, tag),
-      Array.sub(allTags, 0, 25),
+      Array.sub(sortedTags, 0, 25),
       selectedTagsMap,
     );
   /* extract the map values and sort by name */

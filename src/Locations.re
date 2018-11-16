@@ -33,11 +33,12 @@ let selectTopLocations = (selectedLocations, allLocations) => {
       Belt.Map.String.empty,
     );
   /* keep the top 25 locations by count, merge with the selected */
-  Array.sort((a, b) => a##count - b##count, Array.copy(allLocations));
+  let sortedLocations = Array.copy(allLocations);
+  Array.sort((a, b) => a##count - b##count, sortedLocations);
   let mergedMap =
     Array.fold_right(
       (location, coll) => Belt.Map.String.set(coll, location##value, location),
-      Array.sub(allLocations, 0, 25),
+      Array.sub(sortedLocations, 0, 25),
       selectedLocationsMap,
     );
   /* extract the map values and sort by name */

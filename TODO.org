@@ -1,5 +1,8 @@
 * Tanuki
 ** General Items
+*** TODO No need to run yarn introspection query for GraphQL, can run command
+- =node ./node_modules/gql-tools/cli/gqlschema.js -o tests/graphql_schema.json tests/schema.gql=
+
 *** TODO Consider how to make thumbnail page responsive
 **** Show 1, 2, 3, or more depending on browser width
 **** Should be able to leverage CSS for this
