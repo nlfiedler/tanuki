@@ -1,4 +1,4 @@
-const {exec} = require('child_process')
+const { exec } = require('child_process')
 const fs = require('fs-extra')
 const gulp = require('gulp')
 const gulpif = require('gulp-if')

@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  tanuki:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../tmp:/src/tmp
+    # stdin_open: true
+    # tty: true

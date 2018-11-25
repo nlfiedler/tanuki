@@ -29,6 +29,13 @@ $ npm test
 $ gulp
 ```
 
+## Deployment
+
+### Docker
+
+The application is easily deployed using [Docker](https://www.docker.com), as there is a provided
+`Dockerfile` and `docker-compose.yml` file for building and running the application in Docker.
+
 ## Architecture
 
 Assets stored as-is in date/time formatted directory structure, metadata stored in a document-oriented database, an HTTP server backend, and a single-page application for a front-end. Backend written in JavaScript running on [Node.js](https://nodejs.org/), front-end written in [ReasonML](https://reasonml.github.io/en/), database is [PouchDB](https://pouchdb.com).
