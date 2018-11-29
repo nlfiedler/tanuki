@@ -135,16 +135,17 @@ module TagsRe = {
 };
 
 module TagsProvider = {
-  let lens =
-    Reductive.Lens.make((state: Redux.appState) => state.selectedTags);
-  let make = Reductive.Provider.createMake(Redux.store, lens);
+  let make =
+    Reductive.Lense.createMake(
+      ~lense=(s: Redux.appState) => s.selectedTags,
+      Redux.store,
+    );
 };
 
 module Component = {
   let component = ReasonReact.statelessComponent("Tags");
   let make = _children => {
     ...component,
-    render: _self =>
-      <TagsProvider component=TagsRe.make />,
+    render: _self => <TagsProvider component=TagsRe.make />,
   };
 };

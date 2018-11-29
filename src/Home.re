@@ -88,8 +88,7 @@ module HomeRe = {
 };
 
 module SelectedProvider = {
-  let lens = Reductive.Lens.make((state: Redux.appState) => state);
-  let make = Reductive.Provider.createMake(Redux.store, lens);
+  let make = Reductive.Lense.createMake(~lense=s => s, Redux.store);
 };
 
 module Component = {

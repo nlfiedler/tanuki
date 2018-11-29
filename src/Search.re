@@ -332,7 +332,8 @@ module SearchRe = {
             ...{
                  ({result}) =>
                    switch (result) {
-                   | Loading => <div> {ReasonReact.string("Loading...")} </div>
+                   | Loading =>
+                     <div> {ReasonReact.string("Loading...")} </div>
                    | Error(error) =>
                      Js.log(error);
                      <div> {ReasonReact.string(error##message)} </div>;
@@ -356,8 +357,7 @@ module SearchRe = {
  * will be a peculiar compiler error about SearchRe.state escaping its scope.
  */
 module SearchProvider = {
-  let lens = Reductive.Lens.make((state: Redux.appState) => state);
-  let make = Reductive.Provider.createMake(Redux.store, lens);
+  let make = Reductive.Lense.createMake(~lense=s => s, Redux.store);
 };
 
 module Component = {

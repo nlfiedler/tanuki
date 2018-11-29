@@ -59,9 +59,11 @@ module YearsRe = {
 };
 
 module YearsProvider = {
-  let lens =
-    Reductive.Lens.make((state: Redux.appState) => state.selectedYear);
-  let make = Reductive.Provider.createMake(Redux.store, lens);
+  let make =
+    Reductive.Lense.createMake(
+      ~lense=(s: Redux.appState) => s.selectedYear,
+      Redux.store,
+    );
 };
 
 module Component = {

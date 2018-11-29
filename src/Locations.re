@@ -37,7 +37,8 @@ let selectTopLocations = (selectedLocations, allLocations) => {
   Array.sort((a, b) => b##count - a##count, sortedLocations);
   let mergedMap =
     Array.fold_right(
-      (location, coll) => Belt.Map.String.set(coll, location##value, location),
+      (location, coll) =>
+        Belt.Map.String.set(coll, location##value, location),
       Array.sub(sortedLocations, 0, 25),
       selectedLocationsMap,
     );
@@ -125,7 +126,13 @@ module LocationsRe = {
                          buildLocations(self.state, response##locations),
                        )
                      }
-                     {allLocationsToggle(self.state, self.send, response##locations)}
+                     {
+                       allLocationsToggle(
+                         self.state,
+                         self.send,
+                         response##locations,
+                       )
+                     }
                    </div>
                  }
              }
@@ -135,16 +142,17 @@ module LocationsRe = {
 };
 
 module LocationsProvider = {
-  let lens =
-    Reductive.Lens.make((state: Redux.appState) => state.selectedLocations);
-  let make = Reductive.Provider.createMake(Redux.store, lens);
+  let make =
+    Reductive.Lense.createMake(
+      ~lense=(s: Redux.appState) => s.selectedLocations,
+      Redux.store,
+    );
 };
 
 module Component = {
   let component = ReasonReact.statelessComponent("Locations");
   let make = _children => {
     ...component,
-    render: _self =>
-      <LocationsProvider component=LocationsRe.make />,
+    render: _self => <LocationsProvider component=LocationsRe.make />,
   };
 };
