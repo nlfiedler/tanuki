@@ -33,8 +33,15 @@ $ gulp
 
 ### Docker
 
-The application is easily deployed using [Docker](https://www.docker.com), as there is a provided
-`Dockerfile` and `docker-compose.yml` file for building and running the application in Docker.
+The application is easily deployed using [Docker](https://www.docker.com), as
+there is a provided `Dockerfile` and `docker-compose.yml` file for building and
+running the application in Docker.
+
+Note that [leveldb](https://github.com/google/leveldb) requires `mmap` to access
+its files, so running the container on macOS requires using NFS (otherwise you
+will see strange errors about opening the database). This is easily done using
+[docker-machine-nfs](https://github.com/adlogix/docker-machine-nfs), which can
+be installed using Homebrew: `brew install docker-machine-nfs`
 
 ## Architecture
 
