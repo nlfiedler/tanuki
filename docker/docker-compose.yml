@@ -6,11 +6,12 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     environment:
-      NODE_ENV: development
+      # need to use different paths for container
+      NODE_ENV: docker
       PORT: 3000
     ports:
       - "3000:3000"
     volumes:
-      - ../tmp:/src/tmp
+      - ../tmp:/tanuki
     # stdin_open: true
     # tty: true

@@ -41,10 +41,11 @@ RUN gulp compile
 # node container has a "node" user that owns everything?
 USER node
 
-VOLUME /src/tmp
+VOLUME /tanuki
 
 EXPOSE ${PORT}
 
-HEALTHCHECK CMD curl -f -s -o /dev/null http://localhost:${PORT}/ || exit 1
+COPY docker/healthcheck.js .
+HEALTHCHECK CMD node ./healthcheck.js ${PORT}
 
 ENTRYPOINT [ "node",  "bin/www" ]

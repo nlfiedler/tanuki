@@ -1,6 +1,5 @@
 * Tanuki
 ** General Items
-*** TODO Fix the npm vulnerability (run =npm audit=)
 *** TODO Build a docker image for deployment to server
 **** DONE resolve the ffmpeg issue using ffmpeg-static
 **** DONE resolve leveldb startup error on macOS

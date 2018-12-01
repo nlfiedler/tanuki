@@ -1,0 +1,11 @@
+{
+  "backend": {
+    "dbPath": "/tanuki/database/leveldb",
+    "thumbsDbPath": "/tanuki/thumbs/leveldb",
+    "uploadPath": "/tanuki/uploads",
+    "assetPath": "/tanuki/assets",
+    "logger": {
+      "level": "debug"
+    }
+  }
+}

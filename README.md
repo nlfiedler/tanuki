@@ -8,7 +8,7 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 
 * [Node.js](https://nodejs.org/) LTS
 
-#### Example for MacOS
+#### Example for macOS
 
 This example assumes you are using [Homebrew](http://brew.sh) to install the dependencies, which provides up-to-date versions of everything needed. The `xcode-select --install` is there just because the command-line tools sometimes get out of date, and some of the dependencies will fail to build without them.
 
@@ -40,8 +40,16 @@ running the application in Docker.
 Note that [leveldb](https://github.com/google/leveldb) requires `mmap` to access
 its files, so running the container on macOS requires using NFS (otherwise you
 will see strange errors about opening the database). This is easily done using
-[docker-machine-nfs](https://github.com/adlogix/docker-machine-nfs), which can
-be installed using Homebrew: `brew install docker-machine-nfs`
+[docker-machine-nfs](https://github.com/adlogix/docker-machine-nfs). For any
+issues, see the **Docker** document on Google Drive.
+
+```shell
+$ docker-machine start
+$ docker-compose build
+$ docker-compose up -d
+```
+
+The application should be accessible on port 3000.
 
 ## Architecture
 
