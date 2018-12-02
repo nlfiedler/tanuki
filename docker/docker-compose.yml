@@ -1,4 +1,4 @@
-version: '3'
+version: '3.2'
 
 services:
   tanuki:
@@ -12,6 +12,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ../tmp:/tanuki
+      - type: bind
+        source: ../tmp
+        target: /tanuki
     # stdin_open: true
     # tty: true

@@ -1,34 +1,5 @@
 * Tanuki
 ** General Items
-*** TODO Build a docker image for deployment to server
-**** DONE resolve the ffmpeg issue using ffmpeg-static
-**** DONE resolve leveldb startup error on macOS
-#+BEGIN_SRC
-error: database initialization error: message=IO error: tmp/database/leveldb: Invalid argument,
-  type=OpenError, name=OpenError, cause=undefined, stack=OpenError: IO error: tmp/database/leveldb: Invalid argument
-     at /src/node_modules/levelup/lib/levelup.js:91:23
-     at /src/node_modules/deferred-leveldown/node_modules/abstract-leveldown/abstract-leveldown.js:39:16
-     at /src/node_modules/deferred-leveldown/deferred-leveldown.js:19:21
-     at /src/node_modules/leveldown/node_modules/abstract-leveldown/abstract-leveldown.js:39:16
-#+END_SRC
-***** normally runs as root user
-***** files are owned by node:staff and -rw-r--r--
-***** setting =USER node= does not help
-***** seems like a known issue with vbox and leveldb use of mmap
-***** DONE try using NFS volume
-****** c.f. https://github.com/adlogix/docker-machine-nfs
-#+BEGIN_SRC shell
-$ brew install docker-machine-nfs
-$ docker-machine start
-$ docker-machine-nfs default
-#+END_SRC
-
-**** DONE configure tanuki for production environment
-**** DONE delete =ecosystem.config.js=
-**** TODO change provisioning to use docker
-**** TODO How to deploy on server: =docker-compose -f docker-compose.yml -f production.yml up -d=
-**** DONE delete =config/tanuki.rc=
-**** TODO delete =graphql_ppx.exe= from provisioning
 *** TODO Consider how to make thumbnail page responsive
 **** Show 1, 2, 3, or more depending on browser width
 **** Should be able to leverage CSS for this
