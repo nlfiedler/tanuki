@@ -27,7 +27,9 @@ let formatDate = (datetime: Js.Json.t) =>
 let namedPaginationLink = (label, page, pager) =>
   Some(
     <li key={string_of_int(page)}>
-      <a onClick={_ => pager(page)}> {ReasonReact.string(label)} </a>
+      <a onClick={_ => pager(page)} className="pagination-link">
+        {ReasonReact.string(label)}
+      </a>
     </li>,
   );
 
@@ -74,12 +76,12 @@ let makeLinks = (currentPage: int, totalCount: int, pager) => {
   let firstLink = paginationLink(currentPage, 1, pager);
   let prevLink =
     currentPage - 10 <= 1 ?
-      None : namedPaginationLink("«", currentPage - 10, pager);
+      None : namedPaginationLink("<<", currentPage - 10, pager);
   let preDots =
     lower > 2 ?
       Some(
         <li key="prev" className="pagination-ellipsis">
-          <span> {ReasonReact.string("…")} </span>
+          <span> {ReasonReact.string("...")} </span>
         </li>,
       ) :
       None;
@@ -87,13 +89,13 @@ let makeLinks = (currentPage: int, totalCount: int, pager) => {
     upper < totalPages - 1 ?
       Some(
         <li key="next" className="pagination-ellipsis">
-          <span> {ReasonReact.string("…")} </span>
+          <span> {ReasonReact.string("...")} </span>
         </li>,
       ) :
       None;
   let nextLink =
     currentPage + 10 >= totalPages ?
-      None : namedPaginationLink("»", currentPage + 10, pager);
+      None : namedPaginationLink(">>", currentPage + 10, pager);
   let lastLink = paginationLink(currentPage, totalPages, pager);
   let maybeLinks =
     [firstLink, prevLink, preDots]
