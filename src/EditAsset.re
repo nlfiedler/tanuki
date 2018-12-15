@@ -370,7 +370,11 @@ module EditPanel = {
                | Error(error) =>
                  Js.log(error);
                  <div> {ReasonReact.string(error##message)} </div>;
-               | Data(_result) => <ShowAsset.Component assetId=asset##id />
+               | Data(_result) =>
+                 <div>
+                  {ReasonReact.Router.push("/assets/" ++ asset##id);
+                   ReasonReact.string("loading...")}
+                 </div>
                | NotCalled =>
                  <div className="container">
                    <div className="card">

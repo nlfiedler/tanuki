@@ -110,7 +110,10 @@ module Component = {
                  Js.log(error);
                  <div> {ReasonReact.string(error##message)} </div>;
                | Data(result) =>
-                 <EditAsset.Component assetId=result##upload />
+                 <div>
+                  {ReasonReact.Router.push("/assets/" ++ result##upload ++ "/edit");
+                   ReasonReact.string("loading...")}
+                 </div>
                | NotCalled =>
                  <div>
                    <form action="#" method="post">
