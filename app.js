@@ -47,7 +47,7 @@ if (config.has('morgan.logger.logPath')) {
     path: logDirectory
   })
   app.use(logger('combined', { stream: accessLogStream }))
-} if (process.env.NODE_ENV !== 'production') {
+} else if (process.env.NODE_ENV !== 'production') {
   app.use(logger('dev'))
 } else {
   app.use(logger('combined'))
