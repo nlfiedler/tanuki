@@ -1,5 +1,10 @@
 * Tanuki
 ** General Items
+*** TODO Looks like GraphQL server modules changed again
+**** c.f. https://github.com/jaydenseric/graphql-upload
+**** TODO Determine what packages we should be using
+**** TODO Determine what packages we can now remove
+**** TODO Change our code to conform to the new API
 *** TODO Consider how to make thumbnail page responsive
 **** Show 1, 2, 3, or more depending on browser width
 **** Should be able to leverage CSS for this
