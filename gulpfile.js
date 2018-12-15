@@ -23,7 +23,7 @@ gulp.task('serve', (cb) => {
 })
 
 gulp.task('bsb-clean', (cb) => {
-  exec('bsb -clean-world', (err, stdout, stderr) => {
+  exec('npx bsb -clean-world', (err, stdout, stderr) => {
     console.info(stdout)
     console.error(stderr)
     cb(err)
@@ -37,7 +37,7 @@ gulp.task('js-clean', (cb) => {
 })
 
 gulp.task('bsb-make', (cb) => {
-  exec('bsb -make-world', (err, stdout, stderr) => {
+  exec('npx bsb -make-world', (err, stdout, stderr) => {
     console.info(stdout)
     console.error(stderr)
     cb(err)

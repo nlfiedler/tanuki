@@ -7,12 +7,9 @@ RUN apt-get -q -y install apt-utils
 WORKDIR /src
 
 #
-# installing BuckleScript requires gcc/make to compile OCaml;
-# the --unsafe-perm is to get around permissions errors that
-# are quite common with the bs-platform installation
+# using BuckleScript requires gcc/make to compile OCaml
 #
 RUN apt-get -q -y install build-essential
-RUN npm install -q -g bs-platform --unsafe-perm
 RUN npm install -q -g gulp-cli
 
 #
@@ -35,7 +32,7 @@ COPY public public
 COPY routes routes
 COPY src src
 COPY views views
-RUN npm install -q
+RUN npm ci
 RUN gulp compile
 
 # node container has a "node" user that owns everything?

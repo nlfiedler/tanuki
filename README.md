@@ -15,7 +15,6 @@ This example assumes you are using [Homebrew](http://brew.sh) to install the dep
 ```shell
 $ xcode-select --install
 $ brew install node
-$ npm install -g bs-platform
 $ npm install -g gulp-cli
 ```
 
