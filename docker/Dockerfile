@@ -28,6 +28,7 @@ COPY graphql_schema.json .
 COPY gulpfile.js .
 COPY lib lib
 COPY package.json .
+COPY package-lock.json .
 COPY public public
 COPY routes routes
 COPY src src
