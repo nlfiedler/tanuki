@@ -36,7 +36,7 @@
     "app-module-path": "^2.2.0",
     "body-parser": "^1.18.3",
     "bs-date-fns": "^0.1.6",
-    "bs-platform": "^4.0.14",
+    "bs-platform": "^4.0.8",
     "bs-reform": "^5.1.1",
     "config": "^1.31.0",
     "cookie-parser": "~1.4.3",
