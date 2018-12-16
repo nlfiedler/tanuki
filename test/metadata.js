@@ -287,6 +287,47 @@ setTimeout(function () {
             done()
           })
       })
+
+      it('should trim blank tags', function (done) {
+        request(app)
+          .post('/graphql')
+          .send({
+            // zapping the existing tags, adding a blank value, and having a
+            // hash with nothing after it, which would also introduce a blank
+            variables: `{
+              "input": {
+                "caption": "a #mild mannered #cow in @field eating #grass #",
+                "tags": [""]
+              }
+            }`,
+            operationName: 'Update',
+            query: `mutation Update($input: AssetInput!) {
+              update(id: "${docId}", asset: $input) {
+                caption
+                filename
+                location
+                tags
+              }
+            }`
+          })
+          .expect(200)
+          .expect((res) => {
+            const asset = res.body.data.update
+            assert.equal(asset.caption, 'a #mild mannered #cow in @field eating #grass #')
+            assert.equal(asset.filename, 'lorem-ipsum.txt')
+            assert.equal(asset.location, 'hawaii')
+            assert.equal(asset.tags.length, 3)
+            assert.equal(asset.tags[0], 'cow')
+            assert.equal(asset.tags[1], 'grass')
+            assert.equal(asset.tags[2], 'mild')
+          })
+          .end(function (err, res) {
+            if (err) {
+              return done(err)
+            }
+            done()
+          })
+      })
     })
   })
 

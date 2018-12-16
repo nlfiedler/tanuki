@@ -339,6 +339,7 @@ let submitUpdate =
       values: EditFormParams.state,
     ) => {
   let splitTags = Js.String.splitByRe([%bs.re "/,/"], values.tags);
+  /* this may introduce a single blank tag, but it's easier to let the backend prune it */
   let trimmedTags = Array.map(s => String.trim(s), splitTags);
   let newAsset: input = {
     "tags": Some(trimmedTags),
