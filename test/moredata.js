@@ -1,8 +1,8 @@
 //
 // Copyright (c) 2018 Nathan Fiedler
 //
-const {assert} = require('chai')
-const {before, describe, it, run} = require('mocha')
+const { assert } = require('chai')
+const { before, describe, it, run } = require('mocha')
 const request = require('supertest')
 const fs = require('fs-extra')
 const config = require('config')
@@ -71,7 +71,6 @@ setTimeout(function () {
     describe('assets', function () {
       it('should return a large count', function (done) {
         request(app)
-        request(app)
           .post('/graphql')
           .send({
             query: `query {
@@ -128,7 +127,7 @@ setTimeout(function () {
     describe('assets by one tag', function () {
       // With async/await let's go directly against the backend.
       it('should return list of matching assets', async function () {
-        let rows = await backend.query({tags: ['dipstick']})
+        let rows = await backend.query({ tags: ['dipstick'] })
         assert.isNotEmpty(rows)
         for (let row of rows) {
           let doc = await backend.fetchDocument(row.id)
@@ -140,7 +139,7 @@ setTimeout(function () {
     describe('assets by multiple tags', function () {
       // With async/await let's go directly against the backend.
       it('should return list of matching assets', async function () {
-        let rows = await backend.query({tags: ['cat', 'dog', 'hot']})
+        let rows = await backend.query({ tags: ['cat', 'dog', 'hot'] })
         assert.isNotEmpty(rows)
         for (let row of rows) {
           let doc = await backend.fetchDocument(row.id)
