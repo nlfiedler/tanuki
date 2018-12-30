@@ -12,7 +12,7 @@ fs.removeSync(config.get('backend.dbPath'))
 fs.removeSync(config.get('backend.thumbsDbPath'))
 
 // start the server, which also modifies the module path
-const app = require('../app.js')
+const app = require('app.js')
 const backend = require('lib/backend')
 const thumbs = require('lib/thumbs')
 

@@ -11,8 +11,8 @@ const config = require('config')
 const dbPath = config.get('backend.dbPath')
 fs.removeSync(dbPath)
 
-// start the server, which also modifies the module path
-const app = require('../app.js')
+// start the server
+const app = require('app.js')
 const backend = require('lib/backend')
 
 //

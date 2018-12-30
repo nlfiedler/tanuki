@@ -4,8 +4,8 @@
   "description": "Node.js digital asset management application",
   "main": "app.js",
   "scripts": {
-    "start": "node ./bin/www",
-    "test": "NODE_CONFIG_ENV=test mocha --delay",
+    "start": "NODE_PATH=. node ./bin/www",
+    "test": "NODE_PATH=. NODE_CONFIG_ENV=test mocha --delay",
     "lick": "license-checker --production --exclude MIT,ISC,LGPL,WTFPL,Apache-2.0,BSD-3-Clause,BSD-2-Clause,MPL-2.0,Unlicense"
   },
   "repository": {
@@ -33,7 +33,6 @@
     "apollo-server-express": "^2.3.1",
     "apollo-upload-client": "^9.1.0",
     "apollo-utilities": "^1.0.27",
-    "app-module-path": "^2.2.0",
     "body-parser": "^1.18.3",
     "bs-date-fns": "^0.1.6",
     "bs-platform": "^4.0.14",
@@ -66,7 +65,7 @@
     "sharp": "^0.21.1",
     "subscriptions-transport-ws": "^0.9.14",
     "ulid": "^2.3.0",
-    "winston": "^2.4.4",
+    "winston": "^3.1.0",
     "xmldom": "^0.1.27"
   },
   "devDependencies": {

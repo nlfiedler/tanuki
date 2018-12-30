@@ -12,6 +12,9 @@ gulp.task('serve', (cb) => {
   let called = false
   return nodemon({
     'script': './bin/www',
+    'env': {
+      'NODE_PATH': '.'
+    },
     'watch': '.',
     'ext': 'js'
   }).on('start', () => {

@@ -1,35 +1,21 @@
 //
 // Copyright (c) 2018 Nathan Fiedler
 //
-require('app-module-path').addPath(__dirname)
 const express = require('express')
 const path = require('path')
-const logger = require('morgan')
+const morgan = require('morgan')
 const pageRoutes = require('routes/pages')
 const gqlRoutes = require('routes/graphql')
 const backend = require('lib/backend')
 const config = require('config')
-const winston = require('winston')
+const logger = require('lib/logging')
 const rfs = require('rotating-file-stream')
-
-// Configure the logging not related to HTTP, which is handled using morgan.
-winston.exitOnError = false
-winston.level = config.get('backend.logger.level')
-if (config.has('backend.logger.file')) {
-  const filename = config.get('backend.logger.file')
-  winston.add(winston.transports.File, {
-    filename,
-    maxsize: 1048576,
-    maxFiles: 4
-  })
-  winston.remove(winston.transports.Console)
-}
 
 // Initialize the database asynchronously.
 backend.initDatabase().then(function (res) {
-  winston.info('database initialization result:', res)
+  logger.info('database initialization result:', res)
 }).catch(function (err) {
-  winston.error('database initialization error:', err)
+  logger.error('database initialization error:', err)
 })
 
 const app = express()
@@ -46,11 +32,11 @@ if (config.has('morgan.logger.logPath')) {
     maxFiles: 4,
     path: logDirectory
   })
-  app.use(logger('combined', { stream: accessLogStream }))
+  app.use(morgan('combined', { stream: accessLogStream }))
 } else if (process.env.NODE_ENV !== 'production') {
-  app.use(logger('dev'))
+  app.use(morgan('dev'))
 } else {
-  app.use(logger('combined'))
+  app.use(morgan('combined'))
 }
 
 app.use('/graphql', gqlRoutes)

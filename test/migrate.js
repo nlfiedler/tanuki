@@ -1,8 +1,8 @@
 //
 // Copyright (c) 2018 Nathan Fiedler
 //
-const {assert} = require('chai')
-const {before, describe, it, run} = require('mocha')
+const { assert } = require('chai')
+const { before, describe, it, run } = require('mocha')
 const fs = require('fs-extra')
 const config = require('config')
 const path = require('path')
@@ -15,9 +15,7 @@ const db = new PouchDB(dbPath)
 const assetsPath = config.get('backend.assetPath')
 fs.emptyDirSync(assetsPath)
 
-// this test does not need the server, but loading it sets the module path
-// and configures the logging for testing
-require('../app.js')
+require('app.js')
 const assets = require('lib/assets')
 const backend = require('lib/backend')
 const migrate = require('lib/migrate')

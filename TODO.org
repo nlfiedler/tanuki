@@ -1,7 +1,5 @@
 * Tanuki
 ** General Items
-*** TODO Change the logging to work the way zorigami does it
-*** TODO Use =NODE_PATH= instead of =app-module-path=, like zorigami
 *** TODO Home page stays stuck on "upload" even after images are uploaded
 *** TODO Looks like GraphQL server modules changed again
 **** c.f. https://github.com/jaydenseric/graphql-upload

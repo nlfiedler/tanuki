@@ -1,12 +1,12 @@
 //
 // Copyright (c) 2018 Nathan Fiedler
 //
-const {assert} = require('chai')
-const {before, describe, it, run} = require('mocha')
+const { assert } = require('chai')
+const { before, describe, it, run } = require('mocha')
 const request = require('supertest')
 const fs = require('fs-extra')
 const config = require('config')
-const winston = require('winston')
+const logger = require('lib/logging')
 
 // clean up from previous test runs before starting the server
 const dbPath = config.get('backend.dbPath')
@@ -14,14 +14,14 @@ fs.removeSync(dbPath)
 const logfile = config.get('backend.logger.file')
 fs.removeSync(logfile)
 
-// start the server, which also modifies the module path
-const app = require('../app.js')
+// start the server
+const app = require('app.js')
 const backend = require('lib/backend')
 
 // Check if a term appears in any of the log messages.
 function termFoundInLog (term) {
   return new Promise((resolve, reject) => {
-    winston.query({
+    logger.query({
       level: 'info',
       fields: ['message']
     }, function (err, results) {
