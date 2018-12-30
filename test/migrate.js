@@ -10,7 +10,6 @@ const PouchDB = require('pouchdb')
 
 // clean up from previous test runs before starting the server
 const dbPath = config.get('backend.dbPath')
-fs.removeSync(dbPath)
 const db = new PouchDB(dbPath)
 const assetsPath = config.get('backend.assetPath')
 fs.emptyDirSync(assetsPath)

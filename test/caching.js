@@ -8,9 +8,6 @@ const fs = require('fs-extra')
 const config = require('config')
 const logger = require('lib/logging')
 
-// clean up from previous test runs before starting the server
-const dbPath = config.get('backend.dbPath')
-fs.removeSync(dbPath)
 const logfile = config.get('backend.logger.file')
 fs.removeSync(logfile)
 

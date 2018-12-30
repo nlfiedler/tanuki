@@ -4,12 +4,6 @@
 const { assert } = require('chai')
 const { before, describe, it, run } = require('mocha')
 const request = require('supertest')
-const fs = require('fs-extra')
-const config = require('config')
-
-// clean up from previous test runs before starting the server
-const dbPath = config.get('backend.dbPath')
-fs.removeSync(dbPath)
 
 // start the server, which also modifies the module path
 const app = require('app.js')
