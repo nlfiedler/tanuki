@@ -1,11 +1,14 @@
 * Tanuki
 ** General Items
+*** TODO Update to latest =reductive= commits
+*** TODO Hold off on updating PouchDB to 7.0, indices are really slow
 *** TODO Home page stays stuck on "upload" even after images are uploaded
 *** TODO Looks like GraphQL server modules changed again
 **** c.f. https://github.com/jaydenseric/graphql-upload
 **** TODO Determine what packages we should be using
 **** TODO Determine what packages we can now remove
 **** TODO Change our code to conform to the new API
+*** TODO Replace Bulma with Tailwind CSS
 *** TODO Consider how to make thumbnail page responsive
 **** Show 1, 2, 3, or more depending on browser width
 **** Should be able to leverage CSS for this
@@ -35,20 +38,14 @@ include it in the database records.
 : been introduced recently by Exif version 2.31 (July 2016). Related tags are:
 : "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
 
-** ReasonML rewrite
-*** TODO Rewrite backend code in ReasonML
-**** GraphQL portion
-[[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-1-5651f75de497][ecliptic.io part 1]], [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-2-3c3b811f7491][part 2]], [[https://blog.ecliptic.io/a-reasonable-graphql-exploration-part-3-b303b375ab23][part 3]], [[https://blog.ecliptic.io/a-reasonable-graphql-followup-192f6ec29550][follow-up]]
-- shows how to write the GraphQL backend
-- uses Node/Express too
-- builds everything up, from types to encoders/decoders
-- uses [[https://github.com/glennsl/bs-json][bs-json]] for JSON encode/decode
-
-*** TODO Look at https://github.com/cristianoc/genType for JavaScript interop
-*** TODO Consider how to organize webui code from the backend code
-Presumably it will all eventually be written in ReasonML, how should the
-webui and backend code be separated?
-
+** TypeScript
+*** TODO Move the webui code into =web-src= or similar
+**** TODO Update the =gulpfile.js= configuration
+*** TODO Translate the =lib/.js= code to =src/.ts=
+*** TODO Rewrite the test code in TypeScript
+*** TODO Consider if =gulpfile.js= be translated as well
+*** TODO Translate the server code (=www=, =app.js=) to TypeScript
+**** TODO Change =package.json= to use =ts-node= instead of =node=
 ** Documentation
 *** Case Sensitivity
 - Data is stored as entered (case preservative)
