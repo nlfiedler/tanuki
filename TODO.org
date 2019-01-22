@@ -1,7 +1,8 @@
 * Tanuki
 ** General Items
 *** TODO Update to latest =reductive= commits
-*** TODO Hold off on updating PouchDB to 7.0, indices are really slow
+*** TODO Caption with non-alphanumeric next to tags messes it up
+**** e.g. ~(#nathan, #oma, #opa)~ misses the ~nathan~ and adds ~opa)~ as a tag
 *** TODO Home page stays stuck on "upload" even after images are uploaded
 *** TODO Looks like GraphQL server modules changed again
 **** c.f. https://github.com/jaydenseric/graphql-upload
