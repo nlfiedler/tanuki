@@ -1,6 +1,5 @@
 * Tanuki
 ** General Items
-*** TODO Update to latest =reductive= commits
 *** TODO Caption with non-alphanumeric next to tags messes it up
 **** e.g. ~(#nathan, #oma, #opa)~ misses the ~nathan~ and adds ~opa)~ as a tag
 *** TODO Home page stays stuck on "upload" even after images are uploaded

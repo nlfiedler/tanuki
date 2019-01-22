@@ -35,7 +35,7 @@
     "apollo-utilities": "^1.1.2",
     "body-parser": "^1.18.3",
     "bs-date-fns": "^0.1.6",
-    "bs-platform": "^4.0.14",
+    "bs-platform": "^4.0.18",
     "bs-reform": "^5.1.1",
     "config": "^3.0.0",
     "cookie-parser": "~1.4.3",
