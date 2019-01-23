@@ -12,7 +12,7 @@ const logfile = config.get('backend.logger.file')
 fs.removeSync(logfile)
 
 // start the server
-const app = require('app.js')
+const app = require('../dist/app.js').default
 const backend = require('lib/backend')
 
 // Check if a term appears in any of the log messages.

@@ -20,8 +20,6 @@ RUN apt-get install -q -y python
 #
 # Copy the application code and build.
 #
-COPY app.js .
-COPY bin bin
 COPY bsconfig.json .
 COPY config config
 COPY graphql_schema.json .
@@ -31,6 +29,7 @@ COPY package.json .
 COPY package-lock.json .
 COPY public public
 COPY routes routes
+COPY src src
 COPY web web
 COPY views views
 RUN npm ci
@@ -46,4 +45,4 @@ EXPOSE ${PORT}
 COPY docker/healthcheck.js .
 HEALTHCHECK CMD node ./healthcheck.js ${PORT}
 
-ENTRYPOINT [ "node",  "bin/www" ]
+ENTRYPOINT [ "node",  "./dist/server.js" ]

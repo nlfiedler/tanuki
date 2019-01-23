@@ -12,13 +12,14 @@ node_modules
 # ReasonML/BuckleScript
 #
 .merlin
-lib/bs
-lib/js
 .graphql_ppx_cache
 
 #
-# generated ReasonML code
+# compiled code
 #
+dist
+lib/bs
+lib/js
 public/javascripts/main.js
 
 #

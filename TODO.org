@@ -35,7 +35,9 @@ include it in the database records.
 
 ** TypeScript
 *** DONE Move the webui code into =web-src= or similar
-*** TODO Translate the server code (=www=, =app.js=) to TypeScript
+*** DONE Translate the server code (=www=, =app.js=) to TypeScript
+*** DONE Translate the routes to TypeScript
+*** DONE Fix the =Dockerfile= file references to =app.js= and =bin=
 *** TODO Translate the =lib/.js= code to =src/.ts=
 *** TODO Rewrite the test code in TypeScript
 ** Documentation

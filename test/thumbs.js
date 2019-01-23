@@ -6,7 +6,7 @@ const { before, describe, it, run } = require('mocha')
 const request = require('supertest')
 
 // start the server, which also modifies the module path
-const app = require('app.js')
+const app = require('../dist/app.js').default
 const backend = require('lib/backend')
 const thumbs = require('lib/thumbs')
 

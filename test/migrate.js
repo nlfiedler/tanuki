@@ -14,7 +14,7 @@ const db = new PouchDB(dbPath)
 const assetsPath = config.get('backend.assetPath')
 fs.emptyDirSync(assetsPath)
 
-require('app.js')
+require('../dist/app.js')
 const assets = require('lib/assets')
 const backend = require('lib/backend')
 const migrate = require('lib/migrate')
