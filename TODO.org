@@ -3,11 +3,6 @@
 *** TODO Caption with non-alphanumeric next to tags messes it up
 **** e.g. ~(#nathan, #oma, #opa)~ misses the ~nathan~ and adds ~opa)~ as a tag
 *** TODO Home page stays stuck on "upload" even after images are uploaded
-*** TODO Looks like GraphQL server modules changed again
-**** c.f. https://github.com/jaydenseric/graphql-upload
-**** TODO Determine what packages we should be using
-**** TODO Determine what packages we can now remove
-**** TODO Change our code to conform to the new API
 *** TODO Replace Bulma with Tailwind CSS
 *** TODO Consider how to make thumbnail page responsive
 **** Show 1, 2, 3, or more depending on browser width
@@ -39,13 +34,10 @@ include it in the database records.
 : "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
 
 ** TypeScript
-*** TODO Move the webui code into =web-src= or similar
-**** TODO Update the =gulpfile.js= configuration
+*** DONE Move the webui code into =web-src= or similar
+*** TODO Translate the server code (=www=, =app.js=) to TypeScript
 *** TODO Translate the =lib/.js= code to =src/.ts=
 *** TODO Rewrite the test code in TypeScript
-*** TODO Consider if =gulpfile.js= be translated as well
-*** TODO Translate the server code (=www=, =app.js=) to TypeScript
-**** TODO Change =package.json= to use =ts-node= instead of =node=
 ** Documentation
 *** Case Sensitivity
 - Data is stored as entered (case preservative)

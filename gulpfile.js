@@ -48,7 +48,7 @@ gulp.task('bsb-make', (cb) => {
 })
 
 gulp.task('webpack', () => {
-  return gulp.src('lib/js/src/main.bs.js')
+  return gulp.src('lib/js/web/main.bs.js')
     .pipe(webpack({
       mode: production ? 'production' : 'development',
       output: {
@@ -60,7 +60,7 @@ gulp.task('webpack', () => {
 })
 
 gulp.task('watch-server', () => {
-  gulp.watch('src/**/*.re', gulp.series('compile'))
+  gulp.watch('web/**/*.re', gulp.series('compile'))
 })
 
 gulp.task('compile', gulp.series('bsb-make', 'webpack'))

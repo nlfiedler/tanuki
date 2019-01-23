@@ -16,7 +16,7 @@
     "graphql_ppx/ppx"
   ],
   "sources": [
-    "src"
+    "web"
   ],
   "suffix": ".bs.js"
 }
