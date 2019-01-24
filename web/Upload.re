@@ -10,38 +10,13 @@ module UploadAssetMutation = ReasonApollo.CreateMutation(UploadAsset);
 
 type validityState = {. "valid": bool};
 
-/* Web File API object; different browsers have different properties. */
-type fileType = {
-  .
-  "lastModified": int,
-  "lastModifiedDate": string,
-  "name": string,
-  "size": int,
-  "type_": string,
-  "webkitRelativePath": string,
-};
-
-/* let fileToJson = (file: fileType): Js.Json.t =>
-   Js.Json.(
-     object_(
-       Js.Dict.fromList([
-         ("lastModified", file##lastModified |> float_of_int |> number),
-         ("lastModifiedDate", file##lastModifiedDate |> string),
-         ("name", file##name |> string),
-         ("size", file##size |> float_of_int |> number),
-         ("type", file##type_ |> string),
-         ("webkitRelativePath", file##webkitRelativePath |> string),
-       ]),
-     )
-   ); */
-
 let uploadSelection =
-    (event: ReactEvent.Form.t): (option(string), option(fileType)) => {
+    (event: ReactEvent.Form.t): (option(string), option(Js.Json.t)) => {
   let validity: validityState = ReactEvent.Form.target(event)##validity;
   if (!validity##valid) {
     (None, None);
   } else {
-    let files: list(fileType) = ReactEvent.Form.target(event)##files;
+    let files: list(Js.Json.t) = ReactEvent.Form.target(event)##files;
     let firstFile = List.length(files) > 0 ? Some(List.hd(files)) : None;
     let filename: string = ReactEvent.Form.target(event)##value;
     /*
@@ -69,11 +44,6 @@ let hasDraggable = [%raw
   |}
 ];
 
-/* HACK: run the GraphQL mutation using JavaScript. */
-let runMutate: (UploadAssetMutation.apolloMutation, fileType) => unit = [%raw
-  (mutate, file) => "{ mutate({ file }) }"
-];
-
 /*
  * After the upload to /import, the backend redirects the browser to the asset
  * edit page, and that is handled in the main module.
@@ -81,10 +51,10 @@ let runMutate: (UploadAssetMutation.apolloMutation, fileType) => unit = [%raw
 module Component = {
   type state = {
     uploadFilename: option(string),
-    uploadFile: option(fileType),
+    uploadFile: option(Js.Json.t),
   };
   type action =
-    | UploadSelection((option(string), option(fileType)));
+    | UploadSelection((option(string), option(Js.Json.t)));
   let component = ReasonReact.reducerComponent("Upload");
   let make = _children => {
     ...component,
@@ -102,94 +72,81 @@ module Component = {
       let helpDisplay = hasDraggable ? "block" : "none";
       let uploadDisabled = Belt.Option.isNone(self.state.uploadFilename);
       <UploadAssetMutation>
-        ...{
-             (mutate, {result}) =>
-               switch (result) {
-               | Loading => <p> {ReasonReact.string("Loading...")} </p>
-               | Error(error) =>
-                 Js.log(error);
-                 <div> {ReasonReact.string(error##message)} </div>;
-               | Data(result) =>
-                 <div>
-                  {ReasonReact.Router.push("/assets/" ++ result##upload ++ "/edit");
-                   ReasonReact.string("loading...")}
-                 </div>
-               | NotCalled =>
-                 <div>
-                   <form action="#" method="post">
-                     <div className="control">
-                       <div className="file has-name is-boxed">
-                         <label className="file-label">
-                           <input
-                             className="file-input"
-                             id="fileInput"
-                             type_="file"
-                             multiple=false
-                             name="asset"
-                             required=true
-                             onChange=(
-                               evt =>
-                                 self.send(
-                                   UploadSelection(uploadSelection(evt)),
-                                 )
-                             )
-                           />
-                           <span className="file-cta">
-                             <span className="file-icon">
-                               <i className="fas fa-upload" />
-                             </span>
-                             <span className="file-label">
-                               {ReasonReact.string("Choose a file...")}
-                             </span>
-                           </span>
-                           <span className="file-name">
-                             {ReasonReact.string(filename)}
-                           </span>
-                         </label>
-                       </div>
-                       <p
-                         className="help"
-                         style={
-                           ReactDOMRe.Style.make(~display=helpDisplay, ())
-                         }>
-                         {
-                           ReasonReact.string(
-                             "You can drag and drop a file on the above control",
-                           )
-                         }
-                       </p>
-                       <div className="control">
-                         <input
-                           className="button is-primary"
-                           type_="submit"
-                           value="Upload"
-                           disabled=uploadDisabled
-                           onClick=(
-                             _ => {
-                               let file =
-                                 Belt.Option.getExn(self.state.uploadFile);
-                               runMutate(mutate, file);
-                               /* let upload =
-                                    UploadAsset.make(
-                                      ~file=
-                                        fileToJson(
-                                          Belt.Option.getExn(
-                                            self.state.uploadFile,
-                                          ),
-                                        ),
-                                      (),
-                                    );
-                                  mutate(~variables=upload##variables, ())
-                                  |> ignore; */
-                             }
-                           )
-                         />
-                       </div>
-                     </div>
-                   </form>
-                 </div>
-               }
-           }
+        ...{(mutate, {result}) =>
+          switch (result) {
+          | Loading => <p> {ReasonReact.string("Loading...")} </p>
+          | Error(error) =>
+            Js.log(error);
+            <div> {ReasonReact.string(error##message)} </div>;
+          | Data(result) =>
+            <div>
+              {ReasonReact.Router.push(
+                 "/assets/" ++ result##upload ++ "/edit",
+               )
+               ReasonReact.string("loading...")}
+            </div>
+          | NotCalled =>
+            <div>
+              <form action="#" method="post">
+                <div className="control">
+                  <div className="file has-name is-boxed">
+                    <label className="file-label">
+                      <input
+                        className="file-input"
+                        id="fileInput"
+                        type_="file"
+                        multiple=false
+                        name="asset"
+                        required=true
+                        onChange={evt =>
+                          self.send(UploadSelection(uploadSelection(evt)))
+                        }
+                      />
+                      <span className="file-cta">
+                        <span className="file-icon">
+                          <i className="fas fa-upload" />
+                        </span>
+                        <span className="file-label">
+                          {ReasonReact.string("Choose a file...")}
+                        </span>
+                      </span>
+                      <span className="file-name">
+                        {ReasonReact.string(filename)}
+                      </span>
+                    </label>
+                  </div>
+                  <p
+                    className="help"
+                    style={ReactDOMRe.Style.make(~display=helpDisplay, ())}>
+                    {ReasonReact.string(
+                       "You can drag and drop a file on the above control",
+                     )}
+                  </p>
+                  <div className="control">
+                    <input
+                      className="button is-primary"
+                      type_="submit"
+                      value="Upload"
+                      disabled=uploadDisabled
+                      onClick={_ => {
+                        let upload =
+                          UploadAsset.make(
+                            ~file=
+                              switch (self.state.uploadFile) {
+                              | None => Js.Json.null
+                              | Some(fyle) => fyle
+                              },
+                            (),
+                          );
+                        mutate(~variables=upload##variables, ()) |> ignore;
+                      }}
+                    />
+                  </div>
+                </div>
+              </form>
+            </div>
+          }
+        }
       </UploadAssetMutation>;
     },
   };
