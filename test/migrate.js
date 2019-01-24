@@ -6,11 +6,8 @@ const { before, describe, it, run } = require('mocha')
 const fs = require('fs-extra')
 const config = require('config')
 const path = require('path')
-const PouchDB = require('pouchdb')
 
 // clean up from previous test runs before starting the server
-const dbPath = config.get('backend.dbPath')
-const db = new PouchDB(dbPath)
 const assetsPath = config.get('backend.assetPath')
 fs.emptyDirSync(assetsPath)
 
@@ -47,16 +44,16 @@ setTimeout(function () {
       })
 
       it('should not modify up-to-date documents', async function () {
-        let index = await db.get('_design/assets')
-        let assetBefore = await db.get(docId)
-        let ok = await migrate.migrate(db, 0, index.version)
+        let index = await backend.fetchDocument('_design/assets')
+        let assetBefore = await backend.fetchDocument(docId)
+        let ok = await migrate.migrate(backend.getDbObject(), 0, index.version)
         assert.isTrue(ok, 'migrate() returned true')
-        let assetAfter = await db.get(docId)
+        let assetAfter = await backend.fetchDocument(docId)
         assert.equal(assetAfter._rev, assetBefore._rev, 'doc revision unchanged')
       })
 
       it('should not allow version downgrade', async function () {
-        let ok = await migrate.migrate(db, 5, 1)
+        let ok = await migrate.migrate(backend.getDbObject(), 5, 1)
         assert.isFalse(ok, 'migrate() rejected version downgrade')
       })
     })
@@ -81,10 +78,10 @@ setTimeout(function () {
       })
 
       it('should not change documents from v3 to v4', async function () {
-        let assetBefore = await db.get(docId)
-        let ok = await migrate.migrate(db, 3, 4)
+        let assetBefore = await backend.fetchDocument(docId)
+        let ok = await migrate.migrate(backend.getDbObject(), 3, 4)
         assert.isTrue(ok, 'migrate() returned true')
-        let assetAfter = await db.get(docId)
+        let assetAfter = await backend.fetchDocument(docId)
         // despite the document obviously needing changes, the versions
         // specified did not require doing anything to them
         assert.equal(assetAfter._rev, assetBefore._rev, 'doc revision unchanged')
@@ -120,13 +117,13 @@ setTimeout(function () {
 
       it('should rename, remove, and format fields', async function () {
         assert.isTrue(fs.existsSync(oldpath))
-        let index = await db.get('_design/assets')
-        let assetBefore = await db.get(oldDocId)
-        let ok = await migrate.migrate(db, 0, index.version)
+        let index = await backend.fetchDocument('_design/assets')
+        let assetBefore = await backend.fetchDocument(oldDocId)
+        let ok = await migrate.migrate(backend.getDbObject(), 0, index.version)
         assert.isTrue(ok, 'migrate() returned true')
         const newDocId = await backend.byChecksum('sha256-' + oldDocId)
         assert.isNotNull(newDocId)
-        let assetAfter = await db.get(newDocId)
+        let assetAfter = await backend.fetchDocument(newDocId)
         // lots of changes
         assert.notEqual(assetAfter._id, assetBefore._id, 'document identifier changed')
         assert.property(assetAfter, 'filesize', 'filesize property defined')
