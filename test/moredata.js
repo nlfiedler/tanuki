@@ -5,7 +5,7 @@ const { assert } = require('chai')
 const { before, describe, it, run } = require('mocha')
 const request = require('supertest')
 
-// start the server, which also modifies the module path
+// start the server
 const app = require('../dist/app.js').default
 const assets = require('lib/assets')
 const backend = require('lib/backend')
