@@ -1,10 +1,13 @@
 #
-# Copyright (c) 2018 Nathan Fiedler
+# Copyright (c) 2018-2019 Nathan Fiedler
 #
 
 # Our custom date/time that is represented as the number of milliseconds since
 # January 1, 1970, 00:00:00 UTC, with leap seconds ignored.
 scalar Date
+
+# Represents signed integers of up to 53-bits, useful for file sizes.
+scalar BigInt
 
 # The Upload type is implemented by apollo-server and represents a file upload.
 scalar Upload
@@ -21,7 +24,7 @@ type Asset {
   # some features to break with respect to that asset, so be careful.
   filepath: String!
   # The size in bytes of the asset.
-  filesize: Int!
+  filesize: BigInt!
   # The date and time that best represents the asset. For images
   # with EXIF data, this may be the original date/time, while for
   # videos, it may be the creation time.

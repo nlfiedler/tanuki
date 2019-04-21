@@ -25,7 +25,17 @@ To start an instance configured for development, run the following command.
 ```shell
 $ npm install
 $ npm test
-$ gulp
+$ npm start
+```
+
+### Updating the GraphQL PPX schema
+
+The ReasonML support for GraphQL uses a JSON formatted representation of the
+schema, which is generated using the following command (after starting a local
+server in another window):
+
+```shell
+$ npx send-introspection-query http://localhost:3000/graphql
 ```
 
 ## Deployment
@@ -107,7 +117,7 @@ However, this design had several problems:
 
 ## Project History
 
-Original idea was inspired by [perkeep](https://perkeep.org) (née camlistore). Since installing [Go](https://golang.org) on [Solaris](https://www.oracle.com/solaris/) was difficult, something new was needed. That is, given the operating system there would not be any readily available software to serve the purpose. Would later learn that this application space is referred to as "digital asset management."
+Original idea was inspired by [perkeep](https://perkeep.org) (née camlistore). Since installing [Go](https://golang.org) on [Solaris](https://www.oracle.com/solaris/) was difficult, another solution was desired. That is, given the operating system there would not be any readily available software to serve the purpose. Would later learn that this application space is referred to as "digital asset management."
 
 ### July 2014
 

@@ -4,6 +4,7 @@
   "description": "Node.js digital asset management application",
   "scripts": {
     "pretest": "gulp compile",
+    "start": "gulp",
     "test": "NODE_PATH=. NODE_CONFIG_ENV=test mocha --delay",
     "lick": "license-checker --production --exclude MIT,ISC,LGPL,WTFPL,Apache-2.0,BSD-3-Clause,BSD-2-Clause,MPL-2.0,Unlicense"
   },

@@ -1,9 +1,9 @@
 * Tanuki
 ** General Items
+*** TODO Update outdated dependencies
 *** TODO Caption with non-alphanumeric next to tags messes it up
 **** e.g. ~(#nathan, #oma, #opa)~ misses the ~nathan~ and adds ~opa)~ as a tag
 *** TODO Home page stays stuck on "upload" even after images are uploaded
-*** TODO Replace Bulma with Tailwind CSS
 *** TODO Consider how to make thumbnail page responsive
 **** Show 1, 2, 3, or more depending on browser width
 **** Should be able to leverage CSS for this
@@ -33,13 +33,35 @@ include it in the database records.
 : been introduced recently by Exif version 2.31 (July 2016). Related tags are:
 : "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
 
-** TypeScript
-*** DONE Move the webui code into =web-src= or similar
-*** DONE Translate the server code (=www=, =app.js=) to TypeScript
-*** DONE Translate the routes to TypeScript
-*** DONE Fix the =Dockerfile= file references to =app.js= and =bin=
-*** TODO Translate the =lib/.js= code to =src/.ts=
-*** TODO Rewrite the test code in TypeScript
+** Rust rewrite
+*** Action Plan
+**** TODO Translate caption parsing code
+**** TODO Translate query parsing code
+**** TODO Translate database layer
+***** should enable WAL by default
+***** need a plan for the index
+Could have =my-index-on-field/<value>-NNN= keys that have a single record
+reference. Then use a key iterator to scan those values within a key range
+(it is very efficient). For multiple query terms, would sort and merge the
+results to get the final result.
+
+The =NNN= could be a ulid or a monotonically increasing number. Depends if
+the range scan iterators can take a wildcard for the starting key and move
+from there. Otherwise, would want to have a ~sequence~ type of selector
+from the database to facilitate the counter.
+***** could use =GetUpdatesSince()= to tail updates to the default column family
+and then update the reverse index as new documents are written
+***** RocksDB FAQ seems to suggest using column families for different "key spaces"
+****** c.f. https://github.com/facebook/rocksdb/wiki/Column-Families
+***** data migration would likely involve rebuilding the indices
+*** Libraries
+**** Facial recognition
+***** https://crates.io/crates/opencv (WTFPL)
+**** Images
+***** HEIF: https://github.com/oussama/libheif-rs
+***** give this a try: https://github.com/imazen/imageflow
+***** search crates.io for =vips= bindings, there are several
+***** if all else fails, can use =magick-rust= (needs bindgen updates soon)
 ** Documentation
 *** Case Sensitivity
 - Data is stored as entered (case preservative)

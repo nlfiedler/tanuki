@@ -285,7 +285,7 @@
                 "name": null,
                 "ofType": {
                   "kind": "SCALAR",
-                  "name": "Int",
+                  "name": "BigInt",
                   "ofType": null
                 }
               },
@@ -446,8 +446,8 @@
         },
         {
           "kind": "SCALAR",
-          "name": "Int",
-          "description": "The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1. ",
+          "name": "BigInt",
+          "description": "The `BigInt` scalar type represents signed 53-bit integers.",
           "fields": null,
           "inputFields": null,
           "interfaces": null,
@@ -467,7 +467,17 @@
         {
           "kind": "SCALAR",
           "name": "Float",
-          "description": "The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point). ",
+          "description": "The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point). ",
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "SCALAR",
+          "name": "Int",
+          "description": "The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1. ",
           "fields": null,
           "inputFields": null,
           "interfaces": null,
@@ -487,13 +497,9 @@
                 "kind": "LIST",
                 "name": null,
                 "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "String",
-                    "ofType": null
-                  }
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
                 }
               },
               "defaultValue": null
@@ -505,13 +511,9 @@
                 "kind": "LIST",
                 "name": null,
                 "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "String",
-                    "ofType": null
-                  }
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
                 }
               },
               "defaultValue": null
@@ -703,7 +705,7 @@
             },
             {
               "name": "thumbnailUrl",
-              "description": "This URL is for the thumbnail image fitting a 240x240 pixel box.",
+              "description": "This relative URL is for the thumbnail image fitting a 240x240 pixel box.",
               "args": [],
               "type": {
                 "kind": "NON_NULL",
@@ -719,7 +721,7 @@
             },
             {
               "name": "widethumbUrl",
-              "description": "This URL is for the \"wide\" thumbnail image that is 240 pixels high,\nbut whose width is determined by the image aspect ratio.",
+              "description": "This relative URL is for the thumbnail image that is 240 pixels high,\nand whose width is determined by the image aspect ratio.",
               "args": [],
               "type": {
                 "kind": "NON_NULL",
@@ -958,7 +960,7 @@
         {
           "kind": "SCALAR",
           "name": "Upload",
-          "description": "The `Upload` scalar type represents a file upload promise that resolves an object containing `stream`, `filename`, `mimetype` and `encoding`.",
+          "description": "The `Upload` scalar type represents a file upload.",
           "fields": null,
           "inputFields": null,
           "interfaces": null,
@@ -1708,54 +1710,6 @@
               },
               "isDeprecated": false,
               "deprecationReason": null
-            },
-            {
-              "name": "onOperation",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Boolean",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": true,
-              "deprecationReason": "Use `locations`."
-            },
-            {
-              "name": "onFragment",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Boolean",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": true,
-              "deprecationReason": "Use `locations`."
-            },
-            {
-              "name": "onField",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Boolean",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": true,
-              "deprecationReason": "Use `locations`."
             }
           ],
           "inputFields": null,
@@ -1810,6 +1764,12 @@
             {
               "name": "INLINE_FRAGMENT",
               "description": "Location adjacent to an inline fragment.",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "VARIABLE_DEFINITION",
+              "description": "Location adjacent to a variable definition.",
               "isDeprecated": false,
               "deprecationReason": null
             },
@@ -1944,7 +1904,7 @@
           "args": [
             {
               "name": "reason",
-              "description": "Explains why this element was deprecated, usually also including a suggestion for how to access supported similar data. Formatted in [Markdown](https://daringfireball.net/projects/markdown/).",
+              "description": "Explains why this element was deprecated, usually also including a suggestion for how to access supported similar data. Formatted using the Markdown syntax (as specified by [CommonMark](https://commonmark.org/).",
               "type": {
                 "kind": "SCALAR",
                 "name": "String",
