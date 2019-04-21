@@ -6,6 +6,7 @@
 **** Or maybe that tool has an update that fixes this?
 **** c.f. commit =b8fa735=
 *** TODO Update outdated dependencies
+*** TODO Try to resolve the npm vulnerabilities
 *** TODO Caption with non-alphanumeric next to tags messes it up
 **** e.g. ~(#nathan, #oma, #opa)~ misses the ~nathan~ and adds ~opa)~ as a tag
 *** TODO Home page stays stuck on "upload" even after images are uploaded
