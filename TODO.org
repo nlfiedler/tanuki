@@ -1,11 +1,11 @@
 * Tanuki
 ** General Items
+*** TODO Update outdated dependencies
 *** TODO Temporarily figure out how to deal with the GraphQL schema weirdness
 **** The introspection tool generates weird types for the non-optional array of strings
 **** Maybe that tool is correct and my types are wrong?
 **** Or maybe that tool has an update that fixes this?
 **** c.f. commit =b8fa735=
-*** TODO Update outdated dependencies
 *** TODO Try to resolve the npm vulnerabilities
 *** TODO Caption with non-alphanumeric next to tags messes it up
 **** e.g. ~(#nathan, #oma, #opa)~ misses the ~nathan~ and adds ~opa)~ as a tag

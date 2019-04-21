@@ -6,7 +6,8 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     environment:
-      # need to use different paths for container
+      NODE_PATH: "."
+      # need to use different config paths for container
       NODE_ENV: docker
       PORT: 3000
     ports:
