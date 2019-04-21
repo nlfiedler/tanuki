@@ -37,8 +37,8 @@
     "bs-date-fns": "^0.1.6",
     "bs-platform": "^4.0.18",
     "bs-reform": "^5.1.1",
-    "config": "^3.0.0",
-    "cookie-parser": "~1.4.3",
+    "config": "^3.1.0",
+    "cookie-parser": "^1.4.4",
     "dateformat": "^3.0.3",
     "debug": "^4.1.1",
     "ejs": "^2.6.1",
@@ -64,7 +64,7 @@
     "sharp": "^0.21.3",
     "subscriptions-transport-ws": "^0.9.14",
     "ulid": "^2.3.0",
-    "winston": "^3.1.0",
+    "winston": "^3.2.1",
     "xmldom": "^0.1.27"
   },
   "devDependencies": {
