@@ -30,6 +30,7 @@ COPY package-lock.json .
 COPY public public
 COPY src src
 COPY web web
+COPY tsconfig.json .
 COPY views views
 RUN npm ci
 RUN gulp compile
