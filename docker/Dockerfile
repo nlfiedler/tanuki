@@ -28,7 +28,6 @@ COPY lib lib
 COPY package.json .
 COPY package-lock.json .
 COPY public public
-COPY routes routes
 COPY src src
 COPY web web
 COPY views views
