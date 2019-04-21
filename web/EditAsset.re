@@ -7,7 +7,7 @@ type t = {
   "duration": option(float),
   "filename": string,
   "filepath": string,
-  "filesize": int,
+  "filesize": Js.Json.t,
   "location": option(string),
   "mimetype": string,
   "tags": Js.Array.t(string),

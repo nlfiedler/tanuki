@@ -7,7 +7,7 @@ type t = {
   "duration": option(float),
   "filename": string,
   "filepath": string,
-  "filesize": int,
+  "filesize": Js.Json.t,
   "location": option(string),
   "mimetype": string,
   "tags": Js.Array.t(string),
@@ -55,6 +55,12 @@ let formatDate = (datetime: Js.Json.t) =>
     Js.Date.toLocaleString(d);
   };
 
+let formatBigInt = (bigint: Js.Json.t) =>
+  switch (Js.Json.decodeNumber(bigint)) {
+  | None => "INVALID BIGINT"
+  | Some(num) => Js.Float.toFixed(num)
+  };
+
 let assetPreview = (asset: t) =>
   if (Js.String.startsWith("video/", asset##mimetype)) {
     <video
@@ -87,7 +93,7 @@ let assetDetails = (asset: t) =>
       </tr>
       <tr>
         <td> {ReasonReact.string("Size")} </td>
-        <td> {ReasonReact.string(string_of_int(asset##filesize))} </td>
+        <td> {ReasonReact.string(formatBigInt(asset##filesize))} </td>
       </tr>
       {
         switch (asset##duration) {
