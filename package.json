@@ -42,7 +42,7 @@
     "dateformat": "^3.0.3",
     "debug": "^4.1.1",
     "ejs": "^2.6.1",
-    "exifreader": "^2.5.0",
+    "exifreader": "^2.8.2",
     "express": "^4.16.4",
     "ffmpeg-static": "^2.4.0",
     "ffprobe-static": "^3.0.0",
@@ -62,7 +62,7 @@
     "rotating-file-stream": "^1.4.0",
     "serve-favicon": "~2.5.0",
     "sharp": "^0.21.3",
-    "subscriptions-transport-ws": "^0.9.14",
+    "subscriptions-transport-ws": "^0.9.16",
     "ulid": "^2.3.0",
     "winston": "^3.2.1",
     "xmldom": "^0.1.27"
