@@ -102,7 +102,7 @@ let assetDetails = (asset: t) =>
           <tr>
             <td> {ReasonReact.string("Duration")} </td>
             <td>
-              {ReasonReact.string(string_of_float(value) ++ "seconds")}
+              {ReasonReact.string(Js.Float.toString(value) ++ "seconds")}
             </td>
           </tr>
         }

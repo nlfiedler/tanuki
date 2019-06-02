@@ -56,7 +56,7 @@ let dateValidator: string => option(string) =
     if (String.length(value) == 0) {
       None;
     } else {
-      switch (Js.Re.exec(value, dateRegex)) {
+      switch (Js.Re.exec_(dateRegex, value)) {
       | None => Some("date format must be yyyy-MM-dd")
       | Some(_result) => None
       };
@@ -265,6 +265,15 @@ let rangeDateStrToInt = str =>
   };
 
 /*
+ * Split the string on commas, replacing None with empty string.
+ */
+let splitOnComma = (str: string): array(string) => {
+  let parts = Js.String.splitByRe([%bs.re "/,/"], str);
+  // let somes = List.filter(e => Js.Option.isSome(e), parts);
+  Array.map(a => Belt.Option.getWithDefault(a, ""), parts);
+};
+
+/*
  * Convert the form parameters into GraphQL search parameters.
  */
 let makeSearchParams = (params: SearchFormParams.state) => {
@@ -274,13 +283,13 @@ let makeSearchParams = (params: SearchFormParams.state) => {
       lst,
       [],
     );
-  let splitTags = Js.String.splitByRe([%bs.re "/,/"], params.tags);
+  let splitTags = splitOnComma(params.tags);
   let trimmedTags = Array.map(s => String.trim(s), splitTags);
   let nonEmptyTags = filterEmpties(trimmedTags);
   let tags =
     List.length(nonEmptyTags) > 0 ?
       Some(Array.of_list(nonEmptyTags)) : None;
-  let splitLocations = Js.String.splitByRe([%bs.re "/,/"], params.locations);
+  let splitLocations = splitOnComma(params.locations);
   let trimmedLocations = Array.map(s => String.trim(s), splitLocations);
   let nonEmptyLocations = filterEmpties(trimmedLocations);
   let locations =

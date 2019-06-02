@@ -100,7 +100,7 @@ let dateValidator: string => option(string) =
     if (String.length(value) == 0) {
       None;
     } else {
-      switch (Js.Re.exec(value, dateRegex)) {
+      switch (Js.Re.exec_(dateRegex, value)) {
       | None => Some("date format must be yyyy-MM-dd HH:mm")
       | Some(_result) => None
       };
@@ -332,13 +332,22 @@ let userDateStrToInt = str =>
     None;
   };
 
+/*
+ * Split the string on commas, replacing None with empty string.
+ */
+let splitOnComma = (str: string): array(string) => {
+  let parts = Js.String.splitByRe([%bs.re "/,/"], str);
+  // let somes = List.filter(e => Js.Option.isSome(e), parts);
+  Array.map(a => Belt.Option.getWithDefault(a, ""), parts);
+};
+
 let submitUpdate =
     (
       asset: t,
       mutate: UpdateAssetMutation.apolloMutation,
       values: EditFormParams.state,
     ) => {
-  let splitTags = Js.String.splitByRe([%bs.re "/,/"], values.tags);
+  let splitTags = splitOnComma(values.tags);
   /* this may introduce a single blank tag, but it's easier to let the backend prune it */
   let trimmedTags = Array.map(s => String.trim(s), splitTags);
   let newAsset: input = {
