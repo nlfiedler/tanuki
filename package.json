@@ -57,7 +57,7 @@
     "pouchdb-find": "^7.0.0",
     "react-apollo": "^2.5.6",
     "reason-apollo": "^0.15.2",
-    "reason-react": "^0.6.0",
+    "reason-react": "^0.7.0",
     "reductive": "github:reasonml-community/reductive",
     "rotating-file-stream": "^1.4.1",
     "serve-favicon": "~2.5.0",
