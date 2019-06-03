@@ -1,6 +1,11 @@
 * Tanuki
 ** General Items
 *** TODO Update outdated dependencies
+*** TODO Figure out how to migrate to ReasonReact 0.7
+*** TODO Figure out how to migrate to Reason Apollo 0.16
+*** TODO Use the new =[@react.component]= notation for ReasonReact components
+*** TODO Upgrade to react-jsx version 3
+**** c.f. https://reasonml.github.io/reason-react/docs/en/jsx
 *** TODO Temporarily figure out how to deal with the GraphQL schema weirdness
 **** The introspection tool generates weird types for the non-optional array of strings
 **** Maybe that tool is correct and my types are wrong?
