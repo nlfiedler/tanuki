@@ -36,23 +36,21 @@ module YearsRe = {
       ...component,
       render: _self =>
         <GetYearsQuery>
-          ...{
-               ({result}) =>
-                 switch (result) {
-                 | Loading =>
-                   <div> {ReasonReact.string("Loading years...")} </div>
-                 | Error(error) =>
-                   Js.log(error);
-                   <div> {ReasonReact.string(error##message)} </div>;
-                 | Data(response) =>
-                   <div className="tags">
-                     <span className="tag is-info">
-                       {ReasonReact.string("Years")}
-                     </span>
-                     {ReasonReact.array(buildYears(response##years))}
-                   </div>
-                 }
-             }
+          ...{({result}) =>
+            switch (result) {
+            | Loading => <div> {ReasonReact.string("Loading years...")} </div>
+            | Error(error) =>
+              Js.log(error);
+              <div> {ReasonReact.string(error##message)} </div>;
+            | Data(response) =>
+              <div className="tags">
+                <span className="tag is-info">
+                  {ReasonReact.string("Years")}
+                </span>
+                {ReasonReact.array(buildYears(response##years))}
+              </div>
+            }
+          }
         </GetYearsQuery>,
     };
   };

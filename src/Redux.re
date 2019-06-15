@@ -28,24 +28,24 @@ let appReducer = (state, action) =>
       ...state,
       pageNumber: 1,
       selectedTags:
-        Belt.Set.String.has(state.selectedTags, label) ?
-          Belt.Set.String.remove(state.selectedTags, label) :
-          Belt.Set.String.add(state.selectedTags, label),
+        Belt.Set.String.has(state.selectedTags, label)
+          ? Belt.Set.String.remove(state.selectedTags, label)
+          : Belt.Set.String.add(state.selectedTags, label),
     }
   | ToggleLocation(label) => {
       ...state,
       pageNumber: 1,
       selectedLocations:
-        Belt.Set.String.has(state.selectedLocations, label) ?
-          Belt.Set.String.remove(state.selectedLocations, label) :
-          Belt.Set.String.add(state.selectedLocations, label),
+        Belt.Set.String.has(state.selectedLocations, label)
+          ? Belt.Set.String.remove(state.selectedLocations, label)
+          : Belt.Set.String.add(state.selectedLocations, label),
     }
   | ToggleYear(year) => {
       ...state,
       pageNumber: 1,
       selectedYear:
-        Belt.Option.eq(state.selectedYear, Some(year), (a, b) => a == b) ?
-          None : Some(year),
+        Belt.Option.eq(state.selectedYear, Some(year), (a, b) => a == b)
+          ? None : Some(year),
     }
   | Paginate(page) => {...state, pageNumber: page}
   | SaveSearch(inputs) => {...state, savedSearch: inputs}

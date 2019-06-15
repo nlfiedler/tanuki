@@ -107,28 +107,22 @@ module TagsRe = {
         },
       render: self =>
         <GetTagsQuery>
-          ...{
-               ({result}) =>
-                 switch (result) {
-                 | Loading =>
-                   <div> {ReasonReact.string("Loading tags...")} </div>
-                 | Error(error) =>
-                   Js.log(error);
-                   <div> {ReasonReact.string(error##message)} </div>;
-                 | Data(response) =>
-                   <div className="tags">
-                     <span className="tag is-info">
-                       {ReasonReact.string("Tags")}
-                     </span>
-                     {
-                       ReasonReact.array(
-                         buildTags(self.state, response##tags),
-                       )
-                     }
-                     {allTagsToggle(self.state, self.send, response##tags)}
-                   </div>
-                 }
-             }
+          ...{({result}) =>
+            switch (result) {
+            | Loading => <div> {ReasonReact.string("Loading tags...")} </div>
+            | Error(error) =>
+              Js.log(error);
+              <div> {ReasonReact.string(error##message)} </div>;
+            | Data(response) =>
+              <div className="tags">
+                <span className="tag is-info">
+                  {ReasonReact.string("Tags")}
+                </span>
+                {ReasonReact.array(buildTags(self.state, response##tags))}
+                {allTagsToggle(self.state, self.send, response##tags)}
+              </div>
+            }
+          }
         </GetTagsQuery>,
     };
   };

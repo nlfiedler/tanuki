@@ -75,27 +75,27 @@ let makeLinks = (currentPage: int, totalCount: int, pager) => {
   };
   let firstLink = paginationLink(currentPage, 1, pager);
   let prevLink =
-    currentPage - 10 <= 1 ?
-      None : namedPaginationLink("<<", currentPage - 10, pager);
+    currentPage - 10 <= 1
+      ? None : namedPaginationLink("<<", currentPage - 10, pager);
   let preDots =
-    lower > 2 ?
-      Some(
-        <li key="prev" className="pagination-ellipsis">
-          <span> {ReasonReact.string("...")} </span>
-        </li>,
-      ) :
-      None;
+    lower > 2
+      ? Some(
+          <li key="prev" className="pagination-ellipsis">
+            <span> {ReasonReact.string("...")} </span>
+          </li>,
+        )
+      : None;
   let postDots =
-    upper < totalPages - 1 ?
-      Some(
-        <li key="next" className="pagination-ellipsis">
-          <span> {ReasonReact.string("...")} </span>
-        </li>,
-      ) :
-      None;
+    upper < totalPages - 1
+      ? Some(
+          <li key="next" className="pagination-ellipsis">
+            <span> {ReasonReact.string("...")} </span>
+          </li>,
+        )
+      : None;
   let nextLink =
-    currentPage + 10 >= totalPages ?
-      None : namedPaginationLink(">>", currentPage + 10, pager);
+    currentPage + 10 >= totalPages
+      ? None : namedPaginationLink(">>", currentPage + 10, pager);
   let lastLink = paginationLink(currentPage, totalPages, pager);
   let maybeLinks =
     [firstLink, prevLink, preDots]
@@ -149,34 +149,27 @@ module ThumbCard = {
             onClick={_ => ReasonReact.Router.push("/assets/" ++ entry##id)}>
             <figure
               className="image"
-              style={
-                /*
-                 * overflow only works on block elements, so apply it here;
-                 * long file names with "break" characters (e.g. '-') will
-                 * wrap automatically anyway
-                 */
-                ReactDOMRe.Style.make(
-                  ~overflow="hidden",
-                  (),
-                )
-              }>
-              {
-                self.state.thumbless ?
-                  <img
-                    src={
-                      "/images/"
-                      ++ brokenThumbnailPlaceholder(entry##filename)
-                    }
-                    alt=entry##filename
-                    style={ReactDOMRe.Style.make(~width="auto", ())}
-                  /> :
-                  <img
-                    src=entry##thumbnailUrl
-                    alt=entry##filename
-                    onError={_ => self.send(MarkThumbless)}
-                    style={ReactDOMRe.Style.make(~width="auto", ())}
-                  />
-              }
+              /*
+               * overflow only works on block elements, so apply it here;
+               * long file names with "break" characters (e.g. '-') will
+               * wrap automatically anyway
+               */
+              style={ReactDOMRe.Style.make(~overflow="hidden", ())}>
+              {self.state.thumbless
+                 ? <img
+                     src={
+                       "/images/"
+                       ++ brokenThumbnailPlaceholder(entry##filename)
+                     }
+                     alt=entry##filename
+                     style={ReactDOMRe.Style.make(~width="auto", ())}
+                   />
+                 : <img
+                     src=entry##thumbnailUrl
+                     alt=entry##filename
+                     onError={_ => self.send(MarkThumbless)}
+                     style={ReactDOMRe.Style.make(~width="auto", ())}
+                   />}
               <small>
                 {ReasonReact.string(formatDate(entry##datetime))}
               </small>
@@ -191,7 +184,13 @@ module ThumbCard = {
 
 let makeCards = results =>
   Array.map(
-    (entry) => <ThumbCard key={entry##id} entry=entry />,
+    entry =>
+      <ThumbCard
+        key={
+          entry##id;
+        }
+        entry
+      />,
     results,
   );
 
@@ -230,13 +229,11 @@ module Component = {
        */
       <div className="container">
         {ReasonReact.array(Array.of_list(rows))}
-        {
-          if (search##count > pageSize && Array.length(search##results) > 0) {
-            <Paging current={state.pageNumber} total=search##count dispatch />;
-          } else {
-            <span />;
-          }
-        }
+        {if (search##count > pageSize && Array.length(search##results) > 0) {
+           <Paging current={state.pageNumber} total=search##count dispatch />;
+         } else {
+           <span />;
+         }}
       </div>;
     },
   };

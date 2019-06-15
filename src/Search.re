@@ -88,9 +88,9 @@ let searchFormInput =
         type_=inputType
         name=inputId
         value=inputValue
-        onChange={
-          ReForm.Helpers.handleDomFormChange(handleChange(fieldName))
-        }
+        onChange={ReForm.Helpers.handleDomFormChange(
+          handleChange(fieldName),
+        )}
         placeholder=placeholderText
       />
       <span className="icon is-small is-left">
@@ -134,122 +134,106 @@ module SearchFormRe = {
             ),
           ),
         ]>
-        ...{
-             ({handleSubmit, handleChange, form, getErrorForField}) =>
-               <form
-                 onSubmit={ReForm.Helpers.handleDomFormSubmit(handleSubmit)}>
-                 <div
-                   className="container"
-                   style={
-                     ReactDOMRe.Style.make(
-                       ~width="auto",
-                       ~paddingRight="3em",
-                       ~marginBottom="1em",
-                       (),
-                     )
-                   }>
-                   <div className="field is-horizontal">
-                     <div className="field-body">
-                       {
-                         searchFormInput(
-                           handleChange,
-                           getErrorForField,
-                           `tags,
-                           "Tags",
-                           "tags",
-                           "text",
-                           form.values.tags,
-                           "comma-separated values",
-                           "fas fa-tags",
-                         )
-                       }
-                       {
-                         searchFormInput(
-                           handleChange,
-                           getErrorForField,
-                           `locations,
-                           "Locations",
-                           "locations",
-                           "text",
-                           form.values.locations,
-                           "comma-separated values",
-                           "fas fa-map",
-                         )
-                       }
-                     </div>
-                   </div>
-                   <div className="field is-horizontal">
-                     <div className="field-body">
-                       {
-                         searchFormInput(
-                           handleChange,
-                           getErrorForField,
-                           `afterDate,
-                           "After date",
-                           "after",
-                           "text",
-                           form.values.afterDate,
-                           "2002-01-31",
-                           "fas fa-calendar",
-                         )
-                       }
-                       {
-                         searchFormInput(
-                           handleChange,
-                           getErrorForField,
-                           `beforeDate,
-                           "Before date",
-                           "before",
-                           "text",
-                           form.values.beforeDate,
-                           "2003-08-30",
-                           "fas fa-calendar",
-                         )
-                       }
-                     </div>
-                   </div>
-                   <div className="field is-horizontal">
-                     <div className="field-body">
-                       {
-                         searchFormInput(
-                           handleChange,
-                           getErrorForField,
-                           `filename,
-                           "Filename",
-                           "filename",
-                           "text",
-                           form.values.filename,
-                           "img_1234.jpg",
-                           "fas fa-file",
-                         )
-                       }
-                       {
-                         searchFormInput(
-                           handleChange,
-                           getErrorForField,
-                           `mimetype,
-                           "Media type",
-                           "mimetype",
-                           "text",
-                           form.values.mimetype,
-                           "image/jpeg",
-                           "fas fa-code",
-                         )
-                       }
-                     </div>
-                   </div>
-                   <div className="field is-grouped is-grouped-right">
-                     <div className="control">
-                       <input
-                         type_="submit"
-                         value="Search"
-                         className="button is-primary"
-                       />
-                     </div>
-                   </div>
-                 </div>
-               </form>
-           }
+        ...{({handleSubmit, handleChange, form, getErrorForField}) =>
+          <form onSubmit={ReForm.Helpers.handleDomFormSubmit(handleSubmit)}>
+            <div
+              className="container"
+              style={ReactDOMRe.Style.make(
+                ~width="auto",
+                ~paddingRight="3em",
+                ~marginBottom="1em",
+                (),
+              )}>
+              <div className="field is-horizontal">
+                <div className="field-body">
+                  {searchFormInput(
+                     handleChange,
+                     getErrorForField,
+                     `tags,
+                     "Tags",
+                     "tags",
+                     "text",
+                     form.values.tags,
+                     "comma-separated values",
+                     "fas fa-tags",
+                   )}
+                  {searchFormInput(
+                     handleChange,
+                     getErrorForField,
+                     `locations,
+                     "Locations",
+                     "locations",
+                     "text",
+                     form.values.locations,
+                     "comma-separated values",
+                     "fas fa-map",
+                   )}
+                </div>
+              </div>
+              <div className="field is-horizontal">
+                <div className="field-body">
+                  {searchFormInput(
+                     handleChange,
+                     getErrorForField,
+                     `afterDate,
+                     "After date",
+                     "after",
+                     "text",
+                     form.values.afterDate,
+                     "2002-01-31",
+                     "fas fa-calendar",
+                   )}
+                  {searchFormInput(
+                     handleChange,
+                     getErrorForField,
+                     `beforeDate,
+                     "Before date",
+                     "before",
+                     "text",
+                     form.values.beforeDate,
+                     "2003-08-30",
+                     "fas fa-calendar",
+                   )}
+                </div>
+              </div>
+              <div className="field is-horizontal">
+                <div className="field-body">
+                  {searchFormInput(
+                     handleChange,
+                     getErrorForField,
+                     `filename,
+                     "Filename",
+                     "filename",
+                     "text",
+                     form.values.filename,
+                     "img_1234.jpg",
+                     "fas fa-file",
+                   )}
+                  {searchFormInput(
+                     handleChange,
+                     getErrorForField,
+                     `mimetype,
+                     "Media type",
+                     "mimetype",
+                     "text",
+                     form.values.mimetype,
+                     "image/jpeg",
+                     "fas fa-code",
+                   )}
+                </div>
+              </div>
+              <div className="field is-grouped is-grouped-right">
+                <div className="control">
+                  <input
+                    type_="submit"
+                    value="Search"
+                    className="button is-primary"
+                  />
+                </div>
+              </div>
+            </div>
+          </form>
+        }
       </SearchForm>,
   };
 };
@@ -287,14 +271,14 @@ let makeSearchParams = (params: SearchFormParams.state) => {
   let trimmedTags = Array.map(s => String.trim(s), splitTags);
   let nonEmptyTags = filterEmpties(trimmedTags);
   let tags =
-    List.length(nonEmptyTags) > 0 ?
-      Some(Array.of_list(nonEmptyTags)) : None;
+    List.length(nonEmptyTags) > 0
+      ? Some(Array.of_list(nonEmptyTags)) : None;
   let splitLocations = splitOnComma(params.locations);
   let trimmedLocations = Array.map(s => String.trim(s), splitLocations);
   let nonEmptyLocations = filterEmpties(trimmedLocations);
   let locations =
-    List.length(nonEmptyLocations) > 0 ?
-      Some(Array.of_list(nonEmptyLocations)) : None;
+    List.length(nonEmptyLocations) > 0
+      ? Some(Array.of_list(nonEmptyLocations)) : None;
   {
     "after": rangeDateStrToInt(params.afterDate),
     "before": rangeDateStrToInt(params.beforeDate),
@@ -338,22 +322,16 @@ module SearchRe = {
               (),
             );
           <SearchAssetsQuery variables=query##variables>
-            ...{
-                 ({result}) =>
-                   switch (result) {
-                   | Loading =>
-                     <div> {ReasonReact.string("Loading...")} </div>
-                   | Error(error) =>
-                     Js.log(error);
-                     <div> {ReasonReact.string(error##message)} </div>;
-                   | Data(response) =>
-                     <Thumbnails.Component
-                       state
-                       dispatch
-                       search=response##search
-                     />
-                   }
-               }
+            ...{({result}) =>
+              switch (result) {
+              | Loading => <div> {ReasonReact.string("Loading...")} </div>
+              | Error(error) =>
+                Js.log(error);
+                <div> {ReasonReact.string(error##message)} </div>;
+              | Data(response) =>
+                <Thumbnails.Component state dispatch search=response##search />
+              }
+            }
           </SearchAssetsQuery>;
         }
       </div>;

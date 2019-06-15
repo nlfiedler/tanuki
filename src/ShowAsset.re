@@ -95,34 +95,28 @@ let assetDetails = (asset: t) =>
         <td> {ReasonReact.string("Size")} </td>
         <td> {ReasonReact.string(formatBigInt(asset##filesize))} </td>
       </tr>
-      {
-        switch (asset##duration) {
-        | None => ReasonReact.null
-        | Some(value) =>
-          <tr>
-            <td> {ReasonReact.string("Duration")} </td>
-            <td>
-              {ReasonReact.string(Js.Float.toString(value) ++ "seconds")}
-            </td>
-          </tr>
-        }
-      }
+      {switch (asset##duration) {
+       | None => ReasonReact.null
+       | Some(value) =>
+         <tr>
+           <td> {ReasonReact.string("Duration")} </td>
+           <td>
+             {ReasonReact.string(Js.Float.toString(value) ++ "seconds")}
+           </td>
+         </tr>
+       }}
       <tr>
         <td> {ReasonReact.string("Location")} </td>
         <td>
-          {
-            ReasonReact.string(
-              Belt.Option.getWithDefault(asset##location, ""),
-            )
-          }
+          {ReasonReact.string(
+             Belt.Option.getWithDefault(asset##location, ""),
+           )}
         </td>
       </tr>
       <tr>
         <td> {ReasonReact.string("Caption")} </td>
         <td>
-          {
-            ReasonReact.string(Belt.Option.getWithDefault(asset##caption, ""))
-          }
+          {ReasonReact.string(Belt.Option.getWithDefault(asset##caption, ""))}
         </td>
       </tr>
       <tr>
@@ -149,9 +143,8 @@ module PreviewPanel = {
             </p>
             <a
               className="card-header-icon"
-              onClick={
-                _ =>
-                  ReasonReact.Router.push("/assets/" ++ asset##id ++ "/edit")
+              onClick={_ =>
+                ReasonReact.Router.push("/assets/" ++ asset##id ++ "/edit")
               }>
               <span className="icon"> <i className="fa fa-edit" /> </span>
             </a>
@@ -172,20 +165,19 @@ module Component = {
     render: _self => {
       let query = FetchAsset.make(~identifier=assetId, ());
       <FetchAssetQuery variables=query##variables>
-        ...{
-             ({result}) =>
-               switch (result) {
-               | Loading => <div> {ReasonReact.string("Loading...")} </div>
-               | Error(error) =>
-                 Js.log(error);
-                 <div> {ReasonReact.string(error##message)} </div>;
-               | Data(response) =>
-                 switch (response##asset) {
-                 | None => <div> {ReasonReact.string("No such asset!")} </div>
-                 | Some(asset) => <PreviewPanel asset />
-                 }
-               }
-           }
+        ...{({result}) =>
+          switch (result) {
+          | Loading => <div> {ReasonReact.string("Loading...")} </div>
+          | Error(error) =>
+            Js.log(error);
+            <div> {ReasonReact.string(error##message)} </div>;
+          | Data(response) =>
+            switch (response##asset) {
+            | None => <div> {ReasonReact.string("No such asset!")} </div>
+            | Some(asset) => <PreviewPanel asset />
+            }
+          }
+        }
       </FetchAssetQuery>;
     },
   };

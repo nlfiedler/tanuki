@@ -80,10 +80,12 @@ module Component = {
             <div> {ReasonReact.string(error##message)} </div>;
           | Data(result) =>
             <div>
-              {ReasonReact.Router.push(
-                 "/assets/" ++ result##upload ++ "/edit",
-               )
-               ReasonReact.string("loading...")}
+              {
+                ReasonReact.Router.push(
+                  "/assets/" ++ result##upload ++ "/edit",
+                );
+                ReasonReact.string("loading...");
+              }
             </div>
           | NotCalled =>
             <div>

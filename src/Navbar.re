@@ -27,70 +27,62 @@ let make = _children => {
       </div>
       <div className=menuClassName id="navMenu">
         <div className="navbar-end">
-          {
-            ReactDOMRe.createElement(
-              "a",
-              ~props=
-                ReactDOMRe.objToDOMProps({
-                  "className": "navbar-item tooltip is-tooltip-bottom",
-                  "data-tooltip": "Browse assets",
-                  "onClick": _ => ReasonReact.Router.push("/"),
-                }),
-              [|
-                <span className="icon">
-                  <i className="fas fa-lg fa-home" />
-                </span>,
-              |],
-            )
-          }
-          {
-            ReactDOMRe.createElement(
-              "a",
-              ~props=
-                ReactDOMRe.objToDOMProps({
-                  "className": "navbar-item tooltip is-tooltip-bottom",
-                  "data-tooltip": "Upload assets",
-                  "onClick": _ => ReasonReact.Router.push("/upload"),
-                }),
-              [|
-                <span className="icon">
-                  <i className="fas fa-lg fa-upload" />
-                </span>,
-              |],
-            )
-          }
-          {
-            ReactDOMRe.createElement(
-              "a",
-              ~props=
-                ReactDOMRe.objToDOMProps({
-                  "className": "navbar-item tooltip is-tooltip-bottom",
-                  "data-tooltip": "Search assets",
-                  "onClick": _ => ReasonReact.Router.push("/search"),
-                }),
-              [|
-                <span className="icon">
-                  <i className="fas fa-lg fa-search" />
-                </span>,
-              |],
-            )
-          }
-          {
-            ReactDOMRe.createElement(
-              "a",
-              ~props=
-                ReactDOMRe.objToDOMProps({
-                  "className": "navbar-item tooltip is-tooltip-bottom",
-                  "data-tooltip": "Advanced search",
-                  "href": "/graphql",
-                }),
-              [|
-                <span className="icon">
-                  <i className="fas fa-lg fa-search-plus" />
-                </span>,
-              |],
-            )
-          }
+          {ReactDOMRe.createElement(
+             "a",
+             ~props=
+               ReactDOMRe.objToDOMProps({
+                 "className": "navbar-item tooltip is-tooltip-bottom",
+                 "data-tooltip": "Browse assets",
+                 "onClick": _ => ReasonReact.Router.push("/"),
+               }),
+             [|
+               <span className="icon">
+                 <i className="fas fa-lg fa-home" />
+               </span>,
+             |],
+           )}
+          {ReactDOMRe.createElement(
+             "a",
+             ~props=
+               ReactDOMRe.objToDOMProps({
+                 "className": "navbar-item tooltip is-tooltip-bottom",
+                 "data-tooltip": "Upload assets",
+                 "onClick": _ => ReasonReact.Router.push("/upload"),
+               }),
+             [|
+               <span className="icon">
+                 <i className="fas fa-lg fa-upload" />
+               </span>,
+             |],
+           )}
+          {ReactDOMRe.createElement(
+             "a",
+             ~props=
+               ReactDOMRe.objToDOMProps({
+                 "className": "navbar-item tooltip is-tooltip-bottom",
+                 "data-tooltip": "Search assets",
+                 "onClick": _ => ReasonReact.Router.push("/search"),
+               }),
+             [|
+               <span className="icon">
+                 <i className="fas fa-lg fa-search" />
+               </span>,
+             |],
+           )}
+          {ReactDOMRe.createElement(
+             "a",
+             ~props=
+               ReactDOMRe.objToDOMProps({
+                 "className": "navbar-item tooltip is-tooltip-bottom",
+                 "data-tooltip": "Advanced search",
+                 "href": "/graphql",
+               }),
+             [|
+               <span className="icon">
+                 <i className="fas fa-lg fa-search-plus" />
+               </span>,
+             |],
+           )}
         </div>
       </div>
     </nav>;

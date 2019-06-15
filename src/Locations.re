@@ -108,34 +108,29 @@ module LocationsRe = {
         },
       render: self =>
         <GetLocationsQuery>
-          ...{
-               ({result}) =>
-                 switch (result) {
-                 | Loading =>
-                   <div> {ReasonReact.string("Loading locations...")} </div>
-                 | Error(error) =>
-                   Js.log(error);
-                   <div> {ReasonReact.string(error##message)} </div>;
-                 | Data(response) =>
-                   <div className="tags">
-                     <span className="tag is-info">
-                       {ReasonReact.string("Locations")}
-                     </span>
-                     {
-                       ReasonReact.array(
-                         buildLocations(self.state, response##locations),
-                       )
-                     }
-                     {
-                       allLocationsToggle(
-                         self.state,
-                         self.send,
-                         response##locations,
-                       )
-                     }
-                   </div>
-                 }
-             }
+          ...{({result}) =>
+            switch (result) {
+            | Loading =>
+              <div> {ReasonReact.string("Loading locations...")} </div>
+            | Error(error) =>
+              Js.log(error);
+              <div> {ReasonReact.string(error##message)} </div>;
+            | Data(response) =>
+              <div className="tags">
+                <span className="tag is-info">
+                  {ReasonReact.string("Locations")}
+                </span>
+                {ReasonReact.array(
+                   buildLocations(self.state, response##locations),
+                 )}
+                {allLocationsToggle(
+                   self.state,
+                   self.send,
+                   response##locations,
+                 )}
+              </div>
+            }
+          }
         </GetLocationsQuery>,
     };
   };

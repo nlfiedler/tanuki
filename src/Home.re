@@ -67,21 +67,16 @@ module HomeRe = {
           (),
         );
       <QueryAssetsQuery variables=query##variables>
-        ...{
-             ({result}) =>
-               switch (result) {
-               | Loading => <div> {ReasonReact.string("Loading...")} </div>
-               | Error(error) =>
-                 Js.log(error);
-                 <div> {ReasonReact.string(error##message)} </div>;
-               | Data(response) =>
-                 <Thumbnails.Component
-                   state
-                   dispatch
-                   search=response##search
-                 />
-               }
-           }
+        ...{({result}) =>
+          switch (result) {
+          | Loading => <div> {ReasonReact.string("Loading...")} </div>
+          | Error(error) =>
+            Js.log(error);
+            <div> {ReasonReact.string(error##message)} </div>;
+          | Data(response) =>
+            <Thumbnails.Component state dispatch search=response##search />
+          }
+        }
       </QueryAssetsQuery>;
     },
   };
@@ -97,34 +92,33 @@ module Component = {
     ...component,
     render: _self =>
       <CountAssetsQuery>
-        ...{
-             ({result}) =>
-               switch (result) {
-               | Loading => <div> {ReasonReact.string("Loading...")} </div>
-               | Error(error) =>
-                 Js.log(error);
-                 <div> {ReasonReact.string(error##message)} </div>;
-               | Data(response) =>
-                 if (response##count > 0) {
-                   <div>
-                     <Tags.Component />
-                     <Locations.Component />
-                     <Years.Component />
-                     <SelectedProvider component=HomeRe.make />
-                   </div>;
-                 } else {
-                   <div>
-                     <p>
-                       {ReasonReact.string("Use the")}
-                       <span className="icon">
-                         <i className="fas fa-upload" />
-                       </span>
-                       {ReasonReact.string("upload feature to add assets.")}
-                     </p>
-                   </div>;
-                 }
-               }
-           }
+        ...{({result}) =>
+          switch (result) {
+          | Loading => <div> {ReasonReact.string("Loading...")} </div>
+          | Error(error) =>
+            Js.log(error);
+            <div> {ReasonReact.string(error##message)} </div>;
+          | Data(response) =>
+            if (response##count > 0) {
+              <div>
+                <Tags.Component />
+                <Locations.Component />
+                <Years.Component />
+                <SelectedProvider component=HomeRe.make />
+              </div>;
+            } else {
+              <div>
+                <p>
+                  {ReasonReact.string("Use the")}
+                  <span className="icon">
+                    <i className="fas fa-upload" />
+                  </span>
+                  {ReasonReact.string("upload feature to add assets.")}
+                </p>
+              </div>;
+            }
+          }
+        }
       </CountAssetsQuery>,
   };
 };

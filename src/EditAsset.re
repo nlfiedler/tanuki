@@ -183,9 +183,9 @@ let editFormInput =
         type_=inputType
         name=inputId
         value=inputValue
-        onChange={
-          ReForm.Helpers.handleDomFormChange(handleChange(fieldName))
-        }
+        onChange={ReForm.Helpers.handleDomFormChange(
+          handleChange(fieldName),
+        )}
         placeholder=placeholderText
       />
     </div>;
@@ -236,88 +236,72 @@ module EditFormRe = {
             ),
           ),
         ]>
-        ...{
-             ({handleSubmit, handleChange, form, getErrorForField}) =>
-               <form
-                 onSubmit={ReForm.Helpers.handleDomFormSubmit(handleSubmit)}>
-                 <div
-                   className="container"
-                   style={
-                     ReactDOMRe.Style.make(
-                       ~width="auto",
-                       ~paddingRight="3em",
-                       (),
-                     )
-                   }>
-                   {
-                     editFormInput(
-                       handleChange,
-                       getErrorForField,
-                       `userdate,
-                       "Custom Date",
-                       "userdate",
-                       "text",
-                       form.values.userdate,
-                       "yyyy-mm-dd HH:MM",
-                     )
-                   }
-                   {
-                     editFormInput(
-                       handleChange,
-                       getErrorForField,
-                       `location,
-                       "Location",
-                       "location",
-                       "text",
-                       form.values.location,
-                       "",
-                     )
-                   }
-                   {
-                     editFormInput(
-                       handleChange,
-                       getErrorForField,
-                       `caption,
-                       "Caption",
-                       "caption",
-                       "text",
-                       form.values.caption,
-                       "",
-                     )
-                   }
-                   {
-                     editFormInput(
-                       handleChange,
-                       getErrorForField,
-                       `tags,
-                       "Tags",
-                       "tags",
-                       "text",
-                       form.values.tags,
-                       "comma-separated values",
-                     )
-                   }
-                   {
-                     editFormInput(
-                       handleChange,
-                       getErrorForField,
-                       `mimetype,
-                       "Media type",
-                       "mimetype",
-                       "text",
-                       form.values.mimetype,
-                       "image/jpeg",
-                     )
-                   }
-                   <div className="field is-horizontal">
-                     <div className="field-label" />
-                     <div className="field-body">
-                       {assetSaveButton(form)}
-                     </div>
-                   </div>
-                 </div>
-               </form>
-           }
+        ...{({handleSubmit, handleChange, form, getErrorForField}) =>
+          <form onSubmit={ReForm.Helpers.handleDomFormSubmit(handleSubmit)}>
+            <div
+              className="container"
+              style={ReactDOMRe.Style.make(
+                ~width="auto",
+                ~paddingRight="3em",
+                (),
+              )}>
+              {editFormInput(
+                 handleChange,
+                 getErrorForField,
+                 `userdate,
+                 "Custom Date",
+                 "userdate",
+                 "text",
+                 form.values.userdate,
+                 "yyyy-mm-dd HH:MM",
+               )}
+              {editFormInput(
+                 handleChange,
+                 getErrorForField,
+                 `location,
+                 "Location",
+                 "location",
+                 "text",
+                 form.values.location,
+                 "",
+               )}
+              {editFormInput(
+                 handleChange,
+                 getErrorForField,
+                 `caption,
+                 "Caption",
+                 "caption",
+                 "text",
+                 form.values.caption,
+                 "",
+               )}
+              {editFormInput(
+                 handleChange,
+                 getErrorForField,
+                 `tags,
+                 "Tags",
+                 "tags",
+                 "text",
+                 form.values.tags,
+                 "comma-separated values",
+               )}
+              {editFormInput(
+                 handleChange,
+                 getErrorForField,
+                 `mimetype,
+                 "Media type",
+                 "mimetype",
+                 "text",
+                 form.values.mimetype,
+                 "image/jpeg",
+               )}
+              <div className="field is-horizontal">
+                <div className="field-label" />
+                <div className="field-body"> {assetSaveButton(form)} </div>
+              </div>
+            </div>
+          </form>
+        }
       </EditForm>,
   };
 };
@@ -373,46 +357,42 @@ module EditPanel = {
     ...component,
     render: _self =>
       <UpdateAssetMutation>
-        ...{
-             (mutate, {result}) =>
-               switch (result) {
-               | Loading => <p> {ReasonReact.string("Loading...")} </p>
-               | Error(error) =>
-                 Js.log(error);
-                 <div> {ReasonReact.string(error##message)} </div>;
-               | Data(_result) =>
-                 <div>
-                  {ReasonReact.Router.push("/assets/" ++ asset##id);
-                   ReasonReact.string("loading...")}
-                 </div>
-               | NotCalled =>
-                 <div className="container">
-                   <div className="card">
-                     <div className="card-header">
-                       <p className="card-header-title">
-                         {
-                           ReasonReact.string(
-                             formatDateForDisplay(asset##datetime)
-                             ++ ", "
-                             ++
-                             asset##filename,
-                           )
-                         }
-                       </p>
-                     </div>
-                     <div className="card-image has-text-centered">
-                       {assetPreview(asset)}
-                     </div>
-                     <div className="card-content">
-                       <EditFormRe
-                         asset
-                         onSubmit={submitUpdate(asset, mutate)}
-                       />
-                     </div>
-                   </div>
-                 </div>
-               }
-           }
+        ...{(mutate, {result}) =>
+          switch (result) {
+          | Loading => <p> {ReasonReact.string("Loading...")} </p>
+          | Error(error) =>
+            Js.log(error);
+            <div> {ReasonReact.string(error##message)} </div>;
+          | Data(_result) =>
+            <div>
+              {
+                ReasonReact.Router.push("/assets/" ++ asset##id);
+                ReasonReact.string("loading...");
+              }
+            </div>
+          | NotCalled =>
+            <div className="container">
+              <div className="card">
+                <div className="card-header">
+                  <p className="card-header-title">
+                    {ReasonReact.string(
+                       formatDateForDisplay(asset##datetime)
+                       ++ ", "
+                       ++
+                       asset##filename,
+                     )}
+                  </p>
+                </div>
+                <div className="card-image has-text-centered">
+                  {assetPreview(asset)}
+                </div>
+                <div className="card-content">
+                  <EditFormRe asset onSubmit={submitUpdate(asset, mutate)} />
+                </div>
+              </div>
+            </div>
+          }
+        }
       </UpdateAssetMutation>,
   };
 };
@@ -424,20 +404,19 @@ module Component = {
     render: _self => {
       let query = FetchAsset.make(~identifier=assetId, ());
       <FetchAssetQuery variables=query##variables>
-        ...{
-             ({result}) =>
-               switch (result) {
-               | Loading => <div> {ReasonReact.string("Loading...")} </div>
-               | Error(error) =>
-                 Js.log(error);
-                 <div> {ReasonReact.string(error##message)} </div>;
-               | Data(response) =>
-                 switch (response##asset) {
-                 | None => <div> {ReasonReact.string("No such asset!")} </div>
-                 | Some(asset) => <EditPanel asset />
-                 }
-               }
-           }
+        ...{({result}) =>
+          switch (result) {
+          | Loading => <div> {ReasonReact.string("Loading...")} </div>
+          | Error(error) =>
+            Js.log(error);
+            <div> {ReasonReact.string(error##message)} </div>;
+          | Data(response) =>
+            switch (response##asset) {
+            | None => <div> {ReasonReact.string("No such asset!")} </div>
+            | Some(asset) => <EditPanel asset />
+            }
+          }
+        }
       </FetchAssetQuery>;
     },
   };
