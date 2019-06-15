@@ -1,5 +1,5 @@
 const { exec } = require('child_process')
-const fx = require('fs-extra')
+const del = require('del')
 const gulp = require('gulp')
 const gulpif = require('gulp-if')
 const uglify = require('gulp-uglify')
@@ -27,7 +27,7 @@ gulp.task('serve', (cb) => {
   })
 })
 
-gulp.task('bsb-clean', (cb) => {
+gulp.task('clean:bsb', (cb) => {
   exec('npx bsb -clean-world', (err, stdout, stderr) => {
     console.info(stdout)
     console.error(stderr)
@@ -35,16 +35,8 @@ gulp.task('bsb-clean', (cb) => {
   })
 })
 
-gulp.task('js-clean', (cb) => {
-  fx.remove('public/javascripts/main.js', err => {
-    if (err) {
-      cb(err)
-    } else {
-      fx.remove('dist', err => {
-        cb(err)
-      })
-    }
-  })
+gulp.task('clean:js', (cb) => {
+  return del(['public/javascripts/main.js', 'dist'])
 })
 
 gulp.task('compile', () => {
@@ -53,7 +45,7 @@ gulp.task('compile', () => {
     .js.pipe(gulp.dest('dist'))
 })
 
-gulp.task('bsb-make', (cb) => {
+gulp.task('make:bsb', (cb) => {
   exec('npx bsb -make-world', (err, stdout, stderr) => {
     console.info(stdout)
     console.error(stderr)
@@ -77,6 +69,6 @@ gulp.task('watch-server', () => {
   gulp.watch('web/**/*.re', gulp.series('compile'))
 })
 
-gulp.task('compile', gulp.series('compile', 'bsb-make', 'webpack'))
-gulp.task('clean', gulp.series('bsb-clean', 'js-clean'))
-gulp.task('default', gulp.series('compile', 'serve', 'watch-server'))
+gulp.task('build', gulp.series('compile', 'make:bsb', 'webpack'))
+gulp.task('clean', gulp.series('clean:bsb', 'clean:js'))
+gulp.task('default', gulp.series('build', 'serve', 'watch-server'))
