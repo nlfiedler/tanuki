@@ -1,13 +1,13 @@
 /* Name the query so the mutations can invoke in refetchQueries. */
 module GetLocations = [%graphql
   {|
-  query getAllLocations {
-    locations {
-      value
-      count
+    query getAllLocations {
+      locations {
+        value
+        count
+      }
     }
-  }
-|}
+  |}
 ];
 
 module GetLocationsQuery = ReasonApollo.CreateQuery(GetLocations);
