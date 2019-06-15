@@ -3,11 +3,11 @@
 //
 const config = require('config')
 const fs = require('fs-extra')
-const logger = require('lib/logging')
+const logger = require('logging')
 const PouchDB = require('pouchdb')
 const sharp = require('sharp')
-const assets = require('lib/assets')
-const backend = require('lib/backend')
+const assets = require('assets')
+const backend = require('backend')
 
 //
 // Code for caching "wide" asset thumbnail metadata.

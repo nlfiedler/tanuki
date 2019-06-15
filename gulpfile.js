@@ -5,19 +5,17 @@ const gulpif = require('gulp-if')
 const uglify = require('gulp-uglify')
 const nodemon = require('gulp-nodemon')
 const webpack = require('webpack-stream')
-const ts = require('gulp-typescript')
-const tsProject = ts.createProject('tsconfig.json')
 
 let production = false
 
 gulp.task('serve', (cb) => {
   let called = false
   return nodemon({
-    'script': './dist/server.js',
+    'script': './src/server.js',
     'env': {
-      'NODE_PATH': '.'
+      'NODE_PATH': 'src'
     },
-    'watch': './dist',
+    'watch': './src',
     'ext': 'js'
   }).on('start', () => {
     if (!called) {
@@ -35,14 +33,8 @@ gulp.task('clean:bsb', (cb) => {
   })
 })
 
-gulp.task('clean:js', (cb) => {
-  return del(['public/javascripts/main.js', 'dist'])
-})
-
-gulp.task('compile', () => {
-  return tsProject.src()
-    .pipe(tsProject())
-    .js.pipe(gulp.dest('dist'))
+gulp.task('clean:web', (cb) => {
+  return del(['public/javascripts/main.js'])
 })
 
 gulp.task('make:bsb', (cb) => {
@@ -53,8 +45,8 @@ gulp.task('make:bsb', (cb) => {
   })
 })
 
-gulp.task('webpack', () => {
-  return gulp.src('lib/js/web/main.bs.js')
+gulp.task('make:web', () => {
+  return gulp.src('lib/js/src/main.bs.js')
     .pipe(webpack({
       mode: production ? 'production' : 'development',
       output: {
@@ -66,9 +58,9 @@ gulp.task('webpack', () => {
 })
 
 gulp.task('watch-server', () => {
-  gulp.watch('web/**/*.re', gulp.series('compile'))
+  gulp.watch('src/**/*.re', gulp.series('make:bsb'))
 })
 
-gulp.task('build', gulp.series('compile', 'make:bsb', 'webpack'))
-gulp.task('clean', gulp.series('clean:bsb', 'clean:js'))
+gulp.task('build', gulp.series('make:bsb', 'make:web'))
+gulp.task('clean', gulp.series('clean:bsb', 'clean:web'))
 gulp.task('default', gulp.series('build', 'serve', 'watch-server'))

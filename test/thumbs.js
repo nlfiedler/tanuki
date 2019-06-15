@@ -6,9 +6,9 @@ const { before, describe, it, run } = require('mocha')
 const request = require('supertest')
 
 // start the server
-const app = require('../dist/app.js').default
-const backend = require('lib/backend')
-const thumbs = require('lib/thumbs')
+const app = require('app')
+const backend = require('backend')
+const thumbs = require('thumbs')
 
 //
 // Give the backend a chance to initialize the database asynchronously.

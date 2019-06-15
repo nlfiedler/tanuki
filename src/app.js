@@ -1,20 +1,20 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2019 Nathan Fiedler
 //
 const createError = require('http-errors')
-import * as express from 'express'
-import * as morgan from 'morgan'
-import pageRoutes from './routes/pages'
-import gqlRoutes from './routes/graphql'
-const backend = require('lib/backend')
+const express = require('express')
+const morgan = require('morgan')
+const pageRoutes = require('routes/pages')
+const gqlRoutes = require('routes/graphql')
+const backend = require('backend')
 const config = require('config')
-const logger = require('lib/logging')
+const logger = require('logging')
 const rfs = require('rotating-file-stream')
 
 // Initialize the database asynchronously.
-backend.initDatabase().then(function (res: any) {
+backend.initDatabase().then(function (res) {
   logger.info('database initialization result:', res)
-}).catch(function (err: Error) {
+}).catch(function (err) {
   logger.error('database initialization error:', err)
 })
 
@@ -48,7 +48,7 @@ app.use((req, res, next) => {
 })
 
 // error handler
-app.use((err: any, req: express.Request, res: express.Response, next: Function) => {
+app.use((err, req, res, next) => {
   // set locals, only providing error in development
   res.locals.message = err.message
   res.locals.error = req.app.get('env') === 'development' ? err : {}
@@ -58,4 +58,4 @@ app.use((err: any, req: express.Request, res: express.Response, next: Function) 
   res.render('error')
 })
 
-export default app
+module.exports = app

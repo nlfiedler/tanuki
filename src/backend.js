@@ -3,10 +3,10 @@
 //
 const config = require('config')
 const fs = require('fs-extra')
-const logger = require('lib/logging')
+const logger = require('logging')
 const PouchDB = require('pouchdb')
 PouchDB.plugin(require('pouchdb-find'))
-const migrate = require('lib/migrate')
+const migrate = require('migrate')
 
 //
 // Code for operating on the database.

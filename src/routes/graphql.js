@@ -1,10 +1,10 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2019 Nathan Fiedler
 //
-import * as fs from 'fs'
-import * as path from 'path'
-import * as express from 'express'
-const resolvers = require('lib/resolvers')
+const fs = require('fs')
+const path = require('path')
+const express = require('express')
+const resolvers = require('resolvers')
 const { ApolloServer } = require('apollo-server-express')
 const { makeExecutableSchema } = require('apollo-server')
 
@@ -28,4 +28,4 @@ const server = new ApolloServer({
 })
 server.applyMiddleware({ app: router, path: '/' })
 
-export default router
+module.exports = router

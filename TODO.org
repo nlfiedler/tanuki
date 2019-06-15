@@ -1,6 +1,9 @@
 * Tanuki
 ** General Items
-*** DONE Figure out how to migrate to ReasonReact 0.7
+*** TODO Remove all TypeScript, move everything to =src=
+**** DONE make sure all tests pass
+**** DONE test the docker container build
+**** DONE move the =web= contents to =src=
 *** TODO Need unique ids for thumbnail grid so rendering works better
 **** paging sometimes shows stale results because React doesn't see any difference
 *** TODO After editing asset, selections need to elide newly removed tags

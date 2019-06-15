@@ -4,7 +4,7 @@
 const config = require('config')
 const fs = require('fs-extra')
 const path = require('path')
-const logger = require('lib/logging')
+const logger = require('logging')
 // exifreader needs the DataView type (to be overridden)
 global.DataView = require('jdataview')
 // exifreader also needs DOMParser (to be overridden)
@@ -17,7 +17,7 @@ const ffmpegStatic = require('ffmpeg-static')
 ffmpeg.setFfmpegPath(ffmpegStatic.path)
 const ffmpegProbe = require('ffprobe-static')
 ffmpeg.setFfprobePath(ffmpegProbe.path)
-const assets = require('lib/assets')
+const assets = require('assets')
 
 //
 // Code for incorporating new assets into the system.

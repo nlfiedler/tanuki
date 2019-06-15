@@ -6,7 +6,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     environment:
-      NODE_PATH: "."
+      NODE_PATH: src
       # need to use different config paths for container
       NODE_ENV: docker
       PORT: 3000

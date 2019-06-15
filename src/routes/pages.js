@@ -1,18 +1,18 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2019 Nathan Fiedler
 //
-import * as express from 'express'
-import * as path from 'path'
+const express = require('express')
+const path = require('path')
 const favicon = require('serve-favicon')
 const cookieParser = require('cookie-parser')
 const bodyParser = require('body-parser')
-const assets = require('lib/assets')
-const backend = require('lib/backend')
+const assets = require('assets')
+const backend = require('backend')
 
 const router = express.Router()
 
 // wrapper that directs errors to the appropriate handler
-let wrap = (fn: Function) => (...args: any[]) => fn(...args).catch(args[2])
+let wrap = fn => (...args) => fn(...args).catch(args[2])
 
 router.use(favicon(path.join(__dirname, '..', '..', 'public', 'favicon.ico')))
 router.use(bodyParser.json())
@@ -21,7 +21,7 @@ router.use(cookieParser())
 const staticRoot = path.join(__dirname, '..', '..', 'public')
 router.use(express.static(staticRoot))
 
-router.get('/thumbnail/:id', wrap(async function (req: express.Request, res: express.Response, next: Function) {
+router.get('/thumbnail/:id', wrap(async function (req, res, next) {
   let id = req.params['id']
   let doc = await backend.fetchDocument(id)
   let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
@@ -38,7 +38,7 @@ router.get('/thumbnail/:id', wrap(async function (req: express.Request, res: exp
   }
 }))
 
-router.get('/widethumb/:id', wrap(async function (req: express.Request, res: express.Response, next: Function) {
+router.get('/widethumb/:id', wrap(async function (req, res, next) {
   let id = req.params['id']
   let doc = await backend.fetchDocument(id)
   let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
@@ -55,7 +55,7 @@ router.get('/widethumb/:id', wrap(async function (req: express.Request, res: exp
   }
 }))
 
-router.get('/preview/:id', wrap(async function (req: express.Request, res: express.Response, next: Function) {
+router.get('/preview/:id', wrap(async function (req, res, next) {
   let id = req.params['id']
   let doc = await backend.fetchDocument(id)
   let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
@@ -72,7 +72,7 @@ router.get('/preview/:id', wrap(async function (req: express.Request, res: expre
   }
 }))
 
-router.get('/asset/:id', wrap(async function (req: express.Request, res: express.Response, next: Function) {
+router.get('/asset/:id', wrap(async function (req, res, next) {
   let id = req.params['id']
   let filepath = assets.assetPath(id)
   let doc = await backend.fetchDocument(id)
@@ -94,8 +94,8 @@ router.get('/asset/:id', wrap(async function (req: express.Request, res: express
 }))
 
 // Last of all, map everything else to the web front-end.
-router.get('/*', function (req: express.Request, res: express.Response, next: Function) {
+router.get('/*', function (req, res, next) {
   res.render('index', { title: 'Browse Assets' })
 })
 
-export default router
+module.exports = router

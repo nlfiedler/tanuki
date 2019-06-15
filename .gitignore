@@ -1,28 +1,17 @@
-#
 # editors
-#
 .vscode
 
-#
 # Node.js files
-#
 node_modules
 
-#
 # ReasonML/BuckleScript
-#
 .merlin
 .graphql_ppx_cache
 
-#
 # compiled code
-#
-dist
 lib/bs
 lib/js
 public/javascripts/main.js
 
-#
-# temporary
-#
+# temporary files
 tmp

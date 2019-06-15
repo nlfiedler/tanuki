@@ -6,14 +6,14 @@ const { before, describe, it, run } = require('mocha')
 const request = require('supertest')
 const fs = require('fs-extra')
 const config = require('config')
-const logger = require('lib/logging')
+const logger = require('logging')
 
 const logfile = config.get('backend.logger.file')
 fs.removeSync(logfile)
 
 // start the server
-const app = require('../dist/app.js').default
-const backend = require('lib/backend')
+const app = require('app')
+const backend = require('backend')
 
 // Check if a term appears in any of the log messages.
 function termFoundInLog (term) {

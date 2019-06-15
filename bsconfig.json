@@ -5,6 +5,9 @@
   "reason": {
     "react-jsx": 2
   },
+  "bsc-flags": [
+    "-bs-super-errors"
+  ],
   "bs-dependencies": [
     "bs-date-fns",
     "bs-reform",
@@ -12,11 +15,20 @@
     "reason-react",
     "reductive"
   ],
+  "package-specs": [
+    {
+      "module": "commonjs",
+      "in-source": false
+    }
+  ],
   "ppx-flags": [
     "graphql_ppx/ppx"
   ],
   "sources": [
-    "web"
+    {
+      "dir": "src",
+      "subdirs": true
+    }
   ],
   "suffix": ".bs.js"
 }

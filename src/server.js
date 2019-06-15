@@ -1,9 +1,9 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2019 Nathan Fiedler
 //
-import app from './app'
+const app = require('app')
 const debug = require('debug')('tanuki:server')
-import * as http from 'http'
+const http = require('http')
 
 /**
  * Get port from environment and store in Express.
@@ -26,7 +26,7 @@ server.on('listening', onListening)
 /**
  * Normalize a port into a number, string, or false.
  */
-function normalizePort (val: any) {
+function normalizePort (val) {
   const port = parseInt(val, 10)
   if (isNaN(port)) {
     // named pipe
@@ -42,7 +42,7 @@ function normalizePort (val: any) {
 /**
  * Event listener for HTTP server "error" event.
  */
-function onError (error: any) {
+function onError (error) {
   if (error.syscall !== 'listen') {
     throw error
   }
@@ -75,4 +75,4 @@ function onListening () {
   debug('Listening on ' + bind)
 }
 
-export default server
+module.exports = server

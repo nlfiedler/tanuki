@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update
 RUN apt-get -q -y install apt-utils
 
-WORKDIR /src
+WORKDIR /kuukan
 
 #
 # using BuckleScript requires gcc/make to compile OCaml
@@ -24,16 +24,13 @@ COPY bsconfig.json .
 COPY config config
 COPY graphql_schema.json .
 COPY gulpfile.js .
-COPY lib lib
 COPY package.json .
 COPY package-lock.json .
 COPY public public
 COPY src src
-COPY web web
-COPY tsconfig.json .
 COPY views views
 RUN npm ci
-RUN gulp compile
+RUN gulp build
 
 # node container has a "node" user that owns everything?
 USER node
@@ -45,4 +42,4 @@ EXPOSE ${PORT}
 COPY docker/healthcheck.js .
 HEALTHCHECK CMD node ./healthcheck.js ${PORT}
 
-ENTRYPOINT [ "node",  "./dist/server.js" ]
+ENTRYPOINT [ "node",  "./src/server.js" ]

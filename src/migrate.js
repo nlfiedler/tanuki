@@ -4,9 +4,9 @@
 const _ = require('lodash')
 const config = require('config')
 const fs = require('fs-extra')
-const logger = require('lib/logging')
+const logger = require('logging')
 const path = require('path')
-const assets = require('lib/assets')
+const assets = require('assets')
 
 const assetsPath = config.get('backend.assetPath')
 
