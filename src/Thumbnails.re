@@ -142,7 +142,7 @@ module ThumbCard = {
       | MarkThumbless => (_state => ReasonReact.Update({thumbless: true}))
       },
     render: self =>
-      <div key=entry##id className="column is-one-third">
+      <div className="column is-one-third">
         <div className="card">
           <div
             className="card-content"
@@ -190,8 +190,8 @@ module ThumbCard = {
 };
 
 let makeCards = results =>
-  Array.mapi(
-    (i, a) => <ThumbCard key={string_of_int(i)} entry=a />,
+  Array.map(
+    (entry) => <ThumbCard key={entry##id} entry=entry />,
     results,
   );
 
