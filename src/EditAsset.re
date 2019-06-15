@@ -321,7 +321,6 @@ let userDateStrToInt = str =>
  */
 let splitOnComma = (str: string): array(string) => {
   let parts = Js.String.splitByRe([%bs.re "/,/"], str);
-  // let somes = List.filter(e => Js.Option.isSome(e), parts);
   Array.map(a => Belt.Option.getWithDefault(a, ""), parts);
 };
 
