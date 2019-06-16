@@ -1,3 +1,10 @@
+/* The expected shape of the tag from GraphQL. */
+type t = {
+  .
+  "value": string,
+  "count": int,
+};
+
 /* Name the query so the mutations can invoke in refetchQueries. */
 module GetTags = [%graphql
   {|
@@ -19,7 +26,7 @@ module GetTagsQuery = ReasonApollo.CreateQuery(GetTags);
  * sorted by the label. Tags that are currently selected by the user are always
  * included in the result.
  */
-let selectTopTags = (selectedTags, allTags) => {
+let selectTopTags = (selectedTags: Belt.Set.String.t, allTags: array(t)) => {
   /* get the fully defined selected tags into a map keyed by name */
   let selectedTagsMap =
     Array.fold_right(
@@ -53,7 +60,7 @@ module TagsRe = {
     | ToggleAll;
   let component = ReasonReact.reducerComponent("TagsRe");
   let make = (~state: Belt.Set.String.t, ~dispatch, _children) => {
-    let allTagsToggle = (state, send, tags) =>
+    let allTagsToggle = (state, send, tags: array(t)) =>
       if (state.showingAll) {
         <a
           className="tag is-light"
@@ -73,7 +80,7 @@ module TagsRe = {
           {ReasonReact.string(">>")}
         </a>;
       };
-    let buildTags = (myState, tags) => {
+    let buildTags = (myState, tags: array(t)) => {
       let visibleTags =
         if (myState.showingAll || Array.length(tags) <= 25) {
           tags;

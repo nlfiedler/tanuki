@@ -1,3 +1,10 @@
+/* The expected shape of the location from GraphQL. */
+type t = {
+  .
+  "value": string,
+  "count": int,
+};
+
 /* Name the query so the mutations can invoke in refetchQueries. */
 module GetLocations = [%graphql
   {|
@@ -19,7 +26,8 @@ module GetLocationsQuery = ReasonApollo.CreateQuery(GetLocations);
  * sorted by the label. Locations that are currently selected by the user are always
  * included in the result.
  */
-let selectTopLocations = (selectedLocations, allLocations) => {
+let selectTopLocations =
+    (selectedLocations: Belt.Set.String.t, allLocations: array(t)) => {
   /* get the fully defined selected locations into a map keyed by name */
   let selectedLocationsMap =
     Array.fold_right(
@@ -54,7 +62,7 @@ module LocationsRe = {
     | ToggleAll;
   let component = ReasonReact.reducerComponent("LocationsRe");
   let make = (~state: Belt.Set.String.t, ~dispatch, _children) => {
-    let allLocationsToggle = (state, send, locations) =>
+    let allLocationsToggle = (state, send, locations: array(t)) =>
       if (state.showingAll) {
         <a
           className="tag is-light"
@@ -74,7 +82,7 @@ module LocationsRe = {
           {ReasonReact.string(">>")}
         </a>;
       };
-    let buildLocations = (myState, locations) => {
+    let buildLocations = (myState, locations: array(t)) => {
       let visibleLocations =
         if (myState.showingAll || Array.length(locations) <= 25) {
           locations;
@@ -82,7 +90,7 @@ module LocationsRe = {
           selectTopLocations(state, locations);
         };
       Array.mapi(
-        (index, location) => {
+        (index, location: t) => {
           let isSelected = Belt.Set.String.has(state, location##value);
           let className = isSelected ? "tag is-dark" : "tag is-light";
           <a

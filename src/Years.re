@@ -1,3 +1,10 @@
+/* The expected shape of the year from GraphQL. */
+type t = {
+  .
+  "value": int,
+  "count": int,
+};
+
 /* Name the query so the mutations can invoke in refetchQueries. */
 module GetYears = [%graphql
   {|
@@ -15,9 +22,9 @@ module GetYearsQuery = ReasonApollo.CreateQuery(GetYears);
 module YearsRe = {
   let component = ReasonReact.statelessComponent("YearsRe");
   let make = (~state: option(int), ~dispatch, _children) => {
-    let buildYears = years =>
+    let buildYears = (years: array(t)) =>
       Array.mapi(
-        (index, year) => {
+        (index, year: t) => {
           let isSelected =
             Belt.Option.eq(state, Some(year##value), (a, b) => a == b);
           let className = isSelected ? "tag is-dark" : "tag is-light";
