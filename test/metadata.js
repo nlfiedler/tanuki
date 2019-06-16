@@ -209,9 +209,10 @@ setTimeout(function () {
         request(app)
           .post('/graphql')
           .send({
+            // throw in some parentheses for testing that case
             variables: `{
               "input": {
-                "caption": "a mild mannered #cow in @hawaii eating #grass"
+                "caption": "a mild mannered (#cow in @hawaii eating #grass)"
               }
             }`,
             operationName: 'Update',
@@ -227,7 +228,7 @@ setTimeout(function () {
           .expect(200)
           .expect((res) => {
             const asset = res.body.data.update
-            assert.equal(asset.caption, 'a mild mannered #cow in @hawaii eating #grass')
+            assert.equal(asset.caption, 'a mild mannered (#cow in @hawaii eating #grass)')
             assert.equal(asset.filename, 'lorem-ipsum.txt')
             assert.equal(asset.location, 'hawaii')
             assert.equal(asset.tags.length, 3)

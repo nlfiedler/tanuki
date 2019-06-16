@@ -1,7 +1,5 @@
 * Tanuki
 ** General Items
-*** TODO After editing asset, selections need to elide newly removed tags
-**** that is, found "opa)", selected assets, fixed them, now cannot clear selection
 *** TODO Figure out how to migrate to Reason Apollo 0.16
 *** TODO Use the new =[@react.component]= notation for ReasonReact components
 *** TODO Upgrade to react-jsx version 3
@@ -15,14 +13,20 @@
 **** Maybe that tool is correct and my types are wrong?
 **** Or maybe that tool has an update that fixes this?
 **** c.f. commit =b8fa735=
-*** TODO Try to resolve the npm vulnerabilities
-*** TODO Caption with non-alphanumeric next to tags messes it up
-**** e.g. ~(#nathan, #oma, #opa)~ misses the ~nathan~ and adds ~opa)~ as a tag
-*** TODO Home page stays stuck on "upload" even after images are uploaded
+*** TODO Home page fails to update after data changs
+**** TODO Home page stays stuck on "upload" even after images are uploaded
+***** name the =CountAssets= query and add to the =refetchQueries= list
+**** TODO After editing asset, selections need to elide newly removed tags
+***** that is, found "opa)", selected assets, fixed them, now cannot clear selection
+***** need to attach an update function after the edit asset mutation completes
+***** c.f. =onCompleted= prop on =mutation= function
+****** https://www.apollographql.com/docs/react/essentials/mutations/
+***** can also set =awaitRefetchQueries= to wait for refetch to complete
+***** could move Locations/Tags/Years logic into =Home= and handle everything there
+***** could use GraphQL subscriptions in =Home= to keep track of changes
 *** TODO Consider how to make thumbnail page responsive
 **** Show 1, 2, 3, or more depending on browser width
 **** Should be able to leverage CSS for this
-*** TODO Update the modules with major version changes
 *** TODO Debounce the form input validation (i.e. asset edit and search forms)
 *** TODO Support searching the caption text
 *** TODO Support wildcards in filename, mimetype (others?)
@@ -72,6 +76,11 @@ and then update the reverse index as new documents are written
 *** Libraries
 **** Facial recognition
 ***** https://crates.io/crates/opencv (WTFPL)
+**** Videos
+***** need Rust bindings for =ffprobe= and =ffmpeg=
+****** https://crates.io/crates/ffmpeg-next
+****** https://crates.io/crates/metadata
+***** see if there are alternatives for Rust
 **** Images
 ***** HEIF: https://github.com/oussama/libheif-rs
 ***** give this a try: https://github.com/imazen/imageflow

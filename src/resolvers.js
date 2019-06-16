@@ -55,6 +55,9 @@ function receiveAssetInput (asset, assetInput) {
     // Split the caption on whitespace so we can examine if there are any tags
     // or location(s) that can be copied to the appropriate fields.
     let parts = assetInput.caption.split(/\s+/)
+    // remove leading and trailing parentheses to avoid missing and weird tags
+    // (e.g. "(#nathan, #oma, #opa)" would yeild ["oma", "opa)"])
+    parts = parts.map(e => _.trim(e, '()'))
     // Find the #tags and trim the leading hash and any trailing commas, since
     // it is pretty natural for the user to type something like '#cow, #grass,
     // #fence' in the caption.
