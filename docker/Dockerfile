@@ -1,4 +1,4 @@
-FROM node:lts
+FROM node:12
 
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update

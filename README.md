@@ -6,7 +6,7 @@ A system for importing, storing, categorizing, browsing, displaying, and searchi
 
 ### Prerequisites
 
-* [Node.js](https://nodejs.org/) LTS
+* [Node.js](https://nodejs.org/) LTS or Current
 
 #### Example for macOS
 
@@ -53,6 +53,7 @@ will see strange errors about opening the database). This is easily done using
 issues, see the **Docker** document on Google Drive.
 
 ```shell
+$ cd docker
 $ docker-machine start
 $ docker-compose build
 $ docker-compose up -d

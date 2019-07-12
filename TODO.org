@@ -1,5 +1,7 @@
 * Tanuki
 ** General Items
+*** TODO Using iPad, clicking on tag, nothing updates
+**** find out what is going on when this happens
 *** TODO Figure out how to migrate to Reason Apollo 0.16
 *** TODO Use the new =[@react.component]= notation for ReasonReact components
 *** TODO Upgrade to react-jsx version 3
@@ -8,6 +10,10 @@
 *** TODO Update reason react router
 **** c.f. https://reasonml.github.io/reason-react/docs/en/router
 *** TODO Update =bs-reform= at some point
+*** TODO Support advanced queries using Google-style operators
+**** c.f. https://support.google.com/websearch/answer/2466433?hl=en
+**** move perkeep style query support from mujina to tanuki
+**** webui needs an "advanced" tab/link selector on the search page
 *** TODO Temporarily figure out how to deal with the GraphQL schema weirdness
 **** The introspection tool generates weird types for the non-optional array of strings
 **** Maybe that tool is correct and my types are wrong?
