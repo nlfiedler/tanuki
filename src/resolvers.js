@@ -18,7 +18,7 @@ const { INT } = require('graphql/language/kinds')
 // maximum values. If value is a string, parse as an integer and ensure it
 // falls within the minimum and maximum bounds.
 function boundedIntValue (value, fallback, minimum, maximum) {
-  let v = parseInt(value)
+  const v = parseInt(value)
   return Math.min(Math.max(isNaN(v) ? fallback : v, minimum), maximum)
 }
 
@@ -61,7 +61,7 @@ function receiveAssetInput (asset, assetInput) {
     // Find the #tags and trim the leading hash and any trailing commas, since
     // it is pretty natural for the user to type something like '#cow, #grass,
     // #fence' in the caption.
-    let tags = parts.filter(w => w.startsWith('#')).map(e => _.trimEnd(e.substring(1), ','))
+    const tags = parts.filter(w => w.startsWith('#')).map(e => _.trimEnd(e.substring(1), ','))
     // Merge the existing tags with the incoming set. Any old tags that match
     // the new tags in a case insensitive manner will be removed (allowing the
     // case of the tags to be updated). The result will be sorted and made
@@ -81,7 +81,7 @@ function receiveAssetInput (asset, assetInput) {
         }
       } else {
         // If that didn't work, just look for one word starting with @ alone.
-        let location = parts.filter(w => w.startsWith('@')).shift()
+        const location = parts.filter(w => w.startsWith('@')).shift()
         if (location) {
           asset.location = location.substring(1)
         }
@@ -184,16 +184,16 @@ const Query = {
   },
 
   async search (obj, args, context, info) {
-    let rows = await backend.query(args.params)
+    const rows = await backend.query(args.params)
     // sort by date by default
     rows.sort((a, b) => b['datetime'] - a['datetime'])
     const totalCount = rows.length
     const count = boundedIntValue(args.count, 10, 1, 10000)
     const offset = boundedIntValue(args.offset, 0, 0, totalCount)
-    let pageRows = rows.slice(offset, offset + count)
+    const pageRows = rows.slice(offset, offset + count)
     // decorate the results with information about the thumbnails
-    let thumbRows = []
-    for (let elem of pageRows) {
+    const thumbRows = []
+    for (const elem of pageRows) {
       const dims = await thumbs.getSize(elem.id)
       thumbRows.push({
         ...elem,
@@ -210,19 +210,19 @@ const Query = {
   },
 
   async locations (obj, args, context, info) {
-    let locations = await backend.allLocations()
+    const locations = await backend.allLocations()
     // convert the field names to match the schema
     return locations.map(v => ({ value: v.key, count: v.value }))
   },
 
   async tags (obj, args, context, info) {
-    let tags = await backend.allTags()
+    const tags = await backend.allTags()
     // convert the field names to match the schema
     return tags.map(v => ({ value: v.key, count: v.value }))
   },
 
   async years (obj, args, context, info) {
-    let years = await backend.allYears()
+    const years = await backend.allYears()
     // convert the field names to match the schema
     return years.map(v => ({ value: v.key, count: v.value }))
   }
@@ -233,7 +233,7 @@ const Mutation = {
     const { filename, mimetype, createReadStream } = await file
     const stream = createReadStream()
     const filepath = await incoming.receiveAsset(filename, stream)
-    let checksum = await incoming.computeChecksum(filepath)
+    const checksum = await incoming.computeChecksum(filepath)
     // check if an asset with this checksum already exists
     let assetId = await backend.byChecksum(checksum)
     if (assetId === null) {
@@ -242,7 +242,7 @@ const Mutation = {
       assetId = assets.makeAssetId(importDate, filename)
       const filesize = fs.statSync(filepath).size
       const duration = await assets.getDuration(mimetype, filepath)
-      let doc = {
+      const doc = {
         _id: assetId,
         duration,
         filename: filename,

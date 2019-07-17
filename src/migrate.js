@@ -12,7 +12,7 @@ const assetsPath = config.get('backend.assetPath')
 
 // Rename a property in the given object.
 function renameProperty (obj, oldname, newname) {
-  if (obj.hasOwnProperty(oldname)) {
+  if (Object.prototype.hasOwnProperty.call(obj, oldname)) {
     obj[newname] = obj[oldname]
     delete obj[oldname]
   }
@@ -20,14 +20,14 @@ function renameProperty (obj, oldname, newname) {
 
 // Remove the named property from the given object.
 function removeProperty (obj, property) {
-  if (obj.hasOwnProperty(property)) {
+  if (Object.prototype.hasOwnProperty.call(obj, property)) {
     delete obj[property]
   }
 }
 
 // Upgrade document to version 1.
 async function dataVersion1 (doc) {
-  if (!doc.hasOwnProperty('file_date')) {
+  if (!Object.prototype.hasOwnProperty.call(doc, 'file_date')) {
     // avoid renaming the sha256 field as later versions have that field again
     return
   }
@@ -58,8 +58,8 @@ function dataVersion3 (doc) {
     'user_date'
   ]
   const tzMillisOffset = new Date().getTimezoneOffset() * 60000
-  for (let property of fields) {
-    if (doc.hasOwnProperty(property) && Array.isArray(doc[property])) {
+  for (const property of fields) {
+    if (Object.prototype.hasOwnProperty.call(doc, property) && Array.isArray(doc[property])) {
       const dl = doc[property]
       const utc = Date.UTC(dl[0], dl[1] - 1, dl[2], dl[3], dl[4]) + tzMillisOffset
       doc[property] = utc
@@ -78,7 +78,7 @@ function dataVersion7 (doc) {
   // Since the _id is changing the _rev field must be cleared so the document
   // will be saved anew.
   //
-  if (!doc.hasOwnProperty('sha256') && !doc.hasOwnProperty('checksum')) {
+  if (!Object.prototype.hasOwnProperty.call(doc, 'sha256') && !Object.prototype.hasOwnProperty.call(doc, 'checksum')) {
     renameProperty(doc, '_id', 'sha256')
     doc._id = assets.makeAssetId(doc.import_date, doc.filename)
     removeProperty(doc, '_rev')
@@ -88,7 +88,7 @@ function dataVersion7 (doc) {
 // Upgrade document to version 8.
 function dataVersion8 (doc) {
   // rename and field and add a prefix
-  if (doc.hasOwnProperty('sha256')) {
+  if (Object.prototype.hasOwnProperty.call(doc, 'sha256')) {
     doc['checksum'] = 'sha256-' + doc['sha256']
     delete doc['sha256']
   }
@@ -107,7 +107,7 @@ function postVersion7 (doc) {
   const part1 = digest.slice(0, 2)
   const part2 = digest.slice(2, 4)
   const part3 = digest.slice(4)
-  let asp = path.join(assetsPath, part1, part2, part3)
+  const asp = path.join(assetsPath, part1, part2, part3)
   const srcpath = path.isAbsolute(asp) ? asp : path.join(process.cwd(), asp)
   const destpath = assets.assetPath(doc._id)
   // if the new path doesn't exist and the old one does, rename it
@@ -172,7 +172,7 @@ async function migrate (db, fromVersion, toVersion) {
   }
   logger.info('performing database migration...')
   // ideally this would fetch the results in chunks...
-  let result = await db.allDocs()
+  const result = await db.allDocs()
   //
   // basic shape of the result:
   //
@@ -187,7 +187,7 @@ async function migrate (db, fromVersion, toVersion) {
   //    ]
   // }
   //
-  for (let row of result.rows) {
+  for (const row of result.rows) {
     try {
       // Skip the design document itself, which the backend handles.
       if (!row.id.startsWith('_design')) {
@@ -202,7 +202,7 @@ async function migrate (db, fromVersion, toVersion) {
         // write the new document, if it has actually changed
         if (!_.isEqual(newDoc, oldDoc)) {
           await db.put(newDoc)
-          if (!newDoc.hasOwnProperty('_rev') && oldDoc._id !== newDoc._id) {
+          if (!Object.prototype.hasOwnProperty.call(newDoc, '_rev') && oldDoc._id !== newDoc._id) {
             logger.info(`document ${newDoc._id} replaces ${oldDoc._id}`)
             // If the new document does not have a revision, and the identifier
             // is different, that means the migration basically changed the

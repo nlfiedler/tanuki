@@ -31,7 +31,7 @@ setTimeout(function () {
         const filename = `IMG_${1000 + n}.JPG`
         const id = assets.makeAssetId(importDate, filename)
         const year = Math.floor(Math.random() * 7) + 2010
-        let doc = {
+        const doc = {
           _id: id,
           // we only search on the year (for now), the rest is meaningless
           original_date: Date.UTC(year, 4, 13, 5, 26),
@@ -121,10 +121,10 @@ setTimeout(function () {
     describe('assets by one tag', function () {
       // With async/await let's go directly against the backend.
       it('should return list of matching assets', async function () {
-        let rows = await backend.query({ tags: ['dipstick'] })
+        const rows = await backend.query({ tags: ['dipstick'] })
         assert.isNotEmpty(rows)
-        for (let row of rows) {
-          let doc = await backend.fetchDocument(row.id)
+        for (const row of rows) {
+          const doc = await backend.fetchDocument(row.id)
           assert.include(doc.tags, 'dipstick')
         }
       })
@@ -133,10 +133,10 @@ setTimeout(function () {
     describe('assets by multiple tags', function () {
       // With async/await let's go directly against the backend.
       it('should return list of matching assets', async function () {
-        let rows = await backend.query({ tags: ['cat', 'dog', 'hot'] })
+        const rows = await backend.query({ tags: ['cat', 'dog', 'hot'] })
         assert.isNotEmpty(rows)
-        for (let row of rows) {
-          let doc = await backend.fetchDocument(row.id)
+        for (const row of rows) {
+          const doc = await backend.fetchDocument(row.id)
           assert.include(doc.tags, 'cat')
           assert.include(doc.tags, 'dog')
           assert.include(doc.tags, 'hot')
@@ -171,9 +171,9 @@ setTimeout(function () {
           .expect((res) => {
             const search = res.body.data.search
             assert.isNotEmpty(search.results)
-            for (let row of search.results) {
+            for (const row of search.results) {
               assert.isNotNull(row)
-              let date = new Date(row.datetime)
+              const date = new Date(row.datetime)
               assert.equal(date.getFullYear(), 2012)
             }
           })
@@ -239,9 +239,9 @@ setTimeout(function () {
           .expect((res) => {
             const search = res.body.data.search
             assert.isNotEmpty(search.results)
-            for (let row of search.results) {
+            for (const row of search.results) {
               assert.isNotNull(row)
-              let date = new Date(row.datetime)
+              const date = new Date(row.datetime)
               assert.oneOf(date.getFullYear(), [2012, 2013])
             }
           })
@@ -278,7 +278,7 @@ setTimeout(function () {
           .expect((res) => {
             const search = res.body.data.search
             assert.isNotEmpty(search.results)
-            for (let row of search.results) {
+            for (const row of search.results) {
               assert.equal(row.location, 'osaka')
             }
           })
@@ -315,7 +315,7 @@ setTimeout(function () {
           .expect((res) => {
             const search = res.body.data.search
             assert.isNotEmpty(search.results)
-            for (let row of search.results) {
+            for (const row of search.results) {
               assert.oneOf(row.location, ['kyoto', 'osaka'])
             }
           })
@@ -358,10 +358,10 @@ setTimeout(function () {
           .expect((res) => {
             const search = res.body.data.search
             assert.isNotEmpty(search.results)
-            for (let row of search.results) {
+            for (const row of search.results) {
               assert.isNotNull(row)
               assert.equal(row.location, 'osaka')
-              let date = new Date(row.datetime)
+              const date = new Date(row.datetime)
               assert.equal(date.getFullYear(), 2012)
               // The tags are not included in the results.
             }
@@ -445,7 +445,7 @@ setTimeout(function () {
             const years = res.body.data.years
             assert.isNotEmpty(years)
             let found = false
-            for (let tag of years) {
+            for (const tag of years) {
               if (tag.value === 2014) {
                 found = true
               }

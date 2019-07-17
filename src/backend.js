@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2019 Nathan Fiedler
 //
 const config = require('config')
 const fs = require('fs-extra')
@@ -19,7 +19,7 @@ fs.ensureDirSync(dbPath)
 let db = new PouchDB(dbPath)
 
 // Define the map/reduce query views.
-let assetsDefinition = {
+const assetsDefinition = {
   _id: '_design/assets',
   // our monotonically increasing version number for tracking schema changes
   version: 8,
@@ -42,7 +42,7 @@ let assetsDefinition = {
         } else {
           date = doc.import_date
         }
-        let location = 'location' in doc ? doc.location : null
+        const location = 'location' in doc ? doc.location : null
         emit(date, [date, doc.filename, location, doc.mimetype])
       }.toString()
     },
@@ -56,7 +56,7 @@ let assetsDefinition = {
         } else {
           date = doc.import_date
         }
-        let location = 'location' in doc ? doc.location : null
+        const location = 'location' in doc ? doc.location : null
         emit(doc.filename.toLowerCase(), [date, doc.filename, location, doc.mimetype])
       }.toString()
     },
@@ -85,7 +85,7 @@ let assetsDefinition = {
         } else {
           date = doc.import_date
         }
-        let location = 'location' in doc ? doc.location : null
+        const location = 'location' in doc ? doc.location : null
         emit(doc.mimetype.toLowerCase(), [date, doc.filename, location, doc.mimetype])
       }.toString()
     },
@@ -100,7 +100,7 @@ let assetsDefinition = {
           } else {
             date = doc.import_date
           }
-          let location = 'location' in doc ? doc.location : null
+          const location = 'location' in doc ? doc.location : null
           doc.tags.forEach(function (tag) {
             emit(tag.toLowerCase(), [date, doc.filename, location, doc.mimetype])
           })
@@ -153,9 +153,9 @@ let assetsDefinition = {
 async function createIndices (index) {
   let created = false
   try {
-    let oldDoc = await db.get(index._id)
+    const oldDoc = await db.get(index._id)
     if (oldDoc.version === undefined || oldDoc.version < index.version) {
-      let ok = await migrate.migrate(db, oldDoc.version || 0, index.version)
+      const ok = await migrate.migrate(db, oldDoc.version || 0, index.version)
       if (ok) {
         await db.put({ ...index, _rev: oldDoc._rev })
         created = true
@@ -182,7 +182,7 @@ async function createIndices (index) {
  * @returns {Promise<Array>} of query results, without any row data.
  */
 async function primeIndices (index) {
-  let promises = []
+  const promises = []
   for (const view in index.views) {
     promises.push(db.query(`assets/${view}`, {
       limit: 0
@@ -197,7 +197,7 @@ async function primeIndices (index) {
  * @returns {Promise<string>} 'ok'
  */
 async function initDatabase () {
-  let indexCreated = await createIndices(assetsDefinition)
+  const indexCreated = await createIndices(assetsDefinition)
   if (indexCreated) {
     logger.info('database indices created')
     await primeIndices(assetsDefinition)
@@ -234,7 +234,7 @@ function getDbObject () {
  */
 async function updateDocumentAsync (newDoc) {
   try {
-    let oldDoc = await db.get(newDoc._id)
+    const oldDoc = await db.get(newDoc._id)
     await db.put({ ...newDoc, _rev: oldDoc._rev })
     return true
   } catch (err) {
@@ -257,7 +257,7 @@ async function updateDocumentAsync (newDoc) {
 function updateDocument (newDoc) {
   // let any errors bubble up to the caller
   return updateDocumentAsync(newDoc).then(function (res) {
-    let action = res ? 'updated existing' : 'inserted new'
+    const action = res ? 'updated existing' : 'inserted new'
     logger.info(`${action} document ${newDoc._id}`)
   })
 }
@@ -346,7 +346,7 @@ function allYears () {
  * @returns {Promise<number>} Promise resolving to total count of assets.
  */
 async function assetCount () {
-  let allDocs = await db.allDocs()
+  const allDocs = await db.allDocs()
   // Count those documents that have id starting with "_design/" then subtract
   // that from the total_rows to find the true asset count.
   const designCount = allDocs.rows.reduce((acc, row) => {
@@ -419,7 +419,7 @@ async function findByDateRange (after, before) {
   }) : {
     end_key: before
   }
-  let queryResults = await db.query('assets/by_date', keys)
+  const queryResults = await db.query('assets/by_date', keys)
   return queryResults.rows.map((row) => massageMapResult(row))
 }
 
@@ -438,10 +438,10 @@ async function findByTags (tags) {
     // (this special selector scans all documents)
     const queryResults = await db.find({
       selector: {
-        '$or': [
-          { tags: { '$exists': false } },
-          { tags: { '$type': 'null' } },
-          { tags: { '$size': 0 } }
+        $or: [
+          { tags: { $exists: false } },
+          { tags: { $type: 'null' } },
+          { tags: { $size: 0 } }
         ]
       },
       fields: queryFields
@@ -449,22 +449,22 @@ async function findByTags (tags) {
     return queryResults.docs.map((fields) => massageMangoResult(fields))
   } else {
     // Use map/reduce for this query, as mango scans all rows.
-    let queryResults = await db.query('assets/by_tag', {
+    const queryResults = await db.query('assets/by_tag', {
       keys: Array.from(tags).sort()
     })
     // Reduce the results to those that have all of the given tags.
-    let tagCounts = queryResults.rows.reduce((acc, row) => {
-      let docId = row['id']
-      let count = acc.has(docId) ? acc.get(docId) : 0
+    const tagCounts = queryResults.rows.reduce((acc, row) => {
+      const docId = row['id']
+      const count = acc.has(docId) ? acc.get(docId) : 0
       acc.set(docId, count + 1)
       return acc
     }, new Map())
-    let matchingRows = queryResults.rows.filter((row) => {
+    const matchingRows = queryResults.rows.filter((row) => {
       return tagCounts.get(row['id']) === tags.length
     })
     // Remove the duplicate rows by sorting on the document identifier and
     // removing any duplicates.
-    let uniqueResults = matchingRows.sort((a, b) => {
+    const uniqueResults = matchingRows.sort((a, b) => {
       return a['id'].localeCompare(b['id'])
     }).filter((row, idx, arr) => idx === 0 || row['id'] !== arr[idx - 1]['id'])
     return uniqueResults.map((row) => massageMapResult(row))
@@ -486,10 +486,10 @@ async function findByLocations (locations) {
     // (this special selector scans all documents)
     const queryResults = await db.find({
       selector: {
-        '$or': [
-          { location: { '$exists': false } },
-          { location: { '$type': 'null' } },
-          { location: { '$eq': '' } }
+        $or: [
+          { location: { $exists: false } },
+          { location: { $type: 'null' } },
+          { location: { $eq: '' } }
         ]
       },
       fields: queryFields
@@ -497,7 +497,7 @@ async function findByLocations (locations) {
     return queryResults.docs.map((fields) => massageMangoResult(fields))
   } else {
     // Use map/reduce for this query, as mango scans all rows.
-    let queryResults = await db.query('assets/by_location', {
+    const queryResults = await db.query('assets/by_location', {
       keys: Array.from(locations).sort()
     })
     return queryResults.rows.map((row) => massageMapResult(row))
@@ -511,7 +511,7 @@ async function findByLocations (locations) {
  * @return {Array} promise resolving to a list of result objects.
  */
 async function findByFilename (filename) {
-  let queryResults = await db.query('assets/by_filename', {
+  const queryResults = await db.query('assets/by_filename', {
     key: filename
   })
   return queryResults.rows.map((row) => massageMapResult(row))
@@ -524,7 +524,7 @@ async function findByFilename (filename) {
  * @return {Array} promise resolving to a list of result objects.
  */
 async function findByMimetype (mimetype) {
-  let queryResults = await db.query('assets/by_mimetype', {
+  const queryResults = await db.query('assets/by_mimetype', {
     key: mimetype
   })
   return queryResults.rows.map((row) => massageMapResult(row))
@@ -612,7 +612,7 @@ async function query (params) {
   // set "search by" according to query params and index precedence;
   // must start with tags, if given, as the other indices do not have
   // the tags field for us to filter on
-  let filterParams = lowerCaseParams(params)
+  const filterParams = lowerCaseParams(params)
   if (filterParams.tags && filterParams.tags.length) {
     searchBy = findByTags.bind(null, filterParams.tags)
     delete filterParams['tags']
@@ -649,22 +649,22 @@ async function query (params) {
     filterBy.push(filterByMimetype.bind(null, filterParams.mimetype))
   }
   // perform the search
-  let searchResults = await searchBy()
+  const searchResults = await searchBy()
   // filter the results
-  let filteredResults = filterBy.reduce((acc, fn) => fn(acc), searchResults)
+  const filteredResults = filterBy.reduce((acc, fn) => fn(acc), searchResults)
   // TODO: sort the results according to the desired 'order'
   // set "order by" based on params
   return filteredResults
 }
 
 // Lower case a string, if it is truthy.
-let lowerStr = (str) => {
+const lowerStr = (str) => {
   return str ? str.toLowerCase() : str
 }
 
 // Lowercase all of the case insensitive fields, returning a new object.
 function lowerCaseParams (params) {
-  let lowerList = (lst) => {
+  const lowerList = (lst) => {
     // process non-empty lists whose first element is not null
     if (lst && lst.length > 0 && lst[0] !== null) {
       return lst.map(e => e.toLowerCase())
@@ -690,7 +690,7 @@ const bestDateOrder = [
 
 // Retrieve the preferred date/time value from the document.
 function getBestDate (doc) {
-  for (let field of bestDateOrder) {
+  for (const field of bestDateOrder) {
     if (field in doc && doc[field]) {
       return doc[field]
     }

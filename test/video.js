@@ -69,7 +69,7 @@ setTimeout(function () {
             assert.equal(asset.filename, '100_1206.MOV')
             assert.equal(asset.filesize, 311139)
             assert.equal(asset.mimetype, 'video/quicktime')
-            let date = new Date(asset.datetime)
+            const date = new Date(asset.datetime)
             assert.equal(date.getFullYear(), 2007)
             assert.equal(date.getMonth() + 1, 9)
             assert.equal(date.getDate(), 14)

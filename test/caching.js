@@ -26,7 +26,7 @@ function termFoundInLog (term) {
         reject(err)
       } else {
         let found = false
-        for (let row of results.file) {
+        for (const row of results.file) {
           if (row.message.includes(term)) {
             found = true
             break

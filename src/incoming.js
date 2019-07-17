@@ -80,7 +80,7 @@ function computeChecksum (filepath) {
 async function getOriginalDate (mimetype, filepath) {
   try {
     if (mimetype.startsWith('image/')) {
-      let data = fs.readFileSync(filepath)
+      const data = fs.readFileSync(filepath)
       const tags = ExifReader.load(data)
       return parseExifDate(tags['DateTimeOriginal'].description)
     } else if (mimetype.startsWith('video/')) {

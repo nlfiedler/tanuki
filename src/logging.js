@@ -23,7 +23,7 @@ function clone (obj) {
 }
 require('winston/lib/winston/common').clone = clone
 
-let Transport = require('winston-transport')
+const Transport = require('winston-transport')
 Transport.prototype.normalizeQuery = function (options) {
   options = options || {}
 

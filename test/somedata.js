@@ -23,44 +23,44 @@ setTimeout(function () {
       await backend.reinitDatabase()
       const testData = [
         {
-          '_id': 'opaquevalue123',
-          'filename': 'IMG_6005.JPG',
-          'filesize': 159675,
-          'import_date': Date.UTC(2014, 0, 21, 17, 8),
-          'location': 'San Francisco',
-          'mimetype': 'image/jpeg',
-          'tags': ['cat', 'CHEESEburger']
+          _id: 'opaquevalue123',
+          filename: 'IMG_6005.JPG',
+          filesize: 159675,
+          import_date: Date.UTC(2014, 0, 21, 17, 8),
+          location: 'San Francisco',
+          mimetype: 'image/jpeg',
+          tags: ['cat', 'CHEESEburger']
         },
         {
-          '_id': 'opaquevalue456',
-          'filename': 'IMG_6005.MOV',
-          'filesize': 159612075,
-          'import_date': Date.UTC(2014, 10, 2, 6, 1),
-          'location': 'san francisco',
-          'mimetype': 'video/quicktime',
-          'original_date': Date.UTC(2013, 9, 24, 15, 9),
-          'tags': ['dog', 'picnic']
+          _id: 'opaquevalue456',
+          filename: 'IMG_6005.MOV',
+          filesize: 159612075,
+          import_date: Date.UTC(2014, 10, 2, 6, 1),
+          location: 'san francisco',
+          mimetype: 'video/quicktime',
+          original_date: Date.UTC(2013, 9, 24, 15, 9),
+          tags: ['dog', 'picnic']
         },
         {
-          '_id': 'opaquevalue789',
-          'filename': 'img0315.jpg',
-          'filesize': 431671,
-          'import_date': Date.UTC(2014, 6, 21, 5, 34),
-          'mimetype': 'image/jpeg',
-          'original_date': null,
-          'tags': ['cat', 'picnic']
+          _id: 'opaquevalue789',
+          filename: 'img0315.jpg',
+          filesize: 431671,
+          import_date: Date.UTC(2014, 6, 21, 5, 34),
+          mimetype: 'image/jpeg',
+          original_date: null,
+          tags: ['cat', 'picnic']
         },
         {
-          '_id': 'opaquevalue150',
-          'filename': 'tagless.jpg',
-          'filesize': 123456,
-          'import_date': Date.UTC(2015, 6, 9, 10, 15),
-          'mimetype': 'image/jpeg',
-          'original_date': null,
-          'tags': [] // tags should never be null, just an empty list
+          _id: 'opaquevalue150',
+          filename: 'tagless.jpg',
+          filesize: 123456,
+          import_date: Date.UTC(2015, 6, 9, 10, 15),
+          mimetype: 'image/jpeg',
+          original_date: null,
+          tags: [] // tags should never be null, just an empty list
         }
       ]
-      for (let doc of testData) {
+      for (const doc of testData) {
         await backend.updateDocument(doc)
       }
     })
@@ -719,10 +719,10 @@ setTimeout(function () {
           .expect(res => {
             const tags = res.body.data.tags
             assert.equal(tags.length, 4)
-            assert.deepEqual(tags[0], {value: 'cat', count: 2})
-            assert.deepEqual(tags[1], {value: 'cheeseburger', count: 1})
-            assert.deepEqual(tags[2], {value: 'dog', count: 1})
-            assert.deepEqual(tags[3], {value: 'picnic', count: 2})
+            assert.deepEqual(tags[0], { value: 'cat', count: 2 })
+            assert.deepEqual(tags[1], { value: 'cheeseburger', count: 1 })
+            assert.deepEqual(tags[2], { value: 'dog', count: 1 })
+            assert.deepEqual(tags[3], { value: 'picnic', count: 2 })
           })
           .end(function (err, res) {
             if (err) {
@@ -749,7 +749,7 @@ setTimeout(function () {
           .expect(res => {
             const locations = res.body.data.locations
             assert.equal(locations.length, 1)
-            assert.deepEqual(locations[0], {value: 'san francisco', count: 2})
+            assert.deepEqual(locations[0], { value: 'san francisco', count: 2 })
           })
           .end(function (err, res) {
             if (err) {
@@ -776,9 +776,9 @@ setTimeout(function () {
           .expect(res => {
             const years = res.body.data.years
             assert.equal(years.length, 3)
-            assert.deepEqual(years[0], {value: 2013, count: 1})
-            assert.deepEqual(years[1], {value: 2014, count: 2})
-            assert.deepEqual(years[2], {value: 2015, count: 1})
+            assert.deepEqual(years[0], { value: 2013, count: 1 })
+            assert.deepEqual(years[1], { value: 2014, count: 2 })
+            assert.deepEqual(years[2], { value: 2015, count: 1 })
           })
           .end(function (err, res) {
             if (err) {

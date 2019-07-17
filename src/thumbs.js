@@ -20,10 +20,10 @@ const db = new PouchDB(dbPath)
 // Compute the size of the asset thumbnail and cache the result.
 async function computeSize (assetId) {
   try {
-    let doc = await backend.fetchDocument(assetId)
-    let mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
-    let resized = await assets.generateWideThumb(mimetype, assetId)
-    let cached = {
+    const doc = await backend.fetchDocument(assetId)
+    const mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
+    const resized = await assets.generateWideThumb(mimetype, assetId)
+    const cached = {
       _id: assetId
     }
     if (resized) {

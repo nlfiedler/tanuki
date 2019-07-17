@@ -26,7 +26,7 @@ setTimeout(function () {
         const fileName = `IMG_${1000 + n}.JPG`
         const importDate = Date.UTC(2000 + n, 10, 18, 17, 3)
         const id = assets.makeAssetId(importDate, fileName)
-        let doc = {
+        const doc = {
           _id: id,
           filename: fileName,
           import_date: importDate,

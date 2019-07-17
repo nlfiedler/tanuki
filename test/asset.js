@@ -20,7 +20,7 @@ setTimeout(function () {
 
     before(async function () {
       await backend.reinitDatabase()
-      let doc = {
+      const doc = {
         _id: docId,
         filename: 'IMG_1001.JPG',
         import_date: Date.UTC(2017, 10, 18, 17, 3),
@@ -164,7 +164,7 @@ setTimeout(function () {
             const asset = res.body.data.asset
             assert.equal(asset.filename, 'dcp_1069.jpg')
             assert.equal(asset.mimetype, 'image/jpeg')
-            let date = new Date(asset.datetime)
+            const date = new Date(asset.datetime)
             assert.equal(date.getUTCFullYear(), 2003)
             assert.equal(date.getUTCMonth() + 1, 9)
             assert.equal(date.getUTCDate(), 3)
@@ -291,7 +291,7 @@ setTimeout(function () {
           .expect(200)
           .expect((res) => {
             const asset = res.body.data.update
-            let date = new Date(asset.datetime)
+            const date = new Date(asset.datetime)
             assert.equal(date.getUTCFullYear(), 2003)
             assert.equal(date.getUTCMonth() + 1, 8)
             assert.equal(date.getUTCDate(), 30)
@@ -325,7 +325,7 @@ setTimeout(function () {
           .expect(200)
           .expect((res) => {
             const asset = res.body.data.update
-            let date = new Date(asset.datetime)
+            const date = new Date(asset.datetime)
             assert.equal(date.getUTCFullYear(), 2003)
             assert.equal(date.getUTCMonth() + 1, 9)
             assert.equal(date.getUTCDate(), 3)

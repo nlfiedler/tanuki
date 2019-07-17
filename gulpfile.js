@@ -6,17 +6,17 @@ const uglify = require('gulp-uglify')
 const nodemon = require('gulp-nodemon')
 const webpack = require('webpack-stream')
 
-let production = false
+const production = false
 
 gulp.task('serve', (cb) => {
   let called = false
   return nodemon({
-    'script': './src/server.js',
-    'env': {
-      'NODE_PATH': 'src'
+    script: './src/server.js',
+    env: {
+      NODE_PATH: 'src'
     },
-    'watch': './src',
-    'ext': 'js'
+    watch: './src',
+    ext: 'js'
   }).on('start', () => {
     if (!called) {
       called = true

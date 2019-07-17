@@ -35,7 +35,7 @@ const thumbnailCache = new LRU({
 function assetPath (assetId) {
   const buf = Buffer.from(assetId, 'base64')
   const relpath = buf.toString('utf8')
-  let fp = path.join(assetsPath, relpath)
+  const fp = path.join(assetsPath, relpath)
   return path.isAbsolute(fp) ? fp : path.join(process.cwd(), fp)
 }
 
@@ -122,7 +122,7 @@ async function generateThumbnail (mimetype, filepath, width, height) {
     return generateVideoThumbnail(filepath, width, height)
   } else if (mimetype.startsWith('image/')) {
     // fit the image into a box of the given size, convert to jpeg
-    let bits = await sharp(filepath)
+    const bits = await sharp(filepath)
       .resize({
         width,
         height,
@@ -168,7 +168,7 @@ function generateVideoThumbnail (filepath, width, height) {
   return new Promise((resolve, reject) => {
     ffmpeg(filepath)
       .on('end', function () {
-        let binary = fs.readFileSync(outfile)
+        const binary = fs.readFileSync(outfile)
         resolve({
           binary,
           mimetype: 'image/jpeg'
@@ -213,7 +213,7 @@ async function generateWideThumb (mimetype, assetId) {
     return generateVideoThumbnail(filepath, null, 300)
   } else if (mimetype.startsWith('image/')) {
     // resize the image to the desired height, convert to jpeg
-    let bits = await sharp(filepath)
+    const bits = await sharp(filepath)
       .resize(null, 300)
       .toFormat('jpeg')
       .toBuffer()
@@ -237,7 +237,7 @@ async function generateWideThumb (mimetype, assetId) {
  *          resolves to null if asset is missing.
  */
 async function generatePreview (mimetype, assetId) {
-  let filepath = assetPath(assetId)
+  const filepath = assetPath(assetId)
   if (!fs.existsSync(filepath)) {
     return null
   }
@@ -264,7 +264,7 @@ async function getDuration (mimetype, filepath) {
         } else {
           // streams: [{ codec_type: 'video', duration: '2.03'... }]
           try {
-            for (let stream of metadata.streams) {
+            for (const stream of metadata.streams) {
               if (stream.codec_type === 'video') {
                 resolve(stream.duration)
               }

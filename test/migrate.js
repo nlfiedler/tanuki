@@ -30,7 +30,7 @@ setTimeout(function () {
 
       before(async function () {
         await backend.reinitDatabase()
-        let doc = {
+        const doc = {
           _id: docId,
           filename,
           import_date: importDate,
@@ -44,16 +44,16 @@ setTimeout(function () {
       })
 
       it('should not modify up-to-date documents', async function () {
-        let index = await backend.fetchDocument('_design/assets')
-        let assetBefore = await backend.fetchDocument(docId)
-        let ok = await migrate.migrate(backend.getDbObject(), 0, index.version)
+        const index = await backend.fetchDocument('_design/assets')
+        const assetBefore = await backend.fetchDocument(docId)
+        const ok = await migrate.migrate(backend.getDbObject(), 0, index.version)
         assert.isTrue(ok, 'migrate() returned true')
-        let assetAfter = await backend.fetchDocument(docId)
+        const assetAfter = await backend.fetchDocument(docId)
         assert.equal(assetAfter._rev, assetBefore._rev, 'doc revision unchanged')
       })
 
       it('should not allow version downgrade', async function () {
-        let ok = await migrate.migrate(backend.getDbObject(), 5, 1)
+        const ok = await migrate.migrate(backend.getDbObject(), 5, 1)
         assert.isFalse(ok, 'migrate() rejected version downgrade')
       })
     })
@@ -63,7 +63,7 @@ setTimeout(function () {
 
       before(async function () {
         await backend.reinitDatabase()
-        let doc = {
+        const doc = {
           _id: docId,
           filename: 'IMG_1001.JPG',
           import_date: Date.UTC(2017, 10, 18, 17, 3),
@@ -78,10 +78,10 @@ setTimeout(function () {
       })
 
       it('should not change documents from v3 to v4', async function () {
-        let assetBefore = await backend.fetchDocument(docId)
-        let ok = await migrate.migrate(backend.getDbObject(), 3, 4)
+        const assetBefore = await backend.fetchDocument(docId)
+        const ok = await migrate.migrate(backend.getDbObject(), 3, 4)
         assert.isTrue(ok, 'migrate() returned true')
-        let assetAfter = await backend.fetchDocument(docId)
+        const assetAfter = await backend.fetchDocument(docId)
         // despite the document obviously needing changes, the versions
         // specified did not require doing anything to them
         assert.equal(assetAfter._rev, assetBefore._rev, 'doc revision unchanged')
@@ -95,7 +95,7 @@ setTimeout(function () {
 
       before(async function () {
         await backend.reinitDatabase()
-        let doc = {
+        const doc = {
           _id: oldDocId,
           sha256: oldDocId,
           file_name: '100_1206.MOV',
@@ -117,13 +117,13 @@ setTimeout(function () {
 
       it('should rename, remove, and format fields', async function () {
         assert.isTrue(fs.existsSync(oldpath))
-        let index = await backend.fetchDocument('_design/assets')
-        let assetBefore = await backend.fetchDocument(oldDocId)
-        let ok = await migrate.migrate(backend.getDbObject(), 0, index.version)
+        const index = await backend.fetchDocument('_design/assets')
+        const assetBefore = await backend.fetchDocument(oldDocId)
+        const ok = await migrate.migrate(backend.getDbObject(), 0, index.version)
         assert.isTrue(ok, 'migrate() returned true')
         const newDocId = await backend.byChecksum('sha256-' + oldDocId)
         assert.isNotNull(newDocId)
-        let assetAfter = await backend.fetchDocument(newDocId)
+        const assetAfter = await backend.fetchDocument(newDocId)
         // lots of changes
         assert.notEqual(assetAfter._id, assetBefore._id, 'document identifier changed')
         assert.property(assetAfter, 'filesize', 'filesize property defined')
