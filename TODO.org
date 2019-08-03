@@ -10,10 +10,10 @@
 **** DONE lodash
 **** DONE mocha
 **** DONE rotating-file-stream
-*** TODO npm update harder modules
-**** TODO apollo-upload-client
-**** TODO del
-**** TODO gulp-if
+*** DONE npm update harder modules
+**** DONE apollo-upload-client
+**** DONE del
+**** DONE gulp-if
 *** TODO Replace bs-reform with [[https://github.com/minima-app/re-formality][re-formality]] for form validation
 **** TODO add re-formality to =package.json= and =bsconfig.json=
 **** TODO change asset edit page to use re-formality
