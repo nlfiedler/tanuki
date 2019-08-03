@@ -1,15 +1,39 @@
 * Tanuki
 ** General Items
-*** TODO Using iPad, clicking on tag, nothing updates
+*** DONE The "not found" page arrow grapheme renders as an accent character
+**** use a button like zorigami
+*** DONE npm update easy modules
+**** DONE sharp
+**** DONE apollo-server
+**** DONE apollo-server-express
+**** DONE config
+**** DONE lodash
+**** DONE mocha
+**** DONE rotating-file-stream
+*** TODO fix npm audit issues
+*** TODO npm update harder modules
+**** TODO apollo-upload-client
+**** TODO del
+**** TODO gulp-if
+*** TODO Replace bs-reform with [[https://github.com/minima-app/re-formality][re-formality]] for form validation
+**** TODO add re-formality to =package.json= and =bsconfig.json=
+**** TODO change asset edit page to use re-formality
+**** TODO change search page to use re-formality
+**** TODO remove bs-reform from =package.json= and =bsconfig.json=
+*** TODO Sometimes the front-end misses updates from backend?
+**** e.g. click a tag, images fail to appear; click and click again, works
 **** find out what is going on when this happens
+*** TODO Reorganize this todo file into milestones
+**** quick: update front-end code
+**** major: rewrite backend using Rust
+**** then organize the rest of the features and such into milestones
 *** TODO Figure out how to migrate to Reason Apollo 0.16
 *** TODO Use the new =[@react.component]= notation for ReasonReact components
 *** TODO Upgrade to react-jsx version 3
 **** c.f. https://reasonml.github.io/reason-react/docs/en/jsx
-**** will need to update bs-reform at the same time
+**** will need consider how to stay compatible with reductive
 *** TODO Update reason react router
 **** c.f. https://reasonml.github.io/reason-react/docs/en/router
-*** TODO Update =bs-reform= at some point
 *** TODO Support advanced queries using Google-style operators
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
 **** move perkeep style query support from mujina to tanuki
@@ -33,7 +57,6 @@
 *** TODO Consider how to make thumbnail page responsive
 **** Show 1, 2, 3, or more depending on browser width
 **** Should be able to leverage CSS for this
-*** TODO Debounce the form input validation (i.e. asset edit and search forms)
 *** TODO Support searching the caption text
 *** TODO Support wildcards in filename, mimetype (others?)
 *** TODO Extract exact location information from images [0/4]
