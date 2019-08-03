@@ -16,8 +16,10 @@ module Component = {
             </div>
           </div>
         </article>
-        <a onClick={_ => ReasonReact.Router.push("/")}>
-          {ReasonReact.string("← Back to home")}
+        <a
+          className="button is-link"
+          onClick={_ => ReasonReact.Router.push("/")}>
+          {ReasonReact.string("Back to home")}
         </a>
       </div>,
   };
