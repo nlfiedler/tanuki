@@ -10,7 +10,6 @@
 **** DONE lodash
 **** DONE mocha
 **** DONE rotating-file-stream
-*** TODO fix npm audit issues
 *** TODO npm update harder modules
 **** TODO apollo-upload-client
 **** TODO del
@@ -32,8 +31,7 @@
 *** TODO Upgrade to react-jsx version 3
 **** c.f. https://reasonml.github.io/reason-react/docs/en/jsx
 **** will need consider how to stay compatible with reductive
-*** TODO Update reason react router
-**** c.f. https://reasonml.github.io/reason-react/docs/en/router
+*** TODO Update reason react router usage to match zorigami
 *** TODO Support advanced queries using Google-style operators
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
 **** move perkeep style query support from mujina to tanuki

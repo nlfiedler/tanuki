@@ -46,7 +46,7 @@ gulp.task('make:bsb', (cb) => {
 })
 
 gulp.task('make:web', () => {
-  return gulp.src('lib/js/src/main.bs.js')
+  return gulp.src('lib/js/src/Index.bs.js')
     .pipe(webpack({
       mode: production ? 'production' : 'development',
       output: {
