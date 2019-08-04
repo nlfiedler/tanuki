@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2018 Nathan Fiedler
+//
 /* The expected shape of the tag from GraphQL. */
 type t = {
   .
@@ -54,19 +57,32 @@ let selectTopTags = (selectedTags: Belt.Set.String.t, allTags: array(t)) => {
   almostThere;
 };
 
-module TagsRe = {
+// React hooks require a stable function reference to work properly.
+let stateSelector = (state: Redux.appState) => state.selectedTags;
+
+module Component = {
   type state = {showingAll: bool};
   type action =
     | ToggleAll;
-  let component = ReasonReact.reducerComponent("TagsRe");
-  let make = (~state: Belt.Set.String.t, ~dispatch, _children) => {
-    let allTagsToggle = (state, send, tags: array(t)) =>
+  [@react.component]
+  let make = () => {
+    let reduxState = Redux.useSelector(stateSelector);
+    let reduxDispatch = Redux.useDispatch();
+    let (state, dispatch) =
+      React.useReducer(
+        (state, action) =>
+          switch (action) {
+          | ToggleAll => {showingAll: !state.showingAll}
+          },
+        {showingAll: false},
+      );
+    let allTagsToggle = (tags: array(t)) =>
       if (state.showingAll) {
         <a
           className="tag is-light"
           href="#"
           title="Hide some tags"
-          onClick={_ => send(ToggleAll)}>
+          onClick={_ => dispatch(ToggleAll)}>
           {ReasonReact.string("<<")}
         </a>;
       } else if (Array.length(tags) <= 25) {
@@ -76,77 +92,50 @@ module TagsRe = {
           className="tag is-light"
           href="#"
           title="Show all tags"
-          onClick={_ => send(ToggleAll)}>
+          onClick={_ => dispatch(ToggleAll)}>
           {ReasonReact.string(">>")}
         </a>;
       };
-    let buildTags = (myState, tags: array(t)) => {
+    let buildTags = (tags: array(t)) => {
       let visibleTags =
-        if (myState.showingAll || Array.length(tags) <= 25) {
+        if (state.showingAll || Array.length(tags) <= 25) {
           tags;
         } else {
-          selectTopTags(state, tags);
+          selectTopTags(reduxState, tags);
         };
       Array.mapi(
         (index, tag) => {
-          let isSelected = Belt.Set.String.has(state, tag##value);
+          let isSelected = Belt.Set.String.has(reduxState, tag##value);
           let className = isSelected ? "tag is-dark" : "tag is-light";
           <a
             key={string_of_int(index)}
             className
             href="#"
             title={string_of_int(tag##count)}
-            onClick={_ => dispatch(Redux.ToggleTag(tag##value))}>
+            onClick={_ => reduxDispatch(Redux.ToggleTag(tag##value))}>
             {ReasonReact.string(tag##value)}
           </a>;
         },
         visibleTags,
       );
     };
-    {
-      ...component,
-      initialState: () => {showingAll: false},
-      reducer: action =>
-        switch (action) {
-        | ToggleAll => (
-            state => ReasonReact.Update({showingAll: !state.showingAll})
-          )
-        },
-      render: self =>
-        <GetTagsQuery>
-          ...{({result}) =>
-            switch (result) {
-            | Loading => <div> {ReasonReact.string("Loading tags...")} </div>
-            | Error(error) =>
-              Js.log(error);
-              <div> {ReasonReact.string(error##message)} </div>;
-            | Data(response) =>
-              <div className="tags">
-                <span className="tag is-info">
-                  {ReasonReact.string("Tags")}
-                </span>
-                {ReasonReact.array(buildTags(self.state, response##tags))}
-                {allTagsToggle(self.state, self.send, response##tags)}
-              </div>
-            }
-          }
-        </GetTagsQuery>,
-    };
-  };
-};
-
-module TagsProvider = {
-  let make =
-    Reductive.Lense.createMake(
-      ~lense=(s: Redux.appState) => s.selectedTags,
-      Redux.store,
-    );
-};
-
-module Component = {
-  let component = ReasonReact.statelessComponent("Tags");
-  let make = _children => {
-    ...component,
-    render: _self => <TagsProvider component=TagsRe.make />,
+    <GetTagsQuery>
+      ...{({result}) =>
+        switch (result) {
+        | Loading => <div> {ReasonReact.string("Loading tags...")} </div>
+        | Error(error) =>
+          Js.log(error);
+          <div> {ReasonReact.string(error##message)} </div>;
+        | Data(response) =>
+          <div className="tags">
+            <span className="tag is-info">
+              {ReasonReact.string("Tags")}
+            </span>
+            {ReasonReact.array(buildTags(response##tags))}
+            {allTagsToggle(response##tags)}
+          </div>
+        }
+      }
+    </GetTagsQuery>;
   };
 };

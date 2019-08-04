@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2018 Nathan Fiedler
+//
 /* The expected shape of the location from GraphQL. */
 type t = {
   .
@@ -56,19 +59,32 @@ let selectTopLocations =
   almostThere;
 };
 
-module LocationsRe = {
+// React hooks require a stable function reference to work properly.
+let stateSelector = (state: Redux.appState) => state.selectedLocations;
+
+module Component = {
   type state = {showingAll: bool};
   type action =
     | ToggleAll;
-  let component = ReasonReact.reducerComponent("LocationsRe");
-  let make = (~state: Belt.Set.String.t, ~dispatch, _children) => {
-    let allLocationsToggle = (state, send, locations: array(t)) =>
+  [@react.component]
+  let make = () => {
+    let reduxState = Redux.useSelector(stateSelector);
+    let reduxDispatch = Redux.useDispatch();
+    let (state, dispatch) =
+      React.useReducer(
+        (state, action) =>
+          switch (action) {
+          | ToggleAll => {showingAll: !state.showingAll}
+          },
+        {showingAll: false},
+      );
+    let allLocationsToggle = (locations: array(t)) =>
       if (state.showingAll) {
         <a
           className="tag is-light"
           href="#"
           title="Hide some locations"
-          onClick={_ => send(ToggleAll)}>
+          onClick={_ => dispatch(ToggleAll)}>
           {ReasonReact.string("<<")}
         </a>;
       } else if (Array.length(locations) <= 25) {
@@ -78,84 +94,52 @@ module LocationsRe = {
           className="tag is-light"
           href="#"
           title="Show all locations"
-          onClick={_ => send(ToggleAll)}>
+          onClick={_ => dispatch(ToggleAll)}>
           {ReasonReact.string(">>")}
         </a>;
       };
-    let buildLocations = (myState, locations: array(t)) => {
+    let buildLocations = (locations: array(t)) => {
       let visibleLocations =
-        if (myState.showingAll || Array.length(locations) <= 25) {
+        if (state.showingAll || Array.length(locations) <= 25) {
           locations;
         } else {
-          selectTopLocations(state, locations);
+          selectTopLocations(reduxState, locations);
         };
       Array.mapi(
         (index, location: t) => {
-          let isSelected = Belt.Set.String.has(state, location##value);
+          let isSelected = Belt.Set.String.has(reduxState, location##value);
           let className = isSelected ? "tag is-dark" : "tag is-light";
           <a
             key={string_of_int(index)}
             className
             href="#"
             title={string_of_int(location##count)}
-            onClick={_ => dispatch(Redux.ToggleLocation(location##value))}>
+            onClick={_ =>
+              reduxDispatch(Redux.ToggleLocation(location##value))
+            }>
             {ReasonReact.string(location##value)}
           </a>;
         },
         visibleLocations,
       );
     };
-    {
-      ...component,
-      initialState: () => {showingAll: false},
-      reducer: action =>
-        switch (action) {
-        | ToggleAll => (
-            state => ReasonReact.Update({showingAll: !state.showingAll})
-          )
-        },
-      render: self =>
-        <GetLocationsQuery>
-          ...{({result}) =>
-            switch (result) {
-            | Loading =>
-              <div> {ReasonReact.string("Loading locations...")} </div>
-            | Error(error) =>
-              Js.log(error);
-              <div> {ReasonReact.string(error##message)} </div>;
-            | Data(response) =>
-              <div className="tags">
-                <span className="tag is-info">
-                  {ReasonReact.string("Locations")}
-                </span>
-                {ReasonReact.array(
-                   buildLocations(self.state, response##locations),
-                 )}
-                {allLocationsToggle(
-                   self.state,
-                   self.send,
-                   response##locations,
-                 )}
-              </div>
-            }
-          }
-        </GetLocationsQuery>,
-    };
-  };
-};
-
-module LocationsProvider = {
-  let make =
-    Reductive.Lense.createMake(
-      ~lense=(s: Redux.appState) => s.selectedLocations,
-      Redux.store,
-    );
-};
-
-module Component = {
-  let component = ReasonReact.statelessComponent("Locations");
-  let make = _children => {
-    ...component,
-    render: _self => <LocationsProvider component=LocationsRe.make />,
+    <GetLocationsQuery>
+      ...{({result}) =>
+        switch (result) {
+        | Loading => <div> {ReasonReact.string("Loading locations...")} </div>
+        | Error(error) =>
+          Js.log(error);
+          <div> {ReasonReact.string(error##message)} </div>;
+        | Data(response) =>
+          <div className="tags">
+            <span className="tag is-info">
+              {ReasonReact.string("Locations")}
+            </span>
+            {ReasonReact.array(buildLocations(response##locations))}
+            {allLocationsToggle(response##locations)}
+          </div>
+        }
+      }
+    </GetLocationsQuery>;
   };
 };

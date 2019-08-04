@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2018 Nathan Fiedler
+//
 /* The expected shape of the asset data from GraphQL. */
 type t = {
   .
@@ -131,54 +134,49 @@ let assetDetails = (asset: t) =>
   </table>;
 
 module PreviewPanel = {
-  let component = ReasonReact.statelessComponent("ShowAsset");
-  let make = (~asset: t, _children) => {
-    ...component,
-    render: _self =>
-      <div className="container">
-        <div className="card">
-          <div className="card-header">
-            <p className="card-header-title">
-              {ReasonReact.string(asset##filename)}
-            </p>
-            <a
-              className="card-header-icon"
-              onClick={_ =>
-                ReasonReact.Router.push("/assets/" ++ asset##id ++ "/edit")
-              }>
-              <span className="icon"> <i className="fa fa-edit" /> </span>
-            </a>
-          </div>
-          <div className="card-image has-text-centered">
-            {assetPreview(asset)}
-          </div>
-          <div className="card-content"> {assetDetails(asset)} </div>
+  [@react.component]
+  let make = (~asset: t) => {
+    <div className="container">
+      <div className="card">
+        <div className="card-header">
+          <p className="card-header-title">
+            {ReasonReact.string(asset##filename)}
+          </p>
+          <a
+            className="card-header-icon"
+            onClick={_ =>
+              ReasonReact.Router.push("/assets/" ++ asset##id ++ "/edit")
+            }>
+            <span className="icon"> <i className="fa fa-edit" /> </span>
+          </a>
         </div>
-      </div>,
+        <div className="card-image has-text-centered">
+          {assetPreview(asset)}
+        </div>
+        <div className="card-content"> {assetDetails(asset)} </div>
+      </div>
+    </div>;
   };
 };
 
 module Component = {
-  let component = ReasonReact.statelessComponent("ShowAsset");
-  let make = (~assetId: string, _children) => {
-    ...component,
-    render: _self => {
-      let query = FetchAsset.make(~identifier=assetId, ());
-      <FetchAssetQuery variables=query##variables>
-        ...{({result}) =>
-          switch (result) {
-          | Loading => <div> {ReasonReact.string("Loading...")} </div>
-          | Error(error) =>
-            Js.log(error);
-            <div> {ReasonReact.string(error##message)} </div>;
-          | Data(response) =>
-            switch (response##asset) {
-            | None => <div> {ReasonReact.string("No such asset!")} </div>
-            | Some(asset) => <PreviewPanel asset />
-            }
+  [@react.component]
+  let make = (~assetId: string) => {
+    let query = FetchAsset.make(~identifier=assetId, ());
+    <FetchAssetQuery variables=query##variables>
+      ...{({result}) =>
+        switch (result) {
+        | Loading => <div> {ReasonReact.string("Loading...")} </div>
+        | Error(error) =>
+          Js.log(error);
+          <div> {ReasonReact.string(error##message)} </div>;
+        | Data(response) =>
+          switch (response##asset) {
+          | None => <div> {ReasonReact.string("No such asset!")} </div>
+          | Some(asset) => <PreviewPanel asset />
           }
         }
-      </FetchAssetQuery>;
-    },
+      }
+    </FetchAssetQuery>;
   };
 };

@@ -1,3 +1,7 @@
+//
+// Copyright (c) 2018 Nathan Fiedler
+//
+
 /*
  * The search page presents a form in place of the attribute selectors, and
  * displays the results as a grid of thumbnails.
@@ -113,128 +117,126 @@ let searchFormInput =
 
 /* Construct the search form, populating it with the saved values, if any. */
 module SearchFormRe = {
-  let component = ReasonReact.statelessComponent("SearchForm");
-  let make = (~inputs, ~onSubmit, _children) => {
-    ...component,
-    render: _self =>
-      <SearchForm
-        onSubmit={({values}) => onSubmit(values)}
-        initialState=inputs
-        schema=[
-          (
-            `afterDate,
-            ReForm.Validation.Custom(
-              values => dateValidator(values.afterDate),
-            ),
+  [@react.component]
+  let make = (~inputs, ~onSubmit) => {
+    <SearchForm
+      onSubmit={({values}) => onSubmit(values)}
+      initialState=inputs
+      schema=[
+        (
+          `afterDate,
+          ReForm.Validation.Custom(
+            values => dateValidator(values.afterDate),
           ),
-          (
-            `beforeDate,
-            ReForm.Validation.Custom(
-              values => dateValidator(values.beforeDate),
-            ),
+        ),
+        (
+          `beforeDate,
+          ReForm.Validation.Custom(
+            values => dateValidator(values.beforeDate),
           ),
-        ]>
-        ...{({handleSubmit, handleChange, form, getErrorForField}) =>
-          <form onSubmit={ReForm.Helpers.handleDomFormSubmit(handleSubmit)}>
-            <div
-              className="container"
-              style={ReactDOMRe.Style.make(
-                ~width="auto",
-                ~paddingRight="3em",
-                ~marginBottom="1em",
-                (),
-              )}>
-              <div className="field is-horizontal">
-                <div className="field-body">
-                  {searchFormInput(
-                     handleChange,
-                     getErrorForField,
-                     `tags,
-                     "Tags",
-                     "tags",
-                     "text",
-                     form.values.tags,
-                     "comma-separated values",
-                     "fas fa-tags",
-                   )}
-                  {searchFormInput(
-                     handleChange,
-                     getErrorForField,
-                     `locations,
-                     "Locations",
-                     "locations",
-                     "text",
-                     form.values.locations,
-                     "comma-separated values",
-                     "fas fa-map",
-                   )}
-                </div>
-              </div>
-              <div className="field is-horizontal">
-                <div className="field-body">
-                  {searchFormInput(
-                     handleChange,
-                     getErrorForField,
-                     `afterDate,
-                     "After date",
-                     "after",
-                     "text",
-                     form.values.afterDate,
-                     "2002-01-31",
-                     "fas fa-calendar",
-                   )}
-                  {searchFormInput(
-                     handleChange,
-                     getErrorForField,
-                     `beforeDate,
-                     "Before date",
-                     "before",
-                     "text",
-                     form.values.beforeDate,
-                     "2003-08-30",
-                     "fas fa-calendar",
-                   )}
-                </div>
-              </div>
-              <div className="field is-horizontal">
-                <div className="field-body">
-                  {searchFormInput(
-                     handleChange,
-                     getErrorForField,
-                     `filename,
-                     "Filename",
-                     "filename",
-                     "text",
-                     form.values.filename,
-                     "img_1234.jpg",
-                     "fas fa-file",
-                   )}
-                  {searchFormInput(
-                     handleChange,
-                     getErrorForField,
-                     `mimetype,
-                     "Media type",
-                     "mimetype",
-                     "text",
-                     form.values.mimetype,
-                     "image/jpeg",
-                     "fas fa-code",
-                   )}
-                </div>
-              </div>
-              <div className="field is-grouped is-grouped-right">
-                <div className="control">
-                  <input
-                    type_="submit"
-                    value="Search"
-                    className="button is-primary"
-                  />
-                </div>
+        ),
+      ]>
+      ...{({handleSubmit, handleChange, form, getErrorForField}) =>
+        <form onSubmit={ReForm.Helpers.handleDomFormSubmit(handleSubmit)}>
+          <div
+            className="container"
+            style={ReactDOMRe.Style.make(
+              ~width="auto",
+              ~paddingRight="3em",
+              ~marginBottom="1em",
+              (),
+            )}>
+            <div className="field is-horizontal">
+              <div className="field-body">
+                {searchFormInput(
+                   handleChange,
+                   getErrorForField,
+                   `tags,
+                   "Tags",
+                   "tags",
+                   "text",
+                   form.values.tags,
+                   "comma-separated values",
+                   "fas fa-tags",
+                 )}
+                {searchFormInput(
+                   handleChange,
+                   getErrorForField,
+                   `locations,
+                   "Locations",
+                   "locations",
+                   "text",
+                   form.values.locations,
+                   "comma-separated values",
+                   "fas fa-map",
+                 )}
               </div>
             </div>
-          </form>
-        }
-      </SearchForm>,
+            <div className="field is-horizontal">
+              <div className="field-body">
+                {searchFormInput(
+                   handleChange,
+                   getErrorForField,
+                   `afterDate,
+                   "After date",
+                   "after",
+                   "text",
+                   form.values.afterDate,
+                   "2002-01-31",
+                   "fas fa-calendar",
+                 )}
+                {searchFormInput(
+                   handleChange,
+                   getErrorForField,
+                   `beforeDate,
+                   "Before date",
+                   "before",
+                   "text",
+                   form.values.beforeDate,
+                   "2003-08-30",
+                   "fas fa-calendar",
+                 )}
+              </div>
+            </div>
+            <div className="field is-horizontal">
+              <div className="field-body">
+                {searchFormInput(
+                   handleChange,
+                   getErrorForField,
+                   `filename,
+                   "Filename",
+                   "filename",
+                   "text",
+                   form.values.filename,
+                   "img_1234.jpg",
+                   "fas fa-file",
+                 )}
+                {searchFormInput(
+                   handleChange,
+                   getErrorForField,
+                   `mimetype,
+                   "Media type",
+                   "mimetype",
+                   "text",
+                   form.values.mimetype,
+                   "image/jpeg",
+                   "fas fa-code",
+                 )}
+              </div>
+            </div>
+            <div className="field is-grouped is-grouped-right">
+              <div className="control">
+                <input
+                  type_="submit"
+                  value="Search"
+                  className="button is-primary"
+                />
+              </div>
+            </div>
+          </div>
+        </form>
+      }
+    </SearchForm>;
   };
 };
 
@@ -290,66 +292,59 @@ let makeSearchParams = (params: SearchFormParams.state) => {
   };
 };
 
-module SearchRe = {
+// React hooks require a stable function reference to work properly.
+let stateSelector = (state: Redux.appState) => state;
+
+module Component = {
   type state = {params: SearchFormParams.state};
   type action =
     | SetParams(SearchFormParams.state);
-  let component = ReasonReact.reducerComponent("SearchRe");
-  let make = (~state: Redux.appState, ~dispatch, _children) => {
-    ...component,
-    initialState: () => {params: state.savedSearch},
-    reducer: action =>
-      switch (action) {
-      | SetParams(params) => (_state => ReasonReact.Update({params: params}))
-      },
-    render: self => {
-      let onSubmit = params => {
-        dispatch(Redux.Paginate(1));
-        dispatch(Redux.SaveSearch(params));
-        self.send(SetParams(params));
-      };
-      <div>
-        <SearchFormRe inputs={state.savedSearch} onSubmit />
-        {
-          let offset = (state.pageNumber - 1) * Thumbnails.pageSize;
-          let queryParams = makeSearchParams(self.state.params);
-          let query =
-            SearchAssets.make(
-              ~params=queryParams,
-              ~pageSize=Thumbnails.pageSize,
-              ~offset,
-              (),
-            );
-          <SearchAssetsQuery variables=query##variables>
-            ...{({result}) =>
-              switch (result) {
-              | Loading => <div> {ReasonReact.string("Loading...")} </div>
-              | Error(error) =>
-                Js.log(error);
-                <div> {ReasonReact.string(error##message)} </div>;
-              | Data(response) =>
-                <Thumbnails.Component state dispatch search=response##search />
-              }
+  [@react.component]
+  let make = () => {
+    let reduxState = Redux.useSelector(stateSelector);
+    let reduxDispatch = Redux.useDispatch();
+    let (state, dispatch) =
+      React.useReducer(
+        (_state, action) =>
+          switch (action) {
+          | SetParams(params) => {params: params}
+          },
+        {params: reduxState.savedSearch},
+      );
+    let onSubmit = params => {
+      reduxDispatch(Redux.Paginate(1));
+      reduxDispatch(Redux.SaveSearch(params));
+      dispatch(SetParams(params));
+    };
+    <div>
+      <SearchFormRe inputs={reduxState.savedSearch} onSubmit />
+      {
+        let offset = (reduxState.pageNumber - 1) * Thumbnails.pageSize;
+        let queryParams = makeSearchParams(state.params);
+        let query =
+          SearchAssets.make(
+            ~params=queryParams,
+            ~pageSize=Thumbnails.pageSize,
+            ~offset,
+            (),
+          );
+        <SearchAssetsQuery variables=query##variables>
+          ...{({result}) =>
+            switch (result) {
+            | Loading => <div> {ReasonReact.string("Loading...")} </div>
+            | Error(error) =>
+              Js.log(error);
+              <div> {ReasonReact.string(error##message)} </div>;
+            | Data(response) =>
+              <Thumbnails.Component
+                state=reduxState
+                dispatch=reduxDispatch
+                search=response##search
+              />
             }
-          </SearchAssetsQuery>;
-        }
-      </div>;
-    },
-  };
-};
-
-/*
- * Order matters: keep this module definition below SearchRe, otherwise there
- * will be a peculiar compiler error about SearchRe.state escaping its scope.
- */
-module SearchProvider = {
-  let make = Reductive.Lense.createMake(~lense=s => s, Redux.store);
-};
-
-module Component = {
-  let component = ReasonReact.statelessComponent("SearchComp");
-  let make = _children => {
-    ...component,
-    render: _self => <div> <SearchProvider component=SearchRe.make /> </div>,
+          }
+        </SearchAssetsQuery>;
+      }
+    </div>;
   };
 };

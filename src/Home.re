@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2018 Nathan Fiedler
+//
 module CountAssets = [%graphql {|
     query {
       count
@@ -52,73 +55,67 @@ let makeQueryParams = (state: Redux.appState) => {
   };
 };
 
+// React hooks require a stable function reference to work properly.
+let stateSelector = (state: Redux.appState) => state;
+
 module HomeRe = {
-  let component = ReasonReact.statelessComponent("HomeRe");
-  let make = (~state: Redux.appState, ~dispatch, _children) => {
-    ...component,
-    render: _self => {
-      let offset = (state.pageNumber - 1) * Thumbnails.pageSize;
-      let queryParams = makeQueryParams(state);
-      let query =
-        QueryAssets.make(
-          ~params=queryParams,
-          ~pageSize=Thumbnails.pageSize,
-          ~offset,
-          (),
-        );
-      <QueryAssetsQuery variables=query##variables>
-        ...{({result}) =>
-          switch (result) {
-          | Loading => <div> {ReasonReact.string("Loading...")} </div>
-          | Error(error) =>
-            Js.log(error);
-            <div> {ReasonReact.string(error##message)} </div>;
-          | Data(response) =>
-            <Thumbnails.Component state dispatch search=response##search />
-          }
+  [@react.component]
+  let make = () => {
+    let state = Redux.useSelector(stateSelector);
+    let dispatch = Redux.useDispatch();
+    let offset = (state.pageNumber - 1) * Thumbnails.pageSize;
+    let queryParams = makeQueryParams(state);
+    let query =
+      QueryAssets.make(
+        ~params=queryParams,
+        ~pageSize=Thumbnails.pageSize,
+        ~offset,
+        (),
+      );
+    <QueryAssetsQuery variables=query##variables>
+      ...{({result}) =>
+        switch (result) {
+        | Loading => <div> {ReasonReact.string("Loading...")} </div>
+        | Error(error) =>
+          Js.log(error);
+          <div> {ReasonReact.string(error##message)} </div>;
+        | Data(response) =>
+          <Thumbnails.Component state dispatch search=response##search />
         }
-      </QueryAssetsQuery>;
-    },
+      }
+    </QueryAssetsQuery>;
   };
 };
 
-module SelectedProvider = {
-  let make = Reductive.Lense.createMake(~lense=s => s, Redux.store);
-};
-
 module Component = {
-  let component = ReasonReact.statelessComponent("Home");
-  let make = _children => {
-    ...component,
-    render: _self =>
-      <CountAssetsQuery>
-        ...{({result}) =>
-          switch (result) {
-          | Loading => <div> {ReasonReact.string("Loading...")} </div>
-          | Error(error) =>
-            Js.log(error);
-            <div> {ReasonReact.string(error##message)} </div>;
-          | Data(response) =>
-            if (response##count > 0) {
-              <div>
-                <Tags.Component />
-                <Locations.Component />
-                <Years.Component />
-                <SelectedProvider component=HomeRe.make />
-              </div>;
-            } else {
-              <div>
-                <p>
-                  {ReasonReact.string("Use the")}
-                  <span className="icon">
-                    <i className="fas fa-upload" />
-                  </span>
-                  {ReasonReact.string("upload feature to add assets.")}
-                </p>
-              </div>;
-            }
+  [@react.component]
+  let make = () => {
+    <CountAssetsQuery>
+      ...{({result}) =>
+        switch (result) {
+        | Loading => <div> {ReasonReact.string("Loading...")} </div>
+        | Error(error) =>
+          Js.log(error);
+          <div> {ReasonReact.string(error##message)} </div>;
+        | Data(response) =>
+          if (response##count > 0) {
+            <div>
+              <Tags.Component />
+              <Locations.Component />
+              <Years.Component />
+              <HomeRe />
+            </div>;
+          } else {
+            <div>
+              <p>
+                {ReasonReact.string("Use the")}
+                <span className="icon"> <i className="fas fa-upload" /> </span>
+                {ReasonReact.string("upload feature to add assets.")}
+              </p>
+            </div>;
           }
         }
-      </CountAssetsQuery>,
+      }
+    </CountAssetsQuery>;
   };
 };

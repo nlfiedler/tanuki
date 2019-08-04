@@ -57,10 +57,10 @@ gulp.task('make:web', () => {
     .pipe(gulp.dest('public/javascripts'))
 })
 
-gulp.task('watch-server', () => {
-  gulp.watch('src/**/*.re', gulp.series('make:bsb'))
-})
-
 gulp.task('build', gulp.series('make:bsb', 'make:web'))
 gulp.task('clean', gulp.series('clean:bsb', 'clean:web'))
+
+gulp.task('watch-server', () => {
+  gulp.watch('src/**/*.re', gulp.series('build'))
+})
 gulp.task('default', gulp.series('build', 'serve', 'watch-server'))

@@ -14,76 +14,40 @@
 **** DONE apollo-upload-client
 **** DONE del
 **** DONE gulp-if
+*** DONE Upgrade reductive to prepare for JSX upgrade
+**** to upgrade most things, need to upgrade to JSX 3
+**** current reductive is not compatible with JSX 3
+**** DONE switch to =github:MargaretKrutikova/reductive.git#hooks=
+** TODO Upgrade front-end code
+*** DONE Update bs-reform temporarily to get things to compile
+*** DONE Use the new =[@react.component]= notation for ReasonReact components
+**** DONE temporarily comment out usages of other routes
+**** DONE convert the not found page
+**** DONE convert the tags
+**** DONE convert the locations
+**** DONE convert the years
+**** DONE convert the home page
+**** DONE convert the upload page
+**** DONE convert the asset details page
+**** DONE convert the asset edit page
+**** DONE convert the search page
+*** DONE Upgrade to react-jsx version 3
+**** c.f. https://reasonml.github.io/reason-react/docs/en/jsx
+*** DONE Update reason react router usage to match zorigami
+*** DONE Figure out how to migrate to Reason Apollo 0.16
+*** DONE Ensure proper use of the latest features of reductive
+*** DONE Move the =reduxThunk= and =middleware= code into =Redux=
 *** TODO Replace bs-reform with [[https://github.com/minima-app/re-formality][re-formality]] for form validation
 **** TODO add re-formality to =package.json= and =bsconfig.json=
 **** TODO change asset edit page to use re-formality
 **** TODO change search page to use re-formality
 **** TODO remove bs-reform from =package.json= and =bsconfig.json=
-*** TODO Sometimes the front-end misses updates from backend?
-**** e.g. click a tag, images fail to appear; click and click again, works
-**** find out what is going on when this happens
-*** TODO Reorganize this todo file into milestones
-**** quick: update front-end code
-**** major: rewrite backend using Rust
-**** then organize the rest of the features and such into milestones
-*** TODO Figure out how to migrate to Reason Apollo 0.16
-*** TODO Use the new =[@react.component]= notation for ReasonReact components
-*** TODO Upgrade to react-jsx version 3
-**** c.f. https://reasonml.github.io/reason-react/docs/en/jsx
-**** will need consider how to stay compatible with reductive
-*** TODO Update reason react router usage to match zorigami
-*** TODO Support advanced queries using Google-style operators
-**** c.f. https://support.google.com/websearch/answer/2466433?hl=en
-**** move perkeep style query support from mujina to tanuki
-**** webui needs an "advanced" tab/link selector on the search page
-*** TODO Temporarily figure out how to deal with the GraphQL schema weirdness
-**** The introspection tool generates weird types for the non-optional array of strings
-**** Maybe that tool is correct and my types are wrong?
-**** Or maybe that tool has an update that fixes this?
-**** c.f. commit =b8fa735=
-*** TODO Home page fails to update after data changs
-**** TODO Home page stays stuck on "upload" even after images are uploaded
-***** name the =CountAssets= query and add to the =refetchQueries= list
-**** TODO After editing asset, selections need to elide newly removed tags
-***** that is, found "opa)", selected assets, fixed them, now cannot clear selection
-***** need to attach an update function after the edit asset mutation completes
-***** c.f. =onCompleted= prop on =mutation= function
-****** https://www.apollographql.com/docs/react/essentials/mutations/
-***** can also set =awaitRefetchQueries= to wait for refetch to complete
-***** could move Locations/Tags/Years logic into =Home= and handle everything there
-***** could use GraphQL subscriptions in =Home= to keep track of changes
-*** TODO Consider how to make thumbnail page responsive
-**** Show 1, 2, 3, or more depending on browser width
-**** Should be able to leverage CSS for this
-*** TODO Support searching the caption text
-*** TODO Support wildcards in filename, mimetype (others?)
-*** TODO Extract exact location information from images [0/4]
-- [ ] Write a data migration to process existing assets
-- [ ] Incoming needs to extract this information for new assets
-- [ ] Existing location values should be stored in "label" field
-- [ ] Exact location information should be stored separate from label
-
-*** TODO Need a query to find image assets whose orientation is incorrect/unknown
-*** TODO Asset preview page shows a broken link, should show placeholder image
-*** TODO Thumbnail size cache population is noticably slow when selecting many assets
-*** TODO When performing image manipulations, invoke =sharp.withMetadata()= to preserve metadata
-*** TODO Use an =iframe= to preview Markdown generated as HTML
-*** TODO Read [[https://github.com/MtDalPizzol/pouchdb-permissions][pouchdb-permissions]] for possible use in user/groups access
-*** TODO Detect time zone offset in EXIF data
-According to Wikipedia the 2.31 version of EXIF will support time-zone
-information. Eventually, the application should be able to detect this and
-include it in the database records.
-
-: There is no way to record time-zone information along with the time, thus
-: rendering the stored time ambiguous. However, time-zone information have
-: been introduced recently by Exif version 2.31 (July 2016). Related tags are:
-: "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
-
-** Rust rewrite
-*** Action Plan
-**** TODO Translate caption parsing code
-**** TODO Translate query parsing code
-**** TODO Translate database layer
+*** TODO Add error boundary handling
+**** c.f. https://fb.me/react-error-boundaries
+** TODO Rewrite backend in Rust
+*** TODO Translate caption parsing code
+*** TODO Translate query parsing code
+*** TODO Translate database layer
 ***** should enable WAL by default
 ***** need a plan for the index
 Could have =my-index-on-field/<value>-NNN= keys that have a single record
@@ -113,6 +77,61 @@ and then update the reverse index as new documents are written
 ***** give this a try: https://github.com/imazen/imageflow
 ***** search crates.io for =vips= bindings, there are several
 ***** if all else fails, can use =magick-rust= (needs bindgen updates soon)
+** Front-end improvements
+*** TODO Consider how to make thumbnail page responsive
+**** Show 1, 2, 3, or more depending on browser width
+**** Should be able to leverage CSS for this
+*** TODO Asset preview page shows a broken link, should show placeholder image
+** Backend improvements
+*** TODO Rewrite in Rust
+*** TODO Support advanced queries using Google-style operators
+**** c.f. https://support.google.com/websearch/answer/2466433?hl=en
+**** move perkeep style query support from mujina to tanuki
+**** webui needs an "advanced" tab/link selector on the search page
+*** TODO Thumbnail size cache population is noticably slow when selecting many assets
+** Bugs
+*** TODO Sometimes the front-end misses updates from backend?
+**** e.g. click a tag, images fail to appear; click and click again, works
+**** find out what is going on when this happens
+*** TODO Home page fails to update after data changs
+**** TODO Home page stays stuck on "upload" even after images are uploaded
+***** name the =CountAssets= query and add to the =refetchQueries= list
+**** TODO After editing asset, selections need to elide newly removed tags
+***** that is, found "opa)", selected assets, fixed them, now cannot clear selection
+***** need to attach an update function after the edit asset mutation completes
+***** c.f. =onCompleted= prop on =mutation= function
+****** https://www.apollographql.com/docs/react/essentials/mutations/
+***** can also set =awaitRefetchQueries= to wait for refetch to complete
+***** could move Locations/Tags/Years logic into =Home= and handle everything there
+***** could use GraphQL subscriptions in =Home= to keep track of changes
+** Development Support
+*** TODO Figure out how to deal with the GraphQL schema weirdness
+**** The introspection tool generates weird types for the non-optional array of strings
+**** Maybe that tool is correct and my types are wrong?
+**** Or maybe that tool has an update that fixes this?
+**** c.f. commit =b8fa735=
+** Search Improvements
+*** TODO Support searching the caption text
+*** TODO Support wildcards in filename, mimetype (others?)
+*** TODO Need a query to find image assets whose orientation is incorrect/unknown
+** Data Format Support
+*** TODO Use an =iframe= to preview Markdown generated as HTML
+*** TODO Detect time zone offset in EXIF data
+According to Wikipedia the 2.31 version of EXIF will support time-zone
+information. Eventually, the application should be able to detect this and
+include it in the database records.
+
+: There is no way to record time-zone information along with the time, thus
+: rendering the stored time ambiguous. However, time-zone information have
+: been introduced recently by Exif version 2.31 (July 2016). Related tags are:
+: "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
+
+*** TODO Extract exact location information from images [0/4]
+- [ ] Write a data migration to process existing assets
+- [ ] Incoming needs to extract this information for new assets
+- [ ] Existing location values should be stored in "label" field
+- [ ] Exact location information should be stored separate from label
+
 ** Documentation
 *** Case Sensitivity
 - Data is stored as entered (case preservative)

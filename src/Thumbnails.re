@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2018 Nathan Fiedler
+//
 /* The expected shape of the thumbnail data from GraphQL. */
 type t = {
   .
@@ -107,15 +110,12 @@ let makeLinks = (currentPage: int, totalCount: int, pager) => {
 };
 
 module Paging = {
-  let component = ReasonReact.statelessComponent("Paging");
-  let make = (~current: int, ~total: int, ~dispatch, _children) => {
-    ...component,
-    render: _self => {
-      let setPage = (page: int) => dispatch(Redux.Paginate(page));
-      <nav className="pagination is-centered" role="navigation">
-        {makeLinks(current, total, setPage)}
-      </nav>;
-    },
+  [@react.component]
+  let make = (~current: int, ~total: int, ~dispatch) => {
+    let setPage = (page: int) => dispatch(Redux.Paginate(page));
+    <nav className="pagination is-centered" role="navigation">
+      {makeLinks(current, total, setPage)}
+    </nav>;
   };
 };
 
@@ -133,52 +133,52 @@ module ThumbCard = {
   type state = {thumbless: bool};
   type action =
     | MarkThumbless;
-  let component = ReasonReact.reducerComponent("Thumbnail");
-  let make = (~entry, _children) => {
-    ...component,
-    initialState: () => {thumbless: false},
-    reducer: action =>
-      switch (action) {
-      | MarkThumbless => (_state => ReasonReact.Update({thumbless: true}))
-      },
-    render: self =>
-      <div className="column is-one-third">
-        <div className="card">
-          <div
-            className="card-content"
-            onClick={_ => ReasonReact.Router.push("/assets/" ++ entry##id)}>
-            <figure
-              className="image"
-              /*
-               * overflow only works on block elements, so apply it here;
-               * long file names with "break" characters (e.g. '-') will
-               * wrap automatically anyway
-               */
-              style={ReactDOMRe.Style.make(~overflow="hidden", ())}>
-              {self.state.thumbless
-                 ? <img
-                     src={
-                       "/images/"
-                       ++ brokenThumbnailPlaceholder(entry##filename)
-                     }
-                     alt=entry##filename
-                     style={ReactDOMRe.Style.make(~width="auto", ())}
-                   />
-                 : <img
-                     src=entry##thumbnailUrl
-                     alt=entry##filename
-                     onError={_ => self.send(MarkThumbless)}
-                     style={ReactDOMRe.Style.make(~width="auto", ())}
-                   />}
-              <small>
-                {ReasonReact.string(formatDate(entry##datetime))}
-              </small>
-              <br />
-              <small> {ReasonReact.string(entry##filename)} </small>
-            </figure>
-          </div>
+  [@react.component]
+  let make = (~entry) => {
+    let (state, dispatch) =
+      React.useReducer(
+        (_state, action) =>
+          switch (action) {
+          | MarkThumbless => {thumbless: true}
+          },
+        {thumbless: false},
+      );
+    <div className="column is-one-third">
+      <div className="card">
+        <div
+          className="card-content"
+          onClick={_ => ReasonReact.Router.push("/assets/" ++ entry##id)}>
+          <figure
+            className="image"
+            /*
+             * overflow only works on block elements, so apply it here;
+             * long file names with "break" characters (e.g. '-') will
+             * wrap automatically anyway
+             */
+            style={ReactDOMRe.Style.make(~overflow="hidden", ())}>
+            {state.thumbless
+               ? <img
+                   src={
+                     "/images/" ++ brokenThumbnailPlaceholder(entry##filename)
+                   }
+                   alt=entry##filename
+                   style={ReactDOMRe.Style.make(~width="auto", ())}
+                 />
+               : <img
+                   src=entry##thumbnailUrl
+                   alt=entry##filename
+                   onError={_ => dispatch(MarkThumbless)}
+                   style={ReactDOMRe.Style.make(~width="auto", ())}
+                 />}
+            <small>
+              {ReasonReact.string(formatDate(entry##datetime))}
+            </small>
+            <br />
+            <small> {ReasonReact.string(entry##filename)} </small>
+          </figure>
         </div>
-      </div>,
+      </div>
+    </div>;
   };
 };
 
@@ -214,27 +214,24 @@ let makeRows = cards => {
 };
 
 module Component = {
-  let component = ReasonReact.statelessComponent("Thumbnails");
-  let make = (~state: Redux.appState, ~dispatch, ~search: t, _children) => {
-    ...component,
-    render: _self => {
-      let cards = makeCards(search##results);
-      let rows = makeRows(cards);
-      /*
-       * Use the awesome, flexible bulma columns and then force them
-       * to be thirds, so we avoid the images shrinking needlessly.
-       * Then wrap the individual column elements in a "columns",
-       * one for each row, and that is collected in a container.
-       * Basically a primitive table.
-       */
-      <div className="container">
-        {ReasonReact.array(Array.of_list(rows))}
-        {if (search##count > pageSize && Array.length(search##results) > 0) {
-           <Paging current={state.pageNumber} total=search##count dispatch />;
-         } else {
-           <span />;
-         }}
-      </div>;
-    },
+  [@react.component]
+  let make = (~state: Redux.appState, ~dispatch, ~search: t) => {
+    let cards = makeCards(search##results);
+    let rows = makeRows(cards);
+    /*
+     * Use the awesome, flexible bulma columns and then force them
+     * to be thirds, so we avoid the images shrinking needlessly.
+     * Then wrap the individual column elements in a "columns",
+     * one for each row, and that is collected in a container.
+     * Basically a primitive table.
+     */
+    <div className="container">
+      {ReasonReact.array(Array.of_list(rows))}
+      {if (search##count > pageSize && Array.length(search##results) > 0) {
+         <Paging current={state.pageNumber} total=search##count dispatch />;
+       } else {
+         <span />;
+       }}
+    </div>;
   };
 };

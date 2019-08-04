@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2018 Nathan Fiedler
+//
 /* The expected shape of the asset data from GraphQL. */
 type t = {
   .
@@ -215,94 +218,90 @@ let assetSaveButton = (form: EditForm.state) =>
   };
 
 module EditFormRe = {
-  let component = ReasonReact.statelessComponent("EditForm");
-  let make = (~asset: t, ~onSubmit, _children) => {
-    ...component,
-    render: _self =>
-      <EditForm
-        onSubmit={({values}) => onSubmit(values)}
-        initialState={
-          tags: Js.Array.joinWith(", ", asset##tags),
-          location: Belt.Option.getWithDefault(asset##location, ""),
-          caption: Belt.Option.getWithDefault(asset##caption, ""),
-          userdate: formatUserDate(asset##userdate),
-          mimetype: asset##mimetype,
-        }
-        schema=[
-          (
-            `userdate,
-            ReForm.Validation.Custom(
-              values => dateValidator(values.userdate),
-            ),
-          ),
-        ]>
-        ...{({handleSubmit, handleChange, form, getErrorForField}) =>
-          <form onSubmit={ReForm.Helpers.handleDomFormSubmit(handleSubmit)}>
-            <div
-              className="container"
-              style={ReactDOMRe.Style.make(
-                ~width="auto",
-                ~paddingRight="3em",
-                (),
-              )}>
-              {editFormInput(
-                 handleChange,
-                 getErrorForField,
-                 `userdate,
-                 "Custom Date",
-                 "userdate",
-                 "text",
-                 form.values.userdate,
-                 "yyyy-mm-dd HH:MM",
-               )}
-              {editFormInput(
-                 handleChange,
-                 getErrorForField,
-                 `location,
-                 "Location",
-                 "location",
-                 "text",
-                 form.values.location,
-                 "",
-               )}
-              {editFormInput(
-                 handleChange,
-                 getErrorForField,
-                 `caption,
-                 "Caption",
-                 "caption",
-                 "text",
-                 form.values.caption,
-                 "",
-               )}
-              {editFormInput(
-                 handleChange,
-                 getErrorForField,
-                 `tags,
-                 "Tags",
-                 "tags",
-                 "text",
-                 form.values.tags,
-                 "comma-separated values",
-               )}
-              {editFormInput(
-                 handleChange,
-                 getErrorForField,
-                 `mimetype,
-                 "Media type",
-                 "mimetype",
-                 "text",
-                 form.values.mimetype,
-                 "image/jpeg",
-               )}
-              <div className="field is-horizontal">
-                <div className="field-label" />
-                <div className="field-body"> {assetSaveButton(form)} </div>
-              </div>
+  [@react.component]
+  let make = (~asset: t, ~onSubmit) => {
+    <EditForm
+      onSubmit={({values}) => onSubmit(values)}
+      initialState={
+        tags: Js.Array.joinWith(", ", asset##tags),
+        location: Belt.Option.getWithDefault(asset##location, ""),
+        caption: Belt.Option.getWithDefault(asset##caption, ""),
+        userdate: formatUserDate(asset##userdate),
+        mimetype: asset##mimetype,
+      }
+      schema=[
+        (
+          `userdate,
+          ReForm.Validation.Custom(values => dateValidator(values.userdate)),
+        ),
+      ]>
+      ...{({handleSubmit, handleChange, form, getErrorForField}) =>
+        <form onSubmit={ReForm.Helpers.handleDomFormSubmit(handleSubmit)}>
+          <div
+            className="container"
+            style={ReactDOMRe.Style.make(
+              ~width="auto",
+              ~paddingRight="3em",
+              (),
+            )}>
+            {editFormInput(
+               handleChange,
+               getErrorForField,
+               `userdate,
+               "Custom Date",
+               "userdate",
+               "text",
+               form.values.userdate,
+               "yyyy-mm-dd HH:MM",
+             )}
+            {editFormInput(
+               handleChange,
+               getErrorForField,
+               `location,
+               "Location",
+               "location",
+               "text",
+               form.values.location,
+               "",
+             )}
+            {editFormInput(
+               handleChange,
+               getErrorForField,
+               `caption,
+               "Caption",
+               "caption",
+               "text",
+               form.values.caption,
+               "",
+             )}
+            {editFormInput(
+               handleChange,
+               getErrorForField,
+               `tags,
+               "Tags",
+               "tags",
+               "text",
+               form.values.tags,
+               "comma-separated values",
+             )}
+            {editFormInput(
+               handleChange,
+               getErrorForField,
+               `mimetype,
+               "Media type",
+               "mimetype",
+               "text",
+               form.values.mimetype,
+               "image/jpeg",
+             )}
+            <div className="field is-horizontal">
+              <div className="field-label" />
+              <div className="field-body"> {assetSaveButton(form)} </div>
             </div>
-          </form>
-        }
-      </EditForm>,
+          </div>
+        </form>
+      }
+    </EditForm>;
   };
 };
 
@@ -351,72 +350,67 @@ let submitUpdate =
 };
 
 module EditPanel = {
-  let component = ReasonReact.statelessComponent("EditAsset");
-  let make = (~asset: t, _children) => {
-    ...component,
-    render: _self =>
-      <UpdateAssetMutation>
-        ...{(mutate, {result}) =>
-          switch (result) {
-          | Loading => <p> {ReasonReact.string("Loading...")} </p>
-          | Error(error) =>
-            Js.log(error);
-            <div> {ReasonReact.string(error##message)} </div>;
-          | Data(_result) =>
-            <div>
-              {
-                ReasonReact.Router.push("/assets/" ++ asset##id);
-                ReasonReact.string("loading...");
-              }
-            </div>
-          | NotCalled =>
-            <div className="container">
-              <div className="card">
-                <div className="card-header">
-                  <p className="card-header-title">
-                    {ReasonReact.string(
-                       formatDateForDisplay(asset##datetime)
-                       ++ ", "
-                       ++
-                       asset##filename,
-                     )}
-                  </p>
-                </div>
-                <div className="card-image has-text-centered">
-                  {assetPreview(asset)}
-                </div>
-                <div className="card-content">
-                  <EditFormRe asset onSubmit={submitUpdate(asset, mutate)} />
-                </div>
+  [@react.component]
+  let make = (~asset: t) => {
+    <UpdateAssetMutation>
+      ...{(mutate, {result}) =>
+        switch (result) {
+        | Loading => <p> {ReasonReact.string("Loading...")} </p>
+        | Error(error) =>
+          Js.log(error);
+          <div> {ReasonReact.string(error##message)} </div>;
+        | Data(_result) =>
+          <div>
+            {
+              ReasonReact.Router.push("/assets/" ++ asset##id);
+              ReasonReact.string("loading...");
+            }
+          </div>
+        | NotCalled =>
+          <div className="container">
+            <div className="card">
+              <div className="card-header">
+                <p className="card-header-title">
+                  {ReasonReact.string(
+                     formatDateForDisplay(asset##datetime)
+                     ++ ", "
+                     ++
+                     asset##filename,
+                   )}
+                </p>
+              </div>
+              <div className="card-image has-text-centered">
+                {assetPreview(asset)}
+              </div>
+              <div className="card-content">
+                <EditFormRe asset onSubmit={submitUpdate(asset, mutate)} />
               </div>
             </div>
-          }
+          </div>
         }
-      </UpdateAssetMutation>,
+      }
+    </UpdateAssetMutation>;
   };
 };
 
 module Component = {
-  let component = ReasonReact.statelessComponent("EditAsset");
-  let make = (~assetId: string, _children) => {
-    ...component,
-    render: _self => {
-      let query = FetchAsset.make(~identifier=assetId, ());
-      <FetchAssetQuery variables=query##variables>
-        ...{({result}) =>
-          switch (result) {
-          | Loading => <div> {ReasonReact.string("Loading...")} </div>
-          | Error(error) =>
-            Js.log(error);
-            <div> {ReasonReact.string(error##message)} </div>;
-          | Data(response) =>
-            switch (response##asset) {
-            | None => <div> {ReasonReact.string("No such asset!")} </div>
-            | Some(asset) => <EditPanel asset />
-            }
+  [@react.component]
+  let make = (~assetId: string) => {
+    let query = FetchAsset.make(~identifier=assetId, ());
+    <FetchAssetQuery variables=query##variables>
+      ...{({result}) =>
+        switch (result) {
+        | Loading => <div> {ReasonReact.string("Loading...")} </div>
+        | Error(error) =>
+          Js.log(error);
+          <div> {ReasonReact.string(error##message)} </div>;
+        | Data(response) =>
+          switch (response##asset) {
+          | None => <div> {ReasonReact.string("No such asset!")} </div>
+          | Some(asset) => <EditPanel asset />
           }
         }
-      </FetchAssetQuery>;
-    },
+      }
+    </FetchAssetQuery>;
   };
 };

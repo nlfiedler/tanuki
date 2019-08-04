@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2018 Nathan Fiedler
+//
 /* The expected shape of the year from GraphQL. */
 type t = {
   .
@@ -19,9 +22,14 @@ module GetYears = [%graphql
 
 module GetYearsQuery = ReasonApollo.CreateQuery(GetYears);
 
-module YearsRe = {
-  let component = ReasonReact.statelessComponent("YearsRe");
-  let make = (~state: option(int), ~dispatch, _children) => {
+// React hooks require a stable function reference to work properly.
+let stateSelector = (state: Redux.appState) => state.selectedYear;
+
+module Component = {
+  [@react.component]
+  let make = () => {
+    let state = Redux.useSelector(stateSelector);
+    let dispatch = Redux.useDispatch();
     let buildYears = (years: array(t)) =>
       Array.mapi(
         (index, year: t) => {
@@ -39,42 +47,22 @@ module YearsRe = {
         },
         years,
       );
-    {
-      ...component,
-      render: _self =>
-        <GetYearsQuery>
-          ...{({result}) =>
-            switch (result) {
-            | Loading => <div> {ReasonReact.string("Loading years...")} </div>
-            | Error(error) =>
-              Js.log(error);
-              <div> {ReasonReact.string(error##message)} </div>;
-            | Data(response) =>
-              <div className="tags">
-                <span className="tag is-info">
-                  {ReasonReact.string("Years")}
-                </span>
-                {ReasonReact.array(buildYears(response##years))}
-              </div>
-            }
-          }
-        </GetYearsQuery>,
-    };
-  };
-};
-
-module YearsProvider = {
-  let make =
-    Reductive.Lense.createMake(
-      ~lense=(s: Redux.appState) => s.selectedYear,
-      Redux.store,
-    );
-};
-
-module Component = {
-  let component = ReasonReact.statelessComponent("Years");
-  let make = _children => {
-    ...component,
-    render: _self => <YearsProvider component=YearsRe.make />,
+    <GetYearsQuery>
+      ...{({result}) =>
+        switch (result) {
+        | Loading => <div> {ReasonReact.string("Loading years...")} </div>
+        | Error(error) =>
+          Js.log(error);
+          <div> {ReasonReact.string(error##message)} </div>;
+        | Data(response) =>
+          <div className="tags">
+            <span className="tag is-info">
+              {ReasonReact.string("Years")}
+            </span>
+            {ReasonReact.array(buildYears(response##years))}
+          </div>
+        }
+      }
+    </GetYearsQuery>;
   };
 };
