@@ -25,61 +25,132 @@ module SearchAssets = [%graphql
 
 module SearchAssetsQuery = ReasonApollo.CreateQuery(SearchAssets);
 
-module SearchFormParams = {
+module SearchForm = {
+  open Formality;
+
+  type field =
+    | Tags
+    | Locations
+    | AfterDate
+    | BeforeDate
+    | Filename
+    | Mimetype;
+
   type state = Redux.searchInputs;
-  type fields = [
-    | `tags
-    | `locations
-    | `afterDate
-    | `beforeDate
-    | `filename
-    | `mimetype
-  ];
-  /* lens: [(fieldName, getter, setter)] */
-  let lens = [
-    /* the state type alias above requires clearly annotating these functions */
-    (
-      `tags,
-      (s: state) => (s.tags: string),
-      (s: state, tags) => {...s, tags},
-    ),
-    (`locations, s => s.locations, (s, locations) => {...s, locations}),
-    (`afterDate, s => s.afterDate, (s, afterDate) => {...s, afterDate}),
-    (`beforeDate, s => s.beforeDate, (s, beforeDate) => {...s, beforeDate}),
-    (`filename, s => s.filename, (s, filename) => {...s, filename}),
-    (`mimetype, s => s.mimetype, (s, mimetype) => {...s, mimetype}),
-  ];
-};
 
-module SearchForm = ReForm.Create(SearchFormParams);
+  type message = string;
+  type submissionError = unit;
+  // define this updater type for convenience
+  type updater = (state, string) => state;
 
-let dateRegex = [%bs.re "/^\\d{1,4}-\\d{1,2}-\\d{1,2}$/"];
+  module TagsField = {
+    let update = (state: state, value) => {...state, tags: value};
 
-let dateValidator: string => option(string) =
-  value =>
+    let validator = {
+      field: Tags,
+      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      dependents: None,
+      validate: _state => Ok(Valid),
+    };
+  };
+
+  module LocationsField = {
+    let update = (state: state, value) => {...state, locations: value};
+
+    let validator = {
+      field: Locations,
+      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      dependents: None,
+      validate: _state => Ok(Valid),
+    };
+  };
+
+  let dateRegex = [%bs.re "/^\\d{1,4}-\\d{1,2}-\\d{1,2}$/"];
+
+  let dateValidator = (value: string): result(string) =>
     if (String.length(value) == 0) {
-      None;
+      Ok(Valid);
     } else {
       switch (Js.Re.exec_(dateRegex, value)) {
-      | None => Some("date format must be yyyy-MM-dd")
-      | Some(_result) => None
+      | None => Error("date format must be yyyy-MM-dd HH:mm")
+      | Some(_result) => Ok(Valid)
       };
     };
 
+  module AfterDateField = {
+    let update = (state: state, value) => {...state, afterDate: value};
+
+    let validator = {
+      field: AfterDate,
+      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      dependents: None,
+      validate: (state: state) => dateValidator(state.afterDate),
+    };
+  };
+
+  module BeforeDateField = {
+    let update = (state: state, value) => {...state, beforeDate: value};
+
+    let validator = {
+      field: BeforeDate,
+      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      dependents: None,
+      validate: (state: state) => dateValidator(state.beforeDate),
+    };
+  };
+
+  module FilenameField = {
+    let update = (state: state, value) => {...state, filename: value};
+
+    let validator = {
+      field: Filename,
+      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      dependents: None,
+      validate: _state => Ok(Valid),
+    };
+  };
+
+  module MimetypeField = {
+    let update = (state: state, value) => {...state, mimetype: value};
+
+    let validator = {
+      field: Mimetype,
+      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      dependents: None,
+      validate: _state => Ok(Valid),
+    };
+  };
+
+  let validators = [
+    TagsField.validator,
+    LocationsField.validator,
+    AfterDateField.validator,
+    BeforeDateField.validator,
+    FilenameField.validator,
+    MimetypeField.validator,
+  ];
+};
+
+module SearchFormHook = Formality.Make(SearchForm);
+
 let searchFormInput =
     (
-      handleChange,
-      getErrorForField,
-      fieldName,
-      labelText,
-      inputId,
-      inputType,
-      inputValue,
-      placeholderText,
-      iconClass,
+      form: SearchFormHook.interface,
+      field: SearchForm.field,
+      updater: SearchForm.updater,
+      labelText: string,
+      inputId: string,
+      inputType: string,
+      inputValue: string,
+      placeholderText: string,
+      iconClass: string,
     ) => {
   let validateMsg =
-    Belt.Option.getWithDefault(getErrorForField(fieldName), "");
+    switch (form.result(field)) {
+    | Some(Error(message)) => message
+    | Some(Ok(Valid | NoValue))
+    | None => ""
+    };
   let formIsValid = validateMsg == "";
   let inputClass = formIsValid ? "input" : "input is-danger";
   let validationTextDiv =
@@ -92,9 +163,13 @@ let searchFormInput =
         type_=inputType
         name=inputId
         value=inputValue
-        onChange={ReForm.Helpers.handleDomFormChange(
-          handleChange(fieldName),
-        )}
+        onBlur={_ => form.blur(field)}
+        onChange={event =>
+          form.change(
+            field,
+            updater(form.state, event->ReactEvent.Form.target##value),
+          )
+        }
         placeholder=placeholderText
       />
       <span className="icon is-small is-left">
@@ -119,124 +194,108 @@ let searchFormInput =
 module SearchFormRe = {
   [@react.component]
   let make = (~inputs, ~onSubmit) => {
-    <SearchForm
-      onSubmit={({values}) => onSubmit(values)}
-      initialState=inputs
-      schema=[
-        (
-          `afterDate,
-          ReForm.Validation.Custom(
-            values => dateValidator(values.afterDate),
-          ),
-        ),
-        (
-          `beforeDate,
-          ReForm.Validation.Custom(
-            values => dateValidator(values.beforeDate),
-          ),
-        ),
-      ]>
-      ...{({handleSubmit, handleChange, form, getErrorForField}) =>
-        <form onSubmit={ReForm.Helpers.handleDomFormSubmit(handleSubmit)}>
-          <div
-            className="container"
-            style={ReactDOMRe.Style.make(
-              ~width="auto",
-              ~paddingRight="3em",
-              ~marginBottom="1em",
-              (),
-            )}>
-            <div className="field is-horizontal">
-              <div className="field-body">
-                {searchFormInput(
-                   handleChange,
-                   getErrorForField,
-                   `tags,
-                   "Tags",
-                   "tags",
-                   "text",
-                   form.values.tags,
-                   "comma-separated values",
-                   "fas fa-tags",
-                 )}
-                {searchFormInput(
-                   handleChange,
-                   getErrorForField,
-                   `locations,
-                   "Locations",
-                   "locations",
-                   "text",
-                   form.values.locations,
-                   "comma-separated values",
-                   "fas fa-map",
-                 )}
-              </div>
-            </div>
-            <div className="field is-horizontal">
-              <div className="field-body">
-                {searchFormInput(
-                   handleChange,
-                   getErrorForField,
-                   `afterDate,
-                   "After date",
-                   "after",
-                   "text",
-                   form.values.afterDate,
-                   "2002-01-31",
-                   "fas fa-calendar",
-                 )}
-                {searchFormInput(
-                   handleChange,
-                   getErrorForField,
-                   `beforeDate,
-                   "Before date",
-                   "before",
-                   "text",
-                   form.values.beforeDate,
-                   "2003-08-30",
-                   "fas fa-calendar",
-                 )}
-              </div>
-            </div>
-            <div className="field is-horizontal">
-              <div className="field-body">
-                {searchFormInput(
-                   handleChange,
-                   getErrorForField,
-                   `filename,
-                   "Filename",
-                   "filename",
-                   "text",
-                   form.values.filename,
-                   "img_1234.jpg",
-                   "fas fa-file",
-                 )}
-                {searchFormInput(
-                   handleChange,
-                   getErrorForField,
-                   `mimetype,
-                   "Media type",
-                   "mimetype",
-                   "text",
-                   form.values.mimetype,
-                   "image/jpeg",
-                   "fas fa-code",
-                 )}
-              </div>
-            </div>
-            <div className="field is-grouped is-grouped-right">
-              <div className="control">
-                <input
-                  type_="submit"
-                  value="Search"
-                  className="button is-primary"
-                />
-              </div>
-            </div>
+    let form: SearchFormHook.interface =
+      SearchFormHook.useForm(~initialState=inputs, ~onSubmit=(state, _form) =>
+        onSubmit(state)
+      );
+    <form onSubmit={form.submit->Formality.Dom.preventDefault}>
+      <div
+        className="container"
+        style={ReactDOMRe.Style.make(
+          ~width="auto",
+          ~paddingRight="3em",
+          ~marginBottom="1em",
+          (),
+        )}>
+        <div className="field is-horizontal">
+          <div className="field-body">
+            {searchFormInput(
+               form,
+               Tags,
+               SearchForm.TagsField.update,
+               "Tags",
+               "tags",
+               "text",
+               form.state.tags,
+               "comma-separated values",
+               "fas fa-tags",
+             )}
+            {searchFormInput(
+               form,
+               Locations,
+               SearchForm.LocationsField.update,
+               "Locations",
+               "locations",
+               "text",
+               form.state.locations,
+               "comma-separated values",
+               "fas fa-map",
+             )}
           </div>
-        </form>
-      }
-    </SearchForm>;
+        </div>
+        <div className="field is-horizontal">
+          <div className="field-body">
+            {searchFormInput(
+               form,
+               AfterDate,
+               SearchForm.AfterDateField.update,
+               "After date",
+               "after",
+               "text",
+               form.state.afterDate,
+               "2002-01-31",
+               "fas fa-calendar",
+             )}
+            {searchFormInput(
+               form,
+               BeforeDate,
+               SearchForm.BeforeDateField.update,
+               "Before date",
+               "before",
+               "text",
+               form.state.beforeDate,
+               "2003-08-30",
+               "fas fa-calendar",
+             )}
+          </div>
+        </div>
+        <div className="field is-horizontal">
+          <div className="field-body">
+            {searchFormInput(
+               form,
+               Filename,
+               SearchForm.FilenameField.update,
+               "Filename",
+               "filename",
+               "text",
+               form.state.filename,
+               "img_1234.jpg",
+               "fas fa-file",
+             )}
+            {searchFormInput(
+               form,
+               Mimetype,
+               SearchForm.MimetypeField.update,
+               "Media type",
+               "mimetype",
+               "text",
+               form.state.mimetype,
+               "image/jpeg",
+               "fas fa-code",
+             )}
+          </div>
+        </div>
+        <div className="field is-grouped is-grouped-right">
+          <div className="control">
+            <input
+              type_="submit"
+              value="Search"
+              className="button is-primary"
+            />
+          </div>
+        </div>
+      </div>
+    </form>;
   };
 };
 
@@ -261,7 +320,7 @@ let splitOnComma = (str: string): array(string) => {
 /*
  * Convert the form parameters into GraphQL search parameters.
  */
-let makeSearchParams = (params: SearchFormParams.state) => {
+let makeSearchParams = (params: SearchForm.state) => {
   let filterEmpties = lst =>
     Array.fold_right(
       (s, acc) => Js.String.length(s) > 0 ? [s, ...acc] : acc,
@@ -296,9 +355,9 @@ let makeSearchParams = (params: SearchFormParams.state) => {
 let stateSelector = (state: Redux.appState) => state;
 
 module Component = {
-  type state = {params: SearchFormParams.state};
+  type state = {params: SearchForm.state};
   type action =
-    | SetParams(SearchFormParams.state);
+    | SetParams(SearchForm.state);
   [@react.component]
   let make = () => {
     let reduxState = Redux.useSelector(stateSelector);

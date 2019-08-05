@@ -10,10 +10,10 @@
   ],
   "bs-dependencies": [
     "bs-date-fns",
-    "bs-reform",
     "reason-apollo",
     "reason-react",
-    "reductive"
+    "reductive",
+    "re-formality"
   ],
   "package-specs": [
     {

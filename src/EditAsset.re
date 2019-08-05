@@ -75,7 +75,16 @@ module UpdateAsset = [%graphql
 
 module UpdateAssetMutation = ReasonApollo.CreateMutation(UpdateAsset);
 
-module EditFormParams = {
+module EditForm = {
+  open Formality;
+
+  type field =
+    | Tags
+    | Location
+    | Caption
+    | UserDate
+    | Mimetype;
+
   type state = {
     tags: string,
     location: string,
@@ -83,31 +92,87 @@ module EditFormParams = {
     userdate: string,
     mimetype: string,
   };
-  type fields = [ | `tags | `location | `caption | `userdate | `mimetype];
-  /* lens: [(fieldName, getter, setter)] */
-  let lens = [
-    (`tags, s => s.tags, (s, tags) => {...s, tags}),
-    (`location, s => s.location, (s, location) => {...s, location}),
-    (`caption, s => s.caption, (s, caption) => {...s, caption}),
-    (`userdate, s => s.userdate, (s, userdate) => {...s, userdate}),
-    (`mimetype, s => s.mimetype, (s, mimetype) => {...s, mimetype}),
+
+  type message = string;
+  type submissionError = unit;
+  // define this updater type for convenience
+  type updater = (state, string) => state;
+
+  let dateRegex = [%bs.re "/^\\d{1,4}-\\d{1,2}-\\d{1,2} \\d{1,2}:\\d{2}$/"];
+
+  module TagsField = {
+    let update = (state, value) => {...state, tags: value};
+
+    let validator = {
+      field: Tags,
+      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      dependents: None,
+      validate: _state => Ok(Valid),
+    };
+  };
+
+  module LocationField = {
+    let update = (state, value) => {...state, location: value};
+
+    let validator = {
+      field: Location,
+      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      dependents: None,
+      validate: _state => Ok(Valid),
+    };
+  };
+
+  module CaptionField = {
+    let update = (state, value) => {...state, caption: value};
+
+    let validator = {
+      field: Caption,
+      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      dependents: None,
+      validate: _state => Ok(Valid),
+    };
+  };
+
+  module UserDateField = {
+    let update = (state, value) => {...state, userdate: value};
+
+    let validator = {
+      field: UserDate,
+      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      dependents: None,
+      validate: state =>
+        if (String.length(state.userdate) == 0) {
+          Ok(Valid);
+        } else {
+          switch (Js.Re.exec_(dateRegex, state.userdate)) {
+          | None => Error("date format must be yyyy-MM-dd HH:mm")
+          | Some(_result) => Ok(Valid)
+          };
+        },
+    };
+  };
+
+  module MimetypeField = {
+    let update = (state, value) => {...state, mimetype: value};
+
+    let validator = {
+      field: Mimetype,
+      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      dependents: None,
+      validate: _state => Ok(Valid),
+    };
+  };
+
+  let validators = [
+    TagsField.validator,
+    LocationField.validator,
+    CaptionField.validator,
+    UserDateField.validator,
+    MimetypeField.validator,
   ];
 };
 
-module EditForm = ReForm.Create(EditFormParams);
-
-let dateRegex = [%bs.re "/^\\d{1,4}-\\d{1,2}-\\d{1,2} \\d{1,2}:\\d{2}$/"];
-
-let dateValidator: string => option(string) =
-  value =>
-    if (String.length(value) == 0) {
-      None;
-    } else {
-      switch (Js.Re.exec_(dateRegex, value)) {
-      | None => Some("date format must be yyyy-MM-dd HH:mm")
-      | Some(_result) => None
-      };
-    };
+module EditFormHook = Formality.Make(EditForm);
 
 let assetMimeType = (mimetype: string) =>
   if (mimetype == "video/quicktime") {
@@ -163,17 +228,21 @@ let assetPreview = (asset: t) =>
 
 let editFormInput =
     (
-      handleChange,
-      getErrorForField,
-      fieldName,
-      labelText,
-      inputId,
-      inputType,
-      inputValue,
-      placeholderText,
+      form: EditFormHook.interface,
+      field: EditForm.field,
+      updater: EditForm.updater,
+      labelText: string,
+      inputId: string,
+      inputType: string,
+      inputValue: string,
+      placeholderText: string,
     ) => {
   let validateMsg =
-    Belt.Option.getWithDefault(getErrorForField(fieldName), "");
+    switch (form.result(field)) {
+    | Some(Error(message)) => message
+    | Some(Ok(Valid | NoValue))
+    | None => ""
+    };
   let formIsValid = validateMsg == "";
   let inputClass = formIsValid ? "input" : "input is-danger";
   let validationTextDiv =
@@ -186,9 +255,13 @@ let editFormInput =
         type_=inputType
         name=inputId
         value=inputValue
-        onChange={ReForm.Helpers.handleDomFormChange(
-          handleChange(fieldName),
-        )}
+        onBlur={_ => form.blur(field)}
+        onChange={event =>
+          form.change(
+            field,
+            updater(form.state, event->ReactEvent.Form.target##value),
+          )
+        }
         placeholder=placeholderText
       />
     </div>;
@@ -210,98 +283,88 @@ let editFormInput =
   </div>;
 };
 
-let assetSaveButton = (form: EditForm.state) =>
-  switch (form.error) {
-  | None => <input type_="submit" value="Save" className="button is-primary" />
-  | Some(_error) =>
+let assetSaveButton = (form: EditFormHook.interface) =>
+  switch (form.status) {
+  | Submitting(_) => <p> {React.string("Saving...")} </p>
+  | SubmissionFailed(_) =>
     <input type_="submit" value="Save" className="button" disabled=true />
+  | _ => <input type_="submit" value="Save" className="button is-primary" />
   };
 
 module EditFormRe = {
   [@react.component]
   let make = (~asset: t, ~onSubmit) => {
-    <EditForm
-      onSubmit={({values}) => onSubmit(values)}
-      initialState={
-        tags: Js.Array.joinWith(", ", asset##tags),
-        location: Belt.Option.getWithDefault(asset##location, ""),
-        caption: Belt.Option.getWithDefault(asset##caption, ""),
-        userdate: formatUserDate(asset##userdate),
-        mimetype: asset##mimetype,
-      }
-      schema=[
-        (
-          `userdate,
-          ReForm.Validation.Custom(values => dateValidator(values.userdate)),
-        ),
-      ]>
-      ...{({handleSubmit, handleChange, form, getErrorForField}) =>
-        <form onSubmit={ReForm.Helpers.handleDomFormSubmit(handleSubmit)}>
-          <div
-            className="container"
-            style={ReactDOMRe.Style.make(
-              ~width="auto",
-              ~paddingRight="3em",
-              (),
-            )}>
-            {editFormInput(
-               handleChange,
-               getErrorForField,
-               `userdate,
-               "Custom Date",
-               "userdate",
-               "text",
-               form.values.userdate,
-               "yyyy-mm-dd HH:MM",
-             )}
-            {editFormInput(
-               handleChange,
-               getErrorForField,
-               `location,
-               "Location",
-               "location",
-               "text",
-               form.values.location,
-               "",
-             )}
-            {editFormInput(
-               handleChange,
-               getErrorForField,
-               `caption,
-               "Caption",
-               "caption",
-               "text",
-               form.values.caption,
-               "",
-             )}
-            {editFormInput(
-               handleChange,
-               getErrorForField,
-               `tags,
-               "Tags",
-               "tags",
-               "text",
-               form.values.tags,
-               "comma-separated values",
-             )}
-            {editFormInput(
-               handleChange,
-               getErrorForField,
-               `mimetype,
-               "Media type",
-               "mimetype",
-               "text",
-               form.values.mimetype,
-               "image/jpeg",
-             )}
-            <div className="field is-horizontal">
-              <div className="field-label" />
-              <div className="field-body"> {assetSaveButton(form)} </div>
-            </div>
-          </div>
-        </form>
-      }
-    </EditForm>;
+    let initial: EditForm.state = {
+      tags: Js.Array.joinWith(", ", asset##tags),
+      location: Belt.Option.getWithDefault(asset##location, ""),
+      caption: Belt.Option.getWithDefault(asset##caption, ""),
+      userdate: formatUserDate(asset##userdate),
+      mimetype: asset##mimetype,
+    };
+    let form: EditFormHook.interface =
+      EditFormHook.useForm(~initialState=initial, ~onSubmit=(state, _form) =>
+        onSubmit(state)
+      );
+    <form onSubmit={form.submit->Formality.Dom.preventDefault}>
+      <div
+        className="container"
+        style={ReactDOMRe.Style.make(~width="auto", ~paddingRight="3em", ())}>
+        {editFormInput(
+           form,
+           UserDate,
+           EditForm.UserDateField.update,
+           "Custom Date",
+           "userdate",
+           "text",
+           form.state.userdate,
+           "yyyy-mm-dd HH:MM",
+         )}
+        {editFormInput(
+           form,
+           Location,
+           EditForm.LocationField.update,
+           "Location",
+           "location",
+           "text",
+           form.state.location,
+           "",
+         )}
+        {editFormInput(
+           form,
+           Caption,
+           EditForm.CaptionField.update,
+           "Caption",
+           "caption",
+           "text",
+           form.state.caption,
+           "",
+         )}
+        {editFormInput(
+           form,
+           Tags,
+           EditForm.TagsField.update,
+           "Tags",
+           "tags",
+           "text",
+           form.state.tags,
+           "comma-separated values",
+         )}
+        {editFormInput(
+           form,
+           Mimetype,
+           EditForm.MimetypeField.update,
+           "Media type",
+           "mimetype",
+           "text",
+           form.state.mimetype,
+           "image/jpeg",
+         )}
+        <div className="field is-horizontal">
+          <div className="field-label" />
+          <div className="field-body"> {assetSaveButton(form)} </div>
+        </div>
+      </div>
+    </form>;
   };
 };
 
@@ -327,7 +390,7 @@ let submitUpdate =
     (
       asset: t,
       mutate: UpdateAssetMutation.apolloMutation,
-      values: EditFormParams.state,
+      values: EditForm.state,
     ) => {
   let splitTags = splitOnComma(values.tags);
   /* this may introduce a single blank tag, but it's easier to let the backend prune it */

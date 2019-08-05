@@ -37,11 +37,11 @@
 *** DONE Figure out how to migrate to Reason Apollo 0.16
 *** DONE Ensure proper use of the latest features of reductive
 *** DONE Move the =reduxThunk= and =middleware= code into =Redux=
-*** TODO Replace bs-reform with [[https://github.com/minima-app/re-formality][re-formality]] for form validation
-**** TODO add re-formality to =package.json= and =bsconfig.json=
-**** TODO change asset edit page to use re-formality
-**** TODO change search page to use re-formality
-**** TODO remove bs-reform from =package.json= and =bsconfig.json=
+*** DONE Replace bs-reform with [[https://github.com/minima-app/re-formality][re-formality]] for form validation
+**** DONE add re-formality to =package.json= and =bsconfig.json=
+**** DONE change asset edit page to use re-formality
+**** DONE change search page to use re-formality
+**** DONE remove bs-reform from =package.json= and =bsconfig.json=
 *** TODO Add error boundary handling
 **** c.f. https://fb.me/react-error-boundaries
 ** TODO Rewrite backend in Rust
