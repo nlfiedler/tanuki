@@ -18,7 +18,7 @@
 **** to upgrade most things, need to upgrade to JSX 3
 **** current reductive is not compatible with JSX 3
 **** DONE switch to =github:MargaretKrutikova/reductive.git#hooks=
-** TODO Upgrade front-end code
+** DONE Upgrade front-end code
 *** DONE Update bs-reform temporarily to get things to compile
 *** DONE Use the new =[@react.component]= notation for ReasonReact components
 **** DONE temporarily comment out usages of other routes
@@ -42,8 +42,6 @@
 **** DONE change asset edit page to use re-formality
 **** DONE change search page to use re-formality
 **** DONE remove bs-reform from =package.json= and =bsconfig.json=
-*** TODO Add error boundary handling
-**** c.f. https://fb.me/react-error-boundaries
 ** TODO Rewrite backend in Rust
 *** TODO Translate caption parsing code
 *** TODO Translate query parsing code
@@ -82,6 +80,10 @@ and then update the reverse index as new documents are written
 **** Show 1, 2, 3, or more depending on browser width
 **** Should be able to leverage CSS for this
 *** TODO Asset preview page shows a broken link, should show placeholder image
+*** TODO Add error boundary handling (requires React API changes)
+**** waiting on support for =didCatch= in React Hooks API
+**** also likely need the API exposed via ReasonReact
+**** see the =ErrorBoundary= module definition in =Index.re=
 ** Backend improvements
 *** TODO Rewrite in Rust
 *** TODO Support advanced queries using Google-style operators

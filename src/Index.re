@@ -1,6 +1,22 @@
 //
 // Copyright (c) 2018 Nathan Fiedler
 //
+
+// Waiting for support via React Hooks API, which then will
+// appear in ReasonReact. Once those are ready, wrap the
+// `content` element with this to catch errors.
+//
+// c.f. https://github.com/reasonml/reason-react/pull/247
+// c.f. https://reactjs.org/docs/hooks-faq.html
+// c.f. https://reactjs.org/docs/error-boundaries.html
+//
+// module ErrorBoundary = {
+//   [@react.component]
+//   let make = () => {
+//     <h1> {React.string("Something went wrong")} </h1>;
+//   };
+// };
+
 module App = {
   [@react.component]
   let make = () => {
