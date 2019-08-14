@@ -195,8 +195,15 @@ module SearchFormRe = {
   [@react.component]
   let make = (~inputs, ~onSubmit) => {
     let form: SearchFormHook.interface =
-      SearchFormHook.useForm(~initialState=inputs, ~onSubmit=(state, _form) =>
-        onSubmit(state)
+      SearchFormHook.useForm(
+        ~initialState=inputs,
+        ~onSubmit=(state, form) => {
+          onSubmit(state);
+          // reset the form so it will accept input and submit properly
+          // after the search results are rendered (i.e. search for one
+          // thing and then try another search, nothing would happen)
+          form.reset();
+        },
       );
     <form onSubmit={form.submit->Formality.Dom.preventDefault}>
       <div

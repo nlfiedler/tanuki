@@ -1,53 +1,18 @@
 * Tanuki
-** General Items
-*** DONE The "not found" page arrow grapheme renders as an accent character
-**** use a button like zorigami
-*** DONE npm update easy modules
-**** DONE sharp
-**** DONE apollo-server
-**** DONE apollo-server-express
-**** DONE config
-**** DONE lodash
-**** DONE mocha
-**** DONE rotating-file-stream
-*** DONE npm update harder modules
-**** DONE apollo-upload-client
-**** DONE del
-**** DONE gulp-if
-*** DONE Upgrade reductive to prepare for JSX upgrade
-**** to upgrade most things, need to upgrade to JSX 3
-**** current reductive is not compatible with JSX 3
-**** DONE switch to =github:MargaretKrutikova/reductive.git#hooks=
-** DONE Upgrade front-end code
-*** DONE Update bs-reform temporarily to get things to compile
-*** DONE Use the new =[@react.component]= notation for ReasonReact components
-**** DONE temporarily comment out usages of other routes
-**** DONE convert the not found page
-**** DONE convert the tags
-**** DONE convert the locations
-**** DONE convert the years
-**** DONE convert the home page
-**** DONE convert the upload page
-**** DONE convert the asset details page
-**** DONE convert the asset edit page
-**** DONE convert the search page
-*** DONE Upgrade to react-jsx version 3
-**** c.f. https://reasonml.github.io/reason-react/docs/en/jsx
-*** DONE Update reason react router usage to match zorigami
-*** DONE Figure out how to migrate to Reason Apollo 0.16
-*** DONE Ensure proper use of the latest features of reductive
-*** DONE Move the =reduxThunk= and =middleware= code into =Redux=
-*** DONE Replace bs-reform with [[https://github.com/minima-app/re-formality][re-formality]] for form validation
-**** DONE add re-formality to =package.json= and =bsconfig.json=
-**** DONE change asset edit page to use re-formality
-**** DONE change search page to use re-formality
-**** DONE remove bs-reform from =package.json= and =bsconfig.json=
 ** TODO Rewrite backend in Rust
 *** TODO Translate caption parsing code
 *** TODO Translate query parsing code
-*** TODO Translate database layer
+*** TODO Translate database layer to use RocksDB
 ***** should enable WAL by default
-***** need a plan for the index
+***** need a secondary index to support queries
+****** write a simple secondary index library for RocksDB, publish to crates.io
+******* others will eventually contribute and make it better
+****** look for "rocksdb secondary index" on the web
+******* https://misfra.me/2017/01/18/how-to-implement-secondary-indexes/
+******* index key is the information you're search for, value is the original key
+******* important to keep the keys unique and canonically formed
+****** see the algorithms in the research paper on secondary indices on LSM key/value stores
+****** supporting non-unique index keys requires an additionaly unique element (e.g. ULID)
 Could have =my-index-on-field/<value>-NNN= keys that have a single record
 reference. Then use a key iterator to scan those values within a key range
 (it is very efficient). For multiple query terms, would sort and merge the
@@ -76,6 +41,7 @@ and then update the reverse index as new documents are written
 ***** search crates.io for =vips= bindings, there are several
 ***** if all else fails, can use =magick-rust= (needs bindgen updates soon)
 ** Front-end improvements
+*** TODO Debounce the data validation fields using async validators
 *** TODO Consider how to make thumbnail page responsive
 **** Show 1, 2, 3, or more depending on browser width
 **** Should be able to leverage CSS for this
