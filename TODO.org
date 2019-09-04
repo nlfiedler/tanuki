@@ -1,6 +1,4 @@
 * Tanuki
-** TODO Update everything again
-** TODO Switch to main reductive
 ** TODO Look at [[https://www.material.io][Material Design]] for icons and such
 *** they provide free icons that are well thought out
 ** TODO Rewrite backend in Rust
@@ -44,6 +42,10 @@ and then update the reverse index as new documents are written
 ***** give this a try: https://github.com/imazen/imageflow
 ***** search crates.io for =vips= bindings, there are several
 ***** if all else fails, can use =magick-rust= (needs bindgen updates soon)
+** Maintenance
+*** Front-end dependencies
+**** react-apollo upgrade to 3.0.1 has breaking changes
+***** probably need reason-apollo to update first
 ** Front-end improvements
 *** TODO Debounce the data validation fields using async validators
 *** TODO Consider how to make thumbnail page responsive
