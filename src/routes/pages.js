@@ -22,7 +22,7 @@ const staticRoot = path.join(__dirname, '..', '..', 'public')
 router.use(express.static(staticRoot))
 
 router.get('/thumbnail/:id', wrap(async function (req, res, next) {
-  const id = req.params['id']
+  const id = req.params.id
   const doc = await backend.fetchDocument(id)
   const mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
   const result = await assets.retrieveThumbnail(mimetype, id)
@@ -39,7 +39,7 @@ router.get('/thumbnail/:id', wrap(async function (req, res, next) {
 }))
 
 router.get('/widethumb/:id', wrap(async function (req, res, next) {
-  const id = req.params['id']
+  const id = req.params.id
   const doc = await backend.fetchDocument(id)
   const mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
   const result = await assets.generateWideThumb(mimetype, id)
@@ -56,7 +56,7 @@ router.get('/widethumb/:id', wrap(async function (req, res, next) {
 }))
 
 router.get('/preview/:id', wrap(async function (req, res, next) {
-  const id = req.params['id']
+  const id = req.params.id
   const doc = await backend.fetchDocument(id)
   const mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'
   const result = await assets.generatePreview(mimetype, id)
@@ -73,7 +73,7 @@ router.get('/preview/:id', wrap(async function (req, res, next) {
 }))
 
 router.get('/asset/:id', wrap(async function (req, res, next) {
-  const id = req.params['id']
+  const id = req.params.id
   const filepath = assets.assetPath(id)
   const doc = await backend.fetchDocument(id)
   const mimetype = doc.mimetype ? doc.mimetype : 'application/octet-stream'

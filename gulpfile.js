@@ -8,7 +8,7 @@ const webpack = require('webpack-stream')
 
 const production = false
 
-gulp.task('serve', (cb) => {
+function serve (cb) {
   let called = false
   return nodemon({
     script: './src/server.js',
@@ -23,29 +23,29 @@ gulp.task('serve', (cb) => {
       cb()
     }
   })
-})
+}
 
-gulp.task('clean:bsb', (cb) => {
+function cleanbsb (cb) {
   exec('npx bsb -clean-world', (err, stdout, stderr) => {
     console.info(stdout)
     console.error(stderr)
     cb(err)
   })
-})
+}
 
-gulp.task('clean:web', (cb) => {
+function cleanweb (cb) {
   return del(['public/javascripts/main.js'])
-})
+}
 
-gulp.task('make:bsb', (cb) => {
+function makebsb (cb) {
   exec('npx bsb -make-world', (err, stdout, stderr) => {
     console.info(stdout)
     console.error(stderr)
     cb(err)
   })
-})
+}
 
-gulp.task('make:web', () => {
+function makeweb (cb) {
   return gulp.src('lib/js/src/Index.bs.js')
     .pipe(webpack({
       mode: production ? 'production' : 'development',
@@ -55,12 +55,12 @@ gulp.task('make:web', () => {
     }))
     .pipe(gulpif(production, uglify()))
     .pipe(gulp.dest('public/javascripts'))
-})
+}
 
-gulp.task('build', gulp.series('make:bsb', 'make:web'))
-gulp.task('clean', gulp.series('clean:bsb', 'clean:web'))
+exports.clean = gulp.parallel(cleanbsb, cleanweb)
+exports.build = gulp.series(makebsb, makeweb)
 
-gulp.task('watch-server', () => {
+function watchServer () {
   gulp.watch('src/**/*.re', gulp.series('build'))
-})
-gulp.task('default', gulp.series('build', 'serve', 'watch-server'))
+}
+exports.default = gulp.series(exports.build, serve, watchServer)

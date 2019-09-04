@@ -285,7 +285,7 @@ function byChecksum (checksum) {
     key: lowerStr(checksum),
     limit: 1
   }).then(function (res) {
-    return res['rows'].length ? res['rows'][0]['id'] : null
+    return res.rows.length ? res.rows[0].id : null
   }).catch(function (err) {
     logger.warn('byChecksum error:', err)
     return null
@@ -301,7 +301,7 @@ function allTags () {
   return db.query('assets/all_tags', {
     group_level: 1
   }).then(function (res) {
-    return res['rows']
+    return res.rows
   }).catch(function (err) {
     logger.error('allTags error:', err)
     return []
@@ -317,7 +317,7 @@ function allLocations () {
   return db.query('assets/all_locations', {
     group_level: 1
   }).then(function (res) {
-    return res['rows']
+    return res.rows
   }).catch(function (err) {
     logger.error('allLocations error:', err)
     return []
@@ -333,7 +333,7 @@ function allYears () {
   return db.query('assets/all_years', {
     group_level: 1
   }).then(function (res) {
-    return res['rows']
+    return res.rows
   }).catch(function (err) {
     logger.error('allYears error:', err)
     return []
@@ -393,11 +393,11 @@ function massageMangoResult (fields) {
  */
 function massageMapResult (result) {
   return {
-    id: result['id'],
-    datetime: result['value'][0],
-    filename: result['value'][1],
-    location: result['value'][2],
-    mimetype: result['value'][3]
+    id: result.id,
+    datetime: result.value[0],
+    filename: result.value[1],
+    location: result.value[2],
+    mimetype: result.value[3]
   }
 }
 
@@ -454,19 +454,19 @@ async function findByTags (tags) {
     })
     // Reduce the results to those that have all of the given tags.
     const tagCounts = queryResults.rows.reduce((acc, row) => {
-      const docId = row['id']
+      const docId = row.id
       const count = acc.has(docId) ? acc.get(docId) : 0
       acc.set(docId, count + 1)
       return acc
     }, new Map())
     const matchingRows = queryResults.rows.filter((row) => {
-      return tagCounts.get(row['id']) === tags.length
+      return tagCounts.get(row.id) === tags.length
     })
     // Remove the duplicate rows by sorting on the document identifier and
     // removing any duplicates.
     const uniqueResults = matchingRows.sort((a, b) => {
-      return a['id'].localeCompare(b['id'])
-    }).filter((row, idx, arr) => idx === 0 || row['id'] !== arr[idx - 1]['id'])
+      return a.id.localeCompare(b.id)
+    }).filter((row, idx, arr) => idx === 0 || row.id !== arr[idx - 1].id)
     return uniqueResults.map((row) => massageMapResult(row))
   }
 }
@@ -615,20 +615,20 @@ async function query (params) {
   const filterParams = lowerCaseParams(params)
   if (filterParams.tags && filterParams.tags.length) {
     searchBy = findByTags.bind(null, filterParams.tags)
-    delete filterParams['tags']
+    delete filterParams.tags
   } else if (filterParams.after || filterParams.before) {
     searchBy = findByDateRange.bind(null, filterParams.after, filterParams.before)
-    delete filterParams['after']
-    delete filterParams['before']
+    delete filterParams.after
+    delete filterParams.before
   } else if (filterParams.locations && filterParams.locations.length) {
     searchBy = findByLocations.bind(null, filterParams.locations)
-    delete filterParams['locations']
+    delete filterParams.locations
   } else if (filterParams.filename) {
     searchBy = findByFilename.bind(null, filterParams.filename)
-    delete filterParams['filename']
+    delete filterParams.filename
   } else if (filterParams.mimetype) {
     searchBy = findByMimetype.bind(null, filterParams.mimetype)
-    delete filterParams['mimetype']
+    delete filterParams.mimetype
   } else {
     // if no parameters are given, then return nothing (for now)
     searchBy = () => { return [] }

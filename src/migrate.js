@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2019 Nathan Fiedler
 //
 const _ = require('lodash')
 const config = require('config')
@@ -89,8 +89,8 @@ function dataVersion7 (doc) {
 function dataVersion8 (doc) {
   // rename and field and add a prefix
   if (Object.prototype.hasOwnProperty.call(doc, 'sha256')) {
-    doc['checksum'] = 'sha256-' + doc['sha256']
-    delete doc['sha256']
+    doc.checksum = 'sha256-' + doc.sha256
+    delete doc.sha256
   }
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018-2019 Nathan Fiedler
+// Copyright (c) 2019 Nathan Fiedler
 //
 const _ = require('lodash')
 const fs = require('fs')
@@ -25,32 +25,32 @@ function boundedIntValue (value, fallback, minimum, maximum) {
 // Produce an object representing the given asset, suitable for returning from
 // the resolver. Defaults are applied, fields renamed, and dates populated.
 function prepareAssetResult (asset) {
-  const buf = Buffer.from(asset['_id'], 'base64')
+  const buf = Buffer.from(asset._id, 'base64')
   const relpath = buf.toString('utf8')
   return {
     caption: null,
     duration: null,
     location: null,
     ...asset,
-    id: asset['_id'],
+    id: asset._id,
     filepath: relpath,
     datetime: backend.getBestDate(asset),
-    userdate: asset['user_date'],
-    previewUrl: `/preview/${asset['_id']}`,
-    assetUrl: `/asset/${asset['_id']}`
+    userdate: asset.user_date,
+    previewUrl: `/preview/${asset._id}`,
+    assetUrl: `/asset/${asset._id}`
   }
 }
 
 // Merge existing asset details with values from a mutation request.
 function receiveAssetInput (asset, assetInput) {
-  if (Array.isArray(assetInput['tags'])) {
+  if (Array.isArray(assetInput.tags)) {
     asset.tags = _.sortedUniq(assetInput.tags.sort())
   }
-  if (_.isString(assetInput['location'])) {
+  if (_.isString(assetInput.location)) {
     // If location is given, overwrite document field.
     asset.location = assetInput.location
   }
-  if (_.isString(assetInput['caption'])) {
+  if (_.isString(assetInput.caption)) {
     asset.caption = assetInput.caption
     // Split the caption on whitespace so we can examine if there are any tags
     // or location(s) that can be copied to the appropriate fields.
@@ -90,12 +90,12 @@ function receiveAssetInput (asset, assetInput) {
   }
   // trim any blank tags since it is laborious for the front-end to do it
   asset.tags = asset.tags.filter(e => e)
-  if (_.isNumber(assetInput['datetime'])) {
+  if (_.isNumber(assetInput.datetime)) {
     asset.user_date = assetInput.datetime
-  } else if (assetInput['datetime'] === null) {
+  } else if (assetInput.datetime === null) {
     asset.user_date = null
   }
-  if (_.isString(assetInput['mimetype'])) {
+  if (_.isString(assetInput.mimetype)) {
     asset.mimetype = assetInput.mimetype.toLowerCase()
   }
   return asset
@@ -186,7 +186,7 @@ const Query = {
   async search (obj, args, context, info) {
     const rows = await backend.query(args.params)
     // sort by date by default
-    rows.sort((a, b) => b['datetime'] - a['datetime'])
+    rows.sort((a, b) => b.datetime - a.datetime)
     const totalCount = rows.length
     const count = boundedIntValue(args.count, 10, 1, 10000)
     const offset = boundedIntValue(args.offset, 0, 0, totalCount)

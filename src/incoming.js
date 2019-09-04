@@ -82,7 +82,7 @@ async function getOriginalDate (mimetype, filepath) {
     if (mimetype.startsWith('image/')) {
       const data = fs.readFileSync(filepath)
       const tags = ExifReader.load(data)
-      return parseExifDate(tags['DateTimeOriginal'].description)
+      return parseExifDate(tags.DateTimeOriginal.description)
     } else if (mimetype.startsWith('video/')) {
       return getCreationTime(filepath)
     } else {

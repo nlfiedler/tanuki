@@ -1,4 +1,8 @@
 * Tanuki
+** TODO Update everything again
+** TODO Switch to main reductive
+** TODO Look at [[https://www.material.io][Material Design]] for icons and such
+*** they provide free icons that are well thought out
 ** TODO Rewrite backend in Rust
 *** TODO Translate caption parsing code
 *** TODO Translate query parsing code
