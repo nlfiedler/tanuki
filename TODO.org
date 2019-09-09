@@ -1,34 +1,13 @@
 * Tanuki
 ** TODO Look at [[https://www.material.io][Material Design]] for icons and such
 *** they provide free icons that are well thought out
+** TODO Write an export function to dump database in JSON format
+*** need this to import into the new database based on RocksDB
 ** TODO Rewrite backend in Rust
 *** TODO Translate caption parsing code
 *** TODO Translate query parsing code
-*** TODO Translate database layer to use RocksDB
-***** should enable WAL by default
-***** need a secondary index to support queries
-****** write a simple secondary index library for RocksDB, publish to crates.io
-******* others will eventually contribute and make it better
-****** look for "rocksdb secondary index" on the web
-******* https://misfra.me/2017/01/18/how-to-implement-secondary-indexes/
-******* index key is the information you're search for, value is the original key
-******* important to keep the keys unique and canonically formed
-****** see the algorithms in the research paper on secondary indices on LSM key/value stores
-****** supporting non-unique index keys requires an additionaly unique element (e.g. ULID)
-Could have =my-index-on-field/<value>-NNN= keys that have a single record
-reference. Then use a key iterator to scan those values within a key range
-(it is very efficient). For multiple query terms, would sort and merge the
-results to get the final result.
-
-The =NNN= could be a ulid or a monotonically increasing number. Depends if
-the range scan iterators can take a wildcard for the starting key and move
-from there. Otherwise, would want to have a ~sequence~ type of selector
-from the database to facilitate the counter.
-***** could use =GetUpdatesSince()= to tail updates to the default column family
-and then update the reverse index as new documents are written
-***** RocksDB FAQ seems to suggest using column families for different "key spaces"
-****** c.f. https://github.com/facebook/rocksdb/wiki/Column-Families
-***** data migration would likely involve rebuilding the indices
+*** TODO Translate database layer to use RocksDB and =mokuroku=
+*** TODO Write data import/export function to save/load from JSON
 *** Libraries
 **** Facial recognition
 ***** https://crates.io/crates/opencv (WTFPL)
@@ -56,8 +35,8 @@ and then update the reverse index as new documents are written
 **** waiting on support for =didCatch= in React Hooks API
 **** also likely need the API exposed via ReasonReact
 **** see the =ErrorBoundary= module definition in =Index.re=
+*** TODO Add prev/next button in asset preview to navigate query results
 ** Backend improvements
-*** TODO Rewrite in Rust
 *** TODO Support advanced queries using Google-style operators
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
 **** move perkeep style query support from mujina to tanuki
