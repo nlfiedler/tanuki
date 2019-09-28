@@ -1,34 +1,28 @@
 FROM node:12
-
+#
+# build the final image
+#
+# * using BuckleScript requires gcc/make to compile OCaml
+# * some part of the build requires python
+#
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update
-RUN apt-get -q -y install apt-utils
-
-WORKDIR /kuukan
-
-#
-# using BuckleScript requires gcc/make to compile OCaml
-#
-RUN apt-get -q -y install build-essential
+RUN apt-get -q update && \
+    apt-get -q -y install apt-utils build-essential python
 RUN npm install -q -g gulp-cli
-
-#
-# install build-time dependencies
-#
-RUN apt-get install -q -y python
 
 #
 # Copy the application code and build.
 #
+WORKDIR /kuukan
 COPY bsconfig.json .
-COPY config config
+COPY config config/
 COPY graphql_schema.json .
 COPY gulpfile.js .
 COPY package.json .
 COPY package-lock.json .
-COPY public public
-COPY src src
-COPY views views
+COPY public public/
+COPY src src/
+COPY views views/
 RUN npm ci
 RUN gulp build
 
@@ -42,4 +36,4 @@ EXPOSE ${PORT}
 COPY docker/healthcheck.js .
 HEALTHCHECK CMD node ./healthcheck.js ${PORT}
 
-ENTRYPOINT [ "node",  "./src/server.js" ]
+ENTRYPOINT [ "node", "./src/server.js" ]

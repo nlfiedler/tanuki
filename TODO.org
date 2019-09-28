@@ -42,6 +42,8 @@
 **** move perkeep style query support from mujina to tanuki
 **** webui needs an "advanced" tab/link selector on the search page
 *** TODO Thumbnail size cache population is noticably slow when selecting many assets
+*** TODO consider using [[https://github.com/vertexclique/bastion][bastion]] for fault-tolerance (i.e. supervisor)
+**** it appears to support Erlang-style supervisor behavior
 ** Bugs
 *** TODO Sometimes the front-end misses updates from backend?
 **** e.g. click a tag, images fail to appear; click and click again, works
