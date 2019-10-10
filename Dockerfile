@@ -13,7 +13,7 @@ RUN npm install -q -g gulp-cli
 #
 # Copy the application code and build.
 #
-WORKDIR /kuukan
+WORKDIR /working
 COPY bsconfig.json .
 COPY config config/
 COPY graphql_schema.json .
@@ -33,7 +33,7 @@ VOLUME /tanuki
 
 EXPOSE ${PORT}
 
-COPY docker/healthcheck.js .
+COPY healthcheck.js .
 HEALTHCHECK CMD node ./healthcheck.js ${PORT}
 
 ENTRYPOINT [ "node", "./src/server.js" ]

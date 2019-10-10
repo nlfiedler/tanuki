@@ -1,10 +1,9 @@
-version: '3.2'
+version: '3.7'
 
 services:
-  tanuki:
+  app:
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      context: .
     environment:
       NODE_PATH: src
       # need to use different config paths for container
@@ -14,7 +13,5 @@ services:
       - "3000:3000"
     volumes:
       - type: bind
-        source: ../tmp
+        source: ./tmp
         target: /tanuki
-    # stdin_open: true
-    # tty: true
