@@ -1,8 +1,8 @@
 * Tanuki
-** Be careful of which npm modules you update
-*** the reason/react/apollo something or other breaks in the recent versions
-**** react-apollo upgrade to 3.0.1 has breaking changes
-***** probably need reason-apollo to update first
+** N.B. react-apollo module version
+*** reason-apollo still depends on react-apollo 2.5.8
+*** upgrading react-apollo to >3.x breaks reason-apollo
+*** must wait until reason-apollo updates their dependencies
 ** TODO Look at [[https://www.material.io][Material Design]] for icons and such
 *** they provide free icons that are well thought out
 ** TODO Write an export function to dump database in JSON format
