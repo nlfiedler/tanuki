@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2019 Nathan Fiedler
 //
 type searchInputs = {
   tags: string,
@@ -133,5 +133,4 @@ let appStore =
 include ReductiveContext.Make({
   type state = appState;
   type action = appAction;
-  let store = appStore;
 });

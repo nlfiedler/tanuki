@@ -57,7 +57,7 @@
     "react-apollo": "^2.5.8",
     "reason-apollo": "^0.17.0",
     "reason-react": "^0.7.0",
-    "reductive": "github:reasonml-community/reductive",
+    "reductive": "^2.0.0",
     "rotating-file-stream": "^1.4.3",
     "serve-favicon": "~2.5.0",
     "sharp": "^0.23.0",

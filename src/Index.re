@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2019 Nathan Fiedler
 //
 
 // Waiting for support via React Hooks API, which then will
@@ -39,7 +39,7 @@ module App = {
 
 ReactDOMRe.renderToElementWithId(
   <ReasonApollo.Provider client=Client.instance>
-    <App />
+    <Redux.Provider store=Redux.appStore><App /></Redux.Provider>
   </ReasonApollo.Provider>,
   "main",
 );
