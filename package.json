@@ -42,7 +42,7 @@
     "ejs": "^2.7.1",
     "exifreader": "^2.8.3",
     "express": "^4.17.1",
-    "ffmpeg-static": "^2.6.0",
+    "ffmpeg-static": "^2.7.0",
     "ffprobe-static": "^3.0.0",
     "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^8.1.0",
