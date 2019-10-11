@@ -60,7 +60,7 @@
     "reductive": "^2.0.0",
     "rotating-file-stream": "^1.4.4",
     "serve-favicon": "~2.5.0",
-    "sharp": "^0.23.0",
+    "sharp": "^0.23.1",
     "subscriptions-transport-ws": "^0.9.16",
     "ulid": "^2.3.0",
     "winston": "^3.2.1",
