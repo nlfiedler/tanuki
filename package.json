@@ -57,7 +57,7 @@
     "react-apollo": "^2.5.8",
     "reason-apollo": "^0.17.0",
     "reason-react": "^0.7.0",
-    "reductive": "^2.0.0",
+    "reductive": "^2.0.1",
     "rotating-file-stream": "^1.4.4",
     "serve-favicon": "~2.5.0",
     "sharp": "^0.23.1",
@@ -68,7 +68,7 @@
   },
   "devDependencies": {
     "@playlyfe/gql": "^2.6.2",
-    "bs-platform": "^5.0.6",
+    "bs-platform": "^5.2.1",
     "chai": "^4.1.2",
     "del": "^5.1.0",
     "graphql_ppx": "^0.2.8",
