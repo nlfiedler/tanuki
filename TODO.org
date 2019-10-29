@@ -35,7 +35,8 @@
 **** waiting on support for =didCatch= in React Hooks API
 **** also likely need the API exposed via ReasonReact
 **** see the =ErrorBoundary= module definition in =Index.re=
-*** TODO Add prev/next button in asset preview to navigate query results
+*** TODO Use a lightbox component for displaying assets
+**** c.f. https://creativebulma.net/product/lightbox/demo
 ** Backend improvements
 *** TODO Support advanced queries using Google-style operators
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
