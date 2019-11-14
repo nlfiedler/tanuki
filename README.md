@@ -10,7 +10,8 @@ capabilities.
 
 ### Prerequisites
 
-* [Node.js](https://nodejs.org/) LTS or Current
+* [Node.js](https://nodejs.org/) LTS
+* [Gulp](https://gulpjs.com) CLI: `npm -g install gulp-cli`
 
 #### Example for macOS
 
@@ -22,7 +23,7 @@ get out of date, and some of the dependencies will fail to build without them.
 ```shell
 $ xcode-select --install
 $ brew install node
-$ npm install -g gulp-cli
+$ npm -g install gulp-cli
 ```
 
 ### Commands
