@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2019 Nathan Fiedler
 //
 
 /*
@@ -317,35 +317,23 @@ let rangeDateStrToInt = str =>
   };
 
 /*
- * Split the string on commas, replacing None with empty string.
+ * Split the string on commas, discarding empty strings.
  */
-let splitOnComma = (str: string): array(string) => {
-  let parts = Js.String.splitByRe([%bs.re "/,/"], str);
-  Array.map(a => Belt.Option.getWithDefault(a, ""), parts);
+let stringToArray = (str: string): array(string) => {
+  let parts = Js.String.split(",", str);
+  let trimmed = Array.map(s => String.trim(s), parts);
+  Js.Array.filter(e => String.length(e) > 0, trimmed);
 };
 
 /*
  * Convert the form parameters into GraphQL search parameters.
  */
 let makeSearchParams = (params: SearchForm.state) => {
-  let filterEmpties = lst =>
-    Array.fold_right(
-      (s, acc) => Js.String.length(s) > 0 ? [s, ...acc] : acc,
-      lst,
-      [],
-    );
-  let splitTags = splitOnComma(params.tags);
-  let trimmedTags = Array.map(s => String.trim(s), splitTags);
-  let nonEmptyTags = filterEmpties(trimmedTags);
-  let tags =
-    List.length(nonEmptyTags) > 0
-      ? Some(Array.of_list(nonEmptyTags)) : None;
-  let splitLocations = splitOnComma(params.locations);
-  let trimmedLocations = Array.map(s => String.trim(s), splitLocations);
-  let nonEmptyLocations = filterEmpties(trimmedLocations);
+  let nonEmptyTags = stringToArray(params.tags);
+  let tags = Array.length(nonEmptyTags) > 0 ? Some(nonEmptyTags) : None;
+  let nonEmptyLocations = stringToArray(params.locations);
   let locations =
-    List.length(nonEmptyLocations) > 0
-      ? Some(Array.of_list(nonEmptyLocations)) : None;
+    Array.length(nonEmptyLocations) > 0 ? Some(nonEmptyLocations) : None;
   {
     "after": rangeDateStrToInt(params.afterDate),
     "before": rangeDateStrToInt(params.beforeDate),

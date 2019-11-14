@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2019 Nathan Fiedler
 //
 /* The expected shape of the asset data from GraphQL. */
 type t = {
@@ -379,11 +379,12 @@ let userDateStrToInt = str =>
   };
 
 /*
- * Split the string on commas, replacing None with empty string.
+ * Split the string on commas, discarding empty strings.
  */
-let splitOnComma = (str: string): array(string) => {
-  let parts = Js.String.splitByRe([%bs.re "/,/"], str);
-  Array.map(a => Belt.Option.getWithDefault(a, ""), parts);
+let stringToArray = (str: string): array(string) => {
+  let parts = Js.String.split(",", str);
+  let trimmed = Array.map(s => String.trim(s), parts);
+  Js.Array.filter(e => String.length(e) > 0, trimmed);
 };
 
 let submitUpdate =
@@ -392,11 +393,9 @@ let submitUpdate =
       mutate: UpdateAssetMutation.apolloMutation,
       values: EditForm.state,
     ) => {
-  let splitTags = splitOnComma(values.tags);
-  /* this may introduce a single blank tag, but it's easier to let the backend prune it */
-  let trimmedTags = Array.map(s => String.trim(s), splitTags);
+  let tags = stringToArray(values.tags);
   let newAsset: input = {
-    "tags": Some(trimmedTags),
+    "tags": Some(tags),
     "caption": Some(values.caption),
     "location": Some(values.location),
     "datetime": userDateStrToInt(values.userdate),
