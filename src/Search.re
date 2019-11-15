@@ -309,9 +309,7 @@ module SearchFormRe = {
 /* Convert the yyyy-MM-dd date string into UTC milliseconds. */
 let rangeDateStrToInt = str =>
   if (String.length(str) > 0) {
-    /* date-fns 1.x parse does not take a format string... */
-    let date: Js.Date.t = DateFns.parseString(str);
-    Some(Js.Json.number(Js.Date.valueOf(date)));
+    Some(Js.Json.number(Js.Date.parseAsFloat(str)));
   } else {
     None;
   };
