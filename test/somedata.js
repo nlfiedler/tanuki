@@ -68,7 +68,6 @@ setTimeout(function () {
     describe('assets', function () {
       it('should return count of 4', function (done) {
         request(app)
-        request(app)
           .post('/graphql')
           .send({
             query: `query {
