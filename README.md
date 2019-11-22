@@ -56,7 +56,7 @@ the application as a Docker container.
 On the build host:
 
 ```shell
-$ docker-compose build
+$ docker-compose build --pull
 $ docker image rm 192.168.1.1:5000/tanuki_app
 $ docker image tag tanuki_app 192.168.1.1:5000/tanuki_app
 $ docker push 192.168.1.1:5000/tanuki_app
