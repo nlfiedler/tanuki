@@ -40,7 +40,7 @@
     "dateformat": "^3.0.3",
     "debug": "^4.1.1",
     "ejs": "^2.7.2",
-    "exifreader": "^2.10.0",
+    "exifreader": "^2.11.0",
     "express": "^4.17.1",
     "ffmpeg-static": "^2.7.0",
     "ffprobe-static": "^3.0.0",
