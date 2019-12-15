@@ -1,4 +1,9 @@
 * Tanuki
+** TODO Replace =graphql_ppx= with =graphql_ppx_re=
+*** c.f. https://github.com/baransu/graphql_ppx_re
+** N.B. bs-platform module version
+*** cannot upgrade to 6.2.1 because graphql_ppx is incompatible
+*** cannot upgrade to 7.0.1 because ReasonApollo fails to compile
 ** N.B. react-apollo module version
 *** reason-apollo still depends on react-apollo 2.5.8
 *** upgrading react-apollo to >3.x breaks reason-apollo

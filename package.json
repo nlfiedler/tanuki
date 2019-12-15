@@ -55,7 +55,7 @@
     "pouchdb-find": "^7.1.1",
     "re-formality": "^3.1.0",
     "react-apollo": "^2.5.8",
-    "reason-apollo": "^0.17.0",
+    "reason-apollo": "^0.18.0",
     "reason-react": "^0.7.0",
     "reductive": "^2.0.1",
     "rotating-file-stream": "^2.0.0",
