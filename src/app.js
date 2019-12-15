@@ -27,7 +27,7 @@ app.set('view engine', 'ejs')
 // Configure the HTTP logging.
 if (config.has('morgan.logger.logPath')) {
   const logDirectory = config.get('morgan.logger.logPath')
-  const accessLogStream = rfs('access.log', {
+  const accessLogStream = rfs.createStream('access.log', {
     size: '1M',
     maxFiles: 4,
     path: logDirectory
