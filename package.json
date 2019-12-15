@@ -67,11 +67,11 @@
     "xmldom": "^0.1.27"
   },
   "devDependencies": {
+    "@baransu/graphql_ppx_re": "^0.4.6",
     "@playlyfe/gql": "^2.6.2",
     "bs-platform": "^5.2.1",
     "chai": "^4.1.2",
     "del": "^5.1.0",
-    "graphql_ppx": "^0.2.8",
     "gulp": "^4.0.2",
     "gulp-if": "^3.0.0",
     "gulp-nodemon": "^2.4.2",

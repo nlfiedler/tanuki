@@ -22,7 +22,7 @@
     }
   ],
   "ppx-flags": [
-    "graphql_ppx/ppx"
+    "@baransu/graphql_ppx_re/ppx"
   ],
   "sources": [
     {
