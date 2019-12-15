@@ -26,7 +26,7 @@ module SearchAssets = [%graphql
 module SearchAssetsQuery = ReasonApollo.CreateQuery(SearchAssets);
 
 module SearchForm = {
-  open Formality;
+  // open Formality;
 
   type field =
     | Tags
@@ -47,8 +47,8 @@ module SearchForm = {
     let update = (state: state, value) => {...state, tags: value};
 
     let validator = {
-      field: Tags,
-      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      Formality.field: Tags,
+      strategy: Formality.Strategy.OnFirstSuccessOrFirstBlur,
       dependents: None,
       validate: _state => Ok(Valid),
     };
@@ -58,8 +58,8 @@ module SearchForm = {
     let update = (state: state, value) => {...state, locations: value};
 
     let validator = {
-      field: Locations,
-      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      Formality.field: Locations,
+      strategy: Formality.Strategy.OnFirstSuccessOrFirstBlur,
       dependents: None,
       validate: _state => Ok(Valid),
     };
@@ -67,7 +67,7 @@ module SearchForm = {
 
   let dateRegex = [%bs.re "/^\\d{1,4}-\\d{1,2}-\\d{1,2}$/"];
 
-  let dateValidator = (value: string): result(string) =>
+  let dateValidator = (value: string): Formality.result(string) =>
     if (String.length(value) == 0) {
       Ok(Valid);
     } else {
@@ -81,8 +81,8 @@ module SearchForm = {
     let update = (state: state, value) => {...state, afterDate: value};
 
     let validator = {
-      field: AfterDate,
-      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      Formality.field: AfterDate,
+      strategy: Formality.Strategy.OnFirstSuccessOrFirstBlur,
       dependents: None,
       validate: (state: state) => dateValidator(state.afterDate),
     };
@@ -92,8 +92,8 @@ module SearchForm = {
     let update = (state: state, value) => {...state, beforeDate: value};
 
     let validator = {
-      field: BeforeDate,
-      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      Formality.field: BeforeDate,
+      strategy: Formality.Strategy.OnFirstSuccessOrFirstBlur,
       dependents: None,
       validate: (state: state) => dateValidator(state.beforeDate),
     };
@@ -103,8 +103,8 @@ module SearchForm = {
     let update = (state: state, value) => {...state, filename: value};
 
     let validator = {
-      field: Filename,
-      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      Formality.field: Filename,
+      strategy: Formality.Strategy.OnFirstSuccessOrFirstBlur,
       dependents: None,
       validate: _state => Ok(Valid),
     };
@@ -114,8 +114,8 @@ module SearchForm = {
     let update = (state: state, value) => {...state, mimetype: value};
 
     let validator = {
-      field: Mimetype,
-      strategy: Strategy.OnFirstSuccessOrFirstBlur,
+      Formality.field: Mimetype,
+      strategy: Formality.Strategy.OnFirstSuccessOrFirstBlur,
       dependents: None,
       validate: _state => Ok(Valid),
     };

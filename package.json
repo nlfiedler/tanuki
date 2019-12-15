@@ -69,7 +69,7 @@
   "devDependencies": {
     "@baransu/graphql_ppx_re": "^0.4.6",
     "@playlyfe/gql": "^2.6.2",
-    "bs-platform": "^5.2.1",
+    "bs-platform": "^6.2.1",
     "chai": "^4.1.2",
     "del": "^5.1.0",
     "gulp": "^4.0.2",
