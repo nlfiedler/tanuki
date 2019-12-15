@@ -1,14 +1,10 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2019 Nathan Fiedler
 //
 const config = require('config')
 const fs = require('fs-extra')
 const path = require('path')
 const logger = require('logging')
-// exifreader needs the DataView type (to be overridden)
-global.DataView = require('jdataview')
-// exifreader also needs DOMParser (to be overridden)
-global.DOMParser = require('xmldom').DOMParser
 const ExifReader = require('exifreader')
 const sharp = require('sharp')
 const crypto = require('crypto')
