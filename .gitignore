@@ -8,10 +8,12 @@ node_modules
 .merlin
 .graphql_ppx_cache
 
-# compiled code
+# build artifacts
+Cargo.lock
 lib/bs
 lib/js
 public/javascripts/main.js
+target
 
 # temporary files
 tmp

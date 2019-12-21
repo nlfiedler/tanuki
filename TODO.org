@@ -5,28 +5,31 @@
 *** reason-apollo still depends on react-apollo 2.5.8
 *** upgrading react-apollo to >3.x breaks reason-apollo
 *** must wait until reason-apollo updates their dependencies
-** TODO Look at [[https://www.material.io][Material Design]] for icons and such
-*** they provide free icons that are well thought out
-** TODO Write an export function to dump database in JSON format
-*** need this to import into the new database based on RocksDB
 ** TODO Rewrite backend in Rust
+*** TODO Translate database layer to use RocksDB and =mokuroku=
+*** TODO Translate image import code (EXIF, HEIF, MPEG, etc)
 *** TODO Translate caption parsing code
 *** TODO Translate query parsing code
-*** TODO Translate database layer to use RocksDB and =mokuroku=
 *** TODO Write data import/export function to save/load from JSON
 *** Libraries
 **** Facial recognition
 ***** https://crates.io/crates/opencv (WTFPL)
 **** Videos
 ***** need Rust bindings for =ffprobe= and =ffmpeg=
-****** https://crates.io/crates/ffmpeg-next
-****** https://crates.io/crates/metadata
+****** https://crates.io/crates/ffmpeg4 (WTFPL)
+****** https://crates.io/crates/ffmpeg-dev (MIT/LGPL)
+****** https://crates.io/crates/ffmpeg-next (WTFPL)
 ***** see if there are alternatives for Rust
 **** Images
-***** HEIF: https://github.com/oussama/libheif-rs
-***** give this a try: https://github.com/imazen/imageflow
-***** search crates.io for =vips= bindings, there are several
+***** EXIF: https://crates.io/crates/rexif (MIT)
+***** HEIF: https://github.com/oussama/libheif-rs (MIT)
+***** https://crates.io/crates/libvips (MIT)
 ***** if all else fails, can use =magick-rust= (needs bindgen updates soon)
+*** TODO Remove Node modules no longer used (compare to zorigami)
+** TODO Look at [[https://www.material.io][Material Design]] for icons and such
+*** they provide free icons that are well thought out
+** TODO Write an export function to dump database in JSON format
+*** need this to import into the new database based on RocksDB
 ** Front-end improvements
 *** TODO Debounce the data validation fields using async validators
 *** TODO Consider how to make thumbnail page responsive
