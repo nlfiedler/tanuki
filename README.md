@@ -36,6 +36,16 @@ $ npm test
 $ npm start
 ```
 
+#### Windows
+
+For Windows, use PowerShell commands to run the tests this way:
+
+```shell
+PS> Set-Item -path env:NODE_PATH -value src
+PS> Set-Item -path env:NODE_CONFIG_ENV -value test
+PS> npx mocha --delay
+```
+
 ### Updating the GraphQL PPX schema
 
 The ReasonML support for GraphQL uses a JSON formatted representation of the
