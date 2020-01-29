@@ -6,9 +6,47 @@
 *** upgrading react-apollo to >3.x breaks reason-apollo
 *** must wait until reason-apollo updates their dependencies
 ** TODO Rewrite backend in Rust
+*** TODO switch out =ulid= for https://crates.io/crates/rusty_ulid
 *** TODO Translate database layer to use RocksDB and =mokuroku=
+**** DONE define type for assets
+**** DONE write a =new_asset_id= function like =makeAssetId=
+**** DONE need to decide how to handle the database prefix for (asset) keys
+***** straight-forward for now
+**** DONE write =database= module functions for operating on =Asset= instances
+**** DONE use the =mokuroku= database functions for get and put
+**** DONE define a struct to be the database index "value"
+***** holds location label, media type, filename, best date
+**** DONE use =chrono= for the dates (=SystemTime= is not consistent)
+**** DONE implement secondary indices
+***** DONE by_checksum
+***** DONE by_date
+***** DONE by_filename
+***** DONE by_location
+***** DONE by_mimetype
+***** DONE by_tag
+***** DONE all_locations: using =count_all_keys()=
+***** DONE all_tags: using =count_all_keys()=
+***** DONE all_years: using =count_all_keys()=
+**** TODO write query functions and tests
+***** should use =query_exact()= in most cases
+***** use the existing GraphQL resolver code as requirements guide
+***** TODO write test functions that populate test database
+***** TODO write tests for the high-level operations that resolver will need
+****** TODO by_checksum
+****** TODO all_locations
+****** TODO all_tags
+****** TODO all_years
+****** TODO asset_count
+****** TODO query
+**** TODO write a constructor and "builders" for =Asset=
+***** would help to know what GraphQL upload resolver looks like in Rust
+***** TODO write a test that uploads an asset via GraphQL
+**** TODO define a location struct to save a database upgrade
+***** exif data has GPS lat/long and some other metadata
+***** have both a label (for existing data) and GPS fields
 *** TODO Translate image import code (EXIF, HEIF, MPEG, etc)
 *** TODO Translate caption parsing code
+*** TODO figure out file upload for GraphQL resolvers
 *** TODO Translate query parsing code
 *** TODO Write data import/export function to save/load from JSON
 *** Libraries
@@ -27,9 +65,12 @@
 ***** if all else fails, can use =magick-rust= (needs bindgen updates soon)
 *** TODO Remove Node modules no longer used (compare to zorigami)
 ** TODO Look at [[https://www.material.io][Material Design]] for icons and such
+*** icons: https://www.material.io/resources/icons/
+*** many design elements for various purposes
 *** they provide free icons that are well thought out
 ** TODO Write an export function to dump database in JSON format
 *** need this to import into the new database based on RocksDB
+** TODO Rewrite frontend in Flutter
 ** Front-end improvements
 *** TODO Debounce the data validation fields using async validators
 *** TODO Consider how to make thumbnail page responsive

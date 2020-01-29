@@ -10,12 +10,12 @@ use std::thread;
 use util::DBPath;
 use tanuki::database::*;
 
-#[test]
-fn test_get_path() {
-    let db_path = DBPath::new("_test_get_path");
-    let dbase = Database::new(&db_path).unwrap();
-    assert_eq!(db_path.as_ref(), dbase.get_path());
-}
+// #[test]
+// fn test_get_path() {
+//     let db_path = DBPath::new("_test_get_path");
+//     let dbase = Database::new(&db_path).unwrap();
+//     assert_eq!(db_path.as_ref(), dbase.get_path());
+// }
 
 #[test]
 fn test_backup_restore() {
