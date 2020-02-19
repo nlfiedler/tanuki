@@ -58,6 +58,11 @@
 *** TODO Remove Node modules related to backend
 ** TODO Rewrite frontend in Flutter
 *** DONE set up a flutter dev environment
+*** TODO introduce redux for tracking application state
+**** retrieved GraphQL data (i.e. tags, locations, years)
+**** selected locations
+**** selected tags
+**** selected years
 *** TODO build out the webui along-side existing code
 *** TODO find out how to upload a file
 **** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
