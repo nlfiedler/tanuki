@@ -1,32 +1,33 @@
 * Tanuki
-** N.B. bs-platform module version
-*** cannot upgrade to 7.0.1 because ReasonApollo fails to compile
-** N.B. react-apollo module version
-*** reason-apollo still depends on react-apollo 2.5.8
-*** upgrading react-apollo to >3.x breaks reason-apollo
-*** must wait until reason-apollo updates their dependencies
-** TODO Rewrite backend in Rust
-*** TODO switch out =ulid= for https://crates.io/crates/rusty_ulid
-*** TODO Translate database layer to use RocksDB and =mokuroku=
-**** DONE define type for assets
-**** DONE write a =new_asset_id= function like =makeAssetId=
-**** DONE need to decide how to handle the database prefix for (asset) keys
-***** straight-forward for now
-**** DONE write =database= module functions for operating on =Asset= instances
-**** DONE use the =mokuroku= database functions for get and put
-**** DONE define a struct to be the database index "value"
+** TODO Rewrite backend in Dart
+*** TODO Early assessment of available packages
+**** TODO write quick tests for everything tanuki needs [2/10]
+- [X] rocksdb
+- [ ] exif
+- [ ] jfif
+- [ ] tiff
+- [ ] media type detection
+- [ ] thumbnails
+- [ ] web server
+- [X] GraphQL client
+- [ ] GraphQL server
+- [ ] ffmpeg metadata access
+**** TODO assess Windows support for everything
+*** TODO Translate database layer to use RocksDB and secondary index
+**** TODO define a class for assets
+**** TODO use the secondary index wrappers for get and put
+**** TODO define a class to be the database index "value"
 ***** holds location label, media type, filename, best date
-**** DONE use =chrono= for the dates (=SystemTime= is not consistent)
-**** DONE implement secondary indices
-***** DONE by_checksum
-***** DONE by_date
-***** DONE by_filename
-***** DONE by_location
-***** DONE by_mimetype
-***** DONE by_tag
-***** DONE all_locations: using =count_all_keys()=
-***** DONE all_tags: using =count_all_keys()=
-***** DONE all_years: using =count_all_keys()=
+**** TODO implement secondary indices
+***** TODO by_checksum
+***** TODO by_date
+***** TODO by_filename
+***** TODO by_location
+***** TODO by_mimetype
+***** TODO by_tag
+***** TODO all_locations: using =count_all_keys()=
+***** TODO all_tags: using =count_all_keys()=
+***** TODO all_years: using =count_all_keys()=
 **** TODO write query functions and tests
 ***** should use =query_exact()= in most cases
 ***** use the existing GraphQL resolver code as requirements guide
@@ -38,86 +39,77 @@
 ****** TODO all_years
 ****** TODO asset_count
 ****** TODO query
-**** TODO write a constructor and "builders" for =Asset=
-***** would help to know what GraphQL upload resolver looks like in Rust
-***** TODO write a test that uploads an asset via GraphQL
-**** TODO define a location struct to save a database upgrade
+**** TODO define a location class to save a database upgrade
 ***** exif data has GPS lat/long and some other metadata
 ***** have both a label (for existing data) and GPS fields
-*** TODO Translate image import code (EXIF, HEIF, MPEG, etc)
+*** TODO Translate image import code
+**** find something for detecting media type of files
+***** use https://pub.dev/packages/mime supports all platforms
 *** TODO Translate caption parsing code
-*** TODO figure out file upload for GraphQL resolvers
+*** TODO Figure out file upload for GraphQL resolvers
 *** TODO Translate query parsing code
-*** TODO Write data import/export function to save/load from JSON
-*** Libraries
-**** Facial recognition
-***** https://crates.io/crates/opencv (WTFPL)
-**** Videos
-***** need Rust bindings for =ffprobe= and =ffmpeg=
-****** https://crates.io/crates/ffmpeg4 (WTFPL)
-****** https://crates.io/crates/ffmpeg-dev (MIT/LGPL)
-****** https://crates.io/crates/ffmpeg-next (WTFPL)
-***** see if there are alternatives for Rust
-**** Images
-***** EXIF: https://crates.io/crates/rexif (MIT)
-***** HEIF: https://github.com/oussama/libheif-rs (MIT)
-***** https://crates.io/crates/libvips (MIT)
-***** if all else fails, can use =magick-rust= (needs bindgen updates soon)
-*** TODO Remove Node modules no longer used (compare to zorigami)
-** TODO Look at [[https://www.material.io][Material Design]] for icons and such
-*** icons: https://www.material.io/resources/icons/
-*** many design elements for various purposes
-*** they provide free icons that are well thought out
-** TODO Write an export function to dump database in JSON format
-*** need this to import into the new database based on RocksDB
+*** TODO Remove Rust and Cargo files
+*** TODO Plan how database migrations will happen in the future
+**** maintain a meta record with version information
+**** look at how the Dart serde library can help (e.g. how serde.rs does)
+*** TODO Write an export function for the old database
+*** TODO Write an import function for the new database
+*** TODO Remove JavaScript code from =src=
+*** TODO Remove Node modules related to backend
 ** TODO Rewrite frontend in Flutter
-** Front-end improvements
-*** TODO Debounce the data validation fields using async validators
-*** TODO Consider how to make thumbnail page responsive
-**** Show 1, 2, 3, or more depending on browser width
-**** Should be able to leverage CSS for this
-*** TODO Asset preview page shows a broken link, should show placeholder image
-*** TODO Add error boundary handling (requires React API changes)
-**** waiting on support for =didCatch= in React Hooks API
-**** also likely need the API exposed via ReasonReact
-**** see the =ErrorBoundary= module definition in =Index.re=
-*** TODO Use a lightbox component for displaying assets
-**** c.f. https://creativebulma.net/product/lightbox/demo
+*** DONE set up a flutter dev environment
+*** TODO build out the webui along-side existing code
+*** TODO find out how to upload a file
+**** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
+**** example code: https://github.com/rjcalifornia/web_upload
+*** TODO how to handle file drops
+**** drop zone gist: https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
+**** for now this is not so important, just use file selector a la =web_upload= example
+*** TODO how to upload files via graphql
+**** via graphql: https://morioh.com/p/8120c733a77c
+*** TODO use docker container to build web assets
+*** ideas and widget usage
+**** Look for the =video_player= web plugin for playing video in webui
+**** Look for examples using =Observable= to fetch remote data
+**** use =RichText= widget to style the captions (e.g. make tags bold)
+**** tags in caption could be "gesture sensitive" (i.e. clickable) to show assets with that tag
+**** =ListView.builder= allows building list items on demand
+**** =Image= has a loading builder for showing progress of network images
+**** use =semanticLabel= on =Image= for accessibility
+**** =Wrap= will do what =flex-flow: row wrap;= does in CSS
+**** =FutureBuilder= for showing things that load asynchronously
+**** use =SliverAppBar= in place of =AppBar=, it will shrink when content is scrolled
+***** could be a good way to keep controls above scrolling content
+**** use =FadeInImage= to show a placeholder while loading a remote image
+**** maybe use =Hero= to animate/transition from image gallery to a single image
+***** click on item in a list/grid and it expands to the details page
+**** can use =DataTable= to display labeled data (like asset details, metadata)
+**** use pointer enter/exit events to start playing a video in place
+*** TODO remove ReasonML related code and Node modules
+**** should be nothing JavaScript/Node/Reason left at this point
+**** =public/stylesheets=
+**** =public/webfonts=
+**** =bsconfig.json=
+**** =graphql_schema.json=
+**** =gulpfile.js=
+**** =node_modules=
+**** =package.json=
+**** =package-lock.json=
+**** =src/*.re=
+**** =lib/js=
+**** =lib/bs=
+**** update =.gitignore= and =.dockerignore=
 ** Backend improvements
+*** TODO Thumbnail size cache population is noticably slow when selecting many assets
+** Search Improvements
 *** TODO Support advanced queries using Google-style operators
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
 **** move perkeep style query support from mujina to tanuki
 **** webui needs an "advanced" tab/link selector on the search page
-*** TODO Thumbnail size cache population is noticably slow when selecting many assets
-*** TODO consider using [[https://github.com/vertexclique/bastion][bastion]] for fault-tolerance (i.e. supervisor)
-**** it appears to support Erlang-style supervisor behavior
-** Bugs
-*** TODO Sometimes the front-end misses updates from backend?
-**** e.g. click a tag, images fail to appear; click and click again, works
-**** find out what is going on when this happens
-*** TODO Home page fails to update after data changs
-**** TODO Home page stays stuck on "upload" even after images are uploaded
-***** name the =CountAssets= query and add to the =refetchQueries= list
-**** TODO After editing asset, selections need to elide newly removed tags
-***** that is, found "opa)", selected assets, fixed them, now cannot clear selection
-***** need to attach an update function after the edit asset mutation completes
-***** c.f. =onCompleted= prop on =mutation= function
-****** https://www.apollographql.com/docs/react/essentials/mutations/
-***** can also set =awaitRefetchQueries= to wait for refetch to complete
-***** could move Locations/Tags/Years logic into =Home= and handle everything there
-***** could use GraphQL subscriptions in =Home= to keep track of changes
-** Development Support
-*** TODO Figure out how to deal with the GraphQL schema weirdness
-**** The introspection tool generates weird types for the non-optional array of strings
-**** Maybe that tool is correct and my types are wrong?
-**** Or maybe that tool has an update that fixes this?
-**** c.f. commit =b8fa735=
-** Search Improvements
 *** TODO Support searching the caption text
 *** TODO Support wildcards in filename, mimetype (others?)
 *** TODO Need a query to find image assets whose orientation is incorrect/unknown
 ** Data Format Support
-*** TODO Use an =iframe= to preview Markdown generated as HTML
 *** TODO Detect time zone offset in EXIF data
 According to Wikipedia the 2.31 version of EXIF will support time-zone
 information. Eventually, the application should be able to detect this and
@@ -139,7 +131,114 @@ include it in the database records.
 - Data is stored as entered (case preservative)
 - Attribute lists are all lowercased
 - Search is always case insensitive
-
 *** Date/Time values
 - Uses 24 hour clock, displays using local time zone, stored as UTC
 - [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
+** Mobile app
+*** Use [[https://pub.dev/packages/image_picker][image_picker]] to allow user to select images from photo library
+** Legacy Reason/JavaScript/Rust
+*** N.B. bs-platform module version
+**** cannot upgrade to 7.0.1 because ReasonApollo fails to compile
+*** N.B. react-apollo module version
+**** reason-apollo still depends on react-apollo 2.5.8
+**** upgrading react-apollo to >3.x breaks reason-apollo
+**** must wait until reason-apollo updates their dependencies
+*** TODO Rewrite backend in Rust
+**** TODO switch out =ulid= for https://crates.io/crates/rusty_ulid
+**** TODO Translate database layer to use RocksDB and =mokuroku=
+***** DONE define type for assets
+***** DONE write a =new_asset_id= function like =makeAssetId=
+***** DONE need to decide how to handle the database prefix for (asset) keys
+****** straight-forward for now
+***** DONE write =database= module functions for operating on =Asset= instances
+***** DONE use the =mokuroku= database functions for get and put
+***** DONE define a struct to be the database index "value"
+****** holds location label, media type, filename, best date
+***** DONE use =chrono= for the dates (=SystemTime= is not consistent)
+***** DONE implement secondary indices
+****** DONE by_checksum
+****** DONE by_date
+****** DONE by_filename
+****** DONE by_location
+****** DONE by_mimetype
+****** DONE by_tag
+****** DONE all_locations: using =count_all_keys()=
+****** DONE all_tags: using =count_all_keys()=
+****** DONE all_years: using =count_all_keys()=
+***** TODO write query functions and tests
+****** should use =query_exact()= in most cases
+****** use the existing GraphQL resolver code as requirements guide
+****** TODO write test functions that populate test database
+****** TODO write tests for the high-level operations that resolver will need
+******* TODO by_checksum
+******* TODO all_locations
+******* TODO all_tags
+******* TODO all_years
+******* TODO asset_count
+******* TODO query
+***** TODO write a constructor and "builders" for =Asset=
+****** would help to know what GraphQL upload resolver looks like in Rust
+****** TODO write a test that uploads an asset via GraphQL
+***** TODO define a location struct to save a database upgrade
+****** exif data has GPS lat/long and some other metadata
+****** have both a label (for existing data) and GPS fields
+**** TODO Translate image import code (EXIF, HEIF, MPEG, etc)
+**** TODO Translate caption parsing code
+**** TODO figure out file upload for GraphQL resolvers
+**** TODO Translate query parsing code
+**** TODO Write data import/export function to save/load from JSON
+**** Libraries
+***** Facial recognition
+****** https://crates.io/crates/opencv (WTFPL)
+***** Videos
+****** need Rust bindings for =ffprobe= and =ffmpeg=
+******* https://crates.io/crates/ffmpeg4 (WTFPL)
+******* https://crates.io/crates/ffmpeg-dev (MIT/LGPL)
+******* https://crates.io/crates/ffmpeg-next (WTFPL)
+****** see if there are alternatives for Rust
+***** Images
+****** EXIF: https://crates.io/crates/rexif (MIT)
+****** HEIF: https://github.com/oussama/libheif-rs (MIT)
+****** https://crates.io/crates/libvips (MIT)
+****** if all else fails, can use =magick-rust= (needs bindgen updates soon)
+**** TODO Remove Node modules no longer used (compare to zorigami)
+*** TODO Look at [[https://www.material.io][Material Design]] for icons and such
+**** icons: https://www.material.io/resources/icons/
+**** many design elements for various purposes
+**** they provide free icons that are well thought out
+*** Front-end improvements
+**** TODO Debounce the data validation fields using async validators
+**** TODO Consider how to make thumbnail page responsive
+***** Show 1, 2, 3, or more depending on browser width
+***** Should be able to leverage CSS for this
+**** TODO Asset preview page shows a broken link, should show placeholder image
+**** TODO Add error boundary handling (requires React API changes)
+***** waiting on support for =didCatch= in React Hooks API
+***** also likely need the API exposed via ReasonReact
+***** see the =ErrorBoundary= module definition in =Index.re=
+**** TODO Use a lightbox component for displaying assets
+***** c.f. https://creativebulma.net/product/lightbox/demo
+*** Bugs
+**** TODO Sometimes the front-end misses updates from backend?
+***** e.g. click a tag, images fail to appear; click and click again, works
+***** find out what is going on when this happens
+**** TODO Home page fails to update after data changs
+***** TODO Home page stays stuck on "upload" even after images are uploaded
+****** name the =CountAssets= query and add to the =refetchQueries= list
+***** TODO After editing asset, selections need to elide newly removed tags
+****** that is, found "opa)", selected assets, fixed them, now cannot clear selection
+****** need to attach an update function after the edit asset mutation completes
+****** c.f. =onCompleted= prop on =mutation= function
+******* https://www.apollographql.com/docs/react/essentials/mutations/
+****** can also set =awaitRefetchQueries= to wait for refetch to complete
+****** could move Locations/Tags/Years logic into =Home= and handle everything there
+****** could use GraphQL subscriptions in =Home= to keep track of changes
+*** Development Support
+**** TODO Figure out how to deal with the GraphQL schema weirdness
+***** The introspection tool generates weird types for the non-optional array of strings
+***** Maybe that tool is correct and my types are wrong?
+***** Or maybe that tool has an update that fixes this?
+***** c.f. commit =b8fa735=
+*** TODO consider using [[https://github.com/vertexclique/bastion][bastion]] for fault-tolerance (i.e. supervisor)
+**** it appears to support Erlang-style supervisor behavior
+**** actix has similar functionality and is easier to read/write
