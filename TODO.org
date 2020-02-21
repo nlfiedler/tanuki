@@ -1,13 +1,25 @@
 * Tanuki
 ** TODO Rewrite backend in Dart
 *** TODO Early assessment of available packages
-**** TODO write quick tests for everything tanuki needs [2/10]
+**** TODO read https://dart.dev/tutorials/server/httpserver
+**** TODO evaluate https://pub.dev/packages/http_server
+**** TODO evaluate https://github.com/stablekernel/aqueduct
+**** TODO evaluate https://github.com/dart-lang/shelf
+**** TODO consider how to use angel for web
+***** TODO read https://docs.angel-dart.dev
+***** TODO use https://pub.dev/packages/angel_static
+***** TODO watch https://www.youtube.com/watch?v=5x6S4kDODa8
+**** TODO evaluate https://pub.dev/packages/graphql_server
+**** TODO consider how to use angel for graphql
+**** TODO write quick tests for everything tanuki needs [7/12]
 - [X] rocksdb
-- [ ] exif
+- [X] detect orientation
+- [X] rotate image
+- [X] exif
 - [ ] jfif
 - [ ] tiff
-- [ ] media type detection
-- [ ] thumbnails
+- [X] media type detection
+- [X] thumbnails
 - [ ] web server
 - [X] GraphQL client
 - [ ] GraphQL server
@@ -43,8 +55,6 @@
 ***** exif data has GPS lat/long and some other metadata
 ***** have both a label (for existing data) and GPS fields
 *** TODO Translate image import code
-**** find something for detecting media type of files
-***** use https://pub.dev/packages/mime supports all platforms
 *** TODO Translate caption parsing code
 *** TODO Figure out file upload for GraphQL resolvers
 *** TODO Translate query parsing code
@@ -58,11 +68,18 @@
 *** TODO Remove Node modules related to backend
 ** TODO Rewrite frontend in Flutter
 *** DONE set up a flutter dev environment
+*** TODO set up the page routing
+**** c.f. https://flutter.dev/docs/development/ui/navigation
+**** c.f. https://github.com/londonappbrewery/BMI-Calculator-Flutter-Completed/ for code layout ideas
+**** define a navigation rail component to be used in various pages
+**** each page will define a scaffold and decide what is shown
+**** define a home page to hold the selectors and image gallery
 *** TODO introduce redux for tracking application state
 **** retrieved GraphQL data (i.e. tags, locations, years)
 **** selected locations
 **** selected tags
 **** selected years
+*** TODO could use =initState()= of =State= to perform the initial query of data
 *** TODO build out the webui along-side existing code
 *** TODO find out how to upload a file
 **** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
@@ -90,6 +107,8 @@
 ***** click on item in a list/grid and it expands to the details page
 **** can use =DataTable= to display labeled data (like asset details, metadata)
 **** use pointer enter/exit events to start playing a video in place
+**** could check for thumbnails in image EXIF data
+***** look for =JPEGThumbnail= or =TIFFThumbnail=
 *** TODO remove ReasonML related code and Node modules
 **** should be nothing JavaScript/Node/Reason left at this point
 **** =public/stylesheets=
@@ -105,6 +124,11 @@
 **** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
 ** Backend improvements
+*** TODO Get information from video files
+**** Dart packages for ffmpeg have limited platform support
+**** May be easier to write Dart code to extract the information from the file
+***** this would avoid having additional static file dependencies
+**** Alternatively, write our own wrapper for ffmpeg (it's just commands)
 *** TODO Thumbnail size cache population is noticably slow when selecting many assets
 ** Search Improvements
 *** TODO Support advanced queries using Google-style operators
@@ -131,6 +155,8 @@ include it in the database records.
 - [ ] Existing location values should be stored in "label" field
 - [ ] Exact location information should be stored separate from label
 
+** Long Term items
+*** TODO if still using =exif= dart package, must replace it, it is GPL
 ** Documentation
 *** Case Sensitivity
 - Data is stored as entered (case preservative)
@@ -139,6 +165,9 @@ include it in the database records.
 *** Date/Time values
 - Uses 24 hour clock, displays using local time zone, stored as UTC
 - [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
+** Desktop app
+*** Showing the licenses/about dialog
+**** c.f. "licenses" on https://flutter.dev/docs/resources/faq
 ** Mobile app
 *** Use [[https://pub.dev/packages/image_picker][image_picker]] to allow user to select images from photo library
 ** Legacy Reason/JavaScript/Rust

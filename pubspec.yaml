@@ -10,11 +10,16 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^0.1.2
+  exifdart: ^0.7.0+3
   graphql_flutter: ^3.0.1-beta.2
+  # use a version of image that is compatible with flutter_test
+  image: ^2.1.4
+  mime: ^0.9.6+3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  test:
 
 flutter:
   uses-material-design: true
