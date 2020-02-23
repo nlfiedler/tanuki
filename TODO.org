@@ -1,16 +1,76 @@
 * Tanuki
 ** TODO Rewrite backend in Dart
-*** TODO Early assessment of available packages
-**** TODO read https://dart.dev/tutorials/server/httpserver
-**** TODO evaluate https://pub.dev/packages/http_server
-**** TODO evaluate https://github.com/stablekernel/aqueduct
-**** TODO evaluate https://github.com/dart-lang/shelf
-**** TODO consider how to use angel for web
-***** TODO read https://docs.angel-dart.dev
-***** TODO use https://pub.dev/packages/angel_static
-***** TODO watch https://www.youtube.com/watch?v=5x6S4kDODa8
+*** DONE find a web framework
+**** DONE read https://dart.dev/tutorials/server/httpserver
+**** DONE read https://dart-lang.github.io/server/
+***** all rather out of date
+**** DONE ensure support for CORS requests
+***** dart example in =httpserver= just injects the headers
+***** see =note_server.dart= in https://github.com/dart-lang/dart-tutorials-samples/
+**** DONE ensure support for static files
+***** use =VirtualDirectory= from =http_server= package
+***** see =static_file_server.dart= example of serving =index.html= by default
+**** DONE catch-all route that sends everything else to the SPA
+**** DONE evaluate https://pub.dev/packages/http_server
+***** only API documentation, no examples or guides
+***** probably meant to use shelf instead of this directly
+***** theoretically can do everything, it's just all manual
+**** DONE evaluate https://github.com/dart-lang/shelf
+***** similar to warp or plug, modular design for composable servers
+***** offers logging middleware
+****** look at how to integrate with https://pub.dev/packages/logging
+***** easy request handling with "handlers"
+***** easy composability with "pipelines"
+***** static files: https://pub.dev/packages/shelf_static
+***** routing: https://pub.dev/packages/shelf_router
+***** cookies: https://pub.dev/packages/shelf_cookie
+***** testing: https://pub.dev/packages/shelf_test_handler
+**** DONE evaluate https://github.com/stablekernel/aqueduct
+***** essentially a one developer project
+***** featureful all-in-one framework
+***** primarily focused on REST
+***** serves static files
+***** supports automated testing
+***** seems a bit big and far more than needed for tanuki
+**** DONE evaluate https://pub.dev/packages/angel_framework
+***** only one developer, at risk of abandonment
+***** many add-on modules for various functionality
+***** tried generating an application scaffold and it yielded the main repo instead
+**** DONE evaluate https://jaguar-dart.com
+***** not updated since last July
+**** DONE get a basic web server going with shelf
+***** DONE serve some requests
+***** DONE set up logging (console by default)
+***** DONE take the port number from the environment (default 4000)
+***** DONE take the host address from environment (default 'localhost')
+***** DONE serve the static files
+***** DONE serve a static GraphQL response
+***** DONE add CORS headers using middleware
+***** DONE check that =OPTIONS= method is handled
+***** DONE check that correct mimetype is returned for static files
+***** DONE map all missing results to =index.html= (i.e. no 404)
+***** DONE =GET= on =/graphql= route throws errors now
+**** DONE use some load testing tool to ensure core use
+***** =ab= is already installed but dated and often freezes
+***** =brew install hey= (the ab replacement, works better)
+***** =hey -n 10000 http://localhost:<port>/=
+| service               | port |   qps |
+|-----------------------+------+-------|
+| apache                |   80 | 15000 |
+| tanuki (node)         | 3000 |  3000 |
+| tanuki (dart) static  | 4040 |  2500 |
+| tanuki (dart) graphql | 4040 |  4500 |
+| shelf basic example   | 8080 |  6300 |
+| shelf router example  | 8080 |  6100 |
+| zorigami (rust)       | 8080 |  9400 |
+*** TODO debug the flutter graphql not working
+**** dump all the request
+**** compare with tanuki behavior
+*** TODO find a graphql server
+**** TODO evaluate support for GraphiQL or Playground
 **** TODO evaluate https://pub.dev/packages/graphql_server
-**** TODO consider how to use angel for graphql
+**** TODO evaluate https://pub.dev/packages/angel_graphql
+*** TODO Early assessment of available packages
 **** TODO write quick tests for everything tanuki needs [7/12]
 - [X] rocksdb
 - [X] detect orientation
@@ -25,6 +85,7 @@
 - [ ] GraphQL server
 - [ ] ffmpeg metadata access
 **** TODO assess Windows support for everything
+*** TODO look for code coverage tools
 *** TODO Translate database layer to use RocksDB and secondary index
 **** TODO define a class for assets
 **** TODO use the secondary index wrappers for get and put
@@ -129,6 +190,11 @@
 **** May be easier to write Dart code to extract the information from the file
 ***** this would avoid having additional static file dependencies
 **** Alternatively, write our own wrapper for ffmpeg (it's just commands)
+*** TODO consider how to support multicore with isolates
+**** aqueduct does this apparently
+**** c.f. https://stablekernel.com/concurrency-in-server-side-dart/
+**** logging is handled by a single isolate
+**** read about async dart and "zones"
 *** TODO Thumbnail size cache population is noticably slow when selecting many assets
 ** Search Improvements
 *** TODO Support advanced queries using Google-style operators

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import './client_provider.dart';
 import './tags.dart';
 
-final String GRAPHQL_ENDPOINT = 'http://127.0.0.1:3000/graphql';
+final String GRAPHQL_ENDPOINT = 'http://localhost:4040/graphql';
 
 void main() => runApp(MyApp());
 

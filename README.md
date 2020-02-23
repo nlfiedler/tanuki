@@ -11,6 +11,7 @@ capabilities.
 ### Prerequisites
 
 * [Node.js](https://nodejs.org/) LTS
+* [Dart](https://dart.dev) SDK 2.1 or higher
 * [Gulp](https://gulpjs.com) CLI: `npm -g install gulp-cli`
 
 #### Example for macOS
