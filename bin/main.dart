@@ -12,6 +12,16 @@ import 'package:shelf_static/shelf_static.dart';
 main() async {
   var app = Router();
 
+  app.options('/graphql', (shelf.Request request) {
+    // Handle CORS a little better for this one request, returning whatever they
+    // ask for, defaulting to content-type since that seems to be what the Dart
+    // GraphQL client requests anyway.
+    var requestedHeaders =
+        request.headers['Access-Control-Request-Headers'] ?? 'content-type';
+    var headers = {'Access-Control-Allow-Headers': requestedHeaders};
+    return shelf.Response(204, body: null, headers: headers);
+  });
+
   app.post('/graphql', (shelf.Request request) {
     // canned graphql response for a "tags" query
     var json = '''{
@@ -24,7 +34,10 @@ main() async {
         ]
       }
     }''';
-    return shelf.Response.ok(json);
+    var headers = {
+      HttpHeaders.contentTypeHeader: 'application/json; charset=utf-8'
+    };
+    return shelf.Response.ok(json, headers: headers);
   });
 
   var staticPath = Platform.environment['STATIC_PATH'] ?? 'public';
@@ -70,9 +83,8 @@ main() async {
 
 shelf.Response addCorsHeaders(shelf.Response response) {
   Map<String, String> headers = Map.from(response.headers);
+  headers['Access-Control-Allow-Methods'] = 'GET,HEAD,PUT,PATCH,POST,DELETE';
   headers['Access-Control-Allow-Origin'] = '*';
-  headers['Access-Control-Allow-Methods'] = 'POST, GET, OPTIONS';
-  headers['Access-Control-Allow-Headers'] = 'Authorization';
   headers['Access-Control-Max-Age'] = '86400';
   return response.change(headers: headers);
 }

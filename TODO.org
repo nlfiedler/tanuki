@@ -63,9 +63,7 @@
 | shelf basic example   | 8080 |  6300 |
 | shelf router example  | 8080 |  6100 |
 | zorigami (rust)       | 8080 |  9400 |
-*** TODO debug the flutter graphql not working
-**** dump all the request
-**** compare with tanuki behavior
+*** TODO look at using [[https://pub.dev/packages/shelf_test_handler][shelf_test_handler]] for testing the web code
 *** TODO find a graphql server
 **** TODO evaluate support for GraphiQL or Playground
 **** TODO evaluate https://pub.dev/packages/graphql_server
