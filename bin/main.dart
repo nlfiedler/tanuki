@@ -1,95 +1,62 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
+import 'dart:convert';
 import 'dart:io';
+import 'package:angel_container/angel_container.dart';
+import 'package:angel_cors/angel_cors.dart';
+import 'package:angel_framework/angel_framework.dart';
+import 'package:angel_framework/http.dart';
+import 'package:angel_static/angel_static.dart';
+import 'package:file/local.dart';
 import 'package:http_parser/http_parser.dart';
-import 'package:path/path.dart' as p;
-import 'package:shelf/shelf.dart' as shelf;
-import 'package:shelf/shelf_io.dart' as io;
-import 'package:shelf_router/shelf_router.dart';
-import 'package:shelf_static/shelf_static.dart';
+import 'package:logging/logging.dart';
+import 'package:pretty_logging/pretty_logging.dart';
 
 main() async {
-  var app = Router();
+  Logger.root.onRecord.listen(prettyLog);
+  var app = Angel(
+    logger: Logger('angel'),
+    reflector: EmptyReflector(),
+  );
+  app.all(
+    '/graphql',
+    chain(
+      [
+        cors(),
+        (req, res) {
+          // canned graphql response for a "tags" query
+          var data = {
+            'data': {
+              'tags': [
+                {'value': 'dog', 'count': 6},
+                {'value': 'cat', 'count': 7},
+                {'value': 'bird', 'count': 4},
+                {'value': 'mouse', 'count': 8},
+              ]
+            }
+          };
+          res.contentType =
+              MediaType('application', 'json', {'charset': 'utf-8'});
+          var text = json.encode(data);
+          res.contentLength = text.length; // assumes UTF-8 text
+          res.write(text);
+        }
+      ],
+    ),
+  );
 
-  app.options('/graphql', (shelf.Request request) {
-    // Handle CORS a little better for this one request, returning whatever they
-    // ask for, defaulting to content-type since that seems to be what the Dart
-    // GraphQL client requests anyway.
-    var requestedHeaders =
-        request.headers['Access-Control-Request-Headers'] ?? 'content-type';
-    var headers = {'Access-Control-Allow-Headers': requestedHeaders};
-    return shelf.Response(204, body: null, headers: headers);
-  });
+  // serve static files and use index.html as the fallback
+  var fs = const LocalFileSystem();
+  var vDir = CachingVirtualDirectory(app, fs);
+  app.fallback(vDir.handleRequest);
+  app.fallback(vDir.pushState('index.html'));
 
-  app.post('/graphql', (shelf.Request request) {
-    // canned graphql response for a "tags" query
-    var json = '''{
-      "data": {
-        "tags": [
-          { "value": "dog", "count": 6 },
-          { "value": "cat", "count": 7 },
-          { "value": "bird", "count": 4 },
-          { "value": "mouse", "count": 8 }
-        ]
-      }
-    }''';
-    var headers = {
-      HttpHeaders.contentTypeHeader: 'application/json; charset=utf-8'
-    };
-    return shelf.Response.ok(json, headers: headers);
-  });
-
-  var staticPath = Platform.environment['STATIC_PATH'] ?? 'public';
-  app.all('/<ignored|.*>', (shelf.Request request) {
-    // the essence of VirtualDirectory to serve a single file
-    var file = File(p.join(staticPath, 'index.html'));
-    var stat = file.statSync();
-    var ifModifiedSince = request.ifModifiedSince;
-    if (ifModifiedSince != null) {
-      var fileChangeAtSecResolution = toSecondResolution(stat.changed);
-      if (!fileChangeAtSecResolution.isAfter(ifModifiedSince)) {
-        return shelf.Response.notModified();
-      }
-    }
-    var headers = {
-      HttpHeaders.contentLengthHeader: stat.size.toString(),
-      HttpHeaders.lastModifiedHeader: formatHttpDate(stat.changed),
-      HttpHeaders.contentTypeHeader: 'text/html'
-    };
-    return shelf.Response.ok(file.openRead(), headers: headers);
-  });
-
-  // The static file handler will attempt to find matching files. When that
-  // fails, then the router takes over and handles everything else, including
-  // the fallback of serving the index page. In this scenario, the front-end is
-  // responsible for dealing with the application routing.
-  var cascade = shelf.Cascade()
-      .add(createStaticHandler(staticPath, defaultDocument: 'index.html'))
-      .add(app.handler);
-  var handler = const shelf.Pipeline()
-      .addMiddleware(shelf.logRequests())
-      .addMiddleware(shelf.createMiddleware(responseHandler: addCorsHeaders))
-      .addHandler(cascade.handler);
-
+  // start the server on the designated host and port
+  var http = AngelHttp(app);
   var host = Platform.environment['HOST'];
   var portVar = Platform.environment['PORT'];
   var port = portVar == null ? 4040 : int.parse(portVar);
-  var server = await io.serve(handler, host ?? 'localhost', port);
-  server.autoCompress = true;
-
-  print('listening on http://${server.address.host}:${server.port}');
-}
-
-shelf.Response addCorsHeaders(shelf.Response response) {
-  Map<String, String> headers = Map.from(response.headers);
-  headers['Access-Control-Allow-Methods'] = 'GET,HEAD,PUT,PATCH,POST,DELETE';
-  headers['Access-Control-Allow-Origin'] = '*';
-  headers['Access-Control-Max-Age'] = '86400';
-  return response.change(headers: headers);
-}
-
-DateTime toSecondResolution(DateTime dt) {
-  if (dt.millisecond == 0) return dt;
-  return dt.subtract(Duration(milliseconds: dt.millisecond));
+  await http.startServer(host ?? 'localhost', port);
+  print('listening at ${http.uri}');
 }

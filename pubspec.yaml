@@ -1,5 +1,5 @@
 name: tanuki
-description: Flutter-based digital asset management application.
+description: Flutter-based digital asset management system.
 version: 1.0.0+1
 
 environment:
@@ -9,17 +9,19 @@ dependencies:
   flutter:
     sdk: flutter
 
+  angel_cors: ^2.0.0
+  angel_framework: ^2.1.1
+  angel_static: ^2.1.3+2
   cupertino_icons: ^0.1.2
   exifdart: ^0.7.0+3
+  file: ^5.1.0
   graphql_flutter: ^3.0.1-beta.2
   http_parser: ^3.1.3
   # use a version of image that is compatible with flutter_test
   image: ^2.1.4
+  logging: ^0.11.4
   mime: ^0.9.6+3
-  path: ^1.6.4
-  shelf: ^0.7.5
-  shelf_router: ^0.7.2
-  shelf_static: ^0.2.8
+  pretty_logging: ^1.0.0
 
 dev_dependencies:
   flutter_test:

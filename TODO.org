@@ -23,8 +23,6 @@
 ***** easy composability with "pipelines"
 ***** static files: https://pub.dev/packages/shelf_static
 ***** routing: https://pub.dev/packages/shelf_router
-***** cookies: https://pub.dev/packages/shelf_cookie
-***** testing: https://pub.dev/packages/shelf_test_handler
 **** DONE evaluate https://github.com/stablekernel/aqueduct
 ***** essentially a one developer project
 ***** featureful all-in-one framework
@@ -35,7 +33,7 @@
 **** DONE evaluate https://pub.dev/packages/angel_framework
 ***** only one developer, at risk of abandonment
 ***** many add-on modules for various functionality
-***** tried generating an application scaffold and it yielded the main repo instead
+***** scaffold generator is broken due to monorepo changes
 **** DONE evaluate https://jaguar-dart.com
 ***** not updated since last July
 **** DONE get a basic web server going with shelf
@@ -54,20 +52,70 @@
 ***** =ab= is already installed but dated and often freezes
 ***** =brew install hey= (the ab replacement, works better)
 ***** =hey -n 10000 http://localhost:<port>/=
-| service               | port |   qps |
-|-----------------------+------+-------|
-| apache                |   80 | 15000 |
-| tanuki (node)         | 3000 |  3000 |
-| tanuki (dart) static  | 4040 |  2500 |
-| tanuki (dart) graphql | 4040 |  4500 |
-| shelf basic example   | 8080 |  6300 |
-| shelf router example  | 8080 |  6100 |
-| zorigami (rust)       | 8080 |  9400 |
-*** TODO look at using [[https://pub.dev/packages/shelf_test_handler][shelf_test_handler]] for testing the web code
+| service                | port |   qps |
+|------------------------+------+-------|
+| apache                 |   80 | 15000 |
+| tanuki (node) static   | 3000 |  3000 |
+| tanuki (shelf) static  | 4040 |  2500 |
+| tanuki (shelf) graphql | 4040 |  4500 |
+| tanuki (angel) static  | 4040 |  1400 |
+| tanuki (angel) graphql | 4040 |  4500 |
+| shelf basic example    | 8080 |  6300 |
+| shelf router example   | 8080 |  6100 |
+| zorigami (rust) static | 8080 |  9400 |
+*** TODO try using [[https://angel-dart.dev/][angel]] for web and graphql
+**** DONE serve a canned response to =GET /=
+**** DONE continue reading https://docs.angel-dart.dev/v/2.x/guides/getting-started
+**** DONE set up request logging
+**** DONE get host and port from environment
+**** DONE serve static files
+**** DONE ensure proper mimetype for static files
+**** DONE add route for canned graphql response
+**** DONE map fallback route to the =index.html= file
+**** DONE respond with CORS headers as needed
+**** DONE ensure =OPTIONS= handled for graphql route
+**** TODO add testing: https://github.com/angel-dart/angel/tree/master/packages/test
+***** fallback response to unrouted request
+#+BEGIN_SRC shell
+$ curl -D - http://localhost:4040/foobar
+HTTP/1.1 200 OK
+accept-ranges: bytes
+cache-control: public, max-age=0
+content-length: 1031
+content-type: text/html
+etag: 1582075543000
+expires: Thu, 27 Feb 2020 04:03:09 GMT
+last-modified: Wed, 19 Feb 2020 01:25:43 GMT
+#+END_SRC
+***** static image request and response
+#+BEGIN_SRC shell
+$ curl -D - http://localhost:4040/icons/Icon-192.png
+HTTP/1.1 200 OK
+accept-ranges: bytes
+cache-control: public, max-age=0
+content-length: 5292
+content-type: image/png
+etag: 1581826445000
+expires: Thu, 27 Feb 2020 03:23:25 GMT
+last-modified: Sun, 16 Feb 2020 04:14:05 GMT
+#+END_SRC
+***** CORS request and response
+#+BEGIN_SRC shell
+$ curl -H 'Origin: example.com' -D - -X OPTIONS http://localhost:4040/graphql
+HTTP/1.1 204 No Content
+access-control-allow-origin: *
+access-control-allow-methods: GET,HEAD,PUT,PATCH,POST,DELETE
+content-length: 0
+content-type: text/plain
+#+END_SRC
+**** DONE remove the unused packages added in commit =378700b=
 *** TODO find a graphql server
 **** TODO evaluate support for GraphiQL or Playground
 **** TODO evaluate https://pub.dev/packages/graphql_server
 **** TODO evaluate https://pub.dev/packages/angel_graphql
+**** TODO integrate =graphql_server= into existing shelf solution
+***** add graphql_parser, graphql_schema, graphql_server
+***** copy [[https://github.com/angel-dart-archive/graphql/blob/master/angel_graphql/lib/src/graphql_http.dart][graphql_http.dart]] into =lib= and change to use shelf
 *** TODO Early assessment of available packages
 **** TODO write quick tests for everything tanuki needs [7/12]
 - [X] rocksdb
@@ -84,6 +132,7 @@
 - [ ] ffmpeg metadata access
 **** TODO assess Windows support for everything
 *** TODO look for code coverage tools
+*** TODO Can use Angel dependency injection to maintain database connections
 *** TODO Translate database layer to use RocksDB and secondary index
 **** TODO define a class for assets
 **** TODO use the secondary index wrappers for get and put
