@@ -1,17 +1,17 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-import 'dart:convert';
 import 'dart:io';
 import 'package:angel_container/angel_container.dart';
 import 'package:angel_cors/angel_cors.dart';
 import 'package:angel_framework/angel_framework.dart';
 import 'package:angel_framework/http.dart';
+import 'package:angel_graphql/angel_graphql.dart';
 import 'package:angel_static/angel_static.dart';
 import 'package:file/local.dart';
-import 'package:http_parser/http_parser.dart';
 import 'package:logging/logging.dart';
 import 'package:pretty_logging/pretty_logging.dart';
+import 'package:tanuki/schema.dart' as schema;
 
 main() async {
   Logger.root.onRecord.listen(prettyLog);
@@ -19,32 +19,11 @@ main() async {
     logger: Logger('angel'),
     reflector: EmptyReflector(),
   );
-  app.all(
-    '/graphql',
-    chain(
-      [
-        cors(),
-        (req, res) {
-          // canned graphql response for a "tags" query
-          var data = {
-            'data': {
-              'tags': [
-                {'value': 'dog', 'count': 6},
-                {'value': 'cat', 'count': 7},
-                {'value': 'bird', 'count': 4},
-                {'value': 'mouse', 'count': 8},
-              ]
-            }
-          };
-          res.contentType =
-              MediaType('application', 'json', {'charset': 'utf-8'});
-          var text = json.encode(data);
-          res.contentLength = text.length; // assumes UTF-8 text
-          res.write(text);
-        }
-      ],
-    ),
-  );
+
+  app.all('/graphql', graphQLHttp(schema.graphql), middleware: [cors()]);
+  // presently the schema parsing fails, but can still perform queries
+  // (c.f. https://github.com/angel-dart/angel/issues/241)
+  app.get('/graphiql', graphiQL());
 
   // serve static files and use index.html as the fallback
   var fs = const LocalFileSystem();

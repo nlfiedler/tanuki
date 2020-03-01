@@ -16,6 +16,7 @@
 ***** probably meant to use shelf instead of this directly
 ***** theoretically can do everything, it's just all manual
 **** DONE evaluate https://github.com/dart-lang/shelf
+***** inspired by connect, rack, wsgi
 ***** similar to warp or plug, modular design for composable servers
 ***** offers logging middleware
 ****** look at how to integrate with https://pub.dev/packages/logging
@@ -27,13 +28,15 @@
 ***** essentially a one developer project
 ***** featureful all-in-one framework
 ***** primarily focused on REST
-***** serves static files
 ***** supports automated testing
 ***** seems a bit big and far more than needed for tanuki
 **** DONE evaluate https://pub.dev/packages/angel_framework
+***** largely inspired by express.js
 ***** only one developer, at risk of abandonment
 ***** many add-on modules for various functionality
+***** supports automated testing
 ***** scaffold generator is broken due to monorepo changes
+***** considerably slower than shelf, and more so when native
 **** DONE evaluate https://jaguar-dart.com
 ***** not updated since last July
 **** DONE get a basic web server going with shelf
@@ -52,18 +55,28 @@
 ***** =ab= is already installed but dated and often freezes
 ***** =brew install hey= (the ab replacement, works better)
 ***** =hey -n 10000 http://localhost:<port>/=
-| service                | port |   qps |
-|------------------------+------+-------|
-| apache                 |   80 | 15000 |
-| tanuki (node) static   | 3000 |  3000 |
-| tanuki (shelf) static  | 4040 |  2500 |
-| tanuki (shelf) graphql | 4040 |  4500 |
-| tanuki (angel) static  | 4040 |  1400 |
-| tanuki (angel) graphql | 4040 |  4500 |
-| shelf basic example    | 8080 |  6300 |
-| shelf router example   | 8080 |  6100 |
-| zorigami (rust) static | 8080 |  9400 |
-*** TODO try using [[https://angel-dart.dev/][angel]] for web and graphql
+****** ~-exe~ is the compiled executable
+| service              |   qps |
+|----------------------+-------|
+| apache               | 15000 |
+| tanuki (node)        |  3000 |
+| tanuki (shelf)       |  2500 |
+| tanuki (shelf-exe)   |  2600 |
+| tanuki (angel)       |  1400 |
+| tanuki (angel-exe)   |  1010 |
+| shelf basic example  |  6300 |
+| shelf router example |  6100 |
+| zorigami (rust)      |  9400 |
+*** old shelf related work
+**** shelf: add automated testing of http handlers
+***** c.f. https://stackoverflow.com/questions/42824533/unit-testing-with-darts-shelf-rest
+**** shelf: integrate =graphql_server= into existing shelf solution
+***** c.f. https://graphql.org/learn/serving-over-http/
+***** shelf lacks file upload via multi-part posts
+****** c.f. https://github.com/dart-lang/shelf/issues/119
+****** makes the graphql file upload impossible
+**** shelf: consider how to add GraphiQL functionality
+*** TODO try using [[https://angel-dart.dev/][angel]] for web
 **** DONE serve a canned response to =GET /=
 **** DONE continue reading https://docs.angel-dart.dev/v/2.x/guides/getting-started
 **** DONE set up request logging
@@ -109,15 +122,30 @@ content-length: 0
 content-type: text/plain
 #+END_SRC
 **** DONE remove the unused packages added in commit =378700b=
-*** TODO find a graphql server
-**** TODO evaluate support for GraphiQL or Playground
-**** TODO evaluate https://pub.dev/packages/graphql_server
-**** TODO evaluate https://pub.dev/packages/angel_graphql
-**** TODO integrate =graphql_server= into existing shelf solution
-***** add graphql_parser, graphql_schema, graphql_server
-***** copy [[https://github.com/angel-dart-archive/graphql/blob/master/angel_graphql/lib/src/graphql_http.dart][graphql_http.dart]] into =lib= and change to use shelf
+*** DONE find a graphql server
+**** DONE look for support for GraphiQL or Playground
+**** DONE evaluate https://pub.dev/packages/graphql_server
+**** DONE evaluate https://pub.dev/packages/angel_graphql
+*** DONE set up angel graphql server
+**** DONE add =cors= into the middleware (for graphql route)
+**** DONE see how to write resolvers with angel_/graphql_server
+**** DONE find out how to define input objects: use =inputField()= helper
+**** DONE see how to do file uploads with =angel_graphql=
+***** defined as =GraphQLUploadType= in =angel_graphql= with name =Upload=
+**** DONE convert the =schema.graphql= to Dart types
+**** DONE define the =BigInt= type and use for filesize
+**** DONE write some basic tests for the schema
+*** TODO document shelf vs angel
+**** shelf
+***** faster for both vm and native
+***** generally more coding effort
+***** lacks file upload (see shelf issue 119)
+**** angel
+***** has everything (static files, CORS, etc)
+***** supports HTTP and GraphQL thoroughly
+***** integration of graphql is very easy
 *** TODO Early assessment of available packages
-**** TODO write quick tests for everything tanuki needs [7/12]
+**** TODO write quick tests for everything tanuki needs [9/12]
 - [X] rocksdb
 - [X] detect orientation
 - [X] rotate image
@@ -126,13 +154,12 @@ content-type: text/plain
 - [ ] tiff
 - [X] media type detection
 - [X] thumbnails
-- [ ] web server
+- [X] web server
 - [X] GraphQL client
-- [ ] GraphQL server
+- [X] GraphQL server
 - [ ] ffmpeg metadata access
 **** TODO assess Windows support for everything
 *** TODO look for code coverage tools
-*** TODO Can use Angel dependency injection to maintain database connections
 *** TODO Translate database layer to use RocksDB and secondary index
 **** TODO define a class for assets
 **** TODO use the secondary index wrappers for get and put
@@ -164,16 +191,21 @@ content-type: text/plain
 ***** have both a label (for existing data) and GPS fields
 *** TODO Translate image import code
 *** TODO Translate caption parsing code
-*** TODO Figure out file upload for GraphQL resolvers
 *** TODO Translate query parsing code
+*** TODO Figure out what the GraphQL object field resolvers really do
+**** seems like they are not invoked (e.g. resolver for =filename= field of asset is not called)
+*** TODO Implement file upload support in backend
 *** TODO Remove Rust and Cargo files
 *** TODO Plan how database migrations will happen in the future
 **** maintain a meta record with version information
 **** look at how the Dart serde library can help (e.g. how serde.rs does)
 *** TODO Write an export function for the old database
 *** TODO Write an import function for the new database
-*** TODO Remove JavaScript code from =src=
+*** TODO Remove JavaScript code from =src= and =test=
 *** TODO Remove Node modules related to backend
+*** TODO Remove remaining old backend files
+**** =public/schema.graphql=
+**** =views/=
 ** TODO Rewrite frontend in Flutter
 *** DONE set up a flutter dev environment
 *** TODO set up the page routing
