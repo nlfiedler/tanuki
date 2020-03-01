@@ -4,10 +4,6 @@
 # Node.js files
 node_modules
 
-# Rust build artifacts
-Cargo.lock
-target
-
 # ReasonML/BuckleScript
 .merlin
 .graphql_ppx_cache

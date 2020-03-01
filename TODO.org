@@ -76,9 +76,9 @@
 ****** c.f. https://github.com/dart-lang/shelf/issues/119
 ****** makes the graphql file upload impossible
 **** shelf: consider how to add GraphiQL functionality
-*** TODO try using [[https://angel-dart.dev/][angel]] for web
+*** DONE try using [[https://angel-dart.dev/][angel]] for web
 **** DONE serve a canned response to =GET /=
-**** DONE continue reading https://docs.angel-dart.dev/v/2.x/guides/getting-started
+**** DONE read https://docs.angel-dart.dev/v/2.x/guides/getting-started
 **** DONE set up request logging
 **** DONE get host and port from environment
 **** DONE serve static files
@@ -87,7 +87,43 @@
 **** DONE map fallback route to the =index.html= file
 **** DONE respond with CORS headers as needed
 **** DONE ensure =OPTIONS= handled for graphql route
+**** DONE remove the unused packages added in commit =378700b=
+*** DONE find a graphql server
+**** DONE look for support for GraphiQL or Playground
+**** DONE evaluate https://pub.dev/packages/graphql_server
+**** DONE evaluate https://pub.dev/packages/angel_graphql
+*** DONE set up angel graphql server
+**** DONE add =cors= into the middleware (for graphql route)
+**** DONE see how to write resolvers with angel_/graphql_server
+**** DONE find out how to define input objects: use =inputField()= helper
+**** DONE see how to do file uploads with =angel_graphql=
+***** defined as =GraphQLUploadType= in =angel_graphql= with name =Upload=
+**** DONE convert the =schema.graphql= to Dart types
+**** DONE define the =BigInt= type and use for filesize
+**** DONE write some basic tests for the schema
+*** TODO finish incorporating Angel web framework
+**** TODO consider splitting the dart and flutter code into separate packages
+***** maybe just having a plain dart package would make the tests work better
+***** move the flutter code into a separate package
+***** create a mono repo to contain both dart and flutter packages
+****** web build would copy into the backend package
 **** TODO add testing: https://github.com/angel-dart/angel/tree/master/packages/test
+***** using =angel_test= results in strange errors:
+#+BEGIN_SRC shell
+$ flutter test
+00:02 +0: loading /Users/nfiedler/projects/tanuki/test/images_test.dart
+Shell: [ERROR:flutter/shell/common/shell.cc(202)] Dart Error: error: import of dart:mirrors is not supported in the current Dart runtime
+Shell: [ERROR:flutter/shell/common/engine.cc(200)] Could not prepare to run the isolate.
+Shell: [ERROR:flutter/shell/common/engine.cc(139)] Engine not prepare and launch isolate.
+Shell: [ERROR:flutter/shell/common/shell.cc(464)] Could not launch engine with configuration.
+00:03 +6: loading /Users/nfiedler/projects/tanuki/test/web_test.dart
+00:03 +6 -1: loading /Users/nfiedler/projects/tanuki/test/web_test.dart [E]
+  Failed to load "/Users/nfiedler/projects/tanuki/test/web_test.dart":
+  Shell subprocess terminated by ^C (SIGINT, -2) before connecting to test harness.
+  Test: /Users/nfiedler/projects/tanuki/test/web_test.dart
+  Shell: /Users/nfiedler/flutter/bin/cache/artifacts/engine/darwin-x64/flutter_tester
+00:03 +6 -1: Some tests failed.
+#+END_SRC
 ***** fallback response to unrouted request
 #+BEGIN_SRC shell
 $ curl -D - http://localhost:4040/foobar
@@ -121,30 +157,8 @@ access-control-allow-methods: GET,HEAD,PUT,PATCH,POST,DELETE
 content-length: 0
 content-type: text/plain
 #+END_SRC
-**** DONE remove the unused packages added in commit =378700b=
-*** DONE find a graphql server
-**** DONE look for support for GraphiQL or Playground
-**** DONE evaluate https://pub.dev/packages/graphql_server
-**** DONE evaluate https://pub.dev/packages/angel_graphql
-*** DONE set up angel graphql server
-**** DONE add =cors= into the middleware (for graphql route)
-**** DONE see how to write resolvers with angel_/graphql_server
-**** DONE find out how to define input objects: use =inputField()= helper
-**** DONE see how to do file uploads with =angel_graphql=
-***** defined as =GraphQLUploadType= in =angel_graphql= with name =Upload=
-**** DONE convert the =schema.graphql= to Dart types
-**** DONE define the =BigInt= type and use for filesize
-**** DONE write some basic tests for the schema
-*** TODO document shelf vs angel
-**** shelf
-***** faster for both vm and native
-***** generally more coding effort
-***** lacks file upload (see shelf issue 119)
-**** angel
-***** has everything (static files, CORS, etc)
-***** supports HTTP and GraphQL thoroughly
-***** integration of graphql is very easy
-*** TODO Early assessment of available packages
+
+*** TODO assessment of available packages
 **** TODO write quick tests for everything tanuki needs [9/12]
 - [X] rocksdb
 - [X] detect orientation
@@ -195,7 +209,6 @@ content-type: text/plain
 *** TODO Figure out what the GraphQL object field resolvers really do
 **** seems like they are not invoked (e.g. resolver for =filename= field of asset is not called)
 *** TODO Implement file upload support in backend
-*** TODO Remove Rust and Cargo files
 *** TODO Plan how database migrations will happen in the future
 **** maintain a meta record with version information
 **** look at how the Dart serde library can help (e.g. how serde.rs does)
@@ -300,8 +313,6 @@ include it in the database records.
 - [ ] Existing location values should be stored in "label" field
 - [ ] Exact location information should be stored separate from label
 
-** Long Term items
-*** TODO if still using =exif= dart package, must replace it, it is GPL
 ** Documentation
 *** Case Sensitivity
 - Data is stored as entered (case preservative)
@@ -315,72 +326,23 @@ include it in the database records.
 **** c.f. "licenses" on https://flutter.dev/docs/resources/faq
 ** Mobile app
 *** Use [[https://pub.dev/packages/image_picker][image_picker]] to allow user to select images from photo library
-** Legacy Reason/JavaScript/Rust
+** Design Notes
+*** shelf vs angel
+**** shelf
+***** faster for both vm and native
+***** generally more coding effort
+***** lacks file upload (see shelf issue 119)
+**** angel
+***** has everything (static files, CORS, etc)
+***** supports HTTP and GraphQL thoroughly
+***** integration of graphql is very easy
+** Legacy ReasonML, Node.js
 *** N.B. bs-platform module version
 **** cannot upgrade to 7.0.1 because ReasonApollo fails to compile
 *** N.B. react-apollo module version
 **** reason-apollo still depends on react-apollo 2.5.8
 **** upgrading react-apollo to >3.x breaks reason-apollo
 **** must wait until reason-apollo updates their dependencies
-*** TODO Rewrite backend in Rust
-**** TODO switch out =ulid= for https://crates.io/crates/rusty_ulid
-**** TODO Translate database layer to use RocksDB and =mokuroku=
-***** DONE define type for assets
-***** DONE write a =new_asset_id= function like =makeAssetId=
-***** DONE need to decide how to handle the database prefix for (asset) keys
-****** straight-forward for now
-***** DONE write =database= module functions for operating on =Asset= instances
-***** DONE use the =mokuroku= database functions for get and put
-***** DONE define a struct to be the database index "value"
-****** holds location label, media type, filename, best date
-***** DONE use =chrono= for the dates (=SystemTime= is not consistent)
-***** DONE implement secondary indices
-****** DONE by_checksum
-****** DONE by_date
-****** DONE by_filename
-****** DONE by_location
-****** DONE by_mimetype
-****** DONE by_tag
-****** DONE all_locations: using =count_all_keys()=
-****** DONE all_tags: using =count_all_keys()=
-****** DONE all_years: using =count_all_keys()=
-***** TODO write query functions and tests
-****** should use =query_exact()= in most cases
-****** use the existing GraphQL resolver code as requirements guide
-****** TODO write test functions that populate test database
-****** TODO write tests for the high-level operations that resolver will need
-******* TODO by_checksum
-******* TODO all_locations
-******* TODO all_tags
-******* TODO all_years
-******* TODO asset_count
-******* TODO query
-***** TODO write a constructor and "builders" for =Asset=
-****** would help to know what GraphQL upload resolver looks like in Rust
-****** TODO write a test that uploads an asset via GraphQL
-***** TODO define a location struct to save a database upgrade
-****** exif data has GPS lat/long and some other metadata
-****** have both a label (for existing data) and GPS fields
-**** TODO Translate image import code (EXIF, HEIF, MPEG, etc)
-**** TODO Translate caption parsing code
-**** TODO figure out file upload for GraphQL resolvers
-**** TODO Translate query parsing code
-**** TODO Write data import/export function to save/load from JSON
-**** Libraries
-***** Facial recognition
-****** https://crates.io/crates/opencv (WTFPL)
-***** Videos
-****** need Rust bindings for =ffprobe= and =ffmpeg=
-******* https://crates.io/crates/ffmpeg4 (WTFPL)
-******* https://crates.io/crates/ffmpeg-dev (MIT/LGPL)
-******* https://crates.io/crates/ffmpeg-next (WTFPL)
-****** see if there are alternatives for Rust
-***** Images
-****** EXIF: https://crates.io/crates/rexif (MIT)
-****** HEIF: https://github.com/oussama/libheif-rs (MIT)
-****** https://crates.io/crates/libvips (MIT)
-****** if all else fails, can use =magick-rust= (needs bindgen updates soon)
-**** TODO Remove Node modules no longer used (compare to zorigami)
 *** TODO Look at [[https://www.material.io][Material Design]] for icons and such
 **** icons: https://www.material.io/resources/icons/
 **** many design elements for various purposes
@@ -418,6 +380,3 @@ include it in the database records.
 ***** Maybe that tool is correct and my types are wrong?
 ***** Or maybe that tool has an update that fixes this?
 ***** c.f. commit =b8fa735=
-*** TODO consider using [[https://github.com/vertexclique/bastion][bastion]] for fault-tolerance (i.e. supervisor)
-**** it appears to support Erlang-style supervisor behavior
-**** actix has similar functionality and is easier to read/write
