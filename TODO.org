@@ -101,29 +101,25 @@
 **** DONE convert the =schema.graphql= to Dart types
 **** DONE define the =BigInt= type and use for filesize
 **** DONE write some basic tests for the schema
-*** TODO finish incorporating Angel web framework
-**** TODO consider splitting the dart and flutter code into separate packages
-***** maybe just having a plain dart package would make the tests work better
-***** move the flutter code into a separate package
-***** create a mono repo to contain both dart and flutter packages
-****** web build would copy into the backend package
-**** TODO add testing: https://github.com/angel-dart/angel/tree/master/packages/test
-***** using =angel_test= results in strange errors:
-#+BEGIN_SRC shell
-$ flutter test
-00:02 +0: loading /Users/nfiedler/projects/tanuki/test/images_test.dart
-Shell: [ERROR:flutter/shell/common/shell.cc(202)] Dart Error: error: import of dart:mirrors is not supported in the current Dart runtime
-Shell: [ERROR:flutter/shell/common/engine.cc(200)] Could not prepare to run the isolate.
-Shell: [ERROR:flutter/shell/common/engine.cc(139)] Engine not prepare and launch isolate.
-Shell: [ERROR:flutter/shell/common/shell.cc(464)] Could not launch engine with configuration.
-00:03 +6: loading /Users/nfiedler/projects/tanuki/test/web_test.dart
-00:03 +6 -1: loading /Users/nfiedler/projects/tanuki/test/web_test.dart [E]
-  Failed to load "/Users/nfiedler/projects/tanuki/test/web_test.dart":
-  Shell subprocess terminated by ^C (SIGINT, -2) before connecting to test harness.
-  Test: /Users/nfiedler/projects/tanuki/test/web_test.dart
-  Shell: /Users/nfiedler/flutter/bin/cache/artifacts/engine/darwin-x64/flutter_tester
-00:03 +6 -1: Some tests failed.
-#+END_SRC
+*** DONE finish incorporating Angel web framework
+**** DONE consider splitting the dart and flutter code into separate packages
+***** angel tests work without errors when in a plain dart package
+***** DONE read https://code.visualstudio.com/docs/editor/multi-root-workspaces
+***** DONE move the flutter code into =client=
+***** DONE move the dart code into =server=
+***** DONE ensure =pendantic= is set up in =client=
+***** DONE ensure =pendantic= is set up in =server=
+***** DONE ensure the =.gitignore= files are good
+***** DONE copy the test code from =test-angel=
+***** DONE document the setup and build procedure
+****** edit each of the =README.md= files
+****** development process for running application
+******* console 1: cd server ; pub run bin/main.dart
+******* console 2: cd client ; flutter run -d chrome
+****** run =flutter build web= in =client=
+****** copy build output to =server/build/web=
+****** eventually automate this procedure
+**** DONE add testing: https://github.com/angel-dart/angel/tree/master/packages/test
 ***** fallback response to unrouted request
 #+BEGIN_SRC shell
 $ curl -D - http://localhost:4040/foobar
@@ -157,7 +153,6 @@ access-control-allow-methods: GET,HEAD,PUT,PATCH,POST,DELETE
 content-length: 0
 content-type: text/plain
 #+END_SRC
-
 *** TODO assessment of available packages
 **** TODO write quick tests for everything tanuki needs [9/12]
 - [X] rocksdb
@@ -173,7 +168,6 @@ content-type: text/plain
 - [X] GraphQL server
 - [ ] ffmpeg metadata access
 **** TODO assess Windows support for everything
-*** TODO look for code coverage tools
 *** TODO Translate database layer to use RocksDB and secondary index
 **** TODO define a class for assets
 **** TODO use the secondary index wrappers for get and put
@@ -212,6 +206,8 @@ content-type: text/plain
 *** TODO Plan how database migrations will happen in the future
 **** maintain a meta record with version information
 **** look at how the Dart serde library can help (e.g. how serde.rs does)
+*** TODO Use dart =coverage= to measure test effectiveness
+**** c.f. https://github.com/dart-lang/coverage
 *** TODO Write an export function for the old database
 *** TODO Write an import function for the new database
 *** TODO Remove JavaScript code from =src= and =test=
@@ -221,6 +217,8 @@ content-type: text/plain
 **** =views/=
 ** TODO Rewrite frontend in Flutter
 *** DONE set up a flutter dev environment
+*** TODO learn about BLoC
+**** c.f. https://www.netguru.com/codestories/flutter-bloc
 *** TODO set up the page routing
 **** c.f. https://flutter.dev/docs/development/ui/navigation
 **** c.f. https://github.com/londonappbrewery/BMI-Calculator-Flutter-Completed/ for code layout ideas

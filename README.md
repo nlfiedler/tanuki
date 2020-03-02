@@ -12,6 +12,7 @@ capabilities.
 
 * [Node.js](https://nodejs.org/) LTS
 * [Dart](https://dart.dev) SDK 2.1 or higher
+* [Flutter](https://flutter.dev) beta channel with web enabled
 * [Gulp](https://gulpjs.com) CLI: `npm -g install gulp-cli`
 
 #### Example for macOS
@@ -27,7 +28,7 @@ $ brew install node
 $ npm -g install gulp-cli
 ```
 
-### Commands
+### ReasonML/Node.js
 
 To start an instance configured for development, run the following command.
 
@@ -56,6 +57,20 @@ server in another window):
 ```shell
 $ npx send-introspection-query http://localhost:3000/graphql
 ```
+
+### Dart/Flutter
+
+Code base is split into two packages, one for the server (Dart) and one for the
+client (Flutter), which avoids the tools becoming confused with mixing the two.
+
+Start the server and client in separate consoles.
+
+1. `cd server ; pub run bin/main.dart`
+1. `cd client ; flutter run -d chrome`
+
+Eventually the deployment will likely involve running `flutter build web` in the
+`client` directory and copying the build artifacts to the `server` build
+directory, and deploying from there.
 
 ## Deploying
 
@@ -208,3 +223,12 @@ to Apple Photos (see above).
 ### October 2018
 
 Replace front-end Elm code with [ReasonML](https://reasonml.github.io/en/).
+
+### December 2019
+
+Started to rewrite the Node.js backend in [Rust](https://www.rust-lang.org).
+
+### February 2020
+
+Started rewrite in [Dart](https://dart.dev) and [Flutter](https://flutter.dev)
+with the intention of replacing all of the Node.js and ReasonML code.
