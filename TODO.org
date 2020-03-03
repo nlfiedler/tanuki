@@ -202,6 +202,7 @@ content-type: text/plain
 *** TODO Translate query parsing code
 *** TODO Figure out what the GraphQL object field resolvers really do
 **** seems like they are not invoked (e.g. resolver for =filename= field of asset is not called)
+**** API doc suggests that Maps are probed automatically, so resolver is called if it is an object?
 *** TODO Implement file upload support in backend
 *** TODO Plan how database migrations will happen in the future
 **** maintain a meta record with version information

@@ -13,7 +13,7 @@ import 'package:logging/logging.dart';
 import 'package:pretty_logging/pretty_logging.dart';
 import 'package:tanuki_server/schema.dart' as schema;
 
-main() async {
+void main() async {
   Logger.root.onRecord.listen(prettyLog);
   var app = Angel(
     logger: Logger('angel'),

@@ -44,8 +44,11 @@ class GraphQLBigIntType extends GraphQLScalarType<int, String> {
 
 // Temporary work-around for private constructors on ValidationResult.
 class _Vr<T> implements ValidationResult<T> {
+  @override
   final bool successful;
+  @override
   final List<String> errors;
+  @override
   final T value;
 
   _Vr(this.successful, {this.errors, this.value});
@@ -82,7 +85,6 @@ final GraphQLObjectType assetType = objectType(
     field(
       'filesize',
       bigIntType.nonNullable(),
-      // graphQLInt.nonNullable(),
       resolve: (context, args) {
         return 123456;
       },
@@ -555,4 +557,8 @@ final graphql = GraphQL(
     queryType: queryType,
     mutationType: mutationType,
   ),
+  customTypes: [
+    bigIntType,
+    graphQLUpload,
+  ],
 );
