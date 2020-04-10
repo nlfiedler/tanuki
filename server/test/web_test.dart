@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2020 Nathan Fiedler
+//
 import 'package:angel_framework/angel_framework.dart';
 import 'package:angel_test/angel_test.dart';
 import 'package:http/http.dart' as http;
