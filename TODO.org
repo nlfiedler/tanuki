@@ -168,11 +168,24 @@ content-type: text/plain
 - [X] GraphQL server
 - [ ] ffmpeg metadata access
 **** TODO assess Windows support for everything
+*** TODO Utilize the Clean Architecture
+**** use TDD and mocking to develop from the inside out
+**** determine the features
+1) browse
+2) search
+3) import
+4) export
+5) edit
+**** define the models and use cases
+***** asset record
+***** location record (label, gps, etc)
+***** secondary index record (location, media type, filename, date)
+**** the graphql schema and resolvers are the presentation layer
+**** the database and models are the data layer
+**** the glue that makes it all work is the domain layer
+***** this includes the logic for processing imports, massaging data, etc
 *** TODO Translate database layer to use RocksDB and secondary index
-**** TODO define a class for assets
 **** TODO use the secondary index wrappers for get and put
-**** TODO define a class to be the database index "value"
-***** holds location label, media type, filename, best date
 **** TODO implement secondary indices
 ***** TODO by_checksum
 ***** TODO by_date
@@ -194,9 +207,6 @@ content-type: text/plain
 ****** TODO all_years
 ****** TODO asset_count
 ****** TODO query
-**** TODO define a location class to save a database upgrade
-***** exif data has GPS lat/long and some other metadata
-***** have both a label (for existing data) and GPS fields
 *** TODO Translate image import code
 *** TODO Translate caption parsing code
 *** TODO Translate query parsing code
@@ -209,6 +219,7 @@ content-type: text/plain
 **** look at how the Dart serde library can help (e.g. how serde.rs does)
 *** TODO Use dart =coverage= to measure test effectiveness
 **** c.f. https://github.com/dart-lang/coverage
+**** need a good way to summarize the output (look for lcov tools)
 *** TODO Write an export function for the old database
 *** TODO Write an import function for the new database
 *** TODO Remove JavaScript code from =src= and =test=
@@ -217,22 +228,13 @@ content-type: text/plain
 **** =public/schema.graphql=
 **** =views/=
 ** TODO Rewrite frontend in Flutter
-*** DONE set up a flutter dev environment
-*** TODO learn about BLoC
-**** c.f. https://www.netguru.com/codestories/flutter-bloc
+*** TODO Clean Architecture: do it
+**** business rules in redux-saga code become the use cases
 *** TODO set up the page routing
 **** c.f. https://flutter.dev/docs/development/ui/navigation
-**** c.f. https://github.com/londonappbrewery/BMI-Calculator-Flutter-Completed/ for code layout ideas
 **** define a navigation rail component to be used in various pages
 **** each page will define a scaffold and decide what is shown
 **** define a home page to hold the selectors and image gallery
-*** TODO introduce redux for tracking application state
-**** retrieved GraphQL data (i.e. tags, locations, years)
-**** selected locations
-**** selected tags
-**** selected years
-*** TODO could use =initState()= of =State= to perform the initial query of data
-*** TODO build out the webui along-side existing code
 *** TODO find out how to upload a file
 **** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
 **** example code: https://github.com/rjcalifornia/web_upload
@@ -244,10 +246,10 @@ content-type: text/plain
 *** TODO use docker container to build web assets
 *** ideas and widget usage
 **** Look for the =video_player= web plugin for playing video in webui
-**** Look for examples using =Observable= to fetch remote data
 **** use =RichText= widget to style the captions (e.g. make tags bold)
 **** tags in caption could be "gesture sensitive" (i.e. clickable) to show assets with that tag
 **** =ListView.builder= allows building list items on demand
+***** c.f. https://medium.com/flutter-community/flutter-infinite-list-tutorial-with-flutter-bloc-2fc7a272ec67
 **** =Image= has a loading builder for showing progress of network images
 **** use =semanticLabel= on =Image= for accessibility
 **** =Wrap= will do what =flex-flow: row wrap;= does in CSS
@@ -263,14 +265,13 @@ content-type: text/plain
 ***** look for =JPEGThumbnail= or =TIFFThumbnail=
 *** TODO remove ReasonML related code and Node modules
 **** should be nothing JavaScript/Node/Reason left at this point
-**** =public/stylesheets=
-**** =public/webfonts=
 **** =bsconfig.json=
 **** =graphql_schema.json=
 **** =gulpfile.js=
 **** =node_modules=
 **** =package.json=
 **** =package-lock.json=
+**** =public=
 **** =src/*.re=
 **** =lib/js=
 **** =lib/bs=
@@ -311,7 +312,6 @@ include it in the database records.
 - [ ] Incoming needs to extract this information for new assets
 - [ ] Existing location values should be stored in "label" field
 - [ ] Exact location information should be stored separate from label
-
 ** Documentation
 *** Case Sensitivity
 - Data is stored as entered (case preservative)
@@ -342,10 +342,6 @@ include it in the database records.
 **** reason-apollo still depends on react-apollo 2.5.8
 **** upgrading react-apollo to >3.x breaks reason-apollo
 **** must wait until reason-apollo updates their dependencies
-*** TODO Look at [[https://www.material.io][Material Design]] for icons and such
-**** icons: https://www.material.io/resources/icons/
-**** many design elements for various purposes
-**** they provide free icons that are well thought out
 *** Front-end improvements
 **** TODO Debounce the data validation fields using async validators
 **** TODO Consider how to make thumbnail page responsive
@@ -361,6 +357,7 @@ include it in the database records.
 *** Bugs
 **** TODO Sometimes the front-end misses updates from backend?
 ***** e.g. click a tag, images fail to appear; click and click again, works
+***** zorigami has this problem, too; seems like ReasonML is failing somehow
 ***** find out what is going on when this happens
 **** TODO Home page fails to update after data changs
 ***** TODO Home page stays stuck on "upload" even after images are uploaded
