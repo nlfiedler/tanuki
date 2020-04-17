@@ -1,13 +1,13 @@
 //
-// Copyright (c) 2019 Nathan Fiedler
+// Copyright (c) 2020 Nathan Fiedler
 //
 use lazy_static::lazy_static;
 use rocksdb::{Options, DB};
+use rusty_ulid::generate_ulid_string;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use ulid::Ulid;
 
 lazy_static! {
     // Track number of open database instances accessing a particular path. Once
@@ -29,7 +29,7 @@ impl DBPath {
     /// The suffix prevents re-use of database files from a previous failed run
     /// in which the directory was not deleted.
     pub fn new(suffix: &str) -> DBPath {
-        let mut path = Ulid::new().to_string();
+        let mut path = generate_ulid_string();
         path.push_str(suffix);
         let db_path = PathBuf::from(path.to_lowercase());
         // keep track of the number of times this path has been opened

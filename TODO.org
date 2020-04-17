@@ -1,6 +1,5 @@
 * Tanuki
 ** Backend Rewrite
-*** TODO switch out =ulid= for https://crates.io/crates/rusty_ulid
 *** TODO Utilize the Clean Architecture
 **** use dependency injection to connect parts together
 ***** https://crates.io/crates/shaku (compile-time IoC)

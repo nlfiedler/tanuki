@@ -4,13 +4,13 @@
 use chrono::prelude::*;
 use failure::Error;
 use mokuroku::{base32, Document, Emitter};
+use rusty_ulid::generate_ulid_string;
 use serde::{Deserialize, Serialize};
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io;
 use std::path::Path;
 use std::str;
-use ulid::Ulid;
 
 ///
 /// Compute the SHA256 hash digest of the given file.
@@ -39,7 +39,7 @@ pub fn new_asset_id(datetime: DateTime<Utc>, filename: &Path) -> String {
     let round_date = datetime.with_minute(minutes).unwrap();
     let mut leading_path = round_date.format("%Y/%m/%d/%H%M/").to_string();
     let extension = filename.extension().map(OsStr::to_str).flatten();
-    let mut name = Ulid::new().to_string();
+    let mut name = generate_ulid_string();
     if let Some(ext) = extension {
         name.push('.');
         name.push_str(ext);
