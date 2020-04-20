@@ -5,8 +5,8 @@ use failure::Error;
 use std::cmp;
 use std::fmt;
 
-pub mod fetch_asset;
-pub mod import_asset;
+pub mod fetch;
+pub mod import;
 
 /// `UseCase` is the interface by which all use cases are invoked.
 pub trait UseCase<Type, Params> {

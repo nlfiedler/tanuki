@@ -27,7 +27,7 @@
 ***** record database
 ***** blob store
 *** TODO Translate database layer to use RocksDB and secondary index
-**** TODO use the secondary index wrappers for get and put
+**** DONE use the secondary index wrappers for get and put
 **** DONE implement secondary indices
 ***** DONE by_checksum
 ***** DONE by_date
@@ -49,6 +49,14 @@
 ****** TODO all_years
 ****** TODO asset_count
 ****** TODO query
+*** TODO implement and test =query_by_checksum()= in data source
+*** TODO implement use cases
+**** TODO update asset details
+**** TODO get all locations
+**** TODO get all years
+**** TODO get all tags
+**** TODO search for assets
+**** TODO get asset by checksum
 *** TODO Translate image import code
 **** extract original date/time from images
 **** image orientation needs to be adjusted
