@@ -18,7 +18,6 @@ mod database;
 #[cfg_attr(test, automock)]
 pub trait EntityDataSource {
     /// Retrieve the asset record with the given identifier.
-    #[allow(clippy::ptr_arg)]
     fn get_asset(&self, asset_id: &str) -> Result<Asset, Error>;
 
     /// Store the asset record in the database.
@@ -27,7 +26,6 @@ pub trait EntityDataSource {
     /// Search for the asset with the given hash digest.
     ///
     /// Returns the asset identifier.
-    #[allow(clippy::ptr_arg)]
     fn query_by_checksum(&self, digest: &str) -> Result<Option<String>, Error>;
 }
 

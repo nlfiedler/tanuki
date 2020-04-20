@@ -31,13 +31,13 @@ impl ImportAsset {
         let filename = get_file_name(&params.filepath);
         let metadata = std::fs::metadata(&params.filepath)?;
         let byte_length = metadata.len();
-        let media_type = "application/octet-stream".to_owned();
+        let media_type = detect_media_type(&filename);
         let asset = Asset {
             key: asset_id,
             checksum: digest,
             filename,
             byte_length,
-            media_type,
+            media_type: media_type.to_string(),
             tags: vec![],
             import_date: now,
             location: None,
@@ -144,6 +144,17 @@ fn new_asset_id(datetime: DateTime<Utc>, filename: &Path) -> String {
     base64::encode(&rel_path)
 }
 
+///
+/// Return the first guessed media type based on the file name.
+///
+fn detect_media_type(filename: &str) -> mime::Mime {
+    // Alternatively could use a crate that reads the content and guesses at the
+    // media type (e.g. https://github.com/flier/rust-mime-sniffer), perhaps as
+    // a fallback when the filename-based guess yields "octet-stream".
+    let guess = mime_guess::from_path(filename);
+    guess.first_or_octet_stream()
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::UseCase;
@@ -186,6 +197,20 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_media_type() {
+        assert_eq!(detect_media_type("image.jpg"), mime::IMAGE_JPEG);
+        let video_quick: mime::Mime = "video/quicktime".parse().unwrap();
+        assert_eq!(detect_media_type("video.mov"), video_quick);
+        let video_mpeg: mime::Mime = "video/mpeg".parse().unwrap();
+        assert_eq!(detect_media_type("video.mpg"), video_mpeg);
+        assert_eq!(
+            // does not yet guess the apple image type
+            detect_media_type("image.heic"),
+            mime::APPLICATION_OCTET_STREAM
+        );
+    }
+
+    #[test]
     fn test_import_asset_new() {
         // arrange
         let digest = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
@@ -211,6 +236,7 @@ mod tests {
         let asset = result.unwrap();
         assert_eq!(asset.checksum, digest);
         assert_eq!(asset.filename, "fighting_kittens.jpg");
+        assert_eq!(asset.media_type, "image/jpeg");
         assert!(asset.tags.is_empty());
     }
 

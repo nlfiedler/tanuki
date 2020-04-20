@@ -26,8 +26,6 @@
 **** repositories
 ***** record database
 ***** blob store
-*** TODO detect asset media type in import asset
-**** TODO test the record repository =get_media_type()=
 *** TODO Translate database layer to use RocksDB and secondary index
 **** TODO use the secondary index wrappers for get and put
 **** DONE implement secondary indices
@@ -64,6 +62,7 @@
 **** the GraphQL upload feature is non-standard, not implemented by juniper
 **** path would be for a temporary file that gets removed after some time
 **** client returns path in a GraphQL mutation to "upload" the asset
+**** need to maintain the original name of the uploaded file for media type detection
 *** TODO Plan how database migrations will happen in the future
 **** maintain a meta record with version information
 **** look at how the serde.rs library can help
@@ -145,8 +144,10 @@
 **** =lib/js=
 **** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
-** Backend improvements
-*** TODO Thumbnail size cache population is noticably slow when selecting many assets
+** Performance
+*** use =hey= to measure image serving performance
+*** consider if caching/guessing mimetype is needed when serving images
+*** consider how to populate the thumbnail size cache
 ** Search Improvements
 *** TODO Support advanced queries using Google-style operators
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
