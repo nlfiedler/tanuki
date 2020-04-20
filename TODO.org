@@ -12,6 +12,7 @@
 ***** location (label, gps, etc)
 ***** search result (location, media type, filename, date)
 **** use cases
+***** count all assets
 ***** import asset
 ***** update asset details
 ***** get all locations
@@ -26,60 +27,55 @@
 **** repositories
 ***** record database
 ***** blob store
-*** TODO Translate database layer to use RocksDB and secondary index
-**** DONE use the secondary index wrappers for get and put
-**** DONE implement secondary indices
-***** DONE by_checksum
-***** DONE by_date
-***** DONE by_filename
-***** DONE by_location
-***** DONE by_media_type
-***** DONE by_tag
-***** DONE all_locations: using =count_all_keys()=
-***** DONE all_tags: using =count_all_keys()=
-***** DONE all_years: using =count_all_keys()=
-**** TODO write query functions and tests
-***** should use =query_exact()= in most cases
-***** use the existing GraphQL resolver code as requirements guide
-***** TODO write test functions that populate test database
-***** TODO write tests for the high-level operations that resolver will need
-****** TODO by_checksum
-****** TODO all_locations
-****** TODO all_tags
-****** TODO all_years
-****** TODO asset_count
-****** TODO query
 *** TODO implement and test =query_by_checksum()= in data source
 *** TODO implement use cases
-**** TODO update asset details
-**** TODO get all locations
-**** TODO get all years
-**** TODO get all tags
-**** TODO search for assets
 **** TODO get asset by checksum
-*** TODO Translate image import code
+**** TODO count all assets
+**** TODO get all locations
+***** maybe use =count_all_keys()=
+**** TODO get all years
+***** maybe use =count_all_keys()=
+**** TODO get all tags
+***** maybe use =count_all_keys()=
+**** TODO update asset details
+***** translate caption parsing code in =resolvers.js=
+**** TODO search for assets
+***** translate the database =query()= function in =backend.js=
+*** TODO extract metadata from incoming image assets
 **** extract original date/time from images
 **** image orientation needs to be adjusted
 **** EXIF: https://crates.io/crates/rexif (MIT)
 **** HEIF: https://github.com/oussama/libheif-rs (MIT)
 **** https://crates.io/crates/libvips (MIT)
 **** if all else fails, can use =magick-rust= (needs bindgen updates soon)
-*** TODO Translate the database =query()= in =backend.js=
-*** TODO Translate caption parsing code
 *** TODO implement HTTP endpoint to upload asset and return path
 **** the GraphQL upload feature is non-standard, not implemented by juniper
 **** path would be for a temporary file that gets removed after some time
 **** client returns path in a GraphQL mutation to "upload" the asset
 **** need to maintain the original name of the uploaded file for media type detection
-*** TODO Decide how assets, previews, thumbnails will be served
+*** TODO implement GraphQL backend
+**** c.f. =public/schema.graphql=
+**** queries
+***** TODO asset(id: ID!): Asset
+***** TODO lookup(checksum: String!): Asset
+***** TODO count: Int!
+***** TODO search(params: SearchParams!, count: Int = 10, offset: Int = 0): SearchMeta!
+***** TODO locations: [LocationCount!]!
+***** TODO tags: [TagCount!]!
+***** TODO years: [YearCount!]!
+**** mutations
+***** TODO upload(file: Upload!): ID!
+***** TODO update(id: ID!, asset: AssetInput!): Asset!
+*** TODO decide how assets, previews, thumbnails will be served
 **** do these need use cases?
 **** should use repositories to allow for caching
-*** TODO Plan how database migrations will happen in the future
+*** TODO serve the existing ReasonML frontend
+*** TODO plan how database migrations will happen in the future
 **** maintain a meta record with version information
 **** look at how the serde.rs library can help
-*** TODO Image thumbnails (those that maintain aspect ratio)
+*** TODO image thumbnails (those that maintain aspect ratio)
 **** need to populate the database with this information (on import)
-*** TODO Process video metadata
+*** TODO extract video metadata
 **** get the duration of videos in seconds
 **** get the creation time of videos
 **** need Rust bindings for =ffprobe= and =ffmpeg=
@@ -96,14 +92,17 @@
 *** TODO set up logging similar to zorigami
 **** should be effectively disabled for testing (i.e. off by default)
 *** TODO Set up docker build for rust code and healthcheck
-*** TODO Write an export function for the old database
-*** TODO Write an import function for the new database
-*** TODO Remove JavaScript code from =src= and =test=
-*** TODO Remove Node modules related to backend
-*** TODO Remove the incomplete =server= Dart code
-*** TODO Remove remaining old backend files
+*** TODO write an export function for the old database
+*** TODO write an import function for the new database
+*** TODO remove JavaScript code from =src= and =test=
+*** TODO remove Node modules related to backend
+*** TODO remove the incomplete =server= Dart code
+*** TODO remove remaining old backend files
 **** =public/schema.graphql=
 **** =views/=
+** Adjust mujina file upload
+*** Cannot use the apollo-client upload feature
+*** Must upload the asset to the HTTP endpoint and then submit GraphQL mutation
 ** Frontend Rewrite
 *** Use Dart and Flutter
 *** Use Clean Architecture
@@ -157,6 +156,17 @@
 **** update =.gitignore= and =.dockerignore=
 ** Performance
 *** use =hey= to measure image serving performance
+**** =brew install hey= (the =ab= replacement)
+**** =hey -n 10000 http://localhost:<port>/=
+***** numbers below are for serving =index.html=
+***** ~-exe~ is the compiled executable
+| service              |   qps |
+|----------------------+-------|
+| apache               | 15000 |
+| tanuki (node)        |  3000 |
+| tanuki (shelf-exe)   |  2600 |
+| tanuki (angel-exe)   |  1010 |
+| zorigami (rust)      |  9400 |
 *** consider if caching/guessing mimetype is needed when serving images
 *** consider how to populate the thumbnail size cache
 ** Search Improvements
