@@ -26,7 +26,6 @@
 **** repositories
 ***** record database
 ***** blob store
-*** TODO look for outdated crates (e.g. base64)
 *** TODO need configuration mechanism
 **** path for database files
 **** path for where file uploads go temporarily
