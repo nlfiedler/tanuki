@@ -52,7 +52,7 @@ impl ImportAsset {
 impl super::UseCase<Asset, Params> for ImportAsset {
     fn call(&self, params: Params) -> Result<Asset, Error> {
         let digest = checksum_file(&params.filepath)?;
-        let asset = match self.records.get_asset_by_digest(digest.clone())? {
+        let asset = match self.records.get_asset_by_digest(&digest)? {
             Some(a) => a,
             None => {
                 let asset = self.create_asset(digest, params.clone())?;
@@ -194,7 +194,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_get_asset_by_digest()
-            .with(eq(digest.to_owned()))
+            .with(eq(digest))
             .returning(|_| Ok(None));
         records.expect_put_asset().returning(|_| Ok(()));
         let mut blobs = MockBlobRepository::new();
@@ -234,7 +234,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_get_asset_by_digest()
-            .with(eq(digest.to_owned()))
+            .with(eq(digest))
             .returning(move |_| Ok(Some(asset1.clone())));
         let blobs = MockBlobRepository::new();
         // act

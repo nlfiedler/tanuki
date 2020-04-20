@@ -19,7 +19,7 @@ mod database;
 pub trait EntityDataSource {
     /// Retrieve the asset record with the given identifier.
     #[allow(clippy::ptr_arg)]
-    fn get_asset(&self, asset_id: String) -> Result<Asset, Error>;
+    fn get_asset(&self, asset_id: &str) -> Result<Asset, Error>;
 
     /// Store the asset record in the database.
     fn put_asset(&self, asset: &Asset) -> Result<(), Error>;
@@ -28,7 +28,7 @@ pub trait EntityDataSource {
     ///
     /// Returns the asset identifier.
     #[allow(clippy::ptr_arg)]
-    fn query_by_checksum(&self, digest: String) -> Result<Option<String>, Error>;
+    fn query_by_checksum(&self, digest: &str) -> Result<Option<String>, Error>;
 }
 
 /// Implementation of the entity data source utilizing mokuroku to manage
@@ -54,7 +54,7 @@ impl EntityDataSourceImpl {
 }
 
 impl EntityDataSource for EntityDataSourceImpl {
-    fn get_asset(&self, asset_id: String) -> Result<Asset, Error> {
+    fn get_asset(&self, asset_id: &str) -> Result<Asset, Error> {
         let db_key = format!("asset/{}", asset_id);
         let maybe_asset = self.database.get_asset(&db_key)?;
         maybe_asset.ok_or_else(|| err_msg(format!("missing asset {}", asset_id)))
@@ -66,7 +66,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         Ok(())
     }
 
-    fn query_by_checksum(&self, _digest: String) -> Result<Option<String>, Error> {
+    fn query_by_checksum(&self, _digest: &str) -> Result<Option<String>, Error> {
         Err(err_msg("not yet implemented"))
     }
 }

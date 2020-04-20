@@ -19,7 +19,7 @@ impl FetchAsset {
 
 impl super::UseCase<Asset, Params> for FetchAsset {
     fn call(&self, params: Params) -> Result<Asset, Error> {
-        self.repo.get_asset(params.asset_id)
+        self.repo.get_asset(&params.asset_id)
     }
 }
 
@@ -74,7 +74,7 @@ mod tests {
         };
         let mut mock = MockRecordRepository::new();
         mock.expect_get_asset()
-            .with(eq("abc123".to_owned()))
+            .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
         // act
         let usecase = FetchAsset::new(Box::new(mock));
@@ -91,7 +91,7 @@ mod tests {
         // arrange
         let mut mock = MockRecordRepository::new();
         mock.expect_get_asset()
-            .with(eq("abc123".to_owned()))
+            .with(eq("abc123"))
             .returning(move |_| Err(err_msg("oh no")));
         // act
         let usecase = FetchAsset::new(Box::new(mock));

@@ -19,13 +19,13 @@ impl RecordRepositoryImpl {
 }
 
 impl RecordRepository for RecordRepositoryImpl {
-    fn get_asset(&self, asset_id: String) -> Result<Asset, Error> {
+    fn get_asset(&self, asset_id: &str) -> Result<Asset, Error> {
         self.datasource.get_asset(asset_id)
     }
 
-    fn get_asset_by_digest(&self, digest: String) -> Result<Option<Asset>, Error> {
+    fn get_asset_by_digest(&self, digest: &str) -> Result<Option<Asset>, Error> {
         if let Some(asset_id) = self.datasource.query_by_checksum(digest)? {
-            Ok(Some(self.datasource.get_asset(asset_id)?))
+            Ok(Some(self.datasource.get_asset(&asset_id)?))
         } else {
             Ok(None)
         }
@@ -35,7 +35,7 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.put_asset(asset)
     }
 
-    fn get_media_type(&self, _asset_id: String) -> Result<String, Error> {
+    fn get_media_type(&self, _asset_id: &str) -> Result<String, Error> {
         // Options:
         // 1) decode the identifier and use the extension to guess at the mimetype
         // 2) query the database every time to get the media_type record property
@@ -118,11 +118,11 @@ mod tests {
         };
         let mut mock = MockEntityDataSource::new();
         mock.expect_get_asset()
-            .with(eq("abc123".to_owned()))
+            .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
-        let result = repo.get_asset("abc123".to_owned());
+        let result = repo.get_asset("abc123");
         // assert
         assert!(result.is_ok());
         let asset = result.unwrap();
@@ -134,11 +134,11 @@ mod tests {
         // arrange
         let mut mock = MockEntityDataSource::new();
         mock.expect_get_asset()
-            .with(eq("abc123".to_owned()))
+            .with(eq("abc123"))
             .returning(move |_| Err(err_msg("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
-        let result = repo.get_asset("abc123".to_owned());
+        let result = repo.get_asset("abc123");
         // assert
         assert!(result.is_err());
     }
@@ -161,14 +161,14 @@ mod tests {
         };
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_by_checksum()
-            .with(eq("cafebabe".to_owned()))
+            .with(eq("cafebabe"))
             .returning(move |_| Ok(Some("abc123".to_owned())));
         mock.expect_get_asset()
-            .with(eq("abc123".to_owned()))
+            .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
-        let result = repo.get_asset_by_digest("cafebabe".to_owned());
+        let result = repo.get_asset_by_digest("cafebabe");
         // assert
         assert!(result.is_ok());
         let asset_id = result.unwrap();
@@ -183,7 +183,7 @@ mod tests {
         mock.expect_query_by_checksum().returning(move |_| Ok(None));
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
-        let result = repo.get_asset_by_digest("cafebabe".to_owned());
+        let result = repo.get_asset_by_digest("cafebabe");
         // assert
         assert!(result.is_ok());
         let asset_id = result.unwrap();
@@ -195,11 +195,11 @@ mod tests {
         // arrange
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_by_checksum()
-            .with(eq("abc123".to_owned()))
+            .with(eq("abc123"))
             .returning(move |_| Err(err_msg("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
-        let result = repo.get_asset_by_digest("abc123".to_owned());
+        let result = repo.get_asset_by_digest("abc123");
         // assert
         assert!(result.is_err());
     }

@@ -26,14 +26,6 @@
 **** repositories
 ***** record database
 ***** blob store
-*** TODO need configuration mechanism
-**** path for database files
-**** path for where file uploads go temporarily
-**** path for where assets are stored
-***** replace hard-coded assets path
-*** TODO set up logging similar to zorigami
-**** should be effectively disabled for testing (i.e. off by default)
-*** TODO look for =String= in API and change to =&str=
 *** TODO detect asset media type in import asset
 **** TODO test the record repository =get_media_type()=
 *** TODO Translate database layer to use RocksDB and secondary index
@@ -85,7 +77,14 @@
 ***** https://crates.io/crates/ffmpeg-dev (MIT/LGPL)
 ***** https://crates.io/crates/ffmpeg-next (WTFPL)
 **** consider parsing the metadata to get the information
+*** TODO need configuration mechanism
+**** path for database files
+**** path for where file uploads go temporarily
+**** path for where assets are stored
+***** replace hard-coded assets path
 *** TODO ensure there is no longer any =dead_code= or remove the pragma
+*** TODO set up logging similar to zorigami
+**** should be effectively disabled for testing (i.e. off by default)
 *** TODO Set up docker build for rust code and healthcheck
 *** TODO Write an export function for the old database
 *** TODO Write an import function for the new database
