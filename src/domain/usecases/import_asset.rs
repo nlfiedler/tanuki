@@ -40,6 +40,7 @@ impl ImportAsset {
             media_type: media_type.to_string(),
             tags: vec![],
             import_date: now,
+            caption: None,
             location: None,
             duration: None,
             user_date: None,
@@ -236,6 +237,7 @@ mod tests {
         let asset = result.unwrap();
         assert_eq!(asset.checksum, digest);
         assert_eq!(asset.filename, "fighting_kittens.jpg");
+        assert_eq!(asset.byte_length, 39932);
         assert_eq!(asset.media_type, "image/jpeg");
         assert!(asset.tags.is_empty());
     }
@@ -252,6 +254,7 @@ mod tests {
             media_type: "image/jpeg".to_owned(),
             tags: vec!["kittens".to_owned()],
             import_date: Utc::now(),
+            caption: None,
             location: None,
             duration: None,
             user_date: None,

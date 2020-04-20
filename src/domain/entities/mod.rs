@@ -22,6 +22,8 @@ pub struct Asset {
     pub tags: Vec<String>,
     /// Date when the asset was imported.
     pub import_date: DateTime<Utc>,
+    /// Caption provided by the user.
+    pub caption: Option<String>,
     /// User-defined location of the asset.
     pub location: Option<String>,
     /// Duration of (the video) asset in seconds.
@@ -60,6 +62,7 @@ mod tests {
             media_type: "image/jpeg".to_owned(),
             tags: vec!["cat".to_owned(), "dog".to_owned()],
             import_date: Utc::now(),
+            caption: None,
             location: None,
             duration: None,
             user_date: None,
@@ -73,6 +76,7 @@ mod tests {
             media_type: "image/jpeg".to_owned(),
             tags: vec!["kitten".to_owned(), "puppy".to_owned()],
             import_date: Utc::now(),
+            caption: None,
             location: None,
             duration: None,
             user_date: None,
@@ -88,6 +92,7 @@ mod tests {
             media_type: "image/jpeg".to_owned(),
             tags: vec!["kitten".to_owned(), "puppy".to_owned()],
             import_date: Utc::now(),
+            caption: None,
             location: None,
             duration: None,
             user_date: None,
@@ -107,6 +112,7 @@ mod tests {
             media_type: "image/jpeg".to_owned(),
             tags: vec!["cat".to_owned(), "dog".to_owned()],
             import_date: Utc::now(),
+            caption: None,
             location: None,
             duration: None,
             user_date: None,

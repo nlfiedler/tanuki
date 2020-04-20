@@ -95,6 +95,7 @@ pub fn build_basic_asset() -> Asset {
         media_type: "image/jpeg".to_owned(),
         tags: vec!["cat".to_owned(), "dog".to_owned()],
         import_date: Utc::now(),
+        caption: Some("#cat and #dog @hawaii".to_owned()),
         location: Some("hawaii".to_owned()),
         duration: Some(5000),
         user_date: Some(Utc::now()),

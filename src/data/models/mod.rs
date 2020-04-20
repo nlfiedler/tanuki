@@ -22,6 +22,8 @@ pub struct AssetModel {
     pub tags: Vec<String>,
     #[serde(rename = "id")]
     pub import_date: DateTime<Utc>,
+    #[serde(rename = "cp")]
+    pub caption: Option<String>,
     #[serde(rename = "lo")]
     pub location: Option<String>,
     #[serde(rename = "du")]
@@ -48,6 +50,7 @@ mod tests {
             media_type: "image/jpeg".to_owned(),
             tags: vec![],
             import_date: Utc::now(),
+            caption: None,
             location: None,
             duration: None,
             user_date: None,
@@ -88,6 +91,7 @@ mod tests {
             media_type: "image/jpeg".to_owned(),
             tags: vec!["cat".to_owned(), "dog".to_owned()],
             import_date: Utc::now(),
+            caption: Some("#cat and #dog @hawaii".to_owned()),
             location: Some("hawaii".to_owned()),
             duration: Some(5000),
             user_date: Some(Utc::now()),
@@ -110,6 +114,7 @@ mod tests {
         assert_eq!(asset1.media_type, model.media_type);
         assert_eq!(asset1.tags, model.tags);
         assert_eq!(asset1.import_date, model.import_date);
+        assert_eq!(asset1.caption, model.caption);
         assert_eq!(asset1.location, model.location);
         assert_eq!(asset1.duration, model.duration);
         assert_eq!(asset1.user_date, model.user_date);

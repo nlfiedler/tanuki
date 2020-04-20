@@ -67,6 +67,7 @@ mod tests {
             media_type: "image/jpeg".to_owned(),
             tags: vec!["cat".to_owned(), "dog".to_owned()],
             import_date: Utc::now(),
+            caption: None,
             location: None,
             duration: None,
             user_date: None,

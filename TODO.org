@@ -56,13 +56,16 @@
 **** HEIF: https://github.com/oussama/libheif-rs (MIT)
 **** https://crates.io/crates/libvips (MIT)
 **** if all else fails, can use =magick-rust= (needs bindgen updates soon)
+*** TODO Translate the database =query()= in =backend.js=
 *** TODO Translate caption parsing code
-*** TODO Translate query parsing code
 *** TODO implement HTTP endpoint to upload asset and return path
 **** the GraphQL upload feature is non-standard, not implemented by juniper
 **** path would be for a temporary file that gets removed after some time
 **** client returns path in a GraphQL mutation to "upload" the asset
 **** need to maintain the original name of the uploaded file for media type detection
+*** TODO Decide how assets, previews, thumbnails will be served
+**** do these need use cases?
+**** should use repositories to allow for caching
 *** TODO Plan how database migrations will happen in the future
 **** maintain a meta record with version information
 **** look at how the serde.rs library can help
