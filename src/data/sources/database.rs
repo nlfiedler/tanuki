@@ -1,13 +1,7 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-
-//! The `database` module provides high-level functions for storing and
-//! retrieving the various core data structures to a database. This module
-//! performs the serde functions to convert the structures to a format suitable
-//! for on-disk storage.
-
-use super::core;
+use crate::domain::entities::Asset;
 use failure::Error;
 use lazy_static::lazy_static;
 use rocksdb::backup::{BackupEngine, BackupEngineOptions};
@@ -25,8 +19,10 @@ lazy_static! {
     //
     // The key is the path to the database files.
     //
-    // If the Mutex proves to be problematic, switch to ReentrantMutex in the
-    // parking_lot crate, which allows recursive locking.
+    // Need a mutex on the database to allow mutation (mokuroku requires this
+    // for managing the column families). If the Mutex proves to be problematic,
+    // switch to ReentrantMutex in the parking_lot crate, which allows recursive
+    // locking.
     static ref DBASE_REFS: Mutex<HashMap<PathBuf, Weak<Mutex<mokuroku::Database>>>> = Mutex::new(HashMap::new());
 }
 
@@ -34,12 +30,9 @@ lazy_static! {
 /// An instance of the database for reading and writing records to disk.
 ///
 pub struct Database {
-    /// RocksDB instance.
+    /// RocksDB instance wrapped with mokuroku.
     db: Arc<Mutex<mokuroku::Database>>,
 }
-
-// Mark the Database as a valid context type for Juniper.
-// impl juniper::Context for Database {}
 
 impl Database {
     ///
@@ -47,7 +40,15 @@ impl Database {
     /// reuse an existing `DB` instance for the given path, if one has already
     /// been opened.
     ///
-    pub fn new<P: AsRef<Path>>(db_path: P) -> Result<Self, Error> {
+    pub fn new<P: AsRef<Path>, I, N>(
+        db_path: P,
+        views: I,
+        mapper: mokuroku::ByteMapper,
+    ) -> Result<Self, Error>
+    where
+        I: IntoIterator<Item = N>,
+        N: ToString,
+    {
         // should be able to recover from a poisoned mutex without any problem
         let mut db_refs = DBASE_REFS.lock().unwrap();
         if let Some(weak) = db_refs.get(db_path.as_ref()) {
@@ -60,31 +61,16 @@ impl Database {
         let mut opts = Options::default();
         opts.create_if_missing(true);
         opts.set_keep_log_file_num(10);
-        let views = vec![
-            "by_checksum",
-            "by_date",
-            "by_filename",
-            "by_location",
-            "by_mimetype",
-            "by_tag",
-        ];
-        let db = mokuroku::Database::open(db_path.as_ref(), views, Box::new(core::mapper), opts)?;
+        let db = mokuroku::Database::open(db_path.as_ref(), views, mapper, opts)?;
         let arc = Arc::new(Mutex::new(db));
         db_refs.insert(buf, Arc::downgrade(&arc));
         Ok(Self { db: arc })
     }
 
-    // ///
-    // /// Return the path to the database files.
-    // ///
-    // pub fn get_path(&self) -> &Path {
-    //     let db = self.db.lock().unwrap();
-    //     db.db().path()
-    // }
-
     ///
     /// Create a backup of the database at the given path.
     ///
+    #[allow(dead_code)]
     pub fn create_backup<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
         let backup_opts = BackupEngineOptions::default();
         let mut backup_engine = BackupEngine::open(&backup_opts, path.as_ref())?;
@@ -97,6 +83,7 @@ impl Database {
     ///
     /// Restore the database from the backup path to the given db path.
     ///
+    #[allow(dead_code)]
     pub fn restore_from_backup<P: AsRef<Path>>(backup_path: P, db_path: P) -> Result<(), Error> {
         let backup_opts = BackupEngineOptions::default();
         let mut backup_engine = BackupEngine::open(&backup_opts, &backup_path).unwrap();
@@ -109,6 +96,7 @@ impl Database {
     ///
     /// Insert the value if the database does not already contain the given key.
     ///
+    #[allow(dead_code)]
     pub fn insert_document(&self, key: &[u8], value: &[u8]) -> Result<(), Error> {
         let db = self.db.lock().unwrap();
         let existing = db.db().get(key)?;
@@ -121,6 +109,7 @@ impl Database {
     ///
     /// Retrieve the value with the given key.
     ///
+    #[allow(dead_code)]
     pub fn get_document(&self, key: &[u8]) -> Result<Option<Vec<u8>>, Error> {
         let db = self.db.lock().unwrap();
         let result = db.db().get(key)?;
@@ -130,6 +119,7 @@ impl Database {
     ///
     /// Put the key/value pair into the database.
     ///
+    #[allow(dead_code)]
     pub fn put_document(&self, key: &[u8], value: &[u8]) -> Result<(), Error> {
         let db = self.db.lock().unwrap();
         db.db().put(key, value)?;
@@ -139,6 +129,7 @@ impl Database {
     ///
     /// Delete the database record associated with the given key.
     ///
+    #[allow(dead_code)]
     pub fn delete_document(&self, key: &[u8]) -> Result<(), Error> {
         let mut db = self.db.lock().unwrap();
         db.delete(key)
@@ -147,8 +138,9 @@ impl Database {
     ///
     /// Put the given asset into the database.
     ///
-    pub fn put_asset(&self, asset: &core::Asset) -> Result<(), Error> {
-        let key = format!("asset/{}", asset.key);
+    /// The `Asset` will be serialized via the `Document` interface.
+    ///
+    pub fn put_asset(&self, key: &str, asset: &Asset) -> Result<(), Error> {
         let mut db = self.db.lock().unwrap();
         db.put(key, asset)
     }
@@ -156,38 +148,17 @@ impl Database {
     ///
     /// Retrieve the asset by the given key, returning None if not found.
     ///
-    pub fn get_asset(&self, key: &str) -> Result<Option<core::Asset>, Error> {
-        let db_key = format!("asset/{}", key);
+    /// The `Asset` will be deserialized via the `Document` interface.
+    ///
+    pub fn get_asset(&self, key: &str) -> Result<Option<Asset>, Error> {
         let db = self.db.lock().unwrap();
-        db.get(db_key)
+        db.get(key)
     }
-
-    // ///
-    // /// Retrieve all of the assets in the database.
-    // ///
-    // pub fn get_all_assets(&self) -> Result<Vec<core::Asset>, Error> {
-    //     let assets = self.fetch_prefix("asset/")?;
-    //     let mut results: Vec<core::Asset> = Vec::new();
-    //     for (key, value) in assets {
-    //         let mut serde_result: core::Asset = serde_cbor::from_slice(&value)?;
-    //         // strip the "asset/" prefix from the key
-    //         serde_result.key = key[6..].to_string();
-    //         results.push(serde_result);
-    //     }
-    //     Ok(results)
-    // }
-
-    // ///
-    // /// Delete the given asset from the database.
-    // ///
-    // pub fn delete_asset(&self, key: &str) -> Result<(), Error> {
-    //     let key = format!("asset/{}", key);
-    //     self.delete_document(key.as_bytes())
-    // }
 
     ///
     /// Count those keys that start with the given prefix.
     ///
+    #[allow(dead_code)]
     pub fn count_prefix(&self, prefix: &str) -> Result<usize, Error> {
         let pre_bytes = prefix.as_bytes();
         // this only gets us started, we then have to check for the end of the range
@@ -207,6 +178,7 @@ impl Database {
     ///
     /// Find all those keys that start with the given prefix.
     ///
+    #[allow(dead_code)]
     pub fn find_prefix(&self, prefix: &str) -> Result<Vec<String>, Error> {
         let pre_bytes = prefix.as_bytes();
         // this only gets us started, we then have to check for the end of the range
@@ -228,6 +200,7 @@ impl Database {
     /// Fetch the key/value pairs for those keys that start with the given
     /// prefix.
     ///
+    #[allow(dead_code)]
     pub fn fetch_prefix(&self, prefix: &str) -> Result<HashMap<String, Box<[u8]>>, Error> {
         let pre_bytes = prefix.as_bytes();
         // this only gets us started, we then have to check for the end of the range

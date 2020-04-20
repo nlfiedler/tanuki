@@ -1,6 +1,6 @@
 * Tanuki
 ** Backend Rewrite
-*** TODO Utilize the Clean Architecture
+*** Clean Architecture design
 **** use dependency injection to connect parts together
 ***** https://crates.io/crates/shaku (compile-time IoC)
 ***** https://crates.io/crates/coi (compile-time IoC)
@@ -14,29 +14,29 @@
 **** use cases
 ***** import asset
 ***** update asset details
-***** query locations
-***** query years
-***** query tags
+***** get all locations
+***** get all years
+***** get all tags
 ***** search for assets
-***** lookup asset via checksum
+***** get asset by checksum
 ***** fetch asset details
+***** backup the database (an automatic function?)
+****** use repository to invoke backup/restore functions
+****** data source for record database invokes the db functions
 **** repositories
 ***** record database
-***** asset store
-**** action plan
-***** define a =UseCase= trait with a =call()= function
-****** generic for =Type= that is returned from =call()=
-****** generic for =Params= that defines parameters for operation
-***** each use case has a constructor that takes dependencies
-****** e.g. repository implementation
-***** write unit tests (using mocks for data layer) for the domain layer
-***** implement the data model
-****** models wrap the domain entities to allow for use of =#[derive()]=
-****** implement serialization for entities via =serde=
-****** implement the =From= and =Into= for the entities
-***** implement the data repository
-***** implement the data source
-***** write unit tests (using mocks for the database) for data layer
+***** blob store
+*** TODO look for outdated crates (e.g. base64)
+*** TODO need configuration mechanism
+**** path for database files
+**** path for where file uploads go temporarily
+**** path for where assets are stored
+***** replace hard-coded assets path
+*** TODO set up logging similar to zorigami
+**** should be effectively disabled for testing (i.e. off by default)
+*** TODO look for =String= in API and change to =&str=
+*** TODO detect asset media type in import asset
+**** TODO test the record repository =get_media_type()=
 *** TODO Translate database layer to use RocksDB and secondary index
 **** TODO use the secondary index wrappers for get and put
 **** DONE implement secondary indices
@@ -44,7 +44,7 @@
 ***** DONE by_date
 ***** DONE by_filename
 ***** DONE by_location
-***** DONE by_mimetype
+***** DONE by_media_type
 ***** DONE by_tag
 ***** DONE all_locations: using =count_all_keys()=
 ***** DONE all_tags: using =count_all_keys()=
@@ -61,24 +61,32 @@
 ****** TODO asset_count
 ****** TODO query
 *** TODO Translate image import code
+**** extract original date/time from images
+**** image orientation needs to be adjusted
 **** EXIF: https://crates.io/crates/rexif (MIT)
 **** HEIF: https://github.com/oussama/libheif-rs (MIT)
 **** https://crates.io/crates/libvips (MIT)
 **** if all else fails, can use =magick-rust= (needs bindgen updates soon)
 *** TODO Translate caption parsing code
 *** TODO Translate query parsing code
-*** TODO figure out file upload for GraphQL resolvers
+*** TODO implement HTTP endpoint to upload asset and return path
+**** the GraphQL upload feature is non-standard, not implemented by juniper
+**** path would be for a temporary file that gets removed after some time
+**** client returns path in a GraphQL mutation to "upload" the asset
 *** TODO Plan how database migrations will happen in the future
 **** maintain a meta record with version information
 **** look at how the serde.rs library can help
 *** TODO Image thumbnails (those that maintain aspect ratio)
 **** need to populate the database with this information (on import)
 *** TODO Process video metadata
+**** get the duration of videos in seconds
+**** get the creation time of videos
 **** need Rust bindings for =ffprobe= and =ffmpeg=
 ***** https://crates.io/crates/ffmpeg4 (WTFPL)
 ***** https://crates.io/crates/ffmpeg-dev (MIT/LGPL)
 ***** https://crates.io/crates/ffmpeg-next (WTFPL)
-**** see if there are alternatives for Rust
+**** consider parsing the metadata to get the information
+*** TODO ensure there is no longer any =dead_code= or remove the pragma
 *** TODO Set up docker build for rust code and healthcheck
 *** TODO Write an export function for the old database
 *** TODO Write an import function for the new database

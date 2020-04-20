@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Nathan Fiedler
+// Copyright (c) 2020 Nathan Fiedler
 //
-pub mod core;
-pub mod database;
+pub mod data;
+pub mod domain;

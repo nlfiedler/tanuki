@@ -1,13 +1,14 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
+use chrono::prelude::*;
 use lazy_static::lazy_static;
 use rocksdb::{Options, DB};
 use rusty_ulid::generate_ulid_string;
 use std::collections::HashMap;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+use tanuki::domain::entities::Asset;
 
 lazy_static! {
     // Track number of open database instances accessing a particular path. Once
@@ -19,6 +20,11 @@ lazy_static! {
 ///
 /// This is clone-able and thread-safe and will remove the database files only
 /// after the last reference to a given path has been dropped.
+///
+/// N.B. It is important to pass this path as a reference to the database in the
+/// tests, otherwise the path will get dropped before the database is dropped,
+/// and this will try to delete the database files before the database instance
+/// has had a chance to release the lock.
 pub struct DBPath {
     path: PathBuf,
 }
@@ -66,9 +72,9 @@ impl Drop for DBPath {
         if should_delete {
             let opts = Options::default();
             DB::destroy(&opts, &self.path).unwrap();
-            let mut backup_path = PathBuf::from(&self.path);
-            backup_path.set_extension("backup");
-            let _ = fs::remove_dir_all(&backup_path);
+            // let mut backup_path = PathBuf::from(&self.path);
+            // backup_path.set_extension("backup");
+            // let _ = fs::remove_dir_all(&backup_path);
         }
     }
 }
@@ -77,4 +83,37 @@ impl AsRef<Path> for DBPath {
     fn as_ref(&self) -> &Path {
         &self.path
     }
+}
+
+/// Construct a simple asset instance.
+pub fn build_basic_asset() -> Asset {
+    Asset {
+        key: "basic113".to_owned(),
+        checksum: "cafebabe".to_owned(),
+        filename: "img_1234.jpg".to_owned(),
+        byte_length: 1024,
+        media_type: "image/jpeg".to_owned(),
+        tags: vec!["cat".to_owned(), "dog".to_owned()],
+        import_date: Utc::now(),
+        location: Some("hawaii".to_owned()),
+        duration: Some(5000),
+        user_date: Some(Utc::now()),
+        original_date: Some(Utc::now()),
+    }
+}
+
+/// Compare the two assets, including the key. This is useful for ensuring the
+/// serde is performed correctly, including maintaining the asset key.
+pub fn compare_assets(a: &Asset, b: &Asset) {
+    assert_eq!(a.key, b.key);
+    assert_eq!(a.checksum, b.checksum);
+    assert_eq!(a.filename, b.filename);
+    assert_eq!(a.byte_length, b.byte_length);
+    assert_eq!(a.media_type, b.media_type);
+    assert_eq!(a.tags, b.tags);
+    assert_eq!(a.import_date, b.import_date);
+    assert_eq!(a.location, b.location);
+    assert_eq!(a.duration, b.duration);
+    assert_eq!(a.user_date, b.user_date);
+    assert_eq!(a.original_date, b.original_date);
 }
