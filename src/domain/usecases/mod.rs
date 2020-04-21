@@ -5,6 +5,7 @@ use failure::Error;
 use std::cmp;
 use std::fmt;
 
+pub mod checksum;
 pub mod fetch;
 pub mod import;
 

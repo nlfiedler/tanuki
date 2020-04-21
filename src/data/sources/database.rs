@@ -156,6 +156,19 @@ impl Database {
     }
 
     ///
+    /// Query the named view by a certain key, returning at most one item.
+    ///
+    pub fn query_one_by_key<K: AsRef<[u8]>>(
+        &self,
+        view: &str,
+        key: K,
+    ) -> Result<Option<mokuroku::QueryResult>, Error> {
+        let mut db = self.db.lock().unwrap();
+        let mut iter = db.query_by_key(view, key)?;
+        Ok(iter.next())
+    }
+
+    ///
     /// Count those keys that start with the given prefix.
     ///
     #[allow(dead_code)]

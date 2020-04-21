@@ -27,9 +27,7 @@
 **** repositories
 ***** record database
 ***** blob store
-*** TODO implement and test =query_by_checksum()= in data source
 *** TODO implement use cases
-**** TODO get asset by checksum
 **** TODO count all assets
 **** TODO get all locations
 ***** maybe use =count_all_keys()=
@@ -40,7 +38,7 @@
 **** TODO update asset details
 ***** translate caption parsing code in =resolvers.js=
 **** TODO search for assets
-***** translate the database =query()= function in =backend.js=
+***** translate database =query()= function in =backend.js=
 *** TODO extract metadata from incoming image assets
 **** extract original date/time from images
 **** image orientation needs to be adjusted
@@ -53,6 +51,7 @@
 **** path would be for a temporary file that gets removed after some time
 **** client returns path in a GraphQL mutation to "upload" the asset
 **** need to maintain the original name of the uploaded file for media type detection
+**** consider how to write tests for this feature
 *** TODO implement GraphQL backend
 **** c.f. =public/schema.graphql=
 **** queries
@@ -75,7 +74,7 @@
 **** look at how the serde.rs library can help
 *** TODO image thumbnails (those that maintain aspect ratio)
 **** need to populate the database with this information (on import)
-*** TODO extract video metadata
+*** TODO extract metadata from incoming video assets
 **** get the duration of videos in seconds
 **** get the creation time of videos
 **** need Rust bindings for =ffprobe= and =ffmpeg=
@@ -87,13 +86,27 @@
 **** path for database files
 **** path for where file uploads go temporarily
 **** path for where assets are stored
-***** replace hard-coded assets path
+**** would be nice to have something like Dart's =environment_config=
+***** could use =build.rs= to generate an environment config
+***** then load that in =main.rs= to get everything into memory
 *** TODO ensure there is no longer any =dead_code= or remove the pragma
 *** TODO set up logging similar to zorigami
 **** should be effectively disabled for testing (i.e. off by default)
-*** TODO Set up docker build for rust code and healthcheck
-*** TODO write an export function for the old database
-*** TODO write an import function for the new database
+*** TODO set up docker build for rust code and healthcheck
+**** c.f. https://github.com/mastertinner/healthcheck
+***** it has been updated since the copy in zorigami
+**** look at https://github.com/bencord0/docker-healthcheck/
+*** TODO write an export script for the old database
+**** stand-alone script that reads the database and writes out json
+*** TODO write an import binary for the new database
+**** stand-alone binary that reads json and populates new database
+**** maybe handle the (wide) thumbnail size caching at this point
+*** TODO perform migration on production system
+**** stop and remove the current docker container
+**** use script to get dump of current database
+**** backup the database files somewhere safe
+**** run the new binary to populate new database from data dump
+**** deploy new docker container with new backend
 *** TODO remove JavaScript code from =src= and =test=
 *** TODO remove Node modules related to backend
 *** TODO remove the incomplete =server= Dart code
@@ -154,6 +167,7 @@
 **** =lib/js=
 **** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
+*** TODO incorporate relevant items from mujina TODO file
 ** Performance
 *** use =hey= to measure image serving performance
 **** =brew install hey= (the =ab= replacement)
