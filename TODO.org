@@ -28,7 +28,6 @@
 ***** record database
 ***** blob store
 *** TODO implement use cases
-**** TODO count all assets
 **** TODO get all locations
 ***** maybe use =count_all_keys()=
 **** TODO get all years

@@ -41,6 +41,10 @@ impl RecordRepository for RecordRepositoryImpl {
         let asset = self.get_asset(asset_id)?;
         Ok(asset.media_type)
     }
+
+    fn count_assets(&self) -> Result<u64, Error> {
+        self.datasource.count_assets()
+    }
 }
 
 pub struct BlobRepositoryImpl {
@@ -297,6 +301,33 @@ mod tests {
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
         let result = repo.get_media_type("abc123");
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_count_assets_ok() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_count_assets().with().returning(|| Ok(42));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.count_assets();
+        // assert
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 42);
+    }
+
+    #[test]
+    fn test_count_assets_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_count_assets()
+            .with()
+            .returning(|| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.count_assets();
         // assert
         assert!(result.is_err());
     }

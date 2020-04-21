@@ -171,7 +171,6 @@ impl Database {
     ///
     /// Count those keys that start with the given prefix.
     ///
-    #[allow(dead_code)]
     pub fn count_prefix(&self, prefix: &str) -> Result<usize, Error> {
         let pre_bytes = prefix.as_bytes();
         // this only gets us started, we then have to check for the end of the range

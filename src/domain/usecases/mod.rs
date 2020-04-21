@@ -6,6 +6,7 @@ use std::cmp;
 use std::fmt;
 
 pub mod checksum;
+pub mod count;
 pub mod fetch;
 pub mod import;
 

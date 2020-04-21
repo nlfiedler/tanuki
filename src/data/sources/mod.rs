@@ -27,6 +27,9 @@ pub trait EntityDataSource {
     ///
     /// Returns the asset identifier.
     fn query_by_checksum(&self, digest: &str) -> Result<Option<String>, Error>;
+
+    /// Return the number of assets stored in the data source.
+    fn count_assets(&self) -> Result<u64, Error>;
 }
 
 /// Implementation of the entity data source utilizing mokuroku to manage
@@ -72,6 +75,11 @@ impl EntityDataSource for EntityDataSourceImpl {
             // those records that contribute to this particular index.
             String::from_utf8(vec).unwrap().split_off(6)
         }))
+    }
+
+    fn count_assets(&self) -> Result<u64, Error> {
+        let count: usize = self.database.count_prefix("asset/")?;
+        Ok(count as u64)
     }
 }
 
