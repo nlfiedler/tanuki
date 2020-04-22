@@ -3,6 +3,7 @@
 //
 mod common;
 
+use chrono::prelude::*;
 use common::DBPath;
 use tanuki::data::sources::EntityDataSource;
 use tanuki::data::sources::EntityDataSourceImpl;
@@ -118,4 +119,44 @@ fn test_all_locations() {
     assert!(actual.iter().any(|l| l.label == "hawaii" && l.count == 1));
     assert!(actual.iter().any(|l| l.label == "london" && l.count == 2));
     assert!(actual.iter().any(|l| l.label == "paris" && l.count == 1));
+}
+
+#[test]
+fn test_all_years() {
+    let db_path = DBPath::new("_test_all_years");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    // zero years
+    let actual = datasource.all_years().unwrap();
+    assert_eq!(actual.len(), 0);
+
+    // one year(s)
+    let asset = common::build_basic_asset();
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.all_years().unwrap();
+    assert_eq!(actual.len(), 1);
+    assert_eq!(actual[0].label, "2018");
+    assert_eq!(actual[0].count, 1);
+
+    // multiple years and occurrences
+    let mut asset = common::build_basic_asset();
+    asset.key = "single999".to_owned();
+    asset.checksum = "deadbeaf".to_owned();
+    asset.import_date = Utc.ymd(2018, 7, 4).and_hms(12, 12, 12);
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "wonder101".to_owned();
+    asset.checksum = "deadd00d".to_owned();
+    asset.import_date = Utc.ymd(2017, 7, 4).and_hms(12, 12, 12);
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "tuesday42".to_owned();
+    asset.checksum = "beefd00d".to_owned();
+    asset.import_date = Utc.ymd(2016, 7, 4).and_hms(12, 12, 12);
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.all_years().unwrap();
+    assert_eq!(actual.len(), 3);
+    assert!(actual.iter().any(|l| l.label == "2016" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "2017" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "2018" && l.count == 2));
 }

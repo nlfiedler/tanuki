@@ -28,8 +28,6 @@
 ***** record database
 ***** blob store
 *** TODO implement use cases
-**** TODO get all years
-***** maybe use =count_all_keys()=
 **** TODO get all tags
 ***** maybe use =count_all_keys()=
 **** TODO update asset details
@@ -80,7 +78,9 @@
 **** GraphQL resolver merges dimension values with search results
 **** blob repository provides dimensions
 ***** input is the asset identifier
-***** data stored in separate database column family
+***** data stored in separate database instance without mokuroku
+****** rename =database.rs= to =indexdb.rs=
+****** use =database.rs= from zorigami for a simpler database
 ***** repository can cache values in memory if needed
 *** TODO serve the existing ReasonML frontend
 *** TODO plan how database migrations will happen in the future

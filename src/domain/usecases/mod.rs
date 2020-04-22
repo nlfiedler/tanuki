@@ -10,6 +10,7 @@ pub mod count;
 pub mod fetch;
 pub mod import;
 pub mod location;
+pub mod year;
 
 /// `UseCase` is the interface by which all use cases are invoked.
 pub trait UseCase<Type, Params> {

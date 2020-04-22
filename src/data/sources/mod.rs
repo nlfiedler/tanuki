@@ -34,6 +34,10 @@ pub trait EntityDataSource {
     /// Return all of the known locations and the number of assets associated
     /// with each location.
     fn all_locations(&self) -> Result<Vec<LabeledCount>, Error>;
+
+    /// Return all of the known years and the number of assets associated with
+    /// each year.
+    fn all_years(&self) -> Result<Vec<LabeledCount>, Error>;
 }
 
 /// Implementation of the entity data source utilizing mokuroku to manage
@@ -51,10 +55,23 @@ impl EntityDataSourceImpl {
             "by_filename",
             "by_location",
             "by_media_type",
-            "by_tag",
+            "by_tags",
+            "by_year",
         ];
         let database = database::Database::new(db_path, views, Box::new(mapper))?;
         Ok(Self { database })
+    }
+
+    fn count_all_keys(&self, view: &str) -> Result<Vec<LabeledCount>, Error> {
+        let map = self.database.count_all_keys(view)?;
+        let results: Vec<LabeledCount> = map
+            .iter()
+            .map(|t| LabeledCount {
+                label: String::from_utf8((*t.0).to_vec()).unwrap(),
+                count: *t.1,
+            })
+            .collect();
+        Ok(results)
     }
 }
 
@@ -87,15 +104,11 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn all_locations(&self) -> Result<Vec<LabeledCount>, Error> {
-        let map = self.database.count_all_keys("by_location")?;
-        let results: Vec<LabeledCount> = map
-            .iter()
-            .map(|t| LabeledCount {
-                label: String::from_utf8((*t.0).to_vec()).unwrap(),
-                count: *t.1,
-            })
-            .collect();
-        Ok(results)
+        self.count_all_keys("by_location")
+    }
+
+    fn all_years(&self) -> Result<Vec<LabeledCount>, Error> {
+        self.count_all_keys("by_year")
     }
 }
 
@@ -119,7 +132,7 @@ impl Document for Asset {
         // make the index value assuming we will emit something
         let value = IndexValue::new(self);
         let idv: Vec<u8> = serde_cbor::to_vec(&value)?;
-        if view == "by_tag" {
+        if view == "by_tags" {
             for tag in &self.tags {
                 emitter.emit(tag.as_bytes(), Some(&idv))?;
             }
@@ -136,6 +149,17 @@ impl Document for Asset {
                 let lower = loc.to_lowercase();
                 emitter.emit(lower.as_bytes(), Some(&idv))?;
             }
+        } else if view == "by_year" {
+            let year = if let Some(ud) = self.user_date.as_ref() {
+                ud.year()
+            } else if let Some(od) = self.original_date.as_ref() {
+                od.year()
+            } else {
+                self.import_date.year()
+            };
+            let formatted = format!("{}", year);
+            let bytes = formatted.as_bytes();
+            emitter.emit(bytes, Some(&idv))?;
         } else if view == "by_date" {
             let millis = if let Some(ud) = self.user_date.as_ref() {
                 ud.timestamp_millis()

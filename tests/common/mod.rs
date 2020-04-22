@@ -87,6 +87,8 @@ impl AsRef<Path> for DBPath {
 
 /// Construct a simple asset instance.
 pub fn build_basic_asset() -> Asset {
+    // use a predictable date for the date-related tests
+    let import_date = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
     Asset {
         key: "basic113".to_owned(),
         checksum: "cafebabe".to_owned(),
@@ -94,12 +96,12 @@ pub fn build_basic_asset() -> Asset {
         byte_length: 1024,
         media_type: "image/jpeg".to_owned(),
         tags: vec!["cat".to_owned(), "dog".to_owned()],
-        import_date: Utc::now(),
+        import_date,
         caption: Some("#cat and #dog @hawaii".to_owned()),
         location: Some("hawaii".to_owned()),
         duration: Some(5000),
-        user_date: Some(Utc::now()),
-        original_date: Some(Utc::now()),
+        user_date: None,
+        original_date: None,
     }
 }
 

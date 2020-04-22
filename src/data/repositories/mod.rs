@@ -49,6 +49,10 @@ impl RecordRepository for RecordRepositoryImpl {
     fn all_locations(&self) -> Result<Vec<LabeledCount>, Error> {
         self.datasource.all_locations()
     }
+
+    fn all_years(&self) -> Result<Vec<LabeledCount>, Error> {
+        self.datasource.all_years()
+    }
 }
 
 pub struct BlobRepositoryImpl {
@@ -379,6 +383,53 @@ mod tests {
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
         let result = repo.all_locations();
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_all_years_ok() {
+        // arrange
+        let expected = vec![
+            LabeledCount {
+                label: "1996".to_owned(),
+                count: 42,
+            },
+            LabeledCount {
+                label: "2006".to_owned(),
+                count: 101,
+            },
+            LabeledCount {
+                label: "2016".to_owned(),
+                count: 14,
+            },
+        ];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_years()
+            .with()
+            .returning(move || Ok(expected.clone()));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.all_years();
+        // assert
+        assert!(result.is_ok());
+        let actual = result.unwrap();
+        assert_eq!(actual.len(), 3);
+        assert!(actual.iter().any(|l| l.label == "1996" && l.count == 42));
+        assert!(actual.iter().any(|l| l.label == "2006" && l.count == 101));
+        assert!(actual.iter().any(|l| l.label == "2016" && l.count == 14));
+    }
+
+    #[test]
+    fn test_all_years_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_years()
+            .with()
+            .returning(|| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.all_years();
         // assert
         assert!(result.is_err());
     }
