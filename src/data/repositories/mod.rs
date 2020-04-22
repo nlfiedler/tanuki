@@ -53,6 +53,10 @@ impl RecordRepository for RecordRepositoryImpl {
     fn all_years(&self) -> Result<Vec<LabeledCount>, Error> {
         self.datasource.all_years()
     }
+
+    fn all_tags(&self) -> Result<Vec<LabeledCount>, Error> {
+        self.datasource.all_tags()
+    }
 }
 
 pub struct BlobRepositoryImpl {
@@ -430,6 +434,53 @@ mod tests {
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
         let result = repo.all_years();
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_all_tags_ok() {
+        // arrange
+        let expected = vec![
+            LabeledCount {
+                label: "cat".to_owned(),
+                count: 42,
+            },
+            LabeledCount {
+                label: "dog".to_owned(),
+                count: 101,
+            },
+            LabeledCount {
+                label: "mouse".to_owned(),
+                count: 14,
+            },
+        ];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_tags()
+            .with()
+            .returning(move || Ok(expected.clone()));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.all_tags();
+        // assert
+        assert!(result.is_ok());
+        let actual = result.unwrap();
+        assert_eq!(actual.len(), 3);
+        assert!(actual.iter().any(|l| l.label == "cat" && l.count == 42));
+        assert!(actual.iter().any(|l| l.label == "dog" && l.count == 101));
+        assert!(actual.iter().any(|l| l.label == "mouse" && l.count == 14));
+    }
+
+    #[test]
+    fn test_all_tags_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_tags()
+            .with()
+            .returning(|| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.all_tags();
         // assert
         assert!(result.is_err());
     }

@@ -28,8 +28,6 @@
 ***** record database
 ***** blob store
 *** TODO implement use cases
-**** TODO get all tags
-***** maybe use =count_all_keys()=
 **** TODO update asset details
 ***** translate caption parsing code in =resolvers.js=
 **** TODO search for assets

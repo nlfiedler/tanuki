@@ -38,6 +38,10 @@ pub trait EntityDataSource {
     /// Return all of the known years and the number of assets associated with
     /// each year.
     fn all_years(&self) -> Result<Vec<LabeledCount>, Error>;
+
+    /// Return all of the known tags and the number of assets associated with
+    /// each tag.
+    fn all_tags(&self) -> Result<Vec<LabeledCount>, Error>;
 }
 
 /// Implementation of the entity data source utilizing mokuroku to manage
@@ -109,6 +113,10 @@ impl EntityDataSource for EntityDataSourceImpl {
 
     fn all_years(&self) -> Result<Vec<LabeledCount>, Error> {
         self.count_all_keys("by_year")
+    }
+
+    fn all_tags(&self) -> Result<Vec<LabeledCount>, Error> {
+        self.count_all_keys("by_tags")
     }
 }
 

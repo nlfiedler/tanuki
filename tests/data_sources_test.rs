@@ -160,3 +160,46 @@ fn test_all_years() {
     assert!(actual.iter().any(|l| l.label == "2017" && l.count == 1));
     assert!(actual.iter().any(|l| l.label == "2018" && l.count == 2));
 }
+
+#[test]
+fn test_all_tags() {
+    let db_path = DBPath::new("_test_all_tags");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    // zero assets, zero tags
+    let actual = datasource.all_tags().unwrap();
+    assert_eq!(actual.len(), 0);
+
+    // one asset, two tag(s)
+    let asset = common::build_basic_asset();
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.all_tags().unwrap();
+    assert_eq!(actual.len(), 2);
+    assert!(actual.iter().any(|l| l.label == "cat" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "dog" && l.count == 1));
+
+    // multiple tags and occurrences
+    let mut asset = common::build_basic_asset();
+    asset.key = "single999".to_owned();
+    asset.checksum = "deadbeaf".to_owned();
+    asset.tags = vec!["bird".to_owned(), "dog".to_owned()];
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "wonder101".to_owned();
+    asset.checksum = "deadd00d".to_owned();
+    asset.tags = vec!["cat".to_owned(), "mouse".to_owned()];
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "tuesday42".to_owned();
+    asset.checksum = "beefd00d".to_owned();
+    asset.tags = vec!["cat".to_owned(), "lizard".to_owned(), "chicken".to_owned()];
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.all_tags().unwrap();
+    assert_eq!(actual.len(), 6);
+    assert!(actual.iter().any(|l| l.label == "bird" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "cat" && l.count == 3));
+    assert!(actual.iter().any(|l| l.label == "chicken" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "dog" && l.count == 2));
+    assert!(actual.iter().any(|l| l.label == "lizard" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "mouse" && l.count == 1));
+}

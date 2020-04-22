@@ -34,6 +34,10 @@ pub trait RecordRepository {
     /// Return all of the known years and the number of assets associated with
     /// each year.
     fn all_years(&self) -> Result<Vec<LabeledCount>, Error>;
+
+    /// Return all of the known tags and the number of assets associated with
+    /// each tag.
+    fn all_tags(&self) -> Result<Vec<LabeledCount>, Error>;
 }
 
 ///
