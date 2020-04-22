@@ -188,6 +188,17 @@ impl Database {
     }
 
     ///
+    /// Query the index and return the number of occurrences of all keys.
+    ///
+    /// The map keys are the index keys, and the map values are the number of
+    /// times each key was encountered in the index.
+    ///
+    pub fn count_all_keys(&self, view: &str) -> Result<HashMap<Box<[u8]>, usize>, Error> {
+        let mut db = self.db.lock().unwrap();
+        db.count_all_keys(view)
+    }
+
+    ///
     /// Find all those keys that start with the given prefix.
     ///
     #[allow(dead_code)]

@@ -28,8 +28,6 @@
 ***** record database
 ***** blob store
 *** TODO implement use cases
-**** TODO get all locations
-***** maybe use =count_all_keys()=
 **** TODO get all years
 ***** maybe use =count_all_keys()=
 **** TODO get all tags
@@ -38,6 +36,7 @@
 ***** translate caption parsing code in =resolvers.js=
 **** TODO search for assets
 ***** translate database =query()= function in =backend.js=
+***** should always paginate, never return _everything_
 *** TODO extract metadata from incoming image assets
 **** extract original date/time from images
 **** image orientation needs to be adjusted
@@ -64,15 +63,29 @@
 **** mutations
 ***** TODO upload(file: Upload!): ID!
 ***** TODO update(id: ID!, asset: AssetInput!): Asset!
-*** TODO decide how assets, previews, thumbnails will be served
-**** do these need use cases?
-**** should use repositories to allow for caching
+*** TODO decide how to serve the assets, previews, thumbnails
+**** blob repository will produce the thumbnails
+**** blob repository may cache results on disk and/or in memory
+*** TODO decide how to efficiently provide content type with raw assets
+**** response includes content type (i.e. media type)
+**** should minimize disk seeks and database reads
+**** could decode asset id and guess media type from extension
+**** could read media type from asset record and cache in memory
+*** TODO decide how to efficiently provide thumbnail dimensions in search results
+**** only need this for the progressive image gallery feature on client
+**** client performs search via GraphQL, gets filename, location, datetime, mimetype
+**** computing the dimensions takes time for each image, so data should be cached
+**** secondary index cannot reasonably collect the dimensions from the asset model
+**** should populate the cache when importing assets rather than when querying
+**** GraphQL resolver merges dimension values with search results
+**** blob repository provides dimensions
+***** input is the asset identifier
+***** data stored in separate database column family
+***** repository can cache values in memory if needed
 *** TODO serve the existing ReasonML frontend
 *** TODO plan how database migrations will happen in the future
 **** maintain a meta record with version information
 **** look at how the serde.rs library can help
-*** TODO image thumbnails (those that maintain aspect ratio)
-**** need to populate the database with this information (on import)
 *** TODO extract metadata from incoming video assets
 **** get the duration of videos in seconds
 **** get the creation time of videos
@@ -81,6 +94,11 @@
 ***** https://crates.io/crates/ffmpeg-dev (MIT/LGPL)
 ***** https://crates.io/crates/ffmpeg-next (WTFPL)
 **** consider parsing the metadata to get the information
+*** TODO video thumbnails
+**** there are already some videos that have thumbnails
+**** they have =.jpg= extension instead of the original (=.mov=)
+**** should these be retained, removed, or rebuilt?
+**** should these be generated on import, or as needed?
 *** TODO need configuration mechanism
 **** path for database files
 **** path for where file uploads go temporarily
@@ -173,15 +191,16 @@
 **** =hey -n 10000 http://localhost:<port>/=
 ***** numbers below are for serving =index.html=
 ***** ~-exe~ is the compiled executable
-| service              |   qps |
-|----------------------+-------|
-| apache               | 15000 |
-| tanuki (node)        |  3000 |
-| tanuki (shelf-exe)   |  2600 |
-| tanuki (angel-exe)   |  1010 |
-| zorigami (rust)      |  9400 |
+| service            |   qps |
+|--------------------+-------|
+| apache             | 15000 |
+| zorigami           |  9400 |
+| tanuki (node)      |  3000 |
+| tanuki (shelf-exe) |  2600 |
+| tanuki (angel-exe) |  1010 |
 *** consider if caching/guessing mimetype is needed when serving images
-*** consider how to populate the thumbnail size cache
+*** consider a "sidecar" file with each asset that has this information
+*** the repository and data source would have API for reading this data
 ** Search Improvements
 *** TODO Support advanced queries using Google-style operators
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
@@ -219,6 +238,18 @@ include it in the database records.
 **** c.f. "licenses" on https://flutter.dev/docs/resources/faq
 ** Mobile app
 *** Use [[https://pub.dev/packages/image_picker][image_picker]] to allow user to select images from photo library
+** Build Automation
+*** For building the applications
+*** Requirements
+**** Consistent builds
+**** Supports Rust, Dart, Flutter
+**** Supports macOS, Windows?, Linux?
+**** Likely need a build machine for each target (mac, windows, linux)
+**** Contenders
+****** https://bazel.build
+****** https://please.build
+****** https://jenkins.io
+****** https://www.buildbot.net
 ** Design Notes
 *** Dart vs Rust
 | Dart YES            | Dart NO              | Rust YES              | Rust NO      |

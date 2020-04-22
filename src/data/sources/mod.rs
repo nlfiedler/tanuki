@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 use crate::data::models::AssetModel;
-use crate::domain::entities::Asset;
+use crate::domain::entities::{Asset, LabeledCount};
 use chrono::prelude::*;
 use failure::{err_msg, Error};
 #[cfg(test)]
@@ -30,6 +30,10 @@ pub trait EntityDataSource {
 
     /// Return the number of assets stored in the data source.
     fn count_assets(&self) -> Result<u64, Error>;
+
+    /// Return all of the known locations and the number of assets associated
+    /// with each location.
+    fn all_locations(&self) -> Result<Vec<LabeledCount>, Error>;
 }
 
 /// Implementation of the entity data source utilizing mokuroku to manage
@@ -80,6 +84,18 @@ impl EntityDataSource for EntityDataSourceImpl {
     fn count_assets(&self) -> Result<u64, Error> {
         let count: usize = self.database.count_prefix("asset/")?;
         Ok(count as u64)
+    }
+
+    fn all_locations(&self) -> Result<Vec<LabeledCount>, Error> {
+        let map = self.database.count_all_keys("by_location")?;
+        let results: Vec<LabeledCount> = map
+            .iter()
+            .map(|t| LabeledCount {
+                label: String::from_utf8((*t.0).to_vec()).unwrap(),
+                count: *t.1,
+            })
+            .collect();
+        Ok(results)
     }
 }
 

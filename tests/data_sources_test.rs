@@ -79,3 +79,43 @@ fn test_count_assets() {
     let actual = datasource.count_assets().unwrap();
     assert_eq!(actual, 3);
 }
+
+#[test]
+fn test_all_locations() {
+    let db_path = DBPath::new("_test_all_locations");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    // zero locations
+    let actual = datasource.all_locations().unwrap();
+    assert_eq!(actual.len(), 0);
+
+    // one location(s)
+    let asset = common::build_basic_asset();
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.all_locations().unwrap();
+    assert_eq!(actual.len(), 1);
+    assert_eq!(actual[0].label, "hawaii");
+    assert_eq!(actual[0].count, 1);
+
+    // multiple locations and occurrences
+    let mut asset = common::build_basic_asset();
+    asset.key = "single999".to_owned();
+    asset.checksum = "deadbeaf".to_owned();
+    asset.location = Some("paris".to_owned());
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "wonder101".to_owned();
+    asset.checksum = "deadd00d".to_owned();
+    asset.location = Some("london".to_owned());
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "tuesday42".to_owned();
+    asset.checksum = "beefd00d".to_owned();
+    asset.location = Some("london".to_owned());
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.all_locations().unwrap();
+    assert_eq!(actual.len(), 3);
+    assert!(actual.iter().any(|l| l.label == "hawaii" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "london" && l.count == 2));
+    assert!(actual.iter().any(|l| l.label == "paris" && l.count == 1));
+}

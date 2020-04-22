@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-use crate::domain::entities::Asset;
+use crate::domain::entities::{Asset, LabeledCount};
 use failure::Error;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
@@ -26,6 +26,10 @@ pub trait RecordRepository {
 
     /// Return the number of assets stored in the storage system.
     fn count_assets(&self) -> Result<u64, Error>;
+
+    /// Return all of the known locations and the number of assets associated
+    /// with each location.
+    fn all_locations(&self) -> Result<Vec<LabeledCount>, Error>;
 }
 
 ///

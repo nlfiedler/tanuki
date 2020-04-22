@@ -48,6 +48,17 @@ impl cmp::PartialEq for Asset {
 
 impl cmp::Eq for Asset {}
 
+/// A label and its associated count.
+///
+/// `LabeledCount` represents an attribute value and the number of occurrences
+/// of that value in the data set. For instance, a location label and the number
+/// of times that location occurs among the assets.
+#[derive(Clone)]
+pub struct LabeledCount {
+    pub label: String,
+    pub count: usize,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

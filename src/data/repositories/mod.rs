@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 use crate::data::sources::EntityDataSource;
-use crate::domain::entities::Asset;
+use crate::domain::entities::{Asset, LabeledCount};
 use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
 use failure::{err_msg, Error};
@@ -44,6 +44,10 @@ impl RecordRepository for RecordRepositoryImpl {
 
     fn count_assets(&self) -> Result<u64, Error> {
         self.datasource.count_assets()
+    }
+
+    fn all_locations(&self) -> Result<Vec<LabeledCount>, Error> {
+        self.datasource.all_locations()
     }
 }
 
@@ -328,6 +332,53 @@ mod tests {
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
         let result = repo.count_assets();
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_all_locations_ok() {
+        // arrange
+        let expected = vec![
+            LabeledCount {
+                label: "hawaii".to_owned(),
+                count: 42,
+            },
+            LabeledCount {
+                label: "paris".to_owned(),
+                count: 101,
+            },
+            LabeledCount {
+                label: "london".to_owned(),
+                count: 14,
+            },
+        ];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_locations()
+            .with()
+            .returning(move || Ok(expected.clone()));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.all_locations();
+        // assert
+        assert!(result.is_ok());
+        let actual = result.unwrap();
+        assert_eq!(actual.len(), 3);
+        assert!(actual.iter().any(|l| l.label == "hawaii" && l.count == 42));
+        assert!(actual.iter().any(|l| l.label == "london" && l.count == 14));
+        assert!(actual.iter().any(|l| l.label == "paris" && l.count == 101));
+    }
+
+    #[test]
+    fn test_all_locations_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_locations()
+            .with()
+            .returning(|| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.all_locations();
         // assert
         assert!(result.is_err());
     }
