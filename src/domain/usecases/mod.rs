@@ -10,6 +10,7 @@ pub mod count;
 pub mod fetch;
 pub mod import;
 pub mod location;
+pub mod update;
 pub mod tags;
 pub mod year;
 

@@ -28,8 +28,6 @@
 ***** record database
 ***** blob store
 *** TODO implement use cases
-**** TODO update asset details
-***** translate caption parsing code in =resolvers.js=
 **** TODO search for assets
 ***** translate database =query()= function in =backend.js=
 ***** should always paginate, never return _everything_
@@ -48,6 +46,9 @@
 **** consider how to write tests for this feature
 *** TODO implement GraphQL backend
 **** c.f. =public/schema.graphql=
+**** n.b. =SearchResult= should have media type but it was missing before
+**** n.b. =Asset= has a filepath, which should be retrieved from the repository
+***** that is, =BlobRepository= should get a function named =relative_path()= that decodes the asset id
 **** queries
 ***** TODO asset(id: ID!): Asset
 ***** TODO lookup(checksum: String!): Asset
@@ -59,6 +60,7 @@
 **** mutations
 ***** TODO upload(file: Upload!): ID!
 ***** TODO update(id: ID!, asset: AssetInput!): Asset!
+****** filter empty tags before sending to the usecase
 *** TODO decide how to serve the assets, previews, thumbnails
 **** blob repository will produce the thumbnails
 **** blob repository may cache results on disk and/or in memory
