@@ -16,7 +16,7 @@ pub struct Asset {
     pub filename: String,
     /// Size of the asset in bytes.
     pub byte_length: u64,
-    /// Detected media type.
+    /// Media type (formerly MIME type) of the asset.
     pub media_type: String,
     /// Set of user-assigned labels for the asset.
     pub tags: Vec<String>,
@@ -57,6 +57,39 @@ impl cmp::Eq for Asset {}
 pub struct LabeledCount {
     pub label: String,
     pub count: usize,
+}
+
+/// `SearchResult` is returned by data repository queries for assets matching a
+/// given set of criteria.
+#[derive(Clone, Debug)]
+pub struct SearchResult {
+    /// Original filename of the asset.
+    pub filename: String,
+    /// Media type (formerly MIME type) of the asset.
+    pub media_type: String,
+    /// User-defined location of the asset.
+    pub location: Option<String>,
+    /// Best date/time for the indexed asset.
+    pub datetime: DateTime<Utc>,
+}
+
+impl SearchResult {
+    /// Build a search result from the given asset.
+    pub fn new(asset: &Asset) -> Self {
+        let date = if let Some(ud) = asset.user_date.as_ref() {
+            ud.to_owned()
+        } else if let Some(od) = asset.original_date.as_ref() {
+            od.to_owned()
+        } else {
+            asset.import_date
+        };
+        Self {
+            filename: asset.filename.clone(),
+            media_type: asset.media_type.clone(),
+            location: asset.location.clone(),
+            datetime: date,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -131,5 +164,74 @@ mod tests {
         };
         let actual = asset1.to_string();
         assert_eq!(actual, "Asset(abc123, img_1234.jpg)");
+    }
+
+    #[test]
+    fn test_search_result_new_user_date() {
+        // arrange
+        let asset = Asset {
+            key: "abc123".to_owned(),
+            checksum: "cafebabe".to_owned(),
+            filename: "img_1234.jpg".to_owned(),
+            byte_length: 1024,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["cat".to_owned(), "dog".to_owned()],
+            import_date: Utc.ymd(2017, 4, 28).and_hms(11, 12, 59),
+            caption: None,
+            location: None,
+            duration: None,
+            user_date: Some(Utc.ymd(2018, 5, 31).and_hms(21, 10, 11)),
+            original_date: Some(Utc.ymd(2016, 8, 30).and_hms(12, 10, 30)),
+        };
+        // act
+        let result = SearchResult::new(&asset);
+        // assert
+        assert_eq!(result.datetime.year(), 2018);
+    }
+
+    #[test]
+    fn test_search_result_new_original_date() {
+        // arrange
+        let asset = Asset {
+            key: "abc123".to_owned(),
+            checksum: "cafebabe".to_owned(),
+            filename: "img_1234.jpg".to_owned(),
+            byte_length: 1024,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["cat".to_owned(), "dog".to_owned()],
+            import_date: Utc.ymd(2017, 4, 28).and_hms(11, 12, 59),
+            caption: None,
+            location: None,
+            duration: None,
+            user_date: None,
+            original_date: Some(Utc.ymd(2016, 8, 30).and_hms(12, 10, 30)),
+        };
+        // act
+        let result = SearchResult::new(&asset);
+        // assert
+        assert_eq!(result.datetime.year(), 2016);
+    }
+
+    #[test]
+    fn test_search_result_new_import_date() {
+        // arrange
+        let asset = Asset {
+            key: "abc123".to_owned(),
+            checksum: "cafebabe".to_owned(),
+            filename: "img_1234.jpg".to_owned(),
+            byte_length: 1024,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["cat".to_owned(), "dog".to_owned()],
+            import_date: Utc.ymd(2017, 4, 28).and_hms(11, 12, 59),
+            caption: None,
+            location: None,
+            duration: None,
+            user_date: None,
+            original_date: None,
+        };
+        // act
+        let result = SearchResult::new(&asset);
+        // assert
+        assert_eq!(result.datetime.year(), 2017);
     }
 }

@@ -30,6 +30,17 @@
 *** TODO implement use cases
 **** TODO search for assets
 ***** translate database =query()= function in =backend.js=
+***** DONE query by tags: use =query_all_keys()=
+***** DONE query by date range: use =query_range()=
+***** DONE query by location
+***** DONE query by filename
+***** DONE query by media type
+***** TODO filter by date range
+***** TODO filter by location
+***** TODO filter by filename
+***** TODO filter by media type
+***** TODO order by date range (up/down)
+***** should be able to search and filter all combinations (as before)
 ***** should always paginate, never return _everything_
 *** TODO extract metadata from incoming image assets
 **** extract original date/time from images
@@ -49,6 +60,10 @@
 **** n.b. =SearchResult= should have media type but it was missing before
 **** n.b. =Asset= has a filepath, which should be retrieved from the repository
 ***** that is, =BlobRepository= should get a function named =relative_path()= that decodes the asset id
+**** can represent optional user_date in asset update using an Option of Option
+***** if Some(None) then clear the user date
+***** if None then do not change the user date
+***** if Some(Some(d)) then set the user date
 **** queries
 ***** TODO asset(id: ID!): Asset
 ***** TODO lookup(checksum: String!): Asset
@@ -206,9 +221,18 @@
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
 **** move perkeep style query support from mujina to tanuki
 **** webui needs an "advanced" tab/link selector on the search page
+*** TODO Avoid loading all results into memory and then filtering
+**** database queries should probably take a filter closure
+**** database functions iterate the results, applying the filter
+**** the remaining results are then collecting into a vector
+*** TODO Support searching for assets that have no tags at all
+*** TODO Support searching for assets that have no location at all
+*** TODO Support searching for assets that have no caption at all
 *** TODO Support searching the caption text
+**** likely would involve a full table scan
 *** TODO Support wildcards in filename, mimetype (others?)
-*** TODO Need a query to find image assets whose orientation is incorrect/unknown
+**** likely would involve a full table scan
+*** TODO Query for image assets whose orientation is incorrect/unknown
 ** Data Format Support
 *** TODO Detect time zone offset in EXIF data
 According to Wikipedia the 2.31 version of EXIF will support time-zone

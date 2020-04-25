@@ -1,7 +1,8 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-use crate::domain::entities::{Asset, LabeledCount};
+use crate::domain::entities::{Asset, LabeledCount, SearchResult};
+use chrono::prelude::*;
 use failure::Error;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
@@ -38,6 +39,33 @@ pub trait RecordRepository {
     /// Return all of the known tags and the number of assets associated with
     /// each tag.
     fn all_tags(&self) -> Result<Vec<LabeledCount>, Error>;
+
+    /// Search for assets that have all of the given tags.
+    fn query_by_tags<'a>(&self, tags: &'a [&'a str]) -> Result<Vec<SearchResult>, Error>;
+
+    /// Search for assets that have any of the given locations.
+    fn query_by_locations<'a>(&self, locations: &'a [&'a str]) -> Result<Vec<SearchResult>, Error>;
+
+    /// Search for assets whose file name matches the one given.
+    fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error>;
+
+    /// Search for assets whose media type matches the one given.
+    fn query_by_mimetype(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error>;
+
+    /// Search for asssets whose best date is before the one given.
+    fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
+
+    /// Search for asssets whose best date is equal to or after the one given.
+    fn query_after_date(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
+
+    /// Search for assets whose best date is between the after and before dates.
+    ///
+    /// As with `query_after_date()`, the after value inclusive.
+    fn query_date_range(
+        &self,
+        after: DateTime<Utc>,
+        before: DateTime<Utc>,
+    ) -> Result<Vec<SearchResult>, Error>;
 }
 
 ///

@@ -2,13 +2,14 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 use crate::data::models::AssetModel;
-use crate::domain::entities::{Asset, LabeledCount};
+use crate::domain::entities::{Asset, LabeledCount, SearchResult};
 use chrono::prelude::*;
 use failure::{err_msg, Error};
 #[cfg(test)]
 use mockall::automock;
-use mokuroku::{base32, Document, Emitter};
+use mokuroku::{base32, Document, Emitter, QueryResult};
 use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
 use std::path::Path;
 use std::str;
 
@@ -27,6 +28,33 @@ pub trait EntityDataSource {
     ///
     /// Returns the asset identifier.
     fn query_by_checksum(&self, digest: &str) -> Result<Option<String>, Error>;
+
+    /// Search for assets that have all of the given tags.
+    fn query_by_tags<'a>(&self, tags: &'a [&'a str]) -> Result<Vec<SearchResult>, Error>;
+
+    /// Search for assets that have any of the given locations.
+    fn query_by_locations<'a>(&self, locations: &'a [&'a str]) -> Result<Vec<SearchResult>, Error>;
+
+    /// Search for assets whose file name matches the one given.
+    fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error>;
+
+    /// Search for assets whose media type matches the one given.
+    fn query_by_mimetype(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error>;
+
+    /// Search for asssets whose best date is before the one given.
+    fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
+
+    /// Search for asssets whose best date is equal to or after the one given.
+    fn query_after_date(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
+
+    /// Search for assets whose best date is between the after and before dates.
+    ///
+    /// As with `query_after_date()`, the after value inclusive.
+    fn query_date_range(
+        &self,
+        after: DateTime<Utc>,
+        before: DateTime<Utc>,
+    ) -> Result<Vec<SearchResult>, Error>;
 
     /// Return the number of assets stored in the data source.
     fn count_assets(&self) -> Result<u64, Error>;
@@ -102,6 +130,61 @@ impl EntityDataSource for EntityDataSourceImpl {
         }))
     }
 
+    fn query_by_tags<'a>(&self, tags: &'a [&'a str]) -> Result<Vec<SearchResult>, Error> {
+        let query_results = self.database.query_all_keys("by_tags", tags)?;
+        let search_results = convert_results(query_results);
+        Ok(search_results)
+    }
+
+    fn query_by_locations<'a>(&self, locations: &'a [&'a str]) -> Result<Vec<SearchResult>, Error> {
+        // query each of the keys and collect the results into one list
+        let mut query_results: Vec<QueryResult> = Vec::new();
+        for key in locations.iter() {
+            let mut results = self.database.query_by_key("by_location", *key)?;
+            query_results.append(&mut results);
+        }
+        let search_results = convert_results(query_results);
+        Ok(search_results)
+    }
+
+    fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error> {
+        let query_results = self.database.query_by_key("by_filename", filename)?;
+        let search_results = convert_results(query_results);
+        Ok(search_results)
+    }
+
+    fn query_by_mimetype(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error> {
+        let query_results = self.database.query_by_key("by_media_type", mimetype)?;
+        let search_results = convert_results(query_results);
+        Ok(search_results)
+    }
+
+    fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+        let key = encode_datetime(&before);
+        let query_results = self.database.query_less_than("by_date", key)?;
+        let search_results = convert_results(query_results);
+        Ok(search_results)
+    }
+
+    fn query_after_date(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+        let key = encode_datetime(&after);
+        let query_results = self.database.query_greater_than("by_date", key)?;
+        let search_results = convert_results(query_results);
+        Ok(search_results)
+    }
+
+    fn query_date_range(
+        &self,
+        after: DateTime<Utc>,
+        before: DateTime<Utc>,
+    ) -> Result<Vec<SearchResult>, Error> {
+        let key_a = encode_datetime(&after);
+        let key_b = encode_datetime(&before);
+        let query_results = self.database.query_range("by_date", key_a, key_b)?;
+        let search_results = convert_results(query_results);
+        Ok(search_results)
+    }
+
     fn count_assets(&self) -> Result<u64, Error> {
         let count: usize = self.database.count_prefix("asset/")?;
         Ok(count as u64)
@@ -120,6 +203,28 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 }
 
+/// Convert the database query results to our search results.
+///
+/// Silently drops any results that fail to deserialize.
+fn convert_results(query_results: Vec<QueryResult>) -> Vec<SearchResult> {
+    let search_results: Vec<SearchResult> = query_results
+        .into_iter()
+        .filter_map(|r| {
+            // ignore any query results that fail to serialize, there is not
+            // much that can be done with that now
+            SearchResult::try_from(r).ok()
+        })
+        .collect();
+    search_results
+}
+
+/// Encode the date/time as a BigEndian base32hex encoded value.
+fn encode_datetime(date: &DateTime<Utc>) -> Vec<u8> {
+    let millis = date.timestamp_millis();
+    let bytes = millis.to_be_bytes().to_vec();
+    base32::encode(&bytes)
+}
+
 impl Document for Asset {
     fn from_bytes(key: &[u8], value: &[u8]) -> Result<Self, Error> {
         let mut de = serde_cbor::Deserializer::from_slice(value);
@@ -132,14 +237,14 @@ impl Document for Asset {
     fn to_bytes(&self) -> Result<Vec<u8>, Error> {
         let mut encoded: Vec<u8> = Vec::new();
         let mut ser = serde_cbor::Serializer::new(&mut encoded);
-        AssetModel::serialize(&self, &mut ser)?;
+        AssetModel::serialize(self, &mut ser)?;
         Ok(encoded)
     }
 
     fn map(&self, view: &str, emitter: &Emitter) -> Result<(), Error> {
         // make the index value assuming we will emit something
-        let value = IndexValue::new(self);
-        let idv: Vec<u8> = serde_cbor::to_vec(&value)?;
+        let value = SearchResult::new(self);
+        let idv: Vec<u8> = value.to_bytes()?;
         if view == "by_tags" {
             for tag in &self.tags {
                 emitter.emit(tag.as_bytes(), Some(&idv))?;
@@ -169,16 +274,14 @@ impl Document for Asset {
             let bytes = formatted.as_bytes();
             emitter.emit(bytes, Some(&idv))?;
         } else if view == "by_date" {
-            let millis = if let Some(ud) = self.user_date.as_ref() {
-                ud.timestamp_millis()
+            let best_date = if let Some(ud) = self.user_date.as_ref() {
+                encode_datetime(ud)
             } else if let Some(od) = self.original_date.as_ref() {
-                od.timestamp_millis()
+                encode_datetime(od)
             } else {
-                self.import_date.timestamp_millis()
+                encode_datetime(&self.import_date)
             };
-            let bytes = millis.to_be_bytes().to_vec();
-            let encoded = base32::encode(&bytes);
-            emitter.emit(&encoded, Some(&idv))?;
+            emitter.emit(&best_date, Some(&idv))?;
         }
         Ok(())
     }
@@ -194,6 +297,7 @@ pub fn mapper(key: &[u8], value: &[u8], view: &str, emitter: &Emitter) -> Result
 
 /// Database index value for an asset.
 #[derive(Serialize, Deserialize)]
+#[serde(remote = "SearchResult")]
 struct IndexValue {
     /// Original filename of the asset.
     #[serde(rename = "n")]
@@ -209,27 +313,27 @@ struct IndexValue {
     pub datetime: DateTime<Utc>,
 }
 
-impl IndexValue {
-    /// Build an index value from the given asset.
-    pub fn new(asset: &Asset) -> Self {
-        let date = if let Some(ud) = asset.user_date.as_ref() {
-            ud.to_owned()
-        } else if let Some(od) = asset.original_date.as_ref() {
-            od.to_owned()
-        } else {
-            asset.import_date
-        };
-        Self {
-            filename: asset.filename.clone(),
-            media_type: asset.media_type.clone(),
-            location: asset.location.clone(),
-            datetime: date,
-        }
+impl SearchResult {
+    // Deserialize from a slice of bytes.
+    fn from_bytes(value: &[u8]) -> Result<Self, Error> {
+        let mut de = serde_cbor::Deserializer::from_slice(value);
+        let result = IndexValue::deserialize(&mut de)?;
+        Ok(result)
     }
 
-    // /// Deserialize from a slice of bytes.
-    // pub fn from_bytes(value: &[u8]) -> Result<Self, Error> {
-    //     let serde_result: IndexValue = serde_cbor::from_slice(value)?;
-    //     Ok(serde_result)
-    // }
+    // Serialize to a vector of bytes.
+    fn to_bytes(&self) -> Result<Vec<u8>, Error> {
+        let mut encoded: Vec<u8> = Vec::new();
+        let mut ser = serde_cbor::Serializer::new(&mut encoded);
+        IndexValue::serialize(self, &mut ser)?;
+        Ok(encoded)
+    }
+}
+
+impl TryFrom<QueryResult> for SearchResult {
+    type Error = failure::Error;
+
+    fn try_from(value: QueryResult) -> Result<Self, Self::Error> {
+        SearchResult::from_bytes(value.value.as_ref())
+    }
 }

@@ -169,6 +169,78 @@ impl Database {
     }
 
     ///
+    /// Query the named view by a certain key.
+    ///
+    pub fn query_by_key<K: AsRef<[u8]>>(
+        &self,
+        view: &str,
+        key: K,
+    ) -> Result<Vec<mokuroku::QueryResult>, Error> {
+        let mut db = self.db.lock().unwrap();
+        let iter = db.query_by_key(view, key)?;
+        Ok(iter.collect())
+    }
+
+    ///
+    /// Query the index for documents that have all of the given keys.
+    ///
+    pub fn query_all_keys<I, N>(
+        &self,
+        view: &str,
+        keys: I,
+    ) -> Result<Vec<mokuroku::QueryResult>, Error>
+    where
+        I: IntoIterator<Item = N>,
+        N: AsRef<[u8]>,
+    {
+        let mut db = self.db.lock().unwrap();
+        db.query_all_keys(view, keys)
+    }
+
+    ///
+    /// Query an index by range of key values, returning those results whose key
+    /// is equal to or greater than the first key, and less than the second key.
+    ///
+    pub fn query_range<K: AsRef<[u8]>>(
+        &self,
+        view: &str,
+        key_a: K,
+        key_b: K,
+    ) -> Result<Vec<mokuroku::QueryResult>, Error> {
+        let mut db = self.db.lock().unwrap();
+        let iter = db.query_range(view, key_a, key_b)?;
+        Ok(iter.collect())
+    }
+
+    ///
+    /// Query on the given index, returning those results whose key is *equal*
+    /// to or *greater than* the key.
+    ///
+    pub fn query_greater_than<K: AsRef<[u8]>>(
+        &self,
+        view: &str,
+        key: K,
+    ) -> Result<Vec<mokuroku::QueryResult>, Error> {
+        let mut db = self.db.lock().unwrap();
+        let iter = db.query_greater_than(view, key)?;
+        Ok(iter.collect())
+    }
+
+    ///
+    /// Query on the given index, returning those results whose key strictly
+    /// *less than* the key.
+    ///
+    pub fn query_less_than<K: AsRef<[u8]>>(
+        &self,
+        view: &str,
+        key: K,
+    ) -> Result<Vec<mokuroku::QueryResult>, Error> {
+        let mut db = self.db.lock().unwrap();
+        let iter = db.query_less_than(view, key)?;
+        Ok(iter.collect())
+    }
+
+    ///
     /// Count those keys that start with the given prefix.
     ///
     pub fn count_prefix(&self, prefix: &str) -> Result<usize, Error> {

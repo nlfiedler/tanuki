@@ -10,8 +10,9 @@ pub mod count;
 pub mod fetch;
 pub mod import;
 pub mod location;
-pub mod update;
+pub mod search;
 pub mod tags;
+pub mod update;
 pub mod year;
 
 /// `UseCase` is the interface by which all use cases are invoked.

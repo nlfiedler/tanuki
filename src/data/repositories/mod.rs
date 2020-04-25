@@ -2,9 +2,10 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 use crate::data::sources::EntityDataSource;
-use crate::domain::entities::{Asset, LabeledCount};
+use crate::domain::entities::{Asset, LabeledCount, SearchResult};
 use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
+use chrono::prelude::*;
 use failure::{err_msg, Error};
 use std::path::{Path, PathBuf};
 
@@ -56,6 +57,38 @@ impl RecordRepository for RecordRepositoryImpl {
 
     fn all_tags(&self) -> Result<Vec<LabeledCount>, Error> {
         self.datasource.all_tags()
+    }
+
+    fn query_by_tags<'a>(&self, tags: &'a [&'a str]) -> Result<Vec<SearchResult>, Error> {
+        self.datasource.query_by_tags(tags)
+    }
+
+    fn query_by_locations<'a>(&self, locations: &'a [&'a str]) -> Result<Vec<SearchResult>, Error> {
+        self.datasource.query_by_locations(locations)
+    }
+
+    fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error> {
+        self.datasource.query_by_filename(filename)
+    }
+
+    fn query_by_mimetype(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error> {
+        self.datasource.query_by_mimetype(mimetype)
+    }
+
+    fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+        self.datasource.query_before_date(before)
+    }
+
+    fn query_after_date(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+        self.datasource.query_after_date(after)
+    }
+
+    fn query_date_range(
+        &self,
+        after: DateTime<Utc>,
+        before: DateTime<Utc>,
+    ) -> Result<Vec<SearchResult>, Error> {
+        self.datasource.query_date_range(after, before)
     }
 }
 
@@ -110,7 +143,6 @@ impl BlobRepository for BlobRepositoryImpl {
 mod tests {
     use super::*;
     use crate::data::sources::MockEntityDataSource;
-    use chrono::prelude::*;
     use failure::err_msg;
     use mockall::predicate::*;
     use tempfile::tempdir;
@@ -481,6 +513,273 @@ mod tests {
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
         let result = repo.all_tags();
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_query_by_tags_ok() {
+        // arrange
+        let results = vec![SearchResult {
+            filename: "img_1234.jpg".to_owned(),
+            media_type: "image/jpeg".to_owned(),
+            location: Some("hawaii".to_owned()),
+            datetime: Utc::now(),
+        }];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_tags()
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let tags = vec!["kitten"];
+        let result = repo.query_by_tags(&tags);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].filename, "img_1234.jpg");
+    }
+
+    #[test]
+    fn test_query_by_tags_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_tags()
+            .returning(move |_| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let tags = vec!["kitten"];
+        let result = repo.query_by_tags(&tags);
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_query_before_date_ok() {
+        // arrange
+        let results = vec![SearchResult {
+            filename: "img_1234.jpg".to_owned(),
+            media_type: "image/jpeg".to_owned(),
+            location: Some("hawaii".to_owned()),
+            datetime: Utc::now(),
+        }];
+        let before = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_before_date()
+            .with(eq(before))
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.query_before_date(before);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].filename, "img_1234.jpg");
+    }
+
+    #[test]
+    fn test_query_before_date_err() {
+        // arrange
+        let before = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_before_date()
+            .with(eq(before))
+            .returning(move |_| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.query_before_date(before);
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_query_after_date_ok() {
+        // arrange
+        let results = vec![SearchResult {
+            filename: "img_1234.jpg".to_owned(),
+            media_type: "image/jpeg".to_owned(),
+            location: Some("hawaii".to_owned()),
+            datetime: Utc::now(),
+        }];
+        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_after_date()
+            .with(eq(after))
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.query_after_date(after);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].filename, "img_1234.jpg");
+    }
+
+    #[test]
+    fn test_query_after_date_err() {
+        // arrange
+        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_after_date()
+            .with(eq(after))
+            .returning(move |_| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.query_after_date(after);
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_query_date_range_ok() {
+        // arrange
+        let results = vec![SearchResult {
+            filename: "img_1234.jpg".to_owned(),
+            media_type: "image/jpeg".to_owned(),
+            location: Some("hawaii".to_owned()),
+            datetime: Utc::now(),
+        }];
+        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let before = Utc.ymd(2019, 7, 4).and_hms(21, 10, 11);
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_date_range()
+            .with(eq(after), eq(before))
+            .returning(move |_, _| Ok(results.clone()));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.query_date_range(after, before);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].filename, "img_1234.jpg");
+    }
+
+    #[test]
+    fn test_query_date_range_err() {
+        // arrange
+        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let before = Utc.ymd(2019, 7, 4).and_hms(21, 10, 11);
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_date_range()
+            .with(eq(after), eq(before))
+            .returning(move |_, _| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.query_date_range(after, before);
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_query_by_locations_ok() {
+        // arrange
+        let results = vec![SearchResult {
+            filename: "img_1234.jpg".to_owned(),
+            media_type: "image/jpeg".to_owned(),
+            location: Some("hawaii".to_owned()),
+            datetime: Utc::now(),
+        }];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_locations()
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let locations = vec!["hawaii"];
+        let result = repo.query_by_locations(&locations);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].filename, "img_1234.jpg");
+    }
+
+    #[test]
+    fn test_query_by_locations_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_locations()
+            .returning(move |_| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let locations = vec!["hawaii"];
+        let result = repo.query_by_locations(&locations);
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_query_by_filename_ok() {
+        // arrange
+        let results = vec![SearchResult {
+            filename: "img_1234.jpg".to_owned(),
+            media_type: "image/jpeg".to_owned(),
+            location: Some("hawaii".to_owned()),
+            datetime: Utc::now(),
+        }];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_filename()
+            .with(eq("img_1234.jpg"))
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.query_by_filename("img_1234.jpg");
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].filename, "img_1234.jpg");
+    }
+
+    #[test]
+    fn test_query_by_filename_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_filename()
+            .with(eq("img_1234.jpg"))
+            .returning(move |_| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.query_by_filename("img_1234.jpg");
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_query_by_mimetype_ok() {
+        // arrange
+        let results = vec![SearchResult {
+            filename: "img_1234.jpg".to_owned(),
+            media_type: "image/jpeg".to_owned(),
+            location: Some("hawaii".to_owned()),
+            datetime: Utc::now(),
+        }];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_mimetype()
+            .with(eq("image/jpeg"))
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.query_by_mimetype("image/jpeg");
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].filename, "img_1234.jpg");
+    }
+
+    #[test]
+    fn test_query_by_mimetype_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_mimetype()
+            .with(eq("image/jpeg"))
+            .returning(move |_| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let result = repo.query_by_mimetype("image/jpeg");
         // assert
         assert!(result.is_err());
     }

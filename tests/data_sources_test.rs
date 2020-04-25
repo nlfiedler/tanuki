@@ -71,11 +71,9 @@ fn test_count_assets() {
     // three assets
     let mut asset = common::build_basic_asset();
     asset.key = "single999".to_owned();
-    asset.checksum = "deadbeaf".to_owned();
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wonder101".to_owned();
-    asset.checksum = "deadd00d".to_owned();
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.count_assets().unwrap();
     assert_eq!(actual, 3);
@@ -101,17 +99,14 @@ fn test_all_locations() {
     // multiple locations and occurrences
     let mut asset = common::build_basic_asset();
     asset.key = "single999".to_owned();
-    asset.checksum = "deadbeaf".to_owned();
     asset.location = Some("paris".to_owned());
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wonder101".to_owned();
-    asset.checksum = "deadd00d".to_owned();
     asset.location = Some("london".to_owned());
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "tuesday42".to_owned();
-    asset.checksum = "beefd00d".to_owned();
     asset.location = Some("london".to_owned());
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_locations().unwrap();
@@ -141,17 +136,14 @@ fn test_all_years() {
     // multiple years and occurrences
     let mut asset = common::build_basic_asset();
     asset.key = "single999".to_owned();
-    asset.checksum = "deadbeaf".to_owned();
     asset.import_date = Utc.ymd(2018, 7, 4).and_hms(12, 12, 12);
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wonder101".to_owned();
-    asset.checksum = "deadd00d".to_owned();
     asset.import_date = Utc.ymd(2017, 7, 4).and_hms(12, 12, 12);
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "tuesday42".to_owned();
-    asset.checksum = "beefd00d".to_owned();
     asset.import_date = Utc.ymd(2016, 7, 4).and_hms(12, 12, 12);
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_years().unwrap();
@@ -181,17 +173,14 @@ fn test_all_tags() {
     // multiple tags and occurrences
     let mut asset = common::build_basic_asset();
     asset.key = "single999".to_owned();
-    asset.checksum = "deadbeaf".to_owned();
     asset.tags = vec!["bird".to_owned(), "dog".to_owned()];
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wonder101".to_owned();
-    asset.checksum = "deadd00d".to_owned();
     asset.tags = vec!["cat".to_owned(), "mouse".to_owned()];
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "tuesday42".to_owned();
-    asset.checksum = "beefd00d".to_owned();
     asset.tags = vec!["cat".to_owned(), "lizard".to_owned(), "chicken".to_owned()];
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_tags().unwrap();
@@ -202,4 +191,258 @@ fn test_all_tags() {
     assert!(actual.iter().any(|l| l.label == "dog" && l.count == 2));
     assert!(actual.iter().any(|l| l.label == "lizard" && l.count == 1));
     assert!(actual.iter().any(|l| l.label == "mouse" && l.count == 1));
+}
+
+#[test]
+fn test_query_by_tags() {
+    let db_path = DBPath::new("_test_query_by_tags");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    // zero assets
+    let tags = vec!["cat"];
+    let actual = datasource.query_by_tags(&tags).unwrap();
+    assert_eq!(actual.len(), 0);
+
+    // one asset
+    let asset = common::build_basic_asset();
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.query_by_tags(&tags).unwrap();
+    assert_eq!(actual.len(), 1);
+    assert!(actual[0].filename == "img_1234.jpg");
+
+    // multiple assets
+    let mut asset = common::build_basic_asset();
+    asset.key = "monday6".to_owned();
+    asset.filename = "img_2345.jpg".to_owned();
+    asset.tags = vec!["bird".to_owned(), "dog".to_owned()];
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "tuesday7".to_owned();
+    asset.filename = "img_3456.jpg".to_owned();
+    asset.tags = vec!["cat".to_owned(), "mouse".to_owned()];
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "wednesday8".to_owned();
+    asset.filename = "img_4567.jpg".to_owned();
+    asset.tags = vec!["cat".to_owned(), "lizard".to_owned(), "chicken".to_owned()];
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "thursday9".to_owned();
+    asset.filename = "img_5678.jpg".to_owned();
+    asset.tags = vec!["bird".to_owned(), "dog".to_owned()];
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "friday10".to_owned();
+    asset.filename = "img_6789.jpg".to_owned();
+    asset.tags = vec!["mouse".to_owned(), "house".to_owned()];
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.query_by_tags(&tags).unwrap();
+    assert_eq!(actual.len(), 3);
+    assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_3456.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
+}
+
+#[test]
+fn test_query_by_dates() {
+    let db_path = DBPath::new("_test_query_by_dates");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    let date1 = Utc.ymd(2011, 8, 30).and_hms(12, 12, 12);
+    let date2 = Utc.ymd(2013, 8, 30).and_hms(12, 12, 12);
+    let date3 = Utc.ymd(2015, 8, 30).and_hms(12, 12, 12);
+    let date4 = Utc.ymd(2017, 8, 30).and_hms(12, 12, 12);
+    let date5 = Utc.ymd(2019, 8, 30).and_hms(12, 12, 12);
+
+    // zero assets
+    assert_eq!(datasource.query_before_date(date1).unwrap().len(), 0);
+    assert_eq!(datasource.query_after_date(date1).unwrap().len(), 0);
+    assert_eq!(datasource.query_date_range(date1, date2).unwrap().len(), 0);
+
+    // one asset
+    let asset = common::build_basic_asset();
+    datasource.put_asset(&asset).unwrap();
+    assert_eq!(datasource.query_before_date(date1).unwrap().len(), 0);
+    assert_eq!(datasource.query_before_date(date5).unwrap().len(), 1);
+    assert_eq!(datasource.query_after_date(date1).unwrap().len(), 1);
+    assert_eq!(datasource.query_after_date(date5).unwrap().len(), 0);
+    assert_eq!(datasource.query_date_range(date1, date5).unwrap().len(), 1);
+
+    // multiple assets
+    let mut asset = common::build_basic_asset();
+    asset.key = "monday6".to_owned();
+    asset.filename = "img_2345.jpg".to_owned();
+    asset.user_date = Some(date1);
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "tuesday7".to_owned();
+    asset.filename = "img_3456.jpg".to_owned();
+    asset.user_date = Some(date2);
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "wednesday8".to_owned();
+    asset.filename = "img_4567.jpg".to_owned();
+    asset.user_date = Some(date3);
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "thursday9".to_owned();
+    asset.filename = "img_5678.jpg".to_owned();
+    asset.user_date = Some(date4);
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "friday10".to_owned();
+    asset.filename = "img_6789.jpg".to_owned();
+    asset.user_date = Some(date5);
+    datasource.put_asset(&asset).unwrap();
+
+    let actual = datasource.query_before_date(date4).unwrap();
+    assert_eq!(actual.len(), 3);
+    assert!(actual.iter().any(|l| l.filename == "img_2345.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_3456.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
+
+    let actual = datasource.query_after_date(date3).unwrap();
+    assert_eq!(actual.len(), 4);
+    assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_6789.jpg"));
+
+    let actual = datasource.query_date_range(date3, date5).unwrap();
+    assert_eq!(actual.len(), 3);
+    assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
+}
+
+#[test]
+fn test_query_by_locations() {
+    let db_path = DBPath::new("_test_query_by_locations");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    // zero assets
+    let locations = vec!["hawaii"];
+    let actual = datasource.query_by_locations(&locations).unwrap();
+    assert_eq!(actual.len(), 0);
+
+    // one asset
+    let asset = common::build_basic_asset();
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.query_by_locations(&locations).unwrap();
+    assert_eq!(actual.len(), 1);
+    assert!(actual[0].filename == "img_1234.jpg");
+
+    // multiple assets
+    let mut asset = common::build_basic_asset();
+    asset.key = "monday6".to_owned();
+    asset.filename = "img_2345.jpg".to_owned();
+    asset.location = Some("paris".to_owned());
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "tuesday7".to_owned();
+    asset.filename = "img_3456.jpg".to_owned();
+    asset.location = Some("london".to_owned());
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "wednesday8".to_owned();
+    asset.filename = "img_4567.jpg".to_owned();
+    asset.location = Some("seoul".to_owned());
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "thursday9".to_owned();
+    asset.filename = "img_5678.jpg".to_owned();
+    asset.location = Some("hawaii".to_owned());
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "friday10".to_owned();
+    asset.filename = "img_6789.jpg".to_owned();
+    asset.location = Some("paris".to_owned());
+    datasource.put_asset(&asset).unwrap();
+
+    // searching with one location
+    let actual = datasource.query_by_locations(&locations).unwrap();
+    assert_eq!(actual.len(), 2);
+    assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
+
+    // searching with two locations
+    let locations = vec!["hawaii", "paris"];
+    let actual = datasource.query_by_locations(&locations).unwrap();
+    assert_eq!(actual.len(), 4);
+    assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_2345.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_6789.jpg"));
+}
+
+#[test]
+fn test_query_by_filename() {
+    let db_path = DBPath::new("_test_query_by_filename");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    // zero assets
+    let actual = datasource.query_by_filename("img_1234.jpg").unwrap();
+    assert_eq!(actual.len(), 0);
+
+    // one asset
+    let asset = common::build_basic_asset();
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.query_by_filename("img_1234.jpg").unwrap();
+    assert_eq!(actual.len(), 1);
+    assert!(actual[0].filename == "img_1234.jpg");
+
+    // multiple assets
+    let mut asset = common::build_basic_asset();
+    asset.key = "monday6".to_owned();
+    asset.filename = "img_2345.jpg".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "tuesday7".to_owned();
+    asset.filename = "img_3456.jpg".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "wednesday8".to_owned();
+    asset.filename = "img_4567.jpg".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.query_by_filename("img_3456.jpg").unwrap();
+    assert_eq!(actual.len(), 1);
+    assert_eq!(actual[0].filename, "img_3456.jpg");
+}
+
+#[test]
+fn test_query_by_mimetype() {
+    let db_path = DBPath::new("_test_query_by_mimetype");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    // zero assets
+    let actual = datasource.query_by_mimetype("image/jpeg").unwrap();
+    assert_eq!(actual.len(), 0);
+
+    // one asset
+    let asset = common::build_basic_asset();
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.query_by_mimetype("image/jpeg").unwrap();
+    assert_eq!(actual.len(), 1);
+    assert!(actual[0].media_type == "image/jpeg");
+
+    // multiple assets
+    let mut asset = common::build_basic_asset();
+    asset.key = "monday6".to_owned();
+    asset.filename = "img_2345.jpg".to_owned();
+    asset.media_type = "image/png".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "tuesday7".to_owned();
+    asset.filename = "img_3456.jpg".to_owned();
+    asset.media_type = "video/mpeg".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "wednesday8".to_owned();
+    asset.filename = "img_4567.jpg".to_owned();
+    asset.media_type = "image/jpeg".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.query_by_mimetype("image/jpeg").unwrap();
+    assert_eq!(actual.len(), 2);
+    assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
 }
