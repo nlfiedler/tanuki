@@ -27,24 +27,6 @@
 **** repositories
 ***** record database
 ***** blob store
-*** TODO implement use cases
-**** TODO search for assets
-***** translate database =query()= function in =backend.js=
-***** DONE query by tags: use =query_all_keys()=
-***** DONE query by date range: use =query_range()=
-***** DONE query by location
-***** DONE query by filename
-***** DONE query by media type
-***** DONE filter by date range
-***** DONE filter by location
-***** DONE filter by filename
-***** DONE filter by media type
-***** DONE test with mixed-case tags in assets and search parameters
-***** DONE test with mixed-case locations in assets and search parameters
-***** DONE test with mixed-case filenames in assets and search parameters
-***** DONE test with mixed-case mimetype in assets and search parameters
-***** DONE test with mixed-case checksum in assets and search parameters
-***** TODO order by date range (up/down)
 *** TODO extract metadata from incoming image assets
 **** extract original date/time from images
 **** image orientation needs to be adjusted
@@ -138,6 +120,7 @@
 *** TODO write an import binary for the new database
 **** stand-alone binary that reads json and populates new database
 **** maybe handle the (wide) thumbnail size caching at this point
+*** TODO test database migration on development system
 *** TODO perform migration on production system
 **** stop and remove the current docker container
 **** use script to get dump of current database
@@ -150,6 +133,7 @@
 *** TODO remove remaining old backend files
 **** =public/schema.graphql=
 **** =views/=
+*** TODO document the clean architecture of this code base
 ** Adjust mujina file upload
 *** Cannot use the apollo-client upload feature
 *** Must upload the asset to the HTTP endpoint and then submit GraphQL mutation

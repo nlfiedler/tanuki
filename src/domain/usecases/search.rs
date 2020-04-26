@@ -59,13 +59,16 @@ impl super::UseCase<Vec<SearchResult>, Params> for SearchAssets {
         // Clone the parameters to allow modifying them in-place to make the
         // query and filtering implementation logic simpler.
         let mut params = params.clone();
-        // Perform the initial query to get all results.
+        // Perform the initial query to get all results, removing whatever
+        // criteria was selected so the filtering is straightforward.
         let mut results = self.query_assets(&mut params)?;
         // Filter the results using all of the remaining search criteria.
         results = filter_by_date_range(results, &params);
         results = filter_by_locations(results, &params);
         results = filter_by_filename(results, &params);
         results = filter_by_mimetype(results, &params);
+        // Finally, sort the results if so desired.
+        sort_results(&mut results, &params);
         Ok(results)
     }
 }
@@ -150,6 +153,48 @@ fn filter_by_mimetype(results: Vec<SearchResult>, params: &Params) -> Vec<Search
     }
 }
 
+// If a sort was requested, sort the results in-place using an unstable sort
+// since it conserves space and the original ordering is not at all important
+// (or known for that matter).
+fn sort_results(results: &mut Vec<SearchResult>, params: &Params) {
+    if let Some(field) = params.sort_field {
+        let order = params.sort_order.unwrap_or(SortOrder::Ascending);
+        let compare = match field {
+            SortField::Date => {
+                if order == SortOrder::Ascending {
+                    sort_by_date_ascending
+                } else {
+                    sort_by_date_descending
+                }
+            }
+        };
+        results.sort_unstable_by(compare)
+    }
+}
+
+fn sort_by_date_ascending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    a.datetime.cmp(&b.datetime)
+}
+
+fn sort_by_date_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    b.datetime.cmp(&a.datetime)
+}
+
+/// Field of the search results on which to sort.
+#[derive(Clone, Copy)]
+pub enum SortField {
+    Date,
+}
+
+/// Order by which to sort the search results.
+///
+/// If not specified in the search paramaters, the default is ascending.
+#[derive(Clone, Copy, PartialEq)]
+pub enum SortOrder {
+    Ascending,
+    Descending,
+}
+
 #[derive(Clone, Default)]
 pub struct Params {
     tags: Vec<String>,
@@ -158,6 +203,8 @@ pub struct Params {
     mimetype: Option<String>,
     before_date: Option<DateTime<Utc>>,
     after_date: Option<DateTime<Utc>>,
+    sort_field: Option<SortField>,
+    sort_order: Option<SortOrder>,
 }
 
 impl fmt::Display for Params {
@@ -553,5 +600,59 @@ mod tests {
         assert!(results.iter().any(|l| l.filename == "IMG_2345.GIF"));
         assert!(results.iter().any(|l| l.filename == "IMG_3456.MOV"));
         assert!(results.iter().any(|l| l.filename == "IMG_4567.JPG"));
+    }
+
+    #[test]
+    fn test_order_results_ascending_date() {
+        // arrange
+        let results = make_search_results();
+        let mut mock = MockRecordRepository::new();
+        mock.expect_query_by_tags()
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let usecase = SearchAssets::new(Box::new(mock));
+        let mut params: Params = Default::default();
+        params.tags = vec!["kitten".to_owned()];
+        params.sort_field = Some(SortField::Date);
+        params.sort_order = Some(SortOrder::Ascending);
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 7);
+        assert_eq!(results[0].filename, "IMG_1234.PNG");
+        assert_eq!(results[1].filename, "IMG_2345.GIF");
+        assert_eq!(results[2].filename, "IMG_3456.MOV");
+        assert_eq!(results[3].filename, "IMG_4567.JPG");
+        assert_eq!(results[4].filename, "IMG_5678.MOV");
+        assert_eq!(results[5].filename, "IMG_6789.JPG");
+        assert_eq!(results[6].filename, "IMG_7890.JPG");
+    }
+
+    #[test]
+    fn test_order_results_descending_date() {
+        // arrange
+        let results = make_search_results();
+        let mut mock = MockRecordRepository::new();
+        mock.expect_query_by_tags()
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let usecase = SearchAssets::new(Box::new(mock));
+        let mut params: Params = Default::default();
+        params.tags = vec!["kitten".to_owned()];
+        params.sort_field = Some(SortField::Date);
+        params.sort_order = Some(SortOrder::Descending);
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 7);
+        assert_eq!(results[0].filename, "IMG_7890.JPG");
+        assert_eq!(results[1].filename, "IMG_6789.JPG");
+        assert_eq!(results[2].filename, "IMG_5678.MOV");
+        assert_eq!(results[3].filename, "IMG_4567.JPG");
+        assert_eq!(results[4].filename, "IMG_3456.MOV");
+        assert_eq!(results[5].filename, "IMG_2345.GIF");
+        assert_eq!(results[6].filename, "IMG_1234.PNG");
     }
 }
