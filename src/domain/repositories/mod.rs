@@ -41,10 +41,10 @@ pub trait RecordRepository {
     fn all_tags(&self) -> Result<Vec<LabeledCount>, Error>;
 
     /// Search for assets that have all of the given tags.
-    fn query_by_tags<'a>(&self, tags: &'a [&'a str]) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for assets that have any of the given locations.
-    fn query_by_locations<'a>(&self, locations: &'a [&'a str]) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for assets whose file name matches the one given.
     fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error>;

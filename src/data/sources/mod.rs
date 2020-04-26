@@ -30,10 +30,10 @@ pub trait EntityDataSource {
     fn query_by_checksum(&self, digest: &str) -> Result<Option<String>, Error>;
 
     /// Search for assets that have all of the given tags.
-    fn query_by_tags<'a>(&self, tags: &'a [&'a str]) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for assets that have any of the given locations.
-    fn query_by_locations<'a>(&self, locations: &'a [&'a str]) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for assets whose file name matches the one given.
     fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error>;
@@ -130,17 +130,17 @@ impl EntityDataSource for EntityDataSourceImpl {
         }))
     }
 
-    fn query_by_tags<'a>(&self, tags: &'a [&'a str]) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error> {
         let query_results = self.database.query_all_keys("by_tags", tags)?;
         let search_results = convert_results(query_results);
         Ok(search_results)
     }
 
-    fn query_by_locations<'a>(&self, locations: &'a [&'a str]) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error> {
         // query each of the keys and collect the results into one list
         let mut query_results: Vec<QueryResult> = Vec::new();
         for key in locations.iter() {
-            let mut results = self.database.query_by_key("by_location", *key)?;
+            let mut results = self.database.query_by_key("by_location", key)?;
             query_results.append(&mut results);
         }
         let search_results = convert_results(query_results);

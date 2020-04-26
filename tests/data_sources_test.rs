@@ -199,14 +199,14 @@ fn test_query_by_tags() {
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
 
     // zero assets
-    let tags = vec!["cat"];
-    let actual = datasource.query_by_tags(&tags).unwrap();
+    let tags = vec!["cat".to_owned()];
+    let actual = datasource.query_by_tags(tags.clone()).unwrap();
     assert_eq!(actual.len(), 0);
 
     // one asset
     let asset = common::build_basic_asset();
     datasource.put_asset(&asset).unwrap();
-    let actual = datasource.query_by_tags(&tags).unwrap();
+    let actual = datasource.query_by_tags(tags.clone()).unwrap();
     assert_eq!(actual.len(), 1);
     assert!(actual[0].filename == "img_1234.jpg");
 
@@ -236,7 +236,7 @@ fn test_query_by_tags() {
     asset.filename = "img_6789.jpg".to_owned();
     asset.tags = vec!["mouse".to_owned(), "house".to_owned()];
     datasource.put_asset(&asset).unwrap();
-    let actual = datasource.query_by_tags(&tags).unwrap();
+    let actual = datasource.query_by_tags(tags).unwrap();
     assert_eq!(actual.len(), 3);
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_3456.jpg"));
@@ -321,14 +321,14 @@ fn test_query_by_locations() {
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
 
     // zero assets
-    let locations = vec!["hawaii"];
-    let actual = datasource.query_by_locations(&locations).unwrap();
+    let locations = vec!["hawaii".to_owned()];
+    let actual = datasource.query_by_locations(locations.clone()).unwrap();
     assert_eq!(actual.len(), 0);
 
     // one asset
     let asset = common::build_basic_asset();
     datasource.put_asset(&asset).unwrap();
-    let actual = datasource.query_by_locations(&locations).unwrap();
+    let actual = datasource.query_by_locations(locations.clone()).unwrap();
     assert_eq!(actual.len(), 1);
     assert!(actual[0].filename == "img_1234.jpg");
 
@@ -360,14 +360,14 @@ fn test_query_by_locations() {
     datasource.put_asset(&asset).unwrap();
 
     // searching with one location
-    let actual = datasource.query_by_locations(&locations).unwrap();
+    let actual = datasource.query_by_locations(locations).unwrap();
     assert_eq!(actual.len(), 2);
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
 
     // searching with two locations
-    let locations = vec!["hawaii", "paris"];
-    let actual = datasource.query_by_locations(&locations).unwrap();
+    let locations = vec!["hawaii".to_owned(), "paris".to_owned()];
+    let actual = datasource.query_by_locations(locations).unwrap();
     assert_eq!(actual.len(), 4);
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_2345.jpg"));

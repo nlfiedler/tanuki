@@ -35,10 +35,15 @@
 ***** DONE query by location
 ***** DONE query by filename
 ***** DONE query by media type
-***** TODO filter by date range
-***** TODO filter by location
-***** TODO filter by filename
-***** TODO filter by media type
+***** DONE filter by date range
+***** DONE filter by location
+***** DONE filter by filename
+***** DONE filter by media type
+***** TODO test with mixed-case tags in assets and search parameters
+***** TODO test with mixed-case locations in assets and search parameters
+***** TODO test with mixed-case filenames in assets and search parameters
+***** TODO test with mixed-case mimetype in assets and search parameters
+***** TODO test with mixed-case checksum in assets and search parameters
 ***** TODO order by date range (up/down)
 ***** should be able to search and filter all combinations (as before)
 ***** should always paginate, never return _everything_
@@ -98,6 +103,7 @@
 ****** use =database.rs= from zorigami for a simpler database
 ***** repository can cache values in memory if needed
 *** TODO serve the existing ReasonML frontend
+**** convert file upload to the 2-step process
 *** TODO plan how database migrations will happen in the future
 **** maintain a meta record with version information
 **** look at how the serde.rs library can help

@@ -59,11 +59,11 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.all_tags()
     }
 
-    fn query_by_tags<'a>(&self, tags: &'a [&'a str]) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error> {
         self.datasource.query_by_tags(tags)
     }
 
-    fn query_by_locations<'a>(&self, locations: &'a [&'a str]) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error> {
         self.datasource.query_by_locations(locations)
     }
 
@@ -531,8 +531,8 @@ mod tests {
             .returning(move |_| Ok(results.clone()));
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
-        let tags = vec!["kitten"];
-        let result = repo.query_by_tags(&tags);
+        let tags = vec!["kitten".to_owned()];
+        let result = repo.query_by_tags(tags);
         // assert
         assert!(result.is_ok());
         let results = result.unwrap();
@@ -548,8 +548,8 @@ mod tests {
             .returning(move |_| Err(err_msg("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
-        let tags = vec!["kitten"];
-        let result = repo.query_by_tags(&tags);
+        let tags = vec!["kitten".to_owned()];
+        let result = repo.query_by_tags(tags);
         // assert
         assert!(result.is_err());
     }
@@ -687,8 +687,8 @@ mod tests {
             .returning(move |_| Ok(results.clone()));
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
-        let locations = vec!["hawaii"];
-        let result = repo.query_by_locations(&locations);
+        let locations = vec!["hawaii".to_owned()];
+        let result = repo.query_by_locations(locations);
         // assert
         assert!(result.is_ok());
         let results = result.unwrap();
@@ -704,8 +704,8 @@ mod tests {
             .returning(move |_| Err(err_msg("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Box::new(mock));
-        let locations = vec!["hawaii"];
-        let result = repo.query_by_locations(&locations);
+        let locations = vec!["hawaii".to_owned()];
+        let result = repo.query_by_locations(locations);
         // assert
         assert!(result.is_err());
     }
