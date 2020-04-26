@@ -20,6 +20,13 @@ impl SearchAssets {
 
     // Perform an initial search of the assets.
     fn query_assets(&self, params: &mut Params) -> Result<Vec<SearchResult>, Error> {
+        //
+        // Perform the initial query using one of the criteria. The tags is the
+        // first choice since the secondary index does not contain any tags, so
+        // a filter on tags is not possible. What's more, the tags query is more
+        // sophisticated (matches assets that have _all_ of the keys, not just
+        // one) and as such filtering would not make sense.
+        //
         if !params.tags.is_empty() {
             let tags = params.tags.drain(..).collect();
             self.repo.query_by_tags(tags)
@@ -49,24 +56,12 @@ impl SearchAssets {
 
 impl super::UseCase<Vec<SearchResult>, Params> for SearchAssets {
     fn call(&self, params: Params) -> Result<Vec<SearchResult>, Error> {
-        //
-        // Copy and lowercase the parameters to match the values in the index.
-        // Additionally, the parameters are modified in-place to make the query
-        // and filtering implementation logic simpler.
-        //
-        let mut params = params.lowercase_and_dedup();
-        //
-        // Start by performing the query on one of the criteria. The tags is the
-        // first choice since the secondary index does not contain any tags, so
-        // a filter on tags is not possible. What's more, the tags query is more
-        // sophisticated (matches assets that have _all_ of the keys, not just
-        // one) and as such filtering would not make sense.
-        //
+        // Clone the parameters to allow modifying them in-place to make the
+        // query and filtering implementation logic simpler.
+        let mut params = params.clone();
+        // Perform the initial query to get all results.
         let mut results = self.query_assets(&mut params)?;
-        //
-        // Once the primary query has been performed, filter the results using
-        // all of the remaining search criteria.
-        //
+        // Filter the results using all of the remaining search criteria.
         results = filter_by_date_range(results, &params);
         results = filter_by_locations(results, &params);
         results = filter_by_filename(results, &params);
@@ -102,13 +97,15 @@ fn filter_by_locations(results: Vec<SearchResult>, params: &Params) -> Vec<Searc
     if params.locations.is_empty() {
         results
     } else {
+        // All filtering comparisons are case-insensitive for now, so both the
+        // input and the index values are lowercased.
+        let locations: Vec<String> = params.locations.iter().map(|v| v.to_lowercase()).collect();
         results
             .into_iter()
             .filter(|r| {
-                // index values are not in lowercase
                 if let Some(row_location) = r.location.as_ref() {
                     let location = row_location.to_lowercase();
-                    params.locations.iter().any(|l| l == &location)
+                    locations.iter().any(|l| l == &location)
                 } else {
                     false
                 }
@@ -119,13 +116,15 @@ fn filter_by_locations(results: Vec<SearchResult>, params: &Params) -> Vec<Searc
 
 // Filter the search results by file name, if specified.
 fn filter_by_filename(results: Vec<SearchResult>, params: &Params) -> Vec<SearchResult> {
-    if let Some(filename) = params.filename.as_ref() {
+    if let Some(p_filename) = params.filename.as_ref() {
+        // All filtering comparisons are case-insensitive for now, so both the
+        // input and the index values are lowercased.
+        let filename = p_filename.to_lowercase();
         results
             .into_iter()
             .filter(|r| {
-                // index values are not in lowercase
                 let lowercase = r.filename.to_lowercase();
-                filename == &lowercase
+                filename == lowercase
             })
             .collect()
     } else {
@@ -135,13 +134,15 @@ fn filter_by_filename(results: Vec<SearchResult>, params: &Params) -> Vec<Search
 
 // Filter the search results by media type, if specified.
 fn filter_by_mimetype(results: Vec<SearchResult>, params: &Params) -> Vec<SearchResult> {
-    if let Some(mimetype) = params.mimetype.as_ref() {
+    if let Some(p_mimetype) = params.mimetype.as_ref() {
+        // All filtering comparisons are case-insensitive for now, so both the
+        // input and the index values are lowercased.
+        let mimetype = p_mimetype.to_lowercase();
         results
             .into_iter()
             .filter(|r| {
-                // index values are not in lowercase
                 let lowercase = r.media_type.to_lowercase();
-                mimetype == &lowercase
+                mimetype == lowercase
             })
             .collect()
     } else {
@@ -149,7 +150,7 @@ fn filter_by_mimetype(results: Vec<SearchResult>, params: &Params) -> Vec<Search
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Params {
     tags: Vec<String>,
     locations: Vec<String>,
@@ -157,26 +158,6 @@ pub struct Params {
     mimetype: Option<String>,
     before_date: Option<DateTime<Utc>>,
     after_date: Option<DateTime<Utc>>,
-}
-
-impl Params {
-    /// Lowercase all string inputs, deduplicate tags, locations.
-    fn lowercase_and_dedup(&self) -> Self {
-        let mut tags: Vec<String> = self.tags.iter().map(|v| v.to_lowercase()).collect();
-        tags.sort();
-        tags.dedup();
-        let mut locations: Vec<String> = self.locations.iter().map(|v| v.to_lowercase()).collect();
-        locations.sort();
-        locations.dedup();
-        Self {
-            tags,
-            locations,
-            filename: self.filename.as_ref().map(|v| v.to_lowercase()),
-            mimetype: self.mimetype.as_ref().map(|v| v.to_lowercase()),
-            before_date: self.before_date,
-            after_date: self.after_date,
-        }
-    }
 }
 
 impl fmt::Display for Params {
@@ -200,37 +181,6 @@ mod tests {
     use crate::domain::repositories::MockRecordRepository;
     use failure::err_msg;
     use mockall::predicate::*;
-
-    #[test]
-    fn test_params_lowercase_and_dedup() {
-        // arrange
-        let mut params: Params = Default::default();
-        params.tags = vec![
-            "puppy".to_owned(),
-            "KITTEN".to_owned(),
-            "Kitten".to_owned(),
-            "kitten".to_owned(),
-        ];
-        params.locations = vec![
-            "paris".to_owned(),
-            "HAWAII".to_owned(),
-            "Hawaii".to_owned(),
-            "hawaii".to_owned(),
-        ];
-        params.filename = Some("IMG_1234.jpg".to_owned());
-        params.mimetype = Some("Image/JPEG".to_owned());
-        // act
-        let actual = params.lowercase_and_dedup();
-        // assert
-        assert_eq!(actual.filename.unwrap(), "img_1234.jpg");
-        assert_eq!(actual.mimetype.unwrap(), "image/jpeg");
-        assert_eq!(actual.tags.len(), 2);
-        assert_eq!(actual.tags[0], "kitten");
-        assert_eq!(actual.tags[1], "puppy");
-        assert_eq!(actual.locations.len(), 2);
-        assert_eq!(actual.locations[0], "hawaii");
-        assert_eq!(actual.locations[1], "paris");
-    }
 
     #[test]
     fn test_search_assets_tags_ok() {
@@ -386,7 +336,7 @@ mod tests {
         }];
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_filename()
-            .with(eq("img_1234.jpg"))
+            .with(eq("Img_1234.jpg"))
             .returning(move |_| Ok(results.clone()));
         // act
         let usecase = SearchAssets::new(Box::new(mock));
@@ -411,7 +361,7 @@ mod tests {
         }];
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_mimetype()
-            .with(eq("image/jpeg"))
+            .with(eq("imaGE/jpeg"))
             .returning(move |_| Ok(results.clone()));
         // act
         let usecase = SearchAssets::new(Box::new(mock));

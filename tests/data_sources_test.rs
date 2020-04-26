@@ -35,7 +35,7 @@ fn test_query_by_checksum() {
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "single999".to_owned();
-    asset.checksum = "SHA1-DEADBEAF".to_owned();
+    asset.checksum = "SHA1-DEADBEEF".to_owned();
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wonder101".to_owned();
@@ -45,9 +45,9 @@ fn test_query_by_checksum() {
     // check for absent results as well as expected matches
     let actual = datasource.query_by_checksum("cafedeadd00d").unwrap();
     assert!(actual.is_none());
-    let actual = datasource.query_by_checksum("cafebabe").unwrap();
+    let actual = datasource.query_by_checksum("CAFEBABE").unwrap();
     assert_eq!(actual.unwrap(), "basic113");
-    let actual = datasource.query_by_checksum("sha1-deadbeaf").unwrap();
+    let actual = datasource.query_by_checksum("sha1-DeadBeef").unwrap();
     assert_eq!(actual.unwrap(), "single999");
     let actual = datasource.query_by_checksum("deadd00d").unwrap();
     assert_eq!(actual.unwrap(), "wonder101");
@@ -199,7 +199,7 @@ fn test_query_by_tags() {
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
 
     // zero assets
-    let tags = vec!["cat".to_owned()];
+    let tags = vec!["cAt".to_owned()];
     let actual = datasource.query_by_tags(tags.clone()).unwrap();
     assert_eq!(actual.len(), 0);
 
@@ -321,7 +321,7 @@ fn test_query_by_locations() {
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
 
     // zero assets
-    let locations = vec!["hawaii".to_owned()];
+    let locations = vec!["haWAii".to_owned()];
     let actual = datasource.query_by_locations(locations.clone()).unwrap();
     assert_eq!(actual.len(), 0);
 
@@ -387,7 +387,7 @@ fn test_query_by_filename() {
     // one asset
     let asset = common::build_basic_asset();
     datasource.put_asset(&asset).unwrap();
-    let actual = datasource.query_by_filename("img_1234.jpg").unwrap();
+    let actual = datasource.query_by_filename("imG_1234.jpG").unwrap();
     assert_eq!(actual.len(), 1);
     assert!(actual[0].filename == "img_1234.jpg");
 
@@ -404,7 +404,7 @@ fn test_query_by_filename() {
     asset.key = "wednesday8".to_owned();
     asset.filename = "img_4567.jpg".to_owned();
     datasource.put_asset(&asset).unwrap();
-    let actual = datasource.query_by_filename("img_3456.jpg").unwrap();
+    let actual = datasource.query_by_filename("Img_3456.Jpg").unwrap();
     assert_eq!(actual.len(), 1);
     assert_eq!(actual[0].filename, "IMG_3456.JPG");
 }
@@ -421,7 +421,7 @@ fn test_query_by_mimetype() {
     // one asset
     let asset = common::build_basic_asset();
     datasource.put_asset(&asset).unwrap();
-    let actual = datasource.query_by_mimetype("image/jpeg").unwrap();
+    let actual = datasource.query_by_mimetype("imaGE/jpeg").unwrap();
     assert_eq!(actual.len(), 1);
     assert!(actual[0].media_type == "image/jpeg");
 
@@ -441,7 +441,7 @@ fn test_query_by_mimetype() {
     asset.filename = "img_4567.jpg".to_owned();
     asset.media_type = "IMAGE/JPEG".to_owned();
     datasource.put_asset(&asset).unwrap();
-    let actual = datasource.query_by_mimetype("image/jpeg").unwrap();
+    let actual = datasource.query_by_mimetype("image/JPeg").unwrap();
     assert_eq!(actual.len(), 2);
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));

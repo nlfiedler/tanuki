@@ -121,6 +121,8 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_by_checksum(&self, digest: &str) -> Result<Option<String>, Error> {
+        // secondary index keys are lowercase
+        let digest = digest.to_lowercase();
         let maybe_value = self.database.query_one_by_key("by_checksum", digest)?;
         Ok(maybe_value.map(|v| {
             let vec: Vec<u8> = Vec::from(v.doc_id.as_ref());
@@ -131,12 +133,16 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error> {
+        // secondary index keys are lowercase
+        let tags: Vec<String> = tags.into_iter().map(|v| v.to_lowercase()).collect();
         let query_results = self.database.query_all_keys("by_tags", tags)?;
         let search_results = convert_results(query_results);
         Ok(search_results)
     }
 
     fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error> {
+        // secondary index keys are lowercase
+        let locations: Vec<String> = locations.into_iter().map(|v| v.to_lowercase()).collect();
         // query each of the keys and collect the results into one list
         let mut query_results: Vec<QueryResult> = Vec::new();
         for key in locations.iter() {
@@ -148,12 +154,16 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error> {
+        // secondary index keys are lowercase
+        let filename = filename.to_lowercase();
         let query_results = self.database.query_by_key("by_filename", filename)?;
         let search_results = convert_results(query_results);
         Ok(search_results)
     }
 
     fn query_by_mimetype(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error> {
+        // secondary index keys are lowercase
+        let mimetype = mimetype.to_lowercase();
         let query_results = self.database.query_by_key("by_media_type", mimetype)?;
         let search_results = convert_results(query_results);
         Ok(search_results)
@@ -247,20 +257,25 @@ impl Document for Asset {
         let idv: Vec<u8> = value.to_bytes()?;
         if view == "by_tags" {
             for tag in &self.tags {
+                // secondary index keys are lowercase
                 let lower = tag.to_lowercase();
                 emitter.emit(lower.as_bytes(), Some(&idv))?;
             }
         } else if view == "by_checksum" {
+            // secondary index keys are lowercase
             let lower = self.checksum.to_lowercase();
             emitter.emit(lower.as_bytes(), None)?;
         } else if view == "by_filename" {
+            // secondary index keys are lowercase
             let lower = self.filename.to_lowercase();
             emitter.emit(lower.as_bytes(), Some(&idv))?;
         } else if view == "by_media_type" {
+            // secondary index keys are lowercase
             let lower = self.media_type.to_lowercase();
             emitter.emit(lower.as_bytes(), Some(&idv))?;
         } else if view == "by_location" {
             if let Some(loc) = self.location.as_ref() {
+                // secondary index keys are lowercase
                 let lower = loc.to_lowercase();
                 emitter.emit(lower.as_bytes(), Some(&idv))?;
             }

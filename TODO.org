@@ -45,8 +45,6 @@
 ***** DONE test with mixed-case mimetype in assets and search parameters
 ***** DONE test with mixed-case checksum in assets and search parameters
 ***** TODO order by date range (up/down)
-***** should be able to search and filter all combinations (as before)
-***** should always paginate, never return _everything_
 *** TODO extract metadata from incoming image assets
 **** extract original date/time from images
 **** image orientation needs to be adjusted
@@ -69,6 +67,7 @@
 ***** if Some(None) then clear the user date
 ***** if None then do not change the user date
 ***** if Some(Some(d)) then set the user date
+**** should always paginate search results
 **** queries
 ***** TODO asset(id: ID!): Asset
 ***** TODO lookup(checksum: String!): Asset
