@@ -247,10 +247,12 @@ impl Document for Asset {
         let idv: Vec<u8> = value.to_bytes()?;
         if view == "by_tags" {
             for tag in &self.tags {
-                emitter.emit(tag.as_bytes(), Some(&idv))?;
+                let lower = tag.to_lowercase();
+                emitter.emit(lower.as_bytes(), Some(&idv))?;
             }
         } else if view == "by_checksum" {
-            emitter.emit(self.checksum.as_bytes(), None)?;
+            let lower = self.checksum.to_lowercase();
+            emitter.emit(lower.as_bytes(), None)?;
         } else if view == "by_filename" {
             let lower = self.filename.to_lowercase();
             emitter.emit(lower.as_bytes(), Some(&idv))?;

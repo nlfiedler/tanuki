@@ -106,11 +106,12 @@ fn filter_by_locations(results: Vec<SearchResult>, params: &Params) -> Vec<Searc
             .into_iter()
             .filter(|r| {
                 // index values are not in lowercase
-                let location = r
-                    .location
-                    .as_ref()
-                    .map_or("".to_owned(), |s| s.to_lowercase());
-                params.locations.iter().any(|l| l == &location)
+                if let Some(row_location) = r.location.as_ref() {
+                    let location = row_location.to_lowercase();
+                    params.locations.iter().any(|l| l == &location)
+                } else {
+                    false
+                }
             })
             .collect()
     }
@@ -356,7 +357,7 @@ mod tests {
         let results = vec![SearchResult {
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some("Hawaii".to_owned()),
             datetime: Utc::now(),
         }];
         let mut mock = MockRecordRepository::new();
@@ -378,7 +379,7 @@ mod tests {
     fn test_search_assets_filename_ok() {
         // arrange
         let results = vec![SearchResult {
-            filename: "img_1234.jpg".to_owned(),
+            filename: "IMG_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("hawaii".to_owned()),
             datetime: Utc::now(),
@@ -390,13 +391,13 @@ mod tests {
         // act
         let usecase = SearchAssets::new(Box::new(mock));
         let mut params: Params = Default::default();
-        params.filename = Some("img_1234.jpg".to_owned());
+        params.filename = Some("Img_1234.jpg".to_owned());
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
         let results = result.unwrap();
         assert_eq!(results.len(), 1);
-        assert_eq!(results[0].filename, "img_1234.jpg");
+        assert_eq!(results[0].filename, "IMG_1234.jpg");
     }
 
     #[test]
@@ -404,7 +405,7 @@ mod tests {
         // arrange
         let results = vec![SearchResult {
             filename: "img_1234.jpg".to_owned(),
-            media_type: "image/jpeg".to_owned(),
+            media_type: "image/JPEG".to_owned(),
             location: Some("hawaii".to_owned()),
             datetime: Utc::now(),
         }];
@@ -415,7 +416,7 @@ mod tests {
         // act
         let usecase = SearchAssets::new(Box::new(mock));
         let mut params: Params = Default::default();
-        params.mimetype = Some("image/jpeg".to_owned());
+        params.mimetype = Some("imaGE/jpeg".to_owned());
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -425,47 +426,48 @@ mod tests {
     }
 
     fn make_search_results() -> Vec<SearchResult> {
+        // make everything uppercase for lettercase testing
         vec![
             SearchResult {
-                filename: "img_1234.png".to_owned(),
-                media_type: "image/png".to_owned(),
-                location: Some("hawaii".to_owned()),
+                filename: "IMG_1234.PNG".to_owned(),
+                media_type: "IMAGE/PNG".to_owned(),
+                location: Some("HAWAII".to_owned()),
                 datetime: Utc.ymd(2012, 5, 31).and_hms(21, 10, 11),
             },
             SearchResult {
-                filename: "img_2345.gif".to_owned(),
-                media_type: "image/gif".to_owned(),
-                location: Some("london".to_owned()),
+                filename: "IMG_2345.GIF".to_owned(),
+                media_type: "IMAGE/GIF".to_owned(),
+                location: Some("LONDON".to_owned()),
                 datetime: Utc.ymd(2013, 5, 31).and_hms(21, 10, 11),
             },
             SearchResult {
-                filename: "img_3456.mov".to_owned(),
-                media_type: "video/quicktime".to_owned(),
-                location: Some("paris".to_owned()),
+                filename: "IMG_3456.MOV".to_owned(),
+                media_type: "VIDEO/QUICKTIME".to_owned(),
+                location: Some("PARIS".to_owned()),
                 datetime: Utc.ymd(2014, 5, 31).and_hms(21, 10, 11),
             },
             SearchResult {
-                filename: "img_4567.jpg".to_owned(),
-                media_type: "image/jpeg".to_owned(),
-                location: Some("hawaii".to_owned()),
+                filename: "IMG_4567.JPG".to_owned(),
+                media_type: "IMAGE/JPEG".to_owned(),
+                location: Some("HAWAII".to_owned()),
                 datetime: Utc.ymd(2015, 5, 31).and_hms(21, 10, 11),
             },
             SearchResult {
-                filename: "img_5678.mov".to_owned(),
-                media_type: "video/quicktime".to_owned(),
-                location: Some("london".to_owned()),
+                filename: "IMG_5678.MOV".to_owned(),
+                media_type: "VIDEO/QUICKTIME".to_owned(),
+                location: Some("LONDON".to_owned()),
                 datetime: Utc.ymd(2016, 5, 31).and_hms(21, 10, 11),
             },
             SearchResult {
-                filename: "img_6789.jpg".to_owned(),
-                media_type: "image/jpeg".to_owned(),
-                location: Some("paris".to_owned()),
+                filename: "IMG_6789.JPG".to_owned(),
+                media_type: "IMAGE/JPEG".to_owned(),
+                location: Some("PARIS".to_owned()),
                 datetime: Utc.ymd(2017, 5, 31).and_hms(21, 10, 11),
             },
             SearchResult {
-                filename: "img_7890.jpg".to_owned(),
-                media_type: "image/jpeg".to_owned(),
-                location: Some("yosemite".to_owned()),
+                filename: "IMG_7890.JPG".to_owned(),
+                media_type: "IMAGE/JPEG".to_owned(),
+                location: Some("YOSEMITE".to_owned()),
                 datetime: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
             },
         ]
@@ -488,10 +490,10 @@ mod tests {
         assert!(result.is_ok());
         let results = result.unwrap();
         assert_eq!(results.len(), 4);
-        assert!(results.iter().any(|l| l.filename == "img_2345.gif"));
-        assert!(results.iter().any(|l| l.filename == "img_3456.mov"));
-        assert!(results.iter().any(|l| l.filename == "img_5678.mov"));
-        assert!(results.iter().any(|l| l.filename == "img_6789.jpg"));
+        assert!(results.iter().any(|l| l.filename == "IMG_2345.GIF"));
+        assert!(results.iter().any(|l| l.filename == "IMG_3456.MOV"));
+        assert!(results.iter().any(|l| l.filename == "IMG_5678.MOV"));
+        assert!(results.iter().any(|l| l.filename == "IMG_6789.JPG"));
     }
 
     #[test]
@@ -511,7 +513,7 @@ mod tests {
         assert!(result.is_ok());
         let results = result.unwrap();
         assert_eq!(results.len(), 1);
-        assert_eq!(results[0].filename, "img_2345.gif");
+        assert_eq!(results[0].filename, "IMG_2345.GIF");
     }
 
     #[test]
@@ -531,8 +533,8 @@ mod tests {
         assert!(result.is_ok());
         let results = result.unwrap();
         assert_eq!(results.len(), 2);
-        assert!(results.iter().any(|l| l.filename == "img_3456.mov"));
-        assert!(results.iter().any(|l| l.filename == "img_5678.mov"));
+        assert!(results.iter().any(|l| l.filename == "IMG_3456.MOV"));
+        assert!(results.iter().any(|l| l.filename == "IMG_5678.MOV"));
     }
 
     #[test]
@@ -553,9 +555,9 @@ mod tests {
         assert!(result.is_ok());
         let results = result.unwrap();
         assert_eq!(results.len(), 3);
-        assert!(results.iter().any(|l| l.filename == "img_3456.mov"));
-        assert!(results.iter().any(|l| l.filename == "img_4567.jpg"));
-        assert!(results.iter().any(|l| l.filename == "img_5678.mov"));
+        assert!(results.iter().any(|l| l.filename == "IMG_3456.MOV"));
+        assert!(results.iter().any(|l| l.filename == "IMG_4567.JPG"));
+        assert!(results.iter().any(|l| l.filename == "IMG_5678.MOV"));
     }
 
     #[test]
@@ -575,9 +577,9 @@ mod tests {
         assert!(result.is_ok());
         let results = result.unwrap();
         assert_eq!(results.len(), 3);
-        assert!(results.iter().any(|l| l.filename == "img_5678.mov"));
-        assert!(results.iter().any(|l| l.filename == "img_6789.jpg"));
-        assert!(results.iter().any(|l| l.filename == "img_7890.jpg"));
+        assert!(results.iter().any(|l| l.filename == "IMG_5678.MOV"));
+        assert!(results.iter().any(|l| l.filename == "IMG_6789.JPG"));
+        assert!(results.iter().any(|l| l.filename == "IMG_7890.JPG"));
     }
 
     #[test]
@@ -597,9 +599,9 @@ mod tests {
         assert!(result.is_ok());
         let results = result.unwrap();
         assert_eq!(results.len(), 4);
-        assert!(results.iter().any(|l| l.filename == "img_1234.png"));
-        assert!(results.iter().any(|l| l.filename == "img_2345.gif"));
-        assert!(results.iter().any(|l| l.filename == "img_3456.mov"));
-        assert!(results.iter().any(|l| l.filename == "img_4567.jpg"));
+        assert!(results.iter().any(|l| l.filename == "IMG_1234.PNG"));
+        assert!(results.iter().any(|l| l.filename == "IMG_2345.GIF"));
+        assert!(results.iter().any(|l| l.filename == "IMG_3456.MOV"));
+        assert!(results.iter().any(|l| l.filename == "IMG_4567.JPG"));
     }
 }

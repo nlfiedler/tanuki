@@ -35,7 +35,7 @@ fn test_query_by_checksum() {
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "single999".to_owned();
-    asset.checksum = "deadbeaf".to_owned();
+    asset.checksum = "SHA1-DEADBEAF".to_owned();
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wonder101".to_owned();
@@ -47,7 +47,7 @@ fn test_query_by_checksum() {
     assert!(actual.is_none());
     let actual = datasource.query_by_checksum("cafebabe").unwrap();
     assert_eq!(actual.unwrap(), "basic113");
-    let actual = datasource.query_by_checksum("deadbeaf").unwrap();
+    let actual = datasource.query_by_checksum("sha1-deadbeaf").unwrap();
     assert_eq!(actual.unwrap(), "single999");
     let actual = datasource.query_by_checksum("deadd00d").unwrap();
     assert_eq!(actual.unwrap(), "wonder101");
@@ -219,12 +219,12 @@ fn test_query_by_tags() {
     let mut asset = common::build_basic_asset();
     asset.key = "tuesday7".to_owned();
     asset.filename = "img_3456.jpg".to_owned();
-    asset.tags = vec!["cat".to_owned(), "mouse".to_owned()];
+    asset.tags = vec!["CAT".to_owned(), "mouse".to_owned()];
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wednesday8".to_owned();
     asset.filename = "img_4567.jpg".to_owned();
-    asset.tags = vec!["cat".to_owned(), "lizard".to_owned(), "chicken".to_owned()];
+    asset.tags = vec!["Cat".to_owned(), "lizard".to_owned(), "chicken".to_owned()];
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "thursday9".to_owned();
@@ -398,7 +398,7 @@ fn test_query_by_filename() {
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "tuesday7".to_owned();
-    asset.filename = "img_3456.jpg".to_owned();
+    asset.filename = "IMG_3456.JPG".to_owned();
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wednesday8".to_owned();
@@ -406,7 +406,7 @@ fn test_query_by_filename() {
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.query_by_filename("img_3456.jpg").unwrap();
     assert_eq!(actual.len(), 1);
-    assert_eq!(actual[0].filename, "img_3456.jpg");
+    assert_eq!(actual[0].filename, "IMG_3456.JPG");
 }
 
 #[test]
@@ -439,7 +439,7 @@ fn test_query_by_mimetype() {
     let mut asset = common::build_basic_asset();
     asset.key = "wednesday8".to_owned();
     asset.filename = "img_4567.jpg".to_owned();
-    asset.media_type = "image/jpeg".to_owned();
+    asset.media_type = "IMAGE/JPEG".to_owned();
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.query_by_mimetype("image/jpeg").unwrap();
     assert_eq!(actual.len(), 2);
