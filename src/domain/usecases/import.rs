@@ -32,6 +32,7 @@ impl ImportAsset {
         let metadata = std::fs::metadata(&params.filepath)?;
         let byte_length = metadata.len();
         let media_type = detect_media_type(&filename);
+        let original_date = get_original_date(&media_type, &params.filepath);
         let asset = Asset {
             key: asset_id,
             checksum: digest,
@@ -44,7 +45,7 @@ impl ImportAsset {
             location: None,
             duration: None,
             user_date: None,
-            original_date: None,
+            original_date,
         };
         Ok(asset)
     }
@@ -156,6 +157,28 @@ fn detect_media_type(filename: &str) -> mime::Mime {
     guess.first_or_octet_stream()
 }
 
+///
+/// Extract the original date/time from the asset. For images that contain EXIF
+/// data, returns the parsed `DateTimeOriginal` value. For supported video
+/// files, returns the `creation_time` value.
+///
+fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Option<DateTime<Utc>> {
+    if media_type.type_() == mime::IMAGE {
+        // silently ignore errors reading EXIF data, probably did not have any
+        // recognizable meta data
+        if let Ok(exif) = rexif::parse_file(filepath) {
+            for entry in &exif.entries {
+                if entry.tag == rexif::ExifTag::DateTimeOriginal {
+                    if let rexif::TagValue::Ascii(value) = &entry.value {
+                        return Utc.datetime_from_str(value, "%Y:%m:%d %H:%M:%S").ok();
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::UseCase;
@@ -214,8 +237,8 @@ mod tests {
     #[test]
     fn test_import_asset_new() {
         // arrange
-        let digest = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
-        let infile = PathBuf::from("./test/fixtures/fighting_kittens.jpg");
+        let digest = "sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07";
+        let infile = PathBuf::from("./test/fixtures/dcp_1069.jpg");
         let infile_copy = infile.clone();
         let mut records = MockRecordRepository::new();
         records
@@ -236,23 +259,24 @@ mod tests {
         assert!(result.is_ok());
         let asset = result.unwrap();
         assert_eq!(asset.checksum, digest);
-        assert_eq!(asset.filename, "fighting_kittens.jpg");
-        assert_eq!(asset.byte_length, 39932);
+        assert_eq!(asset.filename, "dcp_1069.jpg");
+        assert_eq!(asset.byte_length, 80977);
         assert_eq!(asset.media_type, "image/jpeg");
         assert!(asset.tags.is_empty());
+        assert_eq!(asset.original_date.unwrap().year(), 2003);
     }
 
     #[test]
     fn test_import_asset_existing() {
         // arrange
-        let digest = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
+        let digest = "sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07";
         let asset1 = Asset {
             key: "abc123".to_owned(),
             checksum: digest.to_owned(),
-            filename: "fighting_kittens.jpg".to_owned(),
-            byte_length: 39932,
+            filename: "dcp_1069.jpg".to_owned(),
+            byte_length: 80977,
             media_type: "image/jpeg".to_owned(),
-            tags: vec!["kittens".to_owned()],
+            tags: vec!["cow".to_owned()],
             import_date: Utc::now(),
             caption: None,
             location: None,
@@ -268,13 +292,38 @@ mod tests {
         let blobs = MockBlobRepository::new();
         // act
         let usecase = ImportAsset::new(Box::new(records), Box::new(blobs));
-        let infile = PathBuf::from("./test/fixtures/fighting_kittens.jpg");
+        let infile = PathBuf::from("./test/fixtures/dcp_1069.jpg");
         let params = Params::new(infile);
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
         let asset = result.unwrap();
         assert_eq!(asset.checksum, digest);
-        assert_eq!(asset.filename, "fighting_kittens.jpg");
+        assert_eq!(asset.filename, "dcp_1069.jpg");
+    }
+
+    #[test]
+    fn test_get_original_date() {
+        let filename = "./test/fixtures/dcp_1069.jpg";
+        let mt = detect_media_type(filename);
+        let filepath = Path::new(filename);
+        let actual = get_original_date(&mt, filepath);
+        assert!(actual.is_some());
+        let date = actual.unwrap();
+        assert_eq!(date.year(), 2003);
+        assert_eq!(date.month(), 9);
+        assert_eq!(date.day(), 3);
+
+        let filename = "./test/fixtures/fighting_kittens.jpg";
+        let mt = detect_media_type(filename);
+        let filepath = Path::new(filename);
+        let actual = get_original_date(&mt, filepath);
+        assert!(actual.is_none());
+
+        let filename = "./test/fixtures/lorem-ipsum.txt";
+        let mt = detect_media_type(filename);
+        let filepath = Path::new(filename);
+        let actual = get_original_date(&mt, filepath);
+        assert!(actual.is_none());
     }
 }
