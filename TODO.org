@@ -246,6 +246,8 @@ include it in the database records.
 **** write a data migration to process existing assets
 **** existing location values should be stored in a "label" field
 **** exact location information would be stored separate from label
+*** TODO Read metadata from PDF files
+**** probably has a creation date or some sort
 ** Documentation
 *** Case Sensitivity
 - Data is stored as entered (case preservative)

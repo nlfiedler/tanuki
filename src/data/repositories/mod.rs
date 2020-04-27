@@ -8,6 +8,7 @@ use crate::domain::repositories::RecordRepository;
 use chrono::prelude::*;
 use failure::{err_msg, Error};
 use std::path::{Path, PathBuf};
+use std::str;
 
 pub struct RecordRepositoryImpl {
     datasource: Box<dyn EntityDataSource>,
@@ -105,7 +106,7 @@ impl BlobRepositoryImpl {
 
     fn asset_path(&self, asset: &Asset) -> Result<PathBuf, Error> {
         let decoded = base64::decode(&asset.key)?;
-        let as_string = String::from_utf8(decoded)?;
+        let as_string = str::from_utf8(&decoded)?;
         let rel_path = Path::new(&as_string);
         let mut full_path = self.basepath.clone();
         full_path.push(rel_path);

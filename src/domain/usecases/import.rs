@@ -13,6 +13,7 @@ use std::fmt;
 use std::fs::File;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::str;
 
 pub struct ImportAsset {
     records: Box<dyn RecordRepository>,
@@ -158,9 +159,7 @@ fn detect_media_type(filename: &str) -> mime::Mime {
 }
 
 ///
-/// Extract the original date/time from the asset. For images that contain EXIF
-/// data, returns the parsed `DateTimeOriginal` value. For supported video
-/// files, returns the `creation_time` value.
+/// Extract the original date/time from the asset.
 ///
 fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTime<Utc>, Error> {
     if media_type.type_() == mime::IMAGE {
@@ -172,9 +171,9 @@ fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTim
             .get_field(exif::Tag::DateTimeOriginal, exif::In::PRIMARY)
             .ok_or_else(|| err_msg("no date/time field"))?;
         if let exif::Value::Ascii(data) = &field.value {
-            let value = String::from_utf8(data[0].clone())?;
+            let value = str::from_utf8(&data[0])?;
             return Utc
-                .datetime_from_str(&value, "%Y:%m:%d %H:%M:%S")
+                .datetime_from_str(value, "%Y:%m:%d %H:%M:%S")
                 .map_err(|_| err_msg("could not parse data"));
         }
     }
@@ -209,7 +208,7 @@ mod tests {
         // time and a random number, can only decode and check the basic format
         // matches expectations.
         let decoded = base64::decode(&actual).unwrap();
-        let as_string = String::from_utf8(decoded).unwrap();
+        let as_string = std::str::from_utf8(&decoded).unwrap();
         assert!(as_string.starts_with("2018/05/31/2100/"));
         assert!(as_string.ends_with(".jpg"));
         assert_eq!(as_string.len(), 46);
