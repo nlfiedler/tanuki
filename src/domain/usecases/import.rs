@@ -5,7 +5,7 @@ use crate::domain::entities::Asset;
 use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
 use chrono::prelude::*;
-use failure::Error;
+use failure::{err_msg, Error};
 use rusty_ulid::generate_ulid_string;
 use std::cmp;
 use std::ffi::OsStr;
@@ -32,7 +32,7 @@ impl ImportAsset {
         let metadata = std::fs::metadata(&params.filepath)?;
         let byte_length = metadata.len();
         let media_type = detect_media_type(&filename);
-        let original_date = get_original_date(&media_type, &params.filepath);
+        let original_date = get_original_date(&media_type, &params.filepath).ok();
         let asset = Asset {
             key: asset_id,
             checksum: digest,
@@ -162,21 +162,23 @@ fn detect_media_type(filename: &str) -> mime::Mime {
 /// data, returns the parsed `DateTimeOriginal` value. For supported video
 /// files, returns the `creation_time` value.
 ///
-fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Option<DateTime<Utc>> {
+fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTime<Utc>, Error> {
     if media_type.type_() == mime::IMAGE {
-        // silently ignore errors reading EXIF data, probably did not have any
-        // recognizable meta data
-        if let Ok(exif) = rexif::parse_file(filepath) {
-            for entry in &exif.entries {
-                if entry.tag == rexif::ExifTag::DateTimeOriginal {
-                    if let rexif::TagValue::Ascii(value) = &entry.value {
-                        return Utc.datetime_from_str(value, "%Y:%m:%d %H:%M:%S").ok();
-                    }
-                }
-            }
+        let file = File::open(filepath)?;
+        let mut buffer = io::BufReader::new(&file);
+        let reader = exif::Reader::new();
+        let exif = reader.read_from_container(&mut buffer)?;
+        let field = exif
+            .get_field(exif::Tag::DateTimeOriginal, exif::In::PRIMARY)
+            .ok_or_else(|| err_msg("no date/time field"))?;
+        if let exif::Value::Ascii(data) = &field.value {
+            let value = String::from_utf8(data[0].clone())?;
+            return Utc
+                .datetime_from_str(&value, "%Y:%m:%d %H:%M:%S")
+                .map_err(|_| err_msg("could not parse data"));
         }
     }
-    None
+    Err(err_msg("not an image"))
 }
 
 #[cfg(test)]
@@ -308,7 +310,7 @@ mod tests {
         let mt = detect_media_type(filename);
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
-        assert!(actual.is_some());
+        assert!(actual.is_ok());
         let date = actual.unwrap();
         assert_eq!(date.year(), 2003);
         assert_eq!(date.month(), 9);
@@ -318,12 +320,12 @@ mod tests {
         let mt = detect_media_type(filename);
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
-        assert!(actual.is_none());
+        assert!(actual.is_err());
 
         let filename = "./test/fixtures/lorem-ipsum.txt";
         let mt = detect_media_type(filename);
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
-        assert!(actual.is_none());
+        assert!(actual.is_err());
     }
 }

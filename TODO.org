@@ -30,7 +30,8 @@
 *** TODO extract metadata from incoming image assets
 **** extract original date/time from images
 **** image orientation needs to be adjusted
-**** EXIF: https://crates.io/crates/rexif (MIT)
+**** c.f. https://magnushoff.com/articles/jpeg-orientation/
+**** image library: https://crates.io/crates/image (MIT)
 **** =Orientation: 1=
 **** =Date of original image: 2003:09:03 17:24:35=
 *** TODO implement HTTP endpoint to upload asset and return path
@@ -62,7 +63,10 @@
 ***** TODO update(id: ID!, asset: AssetInput!): Asset!
 ****** filter empty tags before sending to the usecase
 *** TODO generate thumbnails and previews
+**** https://crates.io/crates/image (MIT)
+***** c.f. =image::DynamicImage::thumbnail()= which preserves aspect ratio
 **** https://crates.io/crates/libvips (MIT)
+***** c.f. =libvips::ops::thumbnail= and friends
 **** if all else fails, can use =magick-rust= (needs bindgen updates soon)
 *** TODO decide how to serve the assets, previews, thumbnails
 **** blob repository will produce the thumbnails
@@ -225,14 +229,9 @@
 **** likely would involve a full table scan
 *** TODO Query for image assets whose orientation is incorrect/unknown
 ** Data Format Support
-*** TODO Extend the EXIF crate to recognize additional fields
-**** EXIF: https://crates.io/crates/rexif (MIT)
-**** unrecognized field: ~Pixel X Dimension~
-**** unrecognized field: ~Pixel Y Dimension~
-**** unrecognized field: ~Components Configuration~
-**** misspelled field? ~Meteting mode~
 *** TODO support HEIF images
 **** HEIF: https://github.com/oussama/libheif-rs (MIT)
+**** https://crates.io/crates/kamadak-exif (BSD) reads metadata
 *** TODO Detect time zone offset in EXIF data
 According to Wikipedia the 2.31 version of EXIF will support time-zone
 information. Eventually, the application should be able to detect this and
@@ -244,7 +243,6 @@ include it in the database records.
 : "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
 
 *** TODO Extract location information from images
-**** the =rexif= crate can recognize many GPS related fields
 **** write a data migration to process existing assets
 **** existing location values should be stored in a "label" field
 **** exact location information would be stored separate from label
