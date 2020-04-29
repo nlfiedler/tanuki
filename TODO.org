@@ -27,13 +27,16 @@
 **** repositories
 ***** record database
 ***** blob store
-*** TODO extract metadata from incoming image assets
-**** extract original date/time from images
-**** image orientation needs to be adjusted
+*** TODO decide how to deal with image orientation
+**** image orientation was previously being corrected during import
+**** makes more sense to only correct when serving the thumbnails/previews
+***** already processing the image at that point anyway
+***** and we do not care about preserving the original metadata for thumbnails
+***** and how the client renders the original asset is entirely application dependent
 **** c.f. https://magnushoff.com/articles/jpeg-orientation/
-**** image library: https://crates.io/crates/image (MIT)
-**** =Orientation: 1=
-**** =Date of original image: 2003:09:03 17:24:35=
+**** https://crates.io/crates/image (MIT) strips all metadata
+**** https://crates.io/crates/libvips (MIT) introduces many dependencies
+**** https://github.com/vadixidav/exifsd (MIT) can copy data, but may not be working
 *** TODO implement HTTP endpoint to upload asset and return path
 **** the GraphQL upload feature is non-standard, not implemented by juniper
 **** path would be for a temporary file that gets removed after some time
@@ -63,11 +66,12 @@
 ***** TODO update(id: ID!, asset: AssetInput!): Asset!
 ****** filter empty tags before sending to the usecase
 *** TODO generate thumbnails and previews
+**** detect orientation in original image, resize, then auto-orient
 **** https://crates.io/crates/image (MIT)
+***** =image= is easier to use than =libvips= which requires more management
 ***** c.f. =image::DynamicImage::thumbnail()= which preserves aspect ratio
 **** https://crates.io/crates/libvips (MIT)
 ***** c.f. =libvips::ops::thumbnail= and friends
-**** if all else fails, can use =magick-rust= (needs bindgen updates soon)
 *** TODO decide how to serve the assets, previews, thumbnails
 **** blob repository will produce the thumbnails
 **** blob repository may cache results on disk and/or in memory
@@ -114,6 +118,8 @@
 **** would be nice to have something like Dart's =environment_config=
 ***** could use =build.rs= to generate an environment config
 ***** then load that in =main.rs= to get everything into memory
+**** https://github.com/andoriyu/uclicious (BSD)
+**** https://github.com/mehcode/config-rs (MIT)
 *** TODO ensure there is no longer any =dead_code= or remove the pragma
 *** TODO set up logging similar to zorigami
 **** should be effectively disabled for testing (i.e. off by default)
@@ -229,8 +235,13 @@
 **** likely would involve a full table scan
 *** TODO Query for image assets whose orientation is incorrect/unknown
 ** Data Format Support
+*** EXIF information
+**** https://www.media.mit.edu/pia/Research/deepview/exif.html
+*** TODO blob import always saves auto-oriented images as JPEG
+**** should detect the format and use one of the other libvips save functions
 *** TODO support HEIF images
-**** HEIF: https://github.com/oussama/libheif-rs (MIT)
+**** https://crates.io/crates/libvips (MIT) reads/writes HEIF
+**** https://github.com/oussama/libheif-rs (MIT)
 **** https://crates.io/crates/kamadak-exif (BSD) reads metadata
 *** TODO Detect time zone offset in EXIF data
 According to Wikipedia the 2.31 version of EXIF will support time-zone
@@ -273,6 +284,11 @@ include it in the database records.
 ****** https://please.build
 ****** https://jenkins.io
 ****** https://www.buildbot.net
+** Extra Features
+*** Image orientation
+**** maybe not everyone is going to like that the images get auto-oriented on imports
+**** could optionally leave the image alone and auto-orient when serving
+**** c.f. https://www.daveperrett.com/articles/2012/07/28/exif-orientation-handling-is-a-ghetto/
 ** Design Notes
 *** Dart vs Rust
 | Dart YES            | Dart NO              | Rust YES              | Rust NO      |

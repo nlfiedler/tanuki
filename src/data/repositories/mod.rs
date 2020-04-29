@@ -123,12 +123,12 @@ impl BlobRepository for BlobRepositoryImpl {
                 .parent()
                 .ok_or_else(|| err_msg(format!("no parent for {:?}", dest_path)))?;
             std::fs::create_dir_all(parent)?;
+            // Use file copy to handle crossing file systems, then remove the
+            // original afterward.
             //
-            // Here would be a good place to make adjustments to certain files,
-            // such as auto-orienting images, or converting the file type as
-            // necessary.
-            //
-            // use copy to handle crossing file systems
+            // N.B. Store the asset as-is, do not make any modifications. Any
+            // changes that are needed will be made later, and likely not
+            // committed back to disk unless requested by the user.
             std::fs::copy(filepath, dest_path)?;
         }
         std::fs::remove_file(filepath)?;
@@ -139,6 +139,60 @@ impl BlobRepository for BlobRepositoryImpl {
         self.asset_path(asset)
     }
 }
+
+// TODO: when producing thumbnails, resize and then correct orientation
+// let media_type: mime::Mime = (&asset.media_type).parse()?;
+// if let Ok(orientation) = get_image_orientation(&media_type, filepath) {
+//     self.correct_orientation(orientation, filepath, &dest_path)?;
+// } else {
+//     // use copy to handle crossing file systems
+//     std::fs::copy(filepath, dest_path)?;
+// }
+
+//
+// Extract the EXIF orientation value from the asset, if any.
+//
+#[allow(dead_code)]
+fn get_image_orientation(media_type: &mime::Mime, filepath: &Path) -> Result<u16, Error> {
+    if media_type.type_() == mime::IMAGE {
+        let file = std::fs::File::open(filepath)?;
+        let mut buffer = std::io::BufReader::new(&file);
+        let reader = exif::Reader::new();
+        let exif = reader.read_from_container(&mut buffer)?;
+        let field = exif
+            .get_field(exif::Tag::Orientation, exif::In::PRIMARY)
+            .ok_or_else(|| err_msg("no orientation field"))?;
+        if let exif::Value::Short(data) = &field.value {
+            return Ok(data[0]);
+        }
+    }
+    Err(err_msg("not an image"))
+}
+
+// Flip and/or rotate the image to have the correct rendering.
+//
+// The orientation value is as read from the EXIF image header.
+// fn correct_orientation(orientation: u16, srcpath: &Path, destpath: &Path) -> Result<(), Error> {
+//     if orientation == 1 || orientation > 8 {
+//         // special-case, simply copy the file without processing it
+//         std::fs::copy(srcpath, destpath)?;
+//     } else {
+//         // TODO: add the image crate
+//         let img = image::open(srcpath)?;
+//         let new_img = match orientation {
+//             2 => img.fliph(),
+//             3 => img.rotate180(),
+//             4 => img.flipv(),
+//             5 => img.flipv().rotate90(),
+//             6 => img.rotate90(),
+//             7 => img.fliph().rotate90(),
+//             8 => img.rotate270(),
+//             _ => img,
+//         };
+//         new_img.save(destpath)?;
+//     }
+//     Ok(())
+// }
 
 #[cfg(test)]
 mod tests {
@@ -852,5 +906,48 @@ mod tests {
         let mut blob_path = PathBuf::from("foobar/blobs");
         blob_path.push(id_path);
         assert_eq!(result.unwrap(), blob_path.as_path());
+    }
+
+    #[test]
+    fn test_get_image_orientation() {
+        let mt = mime::IMAGE_JPEG;
+
+        // these files have the orientation captured in the name
+        let filepath = Path::new("./test/fixtures/f1t.jpg");
+        let actual = get_image_orientation(&mt, filepath);
+        assert_eq!(actual.unwrap(), 1);
+        let filepath = Path::new("./test/fixtures/f2t.jpg");
+        let actual = get_image_orientation(&mt, filepath);
+        assert_eq!(actual.unwrap(), 2);
+        let filepath = Path::new("./test/fixtures/f3t.jpg");
+        let actual = get_image_orientation(&mt, filepath);
+        assert_eq!(actual.unwrap(), 3);
+        let filepath = Path::new("./test/fixtures/f4t.jpg");
+        let actual = get_image_orientation(&mt, filepath);
+        assert_eq!(actual.unwrap(), 4);
+        let filepath = Path::new("./test/fixtures/f5t.jpg");
+        let actual = get_image_orientation(&mt, filepath);
+        assert_eq!(actual.unwrap(), 5);
+        let filepath = Path::new("./test/fixtures/f6t.jpg");
+        let actual = get_image_orientation(&mt, filepath);
+        assert_eq!(actual.unwrap(), 6);
+        let filepath = Path::new("./test/fixtures/f7t.jpg");
+        let actual = get_image_orientation(&mt, filepath);
+        assert_eq!(actual.unwrap(), 7);
+        let filepath = Path::new("./test/fixtures/f8t.jpg");
+        let actual = get_image_orientation(&mt, filepath);
+        assert_eq!(actual.unwrap(), 8);
+
+        // now test the real-world images
+        let filepath = Path::new("./test/fixtures/dcp_1069.jpg");
+        let actual = get_image_orientation(&mt, filepath);
+        assert_eq!(actual.unwrap(), 1);
+        // (this image does not have an EXIF header)
+        let filepath = Path::new("./test/fixtures/animal-cat-cute-126407.jpg");
+        let actual = get_image_orientation(&mt, filepath);
+        assert!(actual.is_err());
+        let filepath = Path::new("./test/fixtures/fighting_kittens.jpg");
+        let actual = get_image_orientation(&mt, filepath);
+        assert_eq!(actual.unwrap(), 8);
     }
 }

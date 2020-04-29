@@ -305,6 +305,7 @@ mod tests {
 
     #[test]
     fn test_get_original_date() {
+        // has EXIF header and the original date/time value
         let filename = "./test/fixtures/dcp_1069.jpg";
         let mt = detect_media_type(filename);
         let filepath = Path::new(filename);
@@ -315,12 +316,21 @@ mod tests {
         assert_eq!(date.month(), 9);
         assert_eq!(date.day(), 3);
 
+        // does not have date/time original value
         let filename = "./test/fixtures/fighting_kittens.jpg";
         let mt = detect_media_type(filename);
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
         assert!(actual.is_err());
 
+        // does not have EXIF header at all
+        let filename = "./test/fixtures/animal-cat-cute-126407.jpg";
+        let mt = detect_media_type(filename);
+        let filepath = Path::new(filename);
+        let actual = get_original_date(&mt, filepath);
+        assert!(actual.is_err());
+
+        // not an image
         let filename = "./test/fixtures/lorem-ipsum.txt";
         let mt = detect_media_type(filename);
         let filepath = Path::new(filename);
