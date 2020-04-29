@@ -27,16 +27,6 @@
 **** repositories
 ***** record database
 ***** blob store
-*** TODO decide how to deal with image orientation
-**** image orientation was previously being corrected during import
-**** makes more sense to only correct when serving the thumbnails/previews
-***** already processing the image at that point anyway
-***** and we do not care about preserving the original metadata for thumbnails
-***** and how the client renders the original asset is entirely application dependent
-**** c.f. https://magnushoff.com/articles/jpeg-orientation/
-**** https://crates.io/crates/image (MIT) strips all metadata
-**** https://crates.io/crates/libvips (MIT) introduces many dependencies
-**** https://github.com/vadixidav/exifsd (MIT) can copy data, but may not be working
 *** TODO implement HTTP endpoint to upload asset and return path
 **** the GraphQL upload feature is non-standard, not implemented by juniper
 **** path would be for a temporary file that gets removed after some time
@@ -65,16 +55,6 @@
 ***** TODO upload(file: Upload!): ID!
 ***** TODO update(id: ID!, asset: AssetInput!): Asset!
 ****** filter empty tags before sending to the usecase
-*** TODO generate thumbnails and previews
-**** detect orientation in original image, resize, then auto-orient
-**** https://crates.io/crates/image (MIT)
-***** =image= is easier to use than =libvips= which requires more management
-***** c.f. =image::DynamicImage::thumbnail()= which preserves aspect ratio
-**** https://crates.io/crates/libvips (MIT)
-***** c.f. =libvips::ops::thumbnail= and friends
-*** TODO decide how to serve the assets, previews, thumbnails
-**** blob repository will produce the thumbnails
-**** blob repository may cache results on disk and/or in memory
 *** TODO decide how to efficiently provide content type with raw assets
 **** response includes content type (i.e. media type)
 **** should minimize disk seeks and database reads
@@ -94,6 +74,9 @@
 ****** use =database.rs= from zorigami for a simpler database
 ***** repository can cache values in memory if needed
 *** TODO serve the existing ReasonML frontend
+**** add endpoints to get the thumbnails, previews, and assets
+**** blob repository will produce the thumbnails
+**** blob repository may cache results on disk and/or in memory
 **** convert file upload to the 2-step process
 *** TODO plan how database migrations will happen in the future
 **** maintain a meta record with version information
