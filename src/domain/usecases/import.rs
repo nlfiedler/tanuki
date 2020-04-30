@@ -32,14 +32,13 @@ impl ImportAsset {
         let filename = get_file_name(&params.filepath);
         let metadata = std::fs::metadata(&params.filepath)?;
         let byte_length = metadata.len();
-        let media_type = detect_media_type(&filename);
-        let original_date = get_original_date(&media_type, &params.filepath).ok();
+        let original_date = get_original_date(&params.media_type, &params.filepath).ok();
         let asset = Asset {
             key: asset_id,
             checksum: digest,
             filename,
             byte_length,
-            media_type: media_type.to_string(),
+            media_type: params.media_type.to_string(),
             tags: vec![],
             import_date: now,
             caption: None,
@@ -71,11 +70,15 @@ impl super::UseCase<Asset, Params> for ImportAsset {
 #[derive(Clone)]
 pub struct Params {
     filepath: PathBuf,
+    media_type: mime::Mime,
 }
 
 impl Params {
-    pub fn new(filepath: PathBuf) -> Self {
-        Self { filepath }
+    pub fn new(filepath: PathBuf, media_type: mime::Mime) -> Self {
+        Self {
+            filepath,
+            media_type,
+        }
     }
 }
 
@@ -147,16 +150,16 @@ fn new_asset_id(datetime: DateTime<Utc>, filename: &Path) -> String {
     base64::encode(&rel_path)
 }
 
-///
-/// Return the first guessed media type based on the file name.
-///
-fn detect_media_type(filename: &str) -> mime::Mime {
-    // Alternatively could use a crate that reads the content and guesses at the
-    // media type (e.g. https://github.com/flier/rust-mime-sniffer), perhaps as
-    // a fallback when the filename-based guess yields "octet-stream".
-    let guess = mime_guess::from_path(filename);
-    guess.first_or_octet_stream()
-}
+//
+// Return the first guessed media type based on the file name.
+//
+// fn detect_media_type(filename: &str) -> mime::Mime {
+//     // Alternatively could use a crate that reads the content and guesses at the
+//     // media type (e.g. https://github.com/flier/rust-mime-sniffer), perhaps as
+//     // a fallback when the filename-based guess yields "octet-stream".
+//     let guess = mime_guess::from_path(filename);
+//     guess.first_or_octet_stream()
+// }
 
 ///
 /// Extract the original date/time from the asset.
@@ -221,19 +224,19 @@ mod tests {
         assert_eq!(actual, "fighting_kittens.jpg");
     }
 
-    #[test]
-    fn test_detect_media_type() {
-        assert_eq!(detect_media_type("image.jpg"), mime::IMAGE_JPEG);
-        let video_quick: mime::Mime = "video/quicktime".parse().unwrap();
-        assert_eq!(detect_media_type("video.mov"), video_quick);
-        let video_mpeg: mime::Mime = "video/mpeg".parse().unwrap();
-        assert_eq!(detect_media_type("video.mpg"), video_mpeg);
-        assert_eq!(
-            // does not yet guess the apple image type
-            detect_media_type("image.heic"),
-            mime::APPLICATION_OCTET_STREAM
-        );
-    }
+    // #[test]
+    // fn test_detect_media_type() {
+    //     assert_eq!(detect_media_type("image.jpg"), mime::IMAGE_JPEG);
+    //     let video_quick: mime::Mime = "video/quicktime".parse().unwrap();
+    //     assert_eq!(detect_media_type("video.mov"), video_quick);
+    //     let video_mpeg: mime::Mime = "video/mpeg".parse().unwrap();
+    //     assert_eq!(detect_media_type("video.mpg"), video_mpeg);
+    //     assert_eq!(
+    //         // does not yet guess the apple image type
+    //         detect_media_type("image.heic"),
+    //         mime::APPLICATION_OCTET_STREAM
+    //     );
+    // }
 
     #[test]
     fn test_import_asset_new() {
@@ -254,7 +257,8 @@ mod tests {
             .returning(|_, _| Ok(()));
         // act
         let usecase = ImportAsset::new(Box::new(records), Box::new(blobs));
-        let params = Params::new(infile);
+        let media_type = mime::IMAGE_JPEG;
+        let params = Params::new(infile, media_type);
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -294,7 +298,8 @@ mod tests {
         // act
         let usecase = ImportAsset::new(Box::new(records), Box::new(blobs));
         let infile = PathBuf::from("./test/fixtures/dcp_1069.jpg");
-        let params = Params::new(infile);
+        let media_type = mime::IMAGE_JPEG;
+        let params = Params::new(infile, media_type);
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -307,7 +312,7 @@ mod tests {
     fn test_get_original_date() {
         // has EXIF header and the original date/time value
         let filename = "./test/fixtures/dcp_1069.jpg";
-        let mt = detect_media_type(filename);
+        let mt = mime::IMAGE_JPEG;
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
         assert!(actual.is_ok());
@@ -318,21 +323,18 @@ mod tests {
 
         // does not have date/time original value
         let filename = "./test/fixtures/fighting_kittens.jpg";
-        let mt = detect_media_type(filename);
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
         assert!(actual.is_err());
 
         // does not have EXIF header at all
         let filename = "./test/fixtures/animal-cat-cute-126407.jpg";
-        let mt = detect_media_type(filename);
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
         assert!(actual.is_err());
 
         // not an image
         let filename = "./test/fixtures/lorem-ipsum.txt";
-        let mt = detect_media_type(filename);
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
         assert!(actual.is_err());

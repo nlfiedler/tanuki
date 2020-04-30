@@ -27,13 +27,7 @@
 **** repositories
 ***** record database
 ***** blob store
-*** TODO implement HTTP endpoint to upload asset and return path
-**** the GraphQL upload feature is non-standard, not implemented by juniper
-**** path would be for a temporary file that gets removed after some time
-**** client returns path in a GraphQL mutation to "upload" the asset
-**** need to maintain the original name of the uploaded file for media type detection
-**** consider how to write tests for this feature
-*** TODO implement GraphQL backend
+*** TODO implement GraphQL schema
 **** c.f. =public/schema.graphql=
 **** n.b. =SearchResult= should have media type but it was missing before
 **** n.b. =Asset= has a filepath, which should be retrieved from the repository
@@ -74,10 +68,16 @@
 ****** use =database.rs= from zorigami for a simpler database
 ***** repository can cache values in memory if needed
 *** TODO serve the existing ReasonML frontend
+**** add handler for static files
+**** add default handler for all non-matching routes
 **** add endpoints to get the thumbnails, previews, and assets
+**** add endpoints for graphql and graphiql
+**** add CORS middleware
+**** ensure logging middleware is set up
 **** blob repository will produce the thumbnails
 **** blob repository may cache results on disk and/or in memory
-**** convert file upload to the 2-step process
+**** convert file upload to use HTTP endpoint
+***** see =Upload.re= in commit =5974201= for how it used to be
 *** TODO plan how database migrations will happen in the future
 **** maintain a meta record with version information
 **** look at how the serde.rs library can help
@@ -131,7 +131,7 @@
 *** TODO document the clean architecture of this code base
 ** Adjust mujina file upload
 *** Cannot use the apollo-client upload feature
-*** Must upload the asset to the HTTP endpoint and then submit GraphQL mutation
+*** Upload each asset to the HTTP endpoint instead of GraphQL
 ** Frontend Rewrite
 *** Use Dart and Flutter
 *** Use Clean Architecture
@@ -184,6 +184,8 @@
 **** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
 *** TODO incorporate relevant items from mujina TODO file
+** Testing
+*** TODO Consider how to test the web endpoints
 ** Performance
 *** use =hey= to measure image serving performance
 **** =brew install hey= (the =ab= replacement)
@@ -253,6 +255,10 @@ include it in the database records.
 ** Desktop app
 *** Showing the licenses/about dialog
 **** c.f. "licenses" on https://flutter.dev/docs/resources/faq
+** Mobile web support
+*** Progressive Web App support in Flutter is coming
+*** Use PWA to get app-like behavior on mobile devices
+*** Look for package (like image_picker) that enables user to select photos to upload
 ** Mobile app
 *** Use [[https://pub.dev/packages/image_picker][image_picker]] to allow user to select images from photo library
 ** Build Automation
