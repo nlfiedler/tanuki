@@ -9,13 +9,18 @@ use chrono::prelude::*;
 use failure::{err_msg, Error};
 use std::path::{Path, PathBuf};
 use std::str;
+use std::sync::Arc;
 
+// Use an `Arc` to hold the data source to make cloning easy for the caller. If
+// using a `Box` instead, cloning it would involve adding fake clone operations
+// to the data source trait, which works, but is ugly. It gets even uglier when
+// mocking the calls on the data source, which gets cloned during the test.
 pub struct RecordRepositoryImpl {
-    datasource: Box<dyn EntityDataSource>,
+    datasource: Arc<dyn EntityDataSource>,
 }
 
 impl RecordRepositoryImpl {
-    pub fn new(datasource: Box<dyn EntityDataSource>) -> Self {
+    pub fn new(datasource: Arc<dyn EntityDataSource>) -> Self {
         Self { datasource }
     }
 }
@@ -225,7 +230,7 @@ mod tests {
             .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.get_asset("abc123");
         // assert
         assert!(result.is_ok());
@@ -241,7 +246,7 @@ mod tests {
             .with(eq("abc123"))
             .returning(move |_| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.get_asset("abc123");
         // assert
         assert!(result.is_err());
@@ -272,7 +277,7 @@ mod tests {
             .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.get_asset_by_digest("cafebabe");
         // assert
         assert!(result.is_ok());
@@ -287,7 +292,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_by_checksum().returning(move |_| Ok(None));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.get_asset_by_digest("cafebabe");
         // assert
         assert!(result.is_ok());
@@ -303,7 +308,7 @@ mod tests {
             .with(eq("abc123"))
             .returning(move |_| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.get_asset_by_digest("abc123");
         // assert
         assert!(result.is_err());
@@ -329,7 +334,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_put_asset().returning(move |_| Ok(()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.put_asset(&asset1);
         // assert
         assert!(result.is_ok());
@@ -356,7 +361,7 @@ mod tests {
         mock.expect_put_asset()
             .returning(move |_| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.put_asset(&asset1);
         // assert
         assert!(result.is_err());
@@ -384,7 +389,7 @@ mod tests {
             .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.get_media_type("abc123");
         // assert
         assert!(result.is_ok());
@@ -399,7 +404,7 @@ mod tests {
             .with(eq("abc123"))
             .returning(move |_| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.get_media_type("abc123");
         // assert
         assert!(result.is_err());
@@ -411,7 +416,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_count_assets().with().returning(|| Ok(42));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.count_assets();
         // assert
         assert!(result.is_ok());
@@ -426,7 +431,7 @@ mod tests {
             .with()
             .returning(|| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.count_assets();
         // assert
         assert!(result.is_err());
@@ -454,7 +459,7 @@ mod tests {
             .with()
             .returning(move || Ok(expected.clone()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_locations();
         // assert
         assert!(result.is_ok());
@@ -473,7 +478,7 @@ mod tests {
             .with()
             .returning(|| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_locations();
         // assert
         assert!(result.is_err());
@@ -501,7 +506,7 @@ mod tests {
             .with()
             .returning(move || Ok(expected.clone()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_years();
         // assert
         assert!(result.is_ok());
@@ -520,7 +525,7 @@ mod tests {
             .with()
             .returning(|| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_years();
         // assert
         assert!(result.is_err());
@@ -548,7 +553,7 @@ mod tests {
             .with()
             .returning(move || Ok(expected.clone()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_tags();
         // assert
         assert!(result.is_ok());
@@ -567,7 +572,7 @@ mod tests {
             .with()
             .returning(|| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_tags();
         // assert
         assert!(result.is_err());
@@ -586,7 +591,7 @@ mod tests {
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let tags = vec!["kitten".to_owned()];
         let result = repo.query_by_tags(tags);
         // assert
@@ -603,7 +608,7 @@ mod tests {
         mock.expect_query_by_tags()
             .returning(move |_| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let tags = vec!["kitten".to_owned()];
         let result = repo.query_by_tags(tags);
         // assert
@@ -625,7 +630,7 @@ mod tests {
             .with(eq(before))
             .returning(move |_| Ok(results.clone()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_before_date(before);
         // assert
         assert!(result.is_ok());
@@ -643,7 +648,7 @@ mod tests {
             .with(eq(before))
             .returning(move |_| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_before_date(before);
         // assert
         assert!(result.is_err());
@@ -664,7 +669,7 @@ mod tests {
             .with(eq(after))
             .returning(move |_| Ok(results.clone()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_after_date(after);
         // assert
         assert!(result.is_ok());
@@ -682,7 +687,7 @@ mod tests {
             .with(eq(after))
             .returning(move |_| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_after_date(after);
         // assert
         assert!(result.is_err());
@@ -704,7 +709,7 @@ mod tests {
             .with(eq(after), eq(before))
             .returning(move |_, _| Ok(results.clone()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_date_range(after, before);
         // assert
         assert!(result.is_ok());
@@ -723,7 +728,7 @@ mod tests {
             .with(eq(after), eq(before))
             .returning(move |_, _| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_date_range(after, before);
         // assert
         assert!(result.is_err());
@@ -742,7 +747,7 @@ mod tests {
         mock.expect_query_by_locations()
             .returning(move |_| Ok(results.clone()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let locations = vec!["hawaii".to_owned()];
         let result = repo.query_by_locations(locations);
         // assert
@@ -759,7 +764,7 @@ mod tests {
         mock.expect_query_by_locations()
             .returning(move |_| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let locations = vec!["hawaii".to_owned()];
         let result = repo.query_by_locations(locations);
         // assert
@@ -780,7 +785,7 @@ mod tests {
             .with(eq("img_1234.jpg"))
             .returning(move |_| Ok(results.clone()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_by_filename("img_1234.jpg");
         // assert
         assert!(result.is_ok());
@@ -797,7 +802,7 @@ mod tests {
             .with(eq("img_1234.jpg"))
             .returning(move |_| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_by_filename("img_1234.jpg");
         // assert
         assert!(result.is_err());
@@ -817,7 +822,7 @@ mod tests {
             .with(eq("image/jpeg"))
             .returning(move |_| Ok(results.clone()));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_by_mimetype("image/jpeg");
         // assert
         assert!(result.is_ok());
@@ -834,7 +839,7 @@ mod tests {
             .with(eq("image/jpeg"))
             .returning(move |_| Err(err_msg("oh no")));
         // act
-        let repo = RecordRepositoryImpl::new(Box::new(mock));
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_by_mimetype("image/jpeg");
         // assert
         assert!(result.is_err());

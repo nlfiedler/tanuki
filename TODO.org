@@ -29,19 +29,14 @@
 ***** blob store
 *** TODO implement GraphQL schema
 **** c.f. =public/schema.graphql=
-**** n.b. =SearchResult= should have media type but it was missing before
-**** n.b. =Asset= has a filepath, which should be retrieved from the repository
-***** that is, =BlobRepository= should get a function named =relative_path()= that decodes the asset id
-**** can represent optional user_date in asset update using an Option of Option
-***** if Some(None) then clear the user date
-***** if None then do not change the user date
-***** if Some(Some(d)) then set the user date
-**** should always paginate search results
 **** queries
 ***** TODO asset(id: ID!): Asset
+****** add a =relative_path()= to =BlobRepository= to get =filepath= for asset
 ***** TODO lookup(checksum: String!): Asset
-***** TODO count: Int!
+***** DONE count: Int!
 ***** TODO search(params: SearchParams!, count: Int = 10, offset: Int = 0): SearchMeta!
+****** should enforce a maximum value for =count=
+****** =SearchResult= is supposed to have =mimetype= but it was missing before
 ***** TODO locations: [LocationCount!]!
 ***** TODO tags: [TagCount!]!
 ***** TODO years: [YearCount!]!
@@ -49,6 +44,10 @@
 ***** TODO upload(file: Upload!): ID!
 ***** TODO update(id: ID!, asset: AssetInput!): Asset!
 ****** filter empty tags before sending to the usecase
+****** can represent optional user_date in asset update using an Option of Option
+******* if Some(None) then clear the user date
+******* if None then do not change the user date
+******* if Some(Some(d)) then set the user date
 *** TODO decide how to efficiently provide content type with raw assets
 **** response includes content type (i.e. media type)
 **** should minimize disk seeks and database reads
@@ -122,12 +121,14 @@
 **** backup the database files somewhere safe
 **** run the new binary to populate new database from data dump
 **** deploy new docker container with new backend
+*** TODO move =test/fixtures= under =tests=
 *** TODO remove JavaScript code from =src= and =test=
 *** TODO remove Node modules related to backend
 *** TODO remove the incomplete =server= Dart code
 *** TODO remove remaining old backend files
 **** =public/schema.graphql=
 **** =views/=
+*** TODO document build instructions for Rust in README
 *** TODO document the clean architecture of this code base
 ** Adjust mujina file upload
 *** Cannot use the apollo-client upload feature
@@ -151,7 +152,40 @@
 *** TODO how to upload files via graphql
 **** via graphql: https://morioh.com/p/8120c733a77c
 *** TODO use docker container to build web assets
+*** Thoughts on the design
+**** quick import
+***** drag/drop and/or file open to add lots of assets
+***** immediately import everything to the backend
+***** show progress and display thumbnails as assets are successfully imported
+***** switch to the "recent imports" screen showing just these new assets
+***** user selects multiple assets and applies tags and locations to them
+***** click on an asset to enter a caption in place (without leaving the gallery view)
+**** image gallery selectors
+***** instead of showing all of the tags, years, locations at once
+****** see the "crane" flutter gallery sample for the basic layout and appearance
+****** use input fields with small icons on the left and drop-down button on the right
+****** typing into the field will perform completion for tags, locations, years
+****** clicking on the drop-down will offer selection of attributes
+****** once entered or selected, input fields show active selectors
+****** maybe have a small x to deactive active selectors
+****** can also remove selectors by backspacing
+**** image gallery display
+***** show additional details on mouse hover
+***** button in corner of thumbnail to select assets to edit, download, etc
+**** asset detail page
+***** seems popular to show the gallery items as small thumbnails along the top (horizontally scrollable)
+***** have chevron buttons on both sides to navigate through gallery items
+**** timeline style display for all assets
+***** without any selectors, just show most recent going back in time
 *** ideas and widget usage
+**** Look at the Flutter "Gallery" app ("crane") for a pretty example
+***** gently rounded image corners
+***** gallery background has rounded corners
+***** pleasing captions
+***** interesting not-quite-grid (column oriented) arrangement
+***** selectors across the top
+***** floating ~Back~ button at the bottom left
+**** Consider how to have a "light" and "dark" mode
 **** Look for the =video_player= web plugin for playing video in webui
 **** use =RichText= widget to style the captions (e.g. make tags bold)
 **** tags in caption could be "gesture sensitive" (i.e. clickable) to show assets with that tag
@@ -160,6 +194,8 @@
 **** =Image= has a loading builder for showing progress of network images
 **** use =semanticLabel= on =Image= for accessibility
 **** =Wrap= will do what =flex-flow: row wrap;= does in CSS
+**** alternative to row wrapping would be columns of images
+***** need to make the number of columns responsive to window width
 **** =FutureBuilder= for showing things that load asynchronously
 **** use =SliverAppBar= in place of =AppBar=, it will shrink when content is scrolled
 ***** could be a good way to keep controls above scrolling content
@@ -168,8 +204,6 @@
 ***** click on item in a list/grid and it expands to the details page
 **** can use =DataTable= to display labeled data (like asset details, metadata)
 **** use pointer enter/exit events to start playing a video in place
-**** could check for thumbnails in image EXIF data
-***** look for =JPEGThumbnail= or =TIFFThumbnail=
 *** TODO remove ReasonML related code and Node modules
 **** should be nothing JavaScript/Node/Reason left at this point
 **** =bsconfig.json=
@@ -207,6 +241,9 @@
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
 **** move perkeep style query support from mujina to tanuki
 **** webui needs an "advanced" tab/link selector on the search page
+**** =is:image= and similar to filter by media type
+**** =with:<name>= to filter by people (need to know the people though)
+**** =AND= and =OR= operators and grouping with parentheses
 *** TODO Avoid loading all results into memory and then filtering
 **** database queries should probably take a filter closure
 **** database functions iterate the results, applying the filter
@@ -220,8 +257,10 @@
 **** likely would involve a full table scan
 *** TODO Query for image assets whose orientation is incorrect/unknown
 ** Data Format Support
-*** EXIF information
+*** EXIF reference
 **** https://www.media.mit.edu/pia/Research/deepview/exif.html
+*** could check for thumbnails in image EXIF data
+**** look for =JPEGThumbnail= or =TIFFThumbnail=
 *** TODO blob import always saves auto-oriented images as JPEG
 **** should detect the format and use one of the other libvips save functions
 *** TODO support HEIF images
@@ -244,6 +283,30 @@ include it in the database records.
 **** exact location information would be stored separate from label
 *** TODO Read metadata from PDF files
 **** probably has a creation date or some sort
+*** TODO Show the =AAE= files as plain text (they are xml)
+** Bulk edit
+*** Short term solution akin to perkeep web interface
+- [ ] Easy selection with hover checkbox button
+  - Could use =svg= tag to render the button
+  - See pexels.com in that it uses article tag, with nested img and button with nested svg
+- [ ] When selections, filters panel changes to show available actions
+- [ ] Actions include adding, deleting tags, setting location
+  - This is basically a simplified bulk edit
+- [ ] Use a prefix for the checksum values
+*** Design bulk edit solution, probably similar to JIRA
+- [ ] Access the bulk edit screen via a menu item
+- [ ] Use search form
+- [ ] Perform search, present results using "list" view
+- [ ] Check off results as desired
+- [ ] Next page presents several operations
+  - [ ] add location
+  - [ ] remove location
+  - [ ] rename location
+  - [ ] add a tag
+  - [ ] remove a tag
+  - [ ] rename a tag
+  - [ ] set caption
+  - [ ] change media type
 ** Documentation
 *** Case Sensitivity
 - Data is stored as entered (case preservative)
@@ -265,6 +328,9 @@ include it in the database records.
 *** For building the applications
 *** Requirements
 **** Consistent builds
+**** Need this for building the application, not compiling code
+***** dart, flutter, and rust/cargo all know how to compile code
+***** need a process to assemble the application deliverable
 **** Supports Rust, Dart, Flutter
 **** Supports macOS, Windows?, Linux?
 **** Likely need a build machine for each target (mac, windows, linux)
@@ -273,6 +339,14 @@ include it in the database records.
 ****** https://please.build
 ****** https://jenkins.io
 ****** https://www.buildbot.net
+**** Bazel
+***** supports all major platforms
+***** a very sophisticated replacement for =make=
+***** not appropriate for replacing =cargo= or =flutter build=
+***** dart: https://github.com/cbracken/rules_dart
+***** rust: https://github.com/bazelbuild/rules_rust
+***** rust: https://github.com/google/cargo-raze
+****** tries to replace cargo to get benefits of bazel
 ** Extra Features
 *** Image orientation
 **** maybe not everyone is going to like that the images get auto-oriented on imports
