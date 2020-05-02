@@ -3,6 +3,7 @@
 //
 use crate::data::repositories::RecordRepositoryImpl;
 use crate::data::sources::EntityDataSource;
+use crate::domain::entities::LabeledCount;
 use juniper::{graphql_scalar, FieldResult, ParseScalarResult, ParseScalarValue, RootNode, Value};
 use std::sync::Arc;
 
@@ -61,6 +62,19 @@ graphql_scalar!(BigInt where Scalar = <S> {
     }
 });
 
+#[juniper::object(description = "An attribute name and the number of assets it references.")]
+impl LabeledCount {
+    /// Label for an asset attribute, such as a tag or location.
+    fn label(&self) -> String {
+        self.label.clone()
+    }
+
+    /// Number of assets that are associated with this particular label.
+    fn count(&self) -> i32 {
+        self.count as i32
+    }
+}
+
 pub struct QueryRoot;
 
 #[juniper::object(Context = Arc<dyn EntityDataSource>)]
@@ -75,6 +89,42 @@ impl QueryRoot {
         let params = NoParams {};
         let count = usecase.call(params)?;
         Ok(count as i32)
+    }
+
+    /// Retrieve the list of locations and their associated asset count.
+    fn locations(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
+        use crate::domain::usecases::location::AllLocations;
+        use crate::domain::usecases::{NoParams, UseCase};
+        let source = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(source);
+        let usecase = AllLocations::new(Box::new(repo));
+        let params = NoParams {};
+        let locations: Vec<LabeledCount> = usecase.call(params)?;
+        Ok(locations)
+    }
+
+    /// Retrieve the list of tags and their associated asset count.
+    fn tags(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
+        use crate::domain::usecases::tags::AllTags;
+        use crate::domain::usecases::{NoParams, UseCase};
+        let source = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(source);
+        let usecase = AllTags::new(Box::new(repo));
+        let params = NoParams {};
+        let tags: Vec<LabeledCount> = usecase.call(params)?;
+        Ok(tags)
+    }
+
+    /// Retrieve the list of years and their associated asset count.
+    fn years(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
+        use crate::domain::usecases::year::AllYears;
+        use crate::domain::usecases::{NoParams, UseCase};
+        let source = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(source);
+        let usecase = AllYears::new(Box::new(repo));
+        let params = NoParams {};
+        let years: Vec<LabeledCount> = usecase.call(params)?;
+        Ok(years)
     }
 }
 
@@ -127,6 +177,225 @@ mod tests {
         let schema = create_schema();
         let (res, errors) =
             juniper::execute(r#"query { count }"#, None, &schema, &Variables::new(), &ctx).unwrap();
+        // assert
+        assert!(res.is_null());
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].error().message().contains("oh no"));
+    }
+
+    #[test]
+    fn test_query_locations_ok() {
+        // arrange
+        let expected = vec![
+            LabeledCount {
+                label: "hawaii".to_owned(),
+                count: 42,
+            },
+            LabeledCount {
+                label: "paris".to_owned(),
+                count: 101,
+            },
+            LabeledCount {
+                label: "london".to_owned(),
+                count: 14,
+            },
+        ];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_locations()
+            .with()
+            .returning(move || Ok(expected.clone()));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let (res, _errors) = juniper::execute(
+            r#"query { locations { label count } }"#,
+            None,
+            &schema,
+            &Variables::new(),
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("locations").unwrap();
+        let list_result = res.as_list_value().unwrap();
+        let labels = ["hawaii", "paris", "london"];
+        let counts = [42, 101, 14];
+        for (idx, result) in list_result.iter().enumerate() {
+            let object = result.as_object_value().unwrap();
+            let res = object.get_field_value("label").unwrap();
+            let actual = res.as_scalar_value::<String>().unwrap();
+            assert_eq!(actual, labels[idx]);
+            let res = object.get_field_value("count").unwrap();
+            let actual = res.as_scalar_value::<i32>().unwrap();
+            assert_eq!(*actual, counts[idx]);
+        }
+    }
+
+    #[test]
+    fn test_query_locations_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_locations()
+            .with()
+            .returning(|| Err(err_msg("oh no")));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let (res, errors) = juniper::execute(
+            r#"query { locations { label count } }"#,
+            None,
+            &schema,
+            &Variables::new(),
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert!(res.is_null());
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].error().message().contains("oh no"));
+    }
+
+    #[test]
+    fn test_query_tags_ok() {
+        // arrange
+        let expected = vec![
+            LabeledCount {
+                label: "cat".to_owned(),
+                count: 42,
+            },
+            LabeledCount {
+                label: "dog".to_owned(),
+                count: 101,
+            },
+            LabeledCount {
+                label: "mouse".to_owned(),
+                count: 14,
+            },
+        ];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_tags()
+            .with()
+            .returning(move || Ok(expected.clone()));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let (res, _errors) = juniper::execute(
+            r#"query { tags { label count } }"#,
+            None,
+            &schema,
+            &Variables::new(),
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("tags").unwrap();
+        let list_result = res.as_list_value().unwrap();
+        let labels = ["cat", "dog", "mouse"];
+        let counts = [42, 101, 14];
+        for (idx, result) in list_result.iter().enumerate() {
+            let object = result.as_object_value().unwrap();
+            let res = object.get_field_value("label").unwrap();
+            let actual = res.as_scalar_value::<String>().unwrap();
+            assert_eq!(actual, labels[idx]);
+            let res = object.get_field_value("count").unwrap();
+            let actual = res.as_scalar_value::<i32>().unwrap();
+            assert_eq!(*actual, counts[idx]);
+        }
+    }
+
+    #[test]
+    fn test_query_tags_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_tags()
+            .with()
+            .returning(|| Err(err_msg("oh no")));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let (res, errors) = juniper::execute(
+            r#"query { tags { label count } }"#,
+            None,
+            &schema,
+            &Variables::new(),
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert!(res.is_null());
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].error().message().contains("oh no"));
+    }
+
+    #[test]
+    fn test_query_years_ok() {
+        // arrange
+        let expected = vec![
+            LabeledCount {
+                label: "1996".to_owned(),
+                count: 42,
+            },
+            LabeledCount {
+                label: "2006".to_owned(),
+                count: 101,
+            },
+            LabeledCount {
+                label: "2016".to_owned(),
+                count: 14,
+            },
+        ];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_years()
+            .with()
+            .returning(move || Ok(expected.clone()));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let (res, _errors) = juniper::execute(
+            r#"query { years { label count } }"#,
+            None,
+            &schema,
+            &Variables::new(),
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("years").unwrap();
+        let list_result = res.as_list_value().unwrap();
+        let labels = ["1996", "2006", "2016"];
+        let counts = [42, 101, 14];
+        for (idx, result) in list_result.iter().enumerate() {
+            let object = result.as_object_value().unwrap();
+            let res = object.get_field_value("label").unwrap();
+            let actual = res.as_scalar_value::<String>().unwrap();
+            assert_eq!(actual, labels[idx]);
+            let res = object.get_field_value("count").unwrap();
+            let actual = res.as_scalar_value::<i32>().unwrap();
+            assert_eq!(*actual, counts[idx]);
+        }
+    }
+
+    #[test]
+    fn test_query_years_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_years()
+            .with()
+            .returning(|| Err(err_msg("oh no")));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let (res, errors) = juniper::execute(
+            r#"query { years { label count } }"#,
+            None,
+            &schema,
+            &Variables::new(),
+            &ctx,
+        )
+        .unwrap();
         // assert
         assert!(res.is_null());
         assert_eq!(errors.len(), 1);

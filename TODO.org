@@ -37,9 +37,9 @@
 ***** TODO search(params: SearchParams!, count: Int = 10, offset: Int = 0): SearchMeta!
 ****** should enforce a maximum value for =count=
 ****** =SearchResult= is supposed to have =mimetype= but it was missing before
-***** TODO locations: [LocationCount!]!
-***** TODO tags: [TagCount!]!
-***** TODO years: [YearCount!]!
+***** DONE locations: [LabeledCount!]!
+***** DONE tags: [LabeledCount!]!
+***** DONE years: [LabeledCount!]!
 **** mutations
 ***** TODO upload(file: Upload!): ID!
 ***** TODO update(id: ID!, asset: AssetInput!): Asset!
