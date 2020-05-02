@@ -29,10 +29,15 @@
 ***** blob store
 *** TODO implement GraphQL schema
 **** c.f. =public/schema.graphql=
+**** may want to create a new "context" that holds everything needed
+***** record repo
+***** blob repo
+***** data source
+**** should use =juniper::ID= where =ID= is expected
+**** add a =relative_path()= to =BlobRepository= to get =filepath= for asset
 **** queries
-***** TODO asset(id: ID!): Asset
-****** add a =relative_path()= to =BlobRepository= to get =filepath= for asset
-***** TODO lookup(checksum: String!): Asset
+***** DONE asset(id: ID!): Asset
+***** DONE lookup(checksum: String!): Asset
 ***** DONE count: Int!
 ***** TODO search(params: SearchParams!, count: Int = 10, offset: Int = 0): SearchMeta!
 ****** should enforce a maximum value for =count=
@@ -73,6 +78,8 @@
 **** add endpoints for graphql and graphiql
 **** add CORS middleware
 **** ensure logging middleware is set up
+**** generate the =graphql_schema.json= using the new API
+**** fix the ReasonML code related to GraphQL
 **** blob repository will produce the thumbnails
 **** blob repository may cache results on disk and/or in memory
 **** convert file upload to use HTTP endpoint
