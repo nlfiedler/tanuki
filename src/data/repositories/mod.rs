@@ -582,6 +582,7 @@ mod tests {
     fn test_query_by_tags_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("hawaii".to_owned()),
@@ -619,6 +620,7 @@ mod tests {
     fn test_query_before_date_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("hawaii".to_owned()),
@@ -658,6 +660,7 @@ mod tests {
     fn test_query_after_date_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("hawaii".to_owned()),
@@ -697,6 +700,7 @@ mod tests {
     fn test_query_date_range_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("hawaii".to_owned()),
@@ -738,6 +742,7 @@ mod tests {
     fn test_query_by_locations_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("hawaii".to_owned()),
@@ -775,6 +780,7 @@ mod tests {
     fn test_query_by_filename_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("hawaii".to_owned()),
@@ -812,6 +818,7 @@ mod tests {
     fn test_query_by_mimetype_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("hawaii".to_owned()),

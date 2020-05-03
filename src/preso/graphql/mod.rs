@@ -3,9 +3,12 @@
 //
 use crate::data::repositories::RecordRepositoryImpl;
 use crate::data::sources::EntityDataSource;
-use crate::domain::entities::{Asset, LabeledCount};
+use crate::domain::entities::{Asset, LabeledCount, SearchResult};
 use chrono::prelude::*;
-use juniper::{graphql_scalar, FieldResult, ParseScalarResult, ParseScalarValue, RootNode, Value};
+use juniper::{
+    graphql_scalar, FieldResult, GraphQLInputObject, ParseScalarResult, ParseScalarValue, RootNode,
+    Value,
+};
 use std::sync::Arc;
 
 // Mark the data source as a valid context type for Juniper.
@@ -135,6 +138,86 @@ impl LabeledCount {
     }
 }
 
+/// `SearchParams` defines the various parameters by which to search for assets.
+#[derive(GraphQLInputObject)]
+pub struct SearchParams {
+    /// Tags that an asset should have. All should match.
+    pub tags: Option<Vec<String>>,
+    /// Locations of an asset. At least one must match.
+    pub locations: Option<Vec<String>>,
+    /// Date for filtering asset results. Only those assets whose canonical date
+    /// occurs _on_ or _after_ this date will be returned.
+    pub after: Option<DateTime<Utc>>,
+    /// Date for filtering asset results. Only those assets whose canonical date
+    /// occurs _before_ this date will be returned.
+    pub before: Option<DateTime<Utc>>,
+    /// Find assets whose filename (e.g. `img_3011.jpg`) matches the one given.
+    pub filename: Option<String>,
+    /// Find assets whose mimetype (e.g. `image/jpeg`) matches the one given.
+    pub mimetype: Option<String>,
+}
+
+impl Into<crate::domain::usecases::search::Params> for SearchParams {
+    fn into(self) -> crate::domain::usecases::search::Params {
+        crate::domain::usecases::search::Params {
+            tags: self.tags.unwrap_or(vec![]),
+            locations: self.locations.unwrap_or(vec![]),
+            filename: self.filename,
+            mimetype: self.mimetype,
+            before_date: self.before,
+            after_date: self.after,
+            sort_field: None,
+            sort_order: None,
+        }
+    }
+}
+
+#[juniper::object(description = "An attribute name and the number of assets it references.")]
+impl SearchResult {
+    /// The identifier of the matching asset.
+    fn id(&self) -> String {
+        self.asset_id.clone()
+    }
+
+    /// The filename for the matching asset.
+    fn filename(&self) -> String {
+        self.filename.clone()
+    }
+
+    /// Media type (formerly MIME type) of the asset.
+    fn mimetype(&self) -> String {
+        self.media_type.clone()
+    }
+
+    /// The location for the matching asset, if available.
+    fn location(&self) -> Option<String> {
+        self.location.clone()
+    }
+
+    /// The date/time for the matching asset.
+    fn datetime(&self) -> DateTime<Utc> {
+        self.datetime.clone()
+    }
+}
+
+struct SearchMeta {
+    results: Vec<SearchResult>,
+    count: i32,
+}
+
+#[juniper::object(description = "`SearchMeta` is returned from the `search` query.")]
+impl SearchMeta {
+    /// The list of results retrieved via the query.
+    fn results(&self) -> Vec<SearchResult> {
+        self.results.clone()
+    }
+
+    /// The total number of matching assets in the system, useful for pagination.
+    fn count(&self) -> i32 {
+        self.count
+    }
+}
+
 pub struct QueryRoot;
 
 #[juniper::object(Context = Arc<dyn EntityDataSource>)]
@@ -187,6 +270,33 @@ impl QueryRoot {
         Ok(asset)
     }
 
+    /// Search for assets by the given parameters.
+    ///
+    /// The count indicates how many results to return in a single query,
+    /// limited to a maximum of 250. Default value is `10`.
+    ///
+    /// The offset is useful for pagination. Default value is `0`.
+    fn search(
+        executor: &Executor,
+        params: SearchParams,
+        count: Option<i32>,
+        offset: Option<i32>,
+    ) -> FieldResult<SearchMeta> {
+        use crate::domain::usecases::search::{Params, SearchAssets};
+        use crate::domain::usecases::UseCase;
+        let source = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(source);
+        let usecase = SearchAssets::new(Box::new(repo));
+        let params: Params = params.into();
+        let mut results: Vec<SearchResult> = usecase.call(params)?;
+        let total_count = results.len() as i32;
+        let results = paginate_vector(&mut results, offset, count);
+        Ok(SearchMeta {
+            results,
+            count: total_count,
+        })
+    }
+
     /// Retrieve the list of tags and their associated asset count.
     fn tags(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
         use crate::domain::usecases::tags::AllTags;
@@ -212,6 +322,30 @@ impl QueryRoot {
     }
 }
 
+/// Return the optional value bounded by the given range, or the default value
+/// if `value` is `None`.
+fn bounded_int_value(value: Option<i32>, default: i32, minimum: i32, maximum: i32) -> i32 {
+    if let Some(v) = value {
+        std::cmp::min(std::cmp::max(v, minimum), maximum)
+    } else {
+        default
+    }
+}
+
+/// Truncate the given vector to yield the desired portion.
+///
+/// If offset is None, it defaults to 0, while count defaults to 10. Offset is
+/// bound between zero and the length of the input vector. Count is bound by 1
+/// and 250.
+fn paginate_vector<T>(input: &mut Vec<T>, offset: Option<i32>, count: Option<i32>) -> Vec<T> {
+    let total_count = input.len() as i32;
+    let count = bounded_int_value(count, 10, 1, 250) as usize;
+    let offset = bounded_int_value(offset, 0, 0, total_count) as usize;
+    let mut results = input.split_off(offset);
+    results.truncate(count);
+    results
+}
+
 pub struct MutationRoot;
 
 #[juniper::object(Context = Arc<dyn EntityDataSource>)]
@@ -229,8 +363,49 @@ mod tests {
     use super::*;
     use crate::data::sources::MockEntityDataSource;
     use failure::err_msg;
-    use juniper::{InputValue, Variables};
+    use juniper::{InputValue, ToInputValue, Variables};
     use mockall::predicate::*;
+
+    #[test]
+    fn test_bounded_int_value() {
+        assert_eq!(10, bounded_int_value(None, 10, 1, 250));
+        assert_eq!(15, bounded_int_value(Some(15), 10, 1, 250));
+        assert_eq!(1, bounded_int_value(Some(-8), 10, 1, 250));
+        assert_eq!(250, bounded_int_value(Some(1000), 10, 1, 250));
+    }
+
+    #[test]
+    fn test_paginate_vector() {
+        // sensible "first" page
+        let mut input: Vec<u32> = Vec::new();
+        for v in 0..102 {
+            input.push(v);
+        }
+        let actual = paginate_vector(&mut input, Some(0), Some(10));
+        assert_eq!(actual.len(), 10);
+        assert_eq!(actual[0], 0);
+        assert_eq!(actual[9], 9);
+
+        // page somewhere in the middle
+        let mut input: Vec<u32> = Vec::new();
+        for v in 0..102 {
+            input.push(v);
+        }
+        let actual = paginate_vector(&mut input, Some(40), Some(20));
+        assert_eq!(actual.len(), 20);
+        assert_eq!(actual[0], 40);
+        assert_eq!(actual[19], 59);
+
+        // last page with over extension
+        let mut input: Vec<u32> = Vec::new();
+        for v in 0..102 {
+            input.push(v);
+        }
+        let actual = paginate_vector(&mut input, Some(90), Some(100));
+        assert_eq!(actual.len(), 12);
+        assert_eq!(actual[0], 90);
+        assert_eq!(actual[11], 101);
+    }
 
     #[test]
     fn test_query_asset_ok() {
@@ -529,6 +704,485 @@ mod tests {
         // assert
         let res = res.as_object_value().unwrap();
         let res = res.get_field_value("lookup").unwrap();
+        assert!(res.is_null());
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].error().message().contains("oh no"));
+    }
+
+    fn make_search_results() -> Vec<SearchResult> {
+        vec![
+            SearchResult {
+                asset_id: "cafebabe".to_owned(),
+                filename: "img_1234.png".to_owned(),
+                media_type: "image/png".to_owned(),
+                location: Some("hawaii".to_owned()),
+                datetime: Utc.ymd(2012, 5, 31).and_hms(21, 10, 11),
+            },
+            SearchResult {
+                asset_id: "babecafe".to_owned(),
+                filename: "img_2345.gif".to_owned(),
+                media_type: "image/gif".to_owned(),
+                location: Some("london".to_owned()),
+                datetime: Utc.ymd(2013, 5, 31).and_hms(21, 10, 11),
+            },
+            SearchResult {
+                asset_id: "cafed00d".to_owned(),
+                filename: "img_3456.mov".to_owned(),
+                media_type: "video/quicktime".to_owned(),
+                location: Some("paris".to_owned()),
+                datetime: Utc.ymd(2014, 5, 31).and_hms(21, 10, 11),
+            },
+            SearchResult {
+                asset_id: "d00dcafe".to_owned(),
+                filename: "img_4567.jpg".to_owned(),
+                media_type: "image/jpeg".to_owned(),
+                location: Some("hawaii".to_owned()),
+                datetime: Utc.ymd(2015, 5, 31).and_hms(21, 10, 11),
+            },
+            SearchResult {
+                asset_id: "deadbeef".to_owned(),
+                filename: "img_5678.mov".to_owned(),
+                media_type: "video/quicktime".to_owned(),
+                location: Some("london".to_owned()),
+                datetime: Utc.ymd(2016, 5, 31).and_hms(21, 10, 11),
+            },
+            SearchResult {
+                asset_id: "cafebeef".to_owned(),
+                filename: "img_6789.jpg".to_owned(),
+                media_type: "image/jpeg".to_owned(),
+                location: Some("paris".to_owned()),
+                datetime: Utc.ymd(2017, 5, 31).and_hms(21, 10, 11),
+            },
+            SearchResult {
+                asset_id: "deadcafe".to_owned(),
+                filename: "img_7890.jpg".to_owned(),
+                media_type: "image/jpeg".to_owned(),
+                location: Some("yosemite".to_owned()),
+                datetime: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
+            },
+        ]
+    }
+
+    #[test]
+    fn test_query_search_ok() {
+        // arrange
+        let results = make_search_results();
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_tags()
+            .with(always())
+            .returning(move |_| Ok(results.clone()));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let mut vars = Variables::new();
+        let params = SearchParams {
+            tags: Some(vec!["cat".to_owned()]),
+            locations: None,
+            after: None,
+            before: None,
+            filename: None,
+            mimetype: None,
+        };
+        vars.insert("params".to_owned(), params.to_input_value());
+        let (res, errors) = juniper::execute(
+            r#"query Search($params: SearchParams!) {
+                search(params: $params) {
+                    results { id filename mimetype location datetime }
+                    count
+                }
+            }"#,
+            None,
+            &schema,
+            &vars,
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert_eq!(errors.len(), 0);
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("search").unwrap();
+        let search = res.as_object_value().unwrap();
+        let count_field = search.get_field_value("count").unwrap();
+        let count_value = count_field.as_scalar_value::<i32>().unwrap();
+        assert_eq!(*count_value, 7);
+        let results_field = search.get_field_value("results").unwrap();
+        let result_value = results_field.as_list_value().unwrap();
+
+        // check the first result
+        let entry_object = result_value[0].as_object_value().unwrap();
+        let entry_field = entry_object.get_field_value("id").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "cafebabe");
+        let entry_field = entry_object.get_field_value("filename").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "img_1234.png");
+        let entry_field = entry_object.get_field_value("mimetype").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "image/png");
+        let entry_field = entry_object.get_field_value("location").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "hawaii");
+        let entry_field = entry_object.get_field_value("datetime").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(&entry_value[..19], "2012-05-31T21:10:11");
+
+        // check the last result
+        let entry_object = result_value[6].as_object_value().unwrap();
+        let entry_field = entry_object.get_field_value("id").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "deadcafe");
+        let entry_field = entry_object.get_field_value("filename").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "img_7890.jpg");
+        let entry_field = entry_object.get_field_value("mimetype").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "image/jpeg");
+        let entry_field = entry_object.get_field_value("location").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "yosemite");
+        let entry_field = entry_object.get_field_value("datetime").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(&entry_value[..19], "2018-05-31T21:10:11");
+    }
+
+    fn make_many_results() -> Vec<SearchResult> {
+        let mut results: Vec<SearchResult> = Vec::new();
+        let locations = ["hawaii", "paris", "london"];
+        for index in 1..108 {
+            let asset_id = format!("cafebabe-{}", index);
+            let filename = format!("img_1{}.jpg", index);
+            let base_time = Utc.ymd(2012, 5, 31).and_hms(21, 10, 11);
+            let duration = chrono::Duration::days(index);
+            let datetime = base_time + duration;
+            let location_index = (index % locations.len() as i64) as usize;
+            results.push(SearchResult {
+                asset_id,
+                filename,
+                media_type: "image/jpeg".to_owned(),
+                location: Some(locations[location_index].to_owned()),
+                datetime,
+            });
+        }
+        results
+    }
+
+    #[test]
+    fn test_query_search_page_first() {
+        // arrange
+        let results = make_many_results();
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_tags()
+            .with(always())
+            .returning(move |_| Ok(results.clone()));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let mut vars = Variables::new();
+        let params = SearchParams {
+            tags: Some(vec!["cat".to_owned()]),
+            locations: None,
+            after: None,
+            before: None,
+            filename: None,
+            mimetype: None,
+        };
+        vars.insert("params".to_owned(), params.to_input_value());
+        let (res, errors) = juniper::execute(
+            r#"query Search($params: SearchParams!) {
+                search(params: $params, count: 10) {
+                    results { id }
+                    count
+                }
+            }"#,
+            None,
+            &schema,
+            &vars,
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert_eq!(errors.len(), 0);
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("search").unwrap();
+        let search = res.as_object_value().unwrap();
+        let count_field = search.get_field_value("count").unwrap();
+        let count_value = count_field.as_scalar_value::<i32>().unwrap();
+        assert_eq!(*count_value, 107);
+        let results_field = search.get_field_value("results").unwrap();
+        let result_value = results_field.as_list_value().unwrap();
+        assert_eq!(result_value.len(), 10);
+
+        // check the first result
+        let entry_object = result_value[0].as_object_value().unwrap();
+        let entry_field = entry_object.get_field_value("id").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "cafebabe-1");
+
+        // check the last result
+        let entry_object = result_value[9].as_object_value().unwrap();
+        let entry_field = entry_object.get_field_value("id").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "cafebabe-10");
+    }
+
+    #[test]
+    fn test_query_search_page_middle() {
+        // arrange
+        let results = make_many_results();
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_tags()
+            .with(always())
+            .returning(move |_| Ok(results.clone()));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let mut vars = Variables::new();
+        let params = SearchParams {
+            tags: Some(vec!["cat".to_owned()]),
+            locations: None,
+            after: None,
+            before: None,
+            filename: None,
+            mimetype: None,
+        };
+        vars.insert("params".to_owned(), params.to_input_value());
+        let (res, errors) = juniper::execute(
+            r#"query Search($params: SearchParams!) {
+                search(params: $params, count: 10, offset: 20) {
+                    results { id }
+                    count
+                }
+            }"#,
+            None,
+            &schema,
+            &vars,
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert_eq!(errors.len(), 0);
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("search").unwrap();
+        let search = res.as_object_value().unwrap();
+        let count_field = search.get_field_value("count").unwrap();
+        let count_value = count_field.as_scalar_value::<i32>().unwrap();
+        assert_eq!(*count_value, 107);
+        let results_field = search.get_field_value("results").unwrap();
+        let result_value = results_field.as_list_value().unwrap();
+        assert_eq!(result_value.len(), 10);
+
+        // check the first result
+        let entry_object = result_value[0].as_object_value().unwrap();
+        let entry_field = entry_object.get_field_value("id").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "cafebabe-21");
+
+        // check the last result
+        let entry_object = result_value[9].as_object_value().unwrap();
+        let entry_field = entry_object.get_field_value("id").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "cafebabe-30");
+    }
+
+    #[test]
+    fn test_query_search_page_last() {
+        // arrange
+        let results = make_many_results();
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_tags()
+            .with(always())
+            .returning(move |_| Ok(results.clone()));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let mut vars = Variables::new();
+        let params = SearchParams {
+            tags: Some(vec!["cat".to_owned()]),
+            locations: None,
+            after: None,
+            before: None,
+            filename: None,
+            mimetype: None,
+        };
+        vars.insert("params".to_owned(), params.to_input_value());
+        let (res, errors) = juniper::execute(
+            r#"query Search($params: SearchParams!) {
+                search(params: $params, count: 100, offset: 80) {
+                    results { id }
+                    count
+                }
+            }"#,
+            None,
+            &schema,
+            &vars,
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert_eq!(errors.len(), 0);
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("search").unwrap();
+        let search = res.as_object_value().unwrap();
+        let count_field = search.get_field_value("count").unwrap();
+        let count_value = count_field.as_scalar_value::<i32>().unwrap();
+        assert_eq!(*count_value, 107);
+        let results_field = search.get_field_value("results").unwrap();
+        let result_value = results_field.as_list_value().unwrap();
+        assert_eq!(result_value.len(), 27);
+
+        // check the first result
+        let entry_object = result_value[0].as_object_value().unwrap();
+        let entry_field = entry_object.get_field_value("id").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "cafebabe-81");
+
+        // check the last result
+        let entry_object = result_value[26].as_object_value().unwrap();
+        let entry_field = entry_object.get_field_value("id").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "cafebabe-107");
+    }
+
+    #[test]
+    fn test_query_search_complex() {
+        // arrange
+        let results = make_many_results();
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_tags()
+            .with(always())
+            .returning(move |_| Ok(results.clone()));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let mut vars = Variables::new();
+        // slightly more complex search parameters
+        let params = SearchParams {
+            tags: Some(vec!["cat".to_owned()]),
+            locations: Some(vec!["hawaii".to_owned()]),
+            after: None,
+            before: None,
+            filename: None,
+            mimetype: None,
+        };
+        vars.insert("params".to_owned(), params.to_input_value());
+        let (res, errors) = juniper::execute(
+            r#"query Search($params: SearchParams!) {
+                search(params: $params, count: 100) {
+                    results { id }
+                    count
+                }
+            }"#,
+            None,
+            &schema,
+            &vars,
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert_eq!(errors.len(), 0);
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("search").unwrap();
+        let search = res.as_object_value().unwrap();
+        let count_field = search.get_field_value("count").unwrap();
+        let count_value = count_field.as_scalar_value::<i32>().unwrap();
+        assert_eq!(*count_value, 35);
+        let results_field = search.get_field_value("results").unwrap();
+        let result_value = results_field.as_list_value().unwrap();
+        assert_eq!(result_value.len(), 35);
+
+        // check the first result
+        let entry_object = result_value[0].as_object_value().unwrap();
+        let entry_field = entry_object.get_field_value("id").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "cafebabe-3");
+
+        // check the last result
+        let entry_object = result_value[34].as_object_value().unwrap();
+        let entry_field = entry_object.get_field_value("id").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "cafebabe-105");
+    }
+
+    #[test]
+    fn test_query_search_none() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_tags()
+            .with(always())
+            .returning(move |_| Ok(vec![]));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let mut vars = Variables::new();
+        let params = SearchParams {
+            tags: Some(vec!["cat".to_owned()]),
+            locations: None,
+            after: None,
+            before: None,
+            filename: None,
+            mimetype: None,
+        };
+        vars.insert("params".to_owned(), params.to_input_value());
+        let (res, errors) = juniper::execute(
+            r#"query Search($params: SearchParams!) {
+                search(params: $params) {
+                    results { id filename mimetype location datetime }
+                    count
+                }
+            }"#,
+            None,
+            &schema,
+            &vars,
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert_eq!(errors.len(), 0);
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("search").unwrap();
+        let search = res.as_object_value().unwrap();
+        let count_field = search.get_field_value("count").unwrap();
+        let count_value = count_field.as_scalar_value::<i32>().unwrap();
+        assert_eq!(*count_value, 0);
+        let results_field = search.get_field_value("results").unwrap();
+        let result_value = results_field.as_list_value().unwrap();
+        assert_eq!(result_value.len(), 0);
+    }
+
+    #[test]
+    fn test_query_search_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_by_tags()
+            .with(eq(vec!["cat".to_owned()]))
+            .returning(|_| Err(err_msg("oh no")));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let mut vars = Variables::new();
+        let params = SearchParams {
+            tags: Some(vec!["cat".to_owned()]),
+            locations: None,
+            after: None,
+            before: None,
+            filename: None,
+            mimetype: None,
+        };
+        vars.insert("params".to_owned(), params.to_input_value());
+        let (res, errors) = juniper::execute(
+            r#"query Search($params: SearchParams!) {
+                search(params: $params) {
+                    results { id }
+                    count
+                }
+            }"#,
+            None,
+            &schema,
+            &vars,
+            &ctx,
+        )
+        .unwrap();
+        // assert
         assert!(res.is_null());
         assert_eq!(errors.len(), 1);
         assert!(errors[0].error().message().contains("oh no"));

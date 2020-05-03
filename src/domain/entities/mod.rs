@@ -63,6 +63,8 @@ pub struct LabeledCount {
 /// given set of criteria.
 #[derive(Clone, Debug)]
 pub struct SearchResult {
+    /// Asset identifier.
+    pub asset_id: String,
     /// Original filename of the asset.
     pub filename: String,
     /// Media type (formerly MIME type) of the asset.
@@ -84,6 +86,7 @@ impl SearchResult {
             asset.import_date
         };
         Self {
+            asset_id: asset.key.clone(),
             filename: asset.filename.clone(),
             media_type: asset.media_type.clone(),
             location: asset.location.clone(),

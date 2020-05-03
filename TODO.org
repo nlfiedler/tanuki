@@ -33,20 +33,16 @@
 ***** record repo
 ***** blob repo
 ***** data source
-**** should use =juniper::ID= where =ID= is expected
-**** add a =relative_path()= to =BlobRepository= to get =filepath= for asset
-**** queries
+**** TODO add a =relative_path()= to =BlobRepository= to get =filepath= for asset
+**** DONE queries
 ***** DONE asset(id: ID!): Asset
 ***** DONE lookup(checksum: String!): Asset
 ***** DONE count: Int!
-***** TODO search(params: SearchParams!, count: Int = 10, offset: Int = 0): SearchMeta!
-****** should enforce a maximum value for =count=
-****** =SearchResult= is supposed to have =mimetype= but it was missing before
+***** DONE search(params: SearchParams!, count: Int = 10, offset: Int = 0): SearchMeta!
 ***** DONE locations: [LabeledCount!]!
 ***** DONE tags: [LabeledCount!]!
 ***** DONE years: [LabeledCount!]!
-**** mutations
-***** TODO upload(file: Upload!): ID!
+**** TODO mutations
 ***** TODO update(id: ID!, asset: AssetInput!): Asset!
 ****** filter empty tags before sending to the usecase
 ****** can represent optional user_date in asset update using an Option of Option

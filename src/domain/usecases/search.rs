@@ -197,14 +197,14 @@ pub enum SortOrder {
 
 #[derive(Clone, Default)]
 pub struct Params {
-    tags: Vec<String>,
-    locations: Vec<String>,
-    filename: Option<String>,
-    mimetype: Option<String>,
-    before_date: Option<DateTime<Utc>>,
-    after_date: Option<DateTime<Utc>>,
-    sort_field: Option<SortField>,
-    sort_order: Option<SortOrder>,
+    pub tags: Vec<String>,
+    pub locations: Vec<String>,
+    pub filename: Option<String>,
+    pub mimetype: Option<String>,
+    pub before_date: Option<DateTime<Utc>>,
+    pub after_date: Option<DateTime<Utc>>,
+    pub sort_field: Option<SortField>,
+    pub sort_order: Option<SortOrder>,
 }
 
 impl fmt::Display for Params {
@@ -233,6 +233,7 @@ mod tests {
     fn test_search_assets_tags_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("hawaii".to_owned()),
@@ -272,6 +273,7 @@ mod tests {
     fn test_search_assets_after_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("hawaii".to_owned()),
@@ -298,6 +300,7 @@ mod tests {
     fn test_search_assets_before_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("hawaii".to_owned()),
@@ -324,6 +327,7 @@ mod tests {
     fn test_search_assets_range_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("hawaii".to_owned()),
@@ -352,6 +356,7 @@ mod tests {
     fn test_search_assets_locations_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("Hawaii".to_owned()),
@@ -376,6 +381,7 @@ mod tests {
     fn test_search_assets_filename_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "IMG_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
             location: Some("hawaii".to_owned()),
@@ -401,6 +407,7 @@ mod tests {
     fn test_search_assets_mimetype_ok() {
         // arrange
         let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/JPEG".to_owned(),
             location: Some("hawaii".to_owned()),
@@ -426,42 +433,49 @@ mod tests {
         // make everything uppercase for lettercase testing
         vec![
             SearchResult {
+                asset_id: "cafebabe".to_owned(),
                 filename: "IMG_1234.PNG".to_owned(),
                 media_type: "IMAGE/PNG".to_owned(),
                 location: Some("HAWAII".to_owned()),
                 datetime: Utc.ymd(2012, 5, 31).and_hms(21, 10, 11),
             },
             SearchResult {
+                asset_id: "babecafe".to_owned(),
                 filename: "IMG_2345.GIF".to_owned(),
                 media_type: "IMAGE/GIF".to_owned(),
                 location: Some("LONDON".to_owned()),
                 datetime: Utc.ymd(2013, 5, 31).and_hms(21, 10, 11),
             },
             SearchResult {
+                asset_id: "cafed00d".to_owned(),
                 filename: "IMG_3456.MOV".to_owned(),
                 media_type: "VIDEO/QUICKTIME".to_owned(),
                 location: Some("PARIS".to_owned()),
                 datetime: Utc.ymd(2014, 5, 31).and_hms(21, 10, 11),
             },
             SearchResult {
+                asset_id: "d00dcafe".to_owned(),
                 filename: "IMG_4567.JPG".to_owned(),
                 media_type: "IMAGE/JPEG".to_owned(),
                 location: Some("HAWAII".to_owned()),
                 datetime: Utc.ymd(2015, 5, 31).and_hms(21, 10, 11),
             },
             SearchResult {
+                asset_id: "deadbeef".to_owned(),
                 filename: "IMG_5678.MOV".to_owned(),
                 media_type: "VIDEO/QUICKTIME".to_owned(),
                 location: Some("LONDON".to_owned()),
                 datetime: Utc.ymd(2016, 5, 31).and_hms(21, 10, 11),
             },
             SearchResult {
+                asset_id: "cafebeef".to_owned(),
                 filename: "IMG_6789.JPG".to_owned(),
                 media_type: "IMAGE/JPEG".to_owned(),
                 location: Some("PARIS".to_owned()),
                 datetime: Utc.ymd(2017, 5, 31).and_hms(21, 10, 11),
             },
             SearchResult {
+                asset_id: "deadcafe".to_owned(),
                 filename: "IMG_7890.JPG".to_owned(),
                 media_type: "IMAGE/JPEG".to_owned(),
                 location: Some("YOSEMITE".to_owned()),

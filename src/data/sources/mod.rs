@@ -316,6 +316,8 @@ pub fn mapper(key: &[u8], value: &[u8], view: &str, emitter: &Emitter) -> Result
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "SearchResult")]
 struct IndexValue {
+    #[serde(skip)]
+    pub asset_id: String,
     /// Original filename of the asset.
     #[serde(rename = "n")]
     pub filename: String,
@@ -351,6 +353,8 @@ impl TryFrom<QueryResult> for SearchResult {
     type Error = failure::Error;
 
     fn try_from(value: QueryResult) -> Result<Self, Self::Error> {
-        SearchResult::from_bytes(value.value.as_ref())
+        let mut result = SearchResult::from_bytes(value.value.as_ref())?;
+        result.asset_id = String::from_utf8((*value.doc_id).to_vec())?;
+        Ok(result)
     }
 }
