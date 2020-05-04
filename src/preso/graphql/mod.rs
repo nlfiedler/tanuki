@@ -218,6 +218,42 @@ impl SearchMeta {
     }
 }
 
+/// `AssetInput` is used to update the details of an asset.
+#[derive(GraphQLInputObject)]
+pub struct AssetInput {
+    /// New set of tags to replace the existing set.
+    tags: Option<Vec<String>>,
+    /// New caption to replace any existing value. Note that the caption text
+    /// may contain hashtags which are merged with the other tags, and may have
+    /// an @location that sets the location, if it has not yet defined.
+    caption: Option<String>,
+    /// New location to replace any existing value.
+    location: Option<String>,
+    /// A date/time that overrides intrinsic values; a `null` clears the custom
+    /// field and reverts back to the intrinsic value.
+    datetime: Option<DateTime<Utc>>,
+    /// New media type, useful for fixing assets where the automatic detection
+    /// guessed wrong. Beware that setting a wrong value means the asset will
+    /// likely not display correctly.
+    mimetype: Option<String>,
+}
+
+impl Into<crate::domain::usecases::update::AssetInput> for AssetInput {
+    fn into(self) -> crate::domain::usecases::update::AssetInput {
+        let mut tags = self.tags.unwrap_or(vec![]);
+        // Filter out empty tags, as the front-end may send those because it is
+        // too lazy to filter them itself.
+        tags = tags.iter().filter(|t| t.len() > 0).cloned().collect();
+        crate::domain::usecases::update::AssetInput {
+            tags,
+            caption: self.caption,
+            location: self.location,
+            media_type: self.mimetype,
+            datetime: self.datetime,
+        }
+    }
+}
+
 pub struct QueryRoot;
 
 #[juniper::object(Context = Arc<dyn EntityDataSource>)]
@@ -349,7 +385,19 @@ fn paginate_vector<T>(input: &mut Vec<T>, offset: Option<i32>, count: Option<i32
 pub struct MutationRoot;
 
 #[juniper::object(Context = Arc<dyn EntityDataSource>)]
-impl MutationRoot {}
+impl MutationRoot {
+    /// Update the asset with the given values.
+    fn update(executor: &Executor, id: String, asset: AssetInput) -> FieldResult<Asset> {
+        use crate::domain::usecases::update::{Params, UpdateAsset};
+        use crate::domain::usecases::UseCase;
+        let source = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(source);
+        let usecase = UpdateAsset::new(Box::new(repo));
+        let params: Params = Params::new(id, asset.into());
+        let result: Asset = usecase.call(params)?;
+        Ok(result)
+    }
+}
 
 pub type Schema = RootNode<'static, QueryRoot, MutationRoot>;
 
@@ -1325,6 +1373,110 @@ mod tests {
             None,
             &schema,
             &Variables::new(),
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert!(res.is_null());
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].error().message().contains("oh no"));
+    }
+
+    #[test]
+    fn test_mutation_update_ok() {
+        // arrange
+        let asset1 = Asset {
+            key: "abc123".to_owned(),
+            checksum: "cafebabe".to_owned(),
+            filename: "img_1234.jpg".to_owned(),
+            byte_length: 1048576,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["cat".to_owned(), "dog".to_owned()],
+            import_date: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
+            caption: None,
+            location: Some("hawaii".to_owned()),
+            duration: None,
+            user_date: None,
+            original_date: None,
+        };
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_get_asset()
+            .with(eq("abc123"))
+            .returning(move |_| Ok(asset1.clone()));
+        mock.expect_put_asset().with(always()).returning(|_| Ok(()));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let mut vars = Variables::new();
+        let input = AssetInput {
+            tags: Some(vec!["kitten".to_owned()]),
+            caption: Some("saw a #cat playing".to_owned()),
+            location: Some("london".to_owned()),
+            datetime: None,
+            mimetype: None,
+        };
+        vars.insert("input".to_owned(), input.to_input_value());
+        let (res, errors) = juniper::execute(
+            r#"mutation Update($input: AssetInput!) {
+                update(id: "abc123", asset: $input) {
+                    id tags location caption
+                }
+            }"#,
+            None,
+            &schema,
+            &vars,
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert_eq!(errors.len(), 0);
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("update").unwrap();
+        let object = res.as_object_value().unwrap();
+        let field = object.get_field_value("id").unwrap();
+        let value = field.as_scalar_value::<String>().unwrap();
+        assert_eq!(value, "abc123");
+        let field = object.get_field_value("location").unwrap();
+        let value = field.as_scalar_value::<String>().unwrap();
+        assert_eq!(value, "london");
+        let field = object.get_field_value("caption").unwrap();
+        let value = field.as_scalar_value::<String>().unwrap();
+        assert_eq!(value, "saw a #cat playing");
+        let field = object.get_field_value("tags").unwrap();
+        let value = field.as_list_value().unwrap();
+        let tags = ["cat", "kitten"];
+        for (idx, entry) in value.iter().enumerate() {
+            let actual = entry.as_scalar_value::<String>().unwrap();
+            assert_eq!(actual, tags[idx]);
+        }
+    }
+
+    #[test]
+    fn test_mutation_update_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_get_asset()
+            .with(always())
+            .returning(|_| Err(err_msg("oh no")));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let mut vars = Variables::new();
+        let input = AssetInput {
+            tags: Some(vec!["kitten".to_owned()]),
+            caption: None,
+            location: None,
+            datetime: None,
+            mimetype: None,
+        };
+        vars.insert("input".to_owned(), input.to_input_value());
+        let (res, errors) = juniper::execute(
+            r#"mutation Update($input: AssetInput!) {
+                update(id: "abc123", asset: $input) { id }
+            }"#,
+            None,
+            &schema,
+            &vars,
             &ctx,
         )
         .unwrap();

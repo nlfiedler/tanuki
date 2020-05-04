@@ -27,28 +27,6 @@
 **** repositories
 ***** record database
 ***** blob store
-*** TODO implement GraphQL schema
-**** c.f. =public/schema.graphql=
-**** may want to create a new "context" that holds everything needed
-***** record repo
-***** blob repo
-***** data source
-**** TODO add a =relative_path()= to =BlobRepository= to get =filepath= for asset
-**** DONE queries
-***** DONE asset(id: ID!): Asset
-***** DONE lookup(checksum: String!): Asset
-***** DONE count: Int!
-***** DONE search(params: SearchParams!, count: Int = 10, offset: Int = 0): SearchMeta!
-***** DONE locations: [LabeledCount!]!
-***** DONE tags: [LabeledCount!]!
-***** DONE years: [LabeledCount!]!
-**** TODO mutations
-***** TODO update(id: ID!, asset: AssetInput!): Asset!
-****** filter empty tags before sending to the usecase
-****** can represent optional user_date in asset update using an Option of Option
-******* if Some(None) then clear the user date
-******* if None then do not change the user date
-******* if Some(Some(d)) then set the user date
 *** TODO decide how to efficiently provide content type with raw assets
 **** response includes content type (i.e. media type)
 **** should minimize disk seeks and database reads
@@ -76,6 +54,9 @@
 **** ensure logging middleware is set up
 **** generate the =graphql_schema.json= using the new API
 **** fix the ReasonML code related to GraphQL
+***** dates are not numbers but strings
+***** search results do not have thumbnail dimensions
+***** asset details do not include image urls
 **** blob repository will produce the thumbnails
 **** blob repository may cache results on disk and/or in memory
 **** convert file upload to use HTTP endpoint
@@ -133,9 +114,12 @@
 **** =views/=
 *** TODO document build instructions for Rust in README
 *** TODO document the clean architecture of this code base
-** Adjust mujina file upload
-*** Cannot use the apollo-client upload feature
-*** Upload each asset to the HTTP endpoint instead of GraphQL
+** Fix mujina
+*** Asset details
+**** does not have image urls
+*** File upload
+**** Cannot use the apollo-client upload feature
+**** Upload each asset to the HTTP endpoint instead of GraphQL
 ** Frontend Rewrite
 *** Use Dart and Flutter
 *** Use Clean Architecture
