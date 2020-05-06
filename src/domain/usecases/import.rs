@@ -28,7 +28,7 @@ impl ImportAsset {
     // Create an asset entity based on available information.
     fn create_asset(&self, digest: String, params: Params) -> Result<Asset, Error> {
         let now = Utc::now();
-        let asset_id = new_asset_id(now, &params.filepath);
+        let asset_id = new_asset_id(now, &params.filepath, &params.media_type);
         let filename = get_file_name(&params.filepath);
         let metadata = std::fs::metadata(&params.filepath)?;
         let byte_length = metadata.len();
@@ -131,21 +131,36 @@ fn get_file_name(path: &Path) -> String {
 ///
 /// The identifier is suitable to be used as a file path within blob storage.
 ///
-/// This is _not_ a pure function, since it involves both the current time as
-/// well as a random number. It does, however, avoid any possibility of name
-/// collisions.
+/// This is _not_ a pure function, since it involves a random number. It does,
+/// however, avoid any possibility of name collisions.
 ///
-fn new_asset_id(datetime: DateTime<Utc>, filename: &Path) -> String {
-    // round the date/time down to the nearest quarter hour
-    // (e.g. 21:50 becomes 21:45, 08:10 becomes 08:00)
+fn new_asset_id(datetime: DateTime<Utc>, filepath: &Path, media_type: &mime::Mime) -> String {
+    // Round the date/time down to the nearest quarter hour (e.g. 21:50 becomes
+    // 21:45, 08:10 becomes 08:00) to avoid creating many directories with only
+    // a few assets in them.
     let minutes = (datetime.minute() / 15) * 15;
     let round_date = datetime.with_minute(minutes).unwrap();
     let mut leading_path = round_date.format("%Y/%m/%d/%H%M/").to_string();
-    let extension = filename.extension().map(OsStr::to_str).flatten();
+    let extension = filepath.extension().map(OsStr::to_str).flatten();
     let mut name = generate_ulid_string();
-    if let Some(ext) = extension {
+    let append_suffix = if let Some(ext) = extension {
         name.push('.');
         name.push_str(ext);
+        let guessed_mime = detect_media_type(ext);
+        &guessed_mime != media_type
+    } else {
+        true
+    };
+    if append_suffix {
+        // If the media type guessed from the file extension differs from the
+        // media type provided in the parameters, then append the preferred
+        // suffix to the name. This provides a means for the blob repository to
+        // correctly guess the media type from just the asset identifier.
+        let maybe_mime_extension = mime_guess::get_mime_extensions(media_type).map(|l| l[0]);
+        if let Some(mime_ext) = maybe_mime_extension {
+            name.push('.');
+            name.push_str(mime_ext);
+        }
     }
     leading_path.push_str(&name);
     let rel_path = leading_path.to_lowercase();
@@ -153,15 +168,15 @@ fn new_asset_id(datetime: DateTime<Utc>, filename: &Path) -> String {
 }
 
 //
-// Return the first guessed media type based on the file name.
+// Return the first guessed media type based on the extension.
 //
-// fn detect_media_type(filename: &str) -> mime::Mime {
-//     // Alternatively could use a crate that reads the content and guesses at the
-//     // media type (e.g. https://github.com/flier/rust-mime-sniffer), perhaps as
-//     // a fallback when the filename-based guess yields "octet-stream".
-//     let guess = mime_guess::from_path(filename);
-//     guess.first_or_octet_stream()
-// }
+fn detect_media_type(extension: &str) -> mime::Mime {
+    // Alternatively could use a crate that reads the content and guesses at the
+    // media type (e.g. https://github.com/flier/rust-mime-sniffer), perhaps as
+    // a fallback when the extension-based guess yields "octet-stream".
+    let guess = mime_guess::from_ext(extension);
+    guess.first_or_octet_stream()
+}
 
 ///
 /// Extract the original date/time from the asset.
@@ -223,15 +238,32 @@ mod tests {
     fn test_new_asset_id() {
         let import_date = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
         let filename = "fighting_kittens.jpg";
-        let actual = new_asset_id(import_date, Path::new(filename));
-        // Cannot compare the actual value because it incorporates the current
-        // time and a random number, can only decode and check the basic format
-        // matches expectations.
+        let mt = mime::IMAGE_JPEG;
+        let actual = new_asset_id(import_date, Path::new(filename), &mt);
+        // Cannot compare the actual value because it incorporates a random
+        // number, can only decode and check the basic format matches
+        // expectations.
         let decoded = base64::decode(&actual).unwrap();
         let as_string = std::str::from_utf8(&decoded).unwrap();
         assert!(as_string.starts_with("2018/05/31/2100/"));
         assert!(as_string.ends_with(".jpg"));
         assert_eq!(as_string.len(), 46);
+
+        // test with an image/jpeg asset with an incorrect extension
+        let filename = "fighting_kittens.foo";
+        let actual = new_asset_id(import_date, Path::new(filename), &mt);
+        let decoded = base64::decode(&actual).unwrap();
+        let as_string = std::str::from_utf8(&decoded).unwrap();
+        // jpe because it's first in the list of [jpe, jpeg, jpg]
+        assert!(as_string.ends_with(".jpe"));
+
+        // test with an image/jpeg asset with _no_ extension
+        let filename = "fighting_kittens";
+        let actual = new_asset_id(import_date, Path::new(filename), &mt);
+        let decoded = base64::decode(&actual).unwrap();
+        let as_string = std::str::from_utf8(&decoded).unwrap();
+        // jpe because it's first in the list of [jpe, jpeg, jpg]
+        assert!(as_string.ends_with(".jpe"));
     }
 
     #[test]
@@ -241,19 +273,19 @@ mod tests {
         assert_eq!(actual, "fighting_kittens.jpg");
     }
 
-    // #[test]
-    // fn test_detect_media_type() {
-    //     assert_eq!(detect_media_type("image.jpg"), mime::IMAGE_JPEG);
-    //     let video_quick: mime::Mime = "video/quicktime".parse().unwrap();
-    //     assert_eq!(detect_media_type("video.mov"), video_quick);
-    //     let video_mpeg: mime::Mime = "video/mpeg".parse().unwrap();
-    //     assert_eq!(detect_media_type("video.mpg"), video_mpeg);
-    //     assert_eq!(
-    //         // does not yet guess the apple image type
-    //         detect_media_type("image.heic"),
-    //         mime::APPLICATION_OCTET_STREAM
-    //     );
-    // }
+    #[test]
+    fn test_detect_media_type() {
+        assert_eq!(detect_media_type("jpg"), mime::IMAGE_JPEG);
+        let video_quick: mime::Mime = "video/quicktime".parse().unwrap();
+        assert_eq!(detect_media_type("mov"), video_quick);
+        let video_mpeg: mime::Mime = "video/mpeg".parse().unwrap();
+        assert_eq!(detect_media_type("mpg"), video_mpeg);
+        assert_eq!(
+            // does not yet guess the apple image type
+            detect_media_type("heic"),
+            mime::APPLICATION_OCTET_STREAM
+        );
+    }
 
     #[test]
     fn test_import_asset_new() {
