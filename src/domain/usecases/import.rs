@@ -129,7 +129,9 @@ fn get_file_name(path: &Path) -> String {
 /// Use the datetime and filename to produce a relative path, and return as a
 /// base64 encoded value, suitable as an identifier.
 ///
-/// The identifier is suitable to be used as a file path within blob storage.
+/// The decoded identifier is suitable to be used as a file path within blob
+/// storage. The filename will be universally unique and the path will ensure
+/// assets are distributed across directories to avoid congestion.
 ///
 /// This is _not_ a pure function, since it involves a random number. It does,
 /// however, avoid any possibility of name collisions.
@@ -255,7 +257,7 @@ mod tests {
         let decoded = base64::decode(&actual).unwrap();
         let as_string = std::str::from_utf8(&decoded).unwrap();
         // jpe because it's first in the list of [jpe, jpeg, jpg]
-        assert!(as_string.ends_with(".jpe"));
+        assert!(as_string.ends_with(".foo.jpe"));
 
         // test with an image/jpeg asset with _no_ extension
         let filename = "fighting_kittens";

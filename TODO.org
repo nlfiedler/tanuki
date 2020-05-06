@@ -27,7 +27,7 @@
 **** repositories
 ***** record database
 ***** blob store
-*** TODO design streamlined thumbnail serving strategy
+*** DONE design streamlined thumbnail serving strategy
 **** capture the image/video dimensions during import, save to asset record
 ***** a larger asset record in CBOR format is ~260 bytes, a few more bytes is okay
 ***** in PouchDB, each record takes almost exactly 1 kilobyte
@@ -44,9 +44,9 @@
 **** frontend can ask for images that are N pixels high or M pixels wide, or whatever
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
-**** backend will decode the asset ID to get the filename to guess the media type
+**** backend will decode the asset ID to get the extension to guess the media type
 **** backend can then generate the appropriate thumbnail
-**** when generating the thumbnail, always use jpeg format so content type is always =image/jpeg=
+**** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO serve the existing ReasonML frontend
 **** add handler for static files
 **** add default handler for all non-matching routes
