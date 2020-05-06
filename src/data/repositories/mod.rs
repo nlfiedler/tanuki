@@ -224,6 +224,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let mut mock = MockEntityDataSource::new();
         mock.expect_get_asset()
@@ -268,6 +269,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_by_checksum()
@@ -330,6 +332,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let mut mock = MockEntityDataSource::new();
         mock.expect_put_asset().returning(move |_| Ok(()));
@@ -356,6 +359,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let mut mock = MockEntityDataSource::new();
         mock.expect_put_asset()
@@ -383,6 +387,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let mut mock = MockEntityDataSource::new();
         mock.expect_get_asset()
@@ -872,6 +877,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let tmpdir = tempdir().unwrap();
         let basepath = tmpdir.path().join("blobs");
@@ -910,6 +916,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         // act
         let repo = BlobRepositoryImpl::new(Path::new("foobar/blobs"));

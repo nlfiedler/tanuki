@@ -471,6 +471,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let mut mock = MockEntityDataSource::new();
         mock.expect_get_asset()
@@ -684,6 +685,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_by_checksum()
@@ -1398,6 +1400,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let mut mock = MockEntityDataSource::new();
         mock.expect_get_asset()

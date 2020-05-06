@@ -361,6 +361,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let input = AssetInput {
             tags: vec![],
@@ -393,6 +394,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let input = AssetInput {
             tags: vec![],
@@ -425,6 +427,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let input = AssetInput {
             tags: vec![],
@@ -462,6 +465,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let input = AssetInput {
             tags: vec![
@@ -499,6 +503,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let input = AssetInput {
             tags: vec!["puppies".to_owned()],
@@ -534,6 +539,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let user_date = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
         let input = AssetInput {
@@ -567,6 +573,7 @@ mod tests {
             duration: None,
             user_date: Some(Utc.ymd(2018, 5, 31).and_hms(21, 10, 11)),
             original_date: None,
+            dimensions: None,
         };
         let input = AssetInput {
             tags: vec![],
@@ -601,6 +608,7 @@ mod tests {
             duration: None,
             user_date: Some(user_date),
             original_date: None,
+            dimensions: None,
         };
         let input = AssetInput {
             tags: vec!["puppies".to_owned()],

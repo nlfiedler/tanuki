@@ -102,6 +102,7 @@ pub fn build_basic_asset() -> Asset {
         duration: Some(5000),
         user_date: None,
         original_date: None,
+        dimensions: None,
     }
 }
 

@@ -1,9 +1,54 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-use crate::domain::entities::Asset;
+use crate::domain::entities::{Asset, Dimensions};
 use chrono::prelude::*;
-use serde::{Deserialize, Serialize};
+use serde::de::Visitor;
+use serde::ser::SerializeTupleStruct;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+// Tried to create a "model" for Dimensions and use the serde remote feature to
+// derive the serializer, but it failed to compile due to trait bounds when used
+// in the AssetModel for whatever mysterious reason.
+impl Serialize for Dimensions {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut ts = serializer.serialize_tuple_struct("Dimensions", 2)?;
+        ts.serialize_field(&self.0)?;
+        ts.serialize_field(&self.1)?;
+        ts.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for Dimensions {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct DimensionsVisitor;
+
+        impl<'vi> Visitor<'vi> for DimensionsVisitor {
+            type Value = Dimensions;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a (u32, u32) tuple struct")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::SeqAccess<'vi>,
+            {
+                let w: u32 = seq.next_element()?.unwrap();
+                let h: u32 = seq.next_element()?.unwrap();
+                Ok(Dimensions(w, h))
+            }
+        }
+
+        deserializer.deserialize_tuple_struct("Dimensions", 2, DimensionsVisitor)
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "Asset")]
@@ -32,6 +77,8 @@ pub struct AssetModel {
     pub user_date: Option<DateTime<Utc>>,
     #[serde(rename = "od")]
     pub original_date: Option<DateTime<Utc>>,
+    #[serde(rename = "dm")]
+    pub dimensions: Option<Dimensions>,
 }
 
 #[cfg(test)]
@@ -55,6 +102,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         // act
         let mut buffer: Vec<u8> = Vec::new();
@@ -77,6 +125,7 @@ mod tests {
         assert_eq!(asset1.duration, model.duration);
         assert_eq!(asset1.user_date, model.user_date);
         assert_eq!(asset1.original_date, model.original_date);
+        assert_eq!(asset1.dimensions, model.dimensions);
         Ok(())
     }
 
@@ -96,6 +145,7 @@ mod tests {
             duration: Some(5000),
             user_date: Some(Utc::now()),
             original_date: Some(Utc::now()),
+            dimensions: Some(Dimensions(640, 480)),
         };
         // act
         let mut buffer: Vec<u8> = Vec::new();
@@ -119,6 +169,7 @@ mod tests {
         assert_eq!(asset1.duration, model.duration);
         assert_eq!(asset1.user_date, model.user_date);
         assert_eq!(asset1.original_date, model.original_date);
+        assert_eq!(asset1.dimensions, model.dimensions);
         Ok(())
     }
 }

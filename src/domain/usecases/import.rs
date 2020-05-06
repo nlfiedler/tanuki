@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-use crate::domain::entities::Asset;
+use crate::domain::entities::{Asset, Dimensions};
 use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
 use chrono::prelude::*;
@@ -33,6 +33,7 @@ impl ImportAsset {
         let metadata = std::fs::metadata(&params.filepath)?;
         let byte_length = metadata.len();
         let original_date = get_original_date(&params.media_type, &params.filepath).ok();
+        let dimensions = get_dimensions(&params.media_type, &params.filepath).ok();
         let asset = Asset {
             key: asset_id,
             checksum: digest,
@@ -46,6 +47,7 @@ impl ImportAsset {
             duration: None,
             user_date: None,
             original_date,
+            dimensions,
         };
         Ok(asset)
     }
@@ -164,6 +166,8 @@ fn new_asset_id(datetime: DateTime<Utc>, filename: &Path) -> String {
 ///
 /// Extract the original date/time from the asset.
 ///
+/// Returns an error if unsuccessful.
+///
 fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTime<Utc>, Error> {
     if media_type.type_() == mime::IMAGE {
         let file = File::open(filepath)?;
@@ -179,6 +183,19 @@ fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTim
                 .datetime_from_str(value, "%Y:%m:%d %H:%M:%S")
                 .map_err(|_| err_msg("could not parse data"));
         }
+    }
+    Err(err_msg("not an image"))
+}
+
+///
+/// Gather the pixel dimensions of the image asset.
+///
+/// Returns an error if unsuccessful.
+///
+fn get_dimensions(media_type: &mime::Mime, filepath: &Path) -> Result<Dimensions, Error> {
+    if media_type.type_() == mime::IMAGE {
+        let dim = image::image_dimensions(filepath)?;
+        return Ok(Dimensions(dim.0, dim.1));
     }
     Err(err_msg("not an image"))
 }
@@ -268,7 +285,11 @@ mod tests {
         assert_eq!(asset.byte_length, 80977);
         assert_eq!(asset.media_type, "image/jpeg");
         assert!(asset.tags.is_empty());
+        assert!(asset.original_date.is_some(), "expected an original date");
         assert_eq!(asset.original_date.unwrap().year(), 2003);
+        assert!(asset.dimensions.is_some(), "expected image dimensions");
+        assert_eq!(asset.dimensions.as_ref().unwrap().0, 440);
+        assert_eq!(asset.dimensions.as_ref().unwrap().1, 292);
     }
 
     #[test]
@@ -288,6 +309,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let mut records = MockRecordRepository::new();
         records
@@ -337,6 +359,41 @@ mod tests {
         let filename = "./test/fixtures/lorem-ipsum.txt";
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
+        assert!(actual.is_err());
+    }
+
+    #[test]
+    fn test_get_dimensions() {
+        let filename = "./test/fixtures/dcp_1069.jpg";
+        let mt = mime::IMAGE_JPEG;
+        let filepath = Path::new(filename);
+        let actual = get_dimensions(&mt, filepath);
+        assert!(actual.is_ok());
+        let dim = actual.unwrap();
+        assert_eq!(dim.0, 440);
+        assert_eq!(dim.1, 292);
+
+        // rotated sideways (dimensions are flipped)
+        let filename = "./test/fixtures/fighting_kittens.jpg";
+        let filepath = Path::new(filename);
+        let actual = get_dimensions(&mt, filepath);
+        assert!(actual.is_ok());
+        let dim = actual.unwrap();
+        assert_eq!(dim.0, 384);
+        assert_eq!(dim.1, 512);
+
+        let filename = "./test/fixtures/animal-cat-cute-126407.jpg";
+        let filepath = Path::new(filename);
+        let actual = get_dimensions(&mt, filepath);
+        assert!(actual.is_ok());
+        let dim = actual.unwrap();
+        assert_eq!(dim.0, 2067);
+        assert_eq!(dim.1, 1163);
+
+        // not an image
+        let filename = "./test/fixtures/lorem-ipsum.txt";
+        let filepath = Path::new(filename);
+        let actual = get_dimensions(&mt, filepath);
         assert!(actual.is_err());
     }
 }

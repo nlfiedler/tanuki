@@ -27,28 +27,32 @@
 **** repositories
 ***** record database
 ***** blob store
-*** TODO decide how to efficiently provide content type with raw assets
-**** response includes content type (i.e. media type)
-**** should minimize disk seeks and database reads
-**** could decode asset id and guess media type from extension
-**** could read media type from asset record and cache in memory
-*** TODO decide how to efficiently provide thumbnail dimensions in search results
-**** only need this for the progressive image gallery feature on client
-**** client performs search via GraphQL, gets filename, location, datetime, mimetype
-**** computing the dimensions takes time for each image, so data should be cached
-**** secondary index cannot reasonably collect the dimensions from the asset model
-**** should populate the cache when importing assets rather than when querying
-**** GraphQL resolver merges dimension values with search results
-**** blob repository provides dimensions
-***** input is the asset identifier
-***** data stored in separate database instance without mokuroku
-****** rename =database.rs= to =indexdb.rs=
-****** use =database.rs= from zorigami for a simpler database
-***** repository can cache values in memory if needed
+*** TODO design streamlined thumbnail serving strategy
+**** capture the image/video dimensions during import, save to asset record
+***** a larger asset record in CBOR format is ~260 bytes, a few more bytes is okay
+***** in PouchDB, each record takes almost exactly 1 kilobyte
+***** use =u32= for each dimension (should be more than enough)
+**** on import, ensure asset identifier ends with correct media type extension
+***** if provided filename does not end in the correct extension, append it
+****** use the provided media type to know what extension to add
+***** this ensures correct guessing of media type when making thumbnails
+***** if, someday, the provided media type is "unknown", then use mime sniffer
+***** c.f. https://developer.mozilla.org/en-US/docs/Mozilla/How_Mozilla_determines_MIME_Types
+***** c.f. https://github.com/flier/rust-mime-sniffer
+**** the frontend can use the image dimensions to compute the aspect ratio
+**** with the aspect ratio, frontend can request images of the desired size
+**** frontend can ask for images that are N pixels high or M pixels wide, or whatever
+***** by leaving one dimension maxed out, the image aspect ratio will be maintained
+**** as long as client keeps asking for the same basic size, backend can cache them
+**** backend will decode the asset ID to get the filename to guess the media type
+**** backend can then generate the appropriate thumbnail
+**** when generating the thumbnail, always use jpeg format so content type is always =image/jpeg=
 *** TODO serve the existing ReasonML frontend
 **** add handler for static files
 **** add default handler for all non-matching routes
 **** add endpoints to get the thumbnails, previews, and assets
+***** thumbnails (and previews) are always =image/jpeg= content type
+***** only raw assets need to look up the media type
 **** add endpoints for graphql and graphiql
 **** add CORS middleware
 **** ensure logging middleware is set up
@@ -56,6 +60,7 @@
 **** fix the ReasonML code related to GraphQL
 ***** dates are not numbers but strings
 ***** search results do not have thumbnail dimensions
+***** search results do not have thumbnail urls
 ***** asset details do not include image urls
 **** blob repository will produce the thumbnails
 **** blob repository may cache results on disk and/or in memory
@@ -97,7 +102,7 @@
 **** stand-alone script that reads the database and writes out json
 *** TODO write an import binary for the new database
 **** stand-alone binary that reads json and populates new database
-**** maybe handle the (wide) thumbnail size caching at this point
+**** read the image/video dimensions to insert into asset record
 *** TODO test database migration on development system
 *** TODO perform migration on production system
 **** stop and remove the current docker container
@@ -140,6 +145,11 @@
 **** via graphql: https://morioh.com/p/8120c733a77c
 *** TODO use docker container to build web assets
 *** Thoughts on the design
+**** browse and search
+***** unify the two pages into one
+***** with the "crane" like selectors, the search is just another row of inputs
+***** that is, normally the second row is collapsed, but clicking a button expands it
+***** the second row would have the date range, file name, and media type
 **** quick import
 ***** drag/drop and/or file open to add lots of assets
 ***** immediately import everything to the backend

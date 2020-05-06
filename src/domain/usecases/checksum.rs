@@ -72,6 +72,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let mut mock = MockRecordRepository::new();
         mock.expect_get_asset_by_digest()

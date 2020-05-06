@@ -5,6 +5,10 @@ use chrono::prelude::*;
 use std::cmp;
 use std::fmt;
 
+/// Width and height in pixels of an image or video asset.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Dimensions(pub u32, pub u32);
+
 /// Digital asset entity.
 #[derive(Clone, Debug)]
 pub struct Asset {
@@ -32,6 +36,28 @@ pub struct Asset {
     pub user_date: Option<DateTime<Utc>>,
     /// Date of the asset as extracted from metadata.
     pub original_date: Option<DateTime<Utc>>,
+    /// Width and height of the image or video asset.
+    pub dimensions: Option<Dimensions>,
+}
+
+impl Default for Asset {
+    fn default() -> Self {
+        Self {
+            key: String::new(),
+            checksum: String::new(),
+            filename: String::new(),
+            byte_length: 0,
+            media_type: String::from("application/octet-stream"),
+            tags: vec![],
+            import_date: Utc::now(),
+            caption: None,
+            location: None,
+            duration: None,
+            user_date: None,
+            original_date: None,
+            dimensions: None,
+        }
+    }
 }
 
 impl fmt::Display for Asset {
@@ -47,6 +73,87 @@ impl cmp::PartialEq for Asset {
 }
 
 impl cmp::Eq for Asset {}
+
+impl Asset {
+    /// Construct a new Asset with mostly default fields.
+    pub fn new(key: String) -> Self {
+        let mut asset: Asset = Default::default();
+        asset.key = key;
+        asset
+    }
+
+    /// Set the checksum field of the asset.
+    pub fn checksum(&mut self, checksum: String) -> &mut Self {
+        self.checksum = checksum;
+        self
+    }
+
+    /// Set the filename field of the asset.
+    pub fn filename(&mut self, filename: String) -> &mut Self {
+        self.filename = filename;
+        self
+    }
+
+    /// Set the byte_length field of the asset.
+    pub fn byte_length(&mut self, byte_length: u64) -> &mut Self {
+        self.byte_length = byte_length;
+        self
+    }
+
+    /// Set the media_type field of the asset.
+    pub fn media_type(&mut self, media_type: String) -> &mut Self {
+        self.media_type = media_type;
+        self
+    }
+
+    /// Set the tags field of the asset.
+    pub fn tags(&mut self, tags: Vec<String>) -> &mut Self {
+        self.tags = tags;
+        self
+    }
+
+    /// Set the import_date field of the asset.
+    pub fn import_date(&mut self, import_date: DateTime<Utc>) -> &mut Self {
+        self.import_date = import_date;
+        self
+    }
+
+    /// Set the caption field of the asset.
+    pub fn caption(&mut self, caption: String) -> &mut Self {
+        self.caption = Some(caption);
+        self
+    }
+
+    /// Set the location field of the asset.
+    pub fn location(&mut self, location: String) -> &mut Self {
+        self.location = Some(location);
+        self
+    }
+
+    /// Set the duration field of the asset.
+    pub fn duration(&mut self, duration: u32) -> &mut Self {
+        self.duration = Some(duration);
+        self
+    }
+
+    /// Set the user_date field of the asset.
+    pub fn user_date(&mut self, user_date: DateTime<Utc>) -> &mut Self {
+        self.user_date = Some(user_date);
+        self
+    }
+
+    /// Set the original_date field of the asset.
+    pub fn original_date(&mut self, original_date: DateTime<Utc>) -> &mut Self {
+        self.original_date = Some(original_date);
+        self
+    }
+
+    /// Set the dimensions field of the asset.
+    pub fn dimensions(&mut self, dimensions: Dimensions) -> &mut Self {
+        self.dimensions = Some(dimensions);
+        self
+    }
+}
 
 /// A label and its associated count.
 ///
@@ -100,6 +207,39 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_asset_builder() {
+        let mut asset = Asset::new("abc123".to_owned());
+        // chain some of the builder calls to ensure that works
+        asset
+            .checksum("cafebabe".to_owned())
+            .filename("img_1234.jpg".to_owned());
+        asset.byte_length(49152).media_type("image/jpeg".to_owned());
+        asset.tags(vec!["cat".to_owned(), "dog".to_owned()]);
+        asset.import_date(Utc.ymd(2018, 5, 31).and_hms(21, 10, 11));
+        asset.caption("this is a caption".to_owned());
+        asset.location("hawaii".to_owned()).duration(1024);
+        asset.user_date(Utc.ymd(2017, 6, 9).and_hms(21, 10, 11));
+        asset.original_date(Utc.ymd(2016, 10, 14).and_hms(21, 10, 11));
+        asset.dimensions(Dimensions(640, 480));
+        assert_eq!(asset.key, "abc123");
+        assert_eq!(asset.checksum, "cafebabe");
+        assert_eq!(asset.filename, "img_1234.jpg");
+        assert_eq!(asset.byte_length, 49152);
+        assert_eq!(asset.media_type, "image/jpeg");
+        assert_eq!(asset.tags.len(), 2);
+        assert_eq!(asset.tags[0], "cat");
+        assert_eq!(asset.tags[1], "dog");
+        assert_eq!(asset.import_date.year(), 2018);
+        assert_eq!(asset.caption.as_ref().unwrap(), "this is a caption");
+        assert_eq!(asset.location.as_ref().unwrap(), "hawaii");
+        assert_eq!(*asset.duration.as_ref().unwrap(), 1024);
+        assert_eq!(asset.user_date.as_ref().unwrap().year(), 2017);
+        assert_eq!(asset.original_date.as_ref().unwrap().year(), 2016);
+        assert_eq!(asset.dimensions.as_ref().unwrap().0, 640);
+        assert_eq!(asset.dimensions.as_ref().unwrap().1, 480);
+    }
+
+    #[test]
     fn test_asset_equality() {
         let asset1 = Asset {
             key: "abc123".to_owned(),
@@ -114,6 +254,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let asset2 = Asset {
             key: "abc123".to_owned(),
@@ -128,6 +269,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         assert!(asset1 == asset2);
         assert!(asset2 == asset1);
@@ -144,6 +286,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         assert!(asset1 != asset3);
         assert!(asset2 != asset3);
@@ -164,6 +307,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         let actual = asset1.to_string();
         assert_eq!(actual, "Asset(abc123, img_1234.jpg)");
@@ -185,6 +329,7 @@ mod tests {
             duration: None,
             user_date: Some(Utc.ymd(2018, 5, 31).and_hms(21, 10, 11)),
             original_date: Some(Utc.ymd(2016, 8, 30).and_hms(12, 10, 30)),
+            dimensions: None,
         };
         // act
         let result = SearchResult::new(&asset);
@@ -208,6 +353,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: Some(Utc.ymd(2016, 8, 30).and_hms(12, 10, 30)),
+            dimensions: None,
         };
         // act
         let result = SearchResult::new(&asset);
@@ -231,6 +377,7 @@ mod tests {
             duration: None,
             user_date: None,
             original_date: None,
+            dimensions: None,
         };
         // act
         let result = SearchResult::new(&asset);
