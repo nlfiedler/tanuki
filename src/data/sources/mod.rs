@@ -239,7 +239,7 @@ impl Document for Asset {
     fn from_bytes(key: &[u8], value: &[u8]) -> Result<Self, Error> {
         let mut de = serde_cbor::Deserializer::from_slice(value);
         let mut result = AssetModel::deserialize(&mut de)?;
-        // remove the "asset/" key prefix added by the database source
+        // remove the "asset/" key prefix added by the data source
         result.key = str::from_utf8(&key[6..])?.to_owned();
         Ok(result)
     }
@@ -354,7 +354,9 @@ impl TryFrom<QueryResult> for SearchResult {
 
     fn try_from(value: QueryResult) -> Result<Self, Self::Error> {
         let mut result = SearchResult::from_bytes(value.value.as_ref())?;
-        result.asset_id = String::from_utf8((*value.doc_id).to_vec())?;
+        // remove the "asset/" key prefix added by the data source
+        let key_vec = (*value.doc_id).to_vec();
+        result.asset_id = String::from_utf8(key_vec)?.split_off(6);
         Ok(result)
     }
 }

@@ -238,6 +238,7 @@ fn test_query_by_tags() {
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.query_by_tags(tags).unwrap();
     assert_eq!(actual.len(), 3);
+    assert!(!actual[0].asset_id.starts_with("asset/"));
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_3456.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
@@ -297,12 +298,14 @@ fn test_query_by_dates() {
 
     let actual = datasource.query_before_date(date4).unwrap();
     assert_eq!(actual.len(), 3);
+    assert!(!actual[0].asset_id.starts_with("asset/"));
     assert!(actual.iter().any(|l| l.filename == "img_2345.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_3456.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
 
     let actual = datasource.query_after_date(date3).unwrap();
     assert_eq!(actual.len(), 4);
+    assert!(!actual[0].asset_id.starts_with("asset/"));
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
@@ -310,6 +313,7 @@ fn test_query_by_dates() {
 
     let actual = datasource.query_date_range(date3, date5).unwrap();
     assert_eq!(actual.len(), 3);
+    assert!(!actual[0].asset_id.starts_with("asset/"));
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
@@ -362,6 +366,7 @@ fn test_query_by_locations() {
     // searching with one location
     let actual = datasource.query_by_locations(locations).unwrap();
     assert_eq!(actual.len(), 2);
+    assert!(!actual[0].asset_id.starts_with("asset/"));
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
 
@@ -406,6 +411,7 @@ fn test_query_by_filename() {
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.query_by_filename("Img_3456.Jpg").unwrap();
     assert_eq!(actual.len(), 1);
+    assert!(!actual[0].asset_id.starts_with("asset/"));
     assert_eq!(actual[0].filename, "IMG_3456.JPG");
 }
 
@@ -443,6 +449,7 @@ fn test_query_by_mimetype() {
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.query_by_mimetype("image/JPeg").unwrap();
     assert_eq!(actual.len(), 2);
+    assert!(!actual[0].asset_id.starts_with("asset/"));
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
 }
