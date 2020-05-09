@@ -55,7 +55,7 @@ schema, which is generated using the following command (after starting a local
 server in another window):
 
 ```shell
-$ npx send-introspection-query http://localhost:3000/graphql
+$ npx apollo-codegen introspect-schema http://localhost:3000/graphql --output graphql_schema.json
 ```
 
 ### Dart/Flutter
@@ -232,3 +232,7 @@ Started to rewrite the Node.js backend in [Rust](https://www.rust-lang.org).
 
 Started rewrite in [Dart](https://dart.dev) and [Flutter](https://flutter.dev)
 with the intention of replacing all of the Node.js and ReasonML code.
+
+### April 2020
+
+Switch from Dart back to Rust. Long live Rust.
