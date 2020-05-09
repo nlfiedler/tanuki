@@ -109,8 +109,8 @@ impl BlobRepositoryImpl {
         }
     }
 
-    fn asset_path(&self, asset: &Asset) -> Result<PathBuf, Error> {
-        let decoded = base64::decode(&asset.key)?;
+    fn asset_path(&self, asset_id: &str) -> Result<PathBuf, Error> {
+        let decoded = base64::decode(asset_id)?;
         let as_string = str::from_utf8(&decoded)?;
         let rel_path = Path::new(&as_string);
         let mut full_path = self.basepath.clone();
@@ -121,7 +121,7 @@ impl BlobRepositoryImpl {
 
 impl BlobRepository for BlobRepositoryImpl {
     fn store_blob(&self, filepath: &Path, asset: &Asset) -> Result<(), Error> {
-        let dest_path = self.asset_path(asset)?;
+        let dest_path = self.asset_path(&asset.key)?;
         // do not overwrite existing asset blobs
         if !dest_path.exists() {
             let parent = dest_path
@@ -141,13 +141,17 @@ impl BlobRepository for BlobRepositoryImpl {
     }
 
     fn blob_path(&self, asset: &Asset) -> Result<PathBuf, Error> {
-        self.asset_path(asset)
+        self.asset_path(&asset.key)
+    }
+
+    fn thumbnail(&self, width: u32, height: u32, asset_id: &str) -> Result<Vec<u8>, Error> {
+        let filepath = self.asset_path(asset_id)?;
+        create_thumbnail(&filepath, width, height)
     }
 }
 
 // Produce a thumbnail for the given asset (assumed to be an image) that fits
 // within the bounds given while maintaining aspect ratio.
-#[allow(dead_code)]
 fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8>, Error> {
     let mut buffer: Vec<u8> = Vec::new();
     let mut img = image::open(filepath)?;

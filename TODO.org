@@ -27,7 +27,7 @@
 **** repositories
 ***** record database
 ***** blob store
-*** DONE design streamlined thumbnail serving strategy
+*** Thumbnail Serving Strategy
 **** capture the image/video dimensions during import, save to asset record
 ***** a larger asset record in CBOR format is ~260 bytes, a few more bytes is okay
 ***** in PouchDB, each record takes almost exactly 1 kilobyte
@@ -36,6 +36,7 @@
 ***** if provided filename does not end in the correct extension, append it
 ****** use the provided media type to know what extension to add
 ***** this ensures correct guessing of media type when making thumbnails
+***** n.b. all thumbnails and previews are image/jpeg anyway so this is not necessary
 ***** if, someday, the provided media type is "unknown", then use mime sniffer
 ***** c.f. https://developer.mozilla.org/en-US/docs/Mozilla/How_Mozilla_determines_MIME_Types
 ***** c.f. https://github.com/flier/rust-mime-sniffer
@@ -44,28 +45,55 @@
 **** frontend can ask for images that are N pixels high or M pixels wide, or whatever
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
-**** backend will decode the asset ID to get the extension to guess the media type
-**** backend can then generate the appropriate thumbnail
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** TODO serve the existing ReasonML frontend
-**** add handler for static files
-**** add default handler for all non-matching routes
-**** add endpoints to get the thumbnails, previews, and assets
+*** DONE serve the existing ReasonML frontend
+**** DONE add handler for static files
+**** DONE add default handler for all non-matching routes
+**** DONE add endpoints for graphql and graphiql
+**** DONE add CORS middleware
+**** DONE ensure logging middleware is set up
+**** DONE generate the =graphql_schema.json= using the new API
+**** DONE fix the ReasonML code related to GraphQL
+**** DONE convert file upload to use HTTP endpoint
+***** see =Upload.re= in commit =5974201= for how it used to be
+**** DONE add endpoint to get the thumbnail and previews
 ***** thumbnails (and previews) are always =image/jpeg= content type
 ***** only raw assets need to look up the media type
-**** add endpoints for graphql and graphiql
-**** add CORS middleware
-**** ensure logging middleware is set up
-**** generate the =graphql_schema.json= using the new API
-**** fix the ReasonML code related to GraphQL
-***** dates are not numbers but strings
-***** search results do not have thumbnail dimensions
-***** search results do not have thumbnail urls
-***** asset details do not include image urls
-**** blob repository will produce the thumbnails
-**** blob repository may cache results on disk and/or in memory
-**** convert file upload to use HTTP endpoint
-***** see =Upload.re= in commit =5974201= for how it used to be
+***** blob repository will produce the thumbnails
+**** DONE add endpoint to get the raw asset and its media type
+***** DONE read the media type from the database
+***** DONE get the asset path and return the raw file in the response
+***** DONE should return 404 for missing asset, not 500
+***** DONE =/asset/= needs to respond to =HEAD= as well as =GET=
+**** DONE ensure web endpoints use =web::block()= appropriately
+**** DONE fix date handling in thumbnails
+**** DONE fix date handling on show asset page
+**** DONE fix file size handling on show asset page
+**** DONE year selector is not working
+**** DONE search by date is not working
+**** DONE fix the user date handling on edit page
+*** TODO repository =blob_path()= should take only an asset id, not an asset
+*** TODO write tests for the http endpoints
+**** c.f. https://actix.rs/docs/testing/
+*** TODO try to clean up the =main.rs= TODO items
+*** TODO probably do not need =get_media_type()=
+*** TODO index mapper should not emit empty values
+**** asset with no location emitted a blank and it shows up in the list of locations
+*** TODO improve thumbnail caching support (=ETag= and =If-None-Match=)
+**** need to include an etag and respond properly to if-none-match requests
+**** create a =Thumbnail= type that implements =actix_web::Responder=
+**** the =respond_to()= returns a future so can use async/await
+**** in =respond_to()= can check the asset exists, check if the etag matches, generate thumbnail
+**** respond with =StatusCode::NOT_MODIFIED= if not modified
+**** respond with =OK= and the data if the etag does not match
+**** c.f. https://github.com/actix/actix-web/blob/master/actix-files/src/named.rs
+*** TODO measure and improve the thumbnail serving
+**** seems kinda slow, use =hey= to measure performance
+**** use =hey= to compare the same behavior with JavaScript impl
+***** measure both with and without in-memory caching
+**** consider changing the quality factor when producing the jpeg
+**** consider caching in memory or on disk
+***** typical thumbnail is 40-50kb
 *** TODO plan how database migrations will happen in the future
 **** maintain a meta record with version information
 **** look at how the serde.rs library can help
@@ -82,15 +110,8 @@
 **** they have =.jpg= extension instead of the original (=.mov=)
 **** should these be retained, removed, or rebuilt?
 **** should these be generated on import, or as needed?
-*** TODO need configuration mechanism
-**** path for database files
-**** path for where file uploads go temporarily
-**** path for where assets are stored
-**** would be nice to have something like Dart's =environment_config=
-***** could use =build.rs= to generate an environment config
-***** then load that in =main.rs= to get everything into memory
-**** https://github.com/andoriyu/uclicious (BSD)
-**** https://github.com/mehcode/config-rs (MIT)
+*** TODO test video playback in all browsers
+**** =actix-files= should support range requests so Safari will be satisfied
 *** TODO ensure there is no longer any =dead_code= or remove the pragma
 *** TODO set up logging similar to zorigami
 **** should be effectively disabled for testing (i.e. off by default)
@@ -118,6 +139,12 @@
 **** =public/schema.graphql=
 **** =views/=
 *** TODO document build instructions for Rust in README
+**** =cargo build=
+**** =cargo test=
+**** =cargo update=
+**** =cargo outdated=
+**** =cargo clean=
+**** =RUST_LOG=info cargo run=
 *** TODO document the clean architecture of this code base
 ** Fix mujina
 *** Asset details
@@ -141,8 +168,6 @@
 *** TODO how to handle file drops
 **** drop zone gist: https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
 **** for now this is not so important, just use file selector a la =web_upload= example
-*** TODO how to upload files via graphql
-**** via graphql: https://morioh.com/p/8120c733a77c
 *** TODO use docker container to build web assets
 *** Thoughts on the design
 **** browse and search
@@ -214,7 +239,6 @@
 **** =lib/js=
 **** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
-*** TODO incorporate relevant items from mujina TODO file
 ** Testing
 *** TODO Consider how to test the web endpoints
 ** Performance
@@ -230,9 +254,14 @@
 | tanuki (node)      |  3000 |
 | tanuki (shelf-exe) |  2600 |
 | tanuki (angel-exe) |  1010 |
-*** consider if caching/guessing mimetype is needed when serving images
-*** consider a "sidecar" file with each asset that has this information
-*** the repository and data source would have API for reading this data
+*** consider if caching the thumbnails will improve responsiveness
+*** consider if caching search results will improve responsiveness
+**** could return a query code to the caller in search meta
+**** caller returns that code in the next query to access the cache
+**** in this way, the results for a particular query can be cached reliably
+**** eventually cached search results need to be pruned
+**** RocksDB by default has a block cache of 8mb in 16 shards of 512kb
+**** also consider that any caching should live in the data source
 ** Search Improvements
 *** TODO Support advanced queries using Google-style operators
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
@@ -312,7 +341,29 @@ include it in the database records.
 *** Date/Time values
 - Uses 24 hour clock, displays using local time zone, stored as UTC
 - [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
+** Multi-file Upload
+*** could theoretically allow the upload of multiple files
+*** with HTML forms, set =multiple= to =true= on the file input field
+*** this would fall under "quick import": just throw everything into the collection
+*** after upload, show the "recent imports" page so the user can make edits
+** Architecture Review
+*** GraphQL server
+**** consider https://github.com/async-graphql/async-graphql as alternative to juniper
+***** handles multipart requests (file uploads)
+***** provides actix-web integration
 ** Desktop app
+*** Need setup for configuration system
+**** properties
+***** path for database files
+***** path for where file uploads go temporarily
+***** path for where assets are stored
+**** default configuration setup at build-time
+***** would be nice to have something like Dart's =environment_config=
+****** could use =build.rs= to generate an environment config
+******* then load that in =main.rs= to get everything into memory
+***** https://github.com/andoriyu/uclicious (BSD)
+***** https://github.com/mehcode/config-rs (MIT)
+**** screen for configuring the settings
 *** Showing the licenses/about dialog
 **** c.f. "licenses" on https://flutter.dev/docs/resources/faq
 ** Mobile web support
@@ -344,6 +395,8 @@ include it in the database records.
 ***** rust: https://github.com/bazelbuild/rules_rust
 ***** rust: https://github.com/google/cargo-raze
 ****** tries to replace cargo to get benefits of bazel
+** SCM
+*** Consider if using GitLab (in a container) would be helpful
 ** Extra Features
 *** Image orientation
 **** maybe not everyone is going to like that the images get auto-oriented on imports

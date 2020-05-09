@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2020 Nathan Fiedler
 //
 /* The expected shape of the asset data from GraphQL. */
 type t = {
@@ -7,35 +7,29 @@ type t = {
   "id": string,
   "caption": option(string),
   "datetime": Js.Json.t,
-  "duration": option(float),
+  "duration": option(int),
   "filename": string,
-  "filepath": string,
   "filesize": Js.Json.t,
   "location": option(string),
   "mimetype": string,
   "tags": Js.Array.t(string),
   "userdate": option(Js.Json.t),
-  "previewUrl": string,
-  "assetUrl": string,
 };
 
 module FetchAsset = [%graphql
   {|
-    query Fetch($identifier: ID!) {
+    query Fetch($identifier: String!) {
       asset(id: $identifier) {
         id
         caption
         datetime
         duration
         filename
-        filepath
         filesize
         location
         mimetype
         tags
         userdate
-        previewUrl
-        assetUrl
       }
     }
   |}
@@ -51,17 +45,17 @@ let assetMimeType = (mimetype: string) =>
   };
 
 let formatDate = (datetime: Js.Json.t) =>
-  switch (Js.Json.decodeNumber(datetime)) {
-  | None => "INVALID DATE"
-  | Some(num) =>
-    let d = Js.Date.fromFloat(num);
+  switch (Js.Json.decodeString(datetime)) {
+  | None => "INVALID STRING"
+  | Some(dateStr) =>
+    let d = Js.Date.fromString(dateStr);
     Js.Date.toLocaleString(d);
   };
 
 let formatBigInt = (bigint: Js.Json.t) =>
-  switch (Js.Json.decodeNumber(bigint)) {
-  | None => "INVALID BIGINT"
-  | Some(num) => Js.Float.toFixed(num)
+  switch (Js.Json.decodeString(bigint)) {
+  | None => "INVALID STRING"
+  | Some(num) => num
   };
 
 let assetPreview = (asset: t) =>
@@ -70,7 +64,10 @@ let assetPreview = (asset: t) =>
       style={ReactDOMRe.Style.make(~width="100%", ~height="100%", ())}
       controls=true
       preload="auto">
-      <source src=asset##assetUrl type_={assetMimeType(asset##mimetype)} />
+      <source
+        src={"/asset/" ++ asset##id}
+        type_={assetMimeType(asset##mimetype)}
+      />
       {ReasonReact.string("Bummer, your browser does not support the HTML5")}
       <code> {ReasonReact.string("video")} </code>
       {ReasonReact.string("tag.")}
@@ -80,7 +77,7 @@ let assetPreview = (asset: t) =>
       <figure className="image">
         <img
           style={ReactDOMRe.Style.make(~display="inline", ~width="auto", ())}
-          src=asset##previewUrl
+          src={"/thumbnail/640/640/" ++ asset##id}
           alt=asset##filename
         />
       </figure>
@@ -104,7 +101,7 @@ let assetDetails = (asset: t) =>
          <tr>
            <td> {ReasonReact.string("Duration")} </td>
            <td>
-             {ReasonReact.string(Js.Float.toString(value) ++ "seconds")}
+             {ReasonReact.string(string_of_int(value) ++ "seconds")}
            </td>
          </tr>
        }}
@@ -171,10 +168,11 @@ module Component = {
           Js.log(error);
           <div> {ReasonReact.string(error##message)} </div>;
         | Data(response) =>
-          switch (response##asset) {
-          | None => <div> {ReasonReact.string("No such asset!")} </div>
-          | Some(asset) => <PreviewPanel asset />
-          }
+          <PreviewPanel
+            asset={
+              response##asset;
+            }
+          />
         }
       }
     </FetchAssetQuery>;

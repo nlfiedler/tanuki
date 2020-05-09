@@ -1,7 +1,6 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2020 Nathan Fiedler
 //
-/* The expected shape of the thumbnail data from GraphQL. */
 type t = {
   .
   "count": int,
@@ -12,7 +11,6 @@ type t = {
       "filename": string,
       "id": string,
       "location": option(string),
-      "thumbnailUrl": string,
     }),
 };
 
@@ -20,10 +18,10 @@ let pageSize = 18;
 let rowWidth = 3;
 
 let formatDate = (datetime: Js.Json.t) =>
-  switch (Js.Json.decodeNumber(datetime)) {
-  | None => "INVALID DATE"
-  | Some(num) =>
-    let d = Js.Date.fromFloat(num);
+  switch (Js.Json.decodeString(datetime)) {
+  | None => "INVALID STRING"
+  | Some(dateStr) =>
+    let d = Js.Date.fromString(dateStr);
     Js.Date.toLocaleString(d);
   };
 
@@ -165,7 +163,7 @@ module ThumbCard = {
                    style={ReactDOMRe.Style.make(~width="auto", ())}
                  />
                : <img
-                   src=entry##thumbnailUrl
+                   src={"/thumbnail/240/240/" ++ entry##id}
                    alt=entry##filename
                    onError={_ => dispatch(MarkThumbless)}
                    style={ReactDOMRe.Style.make(~width="auto", ())}

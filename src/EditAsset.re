@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Nathan Fiedler
+// Copyright (c) 2020 Nathan Fiedler
 //
 /* The expected shape of the asset data from GraphQL. */
 type t = {
@@ -7,35 +7,29 @@ type t = {
   "id": string,
   "caption": option(string),
   "datetime": Js.Json.t,
-  "duration": option(float),
+  "duration": option(int),
   "filename": string,
-  "filepath": string,
   "filesize": Js.Json.t,
   "location": option(string),
   "mimetype": string,
   "tags": Js.Array.t(string),
   "userdate": option(Js.Json.t),
-  "previewUrl": string,
-  "assetUrl": string,
 };
 
 module FetchAsset = [%graphql
   {|
-    query Fetch($identifier: ID!) {
+    query Fetch($identifier: String!) {
       asset(id: $identifier) {
         id
         caption
         datetime
         duration
         filename
-        filepath
         filesize
         location
         mimetype
         tags
         userdate
-        previewUrl
-        assetUrl
       }
     }
   |}
@@ -59,7 +53,7 @@ type input = {
  */
 module UpdateAsset = [%graphql
   {|
-    mutation Update($identifier: ID!, $input: AssetInput!) {
+    mutation Update($identifier: String!, $input: AssetInput!) {
       update(id: $identifier, asset: $input) {
         id
         caption
@@ -182,18 +176,18 @@ let assetMimeType = (mimetype: string) =>
   };
 
 let formatDateForDisplay = (datetime: Js.Json.t) =>
-  switch (Js.Json.decodeNumber(datetime)) {
-  | None => "INVALID DATE"
-  | Some(num) =>
-    let d = Js.Date.fromFloat(num);
+  switch (Js.Json.decodeString(datetime)) {
+  | None => "INVALID STRING"
+  | Some(dateStr) =>
+    let d = Js.Date.fromString(dateStr);
     Js.Date.toLocaleString(d);
   };
 
 let formatDateForInput = (datetime: Js.Json.t) =>
-  switch (Js.Json.decodeNumber(datetime)) {
-  | None => "INVALID DATE"
-  | Some(num) =>
-    let d = Js.Date.fromFloat(num);
+  switch (Js.Json.decodeString(datetime)) {
+  | None => "INVALID STRING"
+  | Some(dateStr) =>
+    let d = Js.Date.fromString(dateStr);
     DateFns.format("YYYY-MM-DD HH:mm", d);
   };
 
@@ -209,7 +203,10 @@ let assetPreview = (asset: t) =>
       style={ReactDOMRe.Style.make(~width="100%", ~height="100%", ())}
       controls=true
       preload="auto">
-      <source src=asset##assetUrl type_={assetMimeType(asset##mimetype)} />
+      <source
+        src={"/thumbnail/640/640/" ++ asset##id}
+        type_={assetMimeType(asset##mimetype)}
+      />
       {ReasonReact.string("Bummer, your browser does not support the HTML5")}
       <code> {ReasonReact.string("video")} </code>
       {ReasonReact.string("tag.")}
@@ -219,7 +216,7 @@ let assetPreview = (asset: t) =>
       <figure className="image">
         <img
           style={ReactDOMRe.Style.make(~display="inline", ~width="auto", ())}
-          src=asset##previewUrl
+          src={"/thumbnail/640/640/" ++ asset##id}
           alt=asset##filename
         />
       </figure>
@@ -368,12 +365,12 @@ module EditFormRe = {
   };
 };
 
-/* Convert the user date string into UTC milliseconds. */
-let userDateStrToInt = str =>
+/* Convert the yyyy-MM-dd date string into what GraphQL server expects. */
+let userDateToGraphQL = str =>
   if (String.length(str) > 0) {
     /* date-fns 1.x parse does not take a format string... */
     let date: Js.Date.t = DateFns.parseString(str);
-    Some(Js.Json.number(Js.Date.valueOf(date)));
+    Some(Js.Json.string(Js.Date.toISOString(date)));
   } else {
     None;
   };
@@ -398,7 +395,7 @@ let submitUpdate =
     "tags": Some(tags),
     "caption": Some(values.caption),
     "location": Some(values.location),
-    "datetime": userDateStrToInt(values.userdate),
+    "datetime": userDateToGraphQL(values.userdate),
     "mimetype": Some(values.mimetype),
   };
   let update = UpdateAsset.make(~identifier=asset##id, ~input=newAsset, ());
@@ -467,10 +464,11 @@ module Component = {
           Js.log(error);
           <div> {ReasonReact.string(error##message)} </div>;
         | Data(response) =>
-          switch (response##asset) {
-          | None => <div> {ReasonReact.string("No such asset!")} </div>
-          | Some(asset) => <EditPanel asset />
-          }
+          <EditPanel
+            asset={
+              response##asset;
+            }
+          />
         }
       }
     </FetchAssetQuery>;

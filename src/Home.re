@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2020 Nathan Fiedler
 //
 module CountAssets = [%graphql {|
     query {
@@ -22,7 +22,6 @@ module QueryAssets = [%graphql
           datetime
           filename
           location
-          thumbnailUrl
         }
         count
       }
@@ -38,12 +37,13 @@ let makeQueryParams = (state: Redux.appState) => {
       (None, None);
     } else {
       let afterYear = Belt.Option.getExn(state.selectedYear);
-      let beforeYear = afterYear + 1;
-      let yearToDate = (year: int) =>
-        Js.Json.number(
-          Js.Date.utcWithYM(~year=float_of_int(year), ~month=0.0, ()),
-        );
-      (Some(yearToDate(afterYear)), Some(yearToDate(beforeYear)));
+      let beforeYear = int_of_string(afterYear) + 1;
+      let yearToDate = (year: string) =>
+        Js.Json.string(year ++ "-01-01T00:00:00Z");
+      (
+        Some(yearToDate(afterYear)),
+        Some(yearToDate(string_of_int(beforeYear))),
+      );
     };
   {
     "after": afterTime,

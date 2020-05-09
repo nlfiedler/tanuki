@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Nathan Fiedler
+// Copyright (c) 2020 Nathan Fiedler
 //
 type searchInputs = {
   tags: string,
@@ -13,14 +13,14 @@ type searchInputs = {
 type appAction =
   | ToggleTag(string)
   | ToggleLocation(string)
-  | ToggleYear(int)
+  | ToggleYear(string)
   | Paginate(int)
   | SaveSearch(searchInputs);
 
 type appState = {
   selectedTags: Belt.Set.String.t,
   selectedLocations: Belt.Set.String.t,
-  selectedYear: option(int),
+  selectedYear: option(string),
   pageNumber: int,
   savedSearch: searchInputs,
 };
@@ -47,7 +47,7 @@ let appReducer = (state: appState, action: appAction) =>
       ...state,
       pageNumber: 1,
       selectedYear:
-        Belt.Option.eq(state.selectedYear, Some(year), (a, b) => a == b)
+        Belt.Option.eq(state.selectedYear, Some(year), (a, b) => String.compare(a, b) == 0)
           ? None : Some(year),
     }
   | Paginate(page) => {...state, pageNumber: page}

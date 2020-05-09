@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Nathan Fiedler
+// Copyright (c) 2020 Nathan Fiedler
 //
 type state = {menuActive: bool};
 type action =
@@ -79,7 +79,7 @@ let make = () => {
              ReactDOMRe.objToDOMProps({
                "className": "navbar-item tooltip has-tooltip-bottom",
                "data-tooltip": "Advanced search",
-               "href": "/graphql",
+               "href": "/graphiql",
              }),
            [|
              <span className="icon">

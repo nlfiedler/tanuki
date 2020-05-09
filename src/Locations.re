@@ -1,10 +1,10 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2020 Nathan Fiedler
 //
 /* The expected shape of the location from GraphQL. */
 type t = {
   .
-  "value": string,
+  "label": string,
   "count": int,
 };
 
@@ -13,7 +13,7 @@ module GetLocations = [%graphql
   {|
     query getAllLocations {
       locations {
-        value
+        label
         count
       }
     }
@@ -35,8 +35,8 @@ let selectTopLocations =
   let selectedLocationsMap =
     Array.fold_right(
       (location, coll) =>
-        if (Belt.Set.String.has(selectedLocations, location##value)) {
-          Belt.Map.String.set(coll, location##value, location);
+        if (Belt.Set.String.has(selectedLocations, location##label)) {
+          Belt.Map.String.set(coll, location##label, location);
         } else {
           coll;
         },
@@ -49,13 +49,13 @@ let selectTopLocations =
   let mergedMap =
     Array.fold_right(
       (location, coll) =>
-        Belt.Map.String.set(coll, location##value, location),
+        Belt.Map.String.set(coll, location##label, location),
       Array.sub(sortedLocations, 0, 25),
       selectedLocationsMap,
     );
   /* extract the map values and sort by name */
   let almostThere = Belt.Map.String.valuesToArray(mergedMap);
-  Array.sort((a, b) => compare(a##value, b##value), almostThere);
+  Array.sort((a, b) => compare(a##label, b##label), almostThere);
   almostThere;
 };
 
@@ -107,7 +107,7 @@ module Component = {
         };
       Array.mapi(
         (index, location: t) => {
-          let isSelected = Belt.Set.String.has(reduxState, location##value);
+          let isSelected = Belt.Set.String.has(reduxState, location##label);
           let className = isSelected ? "tag is-dark" : "tag is-light";
           <a
             key={string_of_int(index)}
@@ -115,9 +115,9 @@ module Component = {
             href="#"
             title={string_of_int(location##count)}
             onClick={_ =>
-              reduxDispatch(Redux.ToggleLocation(location##value))
+              reduxDispatch(Redux.ToggleLocation(location##label))
             }>
-            {ReasonReact.string(location##value)}
+            {ReasonReact.string(location##label)}
           </a>;
         },
         visibleLocations,

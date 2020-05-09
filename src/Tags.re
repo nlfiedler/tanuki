@@ -1,10 +1,10 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2020 Nathan Fiedler
 //
 /* The expected shape of the tag from GraphQL. */
 type t = {
   .
-  "value": string,
+  "label": string,
   "count": int,
 };
 
@@ -13,7 +13,7 @@ module GetTags = [%graphql
   {|
     query getAllTags {
       tags {
-        value
+        label
         count
       }
     }
@@ -34,8 +34,8 @@ let selectTopTags = (selectedTags: Belt.Set.String.t, allTags: array(t)) => {
   let selectedTagsMap =
     Array.fold_right(
       (tag, coll) =>
-        if (Belt.Set.String.has(selectedTags, tag##value)) {
-          Belt.Map.String.set(coll, tag##value, tag);
+        if (Belt.Set.String.has(selectedTags, tag##label)) {
+          Belt.Map.String.set(coll, tag##label, tag);
         } else {
           coll;
         },
@@ -47,13 +47,13 @@ let selectTopTags = (selectedTags: Belt.Set.String.t, allTags: array(t)) => {
   Array.sort((a, b) => b##count - a##count, sortedTags);
   let mergedMap =
     Array.fold_right(
-      (tag, coll) => Belt.Map.String.set(coll, tag##value, tag),
+      (tag, coll) => Belt.Map.String.set(coll, tag##label, tag),
       Array.sub(sortedTags, 0, 25),
       selectedTagsMap,
     );
   /* extract the map values and sort by name */
   let almostThere = Belt.Map.String.valuesToArray(mergedMap);
-  Array.sort((a, b) => compare(a##value, b##value), almostThere);
+  Array.sort((a, b) => compare(a##label, b##label), almostThere);
   almostThere;
 };
 
@@ -105,15 +105,15 @@ module Component = {
         };
       Array.mapi(
         (index, tag) => {
-          let isSelected = Belt.Set.String.has(reduxState, tag##value);
+          let isSelected = Belt.Set.String.has(reduxState, tag##label);
           let className = isSelected ? "tag is-dark" : "tag is-light";
           <a
             key={string_of_int(index)}
             className
             href="#"
             title={string_of_int(tag##count)}
-            onClick={_ => reduxDispatch(Redux.ToggleTag(tag##value))}>
-            {ReasonReact.string(tag##value)}
+            onClick={_ => reduxDispatch(Redux.ToggleTag(tag##label))}>
+            {ReasonReact.string(tag##label)}
           </a>;
         },
         visibleTags,

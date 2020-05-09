@@ -80,4 +80,7 @@ pub trait BlobRepository {
 
     /// Return the full path to the asset in blob storage.
     fn blob_path(&self, asset: &Asset) -> Result<PathBuf, Error>;
+
+    /// Produce a thumbnail of the desired size for the asset.
+    fn thumbnail(&self, width: u32, height: u32, asset_id: &str) -> Result<Vec<u8>, Error>;
 }

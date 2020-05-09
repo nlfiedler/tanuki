@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Nathan Fiedler
+// Copyright (c) 2020 Nathan Fiedler
 //
 
 /*
@@ -15,7 +15,6 @@ module SearchAssets = [%graphql
           datetime
           filename
           location
-          thumbnailUrl
         }
         count
       }
@@ -306,10 +305,10 @@ module SearchFormRe = {
   };
 };
 
-/* Convert the yyyy-MM-dd date string into UTC milliseconds. */
-let rangeDateStrToInt = str =>
+/* Convert the yyyy-MM-dd date string into what GraphQL server expects. */
+let userDateToGraphQL = str =>
   if (String.length(str) > 0) {
-    Some(Js.Json.number(Js.Date.parseAsFloat(str)));
+    Some(Js.Json.string(str ++ "T00:00:00Z"));
   } else {
     None;
   };
@@ -333,8 +332,8 @@ let makeSearchParams = (params: SearchForm.state) => {
   let locations =
     Array.length(nonEmptyLocations) > 0 ? Some(nonEmptyLocations) : None;
   {
-    "after": rangeDateStrToInt(params.afterDate),
-    "before": rangeDateStrToInt(params.beforeDate),
+    "after": userDateToGraphQL(params.afterDate),
+    "before": userDateToGraphQL(params.beforeDate),
     "filename":
       String.length(params.filename) > 0 ? Some(params.filename) : None,
     "locations": locations,

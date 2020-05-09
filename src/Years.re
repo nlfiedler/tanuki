@@ -1,10 +1,10 @@
 //
-// Copyright (c) 2018 Nathan Fiedler
+// Copyright (c) 2020 Nathan Fiedler
 //
 /* The expected shape of the year from GraphQL. */
 type t = {
   .
-  "value": int,
+  "label": string,
   "count": int,
 };
 
@@ -13,7 +13,7 @@ module GetYears = [%graphql
   {|
     query getAllYears {
       years {
-        value
+        label
         count
       }
     }
@@ -34,15 +34,15 @@ module Component = {
       Array.mapi(
         (index, year: t) => {
           let isSelected =
-            Belt.Option.eq(state, Some(year##value), (a, b) => a == b);
+            Belt.Option.eq(state, Some(year##label), (a, b) => String.compare(a, b) == 0);
           let className = isSelected ? "tag is-dark" : "tag is-light";
           <a
             key={string_of_int(index)}
             className
             href="#"
             title={string_of_int(year##count)}
-            onClick={_ => dispatch(Redux.ToggleYear(year##value))}>
-            {ReasonReact.string(string_of_int(year##value))}
+            onClick={_ => dispatch(Redux.ToggleYear(year##label))}>
+            {ReasonReact.string(year##label)}
           </a>;
         },
         years,
