@@ -108,20 +108,11 @@ impl BlobRepositoryImpl {
             basepath: basepath.to_path_buf(),
         }
     }
-
-    fn asset_path(&self, asset_id: &str) -> Result<PathBuf, Error> {
-        let decoded = base64::decode(asset_id)?;
-        let as_string = str::from_utf8(&decoded)?;
-        let rel_path = Path::new(&as_string);
-        let mut full_path = self.basepath.clone();
-        full_path.push(rel_path);
-        Ok(full_path)
-    }
 }
 
 impl BlobRepository for BlobRepositoryImpl {
     fn store_blob(&self, filepath: &Path, asset: &Asset) -> Result<(), Error> {
-        let dest_path = self.asset_path(&asset.key)?;
+        let dest_path = self.blob_path(&asset.key)?;
         // do not overwrite existing asset blobs
         if !dest_path.exists() {
             let parent = dest_path
@@ -140,12 +131,17 @@ impl BlobRepository for BlobRepositoryImpl {
         Ok(())
     }
 
-    fn blob_path(&self, asset: &Asset) -> Result<PathBuf, Error> {
-        self.asset_path(&asset.key)
+    fn blob_path(&self, asset_id: &str) -> Result<PathBuf, Error> {
+        let decoded = base64::decode(asset_id)?;
+        let as_string = str::from_utf8(&decoded)?;
+        let rel_path = Path::new(&as_string);
+        let mut full_path = self.basepath.clone();
+        full_path.push(rel_path);
+        Ok(full_path)
     }
 
     fn thumbnail(&self, width: u32, height: u32, asset_id: &str) -> Result<Vec<u8>, Error> {
-        let filepath = self.asset_path(asset_id)?;
+        let filepath = self.blob_path(asset_id)?;
         create_thumbnail(&filepath, width, height)
     }
 }
@@ -924,7 +920,7 @@ mod tests {
         };
         // act
         let repo = BlobRepositoryImpl::new(Path::new("foobar/blobs"));
-        let result = repo.blob_path(&asset1);
+        let result = repo.blob_path(&asset1.key);
         // assert
         assert!(result.is_ok());
         let mut blob_path = PathBuf::from("foobar/blobs");

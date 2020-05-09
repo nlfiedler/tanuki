@@ -46,33 +46,6 @@
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** DONE serve the existing ReasonML frontend
-**** DONE add handler for static files
-**** DONE add default handler for all non-matching routes
-**** DONE add endpoints for graphql and graphiql
-**** DONE add CORS middleware
-**** DONE ensure logging middleware is set up
-**** DONE generate the =graphql_schema.json= using the new API
-**** DONE fix the ReasonML code related to GraphQL
-**** DONE convert file upload to use HTTP endpoint
-***** see =Upload.re= in commit =5974201= for how it used to be
-**** DONE add endpoint to get the thumbnail and previews
-***** thumbnails (and previews) are always =image/jpeg= content type
-***** only raw assets need to look up the media type
-***** blob repository will produce the thumbnails
-**** DONE add endpoint to get the raw asset and its media type
-***** DONE read the media type from the database
-***** DONE get the asset path and return the raw file in the response
-***** DONE should return 404 for missing asset, not 500
-***** DONE =/asset/= needs to respond to =HEAD= as well as =GET=
-**** DONE ensure web endpoints use =web::block()= appropriately
-**** DONE fix date handling in thumbnails
-**** DONE fix date handling on show asset page
-**** DONE fix file size handling on show asset page
-**** DONE year selector is not working
-**** DONE search by date is not working
-**** DONE fix the user date handling on edit page
-*** TODO repository =blob_path()= should take only an asset id, not an asset
 *** TODO write tests for the http endpoints
 **** c.f. https://actix.rs/docs/testing/
 *** TODO try to clean up the =main.rs= TODO items
