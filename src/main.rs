@@ -21,11 +21,21 @@ use tanuki::domain::usecases::import::{ImportAsset, Params};
 use tanuki::domain::usecases::UseCase;
 use tanuki::preso::graphql;
 
+#[cfg(test)]
+static DEFAULT_DB_PATH: &str = "tmp/test/rocksdb";
+#[cfg(not(test))]
+static DEFAULT_DB_PATH: &str = "tmp/rocksdb";
+
+#[cfg(test)]
+static DEFAULT_ASSETS_PATH: &str = "tmp/test/blobs";
+#[cfg(not(test))]
+static DEFAULT_ASSETS_PATH: &str = "tmp/blobs";
+
 lazy_static! {
     // Path to the database files.
     static ref DB_PATH: PathBuf = {
         dotenv::dotenv().ok();
-        let path = env::var("DB_PATH").unwrap_or_else(|_| "tmp/rocksdb".to_owned());
+        let path = env::var("DB_PATH").unwrap_or_else(|_| DEFAULT_DB_PATH.to_owned());
         PathBuf::from(path)
     };
     // Path for uploaded files.
@@ -34,7 +44,7 @@ lazy_static! {
         PathBuf::from(path)
     };
     static ref ASSETS_PATH: PathBuf = {
-        let path = env::var("ASSETS_PATH").unwrap_or_else(|_| "tmp/blobs".to_owned());
+        let path = env::var("ASSETS_PATH").unwrap_or_else(|_| DEFAULT_ASSETS_PATH.to_owned());
         PathBuf::from(path)
     };
     // Path to the static web files.
@@ -88,10 +98,14 @@ async fn import_asset(mut payload: Multipart) -> Result<HttpResponse, Error> {
         .await?;
         asset_ids.push(asset.key);
     }
-    let edit_url = format!("/assets/{}/edit", asset_ids[0]);
-    Ok(HttpResponse::Found()
-        .header(http::header::LOCATION, edit_url)
-        .finish())
+    if asset_ids.is_empty() {
+        Ok(HttpResponse::BadRequest().body("missing parts"))
+    } else {
+        let edit_url = format!("/assets/{}/edit", asset_ids[0]);
+        Ok(HttpResponse::Found()
+            .header(http::header::LOCATION, edit_url)
+            .finish())
+    }
 }
 
 fn graphiql() -> HttpResponse {
@@ -174,11 +188,11 @@ async fn main() -> std::io::Result<()> {
     let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_owned());
     let port = env::var("PORT").unwrap_or_else(|_| "3000".to_owned());
     let addr = format!("{}:{}", host, port);
-    let schema = std::sync::Arc::new(graphql::create_schema());
     info!("listening on http://{}/...", addr);
-    HttpServer::new(move || {
+    HttpServer::new(|| {
+        let schema = std::sync::Arc::new(graphql::create_schema());
         App::new()
-            .data(schema.clone())
+            .data(schema)
             .wrap(middleware::Logger::default())
             .wrap(
                 // Respond to OPTIONS requests for CORS support, which is common
@@ -202,4 +216,86 @@ async fn main() -> std::io::Result<()> {
     .bind(addr)?
     .run()
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use actix_web::{http, test, web, App};
+
+    #[actix_rt::test]
+    async fn test_index_get() {
+        // arrange
+        let mut app =
+            test::init_service(App::new().default_service(web::get().to(default_index))).await;
+        // act
+        let req = test::TestRequest::default().to_request();
+        let resp = test::call_service(&mut app, req).await;
+        // assert
+        assert!(resp.status().is_success());
+    }
+
+    #[actix_rt::test]
+    async fn test_import_asset_ok() {
+        let boundary = "----WebKitFormBoundary0gYa4NfETro6nMot";
+        // arrange
+        let mut app =
+            test::init_service(App::new().route("/import", web::post().to(import_asset))).await;
+        // act
+        let ct_header = format!("multipart/form-data; boundary={}", boundary);
+        let filename = "./test/fixtures/fighting_kittens.jpg";
+        let raw_file = std::fs::read(filename).unwrap();
+        let mut payload: Vec<u8> = Vec::new();
+        let mut boundary_before = String::from("--");
+        boundary_before.push_str(boundary);
+        boundary_before.push_str("\r\nContent-Disposition: form-data;");
+        boundary_before.push_str(r#" name="asset"; filename="kittens.jpg""#);
+        boundary_before.push_str("\r\nContent-Type: image/jpeg\r\n\r\n");
+        payload.write(boundary_before.as_bytes()).unwrap();
+        payload.write(&raw_file).unwrap();
+        let mut boundary_after = String::from("\r\n--");
+        boundary_after.push_str(boundary);
+        boundary_after.push_str("--\r\n");
+        payload.write(boundary_after.as_bytes()).unwrap();
+        let req = test::TestRequest::with_uri("/import")
+            .method(http::Method::POST)
+            .header(http::header::CONTENT_TYPE, ct_header)
+            .header(http::header::CONTENT_LENGTH, payload.len())
+            .set_payload(payload)
+            .to_request();
+        let resp = test::call_service(&mut app, req).await;
+        // assert
+        assert!(resp.status().is_redirection());
+    }
+
+    #[actix_rt::test]
+    async fn test_get_thumbnail_ok() {
+        // arrange
+        let src_filename = "./test/fixtures/dcp_1069.jpg";
+        let mut filepath = UPLOAD_PATH.clone();
+        filepath.push("dcp_1069.jpg");
+        std::fs::copy(src_filename, &filepath).unwrap();
+        let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
+        let records = RecordRepositoryImpl::new(ctx);
+        let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
+        let usecase = ImportAsset::new(Box::new(records), Box::new(blobs));
+        let params = Params::new(filepath, mime::IMAGE_JPEG);
+        let asset = usecase.call(params).unwrap();
+        let mut app = test::init_service(
+            App::new().route("/thumbnail/{w}/{h}/{id}", web::get().to(get_thumbnail)),
+        )
+        .await;
+        // act
+        let uri = format!("/thumbnail/128/128/{}", asset.key);
+        let req = test::TestRequest::with_uri(&uri).to_request();
+        let resp = test::call_service(&mut app, req).await;
+        // assert
+        assert!(resp.status().is_success());
+        assert!(resp.headers().contains_key(http::header::ETAG));
+        assert_eq!(
+            resp.headers().get(http::header::CONTENT_TYPE).unwrap(),
+            "image/jpeg"
+        );
+    }
 }
