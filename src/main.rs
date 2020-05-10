@@ -63,13 +63,13 @@ lazy_static! {
 async fn import_asset(mut payload: Multipart) -> Result<HttpResponse, Error> {
     // iterate over multipart stream
     let mut asset_ids: Vec<String> = Vec::new();
-    // (expecting only a single item for now)
     while let Ok(Some(mut field)) = payload.try_next().await {
         let disposition = field.content_disposition().unwrap();
         let content_type = field.content_type().to_owned();
         let filename = disposition.get_filename().unwrap();
         let mut filepath = UPLOAD_PATH.clone();
         filepath.push(filename);
+        let filepath_clone = filepath.clone();
         // File::create is blocking operation, use threadpool
         let mut f = web::block(|| std::fs::File::create(filepath))
             .await
@@ -81,18 +81,12 @@ async fn import_asset(mut payload: Multipart) -> Result<HttpResponse, Error> {
             f = web::block(move || f.write_all(&data).map(|_| f)).await?;
         }
         let asset = web::block(move || {
-            // TODO: lots of repeated code here due to moves into blocks
-            // TODO: ultimately want to construct most of this one time,
-            //       but they need to implement Send trait for safety
-            let mut filepath = UPLOAD_PATH.clone();
-            let filename = disposition.get_filename().unwrap();
-            filepath.push(filename);
             let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
             let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
             let records = RecordRepositoryImpl::new(ctx);
             let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
             let usecase = ImportAsset::new(Box::new(records), Box::new(blobs));
-            let params = Params::new(filepath, content_type);
+            let params = Params::new(filepath_clone, content_type);
             usecase.call(params)
         })
         .await?;
@@ -101,6 +95,7 @@ async fn import_asset(mut payload: Multipart) -> Result<HttpResponse, Error> {
     if asset_ids.is_empty() {
         Ok(HttpResponse::BadRequest().body("missing parts"))
     } else {
+        // expecting only a single asset for the time being
         let edit_url = format!("/assets/{}/edit", asset_ids[0]);
         Ok(HttpResponse::Found()
             .header(http::header::LOCATION, edit_url)
@@ -183,8 +178,6 @@ async fn default_index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
-    // TODO: this create_dir_all should probably be done by the repository
-    std::fs::create_dir_all("./tmp/rocksdb").unwrap();
     let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_owned());
     let port = env::var("PORT").unwrap_or_else(|_| "3000".to_owned());
     let addr = format!("{}:{}", host, port);

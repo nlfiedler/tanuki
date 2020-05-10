@@ -90,6 +90,7 @@ impl EntityDataSourceImpl {
             "by_tags",
             "by_year",
         ];
+        std::fs::create_dir_all(&db_path)?;
         let database = database::Database::new(db_path, views, Box::new(mapper))?;
         Ok(Self { database })
     }
