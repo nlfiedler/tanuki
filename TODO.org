@@ -46,23 +46,6 @@
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** TODO improve thumbnail caching support (=ETag= and =If-None-Match=)
-**** need to include an etag and respond properly to if-none-match requests
-**** create a =Thumbnail= type that implements =actix_web::Responder=
-**** the =respond_to()= returns a future so can use async/await
-**** in =respond_to()= can check the asset exists, check if the etag matches, generate thumbnail
-**** respond with =StatusCode::NOT_MODIFIED= if not modified
-**** respond with =OK= and the data if the etag does not match
-**** c.f. https://github.com/actix/actix-web/blob/master/actix-files/src/named.rs
-**** c.f. https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match
-**** c.f. https://web.dev/http-cache/
-*** TODO measure and improve the thumbnail serving
-**** seems kinda slow, use =hey= to measure performance
-**** use =hey= to compare the same behavior with JavaScript impl
-***** measure both with and without in-memory caching
-**** consider changing the quality factor when producing the jpeg
-**** consider caching in memory or on disk
-***** typical thumbnail is 40-50kb
 *** TODO plan how database migrations will happen in the future
 **** maintain a meta record with version information
 **** look at how the serde.rs library can help
@@ -212,19 +195,30 @@
 ** Testing
 *** TODO Consider how to test the web endpoints
 ** Performance
-*** use =hey= to measure image serving performance
-**** =brew install hey= (the =ab= replacement)
-**** =hey -n 10000 http://localhost:<port>/=
-***** numbers below are for serving =index.html=
-***** ~-exe~ is the compiled executable
-| service            |   qps |
-|--------------------+-------|
-| apache             | 15000 |
-| zorigami           |  9400 |
-| tanuki (node)      |  3000 |
-| tanuki (shelf-exe) |  2600 |
-| tanuki (angel-exe) |  1010 |
-*** consider if caching the thumbnails will improve responsiveness
+*** improve thumbnail caching support (=ETag= and =If-None-Match=)
+**** need to include an etag and respond properly to if-none-match requests
+**** create a =Thumbnail= type that implements =actix_web::Responder=
+**** the =respond_to()= returns a future so can use async/await
+**** in =respond_to()= can check the asset exists, check if the etag matches, generate thumbnail
+**** respond with =StatusCode::NOT_MODIFIED= if not modified
+**** respond with =OK= and the data if the etag does not match
+**** c.f. https://github.com/actix/actix-web/blob/master/actix-files/src/named.rs
+**** c.f. https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match
+**** c.f. https://web.dev/http-cache/
+*** measure and improve the thumbnail serving
+**** consider caching in memory or on disk
+**** maybe try using =magick-rust= to see if that is faster
+**** measurements using =hey=
+| conditions         | hey arguments | avg response time | payload size |
+|--------------------+---------------+-------------------+--------------|
+| rust debug initial | -n 5 -c 1     |            2.4346 |        50748 |
+| node with caching  | -n 20 -c 1    |            0.0009 |         8932 |
+| node with caching  | (default)     |            0.0309 |         8932 |
+| node w/o caching   | (default)     |            0.1835 |         8932 |
+| rust with 50% jpeg | -n 5 -c 1     |            2.4235 |         7076 |
+| rust with 80% jpeg | -n 5 -c 1     |            2.4145 |        11793 |
+| rust release 80%   | (default)     |            1.0994 |        11793 |
+| rust release 75%   | (default)     |            1.0956 |        10263 |
 *** consider if caching search results will improve responsiveness
 **** could return a query code to the caller in search meta
 **** caller returns that code in the next query to access the cache
@@ -257,8 +251,6 @@
 **** https://www.media.mit.edu/pia/Research/deepview/exif.html
 *** could check for thumbnails in image EXIF data
 **** look for =JPEGThumbnail= or =TIFFThumbnail=
-*** TODO blob import always saves auto-oriented images as JPEG
-**** should detect the format and use one of the other libvips save functions
 *** TODO support HEIF images
 **** https://crates.io/crates/libvips (MIT) reads/writes HEIF
 **** https://github.com/oussama/libheif-rs (MIT)
@@ -367,11 +359,6 @@ include it in the database records.
 ****** tries to replace cargo to get benefits of bazel
 ** SCM
 *** Consider if using GitLab (in a container) would be helpful
-** Extra Features
-*** Image orientation
-**** maybe not everyone is going to like that the images get auto-oriented on imports
-**** could optionally leave the image alone and auto-orient when serving
-**** c.f. https://www.daveperrett.com/articles/2012/07/28/exif-orientation-handling-is-a-ghetto/
 ** Design Notes
 *** Dart vs Rust
 | Dart YES            | Dart NO              | Rust YES              | Rust NO      |
