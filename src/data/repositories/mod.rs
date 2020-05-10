@@ -42,13 +42,6 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.put_asset(asset)
     }
 
-    fn get_media_type(&self, asset_id: &str) -> Result<String, Error> {
-        // Caching or guessing the media type based on the extension in the
-        // decoded identifier may be options for speeding up this query.
-        let asset = self.get_asset(asset_id)?;
-        Ok(asset.media_type)
-    }
-
     fn count_assets(&self) -> Result<u64, Error> {
         self.datasource.count_assets()
     }
@@ -367,50 +360,6 @@ mod tests {
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.put_asset(&asset1);
-        // assert
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_get_media_type_ok() {
-        // arrange
-        let asset1 = Asset {
-            key: "abc123".to_owned(),
-            checksum: "cafebabe".to_owned(),
-            filename: "img_1234.jpg".to_owned(),
-            byte_length: 1024,
-            media_type: "image/jpeg".to_owned(),
-            tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: Utc::now(),
-            caption: None,
-            location: None,
-            duration: None,
-            user_date: None,
-            original_date: None,
-            dimensions: None,
-        };
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_get_asset()
-            .with(eq("abc123"))
-            .returning(move |_| Ok(asset1.clone()));
-        // act
-        let repo = RecordRepositoryImpl::new(Arc::new(mock));
-        let result = repo.get_media_type("abc123");
-        // assert
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "image/jpeg");
-    }
-
-    #[test]
-    fn test_get_media_type_err() {
-        // arrange
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_get_asset()
-            .with(eq("abc123"))
-            .returning(move |_| Err(err_msg("oh no")));
-        // act
-        let repo = RecordRepositoryImpl::new(Arc::new(mock));
-        let result = repo.get_media_type("abc123");
         // assert
         assert!(result.is_err());
     }

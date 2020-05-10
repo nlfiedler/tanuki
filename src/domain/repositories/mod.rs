@@ -22,9 +22,6 @@ pub trait RecordRepository {
     /// Store the asset entity in the data storage system.
     fn put_asset(&self, asset: &Asset) -> Result<(), Error>;
 
-    /// Retrieve the media type for the identified asset.
-    fn get_media_type(&self, asset_id: &str) -> Result<String, Error>;
-
     /// Return the number of assets stored in the storage system.
     fn count_assets(&self) -> Result<u64, Error>;
 

@@ -47,7 +47,6 @@
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO try to clean up the =main.rs= TODO items
-*** TODO probably do not need =get_media_type()=
 *** TODO improve thumbnail caching support (=ETag= and =If-None-Match=)
 **** need to include an etag and respond properly to if-none-match requests
 **** create a =Thumbnail= type that implements =actix_web::Responder=
@@ -95,6 +94,7 @@
 *** TODO write an import binary for the new database
 **** stand-alone binary that reads json and populates new database
 **** read the image/video dimensions to insert into asset record
+**** append correct extension to asset identifier so it matches the assigned media type
 *** TODO test database migration on development system
 *** TODO perform migration on production system
 **** stop and remove the current docker container
