@@ -48,8 +48,6 @@
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO try to clean up the =main.rs= TODO items
 *** TODO probably do not need =get_media_type()=
-*** TODO index mapper should not emit empty values
-**** asset with no location emitted a blank and it shows up in the list of locations
 *** TODO improve thumbnail caching support (=ETag= and =If-None-Match=)
 **** need to include an etag and respond properly to if-none-match requests
 **** create a =Thumbnail= type that implements =actix_web::Responder=

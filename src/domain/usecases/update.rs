@@ -106,8 +106,11 @@ fn merge_asset_input(asset: &mut Asset, input: AssetInput) {
         tags.dedup();
         asset.tags = tags;
     }
-    if let Some(loc) = input.location {
-        asset.location = Some(loc);
+    if input.location.is_some() {
+        // permit clearing the location value
+        asset.location = input
+            .location
+            .and_then(|v| if v.is_empty() { None } else { Some(v) });
     }
     // parse the caption to glean location and additional tags
     if let Some(caption) = input.caption {
@@ -589,6 +592,34 @@ mod tests {
         assert_eq!(asset.location.unwrap(), "hawaii");
         assert!(asset.user_date.is_none());
         assert_eq!(asset.media_type, "image/jpeg");
+    }
+
+    #[test]
+    fn test_merge_asset_input_clear_location() {
+        let mut asset = Asset {
+            key: "abc123".to_owned(),
+            checksum: "cafebabe".to_owned(),
+            filename: "fighting_kittens.jpg".to_owned(),
+            byte_length: 39932,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["kittens".to_owned()],
+            import_date: Utc::now(),
+            caption: None,
+            location: Some("hawaii".to_owned()),
+            duration: None,
+            user_date: None,
+            original_date: None,
+            dimensions: None,
+        };
+        let input = AssetInput {
+            tags: vec![],
+            caption: None,
+            location: Some(String::new()),
+            datetime: None,
+            media_type: None,
+        };
+        merge_asset_input(&mut asset, input);
+        assert!(asset.location.is_none());
     }
 
     #[test]

@@ -1488,4 +1488,60 @@ mod tests {
         assert_eq!(errors.len(), 1);
         assert!(errors[0].error().message().contains("oh no"));
     }
+
+    #[test]
+    fn test_update_empty_location() {
+        // arrange
+        let asset1 = Asset {
+            key: "abc123".to_owned(),
+            checksum: "cafebabe".to_owned(),
+            filename: "img_1234.jpg".to_owned(),
+            byte_length: 1048576,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["cat".to_owned(), "dog".to_owned()],
+            import_date: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
+            caption: None,
+            location: Some("hawaii".to_owned()),
+            duration: None,
+            user_date: None,
+            original_date: None,
+            dimensions: None,
+        };
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_get_asset()
+            .with(eq("abc123"))
+            .returning(move |_| Ok(asset1.clone()));
+        mock.expect_put_asset().with(always()).returning(|_| Ok(()));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let mut vars = Variables::new();
+        let input = AssetInput {
+            tags: Some(vec!["kitten".to_owned()]),
+            caption: Some("saw a #cat playing".to_owned()),
+            location: Some("".to_owned()),
+            datetime: None,
+            mimetype: None,
+        };
+        vars.insert("input".to_owned(), input.to_input_value());
+        let (res, errors) = juniper::execute(
+            r#"mutation Update($input: AssetInput!) {
+                update(id: "abc123", asset: $input) {
+                    id tags location caption
+                }
+            }"#,
+            None,
+            &schema,
+            &vars,
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert_eq!(errors.len(), 0);
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("update").unwrap();
+        let object = res.as_object_value().unwrap();
+        let field = object.get_field_value("location").unwrap();
+        assert!(field.is_null());
+    }
 }
