@@ -114,11 +114,6 @@ impl Asset {
         self.caption.clone()
     }
 
-    /// For video assets, the duration in seconds.
-    fn duration(&self) -> Option<i32> {
-        self.duration.map(|v| v as i32)
-    }
-
     /// Location information for the asset.
     fn location(&self) -> Option<String> {
         self.location.clone()
@@ -468,7 +463,6 @@ mod tests {
             import_date: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
             caption: None,
             location: Some("hawaii".to_owned()),
-            duration: None,
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -483,7 +477,7 @@ mod tests {
         let query = r#"query Fetch($id: String!) {
             asset(id: $id) {
                 id filename filesize datetime mimetype
-                tags userdate caption duration location
+                tags userdate caption location
             }
         }"#;
         let mut vars = Variables::new();
@@ -528,8 +522,6 @@ mod tests {
         assert!(res.is_null());
         let res = object.get_field_value("caption").unwrap();
         assert!(res.is_null());
-        let res = object.get_field_value("duration").unwrap();
-        assert!(res.is_null());
 
         let res = object.get_field_value("location").unwrap();
         let actual = res.as_scalar_value::<String>().unwrap();
@@ -549,7 +541,7 @@ mod tests {
         let query = r#"query Fetch($id: String!) {
             asset(id: $id) {
                 id filename filesize datetime mimetype
-                tags userdate caption duration location
+                tags userdate caption location
             }
         }"#;
         let mut vars = Variables::new();
@@ -682,7 +674,6 @@ mod tests {
             import_date: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
             caption: None,
             location: Some("hawaii".to_owned()),
-            duration: None,
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -1397,7 +1388,6 @@ mod tests {
             import_date: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
             caption: None,
             location: Some("hawaii".to_owned()),
-            duration: None,
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -1502,7 +1492,6 @@ mod tests {
             import_date: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
             caption: None,
             location: Some("hawaii".to_owned()),
-            duration: None,
             user_date: None,
             original_date: None,
             dimensions: None,

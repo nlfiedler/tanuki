@@ -46,22 +46,13 @@
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** TODO plan how database migrations will happen in the future
-**** maintain a meta record with version information
-**** look at how the serde.rs library can help
-*** TODO extract metadata from incoming video assets
-**** get the duration of videos in seconds
-**** get the creation time of videos
-**** need Rust bindings for =ffprobe= and =ffmpeg=
-***** https://crates.io/crates/ffmpeg4 (WTFPL)
-***** https://crates.io/crates/ffmpeg-dev (MIT/LGPL)
-***** https://crates.io/crates/ffmpeg-next (WTFPL)
-**** consider parsing the metadata to get the information
 *** TODO video thumbnails
 **** there are already some videos that have thumbnails
 **** they have =.jpg= extension instead of the original (=.mov=)
 **** should these be retained, removed, or rebuilt?
 **** should these be generated on import, or as needed?
+*** TODO display videos in search results as tiny video players
+**** i.e. do not try to retrieve the thumbnails for videos
 *** TODO test video playback in all browsers
 **** =actix-files= should support range requests so Safari will be satisfied
 *** TODO ensure there is no longer any =dead_code= or remove the pragma
@@ -99,12 +90,6 @@
 **** =cargo clean=
 **** =RUST_LOG=info cargo run=
 *** TODO document the clean architecture of this code base
-** Fix mujina
-*** Asset details
-**** does not have image urls
-*** File upload
-**** Cannot use the apollo-client upload feature
-**** Upload each asset to the HTTP endpoint instead of GraphQL
 ** Frontend Rewrite
 *** Use Dart and Flutter
 *** Use Clean Architecture
@@ -149,7 +134,7 @@
 ***** button in corner of thumbnail to select assets to edit, download, etc
 **** asset detail page
 ***** seems popular to show the gallery items as small thumbnails along the top (horizontally scrollable)
-***** have chevron buttons on both sides to navigate through gallery items
+***** have chevron buttons on both sides to navigate through gallery items (e.g. "lightbox")
 **** timeline style display for all assets
 ***** without any selectors, just show most recent going back in time
 *** ideas and widget usage
@@ -192,8 +177,6 @@
 **** =lib/js=
 **** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
-** Testing
-*** TODO Consider how to test the web endpoints
 ** Performance
 *** improve thumbnail caching support (=ETag= and =If-None-Match=)
 **** need to include an etag and respond properly to if-none-match requests
@@ -226,6 +209,10 @@
 **** eventually cached search results need to be pruned
 **** RocksDB by default has a block cache of 8mb in 16 shards of 512kb
 **** also consider that any caching should live in the data source
+*** consider if filtering can be done "in the database" somehow
+**** database queries should probably take a filter closure
+**** database functions iterate the results, applying the filter
+**** the remaining results are then collecting into a vector
 ** Search Improvements
 *** TODO Support advanced queries using Google-style operators
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
@@ -234,10 +221,6 @@
 **** =is:image= and similar to filter by media type
 **** =with:<name>= to filter by people (need to know the people though)
 **** =AND= and =OR= operators and grouping with parentheses
-*** TODO Avoid loading all results into memory and then filtering
-**** database queries should probably take a filter closure
-**** database functions iterate the results, applying the filter
-**** the remaining results are then collecting into a vector
 *** TODO Support searching for assets that have no tags at all
 *** TODO Support searching for assets that have no location at all
 *** TODO Support searching for assets that have no caption at all
@@ -245,7 +228,6 @@
 **** likely would involve a full table scan
 *** TODO Support wildcards in filename, mimetype (others?)
 **** likely would involve a full table scan
-*** TODO Query for image assets whose orientation is incorrect/unknown
 ** Data Format Support
 *** EXIF reference
 **** https://www.media.mit.edu/pia/Research/deepview/exif.html
@@ -253,6 +235,7 @@
 **** look for =JPEGThumbnail= or =TIFFThumbnail=
 *** TODO support HEIF images
 **** https://crates.io/crates/libvips (MIT) reads/writes HEIF
+***** this library easily crashes with a segmentation fault
 **** https://github.com/oussama/libheif-rs (MIT)
 **** https://crates.io/crates/kamadak-exif (BSD) reads metadata
 *** TODO Detect time zone offset in EXIF data
@@ -308,6 +291,14 @@ include it in the database records.
 *** with HTML forms, set =multiple= to =true= on the file input field
 *** this would fall under "quick import": just throw everything into the collection
 *** after upload, show the "recent imports" page so the user can make edits
+** Data Migrations
+*** start planning on how to handle data(base) migrations
+*** may be a good idea to introduce "metadata" records for assets
+**** use a =metadata/= prefix with the id of the asset
+**** can hold all sorts of additional information without cluttering the asset
+**** should be some form of dictionary to keep things flexible
+*** maintain an uber record for tracking database version
+*** also the serde library is quite flexible with adding/removing fields
 ** Architecture Review
 *** GraphQL server
 **** consider https://github.com/async-graphql/async-graphql as alternative to juniper
@@ -359,243 +350,3 @@ include it in the database records.
 ****** tries to replace cargo to get benefits of bazel
 ** SCM
 *** Consider if using GitLab (in a container) would be helpful
-** Design Notes
-*** Dart vs Rust
-| Dart YES            | Dart NO              | Rust YES              | Rust NO      |
-|---------------------+----------------------+-----------------------+--------------|
-| productive language | no good database     | embedded database     | slow compile |
-| good image library  | no secondary index   | secondary index       |              |
-|                     | buggy GraphQL server | proven GraphQL server |              |
-|                     | very slow web server | very fast web server  |              |
-*** shelf vs angel
-**** shelf
-***** faster for both vm and native
-***** generally more coding effort
-***** lacks file upload (see shelf issue 119)
-**** angel
-***** has everything (static files, CORS, etc)
-***** supports HTTP and GraphQL thoroughly
-***** integration of graphql is very easy
-** Legacy ReasonML, Node.js
-*** N.B. bs-platform module version
-**** cannot upgrade to 7.0.1 because ReasonApollo fails to compile
-*** N.B. react-apollo module version
-**** reason-apollo still depends on react-apollo 2.5.8
-**** upgrading react-apollo to >3.x breaks reason-apollo
-**** must wait until reason-apollo updates their dependencies
-*** Front-end improvements
-**** TODO Debounce the data validation fields using async validators
-**** TODO Consider how to make thumbnail page responsive
-***** Show 1, 2, 3, or more depending on browser width
-***** Should be able to leverage CSS for this
-**** TODO Asset preview page shows a broken link, should show placeholder image
-**** TODO Add error boundary handling (requires React API changes)
-***** waiting on support for =didCatch= in React Hooks API
-***** also likely need the API exposed via ReasonReact
-***** see the =ErrorBoundary= module definition in =Index.re=
-**** TODO Use a lightbox component for displaying assets
-***** c.f. https://creativebulma.net/product/lightbox/demo
-*** Bugs
-**** TODO Sometimes the front-end misses updates from backend?
-***** e.g. click a tag, images fail to appear; click and click again, works
-***** zorigami has this problem, too; seems like ReasonML is failing somehow
-***** find out what is going on when this happens
-**** TODO Home page fails to update after data changs
-***** TODO Home page stays stuck on "upload" even after images are uploaded
-****** name the =CountAssets= query and add to the =refetchQueries= list
-***** TODO After editing asset, selections need to elide newly removed tags
-****** that is, found "opa)", selected assets, fixed them, now cannot clear selection
-****** need to attach an update function after the edit asset mutation completes
-****** c.f. =onCompleted= prop on =mutation= function
-******* https://www.apollographql.com/docs/react/essentials/mutations/
-****** can also set =awaitRefetchQueries= to wait for refetch to complete
-****** could move Locations/Tags/Years logic into =Home= and handle everything there
-****** could use GraphQL subscriptions in =Home= to keep track of changes
-*** Development Support
-**** TODO Figure out how to deal with the GraphQL schema weirdness
-***** The introspection tool generates weird types for the non-optional array of strings
-***** Maybe that tool is correct and my types are wrong?
-***** Or maybe that tool has an update that fixes this?
-***** c.f. commit =b8fa735=
-** Old "rewrite backend in Dart" notes
-*** DONE find a web framework
-**** DONE read https://dart.dev/tutorials/server/httpserver
-**** DONE read https://dart-lang.github.io/server/
-***** all rather out of date
-**** DONE ensure support for CORS requests
-***** dart example in =httpserver= just injects the headers
-***** see =note_server.dart= in https://github.com/dart-lang/dart-tutorials-samples/
-**** DONE ensure support for static files
-***** use =VirtualDirectory= from =http_server= package
-***** see =static_file_server.dart= example of serving =index.html= by default
-**** DONE catch-all route that sends everything else to the SPA
-**** DONE evaluate https://pub.dev/packages/http_server
-***** only API documentation, no examples or guides
-***** probably meant to use shelf instead of this directly
-***** theoretically can do everything, it's just all manual
-**** DONE evaluate https://github.com/dart-lang/shelf
-***** inspired by connect, rack, wsgi
-***** similar to warp or plug, modular design for composable servers
-***** offers logging middleware
-****** look at how to integrate with https://pub.dev/packages/logging
-***** easy request handling with "handlers"
-***** easy composability with "pipelines"
-***** static files: https://pub.dev/packages/shelf_static
-***** routing: https://pub.dev/packages/shelf_router
-**** DONE evaluate https://github.com/stablekernel/aqueduct
-***** essentially a one developer project
-***** featureful all-in-one framework
-***** primarily focused on REST
-***** supports automated testing
-***** seems a bit big and far more than needed for tanuki
-**** DONE evaluate https://pub.dev/packages/angel_framework
-***** largely inspired by express.js
-***** only one developer, at risk of abandonment
-***** many add-on modules for various functionality
-***** supports automated testing
-***** scaffold generator is broken due to monorepo changes
-***** considerably slower than shelf, and more so when native
-**** DONE evaluate https://jaguar-dart.com
-***** not updated since last July
-**** DONE get a basic web server going with shelf
-***** DONE serve some requests
-***** DONE set up logging (console by default)
-***** DONE take the port number from the environment (default 4000)
-***** DONE take the host address from environment (default 'localhost')
-***** DONE serve the static files
-***** DONE serve a static GraphQL response
-***** DONE add CORS headers using middleware
-***** DONE check that =OPTIONS= method is handled
-***** DONE check that correct mimetype is returned for static files
-***** DONE map all missing results to =index.html= (i.e. no 404)
-***** DONE =GET= on =/graphql= route throws errors now
-**** DONE use some load testing tool to ensure core use
-***** =ab= is already installed but dated and often freezes
-***** =brew install hey= (the ab replacement, works better)
-***** =hey -n 10000 http://localhost:<port>/=
-****** ~-exe~ is the compiled executable
-| service              |   qps |
-|----------------------+-------|
-| apache               | 15000 |
-| tanuki (node)        |  3000 |
-| tanuki (shelf)       |  2500 |
-| tanuki (shelf-exe)   |  2600 |
-| tanuki (angel)       |  1400 |
-| tanuki (angel-exe)   |  1010 |
-| shelf basic example  |  6300 |
-| shelf router example |  6100 |
-| zorigami (rust)      |  9400 |
-*** old shelf related work
-**** shelf: add automated testing of http handlers
-***** c.f. https://stackoverflow.com/questions/42824533/unit-testing-with-darts-shelf-rest
-**** shelf: integrate =graphql_server= into existing shelf solution
-***** c.f. https://graphql.org/learn/serving-over-http/
-***** shelf lacks file upload via multi-part posts
-****** c.f. https://github.com/dart-lang/shelf/issues/119
-****** makes the graphql file upload impossible
-**** shelf: consider how to add GraphiQL functionality
-*** DONE try using [[https://angel-dart.dev/][angel]] for web
-**** DONE serve a canned response to =GET /=
-**** DONE read https://docs.angel-dart.dev/v/2.x/guides/getting-started
-**** DONE set up request logging
-**** DONE get host and port from environment
-**** DONE serve static files
-**** DONE ensure proper mimetype for static files
-**** DONE add route for canned graphql response
-**** DONE map fallback route to the =index.html= file
-**** DONE respond with CORS headers as needed
-**** DONE ensure =OPTIONS= handled for graphql route
-**** DONE remove the unused packages added in commit =378700b=
-*** DONE find a graphql server
-**** DONE look for support for GraphiQL or Playground
-**** DONE evaluate https://pub.dev/packages/graphql_server
-**** DONE evaluate https://pub.dev/packages/angel_graphql
-*** DONE set up angel graphql server
-**** DONE add =cors= into the middleware (for graphql route)
-**** DONE see how to write resolvers with angel_/graphql_server
-**** DONE find out how to define input objects: use =inputField()= helper
-**** DONE see how to do file uploads with =angel_graphql=
-***** defined as =GraphQLUploadType= in =angel_graphql= with name =Upload=
-**** DONE convert the =schema.graphql= to Dart types
-**** DONE define the =BigInt= type and use for filesize
-**** DONE write some basic tests for the schema
-*** DONE finish incorporating Angel web framework
-**** DONE consider splitting the dart and flutter code into separate packages
-***** angel tests work without errors when in a plain dart package
-***** DONE read https://code.visualstudio.com/docs/editor/multi-root-workspaces
-***** DONE move the flutter code into =client=
-***** DONE move the dart code into =server=
-***** DONE ensure =pendantic= is set up in =client=
-***** DONE ensure =pendantic= is set up in =server=
-***** DONE ensure the =.gitignore= files are good
-***** DONE copy the test code from =test-angel=
-***** DONE document the setup and build procedure
-****** edit each of the =README.md= files
-****** development process for running application
-******* console 1: cd server ; pub run bin/main.dart
-******* console 2: cd client ; flutter run -d chrome
-****** run =flutter build web= in =client=
-****** copy build output to =server/build/web=
-****** eventually automate this procedure
-**** DONE add testing: https://github.com/angel-dart/angel/tree/master/packages/test
-***** fallback response to unrouted request
-#+BEGIN_SRC shell
-$ curl -D - http://localhost:4040/foobar
-HTTP/1.1 200 OK
-accept-ranges: bytes
-cache-control: public, max-age=0
-content-length: 1031
-content-type: text/html
-etag: 1582075543000
-expires: Thu, 27 Feb 2020 04:03:09 GMT
-last-modified: Wed, 19 Feb 2020 01:25:43 GMT
-#+END_SRC
-***** static image request and response
-#+BEGIN_SRC shell
-$ curl -D - http://localhost:4040/icons/Icon-192.png
-HTTP/1.1 200 OK
-accept-ranges: bytes
-cache-control: public, max-age=0
-content-length: 5292
-content-type: image/png
-etag: 1581826445000
-expires: Thu, 27 Feb 2020 03:23:25 GMT
-last-modified: Sun, 16 Feb 2020 04:14:05 GMT
-#+END_SRC
-***** CORS request and response
-#+BEGIN_SRC shell
-$ curl -H 'Origin: example.com' -D - -X OPTIONS http://localhost:4040/graphql
-HTTP/1.1 204 No Content
-access-control-allow-origin: *
-access-control-allow-methods: GET,HEAD,PUT,PATCH,POST,DELETE
-content-length: 0
-content-type: text/plain
-#+END_SRC
-*** TODO assessment of available packages
-**** TODO write quick tests for everything tanuki needs [9/12]
-- [X] rocksdb
-- [X] detect orientation
-- [X] rotate image
-- [X] exif
-- [ ] jfif
-- [ ] tiff
-- [X] media type detection
-- [X] thumbnails
-- [X] web server
-- [X] GraphQL client
-- [X] GraphQL server
-- [ ] ffmpeg metadata access
-**** TODO assess Windows support for everything
-*** TODO Figure out what the GraphQL object field resolvers really do
-**** seems like they are not invoked (e.g. resolver for =filename= field of asset is not called)
-**** API doc suggests that Maps are probed automatically, so resolver is called if it is an object?
-*** TODO Get information from video files
-**** Dart packages for ffmpeg have limited platform support
-**** May be easier to write Dart code to extract the information from the file
-***** this would avoid having additional static file dependencies
-**** Alternatively, write our own wrapper for ffmpeg (it's just commands)
-*** TODO consider how to support multicore with isolates
-**** aqueduct does this apparently
-**** c.f. https://stablekernel.com/concurrency-in-server-side-dart/
-**** logging is handled by a single isolate
-**** read about async dart and "zones"

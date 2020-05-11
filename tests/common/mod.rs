@@ -99,7 +99,6 @@ pub fn build_basic_asset() -> Asset {
         import_date,
         caption: Some("#cat and #dog @hawaii".to_owned()),
         location: Some("hawaii".to_owned()),
-        duration: Some(5000),
         user_date: None,
         original_date: None,
         dimensions: None,
@@ -117,7 +116,6 @@ pub fn compare_assets(a: &Asset, b: &Asset) {
     assert_eq!(a.tags, b.tags);
     assert_eq!(a.import_date, b.import_date);
     assert_eq!(a.location, b.location);
-    assert_eq!(a.duration, b.duration);
     assert_eq!(a.user_date, b.user_date);
     assert_eq!(a.original_date, b.original_date);
 }

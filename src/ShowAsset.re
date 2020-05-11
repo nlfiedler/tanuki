@@ -7,7 +7,6 @@ type t = {
   "id": string,
   "caption": option(string),
   "datetime": Js.Json.t,
-  "duration": option(int),
   "filename": string,
   "filesize": Js.Json.t,
   "location": option(string),
@@ -23,7 +22,6 @@ module FetchAsset = [%graphql
         id
         caption
         datetime
-        duration
         filename
         filesize
         location
@@ -95,16 +93,6 @@ let assetDetails = (asset: t) =>
         <td> {ReasonReact.string("Size")} </td>
         <td> {ReasonReact.string(formatBigInt(asset##filesize))} </td>
       </tr>
-      {switch (asset##duration) {
-       | None => ReasonReact.null
-       | Some(value) =>
-         <tr>
-           <td> {ReasonReact.string("Duration")} </td>
-           <td>
-             {ReasonReact.string(string_of_int(value) ++ "seconds")}
-           </td>
-         </tr>
-       }}
       <tr>
         <td> {ReasonReact.string("Location")} </td>
         <td>

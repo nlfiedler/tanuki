@@ -30,8 +30,6 @@ pub struct Asset {
     pub caption: Option<String>,
     /// User-defined location of the asset.
     pub location: Option<String>,
-    /// Duration of (the video) asset in seconds.
-    pub duration: Option<u32>,
     /// User-specified date of the asset.
     pub user_date: Option<DateTime<Utc>>,
     /// Date of the asset as extracted from metadata.
@@ -52,7 +50,6 @@ impl Default for Asset {
             import_date: Utc::now(),
             caption: None,
             location: None,
-            duration: None,
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -127,12 +124,6 @@ impl Asset {
     /// Set the location field of the asset.
     pub fn location(&mut self, location: String) -> &mut Self {
         self.location = Some(location);
-        self
-    }
-
-    /// Set the duration field of the asset.
-    pub fn duration(&mut self, duration: u32) -> &mut Self {
-        self.duration = Some(duration);
         self
     }
 
@@ -217,7 +208,7 @@ mod tests {
         asset.tags(vec!["cat".to_owned(), "dog".to_owned()]);
         asset.import_date(Utc.ymd(2018, 5, 31).and_hms(21, 10, 11));
         asset.caption("this is a caption".to_owned());
-        asset.location("hawaii".to_owned()).duration(1024);
+        asset.location("hawaii".to_owned());
         asset.user_date(Utc.ymd(2017, 6, 9).and_hms(21, 10, 11));
         asset.original_date(Utc.ymd(2016, 10, 14).and_hms(21, 10, 11));
         asset.dimensions(Dimensions(640, 480));
@@ -232,7 +223,6 @@ mod tests {
         assert_eq!(asset.import_date.year(), 2018);
         assert_eq!(asset.caption.as_ref().unwrap(), "this is a caption");
         assert_eq!(asset.location.as_ref().unwrap(), "hawaii");
-        assert_eq!(*asset.duration.as_ref().unwrap(), 1024);
         assert_eq!(asset.user_date.as_ref().unwrap().year(), 2017);
         assert_eq!(asset.original_date.as_ref().unwrap().year(), 2016);
         assert_eq!(asset.dimensions.as_ref().unwrap().0, 640);
@@ -251,7 +241,6 @@ mod tests {
             import_date: Utc::now(),
             caption: None,
             location: None,
-            duration: None,
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -266,7 +255,6 @@ mod tests {
             import_date: Utc::now(),
             caption: None,
             location: None,
-            duration: None,
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -283,7 +271,6 @@ mod tests {
             import_date: Utc::now(),
             caption: None,
             location: None,
-            duration: None,
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -304,7 +291,6 @@ mod tests {
             import_date: Utc::now(),
             caption: None,
             location: None,
-            duration: None,
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -326,7 +312,6 @@ mod tests {
             import_date: Utc.ymd(2017, 4, 28).and_hms(11, 12, 59),
             caption: None,
             location: None,
-            duration: None,
             user_date: Some(Utc.ymd(2018, 5, 31).and_hms(21, 10, 11)),
             original_date: Some(Utc.ymd(2016, 8, 30).and_hms(12, 10, 30)),
             dimensions: None,
@@ -350,7 +335,6 @@ mod tests {
             import_date: Utc.ymd(2017, 4, 28).and_hms(11, 12, 59),
             caption: None,
             location: None,
-            duration: None,
             user_date: None,
             original_date: Some(Utc.ymd(2016, 8, 30).and_hms(12, 10, 30)),
             dimensions: None,
@@ -374,7 +358,6 @@ mod tests {
             import_date: Utc.ymd(2017, 4, 28).and_hms(11, 12, 59),
             caption: None,
             location: None,
-            duration: None,
             user_date: None,
             original_date: None,
             dimensions: None,

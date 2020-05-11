@@ -71,8 +71,6 @@ pub struct AssetModel {
     pub caption: Option<String>,
     #[serde(rename = "lo")]
     pub location: Option<String>,
-    #[serde(rename = "du")]
-    pub duration: Option<u32>,
     #[serde(rename = "ud")]
     pub user_date: Option<DateTime<Utc>>,
     #[serde(rename = "od")]
@@ -99,7 +97,6 @@ mod tests {
             import_date: Utc::now(),
             caption: None,
             location: None,
-            duration: None,
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -122,7 +119,6 @@ mod tests {
         assert_eq!(asset1.tags, model.tags);
         assert_eq!(asset1.import_date, model.import_date);
         assert_eq!(asset1.location, model.location);
-        assert_eq!(asset1.duration, model.duration);
         assert_eq!(asset1.user_date, model.user_date);
         assert_eq!(asset1.original_date, model.original_date);
         assert_eq!(asset1.dimensions, model.dimensions);
@@ -142,7 +138,6 @@ mod tests {
             import_date: Utc::now(),
             caption: Some("#cat and #dog @hawaii".to_owned()),
             location: Some("hawaii".to_owned()),
-            duration: Some(5000),
             user_date: Some(Utc::now()),
             original_date: Some(Utc::now()),
             dimensions: Some(Dimensions(640, 480)),
@@ -166,7 +161,6 @@ mod tests {
         assert_eq!(asset1.import_date, model.import_date);
         assert_eq!(asset1.caption, model.caption);
         assert_eq!(asset1.location, model.location);
-        assert_eq!(asset1.duration, model.duration);
         assert_eq!(asset1.user_date, model.user_date);
         assert_eq!(asset1.original_date, model.original_date);
         assert_eq!(asset1.dimensions, model.dimensions);

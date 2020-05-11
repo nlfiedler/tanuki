@@ -7,7 +7,6 @@ type t = {
   "id": string,
   "caption": option(string),
   "datetime": Js.Json.t,
-  "duration": option(int),
   "filename": string,
   "filesize": Js.Json.t,
   "location": option(string),
@@ -23,7 +22,6 @@ module FetchAsset = [%graphql
         id
         caption
         datetime
-        duration
         filename
         filesize
         location

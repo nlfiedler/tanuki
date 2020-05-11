@@ -69,7 +69,6 @@ mod tests {
             import_date: Utc::now(),
             caption: None,
             location: None,
-            duration: None,
             user_date: None,
             original_date: None,
             dimensions: None,

@@ -962,18 +962,6 @@
               "deprecationReason": null
             },
             {
-              "name": "duration",
-              "description": "For video assets, the duration in seconds.",
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "Int",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "location",
               "description": "Location information for the asset.",
               "args": [],
