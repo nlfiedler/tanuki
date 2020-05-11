@@ -11,6 +11,7 @@ type t = {
       "filename": string,
       "id": string,
       "location": option(string),
+      "mimetype": string,
     }),
 };
 
@@ -127,6 +128,13 @@ let brokenThumbnailPlaceholder = filename =>
   | Mimetypes.Unknown => "file-new-1.png"
   };
 
+let assetMimeType = (mimetype: string) =>
+  if (mimetype == "video/quicktime") {
+    "video/mp4";
+  } else {
+    mimetype;
+  };
+
 module ThumbCard = {
   type state = {thumbless: bool};
   type action =
@@ -162,12 +170,28 @@ module ThumbCard = {
                    alt=entry##filename
                    style={ReactDOMRe.Style.make(~width="auto", ())}
                  />
-               : <img
-                   src={"/thumbnail/240/240/" ++ entry##id}
-                   alt=entry##filename
-                   onError={_ => dispatch(MarkThumbless)}
-                   style={ReactDOMRe.Style.make(~width="auto", ())}
-                 />}
+               : (
+                 if (Js.String.startsWith("video/", entry##mimetype)) {
+                   <video width="240" controls=true preload="auto">
+                     <source
+                       src={"/asset/" ++ entry##id}
+                       type_={assetMimeType(entry##mimetype)}
+                     />
+                     {ReasonReact.string(
+                        "Bummer, your browser does not support the HTML5",
+                      )}
+                     <code> {ReasonReact.string("video")} </code>
+                     {ReasonReact.string("tag.")}
+                   </video>;
+                 } else {
+                   <img
+                     src={"/thumbnail/240/240/" ++ entry##id}
+                     alt=entry##filename
+                     onError={_ => dispatch(MarkThumbless)}
+                     style={ReactDOMRe.Style.make(~width="auto", ())}
+                   />;
+                 }
+               )}
             <small>
               {ReasonReact.string(formatDate(entry##datetime))}
             </small>

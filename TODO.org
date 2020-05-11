@@ -46,18 +46,7 @@
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** TODO video thumbnails
-**** there are already some videos that have thumbnails
-**** they have =.jpg= extension instead of the original (=.mov=)
-**** should these be retained, removed, or rebuilt?
-**** should these be generated on import, or as needed?
-*** TODO display videos in search results as tiny video players
-**** i.e. do not try to retrieve the thumbnails for videos
-*** TODO test video playback in all browsers
-**** =actix-files= should support range requests so Safari will be satisfied
 *** TODO ensure there is no longer any =dead_code= or remove the pragma
-*** TODO set up logging similar to zorigami
-**** should be effectively disabled for testing (i.e. off by default)
 *** TODO set up docker build for rust code and healthcheck
 **** c.f. https://github.com/mastertinner/healthcheck
 ***** it has been updated since the copy in zorigami
@@ -66,7 +55,7 @@
 **** stand-alone script that reads the database and writes out json
 *** TODO write an import binary for the new database
 **** stand-alone binary that reads json and populates new database
-**** read the image/video dimensions to insert into asset record
+**** read the image dimensions to insert into asset record
 **** append correct extension to asset identifier so it matches the assigned media type
 *** TODO test database migration on development system
 *** TODO perform migration on production system
@@ -75,6 +64,8 @@
 **** backup the database files somewhere safe
 **** run the new binary to populate new database from data dump
 **** deploy new docker container with new backend
+**** find and remove the video thumbnails (there will be a =.mov= and =.jpg= with the same id)
+***** just use shell commands and find them, there aren't that many
 *** TODO move =test/fixtures= under =tests=
 *** TODO remove JavaScript code from =src= and =test=
 *** TODO remove Node modules related to backend

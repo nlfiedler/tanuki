@@ -22,6 +22,7 @@ module QueryAssets = [%graphql
           datetime
           filename
           location
+          mimetype
         }
         count
       }

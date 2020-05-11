@@ -15,6 +15,7 @@ module SearchAssets = [%graphql
           datetime
           filename
           location
+          mimetype
         }
         count
       }

@@ -202,7 +202,7 @@ let assetPreview = (asset: t) =>
       controls=true
       preload="auto">
       <source
-        src={"/thumbnail/640/640/" ++ asset##id}
+        src={"/asset/" ++ asset##id}
         type_={assetMimeType(asset##mimetype)}
       />
       {ReasonReact.string("Bummer, your browser does not support the HTML5")}
