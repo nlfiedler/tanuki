@@ -10,6 +10,9 @@
   ],
   "bs-dependencies": [
     "bs-date-fns",
+    "bs-fetch",
+    "@zpnester/bs-filereader",
+    "bs-react-dropzone",
     "reason-apollo",
     "reason-react",
     "reductive",

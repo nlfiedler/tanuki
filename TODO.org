@@ -46,7 +46,7 @@
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** TODO work out how to support multiple file upload
+*** DONE work out how to support multiple file upload
 **** could theoretically allow the upload of multiple files
 **** with HTML forms, set =multiple= to =true= on the file input field
 **** this would fall under "quick import": just throw everything into the collection
@@ -54,18 +54,9 @@
 **** show thumbnails for the assets with some details and an input field
 **** just like mujina, the input field is just the caption, same processing as always
 **** DONE save one at a time or save all at once? all at once
-**** TODO improve the upload page
-***** try to show upload progress indicator
-****** c.f. https://codepen.io/PerfectIsShit/pen/zogMXP
-***** use the react-dropzone (https://react-dropzone.js.org)
-****** via https://github.com/erykpiast/bs-react-dropzone
-****** see the example with the "open file dialog" button
-***** try using the fetch API to upload the files
-****** https://github.com/reasonml-community/bs-fetch
-****** js example https://attacomsian.com/blog/uploading-files-using-fetch-api
-****** c.f. https://gist.github.com/svengiebel/d9d76d579ff908492dc60f49cd2b262e
-***** maybe should define the =File= type
-****** c.f. https://reasonml.chat/t/working-with-results-from-dom-api-like-file-arrays-and-objects/621
+**** DONE improve the upload page
+***** DONE use https://github.com/erykpiast/bs-react-dropzone
+***** DONE try using the fetch API to upload the files
 **** DONE add query for recently imported assets
 ***** asset will emit to new index (~newborn~) when it has no tags, caption, and location
 ***** query for newborn assets with optional "after" date/time

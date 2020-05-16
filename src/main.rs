@@ -62,6 +62,7 @@ lazy_static! {
 
 async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
     // iterate over multipart stream
+    let mut asset_ids: Vec<String> = Vec::new();
     while let Ok(Some(mut field)) = payload.try_next().await {
         let disposition = field.content_disposition().unwrap();
         let content_type = field.content_type().to_owned();
@@ -79,7 +80,7 @@ async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
             // filesystem operations are blocking, we have to use threadpool
             f = web::block(move || f.write_all(&data).map(|_| f)).await?;
         }
-        web::block(move || {
+        let asset = web::block(move || {
             let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
             let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
             let records = RecordRepositoryImpl::new(ctx);
@@ -89,10 +90,10 @@ async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
             usecase.call(params)
         })
         .await?;
+        asset_ids.push(asset.key);
     }
-    Ok(HttpResponse::Found()
-        .header(http::header::LOCATION, String::from("/recents"))
-        .finish())
+    let body = serde_json::to_string(&asset_ids)?;
+    Ok(HttpResponse::Ok().body(body))
 }
 
 fn graphiql() -> HttpResponse {
@@ -250,7 +251,7 @@ mod tests {
             .to_request();
         let resp = test::call_service(&mut app, req).await;
         // assert
-        assert!(resp.status().is_redirection());
+        assert!(resp.status().is_success());
     }
 
     #[actix_rt::test]

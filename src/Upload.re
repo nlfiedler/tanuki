@@ -1,142 +1,149 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-type validityState = {. "valid": bool};
 
-let uploadSelection = (event: ReactEvent.Form.t): list(string) => {
-  let validity: validityState = ReactEvent.Form.target(event)##validity;
-  if (!validity##valid) {
-    [];
-  } else {
-    // The list of files is a special object of type FileList with a
-    // `length` property and an `item(N)` method.
-    // c.f. https://developer.mozilla.org/en-US/docs/Web/API/FileList
-    let files = ReactEvent.Form.target(event)##files;
-    // Each File entry has name, size, type (mime type), lastModified.
-    // c.f. https://developer.mozilla.org/en-US/docs/Web/API/File
-    let getName = (file: Js.Json.t): option(Js.Json.t) => {
-      switch (Js.Json.decodeObject(file)) {
-      | Some(obj) => Js.Dict.get(obj, "name")
-      | None => None
-      };
-    };
-    // extract just the file names from the file list
-    let filenames = ref([]);
-    for (idx in 0 to files##length) {
-      let row = getName(files##item(idx));
-      filenames := [row, ...filenames^];
-    };
-    // discard anything that wasn't a valid json file entry
-    List.fold_right(
-      (a: option(Js.Json.t), b: list(string)): list(string) =>
-        switch (a) {
-        | Some(name) =>
-          switch (Js.Json.decodeString(name)) {
-          | Some(str) => [str, ...b]
-          | None => b
-          }
-        | None => b
-        },
-      filenames^,
-      [],
-    );
-  };
-};
+[@bs.new] external makeFormData: unit => Fetch.formData = "FormData";
 
-/*
- * Hack to detect if the browser supports drag and drop. This is not perfect,
- * but it is better than nothing.
- */
-let hasDraggable = [%raw
+[@bs.send]
+external appendFileData: (Fetch.formData, string, FileReader.File.t) => unit =
+  "append";
+
+let clickFileInput = [%raw
   {|
     function () {
-      var div = document.createElement('div');
-      return ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
+      document.getElementById('magic-file-input').click();
     }
   |}
 ];
 
-/*
- * After the upload to /import, the backend redirects the browser to the recent
- * imports page, and that is handled in the main module.
- */
+let sendOneFile = file => {
+  let formData = makeFormData();
+  appendFileData(formData, "asset", file);
+
+  Js.Promise.(
+    Fetch.fetchWithInit(
+      "/import",
+      Fetch.RequestInit.make(
+        ~method_=Post,
+        ~body=Fetch.BodyInit.makeWithFormData(formData),
+        (),
+      ),
+    )
+    |> then_(Fetch.Response.json)
+  );
+};
+
 module Component = {
-  type state = {uploadFilenames: list(string)};
+  type state = {
+    pendingFiles: list(FileReader.File.t),
+    nextFile: option(FileReader.File.t),
+  };
   type action =
-    | UploadSelection(list(string));
+    | SetPending(list(FileReader.File.t))
+    | StartUpload;
   [@react.component]
   let make = () => {
     let (state, dispatch) =
       React.useReducer(
-        (_state, action) =>
+        (state, action) =>
           switch (action) {
-          | UploadSelection(filenames) => {uploadFilenames: filenames}
+          | SetPending(files) => {...state, pendingFiles: files}
+          | StartUpload =>
+            switch (state.pendingFiles) {
+            | [] => {...state, nextFile: None}
+            | [hd, ...rest] => {pendingFiles: rest, nextFile: Some(hd)}
+            }
           },
-        {uploadFilenames: []},
+        {pendingFiles: [], nextFile: None},
       );
-    let helpDisplay = hasDraggable ? "block" : "none";
-    let uploadDisabled = List.length(state.uploadFilenames) == 0;
-    <div>
-      <div className="columns">
-        <div className="column is-one-third">
-          <form action="/import" method="post" encType="multipart/form-data">
-            <div className="control">
-              <div className="file has-name is-boxed">
-                <label className="file-label">
-                  <input
-                    className="file-input"
-                    id="fileInput"
-                    type_="file"
-                    multiple=true
-                    name="asset"
-                    required=true
-                    onChange={evt =>
-                      dispatch(UploadSelection(uploadSelection(evt)))
-                    }
-                  />
-                  <span className="file-cta">
-                    <span className="file-icon">
-                      <i className="fas fa-upload" />
-                    </span>
-                    <span className="file-label">
-                      {ReasonReact.string("Choose files...")}
-                    </span>
-                  </span>
-                </label>
-              </div>
-              <p
-                className="help"
-                style={ReactDOMRe.Style.make(~display=helpDisplay, ())}>
-                {ReasonReact.string(
-                   "You can drag and drop files on the above control",
-                 )}
-              </p>
-              <div className="control">
-                <input
-                  className="button is-primary"
-                  type_="submit"
-                  value="Upload"
-                  disabled=uploadDisabled
-                />
-              </div>
-            </div>
-          </form>
-        </div>
-        <div className="column is-two-thirds">
-          {List.length(state.uploadFilenames) == 0
-             ? React.null
-             : <h1 className="title">
-                 {ReasonReact.string("Files to be uploaded:")}
-               </h1>}
-          {ReasonReact.array(
-             {Array.map(
-                (entry: string) =>
-                  <p key=entry> {ReasonReact.string(entry)} </p>,
-                Array.of_list(state.uploadFilenames),
-              )},
-           )}
-        </div>
-      </div>
-    </div>;
+    let uploadButtonDisabled =
+      List.length(state.pendingFiles) == 0
+      || Belt.Option.isSome(state.nextFile);
+    let dropzoneDisabled = Belt.Option.isSome(state.nextFile);
+    let uploadButtonValue =
+      Belt.Option.isSome(state.nextFile) ? "Uploading..." : "Upload";
+    Belt.Option.forEach(state.nextFile, file =>
+      sendOneFile(file)
+      |> Js.Promise.then_(_ => dispatch(StartUpload) |> Js.Promise.resolve)
+      |> ignore
+    );
+    <ReactDropzone
+      multiple=true
+      disabled=dropzoneDisabled
+      onDrop={(acceptedFiles, _) =>
+        dispatch(SetPending(Array.to_list(acceptedFiles)))
+      }>
+      {({getInputProps, getRootProps}) => {
+         let inputProps = getInputProps();
+         let rootProps = getRootProps();
+         <div className="container">
+           <div className="notification has-text-centered">
+             {ReasonReact.string(
+                "Choose files to upload and click the Upload button below.",
+              )}
+           </div>
+           <div
+             style={ReactDOMRe.Style.make(~marginBottom="1.5em", ())}
+             className="dropzone"
+             onBlur={rootProps.onBlur}
+             onDragEnter={rootProps.onDragEnter}
+             onDragLeave={rootProps.onDragLeave}
+             onDragOver={rootProps.onDragOver}
+             onDragStart={rootProps.onDragStart}
+             onDrop={rootProps.onDrop}
+             onFocus={rootProps.onFocus}
+             onKeyDown={rootProps.onKeyDown}
+             ref={ReactDOMRe.Ref.callbackDomRef(rootProps.ref)}
+             tabIndex={rootProps.tabIndex}>
+             <div> {React.string("You can drag and drop files here")} </div>
+             <button type_="button" onClick=clickFileInput>
+               {React.string("Open File Dialog")}
+             </button>
+             <input
+               id="magic-file-input"
+               autoComplete={inputProps.autoComplete}
+               multiple={inputProps.multiple}
+               onChange={inputProps.onChange}
+               onClick={inputProps.onClick}
+               ref={ReactDOMRe.Ref.callbackDomRef(inputProps.ref)}
+               style={inputProps.style}
+               tabIndex={inputProps.tabIndex}
+               type_={inputProps.type_}
+             />
+           </div>
+           <div className="columns">
+             <div className="column is-two-thirds">
+               <h5 className="subtitle">
+                 {React.string("Files to be uploaded:")}
+               </h5>
+               <ul>
+                 {ReasonReact.array(
+                    Array.map(
+                      (entry: FileReader.File.t) => {
+                        let name = FileReader.File.name(entry);
+                        <li key=name> {ReasonReact.string(name)} </li>;
+                      },
+                      Array.of_list(state.pendingFiles),
+                    ),
+                  )}
+               </ul>
+             </div>
+             <div className="column is-one-third">
+               <div className="field is-grouped is-grouped-right">
+                 <div className="control">
+                   <input
+                     className="button is-primary"
+                     type_="submit"
+                     value=uploadButtonValue
+                     onClick={_ => dispatch(StartUpload)}
+                     disabled=uploadButtonDisabled
+                   />
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>;
+       }}
+    </ReactDropzone>;
   };
 };
