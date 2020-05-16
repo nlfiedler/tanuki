@@ -71,7 +71,6 @@
 ***** recent imports component will use that new bulk update mutation
 ***** if the asset's input field is blank, do not submit it
 ***** need to query updated selectors (tags, etc)
-*** TODO update the bulma CSS
 *** TODO the routes handled by =main.rs= should be prefixed with =/api= for clarity
 *** TODO recents update should stay on the recents page
 *** TODO the tags (and locations) are randomly order in the webui
