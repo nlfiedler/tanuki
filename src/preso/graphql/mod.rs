@@ -214,7 +214,7 @@ impl SearchMeta {
 }
 
 /// `AssetInput` is used to update the details of an asset.
-#[derive(GraphQLInputObject)]
+#[derive(Clone, GraphQLInputObject)]
 pub struct AssetInput {
     /// New set of tags to replace the existing set.
     tags: Option<Vec<String>>,
@@ -247,6 +247,15 @@ impl Into<crate::domain::usecases::update::AssetInput> for AssetInput {
             datetime: self.datetime,
         }
     }
+}
+
+/// `AssetInputId` is used to update the details of an asset.
+#[derive(GraphQLInputObject)]
+pub struct AssetInputId {
+    /// Identifier for the asset to be updated.
+    id: String,
+    /// Input for the asset.
+    input: AssetInput,
 }
 
 pub struct QueryRoot;
@@ -299,6 +308,26 @@ impl QueryRoot {
         let params = Params::new(checksum);
         let asset = usecase.call(params)?;
         Ok(asset)
+    }
+
+    /// Search for assets that were recently imported.
+    ///
+    /// Recently imported assets do not have any tags, location, or caption, and
+    /// thus are waiting for the user to give them additional details.
+    fn recent(executor: &Executor, since: Option<DateTime<Utc>>) -> FieldResult<SearchMeta> {
+        use crate::domain::usecases::recent::{Params, RecentImports};
+        use crate::domain::usecases::UseCase;
+        let source = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(source);
+        let usecase = RecentImports::new(Box::new(repo));
+        let mut params: Params = Default::default();
+        params.after_date = since;
+        let results: Vec<SearchResult> = usecase.call(params)?;
+        let total_count = results.len() as i32;
+        Ok(SearchMeta {
+            results,
+            count: total_count,
+        })
     }
 
     /// Search for assets by the given parameters.
@@ -391,6 +420,22 @@ impl MutationRoot {
         let params: Params = Params::new(id, asset.into());
         let result: Asset = usecase.call(params)?;
         Ok(result)
+    }
+
+    /// Update multiple assets with the given values.
+    ///
+    /// Returns the number of updated assets.
+    fn bulk_update(executor: &Executor, assets: Vec<AssetInputId>) -> FieldResult<i32> {
+        use crate::domain::usecases::update::{Params, UpdateAsset};
+        use crate::domain::usecases::UseCase;
+        let source = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(source);
+        let usecase = UpdateAsset::new(Box::new(repo));
+        for asset in assets.iter() {
+            let params: Params = Params::new(asset.id.clone(), asset.input.clone().into());
+            let result: Asset = usecase.call(params)?;
+        }
+        Ok(assets.len() as i32)
     }
 }
 
@@ -905,6 +950,90 @@ mod tests {
             });
         }
         results
+    }
+
+    #[test]
+    fn test_query_recent_ok() {
+        // arrange
+        let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
+            filename: "img_1234.png".to_owned(),
+            media_type: "image/png".to_owned(),
+            location: None,
+            datetime: Utc.ymd(2019, 5, 13).and_hms(20, 46, 11),
+        }];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_newborn()
+            .with(always())
+            .returning(move |_| Ok(results.clone()));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let mut vars = Variables::new();
+        let since = Some(Utc::now());
+        vars.insert("since".to_owned(), since.to_input_value());
+        let (res, errors) = juniper::execute(
+            r#"query Recent($since: DateTimeUtc) {
+                recent(since: $since) {
+                    results { id }
+                    count
+                }
+            }"#,
+            None,
+            &schema,
+            &vars,
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert_eq!(errors.len(), 0);
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("recent").unwrap();
+        let recent = res.as_object_value().unwrap();
+        let count_field = recent.get_field_value("count").unwrap();
+        let count_value = count_field.as_scalar_value::<i32>().unwrap();
+        assert_eq!(*count_value, 1);
+        let results_field = recent.get_field_value("results").unwrap();
+        let result_value = results_field.as_list_value().unwrap();
+        assert_eq!(result_value.len(), 1);
+
+        // check the result
+        let entry_object = result_value[0].as_object_value().unwrap();
+        let entry_field = entry_object.get_field_value("id").unwrap();
+        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
+        assert_eq!(entry_value, "cafebabe");
+    }
+
+    #[test]
+    fn test_query_recent_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_newborn()
+            .with(always())
+            .returning(|_| Err(err_msg("oh no")));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let mut vars = Variables::new();
+        let since = Some(Utc::now());
+        vars.insert("since".to_owned(), since.to_input_value());
+        let (res, errors) = juniper::execute(
+            r#"query Recent($since: DateTimeUtc) {
+                recent(since: $since) {
+                    results { id }
+                    count
+                }
+            }"#,
+            None,
+            &schema,
+            &vars,
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert!(res.is_null());
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].error().message().contains("oh no"));
     }
 
     #[test]
@@ -1532,5 +1661,89 @@ mod tests {
         let object = res.as_object_value().unwrap();
         let field = object.get_field_value("location").unwrap();
         assert!(field.is_null());
+    }
+
+    #[test]
+    fn test_mutation_bulk_update_ok() {
+        // arrange
+        let asset1 = Asset {
+            key: "monday6".to_owned(),
+            checksum: "cafebabe".to_owned(),
+            filename: "img_1234.jpg".to_owned(),
+            byte_length: 1048576,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["cat".to_owned(), "dog".to_owned()],
+            import_date: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
+            caption: None,
+            location: Some("hawaii".to_owned()),
+            user_date: None,
+            original_date: None,
+            dimensions: None,
+        };
+        let asset2 = Asset {
+            key: "tuesday7".to_owned(),
+            checksum: "cafed00d".to_owned(),
+            filename: "img_2468.jpg".to_owned(),
+            byte_length: 1048576,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["cat".to_owned(), "dog".to_owned()],
+            import_date: Utc.ymd(2018, 6, 9).and_hms(14, 0, 11),
+            caption: None,
+            location: Some("oakland".to_owned()),
+            user_date: None,
+            original_date: None,
+            dimensions: None,
+        };
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_get_asset()
+            .with(eq("monday6"))
+            .returning(move |_| Ok(asset1.clone()));
+        mock.expect_get_asset()
+            .with(eq("tuesday7"))
+            .returning(move |_| Ok(asset2.clone()));
+        mock.expect_put_asset().with(always()).returning(|_| Ok(()));
+        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        // act
+        let schema = create_schema();
+        let mut vars = Variables::new();
+        let assets = vec![
+            AssetInputId {
+                id: "monday6".to_owned(),
+                input: AssetInput {
+                    tags: Some(vec!["kitten".to_owned()]),
+                    caption: Some("saw a #cat playing with a #dog".to_owned()),
+                    location: Some("hawaii".to_owned()),
+                    datetime: None,
+                    mimetype: None,
+                },
+            },
+            AssetInputId {
+                id: "tuesday7".to_owned(),
+                input: AssetInput {
+                    tags: Some(vec!["kitten".to_owned()]),
+                    caption: Some("saw a #cat playing".to_owned()),
+                    location: Some("london".to_owned()),
+                    datetime: None,
+                    mimetype: None,
+                },
+            },
+        ];
+        vars.insert("assets".to_owned(), assets.to_input_value());
+        let (res, errors) = juniper::execute(
+            r#"mutation BulkUpdate($assets: [AssetInputId!]!) {
+                bulkUpdate(assets: $assets)
+            }"#,
+            None,
+            &schema,
+            &vars,
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert_eq!(errors.len(), 0);
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("bulkUpdate").unwrap();
+        let actual = res.as_scalar_value::<i32>().unwrap();
+        assert_eq!(*actual, 2);
     }
 }

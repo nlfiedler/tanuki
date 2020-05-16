@@ -64,6 +64,20 @@ let make = () => {
            ~props=
              ReactDOMRe.objToDOMProps({
                "className": "navbar-item tooltip has-tooltip-bottom",
+               "data-tooltip": "Recent imports",
+               "onClick": _ => ReasonReactRouter.push("/recents"),
+             }),
+           [|
+             <span className="icon">
+               <i className="fas fa-lg fa-history" />
+             </span>,
+           |],
+         )}
+        {ReactDOMRe.createElement(
+           "a",
+           ~props=
+             ReactDOMRe.objToDOMProps({
+               "className": "navbar-item tooltip has-tooltip-bottom",
                "data-tooltip": "Search assets",
                "onClick": _ => ReasonReactRouter.push("/search"),
              }),

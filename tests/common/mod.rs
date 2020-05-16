@@ -105,6 +105,44 @@ pub fn build_basic_asset() -> Asset {
     }
 }
 
+// Construct a simple asset whose import date/time is now.
+pub fn build_recent_asset(key: &str) -> Asset {
+    // use a predictable date for the date-related tests
+    let import_date = Utc::now();
+    Asset {
+        key: key.to_owned(),
+        checksum: "cafed00d".to_owned(),
+        filename: "img_2468.jpg".to_owned(),
+        byte_length: 1048576,
+        media_type: "image/jpeg".to_owned(),
+        tags: vec!["kitten".to_owned(), "puppy".to_owned()],
+        import_date,
+        caption: Some("#kitten and #puppy @london".to_owned()),
+        location: Some("london".to_owned()),
+        user_date: None,
+        original_date: None,
+        dimensions: None,
+    }
+}
+
+/// Construct a "newborn" asset instance with the given key and date.
+pub fn build_newborn_asset(key: &str, import_date: DateTime<Utc>) -> Asset {
+    Asset {
+        key: key.to_owned(),
+        checksum: "cafebabe".to_owned(),
+        filename: "img_1234.jpg".to_owned(),
+        byte_length: 1048576,
+        media_type: "image/jpeg".to_owned(),
+        tags: vec![],
+        import_date,
+        caption: None,
+        location: None,
+        user_date: None,
+        original_date: None,
+        dimensions: None,
+    }
+}
+
 /// Compare the two assets, including the key. This is useful for ensuring the
 /// serde is performed correctly, including maintaining the asset key.
 pub fn compare_assets(a: &Asset, b: &Asset) {

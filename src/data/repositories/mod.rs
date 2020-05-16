@@ -89,6 +89,10 @@ impl RecordRepository for RecordRepositoryImpl {
     ) -> Result<Vec<SearchResult>, Error> {
         self.datasource.query_date_range(after, before)
     }
+
+    fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+        self.datasource.query_newborn(after)
+    }
 }
 
 pub struct BlobRepositoryImpl {
@@ -689,6 +693,46 @@ mod tests {
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_date_range(after, before);
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_query_newborn_ok() {
+        // arrange
+        let results = vec![SearchResult {
+            asset_id: "cafebabe".to_owned(),
+            filename: "img_1234.jpg".to_owned(),
+            media_type: "image/jpeg".to_owned(),
+            location: None,
+            datetime: Utc::now(),
+        }];
+        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_newborn()
+            .with(eq(after))
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
+        let result = repo.query_newborn(after);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].filename, "img_1234.jpg");
+    }
+
+    #[test]
+    fn test_query_newborn_err() {
+        // arrange
+        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_query_newborn()
+            .with(eq(after))
+            .returning(move |_| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
+        let result = repo.query_newborn(after);
         // assert
         assert!(result.is_err());
     }

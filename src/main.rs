@@ -60,9 +60,8 @@ lazy_static! {
     };
 }
 
-async fn import_asset(mut payload: Multipart) -> Result<HttpResponse, Error> {
+async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
     // iterate over multipart stream
-    let mut asset_ids: Vec<String> = Vec::new();
     while let Ok(Some(mut field)) = payload.try_next().await {
         let disposition = field.content_disposition().unwrap();
         let content_type = field.content_type().to_owned();
@@ -80,7 +79,7 @@ async fn import_asset(mut payload: Multipart) -> Result<HttpResponse, Error> {
             // filesystem operations are blocking, we have to use threadpool
             f = web::block(move || f.write_all(&data).map(|_| f)).await?;
         }
-        let asset = web::block(move || {
+        web::block(move || {
             let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
             let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
             let records = RecordRepositoryImpl::new(ctx);
@@ -90,17 +89,10 @@ async fn import_asset(mut payload: Multipart) -> Result<HttpResponse, Error> {
             usecase.call(params)
         })
         .await?;
-        asset_ids.push(asset.key);
     }
-    if asset_ids.is_empty() {
-        Ok(HttpResponse::BadRequest().body("missing parts"))
-    } else {
-        // expecting only a single asset for the time being
-        let edit_url = format!("/assets/{}/edit", asset_ids[0]);
-        Ok(HttpResponse::Found()
-            .header(http::header::LOCATION, edit_url)
-            .finish())
-    }
+    Ok(HttpResponse::Found()
+        .header(http::header::LOCATION, String::from("/recents"))
+        .finish())
 }
 
 fn graphiql() -> HttpResponse {
@@ -202,7 +194,7 @@ async fn main() -> std::io::Result<()> {
             .route("/thumbnail/{w}/{h}/{id}", web::get().to(get_thumbnail))
             .route("/asset/{id}", web::get().to(raw_asset))
             .route("/asset/{id}", web::head().to(raw_asset))
-            .route("/import", web::post().to(import_asset))
+            .route("/import", web::post().to(import_assets))
             .service(Files::new("/", STATIC_PATH.clone()).index_file("index.html"))
             .default_service(web::get().to(default_index))
     })
@@ -229,11 +221,11 @@ mod tests {
     }
 
     #[actix_rt::test]
-    async fn test_import_asset_ok() {
+    async fn test_import_assets_ok() {
         let boundary = "----WebKitFormBoundary0gYa4NfETro6nMot";
         // arrange
         let mut app =
-            test::init_service(App::new().route("/import", web::post().to(import_asset))).await;
+            test::init_service(App::new().route("/import", web::post().to(import_assets))).await;
         // act
         let ct_header = format!("multipart/form-data; boundary={}", boundary);
         let filename = "./test/fixtures/fighting_kittens.jpg";

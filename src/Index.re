@@ -25,6 +25,7 @@ module App = {
       switch (url.path) {
       | ["assets", id, "edit"] => <EditAsset.Component assetId=id />
       | ["assets", id] => <ShowAsset.Component assetId=id />
+      | ["recents"] => <Imports.Component />
       | ["upload"] => <Upload.Component />
       | ["search"] => <Search.Component />
       | [] => <Home.Component />

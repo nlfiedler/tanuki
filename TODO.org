@@ -54,9 +54,37 @@
 **** show thumbnails for the assets with some details and an input field
 **** just like mujina, the input field is just the caption, same processing as always
 **** DONE save one at a time or save all at once? all at once
-**** TODO how to query assets to show them on the "recent imports" page?
-***** they do not have any tags, caption, or location (probably)
-***** can simply search by date (last 30 days) and filter those with tags/location
+**** TODO improve the upload page
+***** try to show upload progress indicator
+****** c.f. https://codepen.io/PerfectIsShit/pen/zogMXP
+***** use the react-dropzone (https://react-dropzone.js.org)
+****** via https://github.com/erykpiast/bs-react-dropzone
+****** see the example with the "open file dialog" button
+***** try using the fetch API to upload the files
+****** https://github.com/reasonml-community/bs-fetch
+****** js example https://attacomsian.com/blog/uploading-files-using-fetch-api
+****** c.f. https://gist.github.com/svengiebel/d9d76d579ff908492dc60f49cd2b262e
+***** maybe should define the =File= type
+****** c.f. https://reasonml.chat/t/working-with-results-from-dom-api-like-file-arrays-and-objects/621
+**** DONE add query for recently imported assets
+***** asset will emit to new index (~newborn~) when it has no tags, caption, and location
+***** query for newborn assets with optional "after" date/time
+**** DONE how to present the recent imports
+***** buttons to select past day, past week, past month, or year
+***** left column =is-one-third= shows the thumbnail (just the =img= part)
+***** show file name below the thumbnail (see =NewFile.js=)
+***** right column =is-two-thirds= shows the caption input field
+***** ~Save All Changes~ button to submit the changes
+**** DONE how to submit the changes?
+***** add a GraphQL mutation to submit multiple =AssetInput= at once
+***** recent imports component will use that new bulk update mutation
+***** if the asset's input field is blank, do not submit it
+***** need to query updated selectors (tags, etc)
+*** TODO search for =fa fa-= and try changing it to =fas fa-=
+*** TODO update the bulma CSS
+*** TODO the routes handled by =main.rs= should be prefixed with =/api= for clarity
+*** TODO the tags (and locations) are randomly order in the webui
+*** TODO the tag/location queries should be exact (~flower~ vs ~flowers~)
 *** TODO write an export script for the old database
 **** stand-alone script that reads the database and writes out json
 *** TODO write an import binary for the new database
@@ -91,6 +119,7 @@
 **** =cargo clean=
 **** =RUST_LOG=info cargo run=
 *** TODO document the clean architecture of this code base
+*** TODO update remaining Node modules for the time being
 ** Video metadata support
 *** https://github.com/alfg/mp4rs (MIT)
 **** creation time is in =moov.mvhd.creation_time=
@@ -98,9 +127,12 @@
 *** https://github.com/mozilla/mp4parse-rust (MPL-2.0)
 **** intentionally skips the creation time fields
 *** Fork the mp4rs code and add the missing functionality
-**** the mp4parse-rust code supports more types of boxes (it seems)
+**** mp4parse-rust seems to support more types of boxes
 **** it intentionally skips over the creation time fields
 *** Find the MPEG-4 specification on the [[https://en.wikipedia.org/wiki/MPEG-4_Part_14][wikipedia]] page
+*** Could just try invoking =ffprobe= and if that works, use it
+**** if it fails for any reason, ignore it
+**** https://github.com/nomalab/stainless-ffmpeg
 ** Frontend Rewrite
 *** Use Dart and Flutter
 *** Use Clean Architecture
@@ -240,10 +272,13 @@
 *** TODO Support wildcards in filename, mimetype (others?)
 **** likely would involve a full table scan
 ** Data Format Support
-*** EXIF reference
-**** https://www.media.mit.edu/pia/Research/deepview/exif.html
-*** could check for thumbnails in image EXIF data
-**** look for =JPEGThumbnail= or =TIFFThumbnail=
+*** Auto-populate missing fields on load
+**** when loading an asset, detect missing data (e.g. no original time)
+**** try reading the data from the asset and save to the asset record
+**** in the future, as more data formats are supported, can fill in the blanks
+*** Read other metadata formats
+**** XMP
+**** IPTC
 *** TODO support HEIF images
 **** https://crates.io/crates/libvips (MIT) reads/writes HEIF
 ***** this library easily crashes with a segmentation fault
@@ -266,6 +301,8 @@ include it in the database records.
 *** TODO Read metadata from PDF files
 **** probably has a creation date or some sort
 *** TODO Show the =AAE= files as plain text (they are xml)
+*** Reference
+**** EXIF: https://www.media.mit.edu/pia/Research/deepview/exif.html
 ** Bulk edit
 *** Short term solution akin to perkeep web interface
 - [ ] Easy selection with hover checkbox button

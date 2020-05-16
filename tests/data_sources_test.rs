@@ -453,3 +453,48 @@ fn test_query_by_mimetype() {
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
 }
+
+#[test]
+fn test_query_newborn() {
+    let db_path = DBPath::new("_test_query_newborn");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    let date1 = Utc.ymd(2011, 8, 30).and_hms(12, 12, 12);
+    let date2 = Utc.ymd(2013, 8, 30).and_hms(12, 12, 12);
+    let date3 = Utc.ymd(2015, 8, 30).and_hms(12, 12, 12);
+    let date4 = Utc.ymd(2017, 8, 30).and_hms(12, 12, 12);
+    let date5 = Utc.ymd(2019, 8, 30).and_hms(12, 12, 12);
+
+    // zero assets
+    assert_eq!(datasource.query_newborn(date1).unwrap().len(), 0);
+
+    // one asset
+    let import_date = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+    let asset = common::build_newborn_asset("abc123", import_date);
+    datasource.put_asset(&asset).unwrap();
+    assert_eq!(datasource.query_newborn(date4).unwrap().len(), 1);
+    assert_eq!(datasource.query_newborn(date5).unwrap().len(), 0);
+
+    // multiple assets
+    let asset = common::build_newborn_asset("monday6", date1);
+    datasource.put_asset(&asset).unwrap();
+    let asset = common::build_newborn_asset("tuesday7", date2);
+    datasource.put_asset(&asset).unwrap();
+    let asset = common::build_newborn_asset("wednesday8", date3);
+    datasource.put_asset(&asset).unwrap();
+    let asset = common::build_newborn_asset("thursday9", date4);
+    datasource.put_asset(&asset).unwrap();
+    let asset = common::build_newborn_asset("friday10", date5);
+    datasource.put_asset(&asset).unwrap();
+    // include one that should not appear in the results
+    let asset = common::build_recent_asset("rightnow1");
+    datasource.put_asset(&asset).unwrap();
+
+    let actual = datasource.query_newborn(date3).unwrap();
+    assert_eq!(actual.len(), 4);
+    assert!(!actual[0].asset_id.starts_with("asset/"));
+    assert!(actual.iter().any(|l| l.asset_id == "wednesday8"));
+    assert!(actual.iter().any(|l| l.asset_id == "thursday9"));
+    assert!(actual.iter().any(|l| l.asset_id == "friday10"));
+    assert!(actual.iter().any(|l| l.asset_id == "abc123"));
+}

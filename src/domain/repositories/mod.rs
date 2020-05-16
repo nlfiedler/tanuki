@@ -63,6 +63,9 @@ pub trait RecordRepository {
         after: DateTime<Utc>,
         before: DateTime<Utc>,
     ) -> Result<Vec<SearchResult>, Error>;
+
+    /// Query for assets that lack any tags, caption, and location.
+    fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
 }
 
 ///

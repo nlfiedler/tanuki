@@ -56,6 +56,9 @@ pub trait EntityDataSource {
         before: DateTime<Utc>,
     ) -> Result<Vec<SearchResult>, Error>;
 
+    /// Query for assets that lack any tags, caption, and location.
+    fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
+
     /// Return the number of assets stored in the data source.
     fn count_assets(&self) -> Result<u64, Error>;
 
@@ -89,6 +92,7 @@ impl EntityDataSourceImpl {
             "by_media_type",
             "by_tags",
             "by_year",
+            "newborn",
         ];
         std::fs::create_dir_all(&db_path)?;
         let database = database::Database::new(db_path, views, Box::new(mapper))?;
@@ -192,6 +196,13 @@ impl EntityDataSource for EntityDataSourceImpl {
         let key_a = encode_datetime(&after);
         let key_b = encode_datetime(&before);
         let query_results = self.database.query_range("by_date", key_a, key_b)?;
+        let search_results = convert_results(query_results);
+        Ok(search_results)
+    }
+
+    fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+        let key = encode_datetime(&after);
+        let query_results = self.database.query_greater_than("newborn", key)?;
         let search_results = convert_results(query_results);
         Ok(search_results)
     }
@@ -300,6 +311,11 @@ impl Document for Asset {
                 encode_datetime(&self.import_date)
             };
             emitter.emit(&best_date, Some(&idv))?;
+        } else if view == "newborn" {
+            if self.tags.is_empty() && self.caption.is_none() && self.location.is_none() {
+                let best_date = encode_datetime(&value.datetime);
+                emitter.emit(&best_date, Some(&idv))?;
+            }
         }
         Ok(())
     }
