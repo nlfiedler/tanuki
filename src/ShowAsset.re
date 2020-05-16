@@ -132,7 +132,7 @@ module PreviewPanel = {
             onClick={_ =>
               ReasonReact.Router.push("/assets/" ++ asset##id ++ "/edit")
             }>
-            <span className="icon"> <i className="fa fa-edit" /> </span>
+            <span className="icon"> <i className="fas fa-edit" /> </span>
           </a>
         </div>
         <div className="card-image has-text-centered">
