@@ -174,7 +174,7 @@ module ThumbCard = {
                  if (Js.String.startsWith("video/", entry##mimetype)) {
                    <video width="240" controls=true preload="auto">
                      <source
-                       src={"/asset/" ++ entry##id}
+                       src={"/api/asset/" ++ entry##id}
                        type_={assetMimeType(entry##mimetype)}
                      />
                      {ReasonReact.string(
@@ -185,7 +185,7 @@ module ThumbCard = {
                    </video>;
                  } else {
                    <img
-                     src={"/thumbnail/240/240/" ++ entry##id}
+                     src={"/api/thumbnail/240/240/" ++ entry##id}
                      alt=entry##filename
                      onError={_ => dispatch(MarkThumbless)}
                      style={ReactDOMRe.Style.make(~width="auto", ())}

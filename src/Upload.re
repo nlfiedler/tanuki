@@ -22,7 +22,7 @@ let sendOneFile = file => {
 
   Js.Promise.(
     Fetch.fetchWithInit(
-      "/import",
+      "/api/import",
       Fetch.RequestInit.make(
         ~method_=Post,
         ~body=Fetch.BodyInit.makeWithFormData(formData),

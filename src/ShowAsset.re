@@ -63,7 +63,7 @@ let assetPreview = (asset: t) =>
       controls=true
       preload="auto">
       <source
-        src={"/asset/" ++ asset##id}
+        src={"/api/asset/" ++ asset##id}
         type_={assetMimeType(asset##mimetype)}
       />
       {ReasonReact.string("Bummer, your browser does not support the HTML5")}
@@ -71,11 +71,11 @@ let assetPreview = (asset: t) =>
       {ReasonReact.string("tag.")}
     </video>;
   } else {
-    <a href={"/asset/" ++ asset##id}>
+    <a href={"/api/asset/" ++ asset##id}>
       <figure className="image">
         <img
           style={ReactDOMRe.Style.make(~display="inline", ~width="auto", ())}
-          src={"/thumbnail/640/640/" ++ asset##id}
+          src={"/api/thumbnail/640/640/" ++ asset##id}
           alt=asset##filename
         />
       </figure>
