@@ -101,6 +101,7 @@ module Component = {
     let buildLocations = (locations: array(t)) => {
       let visibleLocations =
         if (state.showingAll || Array.length(locations) <= 25) {
+          Array.sort((a, b) => compare(a##label, b##label), locations);
           locations;
         } else {
           selectTopLocations(reduxState, locations);

@@ -71,7 +71,6 @@
 ***** recent imports component will use that new bulk update mutation
 ***** if the asset's input field is blank, do not submit it
 ***** need to query updated selectors (tags, etc)
-*** TODO the tags (and locations) are randomly order in the webui
 *** TODO the tag/location queries should be exact (~flower~ vs ~flowers~)
 *** TODO write an export script for the old database
 **** stand-alone script that reads the database and writes out json

@@ -30,11 +30,18 @@ module Component = {
   let make = () => {
     let state = Redux.useSelector(stateSelector);
     let dispatch = Redux.useDispatch();
-    let buildYears = (years: array(t)) =>
+    let buildYears = (years: array(t)) => {
+      Array.sort(
+        (a, b) =>
+          compare(int_of_string(a##label), int_of_string(b##label)),
+        years,
+      );
       Array.mapi(
         (index, year: t) => {
           let isSelected =
-            Belt.Option.eq(state, Some(year##label), (a, b) => String.compare(a, b) == 0);
+            Belt.Option.eq(state, Some(year##label), (a, b) =>
+              String.compare(a, b) == 0
+            );
           let className = isSelected ? "tag is-dark" : "tag is-light";
           <a
             key={string_of_int(index)}
@@ -47,6 +54,7 @@ module Component = {
         },
         years,
       );
+    };
     <GetYearsQuery>
       ...{({result}) =>
         switch (result) {

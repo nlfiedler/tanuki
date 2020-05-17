@@ -99,6 +99,7 @@ module Component = {
     let buildTags = (tags: array(t)) => {
       let visibleTags =
         if (state.showingAll || Array.length(tags) <= 25) {
+          Array.sort((a, b) => compare(a##label, b##label), tags);
           tags;
         } else {
           selectTopTags(reduxState, tags);
