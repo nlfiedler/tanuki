@@ -56,8 +56,14 @@ impl super::UseCase<Asset, Params> for ImportAsset {
     fn call(&self, params: Params) -> Result<Asset, Error> {
         let digest = checksum_file(&params.filepath)?;
         let asset = match self.records.get_asset_by_digest(&digest)? {
-            Some(a) => a,
+            Some(a) => {
+                // since the blob repo is not involved, must remove the
+                // temporary upload file here
+                std::fs::remove_file(&params.filepath)?;
+                a
+            }
             None => {
+                // blob repo will ensure the temporary file is (re)moved
                 let asset = self.create_asset(digest, params.clone())?;
                 self.records.put_asset(&asset)?;
                 self.blobs.store_blob(&params.filepath, &asset)?;
@@ -235,6 +241,7 @@ mod tests {
     use crate::domain::repositories::MockBlobRepository;
     use crate::domain::repositories::MockRecordRepository;
     use mockall::predicate::*;
+    use tempfile::tempdir;
 
     #[test]
     fn test_checksum_file() -> Result<(), io::Error> {
@@ -304,7 +311,10 @@ mod tests {
     fn test_import_asset_new() {
         // arrange
         let digest = "sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07";
-        let infile = PathBuf::from("./test/fixtures/dcp_1069.jpg");
+        let original = PathBuf::from("./test/fixtures/dcp_1069.jpg");
+        let tmpdir = tempdir().unwrap();
+        let infile = tmpdir.path().join("dcp_1069.jpg");
+        std::fs::copy(original, &infile).unwrap();
         let infile_copy = infile.clone();
         let mut records = MockRecordRepository::new();
         records
@@ -341,6 +351,10 @@ mod tests {
     fn test_import_asset_existing() {
         // arrange
         let digest = "sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07";
+        let original = PathBuf::from("./test/fixtures/dcp_1069.jpg");
+        let tmpdir = tempdir().unwrap();
+        let infile = tmpdir.path().join("dcp_1069.jpg");
+        std::fs::copy(original, &infile).unwrap();
         let asset1 = Asset {
             key: "abc123".to_owned(),
             checksum: digest.to_owned(),
@@ -363,7 +377,6 @@ mod tests {
         let blobs = MockBlobRepository::new();
         // act
         let usecase = ImportAsset::new(Box::new(records), Box::new(blobs));
-        let infile = PathBuf::from("./test/fixtures/dcp_1069.jpg");
         let media_type = mime::IMAGE_JPEG;
         let params = Params::new(infile, media_type);
         let result = usecase.call(params);
