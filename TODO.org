@@ -46,31 +46,6 @@
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** DONE work out how to support multiple file upload
-**** could theoretically allow the upload of multiple files
-**** with HTML forms, set =multiple= to =true= on the file input field
-**** this would fall under "quick import": just throw everything into the collection
-**** after upload, show the "recent imports" page so the user can make edits
-**** show thumbnails for the assets with some details and an input field
-**** just like mujina, the input field is just the caption, same processing as always
-**** DONE save one at a time or save all at once? all at once
-**** DONE improve the upload page
-***** DONE use https://github.com/erykpiast/bs-react-dropzone
-***** DONE try using the fetch API to upload the files
-**** DONE add query for recently imported assets
-***** asset will emit to new index (~newborn~) when it has no tags, caption, and location
-***** query for newborn assets with optional "after" date/time
-**** DONE how to present the recent imports
-***** buttons to select past day, past week, past month, or year
-***** left column =is-one-third= shows the thumbnail (just the =img= part)
-***** show file name below the thumbnail (see =NewFile.js=)
-***** right column =is-two-thirds= shows the caption input field
-***** ~Save All Changes~ button to submit the changes
-**** DONE how to submit the changes?
-***** add a GraphQL mutation to submit multiple =AssetInput= at once
-***** recent imports component will use that new bulk update mutation
-***** if the asset's input field is blank, do not submit it
-***** need to query updated selectors (tags, etc)
 *** TODO write an export script for the old database
 **** stand-alone script that reads the database and writes out json
 *** TODO write an import binary for the new database
