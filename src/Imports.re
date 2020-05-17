@@ -300,8 +300,8 @@ module BulkUpdate = {
         | Data(_result) =>
           <div>
             {
-              ReasonReact.Router.push("/");
-              ReasonReact.string("going home...");
+              ReasonReact.Router.push("/recents");
+              ReasonReact.string("(re)loading...");
             }
           </div>
         | NotCalled =>
