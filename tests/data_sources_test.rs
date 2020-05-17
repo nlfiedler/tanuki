@@ -245,6 +245,34 @@ fn test_query_by_tags() {
 }
 
 #[test]
+fn test_query_by_tags_exact() {
+    let db_path = DBPath::new("_test_query_by_tags_exact");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    // ensure key matches are exact (cat vs cats)
+    let mut asset = common::build_basic_asset();
+    asset.key = "monday6".to_owned();
+    asset.filename = "img_2345.jpg".to_owned();
+    asset.tags = vec!["birds".to_owned(), "dogs".to_owned()];
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "tuesday7".to_owned();
+    asset.filename = "img_3456.jpg".to_owned();
+    asset.tags = vec!["cat".to_owned(), "dog".to_owned()];
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "wednesday8".to_owned();
+    asset.filename = "img_4567.jpg".to_owned();
+    asset.tags = vec!["cats".to_owned(), "bird".to_owned()];
+    datasource.put_asset(&asset).unwrap();
+    let tags = vec!["bird".to_owned()];
+    let actual = datasource.query_by_tags(tags).unwrap();
+    assert_eq!(actual.len(), 1);
+    assert!(!actual[0].asset_id.starts_with("asset/"));
+    assert!(actual[0].filename == "img_4567.jpg");
+}
+
+#[test]
 fn test_query_by_dates() {
     let db_path = DBPath::new("_test_query_by_dates");
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();

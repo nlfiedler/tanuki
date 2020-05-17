@@ -177,7 +177,10 @@ impl Database {
         key: K,
     ) -> Result<Vec<mokuroku::QueryResult>, Error> {
         let mut db = self.db.lock().unwrap();
-        let iter = db.query_by_key(view, key)?;
+        // add the index key separator to get an "exact" match
+        let mut exact_key: Vec<u8> = Vec::from(key.as_ref());
+        exact_key.push(0);
+        let iter = db.query_by_key(view, &exact_key)?;
         Ok(iter.collect())
     }
 
@@ -194,7 +197,15 @@ impl Database {
         N: AsRef<[u8]>,
     {
         let mut db = self.db.lock().unwrap();
-        db.query_all_keys(view, keys)
+        let exact_keys: Vec<Vec<u8>> = keys
+            .into_iter()
+            .map(|v| {
+                let mut exact_key = Vec::from(v.as_ref());
+                exact_key.push(0);
+                exact_key
+            })
+            .collect();
+        db.query_all_keys(view, exact_keys)
     }
 
     ///
