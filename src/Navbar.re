@@ -18,7 +18,7 @@ let make = () => {
     state.menuActive ? "navbar-menu is-active" : "navbar-menu";
   <nav id="navbar" className="navbar is-transparent" role="navigation">
     <div className="navbar-brand">
-      <img src="/images/exposure-level.png" width="48" height="48" />
+      <img src="/images/tanuki.png" width="48" height="48" />
       <a
         role="button"
         className="navbar-burger"
