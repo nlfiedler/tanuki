@@ -8,6 +8,7 @@ repository = "https://github.com/nlfiedler/tanuki"
 readme = "README.md"
 keywords = ["assets", "photos", "videos"]
 license = "BSD-2-Clause"
+default-run = "tanuki"
 
 [dependencies]
 actix-cors = "0.2.0"

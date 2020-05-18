@@ -46,13 +46,12 @@
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** TODO write an export script for the old database
+*** DONE write an export script for the old database
 **** stand-alone script that reads the database and writes out json
-*** TODO write an import binary for the new database
+*** DONE write an import binary for the new database
 **** stand-alone binary that reads json and populates new database
 **** read the image dimensions to insert into asset record
-**** append correct extension to asset identifier so it matches the assigned media type
-*** TODO test database migration on development system
+*** DONE test database migration on development system
 *** TODO set up docker build for rust code and healthcheck
 **** c.f. https://github.com/mastertinner/healthcheck
 ***** it has been updated since the copy in zorigami
