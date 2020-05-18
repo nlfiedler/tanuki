@@ -18,7 +18,7 @@ let make = () => {
     state.menuActive ? "navbar-menu is-active" : "navbar-menu";
   <nav id="navbar" className="navbar is-transparent" role="navigation">
     <div className="navbar-brand">
-      <img src="/images/tanuki.png" width="48" height="48" />
+      <img src="/images/tanuki.png" width="108" height="108" />
       <a
         role="button"
         className="navbar-burger"
@@ -30,6 +30,18 @@ let make = () => {
       </a>
     </div>
     <div className=menuClassName id="navMenu">
+      <div
+        className="navbar-start"
+        style={ReactDOMRe.Style.make(
+          ~display="flex",
+          ~alignItems="center",
+          ~paddingLeft="3em",
+          (),
+        )}>
+        <h4 className="subtitle is-4">
+          {React.string("all your assets r belong to us")}
+        </h4>
+      </div>
       <div className="navbar-end">
         {ReactDOMRe.createElement(
            "a",
