@@ -875,7 +875,7 @@ mod tests {
         let tmpdir = tempdir().unwrap();
         let basepath = tmpdir.path().join("blobs");
         // copy test file to temporary path as it will be (re)moved
-        let original = PathBuf::from("./test/fixtures/fighting_kittens.jpg");
+        let original = PathBuf::from("./tests/fixtures/fighting_kittens.jpg");
         let copy = tmpdir.path().join("fighting_kittens.jpg");
         std::fs::copy(original, &copy).unwrap();
         // act
@@ -923,40 +923,40 @@ mod tests {
     #[test]
     fn test_get_image_orientation() {
         // these files have the orientation captured in the name
-        let filepath = Path::new("./test/fixtures/f1t.jpg");
+        let filepath = Path::new("./tests/fixtures/f1t.jpg");
         let actual = get_image_orientation(filepath);
         assert_eq!(actual.unwrap(), 1);
-        let filepath = Path::new("./test/fixtures/f2t.jpg");
+        let filepath = Path::new("./tests/fixtures/f2t.jpg");
         let actual = get_image_orientation(filepath);
         assert_eq!(actual.unwrap(), 2);
-        let filepath = Path::new("./test/fixtures/f3t.jpg");
+        let filepath = Path::new("./tests/fixtures/f3t.jpg");
         let actual = get_image_orientation(filepath);
         assert_eq!(actual.unwrap(), 3);
-        let filepath = Path::new("./test/fixtures/f4t.jpg");
+        let filepath = Path::new("./tests/fixtures/f4t.jpg");
         let actual = get_image_orientation(filepath);
         assert_eq!(actual.unwrap(), 4);
-        let filepath = Path::new("./test/fixtures/f5t.jpg");
+        let filepath = Path::new("./tests/fixtures/f5t.jpg");
         let actual = get_image_orientation(filepath);
         assert_eq!(actual.unwrap(), 5);
-        let filepath = Path::new("./test/fixtures/f6t.jpg");
+        let filepath = Path::new("./tests/fixtures/f6t.jpg");
         let actual = get_image_orientation(filepath);
         assert_eq!(actual.unwrap(), 6);
-        let filepath = Path::new("./test/fixtures/f7t.jpg");
+        let filepath = Path::new("./tests/fixtures/f7t.jpg");
         let actual = get_image_orientation(filepath);
         assert_eq!(actual.unwrap(), 7);
-        let filepath = Path::new("./test/fixtures/f8t.jpg");
+        let filepath = Path::new("./tests/fixtures/f8t.jpg");
         let actual = get_image_orientation(filepath);
         assert_eq!(actual.unwrap(), 8);
 
         // now test the real-world images
-        let filepath = Path::new("./test/fixtures/dcp_1069.jpg");
+        let filepath = Path::new("./tests/fixtures/dcp_1069.jpg");
         let actual = get_image_orientation(filepath);
         assert_eq!(actual.unwrap(), 1);
         // (this image does not have an EXIF header)
-        let filepath = Path::new("./test/fixtures/animal-cat-cute-126407.jpg");
+        let filepath = Path::new("./tests/fixtures/animal-cat-cute-126407.jpg");
         let actual = get_image_orientation(filepath);
         assert!(actual.is_err());
-        let filepath = Path::new("./test/fixtures/fighting_kittens.jpg");
+        let filepath = Path::new("./tests/fixtures/fighting_kittens.jpg");
         let actual = get_image_orientation(filepath);
         assert_eq!(actual.unwrap(), 8);
     }
@@ -966,7 +966,7 @@ mod tests {
         use image::GenericImageView;
 
         // has EXIF header, does not need orientation
-        let filepath = Path::new("./test/fixtures/dcp_1069.jpg");
+        let filepath = Path::new("./tests/fixtures/dcp_1069.jpg");
         let result = create_thumbnail(filepath, 300, 300);
         let data = result.unwrap();
         let img = image::load_from_memory(&data).unwrap();
@@ -975,7 +975,7 @@ mod tests {
         assert_eq!(height, 199);
 
         // (this image does not have an EXIF header)
-        let filepath = Path::new("./test/fixtures/animal-cat-cute-126407.jpg");
+        let filepath = Path::new("./tests/fixtures/animal-cat-cute-126407.jpg");
         let result = create_thumbnail(filepath, 300, 300);
         let data = result.unwrap();
         let img = image::load_from_memory(&data).unwrap();
@@ -984,7 +984,7 @@ mod tests {
         assert_eq!(height, 168);
 
         // has EXIF header and requires orientation (swap width/height)
-        let filepath = Path::new("./test/fixtures/fighting_kittens.jpg");
+        let filepath = Path::new("./tests/fixtures/fighting_kittens.jpg");
         let result = create_thumbnail(filepath, 300, 300);
         let data = result.unwrap();
         let img = image::load_from_memory(&data).unwrap();

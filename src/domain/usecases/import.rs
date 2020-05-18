@@ -245,7 +245,7 @@ mod tests {
 
     #[test]
     fn test_checksum_file() -> Result<(), io::Error> {
-        let infile = Path::new("./test/fixtures/fighting_kittens.jpg");
+        let infile = Path::new("./tests/fixtures/fighting_kittens.jpg");
         let sha256 = checksum_file(&infile)?;
         assert_eq!(
             sha256,
@@ -288,7 +288,7 @@ mod tests {
 
     #[test]
     fn test_get_file_name() {
-        let filepath = Path::new("./test/fixtures/fighting_kittens.jpg");
+        let filepath = Path::new("./tests/fixtures/fighting_kittens.jpg");
         let actual = get_file_name(&filepath);
         assert_eq!(actual, "fighting_kittens.jpg");
     }
@@ -311,7 +311,7 @@ mod tests {
     fn test_import_asset_new() {
         // arrange
         let digest = "sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07";
-        let original = PathBuf::from("./test/fixtures/dcp_1069.jpg");
+        let original = PathBuf::from("./tests/fixtures/dcp_1069.jpg");
         let tmpdir = tempdir().unwrap();
         let infile = tmpdir.path().join("dcp_1069.jpg");
         std::fs::copy(original, &infile).unwrap();
@@ -351,7 +351,7 @@ mod tests {
     fn test_import_asset_existing() {
         // arrange
         let digest = "sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07";
-        let original = PathBuf::from("./test/fixtures/dcp_1069.jpg");
+        let original = PathBuf::from("./tests/fixtures/dcp_1069.jpg");
         let tmpdir = tempdir().unwrap();
         let infile = tmpdir.path().join("dcp_1069.jpg");
         std::fs::copy(original, &infile).unwrap();
@@ -390,7 +390,7 @@ mod tests {
     #[test]
     fn test_get_original_date() {
         // has EXIF header and the original date/time value
-        let filename = "./test/fixtures/dcp_1069.jpg";
+        let filename = "./tests/fixtures/dcp_1069.jpg";
         let mt = mime::IMAGE_JPEG;
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
@@ -401,25 +401,25 @@ mod tests {
         assert_eq!(date.day(), 3);
 
         // does not have date/time original value
-        let filename = "./test/fixtures/fighting_kittens.jpg";
+        let filename = "./tests/fixtures/fighting_kittens.jpg";
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
         assert!(actual.is_err());
 
         // does not have EXIF header at all
-        let filename = "./test/fixtures/animal-cat-cute-126407.jpg";
+        let filename = "./tests/fixtures/animal-cat-cute-126407.jpg";
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
         assert!(actual.is_err());
 
         // not an image
-        let filename = "./test/fixtures/lorem-ipsum.txt";
+        let filename = "./tests/fixtures/lorem-ipsum.txt";
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
         assert!(actual.is_err());
 
         // video file
-        // let filename = "./test/fixtures/100_1206.MOV";
+        // let filename = "./tests/fixtures/100_1206.MOV";
         // let mt: mime::Mime = "video/mp4".parse().unwrap();
         // let filepath = Path::new(filename);
         // let actual = get_original_date(&mt, filepath);
@@ -432,7 +432,7 @@ mod tests {
 
     #[test]
     fn test_get_dimensions() {
-        let filename = "./test/fixtures/dcp_1069.jpg";
+        let filename = "./tests/fixtures/dcp_1069.jpg";
         let mt = mime::IMAGE_JPEG;
         let filepath = Path::new(filename);
         let actual = get_dimensions(&mt, filepath);
@@ -442,7 +442,7 @@ mod tests {
         assert_eq!(dim.1, 292);
 
         // rotated sideways (dimensions are flipped)
-        let filename = "./test/fixtures/fighting_kittens.jpg";
+        let filename = "./tests/fixtures/fighting_kittens.jpg";
         let filepath = Path::new(filename);
         let actual = get_dimensions(&mt, filepath);
         assert!(actual.is_ok());
@@ -450,7 +450,7 @@ mod tests {
         assert_eq!(dim.0, 384);
         assert_eq!(dim.1, 512);
 
-        let filename = "./test/fixtures/animal-cat-cute-126407.jpg";
+        let filename = "./tests/fixtures/animal-cat-cute-126407.jpg";
         let filepath = Path::new(filename);
         let actual = get_dimensions(&mt, filepath);
         assert!(actual.is_ok());
@@ -459,7 +459,7 @@ mod tests {
         assert_eq!(dim.1, 1163);
 
         // not an image
-        let filename = "./test/fixtures/lorem-ipsum.txt";
+        let filename = "./tests/fixtures/lorem-ipsum.txt";
         let filepath = Path::new(filename);
         let actual = get_dimensions(&mt, filepath);
         assert!(actual.is_err());

@@ -229,7 +229,7 @@ mod tests {
             test::init_service(App::new().route("/import", web::post().to(import_assets))).await;
         // act
         let ct_header = format!("multipart/form-data; boundary={}", boundary);
-        let filename = "./test/fixtures/fighting_kittens.jpg";
+        let filename = "./tests/fixtures/fighting_kittens.jpg";
         let raw_file = std::fs::read(filename).unwrap();
         let mut payload: Vec<u8> = Vec::new();
         let mut boundary_before = String::from("--");
@@ -257,7 +257,7 @@ mod tests {
     #[actix_rt::test]
     async fn test_get_thumbnail_ok() {
         // arrange
-        let src_filename = "./test/fixtures/dcp_1069.jpg";
+        let src_filename = "./tests/fixtures/dcp_1069.jpg";
         let mut filepath = UPLOAD_PATH.clone();
         filepath.push("dcp_1069.jpg");
         std::fs::copy(src_filename, &filepath).unwrap();

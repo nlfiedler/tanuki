@@ -57,22 +57,18 @@
 ***** it has been updated since the copy in zorigami
 **** look at https://github.com/bencord0/docker-healthcheck/
 *** TODO perform migration on production system
-**** stop current docker container
-**** use export script to get dump of current database
-**** use import binary to create new database
-**** backup the database files somewhere safe
-**** deploy new docker container with new backend
-**** find and remove the video thumbnails (there will be a =.mov= and =.jpg= with the same id)
+**** DONE stop current docker container
+**** DONE use export script to get dump of current database
+**** DONE use import binary to create new database
+**** DONE deploy new docker container with new backend
+**** TODO find and remove the video thumbnails (there will be a =.mov= and =.jpg= with the same id)
 ***** just use shell commands and find them, there aren't that many
-*** TODO update the provisioning Ansible tanuki deployment
 *** TODO remove mujina from mac mini
-*** TODO move =test/fixtures= under =tests=
-*** TODO remove JavaScript code from =src= and =test=
-*** TODO remove Node modules related to backend
-*** TODO remove remaining old backend files
-**** =public/schema.graphql=
-**** =views/=
-*** TODO update remaining Node modules for the time being
+*** TODO seems like the default sort order is backward
+**** add support for sorting by identifier or checksum in search usecase
+**** need to add sort params to =SearchParams= in graphql module
+**** default the sort order to descending date
+**** graphql tests need to sort by checksum or identifier (dates are non-deterministic)
 ** Video metadata support
 *** https://github.com/alfg/mp4rs (MIT)
 **** creation time is in =moov.mvhd.creation_time=
@@ -86,6 +82,9 @@
 *** Could just try invoking =ffprobe= and if that works, use it
 **** if it fails for any reason, ignore it
 **** https://github.com/nomalab/stainless-ffmpeg
+** Large File Import
+*** TODO on upload screen, provide input field to accessible file path
+*** TODO create a record, move file into place
 ** Frontend Rewrite
 *** Use Dart and Flutter
 *** Use Clean Architecture
