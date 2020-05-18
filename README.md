@@ -2,17 +2,15 @@
 
 A system for importing, storing, categorizing, browsing, displaying, and
 searching files, primarily images and videos. Attributes regarding the files are
-stored in a schema-less, document-oriented database. Designed to store millions
-of files. Provides a simple web interface with basic browsing and editing
-capabilities.
+stored in a key-value store. Designed to store millions of files. Provides a
+simple web interface with basic browsing and editing capabilities.
 
 ## Building and Testing
 
 ### Prerequisites
 
+* [Rust](https://www.rust-lang.org) stable (2018 edition)
 * [Node.js](https://nodejs.org/) LTS
-* [Dart](https://dart.dev) SDK 2.1 or higher
-* [Flutter](https://flutter.dev) beta channel with web enabled
 * [Gulp](https://gulpjs.com) CLI: `npm -g install gulp-cli`
 
 #### Example for macOS
@@ -28,24 +26,24 @@ $ brew install node
 $ npm -g install gulp-cli
 ```
 
-### ReasonML/Node.js
+### Building, Testing, Starting the Backend
 
-To start an instance configured for development, run the following command.
+```shell
+$ cargo update
+$ cargo build
+$ cargo test
+$ RUST_LOG=info cargo run --release
+```
+
+For more verbose debugging output, use `RUST_LOG=debug` in the command above.
+For extremely verbose logging, use `RUST_LOG=trace` which will dump large
+volumes of output.
+
+### Building, Testing, Starting the Frontend
 
 ```shell
 $ npm install
-$ npm test
-$ npm start
-```
-
-#### Windows
-
-For Windows, use PowerShell commands to run the tests this way:
-
-```shell
-PS> Set-Item -path env:NODE_PATH -value src
-PS> Set-Item -path env:NODE_CONFIG_ENV -value test
-PS> npx mocha --delay
+$ gulp build
 ```
 
 ### Updating the GraphQL PPX schema
@@ -58,26 +56,12 @@ server in another window):
 $ npx apollo-codegen introspect-schema http://localhost:3000/graphql --output graphql_schema.json
 ```
 
-### Dart/Flutter
-
-Code base is split into two packages, one for the server (Dart) and one for the
-client (Flutter), which avoids the tools becoming confused with mixing the two.
-
-Start the server and client in separate consoles.
-
-1. `cd server ; pub run bin/main.dart`
-1. `cd client ; flutter run -d chrome`
-
-Eventually the deployment will likely involve running `flutter build web` in the
-`client` directory and copying the build artifacts to the `server` build
-directory, and deploying from there.
-
 ## Deploying
 
 ### Using Docker
 
 The base directory contains a `docker-compose.yml` file which is used to build
-the application as a Docker container.
+the application in stages and produce a relatively small final image.
 
 On the build host:
 
@@ -96,15 +80,45 @@ $ docker-compose rm -f -s
 $ docker-compose up -d
 ```
 
+## Tools
+
+### Finding Outdated Crates
+
+Use https://github.com/kbknapp/cargo-outdated and run `cargo outdated`
+
+### License checking
+
+Use the https://github.com/Nemo157/cargo-lichking `cargo` utility. To install:
+
+```shell
+$ OPENSSL_ROOT_DIR=`brew --prefix openssl` \
+  OPENSSL_LIB_DIR=`brew --prefix openssl`/lib \
+  OPENSSL_INCLUDE_DIR=`brew --prefix openssl`/include \
+  cargo install cargo-lichking
+```
+
+To get the list of licenses, and check for incompatibility:
+
+```shell
+$ cargo lichking list
+$ cargo lichking check
+```
+
+However, need to look for "gpl" manually in the `list` output, as most licenses
+that are compatible with MIT/Apache are also compatible with GPL.
+
 ## Architecture
 
 Assets stored as-is in date/time formatted directory structure, metadata stored
-in a document-oriented database, an HTTP server backend, and a single-page
-application for a front-end. Backend written in JavaScript running on
-[Node.js](https://nodejs.org/), front-end written in
+in a key-value store, an HTTP server backend, and a single-page application for
+a front-end. Backend written in Rust, front-end written in
 [ReasonML](https://reasonml.github.io/en/), database is
-[PouchDB](https://pouchdb.com). The client/server protocol consists mostly of
+[RocksDB](https://rocksdb.org). The client/server protocol consists mostly of
 [GraphQL](https://graphql.org) queries and HTTP requests for asset data.
+
+### Clean Architecture
+
+The backend is designed using the [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) in which the application is divided into three layers: domain, data, and presentation. The domain layer defines the "policy" or business logic of the application, consisting of entities, use cases, and repositories. The data layer is the interface to the underlying system, defining the data models that are ultimately stored in a database. The presentation layer is what the user generally sees, the web interface, and to some extent, the GraphQL interface.
 
 ## Design
 
@@ -114,11 +128,11 @@ When an asset is added to the system, several steps are performed:
 
 1. A SHA256 checksum of the file contents is computed.
 1. An identifier based on the import date/time, filename extension,
-   and [ULID](https://github.com/ulid/javascript) is generated.
+   and [ULID](https://github.com/ulid/spec) is generated.
 1. A minimal document, with checksum and identifier, is stored in the database.
 1. The asset is stored in a directory structure according to import date/time.
     - e.g. `2017/05/13/1630/01ce0d526z6cyzgm02ap0jv281.jpg`
-    - the minutes are rounded to :00, :15, :30, or :45
+    - the minutes are rounded to `:00`, `:15`, `:30`, or `:45`
     - the base filename is the ULID
     - the original file extension is retained
 
@@ -128,7 +142,7 @@ When an asset is added to the system, several steps are performed:
     - ULID sorts by time, so order of insertion is retained
 * Number of directories and files at any particular level is reasonable
     - at most 96 directories per calendar day
-    - unlikely to have many files per 15 minute block
+    - files per directory limited to what can be uploaded in 15 minutes
 * Can rebuild some of the metadata from the directory structure and file names
     - import date/time from file path
     - media type from extension
@@ -172,11 +186,11 @@ However, this design had several problems:
 ## Project History
 
 Original idea was inspired by [perkeep](https://perkeep.org) (née camlistore).
-Since installing [Go](https://golang.org) on
-[Solaris](https://www.oracle.com/solaris/) was difficult, another solution was
-desired. That is, given the operating system there would not be any readily
-available software to serve the purpose. Would later learn that this application
-space is referred to as "digital asset management."
+However, installing [Go](https://golang.org) on
+[Solaris](https://www.oracle.com/solaris/) was difficult. Given the operating
+system there would not be any readily available software to serve the purpose.
+Would later learn that this application space is referred to as "digital asset
+management."
 
 ### July 2014
 

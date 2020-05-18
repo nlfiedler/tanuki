@@ -5,13 +5,20 @@ services:
     build:
       context: .
     environment:
-      NODE_PATH: src
-      # need to use different config paths for container
-      NODE_ENV: docker
+      DB_PATH: /database
+      UPLOAD_PATH: /uploads
+      ASSETS_PATH: /blobstore
       PORT: 3000
+      RUST_LOG: "info"
     ports:
       - "3000:3000"
     volumes:
       - type: bind
-        source: ./tmp
-        target: /tanuki
+        source: ./tmp/blobs
+        target: /blobstore
+      - type: bind
+        source: ./tmp/rocksdb
+        target: /database
+      - type: bind
+        source: ./tmp/uploads
+        target: /uploads

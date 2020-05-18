@@ -52,33 +52,26 @@
 **** stand-alone binary that reads json and populates new database
 **** read the image dimensions to insert into asset record
 *** DONE test database migration on development system
-*** TODO set up docker build for rust code and healthcheck
+*** DONE set up docker build for rust code and healthcheck
 **** c.f. https://github.com/mastertinner/healthcheck
 ***** it has been updated since the copy in zorigami
 **** look at https://github.com/bencord0/docker-healthcheck/
 *** TODO perform migration on production system
-**** stop and remove the current docker container
-**** use script to get dump of current database
+**** stop current docker container
+**** use export script to get dump of current database
+**** use import binary to create new database
 **** backup the database files somewhere safe
-**** run the new binary to populate new database from data dump
 **** deploy new docker container with new backend
 **** find and remove the video thumbnails (there will be a =.mov= and =.jpg= with the same id)
 ***** just use shell commands and find them, there aren't that many
+*** TODO update the provisioning Ansible tanuki deployment
+*** TODO remove mujina from mac mini
 *** TODO move =test/fixtures= under =tests=
 *** TODO remove JavaScript code from =src= and =test=
 *** TODO remove Node modules related to backend
-*** TODO remove the incomplete =server= Dart code
 *** TODO remove remaining old backend files
 **** =public/schema.graphql=
 **** =views/=
-*** TODO document build instructions for Rust in README
-**** =cargo build=
-**** =cargo test=
-**** =cargo update=
-**** =cargo outdated=
-**** =cargo clean=
-**** =RUST_LOG=info cargo run=
-*** TODO document the clean architecture of this code base
 *** TODO update remaining Node modules for the time being
 ** Video metadata support
 *** https://github.com/alfg/mp4rs (MIT)
