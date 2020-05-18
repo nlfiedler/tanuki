@@ -228,7 +228,11 @@ module BulkForm = {
         </div>
       </div>;
     };
-    <form onSubmit={_ => onSubmit(state.captions)}>
+    <form
+      onSubmit={evt => {
+        evt->ReactEvent.Synthetic.preventDefault;
+        onSubmit(state.captions);
+      }}>
       <div className="notification has-text-centered">
         {ReasonReact.string(
            "Fill in some or all of the fields and click the Save button below.",
