@@ -39,7 +39,7 @@ let make = () => {
           (),
         )}>
         <h4 className="subtitle is-4">
-          {React.string("all your assets r belong to us")}
+          {React.string("all your assets are belong to us")}
         </h4>
       </div>
       <div className="navbar-end">
