@@ -39,7 +39,7 @@ module Component = {
     nextFile: option(FileReader.File.t),
   };
   type action =
-    | SetPending(list(FileReader.File.t))
+    | AddPending(list(FileReader.File.t))
     | StartUpload;
   [@react.component]
   let make = () => {
@@ -47,7 +47,10 @@ module Component = {
       React.useReducer(
         (state, action) =>
           switch (action) {
-          | SetPending(files) => {...state, pendingFiles: files}
+          | AddPending(files) => {
+              ...state,
+              pendingFiles: List.append(state.pendingFiles, files),
+            }
           | StartUpload =>
             switch (state.pendingFiles) {
             | [] => {...state, nextFile: None}
@@ -71,7 +74,7 @@ module Component = {
       multiple=true
       disabled=dropzoneDisabled
       onDrop={(acceptedFiles, _) =>
-        dispatch(SetPending(Array.to_list(acceptedFiles)))
+        dispatch(AddPending(Array.to_list(acceptedFiles)))
       }>
       {({getInputProps, getRootProps}) => {
          let inputProps = getInputProps();
