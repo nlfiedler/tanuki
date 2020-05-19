@@ -305,11 +305,10 @@ module BulkUpdate = {
           Js.log(error);
           <div> {ReasonReact.string(error##message)} </div>;
         | Data(_result) =>
-          <div>
-            {
-              ReasonReact.Router.push("/recents");
-              ReasonReact.string("(re)loading...");
-            }
+          <div className="container">
+            <div className="notification has-text-centered">
+              {ReasonReact.string("Changes submitted")}
+            </div>
           </div>
         | NotCalled =>
           if (Array.length(results) > 0) {
