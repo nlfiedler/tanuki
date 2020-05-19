@@ -526,3 +526,39 @@ fn test_query_newborn() {
     assert!(actual.iter().any(|l| l.asset_id == "friday10"));
     assert!(actual.iter().any(|l| l.asset_id == "abc123"));
 }
+
+#[test]
+fn test_query_newborn_old() {
+    let db_path = DBPath::new("_test_query_newborn_old");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    let import_date = Utc.ymd(1940, 8, 20).and_hms(12, 12, 12);
+    let asset = common::build_newborn_asset("monday1", import_date);
+    datasource.put_asset(&asset).unwrap();
+
+    let import_date = Utc.ymd(1960, 8, 20).and_hms(12, 12, 12);
+    let asset = common::build_newborn_asset("tuesday2", import_date);
+    datasource.put_asset(&asset).unwrap();
+
+    let import_date = Utc.ymd(1970, 8, 20).and_hms(12, 12, 12);
+    let asset = common::build_newborn_asset("wednesday3", import_date);
+    datasource.put_asset(&asset).unwrap();
+
+    let import_date = Utc.ymd(1980, 8, 20).and_hms(12, 12, 12);
+    let asset = common::build_newborn_asset("thursday4", import_date);
+    datasource.put_asset(&asset).unwrap();
+
+    let import_date = Utc.ymd(2010, 5, 13).and_hms(21, 10, 11);
+    let asset = common::build_newborn_asset("friday5", import_date);
+    datasource.put_asset(&asset).unwrap();
+
+    // query for a time "less than" the Unix time, but "greater than" the
+    // earliest asset in the system
+    let query_date = Utc.ymd(1950, 5, 13).and_hms(21, 10, 11);
+    let actual = datasource.query_newborn(query_date).unwrap();
+    assert_eq!(actual.len(), 4);
+    assert!(actual.iter().any(|l| l.asset_id == "tuesday2"));
+    assert!(actual.iter().any(|l| l.asset_id == "wednesday3"));
+    assert!(actual.iter().any(|l| l.asset_id == "thursday4"));
+    assert!(actual.iter().any(|l| l.asset_id == "friday5"));
+}

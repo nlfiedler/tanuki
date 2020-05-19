@@ -201,8 +201,22 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+        let epoch = Utc.timestamp(0, 0);
         let key = encode_datetime(&after);
-        let query_results = self.database.query_greater_than("newborn", key)?;
+        let query_results = if epoch > after {
+            // Times before Unix time are larger than times after when encoded
+            // with base32 hex, so first query for anything larger than that
+            // value, then query for anything between the zero time and now.
+            let mut results1 = self.database.query_greater_than("newborn", key)?;
+            let epoch_key = encode_datetime(&epoch);
+            let now = Utc::now();
+            let now_key = encode_datetime(&now);
+            let mut results2 = self.database.query_range("newborn", epoch_key, now_key)?;
+            results1.append(&mut results2);
+            results1
+        } else {
+            self.database.query_greater_than("newborn", key)?
+        };
         let search_results = convert_results(query_results);
         Ok(search_results)
     }
@@ -313,8 +327,9 @@ impl Document for Asset {
             emitter.emit(&best_date, Some(&idv))?;
         } else if view == "newborn" {
             if self.tags.is_empty() && self.caption.is_none() && self.location.is_none() {
-                let best_date = encode_datetime(&value.datetime);
-                emitter.emit(&best_date, Some(&idv))?;
+                // use the import date for newborn, not the "best" date
+                let import_date = encode_datetime(&self.import_date);
+                emitter.emit(&import_date, Some(&idv))?;
             }
         }
         Ok(())

@@ -59,18 +59,21 @@ type timeRange =
   | Day
   | Week
   | Month
-  | Year;
+  | AllTime;
 
 let makeDate = (from: timeRange) => {
-  let base = Js.Date.make();
-  let date =
-    switch (from) {
-    | Day => DateFns.subDays(1., base)
-    | Week => DateFns.subDays(7., base)
-    | Month => DateFns.subDays(30., base)
-    | Year => DateFns.subYears(1., base)
-    };
-  DateFns.format("YYYY-MM-DD[T]HH:mm:ssZ", date);
+  let daysAgo = (ago: float) => {
+    let base = Js.Date.make();
+    let date = DateFns.subDays(ago, base);
+    let fmt = DateFns.format("YYYY-MM-DD[T]HH:mm:ssZ", date);
+    Js.Json.string(fmt);
+  };
+  switch (from) {
+  | Day => daysAgo(1.)
+  | Week => daysAgo(7.)
+  | Month => daysAgo(30.)
+  | AllTime => Js.Json.null
+  };
 };
 
 let buttonBar = (count, showing, dispatch) => {
@@ -96,7 +99,7 @@ let buttonBar = (count, showing, dispatch) => {
       <p className="level-item"> {makeButton(Day, "Day")} </p>
       <p className="level-item"> {makeButton(Week, "Week")} </p>
       <p className="level-item"> {makeButton(Month, "Month")} </p>
-      <p className="level-item"> {makeButton(Year, "Year")} </p>
+      <p className="level-item"> {makeButton(AllTime, "All Time")} </p>
     </div>
   </nav>;
 };
@@ -342,7 +345,7 @@ module Component = {
           },
         {showing: Day},
       );
-    let since = Js.Json.string(makeDate(state.showing));
+    let since = makeDate(state.showing);
     let query = RecentImports.make(~since, ());
     let setShowing = range => dispatch(SetShowing(range));
     <RecentImportsQuery variables=query##variables>

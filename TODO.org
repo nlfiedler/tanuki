@@ -46,28 +46,11 @@
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** DONE write an export script for the old database
-**** stand-alone script that reads the database and writes out json
-*** DONE write an import binary for the new database
-**** stand-alone binary that reads json and populates new database
-**** read the image dimensions to insert into asset record
-*** DONE test database migration on development system
-*** DONE set up docker build for rust code and healthcheck
-**** c.f. https://github.com/mastertinner/healthcheck
-***** it has been updated since the copy in zorigami
-**** look at https://github.com/bencord0/docker-healthcheck/
-*** TODO perform migration on production system
-**** DONE stop current docker container
-**** DONE use export script to get dump of current database
-**** DONE use import binary to create new database
-**** DONE deploy new docker container with new backend
-**** TODO find and remove the video thumbnails (there will be a =.mov= and =.jpg= with the same id)
-***** just use shell commands and find them, there aren't that many
 *** TODO remove mujina from mac mini
 *** TODO seems like the default sort order is backward
 **** add support for sorting by identifier or checksum in search usecase
 **** need to add sort params to =SearchParams= in graphql module
-**** default the sort order to descending date
+**** default the sort order to descending date in graphql module
 **** graphql tests need to sort by checksum or identifier (dates are non-deterministic)
 ** Video metadata support
 *** https://github.com/alfg/mp4rs (MIT)
@@ -94,7 +77,6 @@
 ***** import
 ***** export
 ***** edit
-*** TODO Move the files under =client/= to the root
 *** TODO find out how to upload a file
 **** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
 **** example code: https://github.com/rjcalifornia/web_upload
@@ -159,7 +141,7 @@
 ***** click on item in a list/grid and it expands to the details page
 **** can use =DataTable= to display labeled data (like asset details, metadata)
 **** use pointer enter/exit events to start playing a video in place
-*** TODO remove ReasonML related code and Node modules
+*** TODO remove ReasonML and Node files
 **** should be nothing JavaScript/Node/Reason left at this point
 **** =bsconfig.json=
 **** =graphql_schema.json=
@@ -250,6 +232,7 @@ include it in the database records.
 **** write a data migration to process existing assets
 **** existing location values should be stored in a "label" field
 **** exact location information would be stored separate from label
+*** TODO Display thumbnails for PDF files
 *** TODO Read metadata from PDF files
 **** probably has a creation date or some sort
 *** TODO Show the =AAE= files as plain text (they are xml)
@@ -315,7 +298,7 @@ include it in the database records.
 *** Showing the licenses/about dialog
 **** c.f. "licenses" on https://flutter.dev/docs/resources/faq
 ** Mobile web support
-*** Progressive Web App support in Flutter is coming
+*** Progressive Web App support in Flutter is coming as of 2020/04
 *** Use PWA to get app-like behavior on mobile devices
 *** Look for package (like image_picker) that enables user to select photos to upload
 ** Mobile app
