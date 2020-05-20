@@ -194,7 +194,10 @@ module BulkForm = {
         key={
           entry##id;
         }>
-        <div className="column is-one-third">
+        <div
+          className="column is-one-third"
+          onClick={_ => ReasonReact.Router.push("/assets/" ++ entry##id)}
+          style={ReactDOMRe.Style.make(~cursor="pointer", ())}>
           <ThumbCard entry />
           <small style={ReactDOMRe.Style.make(~wordWrap="break-word", ())}>
             {ReasonReact.string(entry##filename)}
