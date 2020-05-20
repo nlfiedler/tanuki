@@ -121,10 +121,11 @@ module Component = {
                </h5>
                <ul>
                  {ReasonReact.array(
-                    Array.map(
-                      (entry: FileReader.File.t) => {
+                    Array.mapi(
+                      (idx, entry: FileReader.File.t) => {
                         let name = FileReader.File.name(entry);
-                        <li key=name> {ReasonReact.string(name)} </li>;
+                        let key = name ++ string_of_int(idx);
+                        <li key> {ReasonReact.string(name)} </li>;
                       },
                       Array.of_list(state.pendingFiles),
                     ),

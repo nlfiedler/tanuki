@@ -1,4 +1,14 @@
 * Tanuki
+** Run books
+*** Write a shared google doc that explains how to set up tanuki
+**** install docker (desktop)
+**** set up github key for repo
+**** clone tanuki repo
+**** run docker commands to build
+**** push the image
+**** clone provisioning repo
+**** install python, ansible (using homebrew)
+**** ansible-playbook to install tanuki
 ** Backend Rewrite
 *** Clean Architecture design
 **** use dependency injection to connect parts together
@@ -46,11 +56,15 @@
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
+*** TODO recents image should link to show asset page
 *** TODO seems like the default sort order is backward
 **** add support for sorting by identifier or checksum in search usecase
 **** need to add sort params to =SearchParams= in graphql module
 **** default the sort order to descending date in graphql module
 **** graphql tests need to sort by checksum or identifier (dates are non-deterministic)
+** Shared Folder Cleanup
+*** write a script to checksum files and check if they are in tanuki
+*** anything found in tanuki is deleted
 ** Video metadata support
 *** https://github.com/alfg/mp4rs (MIT)
 **** creation time is in =moov.mvhd.creation_time=
@@ -277,6 +291,11 @@ include it in the database records.
 *** maintain an uber record for tracking database version
 *** also the serde library is quite flexible with adding/removing fields
 ** Architecture Review
+*** Concurrent modifications
+**** Consider how to manage multiple users making changes
+**** e.g. two people trying to update the same set of recent imports
+**** e.g. two people trying to edit the same asset
+**** maybe keep an edit history or revision number in separate records
 *** GraphQL server
 **** consider https://github.com/async-graphql/async-graphql as alternative to juniper
 ***** handles multipart requests (file uploads)
