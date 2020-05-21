@@ -120,6 +120,13 @@ module Component = {
                  {React.string("Files to be uploaded:")}
                </h5>
                <ul>
+                 {switch (state.nextFile) {
+                  | None => React.null
+                  | Some(next) =>
+                    <li key="uploading">
+                      <em> {React.string(FileReader.File.name(next))} </em>
+                    </li>
+                  }}
                  {ReasonReact.array(
                     Array.mapi(
                       (idx, entry: FileReader.File.t) => {
