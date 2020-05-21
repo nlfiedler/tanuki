@@ -56,11 +56,8 @@
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** TODO seems like the default sort order is backward
-**** add support for sorting by identifier or checksum in search usecase
-**** need to add sort params to =SearchParams= in graphql module
-**** default the sort order to descending date in graphql module
-**** graphql tests need to sort by checksum or identifier (dates are non-deterministic)
+*** TODO Upload page should show file currently being uploaded
+**** when the last file is uploading, it is unclear what user is waiting for
 ** Shared Folder Cleanup
 *** write a script to checksum files and check if they are in tanuki
 *** anything found in tanuki is deleted

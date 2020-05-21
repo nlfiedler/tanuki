@@ -167,6 +167,34 @@ fn sort_results(results: &mut Vec<SearchResult>, params: &Params) {
                     sort_by_date_descending
                 }
             }
+            SortField::Identifier => {
+                if order == SortOrder::Ascending {
+                    sort_by_id_ascending
+                } else {
+                    sort_by_id_descending
+                }
+            }
+            SortField::Filename => {
+                if order == SortOrder::Ascending {
+                    sort_by_filename_ascending
+                } else {
+                    sort_by_filename_descending
+                }
+            }
+            SortField::MediaType => {
+                if order == SortOrder::Ascending {
+                    sort_by_mimetype_ascending
+                } else {
+                    sort_by_mimetype_descending
+                }
+            }
+            SortField::Location => {
+                if order == SortOrder::Ascending {
+                    sort_by_location_ascending
+                } else {
+                    sort_by_location_descending
+                }
+            }
         };
         results.sort_unstable_by(compare)
     }
@@ -180,10 +208,46 @@ fn sort_by_date_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Orde
     b.datetime.cmp(&a.datetime)
 }
 
+fn sort_by_id_ascending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    a.asset_id.cmp(&b.asset_id)
+}
+
+fn sort_by_id_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    b.asset_id.cmp(&a.asset_id)
+}
+
+fn sort_by_filename_ascending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    a.filename.cmp(&b.filename)
+}
+
+fn sort_by_filename_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    b.filename.cmp(&a.filename)
+}
+
+fn sort_by_mimetype_ascending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    a.media_type.cmp(&b.media_type)
+}
+
+fn sort_by_mimetype_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    b.media_type.cmp(&a.media_type)
+}
+
+fn sort_by_location_ascending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    a.location.cmp(&b.location)
+}
+
+fn sort_by_location_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    b.location.cmp(&a.location)
+}
+
 /// Field of the search results on which to sort.
 #[derive(Clone, Copy)]
 pub enum SortField {
     Date,
+    Identifier,
+    Filename,
+    MediaType,
+    Location,
 }
 
 /// Order by which to sort the search results.
@@ -434,7 +498,7 @@ mod tests {
         vec![
             SearchResult {
                 asset_id: "cafebabe".to_owned(),
-                filename: "IMG_1234.PNG".to_owned(),
+                filename: "IMG_2431.PNG".to_owned(),
                 media_type: "IMAGE/PNG".to_owned(),
                 location: Some("HAWAII".to_owned()),
                 datetime: Utc.ymd(2012, 5, 31).and_hms(21, 10, 11),
@@ -448,7 +512,7 @@ mod tests {
             },
             SearchResult {
                 asset_id: "cafed00d".to_owned(),
-                filename: "IMG_3456.MOV".to_owned(),
+                filename: "IMG_6431.MOV".to_owned(),
                 media_type: "VIDEO/QUICKTIME".to_owned(),
                 location: Some("PARIS".to_owned()),
                 datetime: Utc.ymd(2014, 5, 31).and_hms(21, 10, 11),
@@ -476,7 +540,7 @@ mod tests {
             },
             SearchResult {
                 asset_id: "deadcafe".to_owned(),
-                filename: "IMG_7890.JPG".to_owned(),
+                filename: "IMG_3142.JPG".to_owned(),
                 media_type: "IMAGE/JPEG".to_owned(),
                 location: Some("YOSEMITE".to_owned()),
                 datetime: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
@@ -502,7 +566,7 @@ mod tests {
         let results = result.unwrap();
         assert_eq!(results.len(), 4);
         assert!(results.iter().any(|l| l.filename == "IMG_2345.GIF"));
-        assert!(results.iter().any(|l| l.filename == "IMG_3456.MOV"));
+        assert!(results.iter().any(|l| l.filename == "IMG_6431.MOV"));
         assert!(results.iter().any(|l| l.filename == "IMG_5678.MOV"));
         assert!(results.iter().any(|l| l.filename == "IMG_6789.JPG"));
     }
@@ -544,7 +608,7 @@ mod tests {
         assert!(result.is_ok());
         let results = result.unwrap();
         assert_eq!(results.len(), 2);
-        assert!(results.iter().any(|l| l.filename == "IMG_3456.MOV"));
+        assert!(results.iter().any(|l| l.filename == "IMG_6431.MOV"));
         assert!(results.iter().any(|l| l.filename == "IMG_5678.MOV"));
     }
 
@@ -566,7 +630,7 @@ mod tests {
         assert!(result.is_ok());
         let results = result.unwrap();
         assert_eq!(results.len(), 3);
-        assert!(results.iter().any(|l| l.filename == "IMG_3456.MOV"));
+        assert!(results.iter().any(|l| l.filename == "IMG_6431.MOV"));
         assert!(results.iter().any(|l| l.filename == "IMG_4567.JPG"));
         assert!(results.iter().any(|l| l.filename == "IMG_5678.MOV"));
     }
@@ -590,7 +654,7 @@ mod tests {
         assert_eq!(results.len(), 3);
         assert!(results.iter().any(|l| l.filename == "IMG_5678.MOV"));
         assert!(results.iter().any(|l| l.filename == "IMG_6789.JPG"));
-        assert!(results.iter().any(|l| l.filename == "IMG_7890.JPG"));
+        assert!(results.iter().any(|l| l.filename == "IMG_3142.JPG"));
     }
 
     #[test]
@@ -610,9 +674,9 @@ mod tests {
         assert!(result.is_ok());
         let results = result.unwrap();
         assert_eq!(results.len(), 4);
-        assert!(results.iter().any(|l| l.filename == "IMG_1234.PNG"));
+        assert!(results.iter().any(|l| l.filename == "IMG_2431.PNG"));
         assert!(results.iter().any(|l| l.filename == "IMG_2345.GIF"));
-        assert!(results.iter().any(|l| l.filename == "IMG_3456.MOV"));
+        assert!(results.iter().any(|l| l.filename == "IMG_6431.MOV"));
         assert!(results.iter().any(|l| l.filename == "IMG_4567.JPG"));
     }
 
@@ -634,13 +698,13 @@ mod tests {
         assert!(result.is_ok());
         let results = result.unwrap();
         assert_eq!(results.len(), 7);
-        assert_eq!(results[0].filename, "IMG_1234.PNG");
+        assert_eq!(results[0].filename, "IMG_2431.PNG");
         assert_eq!(results[1].filename, "IMG_2345.GIF");
-        assert_eq!(results[2].filename, "IMG_3456.MOV");
+        assert_eq!(results[2].filename, "IMG_6431.MOV");
         assert_eq!(results[3].filename, "IMG_4567.JPG");
         assert_eq!(results[4].filename, "IMG_5678.MOV");
         assert_eq!(results[5].filename, "IMG_6789.JPG");
-        assert_eq!(results[6].filename, "IMG_7890.JPG");
+        assert_eq!(results[6].filename, "IMG_3142.JPG");
     }
 
     #[test]
@@ -661,12 +725,228 @@ mod tests {
         assert!(result.is_ok());
         let results = result.unwrap();
         assert_eq!(results.len(), 7);
-        assert_eq!(results[0].filename, "IMG_7890.JPG");
+        assert_eq!(results[0].filename, "IMG_3142.JPG");
         assert_eq!(results[1].filename, "IMG_6789.JPG");
         assert_eq!(results[2].filename, "IMG_5678.MOV");
         assert_eq!(results[3].filename, "IMG_4567.JPG");
-        assert_eq!(results[4].filename, "IMG_3456.MOV");
+        assert_eq!(results[4].filename, "IMG_6431.MOV");
         assert_eq!(results[5].filename, "IMG_2345.GIF");
-        assert_eq!(results[6].filename, "IMG_1234.PNG");
+        assert_eq!(results[6].filename, "IMG_2431.PNG");
+    }
+
+    #[test]
+    fn test_order_results_ascending_filename() {
+        // arrange
+        let results = make_search_results();
+        let mut mock = MockRecordRepository::new();
+        mock.expect_query_by_tags()
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let usecase = SearchAssets::new(Box::new(mock));
+        let mut params: Params = Default::default();
+        params.tags = vec!["kitten".to_owned()];
+        params.sort_field = Some(SortField::Filename);
+        params.sort_order = Some(SortOrder::Ascending);
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 7);
+        assert_eq!(results[0].filename, "IMG_2345.GIF");
+        assert_eq!(results[1].filename, "IMG_2431.PNG");
+        assert_eq!(results[2].filename, "IMG_3142.JPG");
+        assert_eq!(results[3].filename, "IMG_4567.JPG");
+        assert_eq!(results[4].filename, "IMG_5678.MOV");
+        assert_eq!(results[5].filename, "IMG_6431.MOV");
+        assert_eq!(results[6].filename, "IMG_6789.JPG");
+    }
+
+    #[test]
+    fn test_order_results_descending_filename() {
+        // arrange
+        let results = make_search_results();
+        let mut mock = MockRecordRepository::new();
+        mock.expect_query_by_tags()
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let usecase = SearchAssets::new(Box::new(mock));
+        let mut params: Params = Default::default();
+        params.tags = vec!["kitten".to_owned()];
+        params.sort_field = Some(SortField::Filename);
+        params.sort_order = Some(SortOrder::Descending);
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 7);
+        assert_eq!(results[0].filename, "IMG_6789.JPG");
+        assert_eq!(results[1].filename, "IMG_6431.MOV");
+        assert_eq!(results[2].filename, "IMG_5678.MOV");
+        assert_eq!(results[3].filename, "IMG_4567.JPG");
+        assert_eq!(results[4].filename, "IMG_3142.JPG");
+        assert_eq!(results[5].filename, "IMG_2431.PNG");
+        assert_eq!(results[6].filename, "IMG_2345.GIF");
+    }
+
+    #[test]
+    fn test_order_results_ascending_location() {
+        // arrange
+        let results = make_search_results();
+        let mut mock = MockRecordRepository::new();
+        mock.expect_query_by_tags()
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let usecase = SearchAssets::new(Box::new(mock));
+        let mut params: Params = Default::default();
+        params.tags = vec!["kitten".to_owned()];
+        params.sort_field = Some(SortField::Location);
+        params.sort_order = Some(SortOrder::Ascending);
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 7);
+        assert_eq!(results[0].location.as_ref().unwrap(), "HAWAII");
+        assert_eq!(results[1].location.as_ref().unwrap(), "HAWAII");
+        assert_eq!(results[2].location.as_ref().unwrap(), "LONDON");
+        assert_eq!(results[3].location.as_ref().unwrap(), "LONDON");
+        assert_eq!(results[4].location.as_ref().unwrap(), "PARIS");
+        assert_eq!(results[5].location.as_ref().unwrap(), "PARIS");
+        assert_eq!(results[6].location.as_ref().unwrap(), "YOSEMITE");
+    }
+
+    #[test]
+    fn test_order_results_descending_location() {
+        // arrange
+        let results = make_search_results();
+        let mut mock = MockRecordRepository::new();
+        mock.expect_query_by_tags()
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let usecase = SearchAssets::new(Box::new(mock));
+        let mut params: Params = Default::default();
+        params.tags = vec!["kitten".to_owned()];
+        params.sort_field = Some(SortField::Location);
+        params.sort_order = Some(SortOrder::Descending);
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 7);
+        assert_eq!(results[0].location.as_ref().unwrap(), "YOSEMITE");
+        assert_eq!(results[1].location.as_ref().unwrap(), "PARIS");
+        assert_eq!(results[2].location.as_ref().unwrap(), "PARIS");
+        assert_eq!(results[3].location.as_ref().unwrap(), "LONDON");
+        assert_eq!(results[4].location.as_ref().unwrap(), "LONDON");
+        assert_eq!(results[5].location.as_ref().unwrap(), "HAWAII");
+        assert_eq!(results[6].location.as_ref().unwrap(), "HAWAII");
+    }
+
+    #[test]
+    fn test_order_results_ascending_identifier() {
+        // arrange
+        let results = make_search_results();
+        let mut mock = MockRecordRepository::new();
+        mock.expect_query_by_tags()
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let usecase = SearchAssets::new(Box::new(mock));
+        let mut params: Params = Default::default();
+        params.tags = vec!["kitten".to_owned()];
+        params.sort_field = Some(SortField::Identifier);
+        params.sort_order = Some(SortOrder::Ascending);
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 7);
+        assert_eq!(results[0].asset_id, "babecafe");
+        assert_eq!(results[1].asset_id, "cafebabe");
+        assert_eq!(results[2].asset_id, "cafebeef");
+        assert_eq!(results[3].asset_id, "cafed00d");
+        assert_eq!(results[4].asset_id, "d00dcafe");
+        assert_eq!(results[5].asset_id, "deadbeef");
+        assert_eq!(results[6].asset_id, "deadcafe");
+    }
+
+    #[test]
+    fn test_order_results_descending_identifier() {
+        // arrange
+        let results = make_search_results();
+        let mut mock = MockRecordRepository::new();
+        mock.expect_query_by_tags()
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let usecase = SearchAssets::new(Box::new(mock));
+        let mut params: Params = Default::default();
+        params.tags = vec!["kitten".to_owned()];
+        params.sort_field = Some(SortField::Identifier);
+        params.sort_order = Some(SortOrder::Descending);
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 7);
+        assert_eq!(results[0].asset_id, "deadcafe");
+        assert_eq!(results[1].asset_id, "deadbeef");
+        assert_eq!(results[2].asset_id, "d00dcafe");
+        assert_eq!(results[3].asset_id, "cafed00d");
+        assert_eq!(results[4].asset_id, "cafebeef");
+        assert_eq!(results[5].asset_id, "cafebabe");
+        assert_eq!(results[6].asset_id, "babecafe");
+    }
+
+    #[test]
+    fn test_order_results_ascending_mimetype() {
+        // arrange
+        let results = make_search_results();
+        let mut mock = MockRecordRepository::new();
+        mock.expect_query_by_tags()
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let usecase = SearchAssets::new(Box::new(mock));
+        let mut params: Params = Default::default();
+        params.tags = vec!["kitten".to_owned()];
+        params.sort_field = Some(SortField::MediaType);
+        params.sort_order = Some(SortOrder::Ascending);
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 7);
+        assert_eq!(results[0].media_type, "IMAGE/GIF");
+        assert_eq!(results[1].media_type, "IMAGE/JPEG");
+        assert_eq!(results[2].media_type, "IMAGE/JPEG");
+        assert_eq!(results[3].media_type, "IMAGE/JPEG");
+        assert_eq!(results[4].media_type, "IMAGE/PNG");
+        assert_eq!(results[5].media_type, "VIDEO/QUICKTIME");
+        assert_eq!(results[6].media_type, "VIDEO/QUICKTIME");
+    }
+
+    #[test]
+    fn test_order_results_descending_mimetype() {
+        // arrange
+        let results = make_search_results();
+        let mut mock = MockRecordRepository::new();
+        mock.expect_query_by_tags()
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let usecase = SearchAssets::new(Box::new(mock));
+        let mut params: Params = Default::default();
+        params.tags = vec!["kitten".to_owned()];
+        params.sort_field = Some(SortField::MediaType);
+        params.sort_order = Some(SortOrder::Descending);
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 7);
+        assert_eq!(results[0].media_type, "VIDEO/QUICKTIME");
+        assert_eq!(results[1].media_type, "VIDEO/QUICKTIME");
+        assert_eq!(results[2].media_type, "IMAGE/PNG");
+        assert_eq!(results[3].media_type, "IMAGE/JPEG");
+        assert_eq!(results[4].media_type, "IMAGE/JPEG");
+        assert_eq!(results[5].media_type, "IMAGE/JPEG");
+        assert_eq!(results[6].media_type, "IMAGE/GIF");
     }
 }

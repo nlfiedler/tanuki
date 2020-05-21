@@ -6,8 +6,8 @@ use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, SearchResult};
 use chrono::prelude::*;
 use juniper::{
-    graphql_scalar, FieldResult, GraphQLInputObject, ParseScalarResult, ParseScalarValue, RootNode,
-    Value,
+    graphql_scalar, FieldResult, GraphQLEnum, GraphQLInputObject, ParseScalarResult,
+    ParseScalarValue, RootNode, Value,
 };
 use std::sync::Arc;
 
@@ -133,6 +133,42 @@ impl LabeledCount {
     }
 }
 
+#[derive(GraphQLEnum)]
+pub enum SortField {
+    Date,
+    Identifier,
+    Filename,
+    MediaType,
+    Location,
+}
+
+impl Into<crate::domain::usecases::search::SortField> for SortField {
+    fn into(self) -> crate::domain::usecases::search::SortField {
+        match self {
+            SortField::Date => crate::domain::usecases::search::SortField::Date,
+            SortField::Identifier => crate::domain::usecases::search::SortField::Identifier,
+            SortField::Filename => crate::domain::usecases::search::SortField::Filename,
+            SortField::MediaType => crate::domain::usecases::search::SortField::MediaType,
+            SortField::Location => crate::domain::usecases::search::SortField::Location,
+        }
+    }
+}
+
+#[derive(GraphQLEnum)]
+pub enum SortOrder {
+    Ascending,
+    Descending,
+}
+
+impl Into<crate::domain::usecases::search::SortOrder> for SortOrder {
+    fn into(self) -> crate::domain::usecases::search::SortOrder {
+        match self {
+            SortOrder::Ascending => crate::domain::usecases::search::SortOrder::Ascending,
+            SortOrder::Descending => crate::domain::usecases::search::SortOrder::Descending,
+        }
+    }
+}
+
 /// `SearchParams` defines the various parameters by which to search for assets.
 #[derive(GraphQLInputObject)]
 pub struct SearchParams {
@@ -150,6 +186,10 @@ pub struct SearchParams {
     pub filename: Option<String>,
     /// Find assets whose mimetype (e.g. `image/jpeg`) matches the one given.
     pub mimetype: Option<String>,
+    /// Field by which to sort the results.
+    pub sort_field: Option<SortField>,
+    /// Order by which to sort the results.
+    pub sort_order: Option<SortOrder>,
 }
 
 impl Into<crate::domain::usecases::search::Params> for SearchParams {
@@ -161,8 +201,16 @@ impl Into<crate::domain::usecases::search::Params> for SearchParams {
             mimetype: self.mimetype,
             before_date: self.before,
             after_date: self.after,
-            sort_field: None,
-            sort_order: None,
+            sort_field: Some(
+                self.sort_field
+                    .map_or(crate::domain::usecases::search::SortField::Date, |v| {
+                        v.into()
+                    }),
+            ),
+            sort_order: Some(self.sort_order.map_or(
+                crate::domain::usecases::search::SortOrder::Descending,
+                |v| v.into(),
+            )),
         }
     }
 }
@@ -868,6 +916,8 @@ mod tests {
             before: None,
             filename: None,
             mimetype: None,
+            sort_field: Some(SortField::Identifier),
+            sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
         let (res, errors) = juniper::execute(
@@ -898,19 +948,19 @@ mod tests {
         let entry_object = result_value[0].as_object_value().unwrap();
         let entry_field = entry_object.get_field_value("id").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe");
+        assert_eq!(entry_value, "babecafe");
         let entry_field = entry_object.get_field_value("filename").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "img_1234.png");
+        assert_eq!(entry_value, "img_2345.gif");
         let entry_field = entry_object.get_field_value("mimetype").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "image/png");
+        assert_eq!(entry_value, "image/gif");
         let entry_field = entry_object.get_field_value("location").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "hawaii");
+        assert_eq!(entry_value, "london");
         let entry_field = entry_object.get_field_value("datetime").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(&entry_value[..19], "2012-05-31T21:10:11");
+        assert_eq!(&entry_value[..19], "2013-05-31T21:10:11");
 
         // check the last result
         let entry_object = result_value[6].as_object_value().unwrap();
@@ -935,7 +985,8 @@ mod tests {
         let mut results: Vec<SearchResult> = Vec::new();
         let locations = ["hawaii", "paris", "london"];
         for index in 1..108 {
-            let asset_id = format!("cafebabe-{}", index);
+            // add leading zeros so sorting by id works naturally
+            let asset_id = format!("cafebabe-{:04}", index);
             let filename = format!("img_1{}.jpg", index);
             let base_time = Utc.ymd(2012, 5, 31).and_hms(21, 10, 11);
             let duration = chrono::Duration::days(index);
@@ -1055,6 +1106,8 @@ mod tests {
             before: None,
             filename: None,
             mimetype: None,
+            sort_field: Some(SortField::Identifier),
+            sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
         let (res, errors) = juniper::execute(
@@ -1086,13 +1139,13 @@ mod tests {
         let entry_object = result_value[0].as_object_value().unwrap();
         let entry_field = entry_object.get_field_value("id").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-1");
+        assert_eq!(entry_value, "cafebabe-0001");
 
         // check the last result
         let entry_object = result_value[9].as_object_value().unwrap();
         let entry_field = entry_object.get_field_value("id").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-10");
+        assert_eq!(entry_value, "cafebabe-0010");
     }
 
     #[test]
@@ -1114,6 +1167,8 @@ mod tests {
             before: None,
             filename: None,
             mimetype: None,
+            sort_field: Some(SortField::Identifier),
+            sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
         let (res, errors) = juniper::execute(
@@ -1145,13 +1200,13 @@ mod tests {
         let entry_object = result_value[0].as_object_value().unwrap();
         let entry_field = entry_object.get_field_value("id").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-21");
+        assert_eq!(entry_value, "cafebabe-0021");
 
         // check the last result
         let entry_object = result_value[9].as_object_value().unwrap();
         let entry_field = entry_object.get_field_value("id").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-30");
+        assert_eq!(entry_value, "cafebabe-0030");
     }
 
     #[test]
@@ -1173,6 +1228,8 @@ mod tests {
             before: None,
             filename: None,
             mimetype: None,
+            sort_field: Some(SortField::Identifier),
+            sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
         let (res, errors) = juniper::execute(
@@ -1204,13 +1261,13 @@ mod tests {
         let entry_object = result_value[0].as_object_value().unwrap();
         let entry_field = entry_object.get_field_value("id").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-81");
+        assert_eq!(entry_value, "cafebabe-0081");
 
         // check the last result
         let entry_object = result_value[26].as_object_value().unwrap();
         let entry_field = entry_object.get_field_value("id").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-107");
+        assert_eq!(entry_value, "cafebabe-0107");
     }
 
     #[test]
@@ -1233,6 +1290,8 @@ mod tests {
             before: None,
             filename: None,
             mimetype: None,
+            sort_field: Some(SortField::Identifier),
+            sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
         let (res, errors) = juniper::execute(
@@ -1264,13 +1323,13 @@ mod tests {
         let entry_object = result_value[0].as_object_value().unwrap();
         let entry_field = entry_object.get_field_value("id").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-3");
+        assert_eq!(entry_value, "cafebabe-0003");
 
         // check the last result
         let entry_object = result_value[34].as_object_value().unwrap();
         let entry_field = entry_object.get_field_value("id").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-105");
+        assert_eq!(entry_value, "cafebabe-0105");
     }
 
     #[test]
@@ -1291,6 +1350,8 @@ mod tests {
             before: None,
             filename: None,
             mimetype: None,
+            sort_field: Some(SortField::Identifier),
+            sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
         let (res, errors) = juniper::execute(
@@ -1337,6 +1398,8 @@ mod tests {
             before: None,
             filename: None,
             mimetype: None,
+            sort_field: Some(SortField::Identifier),
+            sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
         let (res, errors) = juniper::execute(
