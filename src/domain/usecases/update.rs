@@ -56,6 +56,8 @@ pub struct AssetInput {
     pub datetime: Option<DateTime<Utc>>,
     /// Any `Some` value here overwrites the media_type in the asset.
     pub media_type: Option<String>,
+    /// Replace the filename property in the asset.
+    pub filename: Option<String>,
 }
 
 impl fmt::Display for AssetInput {
@@ -105,6 +107,9 @@ fn merge_asset_input(asset: &mut Asset, input: AssetInput) {
         tags.sort();
         tags.dedup();
         asset.tags = tags;
+    }
+    if let Some(filename) = input.filename {
+        asset.filename = filename;
     }
     if input.location.is_some() {
         // permit clearing the location value
@@ -371,6 +376,7 @@ mod tests {
             location: None,
             datetime: None,
             media_type: None,
+            filename: None,
         };
         merge_asset_input(&mut asset, input);
         assert_eq!(asset.tags.len(), 1);
@@ -403,6 +409,7 @@ mod tests {
             location: None,
             datetime: None,
             media_type: Some("video/quicktime".to_owned()),
+            filename: None,
         };
         merge_asset_input(&mut asset, input);
         assert_eq!(asset.tags.len(), 1);
@@ -435,6 +442,7 @@ mod tests {
             location: None,
             datetime: None,
             media_type: None,
+            filename: None,
         };
         // location in caption should not clobber an existing location value
         //
@@ -476,6 +484,7 @@ mod tests {
             location: None,
             datetime: None,
             media_type: None,
+            filename: None,
         };
         // new tags should replace existing tags
         merge_asset_input(&mut asset, input);
@@ -509,6 +518,7 @@ mod tests {
             location: None,
             datetime: None,
             media_type: None,
+            filename: None,
         };
         // Tags in caption are merged with existing tags, but incoming tags
         // still replace existing tags.
@@ -545,6 +555,7 @@ mod tests {
             location: None,
             datetime: Some(user_date),
             media_type: None,
+            filename: None,
         };
         merge_asset_input(&mut asset, input);
         assert_eq!(asset.tags.len(), 1);
@@ -577,6 +588,7 @@ mod tests {
             location: None,
             datetime: None,
             media_type: None,
+            filename: None,
         };
         merge_asset_input(&mut asset, input);
         assert_eq!(asset.tags.len(), 1);
@@ -609,6 +621,7 @@ mod tests {
             location: Some(String::new()),
             datetime: None,
             media_type: None,
+            filename: None,
         };
         merge_asset_input(&mut asset, input);
         assert!(asset.location.is_none());
@@ -638,6 +651,7 @@ mod tests {
             location: None,
             datetime: Some(user_date),
             media_type: None,
+            filename: Some("kittens_fighting.jpg".to_owned()),
         };
         let mut records = MockRecordRepository::new();
         records
@@ -653,6 +667,7 @@ mod tests {
         assert!(result.is_ok());
         let asset = result.unwrap();
         assert_eq!(asset.location.unwrap(), "hawaii");
+        assert_eq!(asset.filename, "kittens_fighting.jpg");
         assert_eq!(asset.tags.len(), 2);
         assert!(asset.tags.iter().any(|l| l == "kittens"));
         assert!(asset.tags.iter().any(|l| l == "puppies"));
@@ -676,6 +691,7 @@ mod tests {
             location: None,
             datetime: None,
             media_type: None,
+            filename: None,
         };
         let params = Params::new("abc123".to_owned(), input);
         let result = usecase.call(params);

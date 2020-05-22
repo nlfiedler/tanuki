@@ -1,30 +1,43 @@
 * Tanuki
+** Data Corruption
+*** click ~reno~ location, one of the images is broken
+*** click ~mt rose~ location, one of the images is broken
+*** asset 1: =MjAxOC8wNS8yMS8xNzE1LzAxY2UxdnZiem0yZm10a3N0MmYzMDRxODRt=
+**** filepath: =2018/05/21/1715/01ce1vvbzm2fmtkst2f304q84m=
+**** checksum: =sha256-f0bbbaa2dcc41e414712895cb1507b8c95002df9771933925de8b1645c1f15a9=
+**** filename: =nathan_antonia_at_mt_rose=
+**** original date probably missing
+*** asset 2: =MjAxOC8wNS8yMS8xNzE1LzAxY2Uxdms4NjJtejU2ajcybjBxd21nMTll=
+**** filepath: =2018/05/21/1715/01ce1vk862mz56j72n0qwmg19e=
+**** checksum: =sha256-03daadbd3131a14034540614ebe02efc4060f792501e94771b54ede16657bd38=
+**** filename: =adbd3131a14034540614ebe02efc4060f792501e94771b54ede16657bd38=
+**** original date probably missing
+*** TODO provide tools to fix data issues
+**** TODO add additional optional fields to =AssetInput= for manual fixes
+***** use it to fix the filename that is part of a digest
+****** should be =IMG_0912.JPG= or =IMG_0914.JPG= (neither occur in the database)
+**** TODO write a graph query to run a data integrity check
+***** looks for problems and returns list of identifiers that have issues
+***** asset is missing
+***** =original_date= not set at all, or set to wrong value
+***** identifier is missing an extension appropriate for the media type
+***** filename is missing an extension appropriate for the media type
+**** TODO write a graph mutation to fix the identified assets
+***** take list of identifiers for assets with known issues
+***** attempt to fix whatever issues are detected
+****** append missing extension to filename, identifier, asset file
+****** set the missing original date
+***** if asset identifier has changed, insert-new/delete-old
+***** if asset identifier did not change, update record
+***** return list of successfully fixed assets
 ** Quick UI improvements
-*** how to stop the browser from navigating when form is not saved
+*** TODO make the cursor a pointer over thumbnail =figure= elements
+*** TODO add some padding below the pagination controls
+*** TODO how to stop the browser from navigating when form is not saved
+**** should have this on the recents page because there can be many fields
 **** it's called "beforeunload"
 **** c.f. https://github.com/reasonml-community/bs-webapi-incubator/issues/151
 **** c.f. https://github.com/jacobbuck/react-beforeunload
-*** embiggen the thumbnails to 300x300
-** Backend Rewrite
-*** Thumbnail Serving Strategy
-**** capture the image/video dimensions during import, save to asset record
-***** a larger asset record in CBOR format is ~260 bytes, a few more bytes is okay
-***** in PouchDB, each record takes almost exactly 1 kilobyte
-***** use =u32= for each dimension (should be more than enough)
-**** on import, ensure asset identifier ends with correct media type extension
-***** if provided filename does not end in the correct extension, append it
-****** use the provided media type to know what extension to add
-***** this ensures correct guessing of media type when making thumbnails
-***** n.b. all thumbnails and previews are image/jpeg anyway so this is not necessary
-***** if, someday, the provided media type is "unknown", then use mime sniffer
-***** c.f. https://developer.mozilla.org/en-US/docs/Mozilla/How_Mozilla_determines_MIME_Types
-***** c.f. https://github.com/flier/rust-mime-sniffer
-**** the frontend can use the image dimensions to compute the aspect ratio
-**** with the aspect ratio, frontend can request images of the desired size
-**** frontend can ask for images that are N pixels high or M pixels wide, or whatever
-***** by leaving one dimension maxed out, the image aspect ratio will be maintained
-**** as long as client keeps asking for the same basic size, backend can cache them
-**** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 ** Video metadata support
 *** https://github.com/alfg/mp4rs (MIT)
 **** creation time is in =moov.mvhd.creation_time=
@@ -79,7 +92,6 @@
 **** database functions iterate the results, applying the filter
 **** the remaining results are then collecting into a vector
 ** Shared Folder Cleanup
-*** do this after zorigami online backup completes
 *** write a script to checksum files and check if they are in tanuki
 *** anything found in tanuki is deleted
 ** Frontend Rewrite
@@ -91,6 +103,25 @@
 ***** import
 ***** export
 ***** edit
+*** Thumbnail Serving Strategy
+**** capture the image/video dimensions during import, save to asset record
+***** a larger asset record in CBOR format is ~260 bytes, a few more bytes is okay
+***** in PouchDB, each record takes almost exactly 1 kilobyte
+***** use =u32= for each dimension (should be more than enough)
+**** on import, ensure asset identifier ends with correct media type extension
+***** if provided filename does not end in the correct extension, append it
+****** use the provided media type to know what extension to add
+***** this ensures correct guessing of media type when making thumbnails
+***** n.b. all thumbnails and previews are image/jpeg anyway so this is not necessary
+***** if, someday, the provided media type is "unknown", then use mime sniffer
+***** c.f. https://developer.mozilla.org/en-US/docs/Mozilla/How_Mozilla_determines_MIME_Types
+***** c.f. https://github.com/flier/rust-mime-sniffer
+**** the frontend can use the image dimensions to compute the aspect ratio
+**** with the aspect ratio, frontend can request images of the desired size
+**** frontend can ask for images that are N pixels high or M pixels wide, or whatever
+***** by leaving one dimension maxed out, the image aspect ratio will be maintained
+**** as long as client keeps asking for the same basic size, backend can cache them
+**** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO find out how to upload a file
 **** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
 **** example code: https://github.com/rjcalifornia/web_upload
@@ -196,6 +227,8 @@
 ***** this library easily crashes with a segmentation fault
 **** https://github.com/oussama/libheif-rs (MIT)
 **** https://crates.io/crates/kamadak-exif (BSD) reads metadata
+*** Support audio formats
+**** read =ID3= tags in audio files
 *** TODO Detect time zone offset in EXIF data
 According to Wikipedia the 2.31 version of EXIF will support time-zone
 information. Eventually, the application should be able to detect this and
@@ -315,3 +348,9 @@ include it in the database records.
 ****** tries to replace cargo to get benefits of bazel
 ** SCM
 *** Consider if using GitLab (in a container) would be helpful
+** Features
+*** Slide show mode for assets matching search
+*** Machine learning to rank photos on various qualities
+**** c.f. https://simonwillison.net/2020/May/21/dogsheep-photos/
+**** ML assigns scores on aesthetics, interest, etc
+**** ML recognizes the subject (dog, cat, person, etc)

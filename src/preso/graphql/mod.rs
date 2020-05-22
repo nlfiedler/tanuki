@@ -284,6 +284,8 @@ pub struct AssetInput {
     /// guessed wrong. Beware that setting a wrong value means the asset will
     /// likely not display correctly.
     mimetype: Option<String>,
+    /// New filename to replace any existing value.
+    filename: Option<String>,
 }
 
 impl Into<crate::domain::usecases::update::AssetInput> for AssetInput {
@@ -298,6 +300,7 @@ impl Into<crate::domain::usecases::update::AssetInput> for AssetInput {
             location: self.location,
             media_type: self.mimetype,
             datetime: self.datetime,
+            filename: self.filename,
         }
     }
 }
@@ -1604,6 +1607,7 @@ mod tests {
             location: Some("london".to_owned()),
             datetime: None,
             mimetype: None,
+            filename: None,
         };
         vars.insert("input".to_owned(), input.to_input_value());
         let (res, errors) = juniper::execute(
@@ -1658,6 +1662,7 @@ mod tests {
             location: None,
             datetime: None,
             mimetype: None,
+            filename: None,
         };
         vars.insert("input".to_owned(), input.to_input_value());
         let (res, errors) = juniper::execute(
@@ -1708,6 +1713,7 @@ mod tests {
             location: Some("".to_owned()),
             datetime: None,
             mimetype: None,
+            filename: None,
         };
         vars.insert("input".to_owned(), input.to_input_value());
         let (res, errors) = juniper::execute(
@@ -1783,6 +1789,7 @@ mod tests {
                     location: Some("hawaii".to_owned()),
                     datetime: None,
                     mimetype: None,
+                    filename: None,
                 },
             },
             AssetInputId {
@@ -1793,6 +1800,7 @@ mod tests {
                     location: Some("london".to_owned()),
                     datetime: None,
                     mimetype: None,
+                    filename: None,
                 },
             },
         ];
