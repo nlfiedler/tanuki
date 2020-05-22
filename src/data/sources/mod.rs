@@ -204,9 +204,13 @@ impl EntityDataSource for EntityDataSourceImpl {
         let epoch = Utc.timestamp(0, 0);
         let key = encode_datetime(&after);
         let query_results = if epoch > after {
-            // Times before Unix time are larger than times after when encoded
-            // with base32 hex, so first query for anything larger than that
-            // value, then query for anything between the zero time and now.
+            // A Unix timestamp is encoded as seconds since the epoch using a
+            // two's complement signed integer. Times before the epoch are
+            // larger than times after when encoded with base32hex. The encoded
+            // values for negative numbers get larger as they approach zero.
+            // Thus, to find dates after the pre-epoch date given, first query
+            // for anything larger than that value, then query for anything
+            // between the zero time and now.
             let mut results1 = self.database.query_greater_than("newborn", key)?;
             let epoch_key = encode_datetime(&epoch);
             let now = Utc::now();
