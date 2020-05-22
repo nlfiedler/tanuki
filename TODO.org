@@ -1,42 +1,5 @@
 * Tanuki
-** Run books
-*** Write a shared google doc that explains how to set up tanuki
-**** install docker (desktop)
-**** set up github key for repo
-**** clone tanuki repo
-**** run docker commands to build
-**** push the image
-**** clone provisioning repo
-**** install python, ansible (using homebrew)
-**** ansible-playbook to install tanuki
 ** Backend Rewrite
-*** Clean Architecture design
-**** use dependency injection to connect parts together
-***** https://crates.io/crates/shaku (compile-time IoC)
-***** https://crates.io/crates/coi (compile-time IoC)
-***** consider if writing one from scratch (a la =get_it=) would be adequate
-**** use TDD and mocking to develop from the inside out
-***** https://crates.io/crates/mockall
-**** entities
-***** asset
-***** location (label, gps, etc)
-***** search result (location, media type, filename, date)
-**** use cases
-***** count all assets
-***** import asset
-***** update asset details
-***** get all locations
-***** get all years
-***** get all tags
-***** search for assets
-***** get asset by checksum
-***** fetch asset details
-***** backup the database (an automatic function?)
-****** use repository to invoke backup/restore functions
-****** data source for record database invokes the db functions
-**** repositories
-***** record database
-***** blob store
 *** Thumbnail Serving Strategy
 **** capture the image/video dimensions during import, save to asset record
 ***** a larger asset record in CBOR format is ~260 bytes, a few more bytes is okay
@@ -56,9 +19,6 @@
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-** Shared Folder Cleanup
-*** write a script to checksum files and check if they are in tanuki
-*** anything found in tanuki is deleted
 ** Video metadata support
 *** https://github.com/alfg/mp4rs (MIT)
 **** creation time is in =moov.mvhd.creation_time=
@@ -75,6 +35,47 @@
 ** Large File Import
 *** TODO on upload screen, provide input field to accessible file path
 *** TODO create a record, move file into place
+** Performance
+*** improve thumbnail caching support (=ETag= and =If-None-Match=)
+**** need to include an etag and respond properly to if-none-match requests
+**** create a =Thumbnail= type that implements =actix_web::Responder=
+**** the =respond_to()= returns a future so can use async/await
+**** in =respond_to()= can check the asset exists, check if the etag matches, generate thumbnail
+**** respond with =StatusCode::NOT_MODIFIED= if not modified
+**** respond with =OK= and the data if the etag does not match
+**** c.f. https://github.com/actix/actix-web/blob/master/actix-files/src/named.rs
+**** c.f. https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match
+**** c.f. https://web.dev/http-cache/
+*** measure and improve the thumbnail serving
+**** consider caching in memory or on disk
+**** maybe try using =magick-rust= to see if that is faster
+***** it has =auto_orient()= and =fit()= functions on the =MagickWand= type
+**** measurements using =hey=
+| conditions         | hey arguments | avg response time | payload size |
+|--------------------+---------------+-------------------+--------------|
+| rust debug initial | -n 5 -c 1     |            2.4346 |        50748 |
+| node with caching  | -n 20 -c 1    |            0.0009 |         8932 |
+| node with caching  | (default)     |            0.0309 |         8932 |
+| node w/o caching   | (default)     |            0.1835 |         8932 |
+| rust with 50% jpeg | -n 5 -c 1     |            2.4235 |         7076 |
+| rust with 80% jpeg | -n 5 -c 1     |            2.4145 |        11793 |
+| rust release 80%   | (default)     |            1.0994 |        11793 |
+| rust release 75%   | (default)     |            1.0956 |        10263 |
+*** consider if caching search results will improve responsiveness
+**** could return a query code to the caller in search meta
+**** caller returns that code in the next query to access the cache
+**** in this way, the results for a particular query can be cached reliably
+**** eventually cached search results need to be pruned
+**** RocksDB by default has a block cache of 8mb in 16 shards of 512kb
+**** also consider that any caching should live in the data source
+*** consider if filtering can be done "in the database" somehow
+**** database queries should probably take a filter closure
+**** database functions iterate the results, applying the filter
+**** the remaining results are then collecting into a vector
+** Shared Folder Cleanup
+*** do this after zorigami online backup completes
+*** write a script to checksum files and check if they are in tanuki
+*** anything found in tanuki is deleted
 ** Frontend Rewrite
 *** Use Dart and Flutter
 *** Use Clean Architecture
@@ -161,42 +162,6 @@
 **** =lib/js=
 **** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
-** Performance
-*** improve thumbnail caching support (=ETag= and =If-None-Match=)
-**** need to include an etag and respond properly to if-none-match requests
-**** create a =Thumbnail= type that implements =actix_web::Responder=
-**** the =respond_to()= returns a future so can use async/await
-**** in =respond_to()= can check the asset exists, check if the etag matches, generate thumbnail
-**** respond with =StatusCode::NOT_MODIFIED= if not modified
-**** respond with =OK= and the data if the etag does not match
-**** c.f. https://github.com/actix/actix-web/blob/master/actix-files/src/named.rs
-**** c.f. https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match
-**** c.f. https://web.dev/http-cache/
-*** measure and improve the thumbnail serving
-**** consider caching in memory or on disk
-**** maybe try using =magick-rust= to see if that is faster
-**** measurements using =hey=
-| conditions         | hey arguments | avg response time | payload size |
-|--------------------+---------------+-------------------+--------------|
-| rust debug initial | -n 5 -c 1     |            2.4346 |        50748 |
-| node with caching  | -n 20 -c 1    |            0.0009 |         8932 |
-| node with caching  | (default)     |            0.0309 |         8932 |
-| node w/o caching   | (default)     |            0.1835 |         8932 |
-| rust with 50% jpeg | -n 5 -c 1     |            2.4235 |         7076 |
-| rust with 80% jpeg | -n 5 -c 1     |            2.4145 |        11793 |
-| rust release 80%   | (default)     |            1.0994 |        11793 |
-| rust release 75%   | (default)     |            1.0956 |        10263 |
-*** consider if caching search results will improve responsiveness
-**** could return a query code to the caller in search meta
-**** caller returns that code in the next query to access the cache
-**** in this way, the results for a particular query can be cached reliably
-**** eventually cached search results need to be pruned
-**** RocksDB by default has a block cache of 8mb in 16 shards of 512kb
-**** also consider that any caching should live in the data source
-*** consider if filtering can be done "in the database" somehow
-**** database queries should probably take a filter closure
-**** database functions iterate the results, applying the filter
-**** the remaining results are then collecting into a vector
 ** Search Improvements
 *** TODO Support advanced queries using Google-style operators
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
@@ -247,6 +212,10 @@ include it in the database records.
 **** EXIF: https://www.media.mit.edu/pia/Research/deepview/exif.html
 ** Bulk edit
 *** Short term solution akin to perkeep web interface
+**** hover over thumbnail, shows checkbox button in the corner
+**** click on the checkbox to select the asset
+**** once selected, the actions panel slides in from the side
+**** image gallery shrinks to fit the actions panel
 - [ ] Easy selection with hover checkbox button
   - Could use =svg= tag to render the button
   - See pexels.com in that it uses article tag, with nested img and button with nested svg
