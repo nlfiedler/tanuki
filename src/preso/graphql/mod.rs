@@ -73,6 +73,11 @@ impl Asset {
         self.key.clone()
     }
 
+    /// Hash digest of the contents of the asset.
+    fn checksum(&self) -> String {
+        self.checksum.clone()
+    }
+
     /// The original filename of the asset when it was imported.
     fn filename(&self) -> String {
         self.filename.clone()
