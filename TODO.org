@@ -1,4 +1,10 @@
 * Tanuki
+** Quick UI improvements
+*** how to stop the browser from navigating when form is not saved
+**** it's called "beforeunload"
+**** c.f. https://github.com/reasonml-community/bs-webapi-incubator/issues/151
+**** c.f. https://github.com/jacobbuck/react-beforeunload
+*** embiggen the thumbnails to 300x300
 ** Backend Rewrite
 *** Thumbnail Serving Strategy
 **** capture the image/video dimensions during import, save to asset record

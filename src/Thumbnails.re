@@ -150,56 +150,47 @@ module ThumbCard = {
         {thumbless: false},
       );
     <div className="column is-one-third">
-      <div className="card">
-        <div
-          className="card-content"
-          onClick={_ => ReasonReact.Router.push("/assets/" ++ entry##id)}>
-          <figure
-            className="image"
-            /*
-             * overflow only works on block elements, so apply it here;
-             * long file names with "break" characters (e.g. '-') will
-             * wrap automatically anyway
-             */
-            style={ReactDOMRe.Style.make(~overflow="hidden", ())}>
-            {state.thumbless
-               ? <img
-                   src={
-                     "/images/" ++ brokenThumbnailPlaceholder(entry##filename)
-                   }
-                   alt=entry##filename
-                   style={ReactDOMRe.Style.make(~width="auto", ())}
+      <figure
+        className="image"
+        onClick={_ => ReasonReact.Router.push("/assets/" ++ entry##id)}
+        /*
+         * overflow only works on block elements, so apply it here;
+         * long file names with "break" characters (e.g. '-') will
+         * wrap automatically anyway
+         */
+        style={ReactDOMRe.Style.make(~overflow="hidden", ())}>
+        {state.thumbless
+           ? <img
+               src={"/images/" ++ brokenThumbnailPlaceholder(entry##filename)}
+               alt=entry##filename
+               style={ReactDOMRe.Style.make(~width="auto", ())}
+             />
+           : (
+             if (Js.String.startsWith("video/", entry##mimetype)) {
+               <video width="300" controls=true preload="auto">
+                 <source
+                   src={"/api/asset/" ++ entry##id}
+                   type_={assetMimeType(entry##mimetype)}
                  />
-               : (
-                 if (Js.String.startsWith("video/", entry##mimetype)) {
-                   <video width="240" controls=true preload="auto">
-                     <source
-                       src={"/api/asset/" ++ entry##id}
-                       type_={assetMimeType(entry##mimetype)}
-                     />
-                     {ReasonReact.string(
-                        "Bummer, your browser does not support the HTML5",
-                      )}
-                     <code> {ReasonReact.string("video")} </code>
-                     {ReasonReact.string("tag.")}
-                   </video>;
-                 } else {
-                   <img
-                     src={"/api/thumbnail/240/240/" ++ entry##id}
-                     alt=entry##filename
-                     onError={_ => dispatch(MarkThumbless)}
-                     style={ReactDOMRe.Style.make(~width="auto", ())}
-                   />;
-                 }
-               )}
-            <small>
-              {ReasonReact.string(formatDate(entry##datetime))}
-            </small>
-            <br />
-            <small> {ReasonReact.string(entry##filename)} </small>
-          </figure>
-        </div>
-      </div>
+                 {ReasonReact.string(
+                    "Bummer, your browser does not support the HTML5",
+                  )}
+                 <code> {ReasonReact.string("video")} </code>
+                 {ReasonReact.string("tag.")}
+               </video>;
+             } else {
+               <img
+                 src={"/api/thumbnail/300/300/" ++ entry##id}
+                 alt=entry##filename
+                 onError={_ => dispatch(MarkThumbless)}
+                 style={ReactDOMRe.Style.make(~width="auto", ())}
+               />;
+             }
+           )}
+        <small> {ReasonReact.string(formatDate(entry##datetime))} </small>
+        <br />
+        <small> {ReasonReact.string(entry##filename)} </small>
+      </figure>
     </div>;
   };
 };
