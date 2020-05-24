@@ -24,6 +24,9 @@ pub trait EntityDataSource {
     /// Store the asset record in the database.
     fn put_asset(&self, asset: &Asset) -> Result<(), Error>;
 
+    /// Remove the asset record from the database.
+    fn delete_asset(&self, asset_id: &str) -> Result<(), Error>;
+
     /// Search for the asset with the given hash digest.
     ///
     /// Returns the asset identifier.
@@ -73,6 +76,9 @@ pub trait EntityDataSource {
     /// Return all of the known tags and the number of assets associated with
     /// each tag.
     fn all_tags(&self) -> Result<Vec<LabeledCount>, Error>;
+
+    /// Return all asset identifiers in the database.
+    fn all_assets(&self) -> Result<Vec<String>, Error>;
 }
 
 /// Implementation of the entity data source utilizing mokuroku to manage
@@ -122,6 +128,12 @@ impl EntityDataSource for EntityDataSourceImpl {
     fn put_asset(&self, asset: &Asset) -> Result<(), Error> {
         let key = format!("asset/{}", asset.key);
         self.database.put_asset(&key, asset)?;
+        Ok(())
+    }
+
+    fn delete_asset(&self, asset_id: &str) -> Result<(), Error> {
+        let key = format!("asset/{}", asset_id);
+        self.database.delete_document(&key.as_bytes())?;
         Ok(())
     }
 
@@ -240,6 +252,10 @@ impl EntityDataSource for EntityDataSourceImpl {
 
     fn all_tags(&self) -> Result<Vec<LabeledCount>, Error> {
         self.count_all_keys("by_tags")
+    }
+
+    fn all_assets(&self) -> Result<Vec<String>, Error> {
+        self.database.find_prefix("asset/")
     }
 }
 

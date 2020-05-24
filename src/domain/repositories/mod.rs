@@ -22,6 +22,9 @@ pub trait RecordRepository {
     /// Store the asset entity in the data storage system.
     fn put_asset(&self, asset: &Asset) -> Result<(), Error>;
 
+    /// Remove the asset record from the database.
+    fn delete_asset(&self, asset_id: &str) -> Result<(), Error>;
+
     /// Return the number of assets stored in the storage system.
     fn count_assets(&self) -> Result<u64, Error>;
 
@@ -36,6 +39,9 @@ pub trait RecordRepository {
     /// Return all of the known tags and the number of assets associated with
     /// each tag.
     fn all_tags(&self) -> Result<Vec<LabeledCount>, Error>;
+
+    /// Return all asset identifiers in the database.
+    fn all_assets(&self) -> Result<Vec<String>, Error>;
 
     /// Search for assets that have all of the given tags.
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error>;
@@ -80,6 +86,9 @@ pub trait BlobRepository {
 
     /// Return the full path to the asset in blob storage.
     fn blob_path(&self, asset_id: &str) -> Result<PathBuf, Error>;
+
+    /// Change the identity of the asset in blob storage.
+    fn rename_blob(&self, old_id: &str, new_id: &str) -> Result<(), Error>;
 
     /// Produce a thumbnail of the desired size for the asset.
     fn thumbnail(&self, width: u32, height: u32, asset_id: &str) -> Result<Vec<u8>, Error>;

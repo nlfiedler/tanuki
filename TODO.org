@@ -10,26 +10,16 @@
 *** asset 2: =MjAxOC8wNS8yMS8xNzE1LzAxY2Uxdms4NjJtejU2ajcybjBxd21nMTll=
 **** filepath: =2018/05/21/1715/01ce1vk862mz56j72n0qwmg19e=
 **** checksum: =sha256-03daadbd3131a14034540614ebe02efc4060f792501e94771b54ede16657bd38=
-**** filename: =adbd3131a14034540614ebe02efc4060f792501e94771b54ede16657bd38=
+**** filename: =adbd3131a14034540614ebe02efc4060f792501e94771b54ede16657bd38= (now =IMG_0912.JPG=)
 **** original date probably missing
-*** TODO provide tools to fix data issues
-**** TODO add additional optional fields to =AssetInput= for manual fixes
+*** DONE provide tools to fix data issues
+**** DONE add additional optional fields to =AssetInput= for manual fixes
 ***** use it to fix the filename that is part of a digest
 ****** should be =IMG_0912.JPG= or =IMG_0914.JPG= (neither occur in the database)
-**** TODO write a graph query to run a data integrity check
-***** looks for problems and returns list of identifiers that have issues
-***** asset is missing
-***** =original_date= not set at all, or set to wrong value
-***** identifier is missing an extension appropriate for the media type
-***** filename is missing an extension appropriate for the media type
-**** TODO write a graph mutation to fix the identified assets
-***** take list of identifiers for assets with known issues
-***** attempt to fix whatever issues are detected
-****** append missing extension to filename, identifier, asset file
-****** set the missing original date
-***** if asset identifier has changed, insert-new/delete-old
-***** if asset identifier did not change, update record
-***** return list of successfully fixed assets
+**** file sizes will be wrong because of the auto-orient performed previously
+**** DONE write a graphql query to run a data integrity check
+***** look for problems and return list of identifiers that have issues
+**** DONE write a graphql mutation to diagnose and repair issues
 ** Quick UI improvements
 *** TODO make the cursor a pointer over thumbnail =figure= elements
 *** TODO add some padding below the pagination controls
@@ -114,6 +104,7 @@
 ***** this ensures correct guessing of media type when making thumbnails
 ***** n.b. all thumbnails and previews are image/jpeg anyway so this is not necessary
 ***** if, someday, the provided media type is "unknown", then use mime sniffer
+***** c.f. https://mimesniff.spec.whatwg.org
 ***** c.f. https://developer.mozilla.org/en-US/docs/Mozilla/How_Mozilla_determines_MIME_Types
 ***** c.f. https://github.com/flier/rust-mime-sniffer
 **** the frontend can use the image dimensions to compute the aspect ratio
@@ -354,3 +345,11 @@ include it in the database records.
 **** c.f. https://simonwillison.net/2020/May/21/dogsheep-photos/
 **** ML assigns scores on aesthetics, interest, etc
 **** ML recognizes the subject (dog, cat, person, etc)
+** Data Integrity
+*** Expose data integrity checks in frontend
+**** consider if using GraphQL subscriptions would make sense
+***** would return each asset id and success bool or list of error codes
+***** results would be returned one at a time for the frontend to show progress
+***** the error codes would be encoded as GraphQL enums
+**** add an option to purge bad records
+***** errors of type base64, utf8, missing are not recoverable

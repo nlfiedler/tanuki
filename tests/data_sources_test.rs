@@ -9,7 +9,7 @@ use tanuki::data::sources::EntityDataSource;
 use tanuki::data::sources::EntityDataSourceImpl;
 
 #[test]
-fn test_get_put_asset() {
+fn test_get_put_delete_asset() {
     let db_path = DBPath::new("_test_get_put_asset");
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
 
@@ -23,6 +23,11 @@ fn test_get_put_asset() {
     datasource.put_asset(&expected).unwrap();
     let actual = datasource.get_asset(&expected.key).unwrap();
     common::compare_assets(&expected, &actual);
+
+    // delete should result in get returning an error
+    datasource.delete_asset(&expected.key).unwrap();
+    let result = datasource.get_asset(&expected.key);
+    assert!(result.is_err());
 }
 
 #[test]
@@ -191,6 +196,42 @@ fn test_all_tags() {
     assert!(actual.iter().any(|l| l.label == "dog" && l.count == 2));
     assert!(actual.iter().any(|l| l.label == "lizard" && l.count == 1));
     assert!(actual.iter().any(|l| l.label == "mouse" && l.count == 1));
+}
+
+#[test]
+fn test_query_all_assets() {
+    let db_path = DBPath::new("_test_query_all_assets");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    // zero assets
+    let actual = datasource.all_assets().unwrap();
+    assert_eq!(actual.len(), 0);
+
+    // one asset
+    let asset = common::build_basic_asset();
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.all_assets().unwrap();
+    assert_eq!(actual.len(), 1);
+    assert_eq!(actual[0], "basic113");
+
+    // multiple assets
+    let asset = common::build_recent_asset("monday6");
+    datasource.put_asset(&asset).unwrap();
+    let asset = common::build_recent_asset("tuesday7");
+    datasource.put_asset(&asset).unwrap();
+    let asset = common::build_recent_asset("wednesday8");
+    datasource.put_asset(&asset).unwrap();
+    let asset = common::build_recent_asset("thursday9");
+    datasource.put_asset(&asset).unwrap();
+    let asset = common::build_recent_asset("friday10");
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.all_assets().unwrap();
+    assert_eq!(actual.len(), 6);
+    assert!(actual.iter().any(|l| l == "monday6"));
+    assert!(actual.iter().any(|l| l == "tuesday7"));
+    assert!(actual.iter().any(|l| l == "wednesday8"));
+    assert!(actual.iter().any(|l| l == "thursday9"));
+    assert!(actual.iter().any(|l| l == "friday10"));
 }
 
 #[test]

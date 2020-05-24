@@ -42,6 +42,10 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.put_asset(asset)
     }
 
+    fn delete_asset(&self, asset_id: &str) -> Result<(), Error> {
+        self.datasource.delete_asset(asset_id)
+    }
+
     fn count_assets(&self) -> Result<u64, Error> {
         self.datasource.count_assets()
     }
@@ -56,6 +60,10 @@ impl RecordRepository for RecordRepositoryImpl {
 
     fn all_tags(&self) -> Result<Vec<LabeledCount>, Error> {
         self.datasource.all_tags()
+    }
+
+    fn all_assets(&self) -> Result<Vec<String>, Error> {
+        self.datasource.all_assets()
     }
 
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error> {
@@ -135,6 +143,13 @@ impl BlobRepository for BlobRepositoryImpl {
         let mut full_path = self.basepath.clone();
         full_path.push(rel_path);
         Ok(full_path)
+    }
+
+    fn rename_blob(&self, old_id: &str, new_id: &str) -> Result<(), Error> {
+        let old_path = self.blob_path(old_id)?;
+        let new_path = self.blob_path(new_id)?;
+        std::fs::rename(old_path, new_path)?;
+        Ok(())
     }
 
     fn thumbnail(&self, width: u32, height: u32, asset_id: &str) -> Result<Vec<u8>, Error> {
@@ -370,6 +385,34 @@ mod tests {
     }
 
     #[test]
+    fn test_delete_asset_ok() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_delete_asset()
+            .with(eq("abc123"))
+            .returning(move |_| Ok(()));
+        // act
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
+        let result = repo.delete_asset("abc123");
+        // assert
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_delete_asset_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_delete_asset()
+            .with(eq("abc123"))
+            .returning(move |_| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
+        let result = repo.delete_asset("abc123");
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn test_count_assets_ok() {
         // arrange
         let mut mock = MockEntityDataSource::new();
@@ -533,6 +576,48 @@ mod tests {
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_tags();
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_all_assets_ok() {
+        // arrange
+        let expected = vec![
+            "monday1".to_owned(),
+            "tuesday2".to_owned(),
+            "wednesday3".to_owned(),
+            "thursday4".to_owned(),
+            "friday5".to_owned(),
+        ];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_assets()
+            .with()
+            .returning(move || Ok(expected.clone()));
+        // act
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
+        let result = repo.all_assets();
+        // assert
+        assert!(result.is_ok());
+        let actual = result.unwrap();
+        assert_eq!(actual.len(), 5);
+        assert!(actual.iter().any(|l| l == "monday1"));
+        assert!(actual.iter().any(|l| l == "tuesday2"));
+        assert!(actual.iter().any(|l| l == "wednesday3"));
+        assert!(actual.iter().any(|l| l == "thursday4"));
+        assert!(actual.iter().any(|l| l == "friday5"));
+    }
+
+    #[test]
+    fn test_all_assets_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_assets()
+            .with()
+            .returning(|| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
+        let result = repo.all_assets();
         // assert
         assert!(result.is_err());
     }

@@ -68,6 +68,7 @@ async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
         let content_type = field.content_type().to_owned();
         let filename = disposition.get_filename().unwrap();
         let mut filepath = UPLOAD_PATH.clone();
+        std::fs::create_dir_all(&filepath)?;
         filepath.push(filename);
         let filepath_clone = filepath.clone();
         // File::create is blocking operation, use threadpool
@@ -108,7 +109,11 @@ async fn graphql(
     data: web::Json<GraphQLRequest>,
 ) -> actix_web::Result<HttpResponse> {
     let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
-    let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
+    let datasource: Arc<dyn EntityDataSource> = Arc::new(source);
+    let ctx = Arc::new(graphql::GraphContext::new(
+        datasource,
+        Box::new(ASSETS_PATH.clone()),
+    ));
     let res = data.execute(&st, &ctx);
     let body = serde_json::to_string(&res)?;
     Ok(HttpResponse::Ok()
@@ -259,6 +264,7 @@ mod tests {
         // arrange
         let src_filename = "./tests/fixtures/dcp_1069.jpg";
         let mut filepath = UPLOAD_PATH.clone();
+        std::fs::create_dir_all(&filepath).unwrap();
         filepath.push("dcp_1069.jpg");
         std::fs::copy(src_filename, &filepath).unwrap();
         let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();

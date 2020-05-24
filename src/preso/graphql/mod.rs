@@ -1,18 +1,35 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-use crate::data::repositories::RecordRepositoryImpl;
+use crate::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl};
 use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, SearchResult};
+use crate::domain::usecases::diagnose::Diagnosis;
 use chrono::prelude::*;
 use juniper::{
     graphql_scalar, FieldResult, GraphQLEnum, GraphQLInputObject, ParseScalarResult,
     ParseScalarValue, RootNode, Value,
 };
+use std::path::PathBuf;
 use std::sync::Arc;
 
+// Context for the GraphQL schema.
+pub struct GraphContext {
+    datasource: Arc<dyn EntityDataSource>,
+    assets_path: Box<PathBuf>,
+}
+
+impl GraphContext {
+    pub fn new(datasource: Arc<dyn EntityDataSource>, assets_path: Box<PathBuf>) -> Self {
+        Self {
+            datasource,
+            assets_path,
+        }
+    }
+}
+
 // Mark the data source as a valid context type for Juniper.
-impl juniper::Context for dyn EntityDataSource {}
+impl juniper::Context for GraphContext {}
 
 // Define a larger integer type so we can represent those larger values, such as
 // file sizes. Some of the core types define fields that are larger than i32, so
@@ -266,6 +283,57 @@ impl SearchMeta {
     }
 }
 
+#[derive(GraphQLEnum)]
+pub enum ErrorCode {
+    /// Asset identifier was seemingly not valid base64.
+    Base64,
+    /// Asset identifier was seemingly not valid UTF-8.
+    Utf8,
+    /// Asset file was not found at the expected location.
+    Missing,
+    /// Asset file size does not match database record.
+    Size,
+    /// Asset file was probably inaccessible (file permissions).
+    Access,
+    /// Asset file hash digest does not match database record.
+    Digest,
+    /// Asset record media_type property is not a valid media type.
+    MediaType,
+    /// Asset record original_date property missing or incorrect.
+    OriginalDate,
+    /// Asset identifier/filename extension missing or incorrect.
+    Extension,
+}
+
+impl From<crate::domain::usecases::diagnose::ErrorCode> for ErrorCode {
+    fn from(code: crate::domain::usecases::diagnose::ErrorCode) -> Self {
+        match code {
+            crate::domain::usecases::diagnose::ErrorCode::Base64 => ErrorCode::Base64,
+            crate::domain::usecases::diagnose::ErrorCode::Utf8 => ErrorCode::Utf8,
+            crate::domain::usecases::diagnose::ErrorCode::Missing => ErrorCode::Missing,
+            crate::domain::usecases::diagnose::ErrorCode::Size => ErrorCode::Size,
+            crate::domain::usecases::diagnose::ErrorCode::Access => ErrorCode::Access,
+            crate::domain::usecases::diagnose::ErrorCode::Digest => ErrorCode::Digest,
+            crate::domain::usecases::diagnose::ErrorCode::MediaType => ErrorCode::MediaType,
+            crate::domain::usecases::diagnose::ErrorCode::OriginalDate => ErrorCode::OriginalDate,
+            crate::domain::usecases::diagnose::ErrorCode::Extension => ErrorCode::Extension,
+        }
+    }
+}
+
+#[juniper::object(description = "`Diagnosis` is returned from the `diagnose` query.")]
+impl Diagnosis {
+    /// Identifier for the asset.
+    fn asset_id(&self) -> String {
+        self.asset_id.clone()
+    }
+
+    /// One of the issues found with this asset.
+    fn error_code(&self) -> ErrorCode {
+        self.error_code.into()
+    }
+}
+
 /// `AssetInput` is used to update the details of an asset.
 #[derive(Clone, GraphQLInputObject)]
 pub struct AssetInput {
@@ -316,14 +384,14 @@ pub struct AssetInputId {
 
 pub struct QueryRoot;
 
-#[juniper::object(Context = Arc<dyn EntityDataSource>)]
+#[juniper::object(Context = Arc<GraphContext>)]
 impl QueryRoot {
     /// Retrieve an asset by its unique identifier.
     fn asset(executor: &Executor, id: String) -> FieldResult<Asset> {
         use crate::domain::usecases::fetch::{FetchAsset, Params};
         use crate::domain::usecases::UseCase;
-        let source = executor.context().clone();
-        let repo = RecordRepositoryImpl::new(source);
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = FetchAsset::new(Box::new(repo));
         let params = Params::new(id);
         let asset = usecase.call(params)?;
@@ -334,20 +402,36 @@ impl QueryRoot {
     fn count(executor: &Executor) -> FieldResult<i32> {
         use crate::domain::usecases::count::CountAssets;
         use crate::domain::usecases::{NoParams, UseCase};
-        let source = executor.context().clone();
-        let repo = RecordRepositoryImpl::new(source);
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = CountAssets::new(Box::new(repo));
         let params = NoParams {};
         let count = usecase.call(params)?;
         Ok(count as i32)
     }
 
+    /// Perform a diagnosis of the database and blob store.
+    fn diagnose(executor: &Executor, checksum: Option<bool>) -> FieldResult<Vec<Diagnosis>> {
+        use crate::domain::usecases::diagnose::{Diagnose, Params};
+        use crate::domain::usecases::UseCase;
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
+        let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
+        let usecase = Diagnose::new(Box::new(repo), Box::new(blobs));
+        let mut params: Params = Default::default();
+        if let Some(chk) = checksum {
+            params.checksum = chk;
+        }
+        let results: Vec<Diagnosis> = usecase.call(params)?;
+        Ok(results)
+    }
+
     /// Retrieve the list of locations and their associated asset count.
     fn locations(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
         use crate::domain::usecases::location::AllLocations;
         use crate::domain::usecases::{NoParams, UseCase};
-        let source = executor.context().clone();
-        let repo = RecordRepositoryImpl::new(source);
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = AllLocations::new(Box::new(repo));
         let params = NoParams {};
         let locations: Vec<LabeledCount> = usecase.call(params)?;
@@ -358,8 +442,8 @@ impl QueryRoot {
     fn lookup(executor: &Executor, checksum: String) -> FieldResult<Option<Asset>> {
         use crate::domain::usecases::checksum::{AssetByChecksum, Params};
         use crate::domain::usecases::UseCase;
-        let source = executor.context().clone();
-        let repo = RecordRepositoryImpl::new(source);
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = AssetByChecksum::new(Box::new(repo));
         let params = Params::new(checksum);
         let asset = usecase.call(params)?;
@@ -373,8 +457,8 @@ impl QueryRoot {
     fn recent(executor: &Executor, since: Option<DateTime<Utc>>) -> FieldResult<SearchMeta> {
         use crate::domain::usecases::recent::{Params, RecentImports};
         use crate::domain::usecases::UseCase;
-        let source = executor.context().clone();
-        let repo = RecordRepositoryImpl::new(source);
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = RecentImports::new(Box::new(repo));
         let mut params: Params = Default::default();
         params.after_date = since;
@@ -400,8 +484,8 @@ impl QueryRoot {
     ) -> FieldResult<SearchMeta> {
         use crate::domain::usecases::search::{Params, SearchAssets};
         use crate::domain::usecases::UseCase;
-        let source = executor.context().clone();
-        let repo = RecordRepositoryImpl::new(source);
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = SearchAssets::new(Box::new(repo));
         let params: Params = params.into();
         let mut results: Vec<SearchResult> = usecase.call(params)?;
@@ -417,8 +501,8 @@ impl QueryRoot {
     fn tags(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
         use crate::domain::usecases::tags::AllTags;
         use crate::domain::usecases::{NoParams, UseCase};
-        let source = executor.context().clone();
-        let repo = RecordRepositoryImpl::new(source);
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = AllTags::new(Box::new(repo));
         let params = NoParams {};
         let tags: Vec<LabeledCount> = usecase.call(params)?;
@@ -429,8 +513,8 @@ impl QueryRoot {
     fn years(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
         use crate::domain::usecases::year::AllYears;
         use crate::domain::usecases::{NoParams, UseCase};
-        let source = executor.context().clone();
-        let repo = RecordRepositoryImpl::new(source);
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = AllYears::new(Box::new(repo));
         let params = NoParams {};
         let years: Vec<LabeledCount> = usecase.call(params)?;
@@ -464,14 +548,31 @@ fn paginate_vector<T>(input: &mut Vec<T>, offset: Option<i32>, count: Option<i32
 
 pub struct MutationRoot;
 
-#[juniper::object(Context = Arc<dyn EntityDataSource>)]
+#[juniper::object(Context = Arc<GraphContext>)]
 impl MutationRoot {
+    /// Diagnosis and repair issues in the database and blob store.
+    fn repair(executor: &Executor, checksum: Option<bool>) -> FieldResult<Vec<Diagnosis>> {
+        use crate::domain::usecases::diagnose::{Diagnose, Params};
+        use crate::domain::usecases::UseCase;
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
+        let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
+        let usecase = Diagnose::new(Box::new(repo), Box::new(blobs));
+        let mut params: Params = Default::default();
+        if let Some(chk) = checksum {
+            params.checksum = chk;
+        }
+        params.repair = true;
+        let results: Vec<Diagnosis> = usecase.call(params)?;
+        Ok(results)
+    }
+
     /// Update the asset with the given values.
     fn update(executor: &Executor, id: String, asset: AssetInput) -> FieldResult<Asset> {
         use crate::domain::usecases::update::{Params, UpdateAsset};
         use crate::domain::usecases::UseCase;
-        let source = executor.context().clone();
-        let repo = RecordRepositoryImpl::new(source);
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = UpdateAsset::new(Box::new(repo));
         let params: Params = Params::new(id, asset.into());
         let result: Asset = usecase.call(params)?;
@@ -484,8 +585,8 @@ impl MutationRoot {
     fn bulk_update(executor: &Executor, assets: Vec<AssetInputId>) -> FieldResult<i32> {
         use crate::domain::usecases::update::{Params, UpdateAsset};
         use crate::domain::usecases::UseCase;
-        let source = executor.context().clone();
-        let repo = RecordRepositoryImpl::new(source);
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = UpdateAsset::new(Box::new(repo));
         for asset in assets.iter() {
             let params: Params = Params::new(asset.id.clone(), asset.input.clone().into());
@@ -572,7 +673,9 @@ mod tests {
         mock.expect_get_asset()
             .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let query = r#"query Fetch($id: String!) {
@@ -636,7 +739,9 @@ mod tests {
         mock.expect_get_asset()
             .with(eq("abc123"))
             .returning(|_| Err(err_msg("oh no")));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let query = r#"query Fetch($id: String!) {
@@ -659,7 +764,9 @@ mod tests {
         // arrange
         let mut mock = MockEntityDataSource::new();
         mock.expect_count_assets().with().returning(|| Ok(42));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let (res, _errors) =
@@ -678,7 +785,9 @@ mod tests {
         mock.expect_count_assets()
             .with()
             .returning(|| Err(err_msg("oh no")));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let (res, errors) =
@@ -710,7 +819,9 @@ mod tests {
         mock.expect_all_locations()
             .with()
             .returning(move || Ok(expected.clone()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let (res, _errors) = juniper::execute(
@@ -745,7 +856,9 @@ mod tests {
         mock.expect_all_locations()
             .with()
             .returning(|| Err(err_msg("oh no")));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let (res, errors) = juniper::execute(
@@ -786,7 +899,9 @@ mod tests {
         mock.expect_get_asset()
             .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let query = r#"query Lookup($checksum: String!) {
@@ -811,7 +926,9 @@ mod tests {
         mock.expect_query_by_checksum()
             .with(eq("cafebabe"))
             .returning(|_| Ok(None));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let query = r#"query Lookup($checksum: String!) {
@@ -834,7 +951,9 @@ mod tests {
         mock.expect_query_by_checksum()
             .with(eq("cafebabe"))
             .returning(|_| Err(err_msg("oh no")));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let query = r#"query Lookup($checksum: String!) {
@@ -913,7 +1032,9 @@ mod tests {
         mock.expect_query_by_tags()
             .with(always())
             .returning(move |_| Ok(results.clone()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let mut vars = Variables::new();
@@ -1025,7 +1146,9 @@ mod tests {
         mock.expect_query_newborn()
             .with(always())
             .returning(move |_| Ok(results.clone()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let mut vars = Variables::new();
@@ -1070,7 +1193,9 @@ mod tests {
         mock.expect_query_newborn()
             .with(always())
             .returning(|_| Err(err_msg("oh no")));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let mut vars = Variables::new();
@@ -1103,7 +1228,9 @@ mod tests {
         mock.expect_query_by_tags()
             .with(always())
             .returning(move |_| Ok(results.clone()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let mut vars = Variables::new();
@@ -1164,7 +1291,9 @@ mod tests {
         mock.expect_query_by_tags()
             .with(always())
             .returning(move |_| Ok(results.clone()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let mut vars = Variables::new();
@@ -1225,7 +1354,9 @@ mod tests {
         mock.expect_query_by_tags()
             .with(always())
             .returning(move |_| Ok(results.clone()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let mut vars = Variables::new();
@@ -1286,7 +1417,9 @@ mod tests {
         mock.expect_query_by_tags()
             .with(always())
             .returning(move |_| Ok(results.clone()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let mut vars = Variables::new();
@@ -1347,7 +1480,9 @@ mod tests {
         mock.expect_query_by_tags()
             .with(always())
             .returning(move |_| Ok(vec![]));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let mut vars = Variables::new();
@@ -1395,7 +1530,9 @@ mod tests {
         mock.expect_query_by_tags()
             .with(eq(vec!["cat".to_owned()]))
             .returning(|_| Err(err_msg("oh no")));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let mut vars = Variables::new();
@@ -1450,7 +1587,9 @@ mod tests {
         mock.expect_all_tags()
             .with()
             .returning(move || Ok(expected.clone()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let (res, _errors) = juniper::execute(
@@ -1485,7 +1624,9 @@ mod tests {
         mock.expect_all_tags()
             .with()
             .returning(|| Err(err_msg("oh no")));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let (res, errors) = juniper::execute(
@@ -1523,7 +1664,9 @@ mod tests {
         mock.expect_all_years()
             .with()
             .returning(move || Ok(expected.clone()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let (res, _errors) = juniper::execute(
@@ -1558,7 +1701,9 @@ mod tests {
         mock.expect_all_years()
             .with()
             .returning(|| Err(err_msg("oh no")));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let (res, errors) = juniper::execute(
@@ -1597,7 +1742,9 @@ mod tests {
             .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
         mock.expect_put_asset().with(always()).returning(|_| Ok(()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let mut vars = Variables::new();
@@ -1652,7 +1799,9 @@ mod tests {
         mock.expect_get_asset()
             .with(always())
             .returning(|_| Err(err_msg("oh no")));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let mut vars = Variables::new();
@@ -1703,7 +1852,9 @@ mod tests {
             .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
         mock.expect_put_asset().with(always()).returning(|_| Ok(()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let mut vars = Variables::new();
@@ -1776,7 +1927,9 @@ mod tests {
             .with(eq("tuesday7"))
             .returning(move |_| Ok(asset2.clone()));
         mock.expect_put_asset().with(always()).returning(|_| Ok(()));
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
         let mut vars = Variables::new();
