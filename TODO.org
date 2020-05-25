@@ -1,28 +1,11 @@
 * Tanuki
-** Data Corruption
-*** click ~reno~ location, one of the images is broken
-*** click ~mt rose~ location, one of the images is broken
-*** asset 1: =MjAxOC8wNS8yMS8xNzE1LzAxY2UxdnZiem0yZm10a3N0MmYzMDRxODRt=
-**** filepath: =2018/05/21/1715/01ce1vvbzm2fmtkst2f304q84m=
-**** checksum: =sha256-f0bbbaa2dcc41e414712895cb1507b8c95002df9771933925de8b1645c1f15a9=
-**** filename: =nathan_antonia_at_mt_rose=
-**** original date probably missing
-*** asset 2: =MjAxOC8wNS8yMS8xNzE1LzAxY2Uxdms4NjJtejU2ajcybjBxd21nMTll=
-**** filepath: =2018/05/21/1715/01ce1vk862mz56j72n0qwmg19e=
-**** checksum: =sha256-03daadbd3131a14034540614ebe02efc4060f792501e94771b54ede16657bd38=
-**** filename: =adbd3131a14034540614ebe02efc4060f792501e94771b54ede16657bd38= (now =IMG_0912.JPG=)
-**** original date probably missing
-*** DONE provide tools to fix data issues
-**** DONE add additional optional fields to =AssetInput= for manual fixes
-***** use it to fix the filename that is part of a digest
-****** should be =IMG_0912.JPG= or =IMG_0914.JPG= (neither occur in the database)
-**** file sizes will be wrong because of the auto-orient performed previously
-**** DONE write a graphql query to run a data integrity check
-***** look for problems and return list of identifiers that have issues
-**** DONE write a graphql mutation to diagnose and repair issues
 ** Quick UI improvements
+*** TODO should limit the number of recents displayed to 100 or something
 *** TODO make the cursor a pointer over thumbnail =figure= elements
 *** TODO add some padding below the pagination controls
+*** TODO add some padding below the asset edit form
+*** TODO offer a button to download the raw asset on the show asset page
+**** apparently cannot download a video by clicking on it
 *** TODO how to stop the browser from navigating when form is not saved
 **** should have this on the recents page because there can be many fields
 **** it's called "beforeunload"

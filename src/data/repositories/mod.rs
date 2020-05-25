@@ -162,7 +162,10 @@ impl BlobRepository for BlobRepositoryImpl {
 // within the bounds given while maintaining aspect ratio.
 fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8>, Error> {
     let mut buffer: Vec<u8> = Vec::new();
-    let mut img = image::open(filepath)?;
+    // The image crate does not recognize .jpe extension as jpeg, so load the
+    // image into memory to force it to interpret the raw bytes.
+    let raw_bytes = std::fs::read(filepath)?;
+    let mut img = image::load_from_memory(&raw_bytes)?;
     if let Ok(orientation) = get_image_orientation(filepath) {
         // c.f. https://magnushoff.com/articles/jpeg-orientation/
         if orientation > 4 {

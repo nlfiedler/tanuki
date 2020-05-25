@@ -9,7 +9,7 @@ use futures::{StreamExt, TryStreamExt};
 use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
 use lazy_static::lazy_static;
-use log::info;
+use log::{debug, info};
 use std::env;
 use std::io::Write;
 use std::path::PathBuf;
@@ -136,6 +136,7 @@ async fn get_thumbnail(info: web::Path<(u32, u32, String)>) -> HttpResponse {
             .header(http::header::ETAG, etag)
             .body(data)
     } else {
+        debug!("get_thumbnail result: {:?}", result);
         HttpResponse::NotFound().finish()
     }
 }
