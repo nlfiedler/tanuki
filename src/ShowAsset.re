@@ -127,8 +127,12 @@ module PreviewPanel = {
           <p className="card-header-title">
             {ReasonReact.string(asset##filename)}
           </p>
+          <a className="card-header-icon" href={"/api/asset/" ++ asset##id}>
+            <span className="icon"> <i className="fas fa-download" /> </span>
+          </a>
           <a
             className="card-header-icon"
+            style={ReactDOMRe.Style.make(~cursor="pointer", ())}
             onClick={_ =>
               ReasonReact.Router.push("/assets/" ++ asset##id ++ "/edit")
             }>

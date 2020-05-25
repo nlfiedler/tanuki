@@ -1,11 +1,5 @@
 * Tanuki
 ** Quick UI improvements
-*** TODO should limit the number of recents displayed to 100 or something
-*** TODO make the cursor a pointer over thumbnail =figure= elements
-*** TODO add some padding below the pagination controls
-*** TODO add some padding below the asset edit form
-*** TODO offer a button to download the raw asset on the show asset page
-**** apparently cannot download a video by clicking on it
 *** TODO how to stop the browser from navigating when form is not saved
 **** should have this on the recents page because there can be many fields
 **** it's called "beforeunload"

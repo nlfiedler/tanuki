@@ -314,7 +314,14 @@ module BulkUpdate = {
             </div>
           </div>
         | NotCalled =>
-          if (Array.length(results) > 0) {
+          if (Array.length(results) > 100) {
+            <div style={ReactDOMRe.Style.make(~marginBottom="3em", ())}>
+              <BulkForm
+                results
+                onSubmit={submitUpdate(Array.sub(results, 0, 100), mutate)}
+              />
+            </div>;
+          } else if (Array.length(results) > 0) {
             <div style={ReactDOMRe.Style.make(~marginBottom="3em", ())}>
               <BulkForm results onSubmit={submitUpdate(results, mutate)} />
             </div>;

@@ -424,7 +424,9 @@ module EditPanel = {
             }
           </div>
         | NotCalled =>
-          <div className="container">
+          <div
+            className="container"
+            style={ReactDOMRe.Style.make(~marginBottom="3em", ())}>
             <div className="card">
               <div className="card-header">
                 <p className="card-header-title">

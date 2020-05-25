@@ -112,7 +112,10 @@ module Paging = {
   [@react.component]
   let make = (~current: int, ~total: int, ~dispatch) => {
     let setPage = (page: int) => dispatch(Redux.Paginate(page));
-    <nav className="pagination is-centered" role="navigation">
+    <nav
+      className="pagination is-centered"
+      role="navigation"
+      style={ReactDOMRe.Style.make(~marginBottom="3em", ())}>
       {makeLinks(current, total, setPage)}
     </nav>;
   };
@@ -158,7 +161,11 @@ module ThumbCard = {
          * long file names with "break" characters (e.g. '-') will
          * wrap automatically anyway
          */
-        style={ReactDOMRe.Style.make(~overflow="hidden", ())}>
+        style={ReactDOMRe.Style.make(
+          ~cursor="pointer",
+          ~overflow="hidden",
+          (),
+        )}>
         {state.thumbless
            ? <img
                src={"/images/" ++ brokenThumbnailPlaceholder(entry##filename)}
