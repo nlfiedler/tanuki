@@ -7,9 +7,20 @@ use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
 use chrono::prelude::*;
 use failure::{err_msg, Error};
+use lazy_static::lazy_static;
 use std::path::{Path, PathBuf};
 use std::str;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+
+lazy_static! {
+    // Cache of String keys to Vec<u8> image data for caching thumbnails.
+    //
+    // Cache capacity of 100 for 15kb thumbnails is around 1 megabyte.
+    //
+    // If the Mutex proves to be problematic, switch to ReentrantMutex in the
+    // parking_lot crate, which allows recursive locking.
+    static ref LRU_CACHE: Mutex<lru::LruCache<String, Vec<u8>>> = Mutex::new(lru::LruCache::new(100));
+}
 
 // Use an `Arc` to hold the data source to make cloning easy for the caller. If
 // using a `Box` instead, cloning it would involve adding fake clone operations
@@ -161,6 +172,21 @@ impl BlobRepository for BlobRepositoryImpl {
 // Produce a thumbnail for the given asset (assumed to be an image) that fits
 // within the bounds given while maintaining aspect ratio.
 fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8>, Error> {
+    let file_name = filepath.file_name().unwrap().to_string_lossy();
+    let cache_key = format!("{}/{}/{}", nwidth, nheight, file_name);
+    {
+        // limit the lifetime of this handle on the cache
+        //
+        // N.B. This means multiple requests for the same thumbnail will
+        // concurrently produce the same result with the last one overwriting
+        // the ones before, but eventually there will be a cache hit. This is
+        // only really an issue with performance testing that hits the same URL
+        // repeatedly, which is not realistic.
+        let mut cache = LRU_CACHE.lock().unwrap();
+        if let Some(reference) = cache.get(&cache_key) {
+            return Ok(reference.to_owned());
+        }
+    }
     let mut buffer: Vec<u8> = Vec::new();
     // The image crate does not recognize .jpe extension as jpeg, so load the
     // image into memory to force it to interpret the raw bytes.
@@ -184,6 +210,8 @@ fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8
     // low quality levels the image looks rather poor. The libvips library uses
     // a default quality factor of 0.75, so use that here as well.
     img.write_to(&mut buffer, image::ImageOutputFormat::Jpeg(75))?;
+    let mut cache = LRU_CACHE.lock().unwrap();
+    cache.put(cache_key, buffer.clone());
     Ok(buffer)
 }
 

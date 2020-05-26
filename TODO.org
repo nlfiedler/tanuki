@@ -34,9 +34,51 @@
 **** c.f. https://web.dev/http-cache/
 *** measure and improve the thumbnail serving
 **** consider caching in memory or on disk
-**** maybe try using =magick-rust= to see if that is faster
-***** it has =auto_orient()= and =fit()= functions on the =MagickWand= type
-**** measurements using =hey=
+***** unbound caching on disk will consume space forever
+***** should have an on-disk LRU cache with a set capacity
+**** test images for measurements
+| byte size | original filename               | identifier                                                       |
+|-----------+---------------------------------+------------------------------------------------------------------|
+|  12640634 | animal-blur-close-up-678448.jpg | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6ODQ0Y252OHZzMzkzNmtkNHExLmpwZw== |
+|   3285366 | pexels-photo.jpg                | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGswOTNicjBkYTdqc2J2ejFwczRlLmpwZw== |
+|   1613837 | adorable-animal-blur-326875.jpg | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp5aHl4NjlqN3ptY2V2MnRucjV0LmpwZw== |
+|    788961 | japan-cat-snow.jpg              | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGswNjdzMG0xdDkwcmd4ZnhrM3owLmpwZw== |
+|    326088 | animal-cat-cute-74177.jpg       | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6YTl5NmtkdmNqdnFuNDlzZ3Z5LmpwZw== |
+|    160852 | catmouse_1280p.jpg              | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6d25keWI5cmN5emVhamE4ajZuLmpwZw== |
+|     24402 | cat-in-cat-donut.jpg            | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6dnZqZDV4NGdnc3d0NWtheGNmLmpwZw== |
+**** image crate with caching using =hey= with default options
+| file size | response size | average seconds |
+|-----------+---------------+-----------------|
+|  12640634 |         19508 |          2.7554 |
+|   3285366 |         11124 |          0.5980 |
+|   1613837 |         12932 |          0.7358 |
+|    788961 |         12099 |          0.0847 |
+|    326088 |         15397 |          0.1289 |
+|    160852 |         11231 |          0.0723 |
+|     24402 |         13655 |          0.0184 |
+**** magick-rust with auto_orient/fit using =hey= with default options
+***** none of the images are rotated, so this is as good as it gets
+***** produces a strangely diverse range of output sizes
+| file size | response size |     average seconds |
+|-----------+---------------+---------------------|
+|  12640634 |               | too many open files |
+|   3285366 |         55477 |              4.0196 |
+|   1613837 |         12874 |              7.0632 |
+|    788961 |         70088 |              0.5709 |
+|    326088 |         15128 |              1.0801 |
+|    160852 |         15307 |              0.5394 |
+|     24402 |         16750 |              0.2645 |
+**** baseline measurements using =hey= using default options
+| file size | response size |   average seconds |
+|-----------+---------------+-------------------|
+|  12640634 |         19508 | 199/200 timed out |
+|   3285366 |         11124 |            2.2119 |
+|   1613837 |         12932 |            2.8025 |
+|    788961 |         12099 |            0.3350 |
+|    326088 |         15397 |            0.5299 |
+|    160852 |         11231 |            0.2818 |
+|     24402 |         13655 |            0.0544 |
+**** previous measurements using =hey=
 | conditions         | hey arguments | avg response time | payload size |
 |--------------------+---------------+-------------------+--------------|
 | rust debug initial | -n 5 -c 1     |            2.4346 |        50748 |
@@ -120,6 +162,8 @@
 ****** maybe have a small x to deactive active selectors
 ****** can also remove selectors by backspacing
 **** image gallery display
+***** show selects for months of the year to jump to that time range
+****** eventually this selector needs to consider the sort field and order
 ***** show additional details on mouse hover
 ***** button in corner of thumbnail to select assets to edit, download, etc
 **** asset detail page
@@ -322,6 +366,8 @@ include it in the database records.
 **** c.f. https://simonwillison.net/2020/May/21/dogsheep-photos/
 **** ML assigns scores on aesthetics, interest, etc
 **** ML recognizes the subject (dog, cat, person, etc)
+*** Image editing
+**** c.f. https://github.com/silvia-odwyer/photon
 ** Data Integrity
 *** Expose data integrity checks in frontend
 **** consider if using GraphQL subscriptions would make sense
