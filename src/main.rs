@@ -4,7 +4,10 @@
 use actix_cors::Cors;
 use actix_files::{Files, NamedFile};
 use actix_multipart::Multipart;
-use actix_web::{http, middleware, web, App, Either, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{
+    http::header, middleware, web, App, Either, Error, HttpMessage, HttpRequest, HttpResponse,
+    HttpServer,
+};
 use futures::{StreamExt, TryStreamExt};
 use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
@@ -122,22 +125,48 @@ async fn graphql(
 }
 
 // Produce a thumbnail for the asset of the requested size.
-async fn get_thumbnail(info: web::Path<(u32, u32, String)>) -> HttpResponse {
-    let etag: String = format!("{}:{}:{}", info.0, info.1, &info.2);
-    let result = web::block(move || {
-        let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
-        blobs.thumbnail(info.0, info.1, &info.2)
-    })
-    .await;
-    if let Ok(data) = result {
-        HttpResponse::Ok()
-            .content_type("image/jpeg")
-            .content_length(data.len() as u64)
-            .header(http::header::ETAG, etag)
-            .body(data)
+async fn get_thumbnail(req: HttpRequest) -> HttpResponse {
+    // => /api/thumbnail/{w}/{h}/{id}
+    let width: u32 = req.match_info().get("w").unwrap().parse().unwrap();
+    let height: u32 = req.match_info().get("h").unwrap().parse().unwrap();
+    let identifier: String = req.match_info().get("id").unwrap().to_owned();
+    let etag_value = format!("{}:{}:{}", width, height, &identifier);
+    let etag: header::EntityTag = header::EntityTag::strong(etag_value);
+    if none_match(&etag, &req) {
+        let result = web::block(move || {
+            let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
+            blobs.thumbnail(width, height, &identifier)
+        })
+        .await;
+        match result {
+            Ok(data) => HttpResponse::Ok()
+                .content_type("image/jpeg")
+                .content_length(data.len() as u64)
+                .header(header::ETAG, etag)
+                .body(data),
+            Err(err) => {
+                debug!("get_thumbnail result: {}", err);
+                HttpResponse::NotFound().finish()
+            }
+        }
     } else {
-        debug!("get_thumbnail result: {:?}", result);
-        HttpResponse::NotFound().finish()
+        HttpResponse::NotModified().finish()
+    }
+}
+
+// Returns true if `req` does not have an `If-None-Match` header matching `etag`.
+fn none_match(etag: &header::EntityTag, req: &HttpRequest) -> bool {
+    match req.get_header::<header::IfNoneMatch>() {
+        Some(header::IfNoneMatch::Any) => false,
+        Some(header::IfNoneMatch::Items(ref items)) => {
+            for item in items {
+                if item.weak_eq(etag) {
+                    return false;
+                }
+            }
+            true
+        }
+        None => true,
     }
 }
 
@@ -191,8 +220,8 @@ async fn main() -> std::io::Result<()> {
                 // with some GraphQL clients, including the Dart package.
                 Cors::new()
                     .allowed_methods(vec!["GET", "POST"])
-                    .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-                    .allowed_header(http::header::CONTENT_TYPE)
+                    .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
+                    .allowed_header(header::CONTENT_TYPE)
                     .max_age(3600)
                     .finish(),
             )
@@ -251,8 +280,8 @@ mod tests {
         payload.write(boundary_after.as_bytes()).unwrap();
         let req = test::TestRequest::with_uri("/import")
             .method(http::Method::POST)
-            .header(http::header::CONTENT_TYPE, ct_header)
-            .header(http::header::CONTENT_LENGTH, payload.len())
+            .header(header::CONTENT_TYPE, ct_header)
+            .header(header::CONTENT_LENGTH, payload.len())
             .set_payload(payload)
             .to_request();
         let resp = test::call_service(&mut app, req).await;
@@ -285,10 +314,18 @@ mod tests {
         let resp = test::call_service(&mut app, req).await;
         // assert
         assert!(resp.status().is_success());
-        assert!(resp.headers().contains_key(http::header::ETAG));
+        assert!(resp.headers().contains_key(header::ETAG));
         assert_eq!(
-            resp.headers().get(http::header::CONTENT_TYPE).unwrap(),
+            resp.headers().get(header::CONTENT_TYPE).unwrap(),
             "image/jpeg"
         );
+        let etag = resp.headers().get(header::ETAG).unwrap();
+
+        // assert the etag/if-none-match functionality
+        let req = test::TestRequest::with_uri(&uri)
+            .header(header::ETAG, etag.to_str().unwrap())
+            .to_request();
+        let resp = test::call_service(&mut app, req).await;
+        assert!(resp.status().is_success());
     }
 }

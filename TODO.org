@@ -19,19 +19,10 @@
 **** if it fails for any reason, ignore it
 **** https://github.com/nomalab/stainless-ffmpeg
 ** Large File Import
+*** naturally this is for videos, so proper video support is required
 *** TODO on upload screen, provide input field to accessible file path
 *** TODO create a record, move file into place
 ** Performance
-*** improve thumbnail caching support (=ETag= and =If-None-Match=)
-**** need to include an etag and respond properly to if-none-match requests
-**** create a =Thumbnail= type that implements =actix_web::Responder=
-**** the =respond_to()= returns a future so can use async/await
-**** in =respond_to()= can check the asset exists, check if the etag matches, generate thumbnail
-**** respond with =StatusCode::NOT_MODIFIED= if not modified
-**** respond with =OK= and the data if the etag does not match
-**** c.f. https://github.com/actix/actix-web/blob/master/actix-files/src/named.rs
-**** c.f. https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match
-**** c.f. https://web.dev/http-cache/
 *** measure and improve the thumbnail serving
 **** consider caching in memory or on disk
 ***** unbound caching on disk will consume space forever
@@ -68,7 +59,7 @@
 |    326088 |         15128 |              1.0801 |
 |    160852 |         15307 |              0.5394 |
 |     24402 |         16750 |              0.2645 |
-**** baseline measurements using =hey= using default options
+**** baseline measurements using =hey= with default options
 | file size | response size |   average seconds |
 |-----------+---------------+-------------------|
 |  12640634 |         19508 | 199/200 timed out |
