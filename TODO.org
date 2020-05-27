@@ -2,7 +2,7 @@
 ** Quick UI improvements
 *** TODO how to stop the browser from navigating when form is not saved
 **** should have this on the recents page because there can be many fields
-**** it's called "beforeunload"
+**** enable once user enters any values, disable when save button is pressed
 **** c.f. https://github.com/reasonml-community/bs-webapi-incubator/issues/151
 **** c.f. https://github.com/jacobbuck/react-beforeunload
 ** Video metadata support
@@ -18,10 +18,18 @@
 *** Could just try invoking =ffprobe= and if that works, use it
 **** if it fails for any reason, ignore it
 **** https://github.com/nomalab/stainless-ffmpeg
+***** prerequisites
+****** macos: =brew install ffmpeg=
 ** Large File Import
 *** naturally this is for videos, so proper video support is required
 *** TODO on upload screen, provide input field to accessible file path
 *** TODO create a record, move file into place
+** Evaluate photo organizing apps, strategies
+*** https://github.com/photoprism/photoprism
+*** https://www.theritters.online/dewey.html
+*** https://vermaden.wordpress.com/2019/06/12/manage-photography-the-unix-way/
+*** https://vermaden.wordpress.com/2018/09/15/ghost-in-the-shell-part-3/
+*** http://www.geeqie.org
 ** Performance
 *** measure and improve the thumbnail serving
 **** consider caching in memory or on disk
@@ -157,6 +165,7 @@
 ****** eventually this selector needs to consider the sort field and order
 ***** show additional details on mouse hover
 ***** button in corner of thumbnail to select assets to edit, download, etc
+***** option to switch to "list" view with smaller thumbnail and labels aligned in rows
 **** asset detail page
 ***** seems popular to show the gallery items as small thumbnails along the top (horizontally scrollable)
 ***** have chevron buttons on both sides to navigate through gallery items (e.g. "lightbox")
@@ -217,6 +226,19 @@
 **** likely would involve a full table scan
 *** TODO Support wildcards in filename, mimetype (others?)
 **** likely would involve a full table scan
+*** TODO searching for images by dimensions (~pano~, ~landscape~, ~portrait~)
+*** TODO searching assets by metadata values (=meta:exif:field=value=)
+** Easy export
+*** want this for the christmas calendar
+*** easy selection and export of images
+**** Selection process
+***** Maybe show selection icon thingy on hover, click to select
+***** Maybe shift-click to select by thumbnails
+**** Export process
+***** Maybe main menu has "export" feature to export selected assets
+***** Maybe action panel appears when there are selections
+***** Show "file save" dialog to choose local file path
+***** Save assets using their unique filename
 ** Data Format Support
 *** Auto-populate missing fields on load
 **** when loading an asset, detect missing data (e.g. no original time)
@@ -231,6 +253,7 @@
 **** https://github.com/oussama/libheif-rs (MIT)
 **** https://crates.io/crates/kamadak-exif (BSD) reads metadata
 *** Support audio formats
+**** get audio playback working
 **** read =ID3= tags in audio files
 *** TODO Detect time zone offset in EXIF data
 According to Wikipedia the 2.31 version of EXIF will support time-zone
@@ -246,10 +269,17 @@ include it in the database records.
 **** write a data migration to process existing assets
 **** existing location values should be stored in a "label" field
 **** exact location information would be stored separate from label
+**** c.f. https://github.com/google/open-location-code/wiki/Evaluation-of-Location-Encoding-Systems
+**** c.f. https://www.osgeo.org for some information, resources
 *** TODO Display thumbnails for PDF files
 *** TODO Read metadata from PDF files
 **** probably has a creation date or some sort
 *** TODO Show the =AAE= files as plain text (they are xml)
+*** TODO Detect if an image is a "portrait" using metadata
+*** TODO Support display of TIFF, EXIF, JFIF data for images
+*** TODO Display the image resolution in the asset sidebar
+*** TODO Render Markdown as HTML in a scrollable view
+*** TODO Display anything textual in a scrollable text area
 *** Reference
 **** EXIF: https://www.media.mit.edu/pia/Research/deepview/exif.html
 ** Bulk edit
@@ -285,7 +315,8 @@ include it in the database records.
 - Attribute lists are all lowercased
 - Search is always case insensitive
 *** Date/Time values
-- Uses 24 hour clock, displays using local time zone, stored as UTC
+- Everything is treated as UTC
+- EXIF data does not contain timezone information after all
 - [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
 ** Data Migrations
 *** start planning on how to handle data(base) migrations
@@ -300,6 +331,10 @@ include it in the database records.
 **** Consider how to manage multiple users making changes
 **** e.g. two people trying to update the same set of recent imports
 **** e.g. two people trying to edit the same asset
+**** this is known as the ~lost update~ problem
+**** usually managed with a revision number on the record
+***** updates must include the revision number; if mismatch, raise error
+***** HTTP uses the =ETag= value and the =If-Match= header for this purpose
 **** maybe keep an edit history or revision number in separate records
 *** GraphQL server
 **** consider https://github.com/async-graphql/async-graphql as alternative to juniper
@@ -326,6 +361,9 @@ include it in the database records.
 *** Look for package (like image_picker) that enables user to select photos to upload
 ** Mobile app
 *** Use [[https://pub.dev/packages/image_picker][image_picker]] to allow user to select images from photo library
+*** Upload while away from home
+**** mobile app with upload to a "drop box", backend then retrieves those (on a schedule?)
+**** evaluate [[https://github.com/warner/magic-wormhole][magic-wormhole]] as a means of transferring directly to the home computer
 ** Build Automation
 *** For building the applications
 *** Requirements
@@ -353,12 +391,77 @@ include it in the database records.
 *** Consider if using GitLab (in a container) would be helpful
 ** Features
 *** Slide show mode for assets matching search
-*** Machine learning to rank photos on various qualities
+**** look for NCS BGM to play during the slide show
+*** ML to identify objects, people, etc in photos
+**** ML recognizes the subject (dog, cat, person, etc)
+**** opencv for face recognition
+***** consider licensing commercial library for this
+*** ML to rank photos on various qualities
 **** c.f. https://simonwillison.net/2020/May/21/dogsheep-photos/
 **** ML assigns scores on aesthetics, interest, etc
-**** ML recognizes the subject (dog, cat, person, etc)
-*** Image editing
-**** c.f. https://github.com/silvia-odwyer/photon
+*** Easy publishing to sharing sites (e.g. Google Photos)
+**** option to resize image
+**** option to change format
+**** option to strip metadata
+**** option to apply watermarks
+**** option to save in ePub format for iOS
+**** button to open asset in file browser
+*** Easy import from external sites (e.g. google, instagram)
+*** Large file import
+**** Split file into chunks, upload one-by-one, showing progress
+**** Default to 8MB chunks, most images will be smaller than that
+*** Editing Images
+**** Keep track of the asset revisions
+**** Allow user to select the primary version (e.g. undo)
+**** rotate, flip, flop, crop
+**** apply common filters
+***** c.f. https://github.com/silvia-odwyer/photon
+**** open asset in external program in temporary file
+*** Multi-user support
+**** login page
+***** desktop app could use keychain to get access
+**** password reset (via email?)
+**** access restrictions
+**** private sets
+**** comments
+**** favorites
+**** likes
+**** rating levels (e.g. mature)
+*** Albums
+**** i.e. organize assets by project, subject, event
+**** Apple Photos has ~smart~ albums
+***** assets taken around the same time, place
+**** save search results as a new album
+*** Multiple libraries (like Apple Photos)
+*** Map display with locations of photos taken
+**** [[https://cloud.google.com/maps-platform/][Google Maps]]
+- customer uses their own API key, sets in preferences
+- for =testing= account: =AIzaSyAI73udKC3KVk6aIBqOjSqSv6PEQ0qd638=
+**** [[https://mariusandra.github.io/pigeon-maps/][Pigeon Maps]]
+- Uses data from OpenStreetMap, Wikimedia for the tiles
+*** Display "N years ago" assets like Facebook does
+*** Import directly from the camera
+*** random ideas
+**** Custom metadata
+**** Hierarchical categories: People -> Friends -> School
+**** Hierarchical locations: USA -> California -> Los Angeles
+**** Groups and subgroups of assets
+***** Turkey > Gallipoli Peninsula > Gali Winery
+***** Winery > vinification > fermentation tanks
+***** Architecture > Buildings > underground cellar
+**** Converting videos to animated GIFs
+**** Extracting a frame from a video
+**** Creating a calendar
+**** OCR of images, PDFs
+**** Task automation
+***** e.g. editing image metadata
+***** e.g. resize, rotate, format conversion
+***** e.g. watermarks
+***** e.g. strip location data
+*****  store changes in "alternates"
+**** Scripting support
+**** portable mode for thumb-drive based usage
+**** demo bundle that includes some preloaded assets
 ** Data Integrity
 *** Expose data integrity checks in frontend
 **** consider if using GraphQL subscriptions would make sense
@@ -367,3 +470,347 @@ include it in the database records.
 ***** the error codes would be encoded as GraphQL enums
 **** add an option to purge bad records
 ***** errors of type base64, utf8, missing are not recoverable
+**** find files for which there are no documents
+*** should have automated backups of the database
+**** every M operations or T minutes/hours/days
+*** add controls for dumping and loading the database
+**** provides another mechanism for backup
+**** power users could perform large bulk edits of data
+** First Hour
+*** Initial help screen when there is zero content
+*** Describe elements of the home page (e.g. interactive tutorial)
+*** Open a web page with helpful first steps
+* Technical Items
+** Product Assembly
+*** Create new (private) repo that includes =tanuki= and =mujina= as submodules
+*** Build the components and assemble into the final package
+*** Branding elements will live here, probabaly
+** Automated Testing
+*** TODO Look into automated testing frameworks for Electron apps
+- See http://airbnb.io/enzyme/ for writing React tests
+- Read https://reacttraining.com/react-router/web/guides/testing
+- https://github.com/facebook/jest
+  - uses =expect= library
+  - handles React apps
+- https://github.com/electron/spectron
+  - Test Electron apps using ChromeDriver
+- https://github.com/electron/devtron
+  - Official DevTools extension
+
+** Windows support
+*** Development and Testing
+- Can use Microsoft Azure to create a Windows VM for testing
+- VMs free to use for 90 days https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/
+
+*** Menus
+- Use "Settings" instead of "Preferences" on windows
+- The "Settings" menu item should use an appropriate shortcut
+
+*** Issues specific to Windows
+**** TODO The =NODE_ENV=test= in =package.json= does not work on Windows
+Does not work in Git Bash either
+
+**** TODO =npm test= fails because of relative import paths
+Other code has identical paths, why only the tests don't work?
+
+**** TODO About menu item seemingly does nothing
+* Non-technical Items
+** Productization
+*** Application name
+**** TODO Try to get a name with "photo", "pic", or something like that
+- Helps with SEO and such if the name reflects its intended purpose
+**** TODO Look at [[https://www.brandbucket.com/names?search=pic][brandbucket.com]] which has all sorts of great domains and logos for sale
+- https://www.brandbucket.com/names?search=pic
+- https://www.brandbucket.com/names?search=photo
+- picstow: $2795
+- picturepile: $2495
+- apiqo: $2395
+- pictous: $1895
+- picuno: $1895
+- pictasa: $1675
+**** Suggestions
+- fotopyle
+  - startup name check is green across the board
+- fotopile
+  - domain for sale, minimum 75 GBP
+- traqpics
+  - startup name check is green across the board
+- PixKeep
+  - startup name check is green across the board
+  - sounds halfway decent, better than than some others
+- Picstashio
+  - cool picstash.io domain is available
+  - picstashio.com is owned by broken
+- picillary
+  - startup name check is green across the board
+  - google search pulls up some porn results
+- Pictello: taken
+- Pickled Pixels
+  - already taken by a small business in NC (http://www.pickledpixels.biz)
+  - icon consists of 4 media elements in a jar (same idea I had)
+  - pickledpixels.com is parked and sold for $2000
+  - pickledpixels.app is available according to whois
+- PicklePixel
+  - rolls off the tongue, sounds funny, memorable
+  - icon would be a photo in a jar (not a pickle, that would be comical)
+  - picklepixel.com is parked
+    - registration expires 2019-06-18
+  - picklepixel.app is available according to whois
+- PicklePixels
+  - picklepixels.com is an unused wordpress blog
+  - picklepixels.app is available according to whois
+- PixelKeeper
+  - a character in some game
+  - FB pixelkeeper photography, last updated in 2016
+  - blogspot account last updated in 2004
+  - there is a www.pixelkeeper.cl which seems dead
+    - FB page last updated in 2014
+    - Twitter account last updated in 2014
+  - pixelkeeper.com is registered by vodien.com but apparently unused
+    - buydomains.com asks $1088
+  - pixel-keeper.com is available according to whois
+  - pixelkeeper.app is available according to whois
+  - pixelkeeperapp.com is available according to whois
+- Pickle
+  - "preserving your digital assets" or something like that
+  - pickleapp.com and pickle.app are parked
+  - there is an app (http://www.pickleeditor.com) called "pickle" but seems old
+- Shashin
+  - no mac apps with that name
+  - "photo" in nihongo
+  - shashin.com is registered but dead
+  - shashin.app is parked by a registrar in NL
+  - shashinapp.com is available according to whois
+- Tsukeru
+  - no mac apps with that name
+  - "to pickle" in nihongo
+  - tsukeru.com is registered and appears to be an electrician in Japan
+  - tsukeru.app is available according to whois
+*** Application Logo, Icon
+**** c.f. Creating a Side Project PDF has many logo references
+- There is a logo design app on App Store called Logoist, check it out.
+- See [[https://www.brandbucket.com][brandbucket.com]] and look for "pictous.com", has a neat logo
+  basically a smart phone turned sideways with a camera lens on front
+*** TODO Include list of all dependencies and their copyright/license as appropriate
+*** TODO Packaging
+**** TODO Set up a package build environment
+- Look for "authenticode certificate", pay no more than $100/year for a cert
+- Can host package files on S3 or similar
+*** TODO Determine how to prevent pirating the software
+- Does App Store enforce this? Probably not
+*** TODO Research what sort of license to use
+- Important to limit liability, disavow warranty
+*** Documentation
+**** Use GitBook and publish on the web site
+*** App Store
+**** TODO Get an Apple [[https://developer.apple.com/developer-id/][Developer ID]] certificate using Xcode or online
+- Need to register with Apple for $100/year to use app store
+  - Need a Developer ID certificate for signing apps
+    + Need to save this file securely and permanently
+  - Application/Installer certificate is for the app store only
+**** TODO Get the application notarized by Apple
+*** Help and Support
+**** Need some help pages
+**** Menu item for sending a support request
+**** Audit logging so when customers have trouble
+***** need a way to know what happened when they call/email
+*** News feature
+**** Like MyAniList iOS app, fetches news and shows a badge to draw attention to it
+- Good way to give updates about the app, CTA for any assistance the user may need
+- Have an option to turn off fetching news
+** Marketing
+*** What sets tanuki apart from other tools or approaches?
+**** digital curation: organize your photos, pdfs, videos, audio, etc
+***** easy to find what you are looking for
+***** you control what labels to apply
+***** you can apply the information that only you would know
+****** i.e. software cannot determine that your photos are related to your wedding anniversary
+**** keep everything where you want it (i.e. at home on your computer)
+*** Examine feature set of Apple Photos
+*** Examine feature set of Windows 10 photos app
+*** TODO Clean up social media and blog postings
+*** Primary focus is home users who want to manage their assets
+*** TODO Describe how the product is useful
+- Focus on permanently keeping, organizing, and viewing your assets
+- Easy to install and use, no configuration required
+- Easy shared access within your home network
+- Browsing from a tablet or phone (via home WiFi network)
+- Automatically detect duplicates
+*** TODO Describe features and strengths of the app
+- Reliable data storage
+  - Never overwrites live data
+  - Leverages a widely used, robust, storage engine
+- Leaves assets intact
+  - Does not split or merge assets into a "blob" store
+  - Asset directory structure is intuitable
+- Easy to use graphical interface
+- Built-in network server for sharing within the home
+*** Web site
+**** Hosting
+- Consider https://www.phusionpassenger.com which can host Node.js apps
+**** Blog engine
+- Static content generator, like https://hexo.io maybe?
+**** Domain
+- Probably use https://www.namecheap.com/ domain registrar
+ - Provide email address that is not part of web domain in case the domain registrar messes up
+**** Content
+- Animations showing various features (like SublimeText web site)
+** Business
+*** TODO Write business plan
+**** c.f. Creating a Side Project PDF
+**** Problem statement
+***** Organizing digital assets is tedious without a dedicated tool
+**** Product solution
+***** Easy to use, inexpensive, desktop application
+**** Target audience
+***** Casual photographers and families
+**** Competition
+***** see competitor list below for details
+**** Marketing strategy
+***** App/Windows Store search
+***** Google search ads
+**** Monetization
+***** Individual purchases through App/Windows Store
+*** TODO Copyright the source code [0/2]
+- [ ] Add copyright header to the top of all source code
+- [ ] Register with the government
+*** TODO Trademark the product name
+- [ ] Register with the [[https://www.uspto.gov][US Patent & Trademark Office]]
+*** TODO Put a plan in place to open source everything upon my unexpected demise
+**** At the very least, app should have an easy export feature
+*** TODO Make notes from story about publishing on App Store
+- http://debuggerdotbreak.judahgabriel.com/2018/04/13/i-built-a-pwa-and-published-it-in-3-app-stores-heres-what-i-learned/
+** Customers
+*** Photographers
+- http://www.bkwinephotography.com/technology/good-dam-digital-asset-management-software/
+- http://www.bkwinephotography.com/technology/features-functions-digital-asset-management-system-dam/
+- http://www.bkwinephotography.com/technology/found-best-digital-asset-management-dam-system/
+*** Casual Collectors
+- What features appeal to the casual photographer?
+*** Research
+**** TODO Conduct a survey on Facebook
+- Find out what features real people want in image/video management
+**** TODO Research more on the "personal" side of DAM (vs enterprise)
+- Consider how to appeal to casual users
+- Photographers are a tougher bunch, with many available products
+**** Based on small poll from bkwinephotography.com
+| Product                | Votes | Price          |
+|------------------------+-------+----------------|
+| ACDSee                 |    26 | $60            |
+| Canto Cumulus          |    14 | (enterprise)   |
+| Daminion               |    90 | $175/5 users   |
+| DBGallery              |     1 | (enterprise)   |
+| digiKam                |    19 | (open source?) |
+| Extensis Portfoloio    |    34 | (enterprise)   |
+| FotoWare / FotoStation |     8 | (enterprise)   |
+| IMatch                 |    31 | $110           |
+| Lightroom              |   105 | $150           |
+| Media Pro              |    48 | $189           |
+| MediaFiler             |     1 | (enterprise)   |
+| NeoFinder              |    67 | $40            |
+| Photo Supreme          |    35 | $100           |
+| OTHER                  |    32 |                |
+| NONE                   |    34 |                |
+* Comparisons
+** Competitive Landscape
+*** Shotwell Photo Manager?
+- Part of Ubuntu 18 desktop
+- Evaluate what features it supports
+*** [[https://mylio.com][Mylio]]
+- Focus on curating assets across devices
+*** Apple Photos
+- Smart albums based on various criteria
+- Face recognition
+- Geographic organization
+- Groups by time into "albums"
+- Prints cards, calendars
+- Creates slideshow projects
+*** [[https://www.acdsee.com][ACDSee]]
+- Geared to professionals
+- Focus on photo editing
+- Custom rules for workflow (moving, finding, sorting, sharing)
+- Sort by date
+- Rate images
+- Set categories and keywords
+- Find duplicates
+- Edit EXIF/IPTC/custom metadata
+- Color labels and visual tags
+*** [[https://www.pixelmator.com/pro/][Pixelmator Pro]]
+- Heavy focus on editing
+- $60
+- Mac only?
+*** [[https://www.zoner.com][Zoner Photo Studio]]
+- Windows only
+- $50/year subscription
+- Automatic import into folders
+- Sort photos by location, date, folders, keywords
+- Heavy focus on editing
+- Printing services
+*** [[https://www.paintshoppro.com/][PaintShop Pro]]
+- Windows only
+- Focus on editing
+*** [[https://xequte.com/smartpix/][Smart Pix Manager]]
+- Windows only
+- $50
+- Big on format support, making CD/DVD albums
+*** [[http://cerious.com][ThumbsPlus]]
+- Windows only
+- $60 for simple, $180 for network sharing
+- Basically a file manager with attributes stored in a db?
+*** [[http://www.picajet.com/][PicaJet]]
+- Site is pretty old, latest news from 2010
+- Windows only
+- $60
+- 35,000 users
+- Multi-user network support
+- Management features (e.g. access control)
+- Also makes daminion, a small-business DAM system
+- Overall very feature-full
+*** [[https://www.cyberlink.com/products/photodirector-ultra/][PhotoDirector]]
+- macOS and Windows
+- Heavy focus on editing
+- Offers online storage
+*** [[https://www.photools.com][iMatch]]
+- Windows only
+- Very sophisticated search functionality
+- Metadata templates when importing assets
+- Open system, no vendor lock-in
+- Metadata Working Group compliant
+*** [[http://www.pixfiler.com][PixFiler]]
+- Windows only
+- $40
+- Appears old, latest news from 2016
+- Appears rather basic
+*** [[http://www.lynapp.com/][Lyn]]
+- Mac only
+- Lightweight
+- $20
+*** Adobe Photoshop Elements
+- Automatic grouping by date, subject, people, places
+- Curate photos to arrange them by quality
+- Identifies objects in photo and suggests tags
+- Focus on editing
+*** [[https://unboundformac.com][Unbound for Mac]]
+- Looks pretty basic
+- $10
+- Keeps files in original locations
+  - watches for FS changes to keep track
+- Keyboard navigation
+- 1/5 stars with 3 reviews
+*** [[http://www.littlehj.com/mac/][Pixave]]
+- $15
+- has an iPad version
+- looks pretty good
+- Drag "tags" onto assets and vice versa to apply tags to assets
+*** [[http://x.photoscape.org][Photoscape X]]
+- Mac and Windows
+- Focus on editing
+** Perkeep notes
+*** Things I like
+- Automatic deduplication of blobs
+- Easy to get started
+- Easy to use
+- Easy to bulk edit assets
+- Easy sync between locations
+*** Things I do _not_ like
+- Splits assets into blobs
