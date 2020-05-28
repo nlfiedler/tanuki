@@ -78,16 +78,23 @@ fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTim
                 .datetime_from_str(value, "%Y:%m:%d %H:%M:%S")
                 .map_err(|_| err_msg("could not parse data"));
         }
-        // } else if media_type.type_() == mime::VIDEO {
-        //     // For now just hope that the video is mp4 compatible, while someday can
-        //     // add support for other video formats.
-        //     fn err_convert(err: mp4::Error) -> Error {
-        //         err_msg(format!("{:?}", err))
-        //     }
-        //     let file = File::open(filepath)?;
-        //     let bmff = mp4::read_mp4(file).map_err(err_convert)?;
-        //     let moov = bmff.moov.ok_or_else(|| err_msg("missing moov atom"))?;
-        //     println!("creation_time: {:?}", moov.mvhd.creation_time);
+    } else if media_type.type_() == mime::VIDEO {
+        // For now just hope that the video is mp4 compatible, while someday can
+        // add support for other video formats.
+        fn err_convert(err: mp4::Error) -> Error {
+            err_msg(format!("{:?}", err))
+        }
+        let file = File::open(filepath)?;
+        let bmff = mp4::read_mp4(file).map_err(err_convert)?;
+        let moov = bmff.moov.ok_or_else(|| err_msg("missing moov atom"))?;
+        let creation_time = if moov.mvhd.creation_time > 2082844800 {
+            // subtract the difference in seconds between 1904-01-01 and UTC
+            // epoch for those times that are clearly not "Unix time"
+            moov.mvhd.creation_time - 2082844800
+        } else {
+            moov.mvhd.creation_time
+        };
+        return Ok(Utc.timestamp(creation_time as i64, 0));
     }
     Err(err_msg("not an image"))
 }
@@ -164,15 +171,15 @@ mod tests {
         assert!(actual.is_err());
 
         // video file
-        // let filename = "./tests/fixtures/100_1206.MOV";
-        // let mt: mime::Mime = "video/mp4".parse().unwrap();
-        // let filepath = Path::new(filename);
-        // let actual = get_original_date(&mt, filepath);
-        // assert!(actual.is_ok());
-        // let date = actual.unwrap();
-        // assert_eq!(date.year(), 2007);
-        // assert_eq!(date.month(), 9);
-        // assert_eq!(date.day(), 14);
+        let filename = "./tests/fixtures/100_1206.MOV";
+        let mt: mime::Mime = "video/mp4".parse().unwrap();
+        let filepath = Path::new(filename);
+        let actual = get_original_date(&mt, filepath);
+        assert!(actual.is_ok());
+        let date = actual.unwrap();
+        assert_eq!(date.year(), 2007);
+        assert_eq!(date.month(), 9);
+        assert_eq!(date.day(), 14);
     }
 
     #[test]

@@ -1,108 +1,42 @@
 * Tanuki
-** Quick UI improvements
+** TODO run the benchmarks again with the Node.js version of the app
+*** use =hey= and the test set of images
+** [#A] Get existing assets into tanuki
 *** TODO how to stop the browser from navigating when form is not saved
 **** should have this on the recents page because there can be many fields
 **** enable once user enters any values, disable when save button is pressed
 **** c.f. https://github.com/reasonml-community/bs-webapi-incubator/issues/151
 **** c.f. https://github.com/jacobbuck/react-beforeunload
-** Video metadata support
-*** https://github.com/alfg/mp4rs (MIT)
-**** creation time is in =moov.mvhd.creation_time=
-**** does not seem to support the videos produced by iOS
-*** https://github.com/mozilla/mp4parse-rust (MPL-2.0)
-**** intentionally skips the creation time fields
-*** Fork the mp4rs code and add the missing functionality
-**** mp4parse-rust seems to support more types of boxes
-**** it intentionally skips over the creation time fields
-*** Find the MPEG-4 specification on the [[https://en.wikipedia.org/wiki/MPEG-4_Part_14][wikipedia]] page
-*** Could just try invoking =ffprobe= and if that works, use it
-**** if it fails for any reason, ignore it
-**** https://github.com/nomalab/stainless-ffmpeg
-***** prerequisites
-****** macos: =brew install ffmpeg=
-** Large File Import
-*** naturally this is for videos, so proper video support is required
-*** TODO on upload screen, provide input field to accessible file path
-*** TODO create a record, move file into place
-** Evaluate photo organizing apps, strategies
-*** https://github.com/photoprism/photoprism
-*** https://www.theritters.online/dewey.html
-*** https://vermaden.wordpress.com/2019/06/12/manage-photography-the-unix-way/
-*** https://vermaden.wordpress.com/2018/09/15/ghost-in-the-shell-part-3/
-*** http://www.geeqie.org
-** Performance
-*** measure and improve the thumbnail serving
-**** consider caching in memory or on disk
-***** unbound caching on disk will consume space forever
-***** should have an on-disk LRU cache with a set capacity
-**** test images for measurements
-| byte size | original filename               | identifier                                                       |
-|-----------+---------------------------------+------------------------------------------------------------------|
-|  12640634 | animal-blur-close-up-678448.jpg | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6ODQ0Y252OHZzMzkzNmtkNHExLmpwZw== |
-|   3285366 | pexels-photo.jpg                | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGswOTNicjBkYTdqc2J2ejFwczRlLmpwZw== |
-|   1613837 | adorable-animal-blur-326875.jpg | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp5aHl4NjlqN3ptY2V2MnRucjV0LmpwZw== |
-|    788961 | japan-cat-snow.jpg              | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGswNjdzMG0xdDkwcmd4ZnhrM3owLmpwZw== |
-|    326088 | animal-cat-cute-74177.jpg       | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6YTl5NmtkdmNqdnFuNDlzZ3Z5LmpwZw== |
-|    160852 | catmouse_1280p.jpg              | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6d25keWI5cmN5emVhamE4ajZuLmpwZw== |
-|     24402 | cat-in-cat-donut.jpg            | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6dnZqZDV4NGdnc3d0NWtheGNmLmpwZw== |
-**** image crate with caching using =hey= with default options
-| file size | response size | average seconds |
-|-----------+---------------+-----------------|
-|  12640634 |         19508 |          2.7554 |
-|   3285366 |         11124 |          0.5980 |
-|   1613837 |         12932 |          0.7358 |
-|    788961 |         12099 |          0.0847 |
-|    326088 |         15397 |          0.1289 |
-|    160852 |         11231 |          0.0723 |
-|     24402 |         13655 |          0.0184 |
-**** magick-rust with auto_orient/fit using =hey= with default options
-***** none of the images are rotated, so this is as good as it gets
-***** produces a strangely diverse range of output sizes
-| file size | response size |     average seconds |
-|-----------+---------------+---------------------|
-|  12640634 |               | too many open files |
-|   3285366 |         55477 |              4.0196 |
-|   1613837 |         12874 |              7.0632 |
-|    788961 |         70088 |              0.5709 |
-|    326088 |         15128 |              1.0801 |
-|    160852 |         15307 |              0.5394 |
-|     24402 |         16750 |              0.2645 |
-**** baseline measurements using =hey= with default options
-| file size | response size |   average seconds |
-|-----------+---------------+-------------------|
-|  12640634 |         19508 | 199/200 timed out |
-|   3285366 |         11124 |            2.2119 |
-|   1613837 |         12932 |            2.8025 |
-|    788961 |         12099 |            0.3350 |
-|    326088 |         15397 |            0.5299 |
-|    160852 |         11231 |            0.2818 |
-|     24402 |         13655 |            0.0544 |
-**** previous measurements using =hey=
-| conditions         | hey arguments | avg response time | payload size |
-|--------------------+---------------+-------------------+--------------|
-| rust debug initial | -n 5 -c 1     |            2.4346 |        50748 |
-| node with caching  | -n 20 -c 1    |            0.0009 |         8932 |
-| node with caching  | (default)     |            0.0309 |         8932 |
-| node w/o caching   | (default)     |            0.1835 |         8932 |
-| rust with 50% jpeg | -n 5 -c 1     |            2.4235 |         7076 |
-| rust with 80% jpeg | -n 5 -c 1     |            2.4145 |        11793 |
-| rust release 80%   | (default)     |            1.0994 |        11793 |
-| rust release 75%   | (default)     |            1.0956 |        10263 |
-*** consider if caching search results will improve responsiveness
-**** could return a query code to the caller in search meta
-**** caller returns that code in the next query to access the cache
-**** in this way, the results for a particular query can be cached reliably
-**** eventually cached search results need to be pruned
-**** RocksDB by default has a block cache of 8mb in 16 shards of 512kb
-**** also consider that any caching should live in the data source
-*** consider if filtering can be done "in the database" somehow
-**** database queries should probably take a filter closure
-**** database functions iterate the results, applying the filter
-**** the remaining results are then collecting into a vector
-** Shared Folder Cleanup
-*** write a script to checksum files and check if they are in tanuki
-*** anything found in tanuki is deleted
-** Frontend Rewrite
+*** DONE extract creation data from video files (mp4)
+**** https://github.com/alfg/mp4rs (MIT)
+***** creation time is in =moov.mvhd.creation_time=
+***** results of testing with various video files
+| filename     | mp4 creation time | minus 1904 | minus formatted     | ffprobe             |
+|--------------+-------------------+------------+---------------------+---------------------|
+| 100_1206.MOV |        3272616440 | 1189771640 | 2007-09-14 05:07:20 | 2007-09-14 12:07:20 |
+| IMG_3094.MOV |        3463750916 | 1380906116 | 2013-10-04 10:01:56 | 2013-10-04 17:01:56 |
+| flower.mpg   |        3603280881 | 1520436081 | 2018-03-07 07:21:21 | 2018-03-07 15:21:21 |
+**** https://github.com/mozilla/mp4parse-rust (MPL-2.0)
+***** intentionally skips the creation time fields
+*** TODO large file import
+**** naturally this is for videos, so proper video support is required
+**** photoprism has an ~import~ folder and command to bring in assets
+**** on upload screen, provide input field to accessible file path
+**** create a record, move file into place
+*** TODO shared folder cleanup
+**** write a script to checksum files and check if they are in tanuki
+**** anything found in tanuki is deleted
+** [#B] Prepare for Christmas calendar
+*** easy selection and export of images
+**** Selection process
+***** Maybe show selection icon thingy on hover, click to select
+***** Maybe shift-click to select by thumbnails
+**** Export process
+***** Maybe main menu has "export" feature to export selected assets
+***** Maybe action panel appears when there are selections
+***** Show "file save" dialog to choose local file path
+***** Save assets using their unique filename
+** [#C] New Interface
 *** Use Dart and Flutter
 *** Use Clean Architecture
 **** define the features
@@ -137,8 +71,7 @@
 *** TODO how to handle file drops
 **** drop zone gist: https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
 **** for now this is not so important, just use file selector a la =web_upload= example
-*** TODO use docker container to build web assets
-*** Thoughts on the design
+*** thoughts on the design
 **** browse and search
 ***** unify the two pages into one
 ***** with the "crane" like selectors, the search is just another row of inputs
@@ -165,10 +98,15 @@
 ****** eventually this selector needs to consider the sort field and order
 ***** show additional details on mouse hover
 ***** button in corner of thumbnail to select assets to edit, download, etc
-***** option to switch to "list" view with smaller thumbnail and labels aligned in rows
+***** toggle view display
+****** grid of just images, maybe 180x180
+****** grid of images with caption info (300x300, shows title, location, date)
+****** list of rows, tiny thumbnail (96x96), title, location, date, likes
 **** asset detail page
 ***** seems popular to show the gallery items as small thumbnails along the top (horizontally scrollable)
 ***** have chevron buttons on both sides to navigate through gallery items (e.g. "lightbox")
+***** display location as a city/country pair
+***** display select information from EXIF metadata (e.g. camera)
 **** timeline style display for all assets
 ***** without any selectors, just show most recent going back in time
 *** ideas and widget usage
@@ -198,6 +136,7 @@
 ***** click on item in a list/grid and it expands to the details page
 **** can use =DataTable= to display labeled data (like asset details, metadata)
 **** use pointer enter/exit events to start playing a video in place
+*** TODO change docker to build flutter web assets
 *** TODO remove ReasonML and Node files
 **** should be nothing JavaScript/Node/Reason left at this point
 **** =bsconfig.json=
@@ -211,6 +150,34 @@
 **** =lib/js=
 **** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
+** Bulk edit
+*** need to set the custom date on many assets at once
+*** Short term solution akin to perkeep web interface
+**** hover over thumbnail, shows checkbox button in the corner
+**** click on the checkbox to select the asset
+**** once selected, the actions panel slides in from the side
+**** image gallery shrinks to fit the actions panel
+- [ ] Easy selection with hover checkbox button
+  - Could use =svg= tag to render the button
+  - See pexels.com in that it uses article tag, with nested img and button with nested svg
+- [ ] When selections, filters panel changes to show available actions
+- [ ] Actions include adding, deleting tags, setting location
+  - This is basically a simplified bulk edit
+- [ ] Use a prefix for the checksum values
+*** Design bulk edit solution, probably similar to JIRA
+- [ ] Access the bulk edit screen via a menu item
+- [ ] Use search form
+- [ ] Perform search, present results using "list" view
+- [ ] Check off results as desired
+- [ ] Next page presents several operations
+  - [ ] add location
+  - [ ] remove location
+  - [ ] rename location
+  - [ ] add a tag
+  - [ ] remove a tag
+  - [ ] rename a tag
+  - [ ] set caption
+  - [ ] change media type
 ** Search Improvements
 *** TODO Support advanced queries using Google-style operators
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
@@ -228,17 +195,8 @@
 **** likely would involve a full table scan
 *** TODO searching for images by dimensions (~pano~, ~landscape~, ~portrait~)
 *** TODO searching assets by metadata values (=meta:exif:field=value=)
-** Easy export
-*** want this for the christmas calendar
-*** easy selection and export of images
-**** Selection process
-***** Maybe show selection icon thingy on hover, click to select
-***** Maybe shift-click to select by thumbnails
-**** Export process
-***** Maybe main menu has "export" feature to export selected assets
-***** Maybe action panel appears when there are selections
-***** Show "file save" dialog to choose local file path
-***** Save assets using their unique filename
+*** TODO search for images similar to a selected image (a la geeqie)
+*** TODO search for images taken with certain cameras
 ** Data Format Support
 *** Auto-populate missing fields on load
 **** when loading an asset, detect missing data (e.g. no original time)
@@ -282,64 +240,10 @@ include it in the database records.
 *** TODO Display anything textual in a scrollable text area
 *** Reference
 **** EXIF: https://www.media.mit.edu/pia/Research/deepview/exif.html
-** Bulk edit
-*** Short term solution akin to perkeep web interface
-**** hover over thumbnail, shows checkbox button in the corner
-**** click on the checkbox to select the asset
-**** once selected, the actions panel slides in from the side
-**** image gallery shrinks to fit the actions panel
-- [ ] Easy selection with hover checkbox button
-  - Could use =svg= tag to render the button
-  - See pexels.com in that it uses article tag, with nested img and button with nested svg
-- [ ] When selections, filters panel changes to show available actions
-- [ ] Actions include adding, deleting tags, setting location
-  - This is basically a simplified bulk edit
-- [ ] Use a prefix for the checksum values
-*** Design bulk edit solution, probably similar to JIRA
-- [ ] Access the bulk edit screen via a menu item
-- [ ] Use search form
-- [ ] Perform search, present results using "list" view
-- [ ] Check off results as desired
-- [ ] Next page presents several operations
-  - [ ] add location
-  - [ ] remove location
-  - [ ] rename location
-  - [ ] add a tag
-  - [ ] remove a tag
-  - [ ] rename a tag
-  - [ ] set caption
-  - [ ] change media type
-** Documentation
-*** Case Sensitivity
-- Data is stored as entered (case preservative)
-- Attribute lists are all lowercased
-- Search is always case insensitive
-*** Date/Time values
-- Everything is treated as UTC
-- EXIF data does not contain timezone information after all
-- [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
-** Data Migrations
-*** start planning on how to handle data(base) migrations
-*** may be a good idea to introduce "metadata" records for assets
-**** use a =metadata/= prefix with the id of the asset
-**** can hold all sorts of additional information without cluttering the asset
-**** should be some form of dictionary to keep things flexible
-*** maintain an uber record for tracking database version
-*** also the serde library is quite flexible with adding/removing fields
-** Architecture Review
-*** Concurrent modifications
-**** Consider how to manage multiple users making changes
-**** e.g. two people trying to update the same set of recent imports
-**** e.g. two people trying to edit the same asset
-**** this is known as the ~lost update~ problem
-**** usually managed with a revision number on the record
-***** updates must include the revision number; if mismatch, raise error
-***** HTTP uses the =ETag= value and the =If-Match= header for this purpose
-**** maybe keep an edit history or revision number in separate records
-*** GraphQL server
-**** consider https://github.com/async-graphql/async-graphql as alternative to juniper
-***** handles multipart requests (file uploads)
-***** provides actix-web integration
+** Mobile web support
+*** Progressive Web App support in Flutter is coming as of 2020/04
+*** Use PWA to get app-like behavior on mobile devices
+*** Look for package (like image_picker) that enables user to select photos to upload
 ** Desktop app
 *** Need setup for configuration system
 **** properties
@@ -355,51 +259,171 @@ include it in the database records.
 **** screen for configuring the settings
 *** Showing the licenses/about dialog
 **** c.f. "licenses" on https://flutter.dev/docs/resources/faq
-** Mobile web support
-*** Progressive Web App support in Flutter is coming as of 2020/04
-*** Use PWA to get app-like behavior on mobile devices
-*** Look for package (like image_picker) that enables user to select photos to upload
 ** Mobile app
 *** Use [[https://pub.dev/packages/image_picker][image_picker]] to allow user to select images from photo library
 *** Upload while away from home
 **** mobile app with upload to a "drop box", backend then retrieves those (on a schedule?)
 **** evaluate [[https://github.com/warner/magic-wormhole][magic-wormhole]] as a means of transferring directly to the home computer
-** Build Automation
-*** For building the applications
-*** Requirements
-**** Consistent builds
-**** Need this for building the application, not compiling code
-***** dart, flutter, and rust/cargo all know how to compile code
-***** need a process to assemble the application deliverable
-**** Supports Rust, Dart, Flutter
-**** Supports macOS, Windows?, Linux?
-**** Likely need a build machine for each target (mac, windows, linux)
-**** Contenders
-****** https://bazel.build
-****** https://please.build
-****** https://jenkins.io
-****** https://www.buildbot.net
-**** Bazel
-***** supports all major platforms
-***** a very sophisticated replacement for =make=
-***** not appropriate for replacing =cargo= or =flutter build=
-***** dart: https://github.com/cbracken/rules_dart
-***** rust: https://github.com/bazelbuild/rules_rust
-***** rust: https://github.com/google/cargo-raze
-****** tries to replace cargo to get benefits of bazel
-** SCM
-*** Consider if using GitLab (in a container) would be helpful
-** Features
+** Data Integrity
+*** Guard against concurrent modifications
+**** consider how to manage multiple users making changes
+**** e.g. two people trying to update the same set of recent imports
+**** e.g. two people trying to edit the same asset
+**** this is known as the ~lost update~ problem
+**** usually managed with a revision number on the record
+***** updates must include the revision number; if mismatch, raise error
+***** HTTP uses the =ETag= value and the =If-Match= header for this purpose
+**** maybe keep an edit history or revision number in separate records
+*** Expose data integrity checks in frontend
+**** consider if using GraphQL subscriptions would make sense
+***** would return each asset id and success bool or list of error codes
+***** results would be returned one at a time for the frontend to show progress
+***** the error codes would be encoded as GraphQL enums
+**** add an option to purge bad records
+***** errors of type base64, utf8, missing are not recoverable
+**** find files for which there are no documents
+*** Should have automated backups of the database
+**** every M operations or T minutes/hours/days
+*** Add controls for dumping and loading the database
+**** provides another mechanism for backup
+**** power users could perform large bulk edits of data
+*** Design solution to database migrations
+**** start planning on how to handle data(base) migrations
+**** may be a good idea to introduce "metadata" records for assets
+***** use a =metadata/= prefix with the id of the asset
+***** can hold all sorts of additional information without cluttering the asset
+***** should be some form of dictionary to keep things flexible
+**** maintain an uber record for tracking database version
+**** also the serde library is quite flexible with adding/removing fields
+** Performance
+*** measure and improve the thumbnail serving
+**** consider caching in memory or on disk
+***** unbound caching on disk will consume space forever
+***** should have an on-disk LRU cache with a set capacity
+**** test images for measurements
+| byte size | original filename               | identifier                                                       |
+|-----------+---------------------------------+------------------------------------------------------------------|
+|  12640634 | animal-blur-close-up-678448.jpg | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6ODQ0Y252OHZzMzkzNmtkNHExLmpwZw== |
+|   3285366 | pexels-photo.jpg                | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGswOTNicjBkYTdqc2J2ejFwczRlLmpwZw== |
+|   1613837 | adorable-animal-blur-326875.jpg | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp5aHl4NjlqN3ptY2V2MnRucjV0LmpwZw== |
+|    788961 | japan-cat-snow.jpg              | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGswNjdzMG0xdDkwcmd4ZnhrM3owLmpwZw== |
+|    326088 | animal-cat-cute-74177.jpg       | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6YTl5NmtkdmNqdnFuNDlzZ3Z5LmpwZw== |
+|    160852 | catmouse_1280p.jpg              | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6d25keWI5cmN5emVhamE4ajZuLmpwZw== |
+|     24402 | cat-in-cat-donut.jpg            | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6dnZqZDV4NGdnc3d0NWtheGNmLmpwZw== |
+**** image crate with caching using =hey= with default options
+| file size | response size | average seconds |
+|-----------+---------------+-----------------|
+|  12640634 |         19508 |          2.7554 |
+|   3285366 |         11124 |          0.5980 |
+|   1613837 |         12932 |          0.7358 |
+|    788961 |         12099 |          0.0847 |
+|    326088 |         15397 |          0.1289 |
+|    160852 |         11231 |          0.0723 |
+|     24402 |         13655 |          0.0184 |
+**** magick-rust with auto_orient/fit using =hey= with default options
+***** none of the images are rotated, so this is as good as it gets
+| file size | response size |     average seconds |
+|-----------+---------------+---------------------|
+|  12640634 |               | too many open files |
+|   3285366 |         55477 |              4.0196 |
+|   1613837 |         12874 |              7.0632 |
+|    788961 |         70088 |              0.5709 |
+|    326088 |         15128 |              1.0801 |
+|    160852 |         15307 |              0.5394 |
+|     24402 |         16750 |              0.2645 |
+**** baseline measurements using =hey= with default options
+| file size | response size |   average seconds |
+|-----------+---------------+-------------------|
+|  12640634 |         19508 | 199/200 timed out |
+|   3285366 |         11124 |            2.2119 |
+|   1613837 |         12932 |            2.8025 |
+|    788961 |         12099 |            0.3350 |
+|    326088 |         15397 |            0.5299 |
+|    160852 |         11231 |            0.2818 |
+|     24402 |         13655 |            0.0544 |
+**** previous measurements using =hey=
+| conditions         | hey arguments | avg response time | payload size |
+|--------------------+---------------+-------------------+--------------|
+| rust debug initial | -n 5 -c 1     |            2.4346 |        50748 |
+| node with caching  | -n 20 -c 1    |            0.0009 |         8932 |
+| node with caching  | (default)     |            0.0309 |         8932 |
+| node w/o caching   | (default)     |            0.1835 |         8932 |
+| rust with 50% jpeg | -n 5 -c 1     |            2.4235 |         7076 |
+| rust with 80% jpeg | -n 5 -c 1     |            2.4145 |        11793 |
+| rust release 80%   | (default)     |            1.0994 |        11793 |
+| rust release 75%   | (default)     |            1.0956 |        10263 |
+*** consider if caching search results will improve responsiveness
+**** could return a query code to the caller in search meta
+**** caller returns that code in the next query to access the cache
+**** in this way, the results for a particular query can be cached reliably
+**** eventually cached search results need to be pruned
+**** RocksDB by default has a block cache of 8mb in 16 shards of 512kb
+**** also consider that any caching should live in the data source
+*** consider if filtering can be done "in the database" somehow
+**** database queries should probably take a filter closure
+**** database functions iterate the results, applying the filter
+**** the remaining results are then collecting into a vector
+** First Hour
+*** Initial help screen when there is zero content
+*** Describe elements of the home page (e.g. interactive tutorial)
+*** Open a web page with helpful first steps
+** Product Development
+*** Desktop application combined with the server
+*** Building the product (build automation)
+**** Requirements
+***** Consistent builds
+***** Need this for building the application, not compiling code
+****** dart, flutter, and rust/cargo all know how to compile code
+****** need a process to assemble the application deliverable
+***** Supports Rust, Dart, Flutter
+***** Supports macOS, Windows?, Linux?
+***** Likely need a build machine for each target (mac, windows, linux)
+***** Contenders
+******* https://bazel.build
+******* https://please.build
+******* https://jenkins.io
+******* https://www.buildbot.net
+***** Bazel
+****** supports all major platforms
+****** a very sophisticated replacement for =make=
+****** not appropriate for replacing =cargo= or =flutter build=
+****** dart: https://github.com/cbracken/rules_dart
+****** rust: https://github.com/bazelbuild/rules_rust
+****** rust: https://github.com/google/cargo-raze
+******* tries to replace cargo to get benefits of bazel
+*** Branding: name, logo
+*** Tracking issues and releases on a schedule (SCM)
+**** Consider if using GitLab (in a container) would be helpful
+** Documentation
+*** Case Sensitivity
+- Data is stored as entered (case preservative)
+- Attribute lists are all lowercased
+- Search is always case insensitive
+*** Date/Time values
+- Everything is treated as UTC
+- EXIF data does not contain timezone information after all
+- [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
+** Architecture Review
+*** GraphQL server
+**** consider https://github.com/async-graphql/async-graphql as alternative to juniper
+***** handles multipart requests (file uploads)
+***** provides actix-web integration
+** Unsorted Features
 *** Slide show mode for assets matching search
 **** look for NCS BGM to play during the slide show
+*** Image zoom
+*** Display 2 or 4 images at once for side-by-side comparison
 *** ML to identify objects, people, etc in photos
 **** ML recognizes the subject (dog, cat, person, etc)
-**** opencv for face recognition
+**** PhotoPrism supports "automated tagging based on Google TensorFlow"
+**** TensorFlow has dart and rust bindings
+**** OpenCV for face recognition
 ***** consider licensing commercial library for this
 *** ML to rank photos on various qualities
 **** c.f. https://simonwillison.net/2020/May/21/dogsheep-photos/
 **** ML assigns scores on aesthetics, interest, etc
 *** Easy publishing to sharing sites (e.g. Google Photos)
+**** option to auto-orient
 **** option to resize image
 **** option to change format
 **** option to strip metadata
@@ -462,59 +486,6 @@ include it in the database records.
 **** Scripting support
 **** portable mode for thumb-drive based usage
 **** demo bundle that includes some preloaded assets
-** Data Integrity
-*** Expose data integrity checks in frontend
-**** consider if using GraphQL subscriptions would make sense
-***** would return each asset id and success bool or list of error codes
-***** results would be returned one at a time for the frontend to show progress
-***** the error codes would be encoded as GraphQL enums
-**** add an option to purge bad records
-***** errors of type base64, utf8, missing are not recoverable
-**** find files for which there are no documents
-*** should have automated backups of the database
-**** every M operations or T minutes/hours/days
-*** add controls for dumping and loading the database
-**** provides another mechanism for backup
-**** power users could perform large bulk edits of data
-** First Hour
-*** Initial help screen when there is zero content
-*** Describe elements of the home page (e.g. interactive tutorial)
-*** Open a web page with helpful first steps
-* Technical Items
-** Product Assembly
-*** Create new (private) repo that includes =tanuki= and =mujina= as submodules
-*** Build the components and assemble into the final package
-*** Branding elements will live here, probabaly
-** Automated Testing
-*** TODO Look into automated testing frameworks for Electron apps
-- See http://airbnb.io/enzyme/ for writing React tests
-- Read https://reacttraining.com/react-router/web/guides/testing
-- https://github.com/facebook/jest
-  - uses =expect= library
-  - handles React apps
-- https://github.com/electron/spectron
-  - Test Electron apps using ChromeDriver
-- https://github.com/electron/devtron
-  - Official DevTools extension
-
-** Windows support
-*** Development and Testing
-- Can use Microsoft Azure to create a Windows VM for testing
-- VMs free to use for 90 days https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/
-
-*** Menus
-- Use "Settings" instead of "Preferences" on windows
-- The "Settings" menu item should use an appropriate shortcut
-
-*** Issues specific to Windows
-**** TODO The =NODE_ENV=test= in =package.json= does not work on Windows
-Does not work in Git Bash either
-
-**** TODO =npm test= fails because of relative import paths
-Other code has identical paths, why only the tests don't work?
-
-**** TODO About menu item seemingly does nothing
-* Non-technical Items
 ** Productization
 *** Application name
 **** TODO Try to get a name with "photo", "pic", or something like that
@@ -619,6 +590,7 @@ Other code has identical paths, why only the tests don't work?
 - Good way to give updates about the app, CTA for any assistance the user may need
 - Have an option to turn off fetching news
 ** Marketing
+*** TODO Clean up social media and blog postings
 *** What sets tanuki apart from other tools or approaches?
 **** digital curation: organize your photos, pdfs, videos, audio, etc
 ***** easy to find what you are looking for
@@ -628,15 +600,14 @@ Other code has identical paths, why only the tests don't work?
 **** keep everything where you want it (i.e. at home on your computer)
 *** Examine feature set of Apple Photos
 *** Examine feature set of Windows 10 photos app
-*** TODO Clean up social media and blog postings
 *** Primary focus is home users who want to manage their assets
-*** TODO Describe how the product is useful
+*** Describe how the product is useful
 - Focus on permanently keeping, organizing, and viewing your assets
 - Easy to install and use, no configuration required
 - Easy shared access within your home network
 - Browsing from a tablet or phone (via home WiFi network)
 - Automatically detect duplicates
-*** TODO Describe features and strengths of the app
+*** Describe features and strengths of the app
 - Reliable data storage
   - Never overwrites live data
   - Leverages a widely used, robust, storage engine
@@ -711,7 +682,6 @@ Other code has identical paths, why only the tests don't work?
 | Photo Supreme          |    35 | $100           |
 | OTHER                  |    32 |                |
 | NONE                   |    34 |                |
-* Comparisons
 ** Competitive Landscape
 *** Shotwell Photo Manager?
 - Part of Ubuntu 18 desktop
@@ -735,6 +705,11 @@ Other code has identical paths, why only the tests don't work?
 - Find duplicates
 - Edit EXIF/IPTC/custom metadata
 - Color labels and visual tags
+*** geeqie
+**** http://www.geeqie.org
+**** open source
+**** linux only (Gtk+ based)
+**** lots of interesting features
 *** [[https://www.pixelmator.com/pro/][Pixelmator Pro]]
 - Heavy focus on editing
 - $60
@@ -749,6 +724,10 @@ Other code has identical paths, why only the tests don't work?
 *** [[https://www.paintshoppro.com/][PaintShop Pro]]
 - Windows only
 - Focus on editing
+*** [[https://github.com/photoprism/photoprism][PhotoPrism]]
+**** open source
+**** Runs in Docker (only?)
+**** Fancier interface than perkeep
 *** [[https://xequte.com/smartpix/][Smart Pix Manager]]
 - Windows only
 - $50
@@ -757,6 +736,13 @@ Other code has identical paths, why only the tests don't work?
 - Windows only
 - $60 for simple, $180 for network sharing
 - Basically a file manager with attributes stored in a db?
+*** Perkeep
+**** open source
+**** simplistic web interface
+**** easy to upload lots of assets
+**** automatically deduplicates based on checksum
+**** supports easy bulk edit (managing tags)
+**** splits assets into blobs (rather undesirable)
 *** [[http://www.picajet.com/][PicaJet]]
 - Site is pretty old, latest news from 2010
 - Windows only
@@ -805,12 +791,3 @@ Other code has identical paths, why only the tests don't work?
 *** [[http://x.photoscape.org][Photoscape X]]
 - Mac and Windows
 - Focus on editing
-** Perkeep notes
-*** Things I like
-- Automatic deduplication of blobs
-- Easy to get started
-- Easy to use
-- Easy to bulk edit assets
-- Easy sync between locations
-*** Things I do _not_ like
-- Splits assets into blobs
