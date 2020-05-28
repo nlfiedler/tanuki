@@ -1,6 +1,4 @@
 * Tanuki
-** TODO run the benchmarks again with the Node.js version of the app
-*** use =hey= and the test set of images
 ** [#A] Get existing assets into tanuki
 *** TODO how to stop the browser from navigating when form is not saved
 **** should have this on the recents page because there can be many fields
@@ -297,6 +295,13 @@ include it in the database records.
 **** also the serde library is quite flexible with adding/removing fields
 ** Performance
 *** measure and improve the thumbnail serving
+**** thoughts on image crate vs magick-rust vs node.js
+***** no idea why image crate appears to be faster than magick-rust
+***** priming the cache helps actix a great deal because of its concurrency
+***** because actix handles many requests concurrently, it creates the same thumbnail many times over
+***** node.js seems fast because it creates thumbnail on first request; it processes requests serially
+***** however, node.js is 10 times slower than actix in raw performance
+***** actix is probably handling 10 times as many requests concurrently
 **** consider caching in memory or on disk
 ***** unbound caching on disk will consume space forever
 ***** should have an on-disk LRU cache with a set capacity
@@ -310,17 +315,19 @@ include it in the database records.
 |    326088 | animal-cat-cute-74177.jpg       | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6YTl5NmtkdmNqdnFuNDlzZ3Z5LmpwZw== |
 |    160852 | catmouse_1280p.jpg              | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6d25keWI5cmN5emVhamE4ajZuLmpwZw== |
 |     24402 | cat-in-cat-donut.jpg            | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6dnZqZDV4NGdnc3d0NWtheGNmLmpwZw== |
-**** image crate with caching using =hey= with default options
+**** image crate, in-memory caching, =hey= default options
+***** priming the cache with =hey -n 1 -c 1= to avoid congestion
 | file size | response size | average seconds |
 |-----------+---------------+-----------------|
-|  12640634 |         19508 |          2.7554 |
-|   3285366 |         11124 |          0.5980 |
-|   1613837 |         12932 |          0.7358 |
-|    788961 |         12099 |          0.0847 |
-|    326088 |         15397 |          0.1289 |
-|    160852 |         11231 |          0.0723 |
-|     24402 |         13655 |          0.0184 |
-**** magick-rust with auto_orient/fit using =hey= with default options
+|  12640634 |         19508 |          0.0032 |
+|   3285366 |         11124 |          0.0035 |
+|   1613837 |         12932 |          0.0033 |
+|    788961 |         12099 |          0.0034 |
+|    326088 |         15397 |          0.0033 |
+|    160852 |         11231 |          0.0033 |
+|     24402 |         13655 |          0.0035 |
+**** Magick-rust with auto_orient/fit using =hey= with default options
+***** this is without any in-memory caching
 ***** none of the images are rotated, so this is as good as it gets
 | file size | response size |     average seconds |
 |-----------+---------------+---------------------|
@@ -332,6 +339,7 @@ include it in the database records.
 |    160852 |         15307 |              0.5394 |
 |     24402 |         16750 |              0.2645 |
 **** baseline measurements using =hey= with default options
+***** this is without any in-memory caching
 | file size | response size |   average seconds |
 |-----------+---------------+-------------------|
 |  12640634 |         19508 | 199/200 timed out |
@@ -341,17 +349,17 @@ include it in the database records.
 |    326088 |         15397 |            0.5299 |
 |    160852 |         11231 |            0.2818 |
 |     24402 |         13655 |            0.0544 |
-**** previous measurements using =hey=
-| conditions         | hey arguments | avg response time | payload size |
-|--------------------+---------------+-------------------+--------------|
-| rust debug initial | -n 5 -c 1     |            2.4346 |        50748 |
-| node with caching  | -n 20 -c 1    |            0.0009 |         8932 |
-| node with caching  | (default)     |            0.0309 |         8932 |
-| node w/o caching   | (default)     |            0.1835 |         8932 |
-| rust with 50% jpeg | -n 5 -c 1     |            2.4235 |         7076 |
-| rust with 80% jpeg | -n 5 -c 1     |            2.4145 |        11793 |
-| rust release 80%   | (default)     |            1.0994 |        11793 |
-| rust release 75%   | (default)     |            1.0956 |        10263 |
+**** measurements of Node.js using =hey= with default options
+***** n.b. it is generating a 240x240 pixel thumbnail
+| file size | response size | average seconds |
+|-----------+---------------+-----------------|
+|  12640634 |         11124 |          0.0293 |
+|   3285366 |          7608 |          0.0276 |
+|   1613837 |          7894 |          0.0278 |
+|    788961 |          7213 |          0.0329 |
+|    326088 |          9833 |          0.0300 |
+|    160852 |          6799 |          0.0287 |
+|     24402 |          9713 |          0.0314 |
 *** consider if caching search results will improve responsiveness
 **** could return a query code to the caller in search meta
 **** caller returns that code in the next query to access the cache
