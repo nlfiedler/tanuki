@@ -1,10 +1,7 @@
 * Tanuki
 ** [#A] Get existing assets into tanuki
-*** TODO how to stop the browser from navigating when form is not saved
-**** should have this on the recents page because there can be many fields
-**** enable once user enters any values, disable when save button is pressed
-**** c.f. https://github.com/reasonml-community/bs-webapi-incubator/issues/151
-**** c.f. https://github.com/jacobbuck/react-beforeunload
+*** DONE limiting to 100 assets on recents page is not working, shows all
+*** DONE disable the file open button on upload page during upload
 *** DONE extract creation data from video files (mp4)
 **** https://github.com/alfg/mp4rs (MIT)
 ***** creation time is in =moov.mvhd.creation_time=
@@ -16,8 +13,9 @@
 | flower.mpg   |        3603280881 | 1520436081 | 2018-03-07 07:21:21 | 2018-03-07 15:21:21 |
 **** https://github.com/mozilla/mp4parse-rust (MPL-2.0)
 ***** intentionally skips the creation time fields
-*** TODO large file import
-**** naturally this is for videos, so proper video support is required
+*** TODO large file import (or simply direct file import)
+**** split file into chunks, upload one-by-one, showing progress
+***** default to 8MB chunks, most images will be smaller than that
 **** photoprism has an ~import~ folder and command to bring in assets
 **** on upload screen, provide input field to accessible file path
 **** create a record, move file into place
@@ -196,6 +194,7 @@
 *** TODO search for images similar to a selected image (a la geeqie)
 *** TODO search for images taken with certain cameras
 ** Data Format Support
+*** Read and display captions in (image) metadata
 *** Auto-populate missing fields on load
 **** when loading an asset, detect missing data (e.g. no original time)
 **** try reading the data from the asset and save to the asset record
@@ -204,6 +203,7 @@
 **** XMP
 **** IPTC
 *** TODO support HEIF images
+**** image file format employing HEVC (h.265) image coding
 **** https://crates.io/crates/libvips (MIT) reads/writes HEIF
 ***** this library easily crashes with a segmentation fault
 **** https://github.com/oussama/libheif-rs (MIT)
@@ -221,23 +221,53 @@ include it in the database records.
 : been introduced recently by Exif version 2.31 (July 2016). Related tags are:
 : "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
 
-*** TODO Extract location information from images
-**** write a data migration to process existing assets
-**** existing location values should be stored in a "label" field
-**** exact location information would be stored separate from label
-**** c.f. https://github.com/google/open-location-code/wiki/Evaluation-of-Location-Encoding-Systems
-**** c.f. https://www.osgeo.org for some information, resources
 *** TODO Display thumbnails for PDF files
 *** TODO Read metadata from PDF files
 **** probably has a creation date or some sort
 *** TODO Show the =AAE= files as plain text (they are xml)
 *** TODO Detect if an image is a "portrait" using metadata
 *** TODO Support display of TIFF, EXIF, JFIF data for images
-*** TODO Display the image resolution in the asset sidebar
 *** TODO Render Markdown as HTML in a scrollable view
 *** TODO Display anything textual in a scrollable text area
+*** Thumbnails for non-images
+**** PhotoPrism generates suitable thumbnails for other kinds of files, saves them to disk
 *** Reference
 **** EXIF: https://www.media.mit.edu/pia/Research/deepview/exif.html
+** Geolocation
+*** Extract location information from images
+**** write a data migration to process existing assets
+**** existing location values should be stored in a "label" field
+**** exact location information would be stored separate from label
+**** c.f. https://github.com/google/open-location-code/wiki/Evaluation-of-Location-Encoding-Systems
+**** c.f. https://www.osgeo.org for some information, resources
+*** Map display with locations of photos taken
+**** [[https://cloud.google.com/maps-platform/][Google Maps]]
+- customer uses their own API key, sets in preferences
+- for =testing= account: =AIzaSyAI73udKC3KVk6aIBqOjSqSv6PEQ0qd638=
+**** [[https://mariusandra.github.io/pigeon-maps/][Pigeon Maps]]
+- Uses data from OpenStreetMap, Wikimedia for the tiles
+** Machine learning
+*** TensorFlow Hub: https://tfhub.dev
+*** https://developers.google.com/machine-learning/crash-course/
+*** PhotoPrism applies a bunch of keywords to assets, but only one "label"
+**** e.g. a "Sheep" label with keywords "animal, grass, grasslands, green"
+*** ML to identify objects, people, etc in photos
+**** ML recognizes the subject (dog, cat, person, etc)
+**** PhotoPrism supports "automated tagging based on Google TensorFlow"
+**** OpenCV for face recognition
+***** consider licensing commercial library for this
+*** ML to rank photos on various qualities
+**** c.f. https://simonwillison.net/2020/May/21/dogsheep-photos/
+**** ML assigns scores on aesthetics, interest, etc
+** Asset organization
+*** Albums
+**** i.e. organize assets by project, subject, event
+**** Apple Photos has ~smart~ albums
+***** assets taken around the same time, place
+**** save search results as a new album
+*** Personal collections
+**** that is, sets of assets normally visible to just one person
+*** Multiple libraries (like Apple Photos)
 ** Mobile web support
 *** Progressive Web App support in Flutter is coming as of 2020/04
 *** Use PWA to get app-like behavior on mobile devices
@@ -262,6 +292,13 @@ include it in the database records.
 *** Upload while away from home
 **** mobile app with upload to a "drop box", backend then retrieves those (on a schedule?)
 **** evaluate [[https://github.com/warner/magic-wormhole][magic-wormhole]] as a means of transferring directly to the home computer
+** Editing Images
+*** Keep track of the asset revisions
+*** Allow user to select the primary version (e.g. undo)
+*** rotate, flip, flop, crop
+*** apply common filters
+**** c.f. https://github.com/silvia-odwyer/photon
+*** open asset in external program in temporary file
 ** Data Integrity
 *** Guard against concurrent modifications
 **** consider how to manage multiple users making changes
@@ -416,20 +453,12 @@ include it in the database records.
 **** consider https://github.com/async-graphql/async-graphql as alternative to juniper
 ***** handles multipart requests (file uploads)
 ***** provides actix-web integration
-** Unsorted Features
+** Display modes
 *** Slide show mode for assets matching search
 **** look for NCS BGM to play during the slide show
 *** Image zoom
 *** Display 2 or 4 images at once for side-by-side comparison
-*** ML to identify objects, people, etc in photos
-**** ML recognizes the subject (dog, cat, person, etc)
-**** PhotoPrism supports "automated tagging based on Google TensorFlow"
-**** TensorFlow has dart and rust bindings
-**** OpenCV for face recognition
-***** consider licensing commercial library for this
-*** ML to rank photos on various qualities
-**** c.f. https://simonwillison.net/2020/May/21/dogsheep-photos/
-**** ML assigns scores on aesthetics, interest, etc
+** Unsorted Features
 *** Easy publishing to sharing sites (e.g. Google Photos)
 **** option to auto-orient
 **** option to resize image
@@ -439,16 +468,6 @@ include it in the database records.
 **** option to save in ePub format for iOS
 **** button to open asset in file browser
 *** Easy import from external sites (e.g. google, instagram)
-*** Large file import
-**** Split file into chunks, upload one-by-one, showing progress
-**** Default to 8MB chunks, most images will be smaller than that
-*** Editing Images
-**** Keep track of the asset revisions
-**** Allow user to select the primary version (e.g. undo)
-**** rotate, flip, flop, crop
-**** apply common filters
-***** c.f. https://github.com/silvia-odwyer/photon
-**** open asset in external program in temporary file
 *** Multi-user support
 **** login page
 ***** desktop app could use keychain to get access
@@ -459,41 +478,28 @@ include it in the database records.
 **** favorites
 **** likes
 **** rating levels (e.g. mature)
-*** Albums
-**** i.e. organize assets by project, subject, event
-**** Apple Photos has ~smart~ albums
-***** assets taken around the same time, place
-**** save search results as a new album
-*** Multiple libraries (like Apple Photos)
-*** Map display with locations of photos taken
-**** [[https://cloud.google.com/maps-platform/][Google Maps]]
-- customer uses their own API key, sets in preferences
-- for =testing= account: =AIzaSyAI73udKC3KVk6aIBqOjSqSv6PEQ0qd638=
-**** [[https://mariusandra.github.io/pigeon-maps/][Pigeon Maps]]
-- Uses data from OpenStreetMap, Wikimedia for the tiles
 *** Display "N years ago" assets like Facebook does
 *** Import directly from the camera
-*** random ideas
-**** Custom metadata
-**** Hierarchical categories: People -> Friends -> School
-**** Hierarchical locations: USA -> California -> Los Angeles
-**** Groups and subgroups of assets
-***** Turkey > Gallipoli Peninsula > Gali Winery
-***** Winery > vinification > fermentation tanks
-***** Architecture > Buildings > underground cellar
-**** Converting videos to animated GIFs
-**** Extracting a frame from a video
-**** Creating a calendar
-**** OCR of images, PDFs
-**** Task automation
-***** e.g. editing image metadata
-***** e.g. resize, rotate, format conversion
-***** e.g. watermarks
-***** e.g. strip location data
-*****  store changes in "alternates"
-**** Scripting support
-**** portable mode for thumb-drive based usage
-**** demo bundle that includes some preloaded assets
+*** Custom metadata
+*** Hierarchical categories: People -> Friends -> School
+*** Hierarchical locations: USA -> California -> Los Angeles
+*** Groups and subgroups of assets
+**** Turkey > Gallipoli Peninsula > Gali Winery
+**** Winery > vinification > fermentation tanks
+**** Architecture > Buildings > underground cellar
+*** Converting videos to animated GIFs
+*** Extracting a frame from a video
+*** Creating a calendar
+*** OCR of images, PDFs
+*** Task automation
+**** e.g. editing image metadata
+**** e.g. resize, rotate, format conversion
+**** e.g. watermarks
+**** e.g. strip location data
+****  store changes in "alternates"
+*** Scripting support
+*** portable mode for thumb-drive based usage
+*** demo bundle that includes some preloaded assets
 ** Productization
 *** Application name
 **** TODO Try to get a name with "photo", "pic", or something like that
@@ -736,6 +742,8 @@ include it in the database records.
 **** open source
 **** Runs in Docker (only?)
 **** Fancier interface than perkeep
+**** Oriented toward photographers: tracks metadata, camera details, location details, notes
+**** Organizes the "originals" in a fairly shallow directory structure
 *** [[https://xequte.com/smartpix/][Smart Pix Manager]]
 - Windows only
 - $50

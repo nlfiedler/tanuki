@@ -99,7 +99,8 @@ module Component = {
              ref={ReactDOMRe.Ref.callbackDomRef(rootProps.ref)}
              tabIndex={rootProps.tabIndex}>
              <div> {React.string("You can drag and drop files here")} </div>
-             <button type_="button" onClick=clickFileInput>
+             <button
+               type_="button" onClick=clickFileInput disabled=dropzoneDisabled>
                {React.string("Open File Dialog")}
              </button>
              <input
