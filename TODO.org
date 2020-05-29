@@ -193,6 +193,22 @@
 *** TODO searching assets by metadata values (=meta:exif:field=value=)
 *** TODO search for images similar to a selected image (a la geeqie)
 *** TODO search for images taken with certain cameras
+** Schema Growth
+*** ML will introduce new fields, like ~labels~ and ~keywords~
+*** Geolocation will introduce new data, like GPS coordinates
+*** Customer user-provided metadata will need a place to live
+*** Perhaps use records with different key prefixes
+**** =metadata/= for user-provided name/value pairs
+**** =location/= for location details
+**** =decoration/= for ML added values
+*** Design solution to database migrations
+**** start planning on how to handle data(base) migrations
+**** may be a good idea to introduce "metadata" records for assets
+***** use a =metadata/= prefix with the id of the asset
+***** can hold all sorts of additional information without cluttering the asset
+***** should be some form of dictionary to keep things flexible
+**** maintain an uber record for tracking database version
+**** also the serde library is quite flexible with adding/removing fields
 ** Data Format Support
 *** Read and display captions in (image) metadata
 *** Auto-populate missing fields on load
@@ -322,14 +338,6 @@ include it in the database records.
 *** Add controls for dumping and loading the database
 **** provides another mechanism for backup
 **** power users could perform large bulk edits of data
-*** Design solution to database migrations
-**** start planning on how to handle data(base) migrations
-**** may be a good idea to introduce "metadata" records for assets
-***** use a =metadata/= prefix with the id of the asset
-***** can hold all sorts of additional information without cluttering the asset
-***** should be some form of dictionary to keep things flexible
-**** maintain an uber record for tracking database version
-**** also the serde library is quite flexible with adding/removing fields
 ** Performance
 *** measure and improve the thumbnail serving
 **** thoughts on image crate vs magick-rust vs node.js
