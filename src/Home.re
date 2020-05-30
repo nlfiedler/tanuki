@@ -53,6 +53,8 @@ let makeQueryParams = (state: Redux.appState) => {
     "mimetype": None,
     "tags": Some(Belt.Set.String.toArray(state.selectedTags)),
     "locations": Some(Belt.Set.String.toArray(state.selectedLocations)),
+    "sortField": None,
+    "sortOrder": None,
   };
 };
 

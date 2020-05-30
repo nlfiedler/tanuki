@@ -62,6 +62,41 @@
               "deprecationReason": null
             },
             {
+              "name": "diagnose",
+              "description": "Perform a diagnosis of the database and blob store.",
+              "args": [
+                {
+                  "name": "checksum",
+                  "description": null,
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                }
+              ],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "OBJECT",
+                      "name": "Diagnosis",
+                      "ofType": null
+                    }
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "locations",
               "description": "Retrieve the list of locations and their associated asset count.",
               "args": [],
@@ -245,6 +280,16 @@
           "possibleTypes": null
         },
         {
+          "kind": "SCALAR",
+          "name": "Boolean",
+          "description": null,
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
           "kind": "OBJECT",
           "name": "SearchMeta",
           "description": "`SearchMeta` is returned from the `search` query.",
@@ -358,6 +403,16 @@
                 "ofType": null
               },
               "defaultValue": null
+            },
+            {
+              "name": "filename",
+              "description": "New filename to replace any existing value.",
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "defaultValue": null
             }
           ],
           "interfaces": null,
@@ -433,7 +488,7 @@
         },
         {
           "kind": "SCALAR",
-          "name": "Boolean",
+          "name": "String",
           "description": null,
           "fields": null,
           "inputFields": null,
@@ -442,13 +497,68 @@
           "possibleTypes": null
         },
         {
-          "kind": "SCALAR",
-          "name": "String",
+          "kind": "ENUM",
+          "name": "ErrorCode",
           "description": null,
           "fields": null,
           "inputFields": null,
           "interfaces": null,
-          "enumValues": null,
+          "enumValues": [
+            {
+              "name": "BASE64",
+              "description": "Asset identifier was seemingly not valid base64.",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "UTF8",
+              "description": "Asset identifier was seemingly not valid UTF-8.",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "MISSING",
+              "description": "Asset file was not found at the expected location.",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "SIZE",
+              "description": "Asset file size does not match database record.",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "ACCESS",
+              "description": "Asset file was probably inaccessible (file permissions).",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "DIGEST",
+              "description": "Asset file hash digest does not match database record.",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "MEDIA_TYPE",
+              "description": "Asset record media_type property is not a valid media type.",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "ORIGINAL_DATE",
+              "description": "Asset record original_date property missing or incorrect.",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "EXTENSION",
+              "description": "Asset identifier/filename extension missing or incorrect.",
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
           "possibleTypes": null
         },
         {
@@ -668,12 +778,12 @@
         },
         {
           "kind": "OBJECT",
-          "name": "LabeledCount",
-          "description": "An attribute name and the number of assets it references.",
+          "name": "Asset",
+          "description": "An `Asset` defines a single entity in the storage system.",
           "fields": [
             {
-              "name": "label",
-              "description": "Label for an asset attribute, such as a tag or location.",
+              "name": "id",
+              "description": "The unique asset identifier.",
               "args": [],
               "type": {
                 "kind": "NON_NULL",
@@ -688,35 +798,8 @@
               "deprecationReason": null
             },
             {
-              "name": "count",
-              "description": "Number of assets that are associated with this particular label.",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "inputFields": null,
-          "interfaces": [],
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
-          "kind": "OBJECT",
-          "name": "Asset",
-          "description": "An `Asset` defines a single entity in the storage system.",
-          "fields": [
-            {
-              "name": "id",
-              "description": "The unique asset identifier.",
+              "name": "checksum",
+              "description": "Hash digest of the contents of the asset.",
               "args": [],
               "type": {
                 "kind": "NON_NULL",
@@ -862,48 +945,19 @@
         },
         {
           "kind": "OBJECT",
-          "name": "MutationRoot",
-          "description": null,
+          "name": "LabeledCount",
+          "description": "An attribute name and the number of assets it references.",
           "fields": [
             {
-              "name": "update",
-              "description": "Update the asset with the given values.",
-              "args": [
-                {
-                  "name": "id",
-                  "description": null,
-                  "type": {
-                    "kind": "NON_NULL",
-                    "name": null,
-                    "ofType": {
-                      "kind": "SCALAR",
-                      "name": "String",
-                      "ofType": null
-                    }
-                  },
-                  "defaultValue": null
-                },
-                {
-                  "name": "asset",
-                  "description": null,
-                  "type": {
-                    "kind": "NON_NULL",
-                    "name": null,
-                    "ofType": {
-                      "kind": "INPUT_OBJECT",
-                      "name": "AssetInput",
-                      "ofType": null
-                    }
-                  },
-                  "defaultValue": null
-                }
-              ],
+              "name": "label",
+              "description": "Label for an asset attribute, such as a tag or location.",
+              "args": [],
               "type": {
                 "kind": "NON_NULL",
                 "name": null,
                 "ofType": {
-                  "kind": "OBJECT",
-                  "name": "Asset",
+                  "kind": "SCALAR",
+                  "name": "String",
                   "ofType": null
                 }
               },
@@ -911,32 +965,9 @@
               "deprecationReason": null
             },
             {
-              "name": "bulkUpdate",
-              "description": "Update multiple assets with the given values.\n\nReturns the number of updated assets.",
-              "args": [
-                {
-                  "name": "assets",
-                  "description": null,
-                  "type": {
-                    "kind": "NON_NULL",
-                    "name": null,
-                    "ofType": {
-                      "kind": "LIST",
-                      "name": null,
-                      "ofType": {
-                        "kind": "NON_NULL",
-                        "name": null,
-                        "ofType": {
-                          "kind": "INPUT_OBJECT",
-                          "name": "AssetInputId",
-                          "ofType": null
-                        }
-                      }
-                    }
-                  },
-                  "defaultValue": null
-                }
-              ],
+              "name": "count",
+              "description": "Number of assets that are associated with this particular label.",
+              "args": [],
               "type": {
                 "kind": "NON_NULL",
                 "name": null,
@@ -953,6 +984,47 @@
           "inputFields": null,
           "interfaces": [],
           "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "ENUM",
+          "name": "SortField",
+          "description": null,
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "enumValues": [
+            {
+              "name": "DATE",
+              "description": null,
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "IDENTIFIER",
+              "description": null,
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "FILENAME",
+              "description": null,
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "MEDIA_TYPE",
+              "description": null,
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "LOCATION",
+              "description": null,
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
           "possibleTypes": null
         },
         {
@@ -1046,9 +1118,175 @@
                 "ofType": null
               },
               "defaultValue": null
+            },
+            {
+              "name": "sortField",
+              "description": "Field by which to sort the results.",
+              "type": {
+                "kind": "ENUM",
+                "name": "SortField",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "sortOrder",
+              "description": "Order by which to sort the results.",
+              "type": {
+                "kind": "ENUM",
+                "name": "SortOrder",
+                "ofType": null
+              },
+              "defaultValue": null
             }
           ],
           "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "OBJECT",
+          "name": "MutationRoot",
+          "description": null,
+          "fields": [
+            {
+              "name": "ingest",
+              "description": "Perform an import on all files in the uploads directory.",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "repair",
+              "description": "Diagnosis and repair issues in the database and blob store.",
+              "args": [
+                {
+                  "name": "checksum",
+                  "description": null,
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                }
+              ],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "OBJECT",
+                      "name": "Diagnosis",
+                      "ofType": null
+                    }
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "update",
+              "description": "Update the asset with the given values.",
+              "args": [
+                {
+                  "name": "id",
+                  "description": null,
+                  "type": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "SCALAR",
+                      "name": "String",
+                      "ofType": null
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
+                  "name": "asset",
+                  "description": null,
+                  "type": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "INPUT_OBJECT",
+                      "name": "AssetInput",
+                      "ofType": null
+                    }
+                  },
+                  "defaultValue": null
+                }
+              ],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "Asset",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "bulkUpdate",
+              "description": "Update multiple assets with the given values.\n\nReturns the number of updated assets.",
+              "args": [
+                {
+                  "name": "assets",
+                  "description": null,
+                  "type": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "LIST",
+                      "name": null,
+                      "ofType": {
+                        "kind": "NON_NULL",
+                        "name": null,
+                        "ofType": {
+                          "kind": "INPUT_OBJECT",
+                          "name": "AssetInputId",
+                          "ofType": null
+                        }
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                }
+              ],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
           "enumValues": null,
           "possibleTypes": null
         },
@@ -1149,6 +1387,169 @@
           "inputFields": null,
           "interfaces": [],
           "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "OBJECT",
+          "name": "Diagnosis",
+          "description": "`Diagnosis` is returned from the `diagnose` query.",
+          "fields": [
+            {
+              "name": "assetId",
+              "description": "Identifier for the asset.",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "errorCode",
+              "description": "One of the issues found with this asset.",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "ENUM",
+                  "name": "ErrorCode",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "SCALAR",
+          "name": "Int",
+          "description": null,
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "OBJECT",
+          "name": "SearchResult",
+          "description": "An attribute name and the number of assets it references.",
+          "fields": [
+            {
+              "name": "id",
+              "description": "The identifier of the matching asset.",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "filename",
+              "description": "The filename for the matching asset.",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "mimetype",
+              "description": "Media type (formerly MIME type) of the asset.",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "location",
+              "description": "The location for the matching asset, if available.",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "datetime",
+              "description": "The date/time for the matching asset.",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "DateTimeUtc",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "ENUM",
+          "name": "SortOrder",
+          "description": null,
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "enumValues": [
+            {
+              "name": "ASCENDING",
+              "description": null,
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "DESCENDING",
+              "description": null,
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
           "possibleTypes": null
         },
         {
@@ -1337,16 +1738,6 @@
           "possibleTypes": null
         },
         {
-          "kind": "SCALAR",
-          "name": "Int",
-          "description": null,
-          "fields": null,
-          "inputFields": null,
-          "interfaces": null,
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
           "kind": "OBJECT",
           "name": "__EnumValue",
           "description": null,
@@ -1403,93 +1794,6 @@
                 "kind": "SCALAR",
                 "name": "String",
                 "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "inputFields": null,
-          "interfaces": [],
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
-          "kind": "OBJECT",
-          "name": "SearchResult",
-          "description": "An attribute name and the number of assets it references.",
-          "fields": [
-            {
-              "name": "id",
-              "description": "The identifier of the matching asset.",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "String",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "filename",
-              "description": "The filename for the matching asset.",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "String",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "mimetype",
-              "description": "Media type (formerly MIME type) of the asset.",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "String",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "location",
-              "description": "The location for the matching asset, if available.",
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "datetime",
-              "description": "The date/time for the matching asset.",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "DateTimeUtc",
-                  "ofType": null
-                }
               },
               "isDeprecated": false,
               "deprecationReason": null

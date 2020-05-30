@@ -8,6 +8,73 @@
 external appendFileData: (Fetch.formData, string, FileReader.File.t) => unit =
   "append";
 
+module IngestAssets = [%graphql {|
+    mutation {
+      ingest
+    }
+  |}];
+
+module IngestAssetsMutation = ReasonApollo.CreateMutation(IngestAssets);
+
+module IngestForm = {
+  [@react.component]
+  let make = (~results: option(int), ~onSubmit) => {
+    let status =
+      switch (results) {
+      | None => React.null
+      | Some(count) =>
+        <p> {React.string(string_of_int(count) ++ " assets imported.")} </p>
+      };
+    <div className="notification has-text-centered">
+      {React.string("To import files in the")}
+      <strong
+        style={ReactDOMRe.Style.make(
+          ~paddingLeft="0.5em",
+          ~paddingRight="0.5em",
+          ~fontFamily="monospace",
+          (),
+        )}>
+        {React.string("uploads")}
+      </strong>
+      {React.string("directory, click")}
+      <a href="#" onClick={_ => onSubmit()}>
+        <strong style={ReactDOMRe.Style.make(~paddingLeft="0.5em", ())}>
+          {React.string("IMPORT")}
+        </strong>
+      </a>
+      status
+    </div>;
+  };
+};
+
+let submitUpdate = (mutate: IngestAssetsMutation.apolloMutation) => {
+  /* ignore the returned promise, the result will be delivered later */
+  mutate() |> ignore;
+};
+
+module BulkImport = {
+  [@react.component]
+  let make = () => {
+    <IngestAssetsMutation>
+      ...{(mutate, {result}) =>
+        switch (result) {
+        | Loading => <p> {React.string("Loading...")} </p>
+        | Error(error) =>
+          Js.log(error);
+          <div> {React.string(error##message)} </div>;
+        | Data(result) =>
+          <IngestForm
+            results={Some(result##ingest)}
+            onSubmit={_ => submitUpdate(mutate)}
+          />
+        | NotCalled =>
+          <IngestForm results=None onSubmit={_ => submitUpdate(mutate)} />
+        }
+      }
+    </IngestAssetsMutation>;
+  };
+};
+
 let clickFileInput = [%raw
   {|
     function () {
@@ -80,10 +147,18 @@ module Component = {
          let inputProps = getInputProps();
          let rootProps = getRootProps();
          <div className="container">
+           <BulkImport />
            <div className="notification has-text-centered">
-             {ReasonReact.string(
-                "Choose files to upload and click the Upload button below.",
-              )}
+             {React.string("Or, choose files to upload and click the")}
+             <strong
+               style={ReactDOMRe.Style.make(
+                 ~paddingLeft="0.5em",
+                 ~paddingRight="0.5em",
+                 (),
+               )}>
+               {React.string("Upload")}
+             </strong>
+             {React.string("button below.")}
            </div>
            <div
              style={ReactDOMRe.Style.make(~marginBottom="1.5em", ())}
@@ -133,7 +208,7 @@ module Component = {
                       (idx, entry: FileReader.File.t) => {
                         let name = FileReader.File.name(entry);
                         let key = name ++ string_of_int(idx);
-                        <li key> {ReasonReact.string(name)} </li>;
+                        <li key> {React.string(name)} </li>;
                       },
                       Array.of_list(state.pendingFiles),
                     ),

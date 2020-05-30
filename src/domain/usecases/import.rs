@@ -12,14 +12,15 @@ use std::cmp;
 use std::ffi::OsStr;
 use std::fmt;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 pub struct ImportAsset {
-    records: Box<dyn RecordRepository>,
-    blobs: Box<dyn BlobRepository>,
+    records: Arc<dyn RecordRepository>,
+    blobs: Arc<dyn BlobRepository>,
 }
 
 impl ImportAsset {
-    pub fn new(records: Box<dyn RecordRepository>, blobs: Box<dyn BlobRepository>) -> Self {
+    pub fn new(records: Arc<dyn RecordRepository>, blobs: Arc<dyn BlobRepository>) -> Self {
         Self { records, blobs }
     }
 
@@ -54,20 +55,15 @@ impl super::UseCase<Asset, Params> for ImportAsset {
     fn call(&self, params: Params) -> Result<Asset, Error> {
         let digest = checksum_file(&params.filepath)?;
         let asset = match self.records.get_asset_by_digest(&digest)? {
-            Some(a) => {
-                // since the blob repo is not involved, must remove the
-                // temporary upload file here
-                std::fs::remove_file(&params.filepath)?;
-                a
-            }
+            Some(asset) => asset,
             None => {
-                // blob repo will ensure the temporary file is (re)moved
                 let asset = self.create_asset(digest, params.clone())?;
                 self.records.put_asset(&asset)?;
-                self.blobs.store_blob(&params.filepath, &asset)?;
                 asset
             }
         };
+        // blob repo will ensure the temporary file is (re)moved
+        self.blobs.store_blob(&params.filepath, &asset)?;
         Ok(asset)
     }
 }
@@ -180,7 +176,6 @@ mod tests {
     use crate::domain::repositories::MockBlobRepository;
     use crate::domain::repositories::MockRecordRepository;
     use mockall::predicate::*;
-    use tempfile::tempdir;
 
     #[test]
     fn test_new_asset_id() {
@@ -225,10 +220,7 @@ mod tests {
     fn test_import_asset_new() {
         // arrange
         let digest = "sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07";
-        let original = PathBuf::from("./tests/fixtures/dcp_1069.jpg");
-        let tmpdir = tempdir().unwrap();
-        let infile = tmpdir.path().join("dcp_1069.jpg");
-        std::fs::copy(original, &infile).unwrap();
+        let infile = PathBuf::from("./tests/fixtures/dcp_1069.jpg");
         let infile_copy = infile.clone();
         let mut records = MockRecordRepository::new();
         records
@@ -242,7 +234,7 @@ mod tests {
             .with(function(move |p| p == infile_copy.as_path()), always())
             .returning(|_, _| Ok(()));
         // act
-        let usecase = ImportAsset::new(Box::new(records), Box::new(blobs));
+        let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs));
         let media_type = mime::IMAGE_JPEG;
         let params = Params::new(infile, media_type);
         let result = usecase.call(params);
@@ -265,10 +257,8 @@ mod tests {
     fn test_import_asset_existing() {
         // arrange
         let digest = "sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07";
-        let original = PathBuf::from("./tests/fixtures/dcp_1069.jpg");
-        let tmpdir = tempdir().unwrap();
-        let infile = tmpdir.path().join("dcp_1069.jpg");
-        std::fs::copy(original, &infile).unwrap();
+        let infile = PathBuf::from("./tests/fixtures/dcp_1069.jpg");
+        let infile_copy = infile.clone();
         let asset1 = Asset {
             key: "abc123".to_owned(),
             checksum: digest.to_owned(),
@@ -288,9 +278,13 @@ mod tests {
             .expect_get_asset_by_digest()
             .with(eq(digest))
             .returning(move |_| Ok(Some(asset1.clone())));
-        let blobs = MockBlobRepository::new();
+        let mut blobs = MockBlobRepository::new();
+        blobs
+            .expect_store_blob()
+            .with(function(move |p| p == infile_copy.as_path()), always())
+            .returning(|_, _| Ok(()));
         // act
-        let usecase = ImportAsset::new(Box::new(records), Box::new(blobs));
+        let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs));
         let media_type = mime::IMAGE_JPEG;
         let params = Params::new(infile, media_type);
         let result = usecase.call(params);

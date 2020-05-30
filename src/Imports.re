@@ -39,6 +39,7 @@ type input = {
     .
     "caption": option(string),
     "datetime": option(Js.Json.t),
+    "filename": option(string),
     "location": option(string),
     "mimetype": option(string),
     "tags": option(array(string)),
@@ -280,6 +281,7 @@ let submitUpdate =
           "input": {
             "tags": None,
             "caption": Some(value),
+            "filename": None,
             "location": None,
             "datetime": None,
             "mimetype": None,

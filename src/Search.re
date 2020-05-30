@@ -341,6 +341,8 @@ let makeSearchParams = (params: SearchForm.state) => {
     "mimetype":
       String.length(params.mimetype) > 0 ? Some(params.mimetype) : None,
     "tags": tags,
+    "sortField": None,
+    "sortOrder": None,
   };
 };
 

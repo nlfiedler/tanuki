@@ -40,6 +40,7 @@ type input = {
   .
   "tags": option(array(string)),
   "caption": option(string),
+  "filename": option(string),
   "location": option(string),
   "datetime": option(Js.Json.t),
   "mimetype": option(string),
@@ -392,6 +393,7 @@ let submitUpdate =
   let newAsset: input = {
     "tags": Some(tags),
     "caption": Some(values.caption),
+    "filename": None,
     "location": Some(values.location),
     "datetime": userDateToGraphQL(values.userdate),
     "mimetype": Some(values.mimetype),

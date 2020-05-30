@@ -15,6 +15,7 @@ pub mod count;
 pub mod diagnose;
 pub mod fetch;
 pub mod import;
+pub mod ingest;
 pub mod location;
 pub mod recent;
 pub mod search;

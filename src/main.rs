@@ -89,7 +89,7 @@ async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
             let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
             let records = RecordRepositoryImpl::new(ctx);
             let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
-            let usecase = ImportAsset::new(Box::new(records), Box::new(blobs));
+            let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs));
             let params = Params::new(filepath_clone, content_type);
             usecase.call(params)
         })
@@ -301,7 +301,7 @@ mod tests {
         let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
         let records = RecordRepositoryImpl::new(ctx);
         let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
-        let usecase = ImportAsset::new(Box::new(records), Box::new(blobs));
+        let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs));
         let params = Params::new(filepath, mime::IMAGE_JPEG);
         let asset = usecase.call(params).unwrap();
         let mut app = test::init_service(

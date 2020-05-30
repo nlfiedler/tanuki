@@ -550,6 +550,21 @@ pub struct MutationRoot;
 
 #[juniper::object(Context = Arc<GraphContext>)]
 impl MutationRoot {
+    /// Perform an import on all files in the uploads directory.
+    fn ingest(executor: &Executor) -> FieldResult<i32> {
+        use crate::domain::usecases::ingest::{IngestAssets, Params};
+        use crate::domain::usecases::UseCase;
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
+        let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
+        let usecase = IngestAssets::new(Arc::new(repo), Arc::new(blobs));
+        let path = std::env::var("UPLOAD_PATH").unwrap_or_else(|_| "tmp/uploads".to_owned());
+        let uploads_path = PathBuf::from(path);
+        let params = Params::new(uploads_path);
+        let count = usecase.call(params)?;
+        Ok(count as i32)
+    }
+
     /// Diagnosis and repair issues in the database and blob store.
     fn repair(executor: &Executor, checksum: Option<bool>) -> FieldResult<Vec<Diagnosis>> {
         use crate::domain::usecases::diagnose::{Diagnose, Params};

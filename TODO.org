@@ -13,13 +13,18 @@
 | flower.mpg   |        3603280881 | 1520436081 | 2018-03-07 07:21:21 | 2018-03-07 15:21:21 |
 **** https://github.com/mozilla/mp4parse-rust (MPL-2.0)
 ***** intentionally skips the creation time fields
-*** TODO large file import (or simply direct file import)
-**** split file into chunks, upload one-by-one, showing progress
-***** default to 8MB chunks, most images will be smaller than that
+*** DONE large file import (or simply direct file import)
 **** photoprism has an ~import~ folder and command to bring in assets
-**** on upload screen, provide input field to accessible file path
-**** create a record, move file into place
+**** on upload screen, provide button to process anything sitting in ~uploads~ directory
+**** guess the media type, create a record, move file into place
+**** DONE write a new usecase that invokes =ImportAsset=
+***** test that it ignores dot files and directories
+**** DONE write a new GraphQL mutation that invokes the new usecase
+***** return the number of assets processed
+**** DONE add the button on upload screen to invoke GraphQL mutation
+***** display the results (number of assets)
 *** TODO shared folder cleanup
+**** do this after a successful zorigami backup to the cloud
 **** write a script to checksum files and check if they are in tanuki
 **** anything found in tanuki is deleted
 ** [#B] Prepare for Christmas calendar
@@ -175,6 +180,8 @@
   - [ ] set caption
   - [ ] change media type
 ** Search Improvements
+*** TODO Begin search when user pauses typing
+**** Use =debounceTime= operator in RxDart with BLoC state for this
 *** TODO Support advanced queries using Google-style operators
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
 **** move perkeep style query support from mujina to tanuki
@@ -302,8 +309,10 @@ include it in the database records.
 ***** https://github.com/mehcode/config-rs (MIT)
 **** screen for configuring the settings
 *** Showing the licenses/about dialog
-**** c.f. "licenses" on https://flutter.dev/docs/resources/faq
+**** use the Flutter =AboutDialog= widget
+**** c.f. "licenses" on https://flutter.dev/docs/resources/faq for details
 ** Mobile app
+*** Will likely need the Flutter =AboutDialog= to show legalese for app stores
 *** Use [[https://pub.dev/packages/image_picker][image_picker]] to allow user to select images from photo library
 *** Upload while away from home
 **** mobile app with upload to a "drop box", backend then retrieves those (on a schedule?)
@@ -448,6 +457,8 @@ include it in the database records.
 *** Tracking issues and releases on a schedule (SCM)
 **** Consider if using GitLab (in a container) would be helpful
 ** Documentation
+*** Uploads directory
+**** asset importer ignores hidden files and directories
 *** Case Sensitivity
 - Data is stored as entered (case preservative)
 - Attribute lists are all lowercased
@@ -457,6 +468,9 @@ include it in the database records.
 - EXIF data does not contain timezone information after all
 - [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
 ** Architecture Review
+*** Large file upload
+**** split file into chunks, upload one-by-one, showing progress
+***** default to 8MB chunks, most images will be smaller than that
 *** GraphQL server
 **** consider https://github.com/async-graphql/async-graphql as alternative to juniper
 ***** handles multipart requests (file uploads)
