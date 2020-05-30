@@ -368,10 +368,14 @@ module Component = {
           Js.log(error);
           <div> {ReasonReact.string(error##message)} </div>;
         | Data(response) =>
+          Array.sort(
+            (a, b) => compare(a##filename, b##filename),
+            response##recent##results,
+          );
           <div>
             {buttonBar(response##recent##count, state.showing, setShowing)}
             <BulkUpdate results=response##recent##results />
-          </div>
+          </div>;
         }
       }
     </RecentImportsQuery>;

@@ -23,6 +23,8 @@
 ***** return the number of assets processed
 **** DONE add the button on upload screen to invoke GraphQL mutation
 ***** display the results (number of assets)
+*** DONE imports screen should first sort results by filename
+*** TODO extract original date from avi files?
 *** TODO shared folder cleanup
 **** do this after a successful zorigami backup to the cloud
 **** write a script to checksum files and check if they are in tanuki
