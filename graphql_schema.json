@@ -148,6 +148,30 @@
               "deprecationReason": null
             },
             {
+              "name": "mediaTypes",
+              "description": "Retrieve the list of media types and their associated asset count.",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "OBJECT",
+                      "name": "LabeledCount",
+                      "ofType": null
+                    }
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "recent",
               "description": "Search for assets that were recently imported.\n\nRecently imported assets do not have any tags, location, or caption, and\nthus are waiting for the user to give them additional details.",
               "args": [

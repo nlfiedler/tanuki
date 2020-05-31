@@ -450,6 +450,18 @@ impl QueryRoot {
         Ok(asset)
     }
 
+    /// Retrieve the list of media types and their associated asset count.
+    fn media_types(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
+        use crate::domain::usecases::types::AllMediaTypes;
+        use crate::domain::usecases::{NoParams, UseCase};
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
+        let usecase = AllMediaTypes::new(Box::new(repo));
+        let params = NoParams {};
+        let types: Vec<LabeledCount> = usecase.call(params)?;
+        Ok(types)
+    }
+
     /// Search for assets that were recently imported.
     ///
     /// Recently imported assets do not have any tags, location, or caption, and
@@ -878,6 +890,83 @@ mod tests {
         let schema = create_schema();
         let (res, errors) = juniper::execute(
             r#"query { locations { label count } }"#,
+            None,
+            &schema,
+            &Variables::new(),
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        assert!(res.is_null());
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].error().message().contains("oh no"));
+    }
+
+    #[test]
+    fn test_query_media_types_ok() {
+        // arrange
+        let expected = vec![
+            LabeledCount {
+                label: "image/jpeg".to_owned(),
+                count: 42,
+            },
+            LabeledCount {
+                label: "video/mpeg".to_owned(),
+                count: 101,
+            },
+            LabeledCount {
+                label: "text/plain".to_owned(),
+                count: 14,
+            },
+        ];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_media_types()
+            .with()
+            .returning(move || Ok(expected.clone()));
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
+        // act
+        let schema = create_schema();
+        let (res, _errors) = juniper::execute(
+            r#"query { mediaTypes { label count } }"#,
+            None,
+            &schema,
+            &Variables::new(),
+            &ctx,
+        )
+        .unwrap();
+        // assert
+        let res = res.as_object_value().unwrap();
+        let res = res.get_field_value("mediaTypes").unwrap();
+        let list_result = res.as_list_value().unwrap();
+        let labels = ["image/jpeg", "video/mpeg", "text/plain"];
+        let counts = [42, 101, 14];
+        for (idx, result) in list_result.iter().enumerate() {
+            let object = result.as_object_value().unwrap();
+            let res = object.get_field_value("label").unwrap();
+            let actual = res.as_scalar_value::<String>().unwrap();
+            assert_eq!(actual, labels[idx]);
+            let res = object.get_field_value("count").unwrap();
+            let actual = res.as_scalar_value::<i32>().unwrap();
+            assert_eq!(*actual, counts[idx]);
+        }
+    }
+
+    #[test]
+    fn test_query_media_types_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_media_types()
+            .with()
+            .returning(|| Err(err_msg("oh no")));
+        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
+        let assets_path = Box::new(PathBuf::from("/tmp"));
+        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
+        // act
+        let schema = create_schema();
+        let (res, errors) = juniper::execute(
+            r#"query { mediaTypes { label count } }"#,
             None,
             &schema,
             &Variables::new(),

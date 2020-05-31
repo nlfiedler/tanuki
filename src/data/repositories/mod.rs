@@ -73,6 +73,10 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.all_tags()
     }
 
+    fn all_media_types(&self) -> Result<Vec<LabeledCount>, Error> {
+        self.datasource.all_media_types()
+    }
+
     fn all_assets(&self) -> Result<Vec<String>, Error> {
         self.datasource.all_assets()
     }
@@ -89,8 +93,8 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.query_by_filename(filename)
     }
 
-    fn query_by_mimetype(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error> {
-        self.datasource.query_by_mimetype(mimetype)
+    fn query_by_media_type(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error> {
+        self.datasource.query_by_media_type(mimetype)
     }
 
     fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
@@ -612,6 +616,53 @@ mod tests {
     }
 
     #[test]
+    fn test_all_media_types_ok() {
+        // arrange
+        let expected = vec![
+            LabeledCount {
+                label: "image/jpeg".to_owned(),
+                count: 42,
+            },
+            LabeledCount {
+                label: "video/mpeg".to_owned(),
+                count: 101,
+            },
+            LabeledCount {
+                label: "text/plain".to_owned(),
+                count: 14,
+            },
+        ];
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_media_types()
+            .with()
+            .returning(move || Ok(expected.clone()));
+        // act
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
+        let result = repo.all_media_types();
+        // assert
+        assert!(result.is_ok());
+        let actual = result.unwrap();
+        assert_eq!(actual.len(), 3);
+        assert!(actual.iter().any(|l| l.label == "image/jpeg" && l.count == 42));
+        assert!(actual.iter().any(|l| l.label == "video/mpeg" && l.count == 101));
+        assert!(actual.iter().any(|l| l.label == "text/plain" && l.count == 14));
+    }
+
+    #[test]
+    fn test_all_media_types_err() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_media_types()
+            .with()
+            .returning(|| Err(err_msg("oh no")));
+        // act
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
+        let result = repo.all_media_types();
+        // assert
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn test_all_assets_ok() {
         // arrange
         let expected = vec![
@@ -930,7 +981,7 @@ mod tests {
     }
 
     #[test]
-    fn test_query_by_mimetype_ok() {
+    fn test_query_by_media_type_ok() {
         // arrange
         let results = vec![SearchResult {
             asset_id: "cafebabe".to_owned(),
@@ -940,12 +991,12 @@ mod tests {
             datetime: Utc::now(),
         }];
         let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_mimetype()
+        mock.expect_query_by_media_type()
             .with(eq("image/jpeg"))
             .returning(move |_| Ok(results.clone()));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
-        let result = repo.query_by_mimetype("image/jpeg");
+        let result = repo.query_by_media_type("image/jpeg");
         // assert
         assert!(result.is_ok());
         let results = result.unwrap();
@@ -954,15 +1005,15 @@ mod tests {
     }
 
     #[test]
-    fn test_query_by_mimetype_err() {
+    fn test_query_by_media_type_err() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_mimetype()
+        mock.expect_query_by_media_type()
             .with(eq("image/jpeg"))
             .returning(move |_| Err(err_msg("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
-        let result = repo.query_by_mimetype("image/jpeg");
+        let result = repo.query_by_media_type("image/jpeg");
         // assert
         assert!(result.is_err());
     }

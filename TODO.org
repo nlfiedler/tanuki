@@ -25,6 +25,20 @@
 ***** display the results (number of assets)
 *** DONE imports screen should first sort results by filename
 *** TODO extract original date from avi files?
+**** FourCC should be =RIFF=
+**** evaluate https://crates.io/crates/riff to see if it decodes metadata
+**** evaluate https://github.com/tripulse/iffc to see if it decodes metadata
+**** c.f. https://en.wikipedia.org/wiki/Audio_Video_Interleave
+**** there are several formats: DV-AVI (type 1 and 2) and MJPEG-AVI
+**** c.f. https://www.eden-foundation.org/products/code/film_date_stamp/index.html
+**** the videos from 2009 appear to be MJPEG-AVI
+**** the date is a string (in =IDIT= chunk?): =SAT DEC 19 05:46:12 2009= with newline and null
+**** date string format depends on camera manufacturer (in =INFOISFT= chunk?)
+**** =ffprobe= can read the creation time for videos as early as 2009
+**** c.f. mediainfo C++ library
+**** c.f. https://crates.io/crates/mediainfo (2 years old)
+*** TODO select on media type just like location, year, tags
+**** would be nice to get all unique media types (like locations and tags)
 *** TODO shared folder cleanup
 **** do this after a successful zorigami backup to the cloud
 **** write a script to checksum files and check if they are in tanuki
@@ -228,6 +242,9 @@
 **** XMP
 **** IPTC
 *** TODO support HEIF images
+**** c.f. https://aomediacodec.github.io/av1-avif/
+***** AV1 is the free alternative to encumbered HEVC
+***** there are some crates for avif
 **** image file format employing HEVC (h.265) image coding
 **** https://crates.io/crates/libvips (MIT) reads/writes HEIF
 ***** this library easily crashes with a segmentation fault

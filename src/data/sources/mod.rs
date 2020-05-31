@@ -42,7 +42,7 @@ pub trait EntityDataSource {
     fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for assets whose media type matches the one given.
-    fn query_by_mimetype(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_media_type(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for asssets whose best date is before the one given.
     fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
@@ -76,6 +76,10 @@ pub trait EntityDataSource {
     /// Return all of the known tags and the number of assets associated with
     /// each tag.
     fn all_tags(&self) -> Result<Vec<LabeledCount>, Error>;
+
+    /// Return all of the known tags and the number of assets associated with
+    /// each tag.
+    fn all_media_types(&self) -> Result<Vec<LabeledCount>, Error>;
 
     /// Return all asset identifiers in the database.
     fn all_assets(&self) -> Result<Vec<String>, Error>;
@@ -178,7 +182,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         Ok(search_results)
     }
 
-    fn query_by_mimetype(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_media_type(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error> {
         // secondary index keys are lowercase
         let mimetype = mimetype.to_lowercase();
         let query_results = self.database.query_by_key("by_media_type", mimetype)?;
@@ -252,6 +256,10 @@ impl EntityDataSource for EntityDataSourceImpl {
 
     fn all_tags(&self) -> Result<Vec<LabeledCount>, Error> {
         self.count_all_keys("by_tags")
+    }
+
+    fn all_media_types(&self) -> Result<Vec<LabeledCount>, Error> {
+        self.count_all_keys("by_media_type")
     }
 
     fn all_assets(&self) -> Result<Vec<String>, Error> {

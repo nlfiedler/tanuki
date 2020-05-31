@@ -199,6 +199,43 @@ fn test_all_tags() {
 }
 
 #[test]
+fn test_all_media_types() {
+    let db_path = DBPath::new("_test_all_media_types");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    // zero assets
+    let actual = datasource.all_media_types().unwrap();
+    assert_eq!(actual.len(), 0);
+
+    // one asset
+    let asset = common::build_basic_asset();
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.all_media_types().unwrap();
+    assert_eq!(actual.len(), 1);
+    assert_eq!(actual[0].label, "image/jpeg");
+    assert_eq!(actual[0].count, 1);
+
+    // multiple assets
+    let mut asset = common::build_basic_asset();
+    asset.key = "monday6".to_owned();
+    asset.media_type = "image/jpeg".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "tuesday7".to_owned();
+    asset.media_type = "video/mpeg".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "wednesday8".to_owned();
+    asset.media_type = "video/x-msvideo".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.all_media_types().unwrap();
+    assert_eq!(actual.len(), 3);
+    assert!(actual.iter().any(|l| l.label == "image/jpeg" && l.count == 2));
+    assert!(actual.iter().any(|l| l.label == "video/mpeg" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "video/x-msvideo" && l.count == 1));
+}
+
+#[test]
 fn test_query_all_assets() {
     let db_path = DBPath::new("_test_query_all_assets");
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
@@ -485,18 +522,18 @@ fn test_query_by_filename() {
 }
 
 #[test]
-fn test_query_by_mimetype() {
-    let db_path = DBPath::new("_test_query_by_mimetype");
+fn test_query_by_media_type() {
+    let db_path = DBPath::new("_test_query_by_media_type");
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
 
     // zero assets
-    let actual = datasource.query_by_mimetype("image/jpeg").unwrap();
+    let actual = datasource.query_by_media_type("image/jpeg").unwrap();
     assert_eq!(actual.len(), 0);
 
     // one asset
     let asset = common::build_basic_asset();
     datasource.put_asset(&asset).unwrap();
-    let actual = datasource.query_by_mimetype("imaGE/jpeg").unwrap();
+    let actual = datasource.query_by_media_type("imaGE/jpeg").unwrap();
     assert_eq!(actual.len(), 1);
     assert!(actual[0].media_type == "image/jpeg");
 
@@ -516,7 +553,7 @@ fn test_query_by_mimetype() {
     asset.filename = "img_4567.jpg".to_owned();
     asset.media_type = "IMAGE/JPEG".to_owned();
     datasource.put_asset(&asset).unwrap();
-    let actual = datasource.query_by_mimetype("image/JPeg").unwrap();
+    let actual = datasource.query_by_media_type("image/JPeg").unwrap();
     assert_eq!(actual.len(), 2);
     assert!(!actual[0].asset_id.starts_with("asset/"));
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));

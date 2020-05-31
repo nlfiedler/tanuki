@@ -20,6 +20,7 @@ pub mod location;
 pub mod recent;
 pub mod search;
 pub mod tags;
+pub mod types;
 pub mod update;
 pub mod year;
 

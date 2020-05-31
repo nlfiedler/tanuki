@@ -46,7 +46,7 @@ impl SearchAssets {
         } else if let Some(filename) = params.filename.take() {
             self.repo.query_by_filename(&filename)
         } else if let Some(mimetype) = params.mimetype.take() {
-            self.repo.query_by_mimetype(&mimetype)
+            self.repo.query_by_media_type(&mimetype)
         } else {
             // did not recognize the query, return nothing
             Ok(vec![])
@@ -478,7 +478,7 @@ mod tests {
             datetime: Utc::now(),
         }];
         let mut mock = MockRecordRepository::new();
-        mock.expect_query_by_mimetype()
+        mock.expect_query_by_media_type()
             .with(eq("imaGE/jpeg"))
             .returning(move |_| Ok(results.clone()));
         // act

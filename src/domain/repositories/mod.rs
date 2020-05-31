@@ -40,6 +40,10 @@ pub trait RecordRepository {
     /// each tag.
     fn all_tags(&self) -> Result<Vec<LabeledCount>, Error>;
 
+    /// Return all of the known media types and the number of assets associated
+    /// with each type.
+    fn all_media_types(&self) -> Result<Vec<LabeledCount>, Error>;
+
     /// Return all asset identifiers in the database.
     fn all_assets(&self) -> Result<Vec<String>, Error>;
 
@@ -53,7 +57,7 @@ pub trait RecordRepository {
     fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for assets whose media type matches the one given.
-    fn query_by_mimetype(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_media_type(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for asssets whose best date is before the one given.
     fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
