@@ -32,6 +32,7 @@ mime = "0.3.16"
 mime_guess = "2.0.3"
 mokuroku = "2.2.1"
 mp4 = { git = "https://github.com/nlfiedler/mp4rs.git", branch = "master" }
+riff = "1.0.0"
 rocksdb = "0.14.0"
 rusty_ulid = "0.9.3"
 serde = { version = "1.0", features = ["derive"] }

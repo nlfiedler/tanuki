@@ -81,8 +81,12 @@ fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTim
                 .map_err(|_| err_msg("could not parse data"));
         }
     } else if media_type.type_() == mime::VIDEO {
-        // For now just hope that the video is mp4 compatible, while someday can
-        // add support for other video formats.
+        // check for certain types of video formats
+        let sub = media_type.subtype().as_str();
+        if sub == "x-msvideo" || sub == "vnd.avi" || sub == "avi" || sub == "msvideo" {
+            return get_avi_date(filepath);
+        }
+        // For any other type of video, just hope that it is mp4 compatible.
         fn err_convert(err: mp4::Error) -> Error {
             err_msg(format!("{:?}", err))
         }
@@ -98,7 +102,156 @@ fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTim
         };
         return Ok(Utc.timestamp(creation_time as i64, 0));
     }
-    Err(err_msg("not an image"))
+    Err(err_msg("could not read any date"))
+}
+
+// Try reading the date from a RIFF-encoded AVI file.
+fn get_avi_date(filepath: &Path) -> Result<DateTime<Utc>, Error> {
+    let mut file = File::open(filepath)?;
+    let chunk = riff::Chunk::read(&mut file, 0)?;
+    if chunk.id() == riff::RIFF_ID {
+        let chunk_type = chunk.read_type(&mut file)?;
+        if chunk_type.as_str() == "AVI " {
+            if let Some(contents) = read_chunk(&chunk, &mut file) {
+                if let Some(idit) = find_data("IDIT", &contents) {
+                    if let Some(date) = parse_idit_date(&idit) {
+                        return Ok(date);
+                    }
+                }
+                // another possible field is DTIM but that requires
+                // conversion as noted in the RIFF wikipedia article
+                // (https://en.wikipedia.org/wiki/Resource_Interchange_File_Format)
+            }
+            return Err(err_msg("AVI does not contain a date"));
+        }
+    }
+    Err(err_msg("not RIFF encoded AVI"))
+}
+
+//
+// Example output for an AVI MJPEG file from 2009. The IDIT field contains a
+// date string and the ISFT field contains camera manufacturer/model.
+//
+// children -> id: 'RIFF', typ: 'AVI ', len: 5
+//   children -> id: 'LIST', typ: 'hdrl', len: 5
+//     data -> id: 'avih', len: 56
+//     children -> id: 'LIST', typ: 'strl', len: 3
+//       data -> id: 'strh', len: 56
+//       data -> id: 'strf', len: 40
+//       data -> id: 'indx', len: 120
+//     children -> id: 'LIST', typ: 'strl', len: 3
+//       data -> id: 'strh', len: 56
+//       data -> id: 'strf', len: 16
+//       data -> id: 'indx', len: 120
+//     children -> id: 'LIST', typ: 'odml', len: 1
+//       data -> id: 'dmlh', len: 248
+//     data -> id: 'IDIT', len: 26
+//   children -> id: 'LIST', typ: 'INFO', len: 1
+//     data -> id: 'ISFT', len: 12
+//   data -> id: 'JUNK', len: 1138
+//   children -> id: 'LIST', typ: 'movi', len: 2738
+//   data -> id: 'idx1', len: 32
+
+fn read_chunk<T>(chunk: &riff::Chunk, file: &mut T) -> Option<riff::ChunkContents>
+where
+    T: std::io::Seek + std::io::Read,
+{
+    let id = chunk.id();
+    if id == riff::RIFF_ID || id == riff::LIST_ID {
+        let chunk_type = chunk.read_type(file).unwrap();
+        let children = read_items(&mut chunk.iter(file));
+        let mut children_contents: Vec<riff::ChunkContents> = Vec::new();
+        for child in children {
+            if let Some(contents) = read_chunk(&child, file) {
+                children_contents.push(contents);
+            }
+        }
+        Some(riff::ChunkContents::Children(
+            id,
+            chunk_type,
+            children_contents,
+        ))
+    } else if id == riff::SEQT_ID {
+        let children = read_items(&mut chunk.iter_no_type(file));
+        let mut children_contents: Vec<riff::ChunkContents> = Vec::new();
+        for child in children {
+            if let Some(contents) = read_chunk(&child, file) {
+                children_contents.push(contents);
+            }
+        }
+        Some(riff::ChunkContents::ChildrenNoType(id, children_contents))
+    } else if chunk.len() <= 256 {
+        // only interested in the smaller data fields
+        let contents = chunk.read_contents(file).unwrap();
+        Some(riff::ChunkContents::Data(id, contents))
+    } else {
+        // ignore everything else, do not allocate memory
+        None
+    }
+}
+
+fn read_items<T>(iter: &mut T) -> Vec<T::Item>
+where
+    T: Iterator,
+{
+    let mut vec: Vec<T::Item> = Vec::new();
+    for item in iter {
+        vec.push(item);
+    }
+    vec
+}
+
+// Scan recursively through the contents to find a named data field.
+fn find_data(label: &str, contents: &riff::ChunkContents) -> Option<Vec<u8>> {
+    match contents {
+        riff::ChunkContents::Data(id, data) => {
+            if id.as_str() == label {
+                return Some(data.to_owned());
+            } else {
+                return None;
+            }
+        }
+        riff::ChunkContents::Children(_id, _typ, more) => {
+            for content in more.iter() {
+                let data = find_data(label, &content);
+                if data.is_some() {
+                    return data;
+                }
+            }
+        }
+        riff::ChunkContents::ChildrenNoType(_id, more) => {
+            for content in more.iter() {
+                let data = find_data(label, &content);
+                if data.is_some() {
+                    return data;
+                }
+            }
+        }
+    }
+    None
+}
+
+// Parse the date string found in the IDIT data field.
+fn parse_idit_date(bytes: &[u8]) -> Option<DateTime<Utc>> {
+    let mut no_nulls = bytes.to_vec();
+    no_nulls.retain(|e| *e != 0);
+    if let Ok(string) = String::from_utf8(no_nulls) {
+        // the date parsing is sensitive to any kind of whitespace
+        let value = string.trim();
+        // example from a Canon camera: SAT DEC 19 05:46:12 2009
+        if let Ok(date) = Utc.datetime_from_str(value, "%a %b %d %H:%M:%S %Y") {
+            return Some(date);
+        }
+        // example from a Samsung camera: 2005:08:17 11:42:43
+        if let Ok(date) = Utc.datetime_from_str(value, "%Y:%m:%d %H:%M:%S") {
+            return Some(date);
+        }
+        // example from a Fujifilm camera: Mon Mar  3 09:44:56 2008
+        if let Ok(date) = Utc.datetime_from_str(value, "%a %b %e %H:%M:%S %Y") {
+            return Some(date);
+        }
+    }
+    None
 }
 
 //
@@ -166,13 +319,13 @@ mod tests {
         let actual = get_original_date(&mt, filepath);
         assert!(actual.is_err());
 
-        // not an image
+        // not an actual image, despite the media type
         let filename = "./tests/fixtures/lorem-ipsum.txt";
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
         assert!(actual.is_err());
 
-        // video file
+        // MP4-encoded quicktime/mpeg video file
         let filename = "./tests/fixtures/100_1206.MOV";
         let mt: mime::Mime = "video/mp4".parse().unwrap();
         let filepath = Path::new(filename);
@@ -182,6 +335,71 @@ mod tests {
         assert_eq!(date.year(), 2007);
         assert_eq!(date.month(), 9);
         assert_eq!(date.day(), 14);
+
+        // RIFF-encoded AVI video file
+        let filename = "./tests/fixtures/MVI_0727.AVI";
+        let mt: mime::Mime = "video/x-msvideo".parse().unwrap();
+        let filepath = Path::new(filename);
+        let actual = get_original_date(&mt, filepath);
+        assert!(actual.is_ok());
+        let date = actual.unwrap();
+        assert_eq!(date.year(), 2009);
+        assert_eq!(date.month(), 1);
+        assert_eq!(date.day(), 19);
+
+        // not an actual video, despite the media type
+        let filename = "./tests/fixtures/lorem-ipsum.txt";
+        let filepath = Path::new(filename);
+        let actual = get_original_date(&mt, filepath);
+        assert!(actual.is_err());
+    }
+
+    #[test]
+    fn test_get_avi_date() {
+        let filename = "./tests/fixtures/MVI_0727.AVI";
+        let filepath = Path::new(filename);
+        let result = get_avi_date(filepath);
+        assert!(result.is_ok());
+        let date = result.unwrap();
+        assert_eq!(date.year(), 2009);
+        assert_eq!(date.month(), 1);
+        assert_eq!(date.day(), 19);
+    }
+
+    #[test]
+    fn test_parse_idit_date() {
+        // example from Canon camera: SAT DEC 19 05:46:12 2009
+        let input = vec![
+            83, 65, 84, 32, 68, 69, 67, 32, 49, 57, 32, 48, 53, 58, 52, 54, 58, 49, 50, 32, 50, 48,
+            48, 57, 10, 0,
+        ];
+        let option = parse_idit_date(&input);
+        assert!(option.is_some());
+        let actual = option.unwrap();
+        assert_eq!(actual.year(), 2009);
+        assert_eq!(actual.month(), 12);
+        assert_eq!(actual.day(), 19);
+        // example from a Fujifilm camera: Mon Mar  3 09:44:56 2008
+        let input = vec![
+            77, 111, 110, 32, 77, 97, 114, 32, 32, 51, 32, 48, 57, 58, 52, 52, 58, 53, 54, 32, 50,
+            48, 48, 56,
+        ];
+        let option = parse_idit_date(&input);
+        assert!(option.is_some());
+        let actual = option.unwrap();
+        assert_eq!(actual.year(), 2008);
+        assert_eq!(actual.month(), 3);
+        assert_eq!(actual.day(), 3);
+        // example from a Samsung camera: 2005:08:17 11:42:43
+        let input = vec![
+            50, 48, 48, 53, 58, 48, 56, 58, 49, 55, 32, 49, 49, 58, 52, 50, 58, 52, 51,
+        ];
+        let option = parse_idit_date(&input);
+        assert!(option.is_some());
+        let actual = option.unwrap();
+        assert_eq!(actual.year(), 2005);
+        assert_eq!(actual.month(), 8);
+        assert_eq!(actual.day(), 17);
     }
 
     #[test]

@@ -24,20 +24,42 @@
 **** DONE add the button on upload screen to invoke GraphQL mutation
 ***** display the results (number of assets)
 *** DONE imports screen should first sort results by filename
-*** TODO extract original date from avi files?
-**** FourCC should be =RIFF=
+*** DONE need to make sure the other AVI files in shared are really AVI files
+**** rename the files before importing
+**** they all check out as proper RIFF encoded AVI files
+*** TODO some of the supposed avi files are QuickTime
+**** probably need to fix the media type by hand and then run a repair
+**** they are probably the ones that got "fixed" a week ago
+***** their names were probably wrong but the media type was correct?
+**** these are all quicktime videos
+#+BEGIN_SRC
+MjAxNC8xMi8yMS8wMDE1LzAxY2UxcWQ3cWVwMndiMWY4OWduNW1kNHpqLmF2aQ==
+MjAxNS8wMi8wMi8wMjE1LzAxY2UxcWQ4d2gxM3NoYmJyZmo4bWM2czZrLmF2aQ==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ3YjIxMHpmOGRrN3RhdjU3Zzh3LmF2aQ==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ3c3BhODBid2I1cnk5NGZtcXZrLmF2aQ==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ4Y2txOWhuYWdqYjN0dDgzN3hlLmF2aQ==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ4Z3d6M2UzbnQ0am02cjgyYWN0LmF2aQ==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ4bTlrZzV0Y2pkMzA0OHhrMmdrLmF2aQ==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ5YnM2MHJoaDAzbjdrZDBoOGt5LmF2aQ==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ5Z2hjeTZwdmdjanQ3aGthYzZzLmF2aQ==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ5azNxZTA0eGdubmJ4N3poOWtlLmF2aQ==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWRhZGYweWVoOXA0czdnMjdtNnF0LmF2aQ==
+MjAxNS8wNC8xNC8wNDE1LzAxY2UxcWQ4enNweWF3Ymd6a2hqYjY5M2prLmF2aQ==
+MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5MmR3emJiYWd5NTJ0c2FwcjY3LmF2aQ==
+MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLmF2aQ==
+#+END_SRC
+**** only these two are actual RIFF AVI files
+#+BEGIN_SRC
+MjAyMC8wNS8yMC8yMzQ1LzAxZTh0OGUzMDU4ajZlcXg1MDIwZmZtemN0LmF2aQ==
+MjAyMC8wNS8zMC8yMTMwLzAxZTlrcjFrZjJqcTlteHY3eGR5eGV5MTJnLmF2aQ==
+#+END_SRC
+*** DONE extract original date from avi files
 **** evaluate https://crates.io/crates/riff to see if it decodes metadata
-**** evaluate https://github.com/tripulse/iffc to see if it decodes metadata
-**** c.f. https://en.wikipedia.org/wiki/Audio_Video_Interleave
-**** there are several formats: DV-AVI (type 1 and 2) and MJPEG-AVI
+**** c.f. https://en.wikipedia.org/wiki/Resource_Interchange_File_Format
 **** c.f. https://www.eden-foundation.org/products/code/film_date_stamp/index.html
-**** the videos from 2009 appear to be MJPEG-AVI
-**** the date is a string (in =IDIT= chunk?): =SAT DEC 19 05:46:12 2009= with newline and null
-**** date string format depends on camera manufacturer (in =INFOISFT= chunk?)
-**** =ffprobe= can read the creation time for videos as early as 2009
-**** c.f. mediainfo C++ library
-**** c.f. https://crates.io/crates/mediainfo (2 years old)
-*** TODO select on media type just like location, year, tags
+**** date may be a string (in =IDIT= chunk?): =SAT DEC 19 05:46:12 2009= with newline and null
+**** date may also be encoded as =DTIM= (see wikipedia RIFF article on how to convert)
+*** DONE select on media type just like location, year, tags
 **** would be nice to get all unique media types (like locations and tags)
 *** TODO shared folder cleanup
 **** do this after a successful zorigami backup to the cloud
@@ -449,6 +471,11 @@ include it in the database records.
 *** Describe elements of the home page (e.g. interactive tutorial)
 *** Open a web page with helpful first steps
 ** Product Development
+*** Windows support
+**** ensure AVI support works fully
+***** display thumbnails and play video
+***** extract original date/time if available
+**** ensure support for popular image formats (whatever is popular on Windows)
 *** Desktop application combined with the server
 *** Building the product (build automation)
 **** Requirements
