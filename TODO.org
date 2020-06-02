@@ -27,13 +27,18 @@
 *** DONE need to make sure the other AVI files in shared are really AVI files
 **** rename the files before importing
 **** they all check out as proper RIFF encoded AVI files
+*** TODO extension repair should replace the extension, not append
+*** TODO verify all of the diagnose test cases are correct
 *** TODO some of the supposed avi files are QuickTime
 **** probably need to fix the media type by hand and then run a repair
 **** they are probably the ones that got "fixed" a week ago
 ***** their names were probably wrong but the media type was correct?
-**** these are all quicktime videos
+**** these are all quicktime videos with non-trivial length
+***** does play in Finder
+***** does download via link
+***** does not play in Firefox
+***** does not play in Safari
 #+BEGIN_SRC
-MjAxNC8xMi8yMS8wMDE1LzAxY2UxcWQ3cWVwMndiMWY4OWduNW1kNHpqLmF2aQ==
 MjAxNS8wMi8wMi8wMjE1LzAxY2UxcWQ4d2gxM3NoYmJyZmo4bWM2czZrLmF2aQ==
 MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ3YjIxMHpmOGRrN3RhdjU3Zzh3LmF2aQ==
 MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ3c3BhODBid2I1cnk5NGZtcXZrLmF2aQ==
@@ -48,10 +53,20 @@ MjAxNS8wNC8xNC8wNDE1LzAxY2UxcWQ4enNweWF3Ymd6a2hqYjY5M2prLmF2aQ==
 MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5MmR3emJiYWd5NTJ0c2FwcjY3LmF2aQ==
 MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLmF2aQ==
 #+END_SRC
+**** these have been fixed, however they are very short
+***** does not load properly in Firefox
+***** displays normally in Safari, shows as 0 seconds long
+#+BEGIN_SRC
+MjAxNC8xMi8yMS8wMDE1LzAxY2UxcWQ3cWVwMndiMWY4OWduNW1kNHpqLmF2aS5tb3Y=
+#+END_SRC
 **** only these two are actual RIFF AVI files
 #+BEGIN_SRC
 MjAyMC8wNS8yMC8yMzQ1LzAxZTh0OGUzMDU4ajZlcXg1MDIwZmZtemN0LmF2aQ==
 MjAyMC8wNS8zMC8yMTMwLzAxZTlrcjFrZjJqcTlteHY3eGR5eGV5MTJnLmF2aQ==
+#+END_SRC
+*** some videos have trouble playing in Firefox but are okay in Safari
+#+BEGIN_SRC
+http://192.168.1.1:3000/assets/MjAyMC8wNS8zMC8yMjE1LzAxZTlrdjNoZXI2NjQ2bng3cmVlbjVqcHd6Lm1vdg==
 #+END_SRC
 *** DONE extract original date from avi files
 **** evaluate https://crates.io/crates/riff to see if it decodes metadata
