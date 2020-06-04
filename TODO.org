@@ -27,9 +27,8 @@
 *** DONE need to make sure the other AVI files in shared are really AVI files
 **** rename the files before importing
 **** they all check out as proper RIFF encoded AVI files
-*** TODO extension repair should replace the extension, not append
-*** TODO verify all of the diagnose test cases are correct
-*** TODO some of the supposed avi files are QuickTime
+*** DONE extension repair should replace the extension, not append
+*** DONE some of the supposed avi files are QuickTime
 **** probably need to fix the media type by hand and then run a repair
 **** they are probably the ones that got "fixed" a week ago
 ***** their names were probably wrong but the media type was correct?
@@ -38,21 +37,7 @@
 ***** does download via link
 ***** does not play in Firefox
 ***** does not play in Safari
-#+BEGIN_SRC
-MjAxNS8wMi8wMi8wMjE1LzAxY2UxcWQ4d2gxM3NoYmJyZmo4bWM2czZrLmF2aQ==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ3YjIxMHpmOGRrN3RhdjU3Zzh3LmF2aQ==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ3c3BhODBid2I1cnk5NGZtcXZrLmF2aQ==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ4Y2txOWhuYWdqYjN0dDgzN3hlLmF2aQ==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ4Z3d6M2UzbnQ0am02cjgyYWN0LmF2aQ==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ4bTlrZzV0Y2pkMzA0OHhrMmdrLmF2aQ==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ5YnM2MHJoaDAzbjdrZDBoOGt5LmF2aQ==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ5Z2hjeTZwdmdjanQ3aGthYzZzLmF2aQ==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ5azNxZTA0eGdubmJ4N3poOWtlLmF2aQ==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWRhZGYweWVoOXA0czdnMjdtNnF0LmF2aQ==
-MjAxNS8wNC8xNC8wNDE1LzAxY2UxcWQ4enNweWF3Ymd6a2hqYjY5M2prLmF2aQ==
-MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5MmR3emJiYWd5NTJ0c2FwcjY3LmF2aQ==
-MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLmF2aQ==
-#+END_SRC
+***** changing the media type fixes it for Safari
 **** these have been fixed, however they are very short
 ***** does not load properly in Firefox
 ***** displays normally in Safari, shows as 0 seconds long
@@ -64,9 +49,34 @@ MjAxNC8xMi8yMS8wMDE1LzAxY2UxcWQ3cWVwMndiMWY4OWduNW1kNHpqLmF2aS5tb3Y=
 MjAyMC8wNS8yMC8yMzQ1LzAxZTh0OGUzMDU4ajZlcXg1MDIwZmZtemN0LmF2aQ==
 MjAyMC8wNS8zMC8yMTMwLzAxZTlrcjFrZjJqcTlteHY3eGR5eGV5MTJnLmF2aQ==
 #+END_SRC
-*** some videos have trouble playing in Firefox but are okay in Safari
+*** TODO some videos have trouble playing in Firefox but are okay in Safari
+**** maybe something to do with the bytes range request?
+**** maybe =main.rs= should convert =video/quicktime= to =video/mp4=
+***** that made no difference
+**** Firefox says this video is not supported
+***** it has a reasonable date
+***** it has =.mov= extension in the original filename
+***** it is very large (573mb)
 #+BEGIN_SRC
-http://192.168.1.1:3000/assets/MjAyMC8wNS8zMC8yMjE1LzAxZTlrdjNoZXI2NjQ2bng3cmVlbjVqcHd6Lm1vdg==
+MjAyMC8wNS8zMC8yMjE1LzAxZTlrdjNoZXI2NjQ2bng3cmVlbjVqcHd6Lm1vdg==
+#+END_SRC
+**** Firefox will play with sound only
+***** they all have =.avi= extension in the original filename
+***** they all have weird dates (=12/31/1969, 4:00:00 PM=)
+#+BEGIN_SRC
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ3YjIxMHpmOGRrN3RhdjU3Zzh3Lm1vdg==
+MjAxNS8wMi8wMi8wMjE1LzAxY2UxcWQ4d2gxM3NoYmJyZmo4bWM2czZrLm1vdg==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ3c3BhODBid2I1cnk5NGZtcXZrLm1vdg==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ4Y2txOWhuYWdqYjN0dDgzN3hlLm1vdg==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ4Z3d6M2UzbnQ0am02cjgyYWN0Lm1vdg==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ4bTlrZzV0Y2pkMzA0OHhrMmdrLm1vdg==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ5YnM2MHJoaDAzbjdrZDBoOGt5Lm1vdg==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ5Z2hjeTZwdmdjanQ3aGthYzZzLm1vdg==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ5azNxZTA0eGdubmJ4N3poOWtlLm1vdg==
+MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWRhZGYweWVoOXA0czdnMjdtNnF0Lm1vdg==
+MjAxNS8wNC8xNC8wNDE1LzAxY2UxcWQ4enNweWF3Ymd6a2hqYjY5M2prLm1vdg==
+MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5MmR3emJiYWd5NTJ0c2FwcjY3Lm1vdg==
+MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 #+END_SRC
 *** DONE extract original date from avi files
 **** evaluate https://crates.io/crates/riff to see if it decodes metadata
@@ -77,9 +87,7 @@ http://192.168.1.1:3000/assets/MjAyMC8wNS8zMC8yMjE1LzAxZTlrdjNoZXI2NjQ2bng3cmVlb
 *** DONE select on media type just like location, year, tags
 **** would be nice to get all unique media types (like locations and tags)
 *** TODO shared folder cleanup
-**** do this after a successful zorigami backup to the cloud
-**** write a script to checksum files and check if they are in tanuki
-**** anything found in tanuki is deleted
+**** dump everything into the =uploads= directory and process anything new
 ** [#B] Prepare for Christmas calendar
 *** easy selection and export of images
 **** Selection process
@@ -270,7 +278,7 @@ http://192.168.1.1:3000/assets/MjAyMC8wNS8zMC8yMjE1LzAxZTlrdjNoZXI2NjQ2bng3cmVlb
 **** maintain an uber record for tracking database version
 **** also the serde library is quite flexible with adding/removing fields
 ** Data Format Support
-*** Read and display captions in (image) metadata
+*** Read and display descriptions from asset metadata (IPTC ~Description~)
 *** Auto-populate missing fields on load
 **** when loading an asset, detect missing data (e.g. no original time)
 **** try reading the data from the asset and save to the asset record
@@ -305,7 +313,8 @@ include it in the database records.
 **** probably has a creation date or some sort
 *** TODO Show the =AAE= files as plain text (they are xml)
 *** TODO Detect if an image is a "portrait" using metadata
-*** TODO Support display of TIFF, EXIF, JFIF data for images
+*** TODO Display asset metadata when showing asset details
+**** e.g. TIFF, EXIF, JFIF, IPTC
 *** TODO Render Markdown as HTML in a scrollable view
 *** TODO Display anything textual in a scrollable text area
 *** Thumbnails for non-images
@@ -487,10 +496,13 @@ include it in the database records.
 *** Open a web page with helpful first steps
 ** Product Development
 *** Windows support
+**** look into getting some sort of certification to bypass SmartScreen
+***** c.f. https://getimageview.net/2020/06/02/microsoft-defender-smartscreen-is-hurting-independent-developers/
 **** ensure AVI support works fully
 ***** display thumbnails and play video
 ***** extract original date/time if available
 **** ensure support for popular image formats (whatever is popular on Windows)
+***** BMP (Windows Bitmap)
 *** Desktop application combined with the server
 *** Building the product (build automation)
 **** Requirements
