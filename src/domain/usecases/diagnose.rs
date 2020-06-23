@@ -361,7 +361,6 @@ mod tests {
             .expect_get_asset()
             .with(eq(asset1_id))
             .returning(move |_| Ok(asset1.clone()));
-        records.expect_put_asset().returning(|_| Ok(()));
         let mut blobs = MockBlobRepository::new();
         blobs
             .expect_blob_path()
@@ -405,7 +404,6 @@ mod tests {
             .expect_get_asset()
             .with(eq(asset1_id))
             .returning(move |_| Ok(asset1.clone()));
-        records.expect_put_asset().returning(|_| Ok(()));
         let mut blobs = MockBlobRepository::new();
         blobs
             .expect_blob_path()
@@ -584,9 +582,10 @@ mod tests {
         records
             .expect_get_asset()
             .with(eq(asset1_id))
+            .times(3)
             .returning(move |_| {
                 call_count += 1;
-                if call_count > 0 {
+                if call_count > 1 {
                     Ok(asset_good.clone())
                 } else {
                     Ok(asset_bad_clone.clone())
@@ -646,7 +645,6 @@ mod tests {
             .expect_get_asset()
             .with(eq(asset1_id))
             .returning(move |_| Ok(asset_bad.clone()));
-        records.expect_put_asset().returning(|_| Ok(()));
         let mut blobs = MockBlobRepository::new();
         blobs
             .expect_blob_path()
@@ -673,9 +671,10 @@ mod tests {
         records
             .expect_get_asset()
             .with(eq(asset1_id))
+            .times(3)
             .returning(move |_| {
                 call_count += 1;
-                if call_count > 0 {
+                if call_count > 1 {
                     Ok(asset_good.clone())
                 } else {
                     Ok(asset_bad_clone.clone())
@@ -695,6 +694,7 @@ mod tests {
         let usecase = Diagnose::new(Box::new(records), Box::new(blobs));
         let mut params: Params = Default::default();
         params.repair = true;
+        params.checksum = true;
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -735,7 +735,6 @@ mod tests {
             .expect_get_asset()
             .with(eq(asset1_id))
             .returning(move |_| Ok(asset_bad.clone()));
-        records.expect_put_asset().returning(|_| Ok(()));
         let mut blobs = MockBlobRepository::new();
         blobs
             .expect_blob_path()
@@ -761,9 +760,10 @@ mod tests {
         records
             .expect_get_asset()
             .with(eq(asset1_id))
+            .times(3)
             .returning(move |_| {
                 call_count += 1;
-                if call_count > 0 {
+                if call_count > 1 {
                     Ok(asset_good.clone())
                 } else {
                     Ok(asset_bad_clone.clone())

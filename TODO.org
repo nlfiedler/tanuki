@@ -183,6 +183,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** Look for the =video_player= web plugin for playing video in webui
 **** use =RichText= widget to style the captions (e.g. make tags bold)
 **** tags in caption could be "gesture sensitive" (i.e. clickable) to show assets with that tag
+**** paging list view with fetching logic: https://pub.dev/packages/uic
 **** =ListView.builder= allows building list items on demand
 ***** c.f. https://medium.com/flutter-community/flutter-infinite-list-tutorial-with-flutter-bloc-2fc7a272ec67
 **** =Image= has a loading builder for showing progress of network images
@@ -212,6 +213,10 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** =lib/js=
 **** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
+** Minor Fixups
+*** update =mp4= crate to latest release
+*** some of the crate dependencies can be in =dev-dependencies=
+**** mockall
 ** Bulk edit
 *** need to set the custom date on many assets at once
 *** Short term solution akin to perkeep web interface
@@ -290,7 +295,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** c.f. https://aomediacodec.github.io/av1-avif/
 ***** AV1 is the free alternative to encumbered HEVC
 ***** there are some crates for avif
-**** image file format employing HEVC (h.265) image coding
+**** HEIF is an image file format employing HEVC (h.265) image coding
 **** https://crates.io/crates/libvips (MIT) reads/writes HEIF
 ***** this library easily crashes with a segmentation fault
 **** https://github.com/oussama/libheif-rs (MIT)
