@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 /// Repository for entity records.
 ///
 #[cfg_attr(test, automock)]
-pub trait RecordRepository {
+pub trait RecordRepository: Send {
     /// Retrieve an asset by its unique identifier.
     fn get_asset(&self, asset_id: &str) -> Result<Asset, Error>;
 

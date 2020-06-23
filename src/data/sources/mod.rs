@@ -17,7 +17,7 @@ mod database;
 
 /// Data source for entity objects.
 #[cfg_attr(test, automock)]
-pub trait EntityDataSource {
+pub trait EntityDataSource: Send + Sync {
     /// Retrieve the asset record with the given identifier.
     fn get_asset(&self, asset_id: &str) -> Result<Asset, Error>;
 
