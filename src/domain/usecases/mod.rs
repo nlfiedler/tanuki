@@ -54,7 +54,7 @@ fn checksum_file(infile: &Path) -> io::Result<String> {
     let mut file = File::open(infile)?;
     let mut hasher = Sha256::new();
     io::copy(&mut file, &mut hasher)?;
-    let digest = hasher.result();
+    let digest = hasher.finalize();
     Ok(format!("sha256-{:x}", digest))
 }
 
