@@ -88,7 +88,8 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** would be nice to get all unique media types (like locations and tags)
 *** TODO shared folder cleanup
 **** dump everything into the =uploads= directory and process anything new
-** [#B] Prepare for Christmas calendar
+*** DONE ensure assets are readable by all (=chmod 644=) on import
+** [#C] Prepare for Christmas calendar
 *** easy selection and export of images
 **** Selection process
 ***** Maybe show selection icon thingy on hover, click to select
@@ -98,7 +99,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** Maybe action panel appears when there are selections
 ***** Show "file save" dialog to choose local file path
 ***** Save assets using their unique filename
-** [#C] New Interface
+** [#B] New Interface
 *** Use Dart and Flutter
 *** Use Clean Architecture
 **** define the features
@@ -214,7 +215,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
 ** Minor Fixups
-*** update =mp4= crate to latest release
 *** some of the crate dependencies can be in =dev-dependencies=
 **** mockall
 ** Bulk edit
@@ -245,6 +245,9 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
   - [ ] rename a tag
   - [ ] set caption
   - [ ] change media type
+** Asynchronous
+*** Will need to start using =async/await= as more libraries return =Future=
+*** Use of actix means that tokio runtime is already in place
 ** Search Improvements
 *** TODO Begin search when user pauses typing
 **** Use =debounceTime= operator in RxDart with BLoC state for this

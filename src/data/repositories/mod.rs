@@ -145,7 +145,16 @@ impl BlobRepository for BlobRepositoryImpl {
             // N.B. Store the asset as-is, do not make any modifications. Any
             // changes that are needed will be made later, and likely not
             // committed back to disk unless requested by the user.
-            std::fs::copy(filepath, dest_path)?;
+            std::fs::copy(filepath, &dest_path)?;
+            // Make sure the file is readable by all users on the system,
+            // otherwise programs like a backup running as another user
+            // cannot read this file.
+            #[cfg(target_family = "unix")]
+            {
+                use std::fs::Permissions;
+                use std::os::unix::fs::PermissionsExt;
+                std::fs::set_permissions(&dest_path, Permissions::from_mode(0o644))?;
+            }
         }
         std::fs::remove_file(filepath)?;
         Ok(())
@@ -643,9 +652,15 @@ mod tests {
         assert!(result.is_ok());
         let actual = result.unwrap();
         assert_eq!(actual.len(), 3);
-        assert!(actual.iter().any(|l| l.label == "image/jpeg" && l.count == 42));
-        assert!(actual.iter().any(|l| l.label == "video/mpeg" && l.count == 101));
-        assert!(actual.iter().any(|l| l.label == "text/plain" && l.count == 14));
+        assert!(actual
+            .iter()
+            .any(|l| l.label == "image/jpeg" && l.count == 42));
+        assert!(actual
+            .iter()
+            .any(|l| l.label == "video/mpeg" && l.count == 101));
+        assert!(actual
+            .iter()
+            .any(|l| l.label == "text/plain" && l.count == 14));
     }
 
     #[test]
@@ -1053,6 +1068,56 @@ mod tests {
         let mut dest_path = basepath.clone();
         dest_path.push(id_path);
         assert!(dest_path.exists());
+        std::fs::remove_dir_all(basepath).unwrap();
+    }
+
+    #[cfg(target_family = "unix")]
+    #[test]
+    fn test_store_blob_mode() {
+        use std::fs::Permissions;
+        use std::os::unix::fs::PermissionsExt;
+        // arrange
+        let import_date = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let id_path = "2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg";
+        let id = base64::encode(id_path);
+        let digest = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
+        let asset1 = Asset {
+            key: id,
+            checksum: digest.to_owned(),
+            filename: "fighting_kittens.jpg".to_owned(),
+            byte_length: 39932,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["kittens".to_owned()],
+            caption: None,
+            import_date,
+            location: None,
+            user_date: None,
+            original_date: None,
+            dimensions: None,
+        };
+        let tmpdir = tempdir().unwrap();
+        let basepath = tmpdir.path().join("blobs");
+        // copy test file to temporary path as it will be (re)moved
+        let original = PathBuf::from("./tests/fixtures/fighting_kittens.jpg");
+        let copy = tmpdir.path().join("fighting_kittens.jpg");
+        std::fs::copy(original, &copy).unwrap();
+        // Set the permissions to something other than the typical
+        // "readable-by-all" mode that is often necessary when working with
+        // other programs (e.g. backup program running as another user).
+        std::fs::set_permissions(&copy, Permissions::from_mode(0o600)).unwrap();
+        // act
+        let repo = BlobRepositoryImpl::new(basepath.as_path());
+        let result = repo.store_blob(copy.as_path(), &asset1);
+        // assert
+        assert!(result.is_ok());
+        let mut dest_path = basepath.clone();
+        dest_path.push(id_path);
+        assert!(dest_path.exists());
+        // ensure the file mode is readable by all
+        let f = std::fs::File::open(&dest_path).unwrap();
+        let metadata = f.metadata().unwrap();
+        let permissions = metadata.permissions();
+        assert_eq!(permissions.mode(), 0o100644);
         std::fs::remove_dir_all(basepath).unwrap();
     }
 
