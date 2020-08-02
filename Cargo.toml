@@ -31,7 +31,7 @@ lru = "0.5.1"
 mime = "0.3.16"
 mime_guess = "2.0.3"
 mokuroku = "2.2.1"
-mp4 = { git = "https://github.com/nlfiedler/mp4rs.git", branch = "master" }
+mp4 = "0.4.3"
 riff = "1.0.0"
 rocksdb = "0.14.0"
 rusty_ulid = "0.9.3"
