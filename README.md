@@ -12,6 +12,8 @@ simple web interface with basic browsing and editing capabilities.
 * [Rust](https://www.rust-lang.org) stable (2018 edition)
 * [Node.js](https://nodejs.org/) LTS
 * [Gulp](https://gulpjs.com) CLI: `npm -g install gulp-cli`
+* [Flutter](https://flutter.dev) beta channel
+    - Enable the **web** configuration
 
 #### Example for macOS
 
@@ -41,6 +43,17 @@ volumes of output.
 
 ### Building, Testing, Starting the Frontend
 
+#### Flutter
+
+```shell
+$ flutter pub get
+$ flutter pub run environment_config:generate
+$ flutter test
+$ flutter run -d chrome
+```
+
+#### ReasonML
+
 ```shell
 $ npm install
 $ gulp build
@@ -56,6 +69,15 @@ server in another window):
 $ npx apollo-codegen introspect-schema http://localhost:3000/graphql --output graphql_schema.json
 ```
 
+### environment_config
+
+The frontend has some configuration that is set up at build time using the
+[environment_config](https://pub.dev/packages/environment_config) package. The
+generated file (`lib/environment_config.dart`) is not version controlled, and
+the values can be set at build-time using either command-line arguments or
+environment variables. See the `pubspec.yaml` for the names and the
+`environment_config` README for instructions.
+
 ## Deploying
 
 ### Using Docker
@@ -66,7 +88,7 @@ the application in stages and produce a relatively small final image.
 On the build host:
 
 ```shell
-$ docker-compose build --pull
+$ docker-compose build --pull --build-arg BASE_URL=http://192.168.1.1:8080
 $ docker image rm 192.168.1.1:5000/tanuki_app
 $ docker image tag tanuki_app 192.168.1.1:5000/tanuki_app
 $ docker push 192.168.1.1:5000/tanuki_app
@@ -250,3 +272,7 @@ with the intention of replacing all of the Node.js and ReasonML code.
 ### April 2020
 
 Switch from Dart back to Rust. Long live Rust.
+
+### August 2020
+
+Started frontend rewrite in [Flutter](https://flutter.dev).
