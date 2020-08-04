@@ -100,7 +100,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** Show "file save" dialog to choose local file path
 ***** Save assets using their unique filename
 ** [#B] New Interface
-*** Use Dart and Flutter
 *** Use Clean Architecture
 **** define the features
 ***** browse
@@ -128,13 +127,43 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** TODO find out how to upload a file
-**** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
-**** example code: https://github.com/rjcalifornia/web_upload
-*** TODO how to handle file drops
-**** drop zone gist: https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
-**** for now this is not so important, just use file selector a la =web_upload= example
-*** thoughts on the design
+*** TODO Replace Reason-React
+**** TODO create the flutter (web) files
+**** TODO set up the IoC container
+**** TODO set up environment config
+**** TODO use case: count assets
+**** TODO use case: fetch years
+**** TODO use case: fetch locations
+**** TODO use case: fetch tags
+**** TODO use case: fetch asset details
+**** TODO use case: query assets using various attributes
+***** this will search the combined browse/search page
+**** TODO use case: query recent imports
+**** TODO define graphql client
+**** TODO develop home page like "crane" flutter gallery app
+**** TODO develop page for uploading/importing assets
+***** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
+***** example code: https://github.com/rjcalifornia/web_upload
+***** drop zone gist: https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
+***** for now this is not so important, just use file selector a la =web_upload= example
+**** TODO permit dragging and dropping assets to import
+**** TODO develop page for processing recent imports
+**** TODO develop page for editing assets details
+*** TODO change docker to build flutter web assets
+*** TODO remove ReasonML and Node files
+**** should be nothing JavaScript/Node/Reason left at this point
+**** =bsconfig.json=
+**** =graphql_schema.json=
+**** =gulpfile.js=
+**** =node_modules=
+**** =package.json=
+**** =package-lock.json=
+**** =public=
+**** =src/*.re=
+**** =lib/js=
+**** =lib/bs=
+**** update =.gitignore= and =.dockerignore=
+*** TODO Improve User Experience
 **** browse and search
 ***** unify the two pages into one
 ***** with the "crane" like selectors, the search is just another row of inputs
@@ -147,6 +176,9 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** switch to the "recent imports" screen showing just these new assets
 ***** user selects multiple assets and applies tags and locations to them
 ***** click on an asset to enter a caption in place (without leaving the gallery view)
+***** hover over an asset to show a larger version
+****** for image, expand temporarily in place
+****** for video, start playing it
 **** image gallery selectors
 ***** instead of showing all of the tags, years, locations at once
 ****** see the "crane" flutter gallery sample for the basic layout and appearance
@@ -157,7 +189,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ****** maybe have a small x to deactive active selectors
 ****** can also remove selectors by backspacing
 **** image gallery display
-***** show selects for months of the year to jump to that time range
+***** show selectors for months of the year to jump to that time range
 ****** eventually this selector needs to consider the sort field and order
 ***** show additional details on mouse hover
 ***** button in corner of thumbnail to select assets to edit, download, etc
@@ -200,20 +232,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** click on item in a list/grid and it expands to the details page
 **** can use =DataTable= to display labeled data (like asset details, metadata)
 **** use pointer enter/exit events to start playing a video in place
-*** TODO change docker to build flutter web assets
-*** TODO remove ReasonML and Node files
-**** should be nothing JavaScript/Node/Reason left at this point
-**** =bsconfig.json=
-**** =graphql_schema.json=
-**** =gulpfile.js=
-**** =node_modules=
-**** =package.json=
-**** =package-lock.json=
-**** =public=
-**** =src/*.re=
-**** =lib/js=
-**** =lib/bs=
-**** update =.gitignore= and =.dockerignore=
 ** Minor Fixups
 *** some of the crate dependencies can be in =dev-dependencies=
 **** mockall
