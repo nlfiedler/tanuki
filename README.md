@@ -88,7 +88,7 @@ the application in stages and produce a relatively small final image.
 On the build host:
 
 ```shell
-$ docker-compose build --pull --build-arg BASE_URL=http://192.168.1.1:8080
+$ docker-compose build --pull --build-arg BASE_URL=http://192.168.1.1:3000
 $ docker image rm 192.168.1.1:5000/tanuki_app
 $ docker image tag tanuki_app 192.168.1.1:5000/tanuki_app
 $ docker push 192.168.1.1:5000/tanuki_app

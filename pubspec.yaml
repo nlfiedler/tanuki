@@ -1,5 +1,5 @@
 name: tanuki
-description: Graphical user interface for tanuki digital asset mgmt app.
+description: Graphical interface for tanuki digital asset management.
 version: 1.0.0+1
 homepage: https://github.com/nlfiedler/tanuki
 repository: https://github.com/nlfiedler/tanuki.git
@@ -13,11 +13,21 @@ dependencies:
   flutter:
     sdk: flutter
 
+  equatable: ^1.2.3
+  flutter_bloc: ^6.0.1
+  get_it: ^4.0.4
+  graphql: ^3.1.0
+  oxidized: ^3.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  bloc_test: ^7.0.0
   environment_config: ^2.2.3
+  http: ^0.12.2
+  mockito: ^4.1.1
+  pedantic: ^1.8.0
 
 flutter:
   uses-material-design: true
@@ -26,5 +36,5 @@ environment_config:
   const: true
   fields:
     base_url:
-      default: http://127.0.0.1:8080
+      default: http://127.0.0.1:3000
       env_var: BASE_URL

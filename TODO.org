@@ -103,7 +103,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 *** Use Clean Architecture
 **** define the features
 ***** browse
-***** search
 ***** import
 ***** export
 ***** edit
@@ -129,9 +128,15 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO Replace Reason-React
 **** DONE create the flutter (web) files
-**** TODO set up the IoC container
 **** DONE set up environment config
-**** TODO use case: count assets
+**** DONE use case: count assets
+***** graphql client
+***** data source
+***** repository
+***** use case
+***** BLoC to get asset count
+***** IoC container
+***** show number of assets in a widget
 **** TODO use case: fetch years
 **** TODO use case: fetch locations
 **** TODO use case: fetch tags
@@ -139,7 +144,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** TODO use case: query assets using various attributes
 ***** this will search the combined browse/search page
 **** TODO use case: query recent imports
-**** TODO define graphql client
 **** TODO develop home page like "crane" flutter gallery app
 **** TODO develop page for uploading/importing assets
 ***** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html

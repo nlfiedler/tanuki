@@ -1,0 +1,37 @@
+//
+// Copyright (c) 2020 Nathan Fiedler
+//
+import 'package:get_it/get_it.dart';
+import 'package:graphql/client.dart';
+import 'package:tanuki/core/data/repositories/container.dart';
+import 'package:tanuki/core/data/sources/container.dart';
+import 'package:tanuki/core/domain/usecases/container.dart';
+import 'package:tanuki/environment_config.dart';
+import 'package:tanuki/features/browse/preso/bloc/asset_count_bloc.dart';
+
+final getIt = GetIt.instance;
+
+void init() {
+  // bloc
+  getIt.registerFactory(
+    () => AssetCountBloc(usecase: getIt()),
+  );
+
+  // widgets
+
+  initUseCases(getIt);
+  initRepositories(getIt);
+  initDataSources(getIt);
+
+  // core
+
+  // external
+  getIt.registerLazySingleton(() {
+    // seems a relative URL is not supported by the client package
+    final uri = '${EnvironmentConfig.base_url}/graphql';
+    return GraphQLClient(
+      link: HttpLink(uri: uri),
+      cache: InMemoryCache(),
+    );
+  });
+}
