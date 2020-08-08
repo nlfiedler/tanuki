@@ -3,6 +3,7 @@
 //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:tanuki/core/data/models/attributes_model.dart';
 import 'package:tanuki/core/error/exceptions.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
@@ -59,6 +60,54 @@ void main() {
         final result = await repository.getAssetCount();
         // assert
         verify(mockRemoteDataSource.getAssetCount());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+  });
+
+  group('getAllYears', () {
+    test(
+      'should return remote data when remote data source returns data',
+      () async {
+        // arrange
+        final years = [
+          YearModel(label: '2019', count: 806),
+          YearModel(label: '2009', count: 269),
+          YearModel(label: '1999', count: 23),
+        ];
+        when(mockRemoteDataSource.getAllYears()).thenAnswer((_) async => years);
+        // act
+        final result = await repository.getAllYears();
+        // assert
+        verify(mockRemoteDataSource.getAllYears());
+        expect(result.unwrap(), isA<List>());
+        expect(result.unwrap().length, equals(3));
+        expect(result.unwrap(), containsAll(years));
+      },
+    );
+
+    test(
+      'should return failure when remote data source returns null',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.getAllYears()).thenAnswer((_) async => null);
+        // act
+        final result = await repository.getAllYears();
+        // assert
+        verify(mockRemoteDataSource.getAllYears());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+
+    test(
+      'should return failure when remote data source is unsuccessful',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.getAllYears()).thenThrow(ServerException());
+        // act
+        final result = await repository.getAllYears();
+        // assert
+        verify(mockRemoteDataSource.getAllYears());
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );

@@ -137,7 +137,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** BLoC to get asset count
 ***** IoC container
 ***** show number of assets in a widget
-**** TODO use case: fetch years
+**** DONE use case: fetch years
 **** TODO use case: fetch locations
 **** TODO use case: fetch tags
 **** TODO use case: fetch asset details
@@ -145,6 +145,8 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** this will search the combined browse/search page
 **** TODO use case: query recent imports
 **** TODO develop home page like "crane" flutter gallery app
+***** see =FilterChip= in flutter for an example of ui for filtering lists
+****** c.f. https://api.flutter.dev/flutter/material/FilterChip-class.html
 **** TODO develop page for uploading/importing assets
 ***** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
 ***** example code: https://github.com/rjcalifornia/web_upload

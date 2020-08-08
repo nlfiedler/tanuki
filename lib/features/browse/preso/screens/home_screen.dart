@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
+import 'package:tanuki/features/browse/preso/widgets/all_years.dart';
 import 'package:tanuki/features/browse/preso/widgets/asset_count.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -11,7 +12,12 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('TANUKI'),
       ),
-      body: AssetCount(),
+      body: Column(
+        children: [
+          AssetCount(),
+          AllYears(),
+        ],
+      ),
     );
   }
 }
