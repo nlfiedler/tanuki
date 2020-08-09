@@ -22,49 +22,6 @@ void main() {
     );
   });
 
-  group('getAssetCount', () {
-    test(
-      'should return remote data when remote data source returns data',
-      () async {
-        // arrange
-        when(mockRemoteDataSource.getAssetCount())
-            .thenAnswer((_) async => 9413);
-        // act
-        final result = await repository.getAssetCount();
-        // assert
-        verify(mockRemoteDataSource.getAssetCount());
-        expect(result.unwrap(), equals(9413));
-      },
-    );
-
-    test(
-      'should return failure when remote data source returns null',
-      () async {
-        // arrange
-        when(mockRemoteDataSource.getAssetCount())
-            .thenAnswer((_) async => null);
-        // act
-        final result = await repository.getAssetCount();
-        // assert
-        verify(mockRemoteDataSource.getAssetCount());
-        expect(result.err().unwrap(), isA<ServerFailure>());
-      },
-    );
-
-    test(
-      'should return failure when remote data source is unsuccessful',
-      () async {
-        // arrange
-        when(mockRemoteDataSource.getAssetCount()).thenThrow(ServerException());
-        // act
-        final result = await repository.getAssetCount();
-        // assert
-        verify(mockRemoteDataSource.getAssetCount());
-        expect(result.err().unwrap(), isA<ServerFailure>());
-      },
-    );
-  });
-
   group('getAllLocations', () {
     test(
       'should return remote data when remote data source returns data',
@@ -116,6 +73,54 @@ void main() {
     );
   });
 
+  group('getAllTags', () {
+    test(
+      'should return remote data when remote data source returns data',
+      () async {
+        // arrange
+        final tags = [
+          TagModel(label: 'kittens', count: 806),
+          TagModel(label: 'snakes', count: 269),
+          TagModel(label: 'clouds', count: 23),
+        ];
+        when(mockRemoteDataSource.getAllTags()).thenAnswer((_) async => tags);
+        // act
+        final result = await repository.getAllTags();
+        // assert
+        verify(mockRemoteDataSource.getAllTags());
+        expect(result.unwrap(), isA<List>());
+        expect(result.unwrap().length, equals(3));
+        expect(result.unwrap(), containsAll(tags));
+      },
+    );
+
+    test(
+      'should return failure when remote data source returns null',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.getAllTags()).thenAnswer((_) async => null);
+        // act
+        final result = await repository.getAllTags();
+        // assert
+        verify(mockRemoteDataSource.getAllTags());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+
+    test(
+      'should return failure when remote data source is unsuccessful',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.getAllTags()).thenThrow(ServerException());
+        // act
+        final result = await repository.getAllTags();
+        // assert
+        verify(mockRemoteDataSource.getAllTags());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+  });
+
   group('getAllYears', () {
     test(
       'should return remote data when remote data source returns data',
@@ -159,6 +164,49 @@ void main() {
         final result = await repository.getAllYears();
         // assert
         verify(mockRemoteDataSource.getAllYears());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+  });
+
+  group('getAssetCount', () {
+    test(
+      'should return remote data when remote data source returns data',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.getAssetCount())
+            .thenAnswer((_) async => 9413);
+        // act
+        final result = await repository.getAssetCount();
+        // assert
+        verify(mockRemoteDataSource.getAssetCount());
+        expect(result.unwrap(), equals(9413));
+      },
+    );
+
+    test(
+      'should return failure when remote data source returns null',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.getAssetCount())
+            .thenAnswer((_) async => null);
+        // act
+        final result = await repository.getAssetCount();
+        // assert
+        verify(mockRemoteDataSource.getAssetCount());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+
+    test(
+      'should return failure when remote data source is unsuccessful',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.getAssetCount()).thenThrow(ServerException());
+        // act
+        final result = await repository.getAssetCount();
+        // assert
+        verify(mockRemoteDataSource.getAssetCount());
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );

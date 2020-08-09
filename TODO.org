@@ -139,8 +139,8 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** widget
 **** DONE use case: count assets
 **** DONE use case: fetch years
-**** TODO use case: fetch locations
-**** TODO use case: fetch tags
+**** DONE use case: fetch locations
+**** DONE use case: fetch tags
 **** TODO use case: fetch asset details
 **** TODO use case: query assets using various attributes
 ***** this will search the combined browse/search page

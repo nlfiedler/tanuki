@@ -9,6 +9,9 @@ abstract class EntityRepository {
   /// Retrieve all of the locations and their counts.
   Future<Result<List<Location>, Failure>> getAllLocations();
 
+  /// Retrieve all of the tags and their counts.
+  Future<Result<List<Tag>, Failure>> getAllTags();
+
   /// Retrieve all of the years and their counts.
   Future<Result<List<Year>, Failure>> getAllYears();
 

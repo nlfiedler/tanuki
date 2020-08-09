@@ -9,6 +9,7 @@ import 'package:tanuki/core/error/exceptions.dart';
 
 abstract class EntityRemoteDataSource {
   Future<List<Location>> getAllLocations();
+  Future<List<Tag>> getAllTags();
   Future<List<Year>> getAllYears();
   Future<int> getAssetCount();
 }
@@ -43,6 +44,36 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     final List<LocationModel> results = List.from(
       locations.map<LocationModel>((e) {
         return LocationModel.fromJson(e);
+      }),
+    );
+    return results;
+  }
+
+  @override
+  Future<List<Tag>> getAllTags() async {
+    final query = r'''
+      query {
+        tags {
+          label
+          count
+        }
+      }
+    ''';
+    final queryOptions = gql.QueryOptions(
+      documentNode: gql.gql(query),
+      fetchPolicy: gql.FetchPolicy.noCache,
+    );
+    final gql.QueryResult result = await client.query(queryOptions);
+    if (result.hasException) {
+      throw ServerException(result.exception.toString());
+    }
+    final List<dynamic> tags = result.data['tags'] as List<dynamic>;
+    if (tags == null) {
+      return null;
+    }
+    final List<TagModel> results = List.from(
+      tags.map<TagModel>((e) {
+        return TagModel.fromJson(e);
       }),
     );
     return results;

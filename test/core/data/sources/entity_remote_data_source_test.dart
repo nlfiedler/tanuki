@@ -57,86 +57,6 @@ void main() {
     });
   }
 
-  group('getAssetCount', () {
-    void setUpMockHttpClientGraphQLResponse() {
-      final response = {
-        'data': {'count': 9413}
-      };
-      // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
-        final bytes = utf8.encode(json.encode(response));
-        final stream = http.ByteStream.fromBytes(bytes);
-        return http.StreamedResponse(stream, 200);
-      });
-    }
-
-    test(
-      'should return the asset count',
-      () async {
-        // arrange
-        setUpMockHttpClientGraphQLResponse();
-        // act
-        final result = await dataSource.getAssetCount();
-        // assert
-        expect(result, equals(9413));
-      },
-    );
-
-    test(
-      'should report failure when response unsuccessful',
-      () async {
-        // arrange
-        setUpMockHttpClientFailure403();
-        // act, assert
-        try {
-          await dataSource.getAssetCount();
-          fail('should have raised an error');
-        } catch (e) {
-          expect(e, isA<ServerException>());
-        }
-      },
-    );
-
-    test(
-      'should raise error when GraphQL server returns an error',
-      () async {
-        // arrange
-        setUpMockHttpClientGraphQLError();
-        // act, assert
-        try {
-          await dataSource.getAssetCount();
-          fail('should have raised an error');
-        } catch (e) {
-          expect(e, isA<ServerException>());
-        }
-      },
-    );
-
-    void setUpMockGraphQLNullResponse() {
-      final response = {
-        'data': {'count': null}
-      };
-      // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
-        final bytes = utf8.encode(json.encode(response));
-        final stream = http.ByteStream.fromBytes(bytes);
-        return http.StreamedResponse(stream, 200);
-      });
-    }
-
-    test(
-      'should return null when response is null',
-      () async {
-        // arrange
-        setUpMockGraphQLNullResponse();
-        // act
-        final result = await dataSource.getAssetCount();
-        // assert
-        expect(result, isNull);
-      },
-    );
-  });
-
   group('getAllLocations', () {
     void setUpMockHttpClientGraphQLResponse() {
       final response = {
@@ -234,6 +154,103 @@ void main() {
     );
   });
 
+  group('getAllTags', () {
+    void setUpMockHttpClientGraphQLResponse() {
+      final response = {
+        'data': {
+          'tags': [
+            {'label': 'kittens', 'count': 806},
+            {'label': 'puppies', 'count': 269},
+            {'label': 'birds', 'count': 23},
+          ]
+        }
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return all of the tags',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLResponse();
+        // act
+        final result = await dataSource.getAllTags();
+        // assert
+        expect(result, isA<List>());
+        expect(result.length, equals(3));
+        expect(
+          result,
+          containsAll(
+            [
+              TagModel(label: 'kittens', count: 806),
+              TagModel(label: 'puppies', count: 269),
+              TagModel(label: 'birds', count: 23),
+            ],
+          ),
+        );
+      },
+    );
+
+    test(
+      'should report failure when response unsuccessful',
+      () async {
+        // arrange
+        setUpMockHttpClientFailure403();
+        // act, assert
+        try {
+          await dataSource.getAllTags();
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    test(
+      'should raise error when GraphQL server returns an error',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLError();
+        // act, assert
+        try {
+          await dataSource.getAllTags();
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    void setUpMockGraphQLNullResponse() {
+      final response = {
+        'data': {'tags': null}
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return null when response is null',
+      () async {
+        // arrange
+        setUpMockGraphQLNullResponse();
+        // act
+        final result = await dataSource.getAllTags();
+        // assert
+        expect(result, isNull);
+      },
+    );
+  });
+
   group('getAllYears', () {
     void setUpMockHttpClientGraphQLResponse() {
       final response = {
@@ -325,6 +342,86 @@ void main() {
         setUpMockGraphQLNullResponse();
         // act
         final result = await dataSource.getAllYears();
+        // assert
+        expect(result, isNull);
+      },
+    );
+  });
+
+  group('getAssetCount', () {
+    void setUpMockHttpClientGraphQLResponse() {
+      final response = {
+        'data': {'count': 9413}
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return the asset count',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLResponse();
+        // act
+        final result = await dataSource.getAssetCount();
+        // assert
+        expect(result, equals(9413));
+      },
+    );
+
+    test(
+      'should report failure when response unsuccessful',
+      () async {
+        // arrange
+        setUpMockHttpClientFailure403();
+        // act, assert
+        try {
+          await dataSource.getAssetCount();
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    test(
+      'should raise error when GraphQL server returns an error',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLError();
+        // act, assert
+        try {
+          await dataSource.getAssetCount();
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    void setUpMockGraphQLNullResponse() {
+      final response = {
+        'data': {'count': null}
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return null when response is null',
+      () async {
+        // arrange
+        setUpMockGraphQLNullResponse();
+        // act
+        final result = await dataSource.getAssetCount();
         // assert
         expect(result, isNull);
       },

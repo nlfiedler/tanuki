@@ -61,6 +61,60 @@ void main() {
     });
   });
 
+  group('TagModel', () {
+    final tTagModel = TagModel(
+      label: 'kittens',
+      count: 806,
+    );
+
+    test(
+      'should be a subclass of Tag entity',
+      () async {
+        // assert
+        expect(tTagModel, isA<Tag>());
+      },
+    );
+
+    group('fromJson', () {
+      test(
+        'should return a valid attribute when the JSON is valid',
+        () async {
+          // arrange
+          final Map<String, dynamic> jsonMap =
+              json.decode('{ "label": "kittens", "count": 806 }');
+          // act
+          final result = TagModel.fromJson(jsonMap);
+          // assert
+          expect(result, tTagModel);
+        },
+      );
+    });
+
+    group('toJson', () {
+      test(
+        'should return a JSON map containing the proper data',
+        () async {
+          // act
+          final result = tTagModel.toJson();
+          // assert
+          final expectedMap = {'label': 'kittens', 'count': 806};
+          expect(result, expectedMap);
+        },
+      );
+    });
+
+    group('toJson and then fromJson', () {
+      test('should convert all non-null options', () {
+        // arrange
+        final model = TagModel(label: 'snakes', count: 138);
+        // act
+        final result = TagModel.fromJson(model.toJson());
+        // assert
+        expect(result, equals(model));
+      });
+    });
+  });
+
   group('YearModel', () {
     final tYearModel = YearModel(
       label: '2019',

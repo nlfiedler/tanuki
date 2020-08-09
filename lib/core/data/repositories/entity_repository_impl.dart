@@ -30,6 +30,19 @@ class EntityRepositoryImpl extends EntityRepository {
   }
 
   @override
+  Future<Result<List<Tag>, Failure>> getAllTags() async {
+    try {
+      final tags = await remoteDataSource.getAllTags();
+      if (tags == null) {
+        return Err(ServerFailure('got null result for tags'));
+      }
+      return Ok(tags);
+    } on ServerException catch (e) {
+      return Err(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Result<List<Year>, Failure>> getAllYears() async {
     try {
       final years = await remoteDataSource.getAllYears();
