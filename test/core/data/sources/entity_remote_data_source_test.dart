@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'dart:convert';
-import 'package:graphql/client.dart';
+import 'package:graphql/client.dart' as gql;
 import 'package:http/http.dart' as http;
 import 'package:mockito/mockito.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
@@ -18,13 +18,13 @@ void main() {
 
   setUp(() {
     mockHttpClient = MockHttpClient();
-    final link = HttpLink(
+    final link = gql.HttpLink(
       uri: 'http://example.com',
       httpClient: mockHttpClient,
     );
-    final graphQLCient = GraphQLClient(
+    final graphQLCient = gql.GraphQLClient(
       link: link,
-      cache: InMemoryCache(),
+      cache: gql.InMemoryCache(),
     );
     dataSource = EntityRemoteDataSourceImpl(client: graphQLCient);
   });
@@ -137,6 +137,103 @@ void main() {
     );
   });
 
+  group('getAllLocations', () {
+    void setUpMockHttpClientGraphQLResponse() {
+      final response = {
+        'data': {
+          'locations': [
+            {'label': 'tokyo', 'count': 806},
+            {'label': 'paris', 'count': 269},
+            {'label': 'london', 'count': 23},
+          ]
+        }
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return all of the locations',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLResponse();
+        // act
+        final result = await dataSource.getAllLocations();
+        // assert
+        expect(result, isA<List>());
+        expect(result.length, equals(3));
+        expect(
+          result,
+          containsAll(
+            [
+              LocationModel(label: 'tokyo', count: 806),
+              LocationModel(label: 'paris', count: 269),
+              LocationModel(label: 'london', count: 23),
+            ],
+          ),
+        );
+      },
+    );
+
+    test(
+      'should report failure when response unsuccessful',
+      () async {
+        // arrange
+        setUpMockHttpClientFailure403();
+        // act, assert
+        try {
+          await dataSource.getAllLocations();
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    test(
+      'should raise error when GraphQL server returns an error',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLError();
+        // act, assert
+        try {
+          await dataSource.getAllLocations();
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    void setUpMockGraphQLNullResponse() {
+      final response = {
+        'data': {'locations': null}
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return null when response is null',
+      () async {
+        // arrange
+        setUpMockGraphQLNullResponse();
+        // act
+        final result = await dataSource.getAllLocations();
+        // assert
+        expect(result, isNull);
+      },
+    );
+  });
+
   group('getAllYears', () {
     void setUpMockHttpClientGraphQLResponse() {
       final response = {
@@ -157,7 +254,7 @@ void main() {
     }
 
     test(
-      'should return the asset count',
+      'should return all of the years',
       () async {
         // arrange
         setUpMockHttpClientGraphQLResponse();

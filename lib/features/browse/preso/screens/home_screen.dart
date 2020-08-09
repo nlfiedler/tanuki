@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
+import 'package:tanuki/features/browse/preso/widgets/all_locations.dart';
 import 'package:tanuki/features/browse/preso/widgets/all_years.dart';
 import 'package:tanuki/features/browse/preso/widgets/asset_count.dart';
 
@@ -15,6 +16,7 @@ class HomeScreen extends StatelessWidget {
       body: Column(
         children: [
           AssetCount(),
+          AllLocations(),
           AllYears(),
         ],
       ),

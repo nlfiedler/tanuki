@@ -17,13 +17,13 @@ class EntityRepositoryImpl extends EntityRepository {
   });
 
   @override
-  Future<Result<int, Failure>> getAssetCount() async {
+  Future<Result<List<Location>, Failure>> getAllLocations() async {
     try {
-      final configuration = await remoteDataSource.getAssetCount();
-      if (configuration == null) {
-        return Err(ServerFailure('got null result for configuration'));
+      final locations = await remoteDataSource.getAllLocations();
+      if (locations == null) {
+        return Err(ServerFailure('got null result for locations'));
       }
-      return Ok(configuration);
+      return Ok(locations);
     } on ServerException catch (e) {
       return Err(ServerFailure(e.toString()));
     }
@@ -37,6 +37,19 @@ class EntityRepositoryImpl extends EntityRepository {
         return Err(ServerFailure('got null result for years'));
       }
       return Ok(years);
+    } on ServerException catch (e) {
+      return Err(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<int, Failure>> getAssetCount() async {
+    try {
+      final configuration = await remoteDataSource.getAssetCount();
+      if (configuration == null) {
+        return Err(ServerFailure('got null result for configuration'));
+      }
+      return Ok(configuration);
     } on ServerException catch (e) {
       return Err(ServerFailure(e.toString()));
     }

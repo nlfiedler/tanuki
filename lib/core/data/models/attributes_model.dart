@@ -34,3 +34,34 @@ class YearModel extends Year {
     };
   }
 }
+
+class LocationModel extends Location {
+  LocationModel({
+    @required String label,
+    @required int count,
+  }) : super(
+          label: label,
+          count: count,
+        );
+
+  factory LocationModel.fromStore(Location location) {
+    return LocationModel(
+      label: location.label,
+      count: location.count,
+    );
+  }
+
+  factory LocationModel.fromJson(Map<String, dynamic> json) {
+    return LocationModel(
+      label: json['label'],
+      count: json['count'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'label': label,
+      'count': count,
+    };
+  }
+}

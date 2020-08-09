@@ -22,3 +22,22 @@ class Year extends Equatable {
   @override
   bool get stringify => true;
 }
+
+/// A `Location` holds the label and count for a single location value.
+class Location extends Equatable {
+  // Label for the given attribute (e.g. "disney land").
+  final String label;
+  // Count of assets with this attribute.
+  final int count;
+
+  Location({
+    @required this.label,
+    @required this.count,
+  });
+
+  @override
+  List<Object> get props => [label, count];
+
+  @override
+  bool get stringify => true;
+}

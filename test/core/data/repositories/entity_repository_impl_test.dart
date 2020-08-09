@@ -65,6 +65,57 @@ void main() {
     );
   });
 
+  group('getAllLocations', () {
+    test(
+      'should return remote data when remote data source returns data',
+      () async {
+        // arrange
+        final locations = [
+          LocationModel(label: 'tokyo', count: 806),
+          LocationModel(label: 'paris', count: 269),
+          LocationModel(label: 'london', count: 23),
+        ];
+        when(mockRemoteDataSource.getAllLocations())
+            .thenAnswer((_) async => locations);
+        // act
+        final result = await repository.getAllLocations();
+        // assert
+        verify(mockRemoteDataSource.getAllLocations());
+        expect(result.unwrap(), isA<List>());
+        expect(result.unwrap().length, equals(3));
+        expect(result.unwrap(), containsAll(locations));
+      },
+    );
+
+    test(
+      'should return failure when remote data source returns null',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.getAllLocations())
+            .thenAnswer((_) async => null);
+        // act
+        final result = await repository.getAllLocations();
+        // assert
+        verify(mockRemoteDataSource.getAllLocations());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+
+    test(
+      'should return failure when remote data source is unsuccessful',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.getAllLocations())
+            .thenThrow(ServerException());
+        // act
+        final result = await repository.getAllLocations();
+        // assert
+        verify(mockRemoteDataSource.getAllLocations());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+  });
+
   group('getAllYears', () {
     test(
       'should return remote data when remote data source returns data',
