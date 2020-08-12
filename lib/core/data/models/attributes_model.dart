@@ -13,7 +13,7 @@ class LocationModel extends Location {
           count: count,
         );
 
-  factory LocationModel.fromStore(Location location) {
+  factory LocationModel.fromLocation(Location location) {
     return LocationModel(
       label: location.label,
       count: location.count,
@@ -44,7 +44,7 @@ class TagModel extends Tag {
           count: count,
         );
 
-  factory TagModel.fromStore(Tag tag) {
+  factory TagModel.fromTag(Tag tag) {
     return TagModel(
       label: tag.label,
       count: tag.count,
@@ -75,7 +75,7 @@ class YearModel extends Year {
           count: count,
         );
 
-  factory YearModel.fromStore(Year year) {
+  factory YearModel.fromYear(Year year) {
     return YearModel(
       label: year.label,
       count: year.count,

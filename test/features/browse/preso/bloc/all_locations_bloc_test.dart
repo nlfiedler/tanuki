@@ -11,10 +11,10 @@ import 'package:tanuki/core/domain/usecases/get_all_locations.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_locations_bloc.dart';
 
-class MockConfigurationRepository extends Mock implements EntityRepository {}
+class MockEntityRepository extends Mock implements EntityRepository {}
 
 void main() {
-  MockConfigurationRepository mockConfigurationRepository;
+  MockEntityRepository mockEntityRepository;
   GetAllLocations usecase;
 
   group('normal cases', () {
@@ -24,9 +24,9 @@ void main() {
       Location(label: 'london', count: 23),
     ];
     setUp(() {
-      mockConfigurationRepository = MockConfigurationRepository();
-      usecase = GetAllLocations(mockConfigurationRepository);
-      when(mockConfigurationRepository.getAllLocations())
+      mockEntityRepository = MockEntityRepository();
+      usecase = GetAllLocations(mockEntityRepository);
+      when(mockEntityRepository.getAllLocations())
           .thenAnswer((_) async => Ok(locations));
     });
 
@@ -46,9 +46,9 @@ void main() {
 
   group('error cases', () {
     setUp(() {
-      mockConfigurationRepository = MockConfigurationRepository();
-      usecase = GetAllLocations(mockConfigurationRepository);
-      when(mockConfigurationRepository.getAllLocations())
+      mockEntityRepository = MockEntityRepository();
+      usecase = GetAllLocations(mockEntityRepository);
+      when(mockEntityRepository.getAllLocations())
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
     });
 

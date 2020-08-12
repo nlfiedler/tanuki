@@ -3,6 +3,7 @@
 //
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
+import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/error/failures.dart';
 
 abstract class EntityRepository {
@@ -17,4 +18,11 @@ abstract class EntityRepository {
 
   /// Retrieve the number of assets.
   Future<Result<int, Failure>> getAssetCount();
+
+  /// Query for the assets matching the given parameters.
+  Future<Result<QueryResults, Failure>> queryAssets(
+    SearchParams params,
+    int count,
+    int offset,
+  );
 }

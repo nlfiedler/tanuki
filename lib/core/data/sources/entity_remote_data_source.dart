@@ -4,7 +4,9 @@
 import 'package:graphql/client.dart' as gql;
 import 'package:meta/meta.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
+import 'package:tanuki/core/data/models/search_model.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
+import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/error/exceptions.dart';
 
 abstract class EntityRemoteDataSource {
@@ -12,6 +14,11 @@ abstract class EntityRemoteDataSource {
   Future<List<Tag>> getAllTags();
   Future<List<Year>> getAllYears();
   Future<int> getAssetCount();
+  Future<QueryResults> queryAssets(
+    SearchParams params,
+    int count,
+    int offset,
+  );
 }
 
 class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
@@ -126,5 +133,45 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     }
     final count = result.data['count'];
     return count == null ? null : count as int;
+  }
+
+  @override
+  Future<QueryResults> queryAssets(
+    SearchParams params,
+    int count,
+    int offset,
+  ) async {
+    final query = r'''
+      query Search($params: SearchParams!, $pageSize: Int, $offset: Int) {
+        search(params: $params, count: $pageSize, offset: $offset) {
+          results {
+            id
+            datetime
+            filename
+            location
+            mimetype
+          }
+          count
+        }
+      }
+    ''';
+    final paramsModel = SearchParamsModel.from(params);
+    final encodedParams = paramsModel.toJson();
+    final queryOptions = gql.QueryOptions(
+      documentNode: gql.gql(query),
+      variables: <String, dynamic>{
+        'params': encodedParams,
+        'count': count,
+        'offset': offset,
+      },
+      fetchPolicy: gql.FetchPolicy.noCache,
+    );
+    final gql.QueryResult result = await client.query(queryOptions);
+    if (result.hasException) {
+      throw ServerException(result.exception.toString());
+    }
+    final Map<String, dynamic> object =
+        result.data['search'] as Map<String, dynamic>;
+    return object == null ? null : QueryResultsModel.fromJson(object);
   }
 }

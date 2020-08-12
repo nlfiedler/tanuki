@@ -9,11 +9,11 @@ import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_all_locations.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
 
-class MockConfigurationRepository extends Mock implements EntityRepository {}
+class MockEntityRepository extends Mock implements EntityRepository {}
 
 void main() {
   GetAllLocations usecase;
-  MockConfigurationRepository mockConfigurationRepository;
+  MockEntityRepository mockEntityRepository;
 
   final locations = [
     Location(label: 'tokyo', count: 806),
@@ -22,22 +22,22 @@ void main() {
   ];
 
   setUp(() {
-    mockConfigurationRepository = MockConfigurationRepository();
-    usecase = GetAllLocations(mockConfigurationRepository);
+    mockEntityRepository = MockEntityRepository();
+    usecase = GetAllLocations(mockEntityRepository);
   });
 
   test(
     'should get the configuration from the repository',
     () async {
       // arrange
-      when(mockConfigurationRepository.getAllLocations())
+      when(mockEntityRepository.getAllLocations())
           .thenAnswer((_) async => Ok(locations));
       // act
       final result = await usecase(NoParams());
       // assert
       expect(result, Ok(locations));
-      verify(mockConfigurationRepository.getAllLocations());
-      verifyNoMoreInteractions(mockConfigurationRepository);
+      verify(mockEntityRepository.getAllLocations());
+      verifyNoMoreInteractions(mockEntityRepository);
     },
   );
 }

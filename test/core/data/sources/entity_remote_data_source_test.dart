@@ -2,12 +2,15 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'dart:convert';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:graphql/client.dart' as gql;
 import 'package:http/http.dart' as http;
 import 'package:mockito/mockito.dart';
+import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
+import 'package:tanuki/core/data/models/search_model.dart';
 import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/error/exceptions.dart';
 
 class MockHttpClient extends Mock implements http.Client {}
@@ -422,6 +425,116 @@ void main() {
         setUpMockGraphQLNullResponse();
         // act
         final result = await dataSource.getAssetCount();
+        // assert
+        expect(result, isNull);
+      },
+    );
+  });
+
+  group('queryAssets', () {
+    void setUpMockHttpClientGraphQLResponse() {
+      final response = {
+        'data': {
+          'search': {
+            'results': [
+              {
+                'id': 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
+                'filename': 'catmouse_1280p.jpg',
+                'mimetype': 'image/jpeg',
+                'location': 'outdoors',
+                'datetime': '2020-05-24T18:02:15.0+00:00'
+              }
+            ],
+            'count': 1
+          }
+        }
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return results of the query',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLResponse();
+        final params = SearchParams(tags: ["mouse"]);
+        // act
+        final result = await dataSource.queryAssets(params, 10, 0);
+        // assert
+        final expected = QueryResultsModel(
+          results: [
+            SearchResultModel(
+              id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
+              filename: 'catmouse_1280p.jpg',
+              mimetype: 'image/jpeg',
+              location: Some('outdoors'),
+              datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
+            )
+          ],
+          count: 1,
+        );
+        expect(result, equals(expected));
+        expect(result.results, equals(expected.results));
+      },
+    );
+
+    test(
+      'should report failure when response unsuccessful',
+      () async {
+        // arrange
+        setUpMockHttpClientFailure403();
+        final params = SearchParams(tags: ["mouse"]);
+        // act, assert
+        try {
+          await dataSource.queryAssets(params, 10, 0);
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    test(
+      'should raise error when GraphQL server returns an error',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLError();
+        final params = SearchParams(tags: ["mouse"]);
+        // act, assert
+        try {
+          await dataSource.queryAssets(params, 10, 0);
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    void setUpMockGraphQLNullResponse() {
+      final response = {
+        'data': {'search': null}
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return null when response is null',
+      () async {
+        // arrange
+        setUpMockGraphQLNullResponse();
+        final params = SearchParams(tags: ["mouse"]);
+        // act
+        final result = await dataSource.queryAssets(params, 10, 0);
         // assert
         expect(result, isNull);
       },

@@ -129,31 +129,36 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 *** TODO Replace Reason-React
 **** DONE create the flutter (web) files
 **** DONE set up environment config
-**** add new thing checklist
-***** entity
-***** model
-***** data source
-***** repository
-***** use case
-***** BLoC
-***** widget
 **** DONE use case: count assets
 **** DONE use case: fetch years
 **** DONE use case: fetch locations
 **** DONE use case: fetch tags
-**** TODO use case: fetch asset details
-**** TODO use case: query assets using various attributes
-***** this will search the combined browse/search page
-**** TODO use case: query recent imports
+**** DONE use case: query assets using hard-coded attributes
+***** search result entity
+***** search result model
+***** data source API
+***** repository API
+***** use case
+***** bloc
+***** show simple results based on attribute selection
+***** no paging at this time
 **** TODO develop home page like "crane" flutter gallery app
+***** replace the hard-coded ~cat~ query in =AssetsList= with dynamic filters
+***** maybe create a "browser" bloc to handle filters and results
+****** holds the selected filters and current "page"
+****** selectors will fire events to add/remove filters for the query
+****** viewer receives resulting set of results
+****** viewer will fire events to manage fetching pages of results
 ***** see =FilterChip= in flutter for an example of ui for filtering lists
 ****** c.f. https://api.flutter.dev/flutter/material/FilterChip-class.html
+**** TODO use case: fetch asset details
 **** TODO develop page for uploading/importing assets
 ***** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
 ***** example code: https://github.com/rjcalifornia/web_upload
 ***** drop zone gist: https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
 ***** for now this is not so important, just use file selector a la =web_upload= example
 **** TODO permit dragging and dropping assets to import
+**** TODO use case: query recent imports
 **** TODO develop page for processing recent imports
 **** TODO develop page for editing assets details
 *** TODO change docker to build flutter web assets
@@ -171,6 +176,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
 *** TODO Improve User Experience
+**** layout builder: consider early on how to use this for responsive design
 **** browse and search
 ***** unify the two pages into one
 ***** with the "crane" like selectors, the search is just another row of inputs
@@ -211,6 +217,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** display select information from EXIF metadata (e.g. camera)
 **** timeline style display for all assets
 ***** without any selectors, just show most recent going back in time
+**** flutter allows for a custom error handler (i.e. override the ugly red screen)
 *** ideas and widget usage
 **** Look at the Flutter "Gallery" app ("crane") for a pretty example
 ***** gently rounded image corners

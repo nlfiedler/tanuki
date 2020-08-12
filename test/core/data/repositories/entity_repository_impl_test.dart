@@ -3,7 +3,10 @@
 //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
+import 'package:tanuki/core/data/models/search_model.dart';
+import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/error/exceptions.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
@@ -207,6 +210,65 @@ void main() {
         final result = await repository.getAssetCount();
         // assert
         verify(mockRemoteDataSource.getAssetCount());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+  });
+
+  group('queryAssets', () {
+    test(
+      'should return remote data when remote data source returns data',
+      () async {
+        // arrange
+        final expected = QueryResultsModel(
+          results: [
+            SearchResultModel(
+              id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
+              filename: 'catmouse_1280p.jpg',
+              mimetype: 'image/jpeg',
+              location: Some('outdoors'),
+              datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
+            )
+          ],
+          count: 1,
+        );
+        when(mockRemoteDataSource.queryAssets(any, any, any))
+            .thenAnswer((_) async => expected);
+        // act
+        final params = SearchParams(tags: ["mouse"]);
+        final result = await repository.queryAssets(params, 10, 0);
+        // assert
+        verify(mockRemoteDataSource.queryAssets(params, 10, 0));
+        expect(result.unwrap(), equals(expected));
+      },
+    );
+
+    test(
+      'should return failure when remote data source returns null',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.queryAssets(any, any, any))
+            .thenAnswer((_) async => null);
+        // act
+        final params = SearchParams(tags: ["mouse"]);
+        final result = await repository.queryAssets(params, 10, 0);
+        // assert
+        verify(mockRemoteDataSource.queryAssets(params, 10, 0));
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+
+    test(
+      'should return failure when remote data source is unsuccessful',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.queryAssets(any, any, any))
+            .thenThrow(ServerException());
+        // act
+        final params = SearchParams(tags: ["mouse"]);
+        final result = await repository.queryAssets(params, 10, 0);
+        // assert
+        verify(mockRemoteDataSource.queryAssets(params, 10, 0));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );

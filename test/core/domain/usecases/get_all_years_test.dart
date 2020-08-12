@@ -9,11 +9,11 @@ import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_all_years.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
 
-class MockConfigurationRepository extends Mock implements EntityRepository {}
+class MockEntityRepository extends Mock implements EntityRepository {}
 
 void main() {
   GetAllYears usecase;
-  MockConfigurationRepository mockConfigurationRepository;
+  MockEntityRepository mockEntityRepository;
 
   final years = [
     Year(label: '2019', count: 806),
@@ -22,22 +22,22 @@ void main() {
   ];
 
   setUp(() {
-    mockConfigurationRepository = MockConfigurationRepository();
-    usecase = GetAllYears(mockConfigurationRepository);
+    mockEntityRepository = MockEntityRepository();
+    usecase = GetAllYears(mockEntityRepository);
   });
 
   test(
     'should get the configuration from the repository',
     () async {
       // arrange
-      when(mockConfigurationRepository.getAllYears())
+      when(mockEntityRepository.getAllYears())
           .thenAnswer((_) async => Ok(years));
       // act
       final result = await usecase(NoParams());
       // assert
       expect(result, Ok(years));
-      verify(mockConfigurationRepository.getAllYears());
-      verifyNoMoreInteractions(mockConfigurationRepository);
+      verify(mockEntityRepository.getAllYears());
+      verifyNoMoreInteractions(mockEntityRepository);
     },
   );
 }

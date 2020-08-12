@@ -9,11 +9,11 @@ import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_all_tags.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
 
-class MockConfigurationRepository extends Mock implements EntityRepository {}
+class MockEntityRepository extends Mock implements EntityRepository {}
 
 void main() {
   GetAllTags usecase;
-  MockConfigurationRepository mockConfigurationRepository;
+  MockEntityRepository mockEntityRepository;
 
   final tags = [
     Tag(label: 'kittens', count: 806),
@@ -22,22 +22,21 @@ void main() {
   ];
 
   setUp(() {
-    mockConfigurationRepository = MockConfigurationRepository();
-    usecase = GetAllTags(mockConfigurationRepository);
+    mockEntityRepository = MockEntityRepository();
+    usecase = GetAllTags(mockEntityRepository);
   });
 
   test(
     'should get the configuration from the repository',
     () async {
       // arrange
-      when(mockConfigurationRepository.getAllTags())
-          .thenAnswer((_) async => Ok(tags));
+      when(mockEntityRepository.getAllTags()).thenAnswer((_) async => Ok(tags));
       // act
       final result = await usecase(NoParams());
       // assert
       expect(result, Ok(tags));
-      verify(mockConfigurationRepository.getAllTags());
-      verifyNoMoreInteractions(mockConfigurationRepository);
+      verify(mockEntityRepository.getAllTags());
+      verifyNoMoreInteractions(mockEntityRepository);
     },
   );
 }

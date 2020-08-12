@@ -11,10 +11,10 @@ import 'package:tanuki/core/domain/usecases/get_all_years.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_years_bloc.dart';
 
-class MockConfigurationRepository extends Mock implements EntityRepository {}
+class MockEntityRepository extends Mock implements EntityRepository {}
 
 void main() {
-  MockConfigurationRepository mockConfigurationRepository;
+  MockEntityRepository mockEntityRepository;
   GetAllYears usecase;
 
   group('normal cases', () {
@@ -24,9 +24,9 @@ void main() {
       Year(label: '1999', count: 23),
     ];
     setUp(() {
-      mockConfigurationRepository = MockConfigurationRepository();
-      usecase = GetAllYears(mockConfigurationRepository);
-      when(mockConfigurationRepository.getAllYears())
+      mockEntityRepository = MockEntityRepository();
+      usecase = GetAllYears(mockEntityRepository);
+      when(mockEntityRepository.getAllYears())
           .thenAnswer((_) async => Ok(years));
     });
 
@@ -46,9 +46,9 @@ void main() {
 
   group('error cases', () {
     setUp(() {
-      mockConfigurationRepository = MockConfigurationRepository();
-      usecase = GetAllYears(mockConfigurationRepository);
-      when(mockConfigurationRepository.getAllYears())
+      mockEntityRepository = MockEntityRepository();
+      usecase = GetAllYears(mockEntityRepository);
+      when(mockEntityRepository.getAllYears())
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
     });
 

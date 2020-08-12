@@ -10,17 +10,17 @@ import 'package:tanuki/core/domain/usecases/get_asset_count.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_count_bloc.dart';
 
-class MockConfigurationRepository extends Mock implements EntityRepository {}
+class MockEntityRepository extends Mock implements EntityRepository {}
 
 void main() {
-  MockConfigurationRepository mockConfigurationRepository;
+  MockEntityRepository mockEntityRepository;
   GetAssetCount usecase;
 
   group('normal cases', () {
     setUp(() {
-      mockConfigurationRepository = MockConfigurationRepository();
-      usecase = GetAssetCount(mockConfigurationRepository);
-      when(mockConfigurationRepository.getAssetCount())
+      mockEntityRepository = MockEntityRepository();
+      usecase = GetAssetCount(mockEntityRepository);
+      when(mockEntityRepository.getAssetCount())
           .thenAnswer((_) async => Ok(9413));
     });
 
@@ -40,9 +40,9 @@ void main() {
 
   group('error cases', () {
     setUp(() {
-      mockConfigurationRepository = MockConfigurationRepository();
-      usecase = GetAssetCount(mockConfigurationRepository);
-      when(mockConfigurationRepository.getAssetCount())
+      mockEntityRepository = MockEntityRepository();
+      usecase = GetAssetCount(mockEntityRepository);
+      when(mockEntityRepository.getAssetCount())
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
     });
 

@@ -11,10 +11,10 @@ import 'package:tanuki/core/domain/usecases/get_all_tags.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart';
 
-class MockConfigurationRepository extends Mock implements EntityRepository {}
+class MockEntityRepository extends Mock implements EntityRepository {}
 
 void main() {
-  MockConfigurationRepository mockConfigurationRepository;
+  MockEntityRepository mockEntityRepository;
   GetAllTags usecase;
 
   group('normal cases', () {
@@ -24,10 +24,9 @@ void main() {
       Tag(label: 'birds', count: 23),
     ];
     setUp(() {
-      mockConfigurationRepository = MockConfigurationRepository();
-      usecase = GetAllTags(mockConfigurationRepository);
-      when(mockConfigurationRepository.getAllTags())
-          .thenAnswer((_) async => Ok(tags));
+      mockEntityRepository = MockEntityRepository();
+      usecase = GetAllTags(mockEntityRepository);
+      when(mockEntityRepository.getAllTags()).thenAnswer((_) async => Ok(tags));
     });
 
     blocTest(
@@ -46,9 +45,9 @@ void main() {
 
   group('error cases', () {
     setUp(() {
-      mockConfigurationRepository = MockConfigurationRepository();
-      usecase = GetAllTags(mockConfigurationRepository);
-      when(mockConfigurationRepository.getAllTags())
+      mockEntityRepository = MockEntityRepository();
+      usecase = GetAllTags(mockEntityRepository);
+      when(mockEntityRepository.getAllTags())
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
     });
 
