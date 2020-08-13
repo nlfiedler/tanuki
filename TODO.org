@@ -142,7 +142,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** bloc
 ***** show simple results based on attribute selection
 ***** no paging at this time
-**** TODO develop home page like "crane" flutter gallery app
+**** TODO develop home page with dynamic asset selection and paging
 ***** replace the hard-coded ~cat~ query in =AssetsList= with dynamic filters
 ***** maybe create a "browser" bloc to handle filters and results
 ****** holds the selected filters and current "page"
@@ -176,12 +176,20 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
 *** TODO Improve User Experience
+**** [promote this group up one level and prioritize tasks]
 **** layout builder: consider early on how to use this for responsive design
+***** see https://flutter.dev/docs/development/ui/layout for various layouts
+***** also ^^^ gives a way to deal with "portrait" and "landscape" modes
 **** browse and search
 ***** unify the two pages into one
 ***** with the "crane" like selectors, the search is just another row of inputs
 ***** that is, normally the second row is collapsed, but clicking a button expands it
 ***** the second row would have the date range, file name, and media type
+**** image gallery paging
+***** consider other ways of showing lots of results w/o paging
+***** using the carousel style navigation arrows?
+***** small dots instead of large buttons with numbers in them?
+***** still good to have a quick way to jump anywhere in the set of results
 **** quick import
 ***** drag/drop and/or file open to add lots of assets
 ***** immediately import everything to the backend
@@ -217,6 +225,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** display select information from EXIF metadata (e.g. camera)
 **** timeline style display for all assets
 ***** without any selectors, just show most recent going back in time
+***** c.f. https://pub.dev/packages/flutter_timeline
 **** flutter allows for a custom error handler (i.e. override the ugly red screen)
 *** ideas and widget usage
 **** Look at the Flutter "Gallery" app ("crane") for a pretty example
@@ -246,9 +255,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** click on item in a list/grid and it expands to the details page
 **** can use =DataTable= to display labeled data (like asset details, metadata)
 **** use pointer enter/exit events to start playing a video in place
-** Minor Fixups
-*** some of the crate dependencies can be in =dev-dependencies=
-**** mockall
 ** Bulk edit
 *** need to set the custom date on many assets at once
 *** Short term solution akin to perkeep web interface
