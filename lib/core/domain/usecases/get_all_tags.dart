@@ -14,6 +14,11 @@ class GetAllTags implements UseCase<List<Tag>, NoParams> {
 
   @override
   Future<Result<List<Tag>, Failure>> call(NoParams params) async {
-    return await repository.getAllTags();
+    var result = await repository.getAllTags();
+    result = result.map((tags) {
+      tags.sort();
+      return tags;
+    });
+    return result;
   }
 }

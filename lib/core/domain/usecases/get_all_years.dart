@@ -14,6 +14,11 @@ class GetAllYears implements UseCase<List<Year>, NoParams> {
 
   @override
   Future<Result<List<Year>, Failure>> call(NoParams params) async {
-    return await repository.getAllYears();
+    var result = await repository.getAllYears();
+    result = result.map((years) {
+      years.sort();
+      return years;
+    });
+    return result;
   }
 }

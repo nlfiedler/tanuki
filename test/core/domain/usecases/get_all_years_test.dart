@@ -27,7 +27,7 @@ void main() {
   });
 
   test(
-    'should get the configuration from the repository',
+    'should get the list of years from the repository',
     () async {
       // arrange
       when(mockEntityRepository.getAllYears())
@@ -36,6 +36,9 @@ void main() {
       final result = await usecase(NoParams());
       // assert
       expect(result, Ok(years));
+      expect(result.unwrap()[0].label, '1999');
+      expect(result.unwrap()[1].label, '2009');
+      expect(result.unwrap()[2].label, '2019');
       verify(mockEntityRepository.getAllYears());
       verifyNoMoreInteractions(mockEntityRepository);
     },

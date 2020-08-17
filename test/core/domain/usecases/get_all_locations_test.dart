@@ -27,7 +27,7 @@ void main() {
   });
 
   test(
-    'should get the configuration from the repository',
+    'should get the list of locations from the repository',
     () async {
       // arrange
       when(mockEntityRepository.getAllLocations())
@@ -36,6 +36,9 @@ void main() {
       final result = await usecase(NoParams());
       // assert
       expect(result, Ok(locations));
+      expect(result.unwrap()[0].label, 'london');
+      expect(result.unwrap()[1].label, 'paris');
+      expect(result.unwrap()[2].label, 'tokyo');
       verify(mockEntityRepository.getAllLocations());
       verifyNoMoreInteractions(mockEntityRepository);
     },

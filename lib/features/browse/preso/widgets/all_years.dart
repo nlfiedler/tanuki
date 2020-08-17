@@ -4,7 +4,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tanuki/container.dart';
+import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_years_bloc.dart';
+import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart'
+    as abb;
 
 class AllYears extends StatelessWidget {
   @override
@@ -22,21 +25,46 @@ class AllYears extends StatelessWidget {
           }
           if (state is Loaded) {
             final List<Widget> chips = List.from(state.years.map(
-              (y) => FilterChip(
-                label: Text(y.label),
-                onSelected: (bool value) {},
-              ),
+              (y) => YearChip(year: y),
             ));
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Wrap(
-                  children: chips,
-                ),
-              ],
-            );
+            return Wrap(children: chips);
           }
           return CircularProgressIndicator();
+        },
+      ),
+    );
+  }
+}
+
+class YearChip extends StatelessWidget {
+  final Year year;
+
+  const YearChip({
+    Key key,
+    @required this.year,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: BlocProvider.of<abb.AssetBrowserBloc>(context),
+      child: BlocBuilder<abb.AssetBrowserBloc, abb.AssetBrowserState>(
+        builder: (context, state) {
+          bool selected = false;
+          if (state is abb.Loaded) {
+            selected = state.selectedYear.mapOr(
+              (value) => value.toString() == year.label,
+              false,
+            );
+          }
+          return FilterChip(
+            label: Text(year.label),
+            selected: selected,
+            onSelected: (bool value) {
+              BlocProvider.of<abb.AssetBrowserBloc>(context)
+                  .add(abb.ToggleYear(year: int.parse(year.label)));
+            },
+          );
         },
       ),
     );

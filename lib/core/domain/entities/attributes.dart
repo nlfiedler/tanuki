@@ -5,7 +5,7 @@ import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 
 /// A `Location` holds the label and count for a single location value.
-class Location extends Equatable {
+class Location extends Equatable implements Comparable<Location> {
   // Label for the given attribute (e.g. "disney land").
   final String label;
   // Count of assets with this attribute.
@@ -21,10 +21,15 @@ class Location extends Equatable {
 
   @override
   bool get stringify => true;
+
+  @override
+  int compareTo(Location other) {
+    return label.compareTo(other.label);
+  }
 }
 
 /// A `Tag` holds the label and count for a single tag value.
-class Tag extends Equatable {
+class Tag extends Equatable implements Comparable<Tag> {
   // Label for the given attribute (e.g. "kittens").
   final String label;
   // Count of assets with this attribute.
@@ -40,10 +45,15 @@ class Tag extends Equatable {
 
   @override
   bool get stringify => true;
+
+  @override
+  int compareTo(Tag other) {
+    return label.compareTo(other.label);
+  }
 }
 
 /// A `Year` holds the label and count for a single year value.
-class Year extends Equatable {
+class Year extends Equatable implements Comparable<Year> {
   // Label for the given attribute (e.g. "2019").
   final String label;
   // Count of assets with this attribute.
@@ -59,4 +69,11 @@ class Year extends Equatable {
 
   @override
   bool get stringify => true;
+
+  @override
+  int compareTo(Year other) {
+    final parsedLabel = int.parse(label);
+    final parsedOther = int.parse(other.label);
+    return parsedLabel.compareTo(parsedOther);
+  }
 }

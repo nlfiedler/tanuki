@@ -5,8 +5,8 @@ import 'package:get_it/get_it.dart';
 import 'all_locations_bloc.dart';
 import 'all_tags_bloc.dart';
 import 'all_years_bloc.dart';
+import 'asset_browser_bloc.dart';
 import 'asset_count_bloc.dart';
-import 'query_assets_bloc.dart';
 
 void initBrowseBlocs(GetIt getIt) {
   getIt.registerFactory(
@@ -19,9 +19,9 @@ void initBrowseBlocs(GetIt getIt) {
     () => AllYearsBloc(usecase: getIt()),
   );
   getIt.registerFactory(
-    () => AssetCountBloc(usecase: getIt()),
+    () => AssetBrowserBloc(usecase: getIt()),
   );
   getIt.registerFactory(
-    () => QueryAssetsBloc(usecase: getIt()),
+    () => AssetCountBloc(usecase: getIt()),
   );
 }

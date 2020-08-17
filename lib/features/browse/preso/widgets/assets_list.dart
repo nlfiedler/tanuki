@@ -3,33 +3,23 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tanuki/container.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
-import 'package:tanuki/features/browse/preso/bloc/query_assets_bloc.dart';
+import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
 
 class AssetsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<QueryAssetsBloc>(
-      create: (_) => getIt<QueryAssetsBloc>(),
-      child: BlocBuilder<QueryAssetsBloc, QueryAssetsState>(
+    return BlocProvider.value(
+      value: BlocProvider.of<AssetBrowserBloc>(context),
+      child: BlocBuilder<AssetBrowserBloc, AssetBrowserState>(
         builder: (context, state) {
-          if (state is Empty) {
-            // kick off the initial remote request
-            final params = SearchParams(tags: ['cat']);
-            BlocProvider.of<QueryAssetsBloc>(context).add(LoadQueryAssets(
-              params: params,
-              count: 10,
-              offset: 0,
-            ));
-          }
           if (state is Error) {
             return Text('Error: ' + state.message);
           }
           if (state is Loaded) {
             return buildResultsList(context, state.results.results);
           }
-          return CircularProgressIndicator();
+          return Center(child: CircularProgressIndicator());
         },
       ),
     );

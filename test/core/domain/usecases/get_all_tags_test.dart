@@ -27,7 +27,7 @@ void main() {
   });
 
   test(
-    'should get the configuration from the repository',
+    'should get the list of tags from the repository',
     () async {
       // arrange
       when(mockEntityRepository.getAllTags()).thenAnswer((_) async => Ok(tags));
@@ -35,6 +35,9 @@ void main() {
       final result = await usecase(NoParams());
       // assert
       expect(result, Ok(tags));
+      expect(result.unwrap()[0].label, 'birds');
+      expect(result.unwrap()[1].label, 'kittens');
+      expect(result.unwrap()[2].label, 'snakes');
       verify(mockEntityRepository.getAllTags());
       verifyNoMoreInteractions(mockEntityRepository);
     },

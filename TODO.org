@@ -142,15 +142,23 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** bloc
 ***** show simple results based on attribute selection
 ***** no paging at this time
-**** TODO develop home page with dynamic asset selection and paging
-***** replace the hard-coded ~cat~ query in =AssetsList= with dynamic filters
-***** maybe create a "browser" bloc to handle filters and results
+**** DONE develop home page with dynamic asset selection and paging
+***** read https://pub.dev/packages/flutter_bloc_patterns for ideas
+***** design a new browser bloc to handle filters and results
 ****** holds the selected filters and current "page"
 ****** selectors will fire events to add/remove filters for the query
-****** viewer receives resulting set of results
+****** viewer receives resulting set of results via state update
 ****** viewer will fire events to manage fetching pages of results
 ***** see =FilterChip= in flutter for an example of ui for filtering lists
 ****** c.f. https://api.flutter.dev/flutter/material/FilterChip-class.html
+***** avoid repainting the entire asset browser on every state change
+***** replace the hard-coded ~cat~ query in =AssetsList= with dynamic filters
+***** how to make the circular progress indicator not stretch?
+***** fix the page size, only showing 10, should be 18
+**** TODO enhance browse page
+***** TODO add pagination controls
+***** TODO display thumbnails with captions in a grid instead of list view
+***** TODO maybe offer a control to change page size
 **** TODO use case: fetch asset details
 **** TODO develop page for uploading/importing assets
 ***** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
@@ -161,6 +169,12 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** TODO use case: query recent imports
 **** TODO develop page for processing recent imports
 **** TODO develop page for editing assets details
+**** TODO enhance browse page to perform advanced search functions
+***** add event to =AssetBrowserBloc= that sets before date filter (clears selected year)
+***** add event to =AssetBrowserBloc= that sets after date filter (clears selected year)
+***** add event to =AssetBrowserBloc= that sets filename filter
+***** add event to =AssetBrowserBloc= that sets mimetype filter
+***** extra input fields would be hidden normally, expanded by clicking arrow button
 *** TODO change docker to build flutter web assets
 *** TODO remove ReasonML and Node files
 **** should be nothing JavaScript/Node/Reason left at this point
@@ -187,6 +201,11 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** the second row would have the date range, file name, and media type
 **** image gallery paging
 ***** consider other ways of showing lots of results w/o paging
+***** consider how to display pages continuously (a la infinite list)
+****** would keep several pages in the widget tree at one time
+****** scrolling would drop a page widget from the tree, and add a new one
+****** when fetching a new page, the page widget would show a progress indicator
+****** the "dropped" pages would be changed to consist of placeholders to free memory
 ***** using the carousel style navigation arrows?
 ***** small dots instead of large buttons with numbers in them?
 ***** still good to have a quick way to jump anywhere in the set of results
@@ -838,6 +857,10 @@ include it in the database records.
 | OTHER                  |    32 |                |
 | NONE                   |    34 |                |
 ** Competitive Landscape
+*** darktable
+**** open source
+**** primarily focused on raw editing
+**** https://www.darktable.org
 *** Shotwell Photo Manager?
 - Part of Ubuntu 18 desktop
 - Evaluate what features it supports

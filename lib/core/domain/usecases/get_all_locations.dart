@@ -14,6 +14,11 @@ class GetAllLocations implements UseCase<List<Location>, NoParams> {
 
   @override
   Future<Result<List<Location>, Failure>> call(NoParams params) async {
-    return await repository.getAllLocations();
+    var result = await repository.getAllLocations();
+    result = result.map((locations) {
+      locations.sort();
+      return locations;
+    });
+    return result;
   }
 }

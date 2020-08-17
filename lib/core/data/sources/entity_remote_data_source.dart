@@ -142,8 +142,8 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     int offset,
   ) async {
     final query = r'''
-      query Search($params: SearchParams!, $pageSize: Int, $offset: Int) {
-        search(params: $params, count: $pageSize, offset: $offset) {
+      query Search($params: SearchParams!, $count: Int, $offset: Int) {
+        search(params: $params, count: $count, offset: $offset) {
           results {
             id
             datetime
