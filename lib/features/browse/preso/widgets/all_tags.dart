@@ -15,6 +15,9 @@ class AllTags extends StatelessWidget {
     return BlocProvider<AllTagsBloc>(
       create: (_) => getIt<AllTagsBloc>(),
       child: BlocBuilder<AllTagsBloc, AllTagsState>(
+        buildWhen: (previous, current) {
+          return !(previous is Loaded && current is Loading);
+        },
         builder: (context, state) {
           if (state is Empty) {
             // kick off the initial remote request

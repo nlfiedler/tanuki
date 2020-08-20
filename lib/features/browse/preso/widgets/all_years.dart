@@ -15,6 +15,9 @@ class AllYears extends StatelessWidget {
     return BlocProvider<AllYearsBloc>(
       create: (_) => getIt<AllYearsBloc>(),
       child: BlocBuilder<AllYearsBloc, AllYearsState>(
+        buildWhen: (previous, current) {
+          return !(previous is Loaded && current is Loading);
+        },
         builder: (context, state) {
           if (state is Empty) {
             // kick off the initial remote request

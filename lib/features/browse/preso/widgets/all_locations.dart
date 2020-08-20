@@ -15,6 +15,9 @@ class AllLocations extends StatelessWidget {
     return BlocProvider<AllLocationsBloc>(
       create: (_) => getIt<AllLocationsBloc>(),
       child: BlocBuilder<AllLocationsBloc, AllLocationsState>(
+        buildWhen: (previous, current) {
+          return !(previous is Loaded && current is Loading);
+        },
         builder: (context, state) {
           if (state is Empty) {
             // kick off the initial remote request

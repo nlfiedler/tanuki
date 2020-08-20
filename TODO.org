@@ -156,9 +156,13 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** how to make the circular progress indicator not stretch?
 ***** fix the page size, only showing 10, should be 18
 **** TODO enhance browse page
-***** TODO add pagination controls
+***** DONE add pagination controls
 ***** TODO display thumbnails with captions in a grid instead of list view
 ***** TODO maybe offer a control to change page size
+***** TODO try to get the Enter key in page input field to submit
+***** TODO try to remove the =SizedBox= in the pagination control
+**** TODO consider how to show bloc errors using the snackbar
+***** that is, do not disturb whatever is already on the screen
 **** TODO use case: fetch asset details
 **** TODO develop page for uploading/importing assets
 ***** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
@@ -168,6 +172,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** TODO permit dragging and dropping assets to import
 **** TODO use case: query recent imports
 **** TODO develop page for processing recent imports
+**** TODO use case: edit asset details
 **** TODO develop page for editing assets details
 **** TODO enhance browse page to perform advanced search functions
 ***** add event to =AssetBrowserBloc= that sets before date filter (clears selected year)
@@ -199,14 +204,24 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** with the "crane" like selectors, the search is just another row of inputs
 ***** that is, normally the second row is collapsed, but clicking a button expands it
 ***** the second row would have the date range, file name, and media type
+***** look at flutter form builder "chips input" which has suggestion support
+***** flutter form build also has a "type ahead" text input with suggestion support
+***** try using the date range picker function in material
+****** c.f. https://api.flutter.dev/flutter/material/showDatePicker.html
 **** image gallery paging
 ***** consider other ways of showing lots of results w/o paging
+****** look at some examples and packages for ideas on design and implementation
+******* handles scrolling and waiting for data: https://pub.dev/packages/pagination_view
+******* has dots: https://pub.dev/packages/dot_pagination_swiper
+******* can show an error message: https://pub.dev/packages/flutter_pagination_helper
+******* infinite with limited caching: https://pub.dev/packages/infinite_pagination
+******* supports various views: https://pub.dev/packages/flutter_paginator
 ***** consider how to display pages continuously (a la infinite list)
 ****** would keep several pages in the widget tree at one time
 ****** scrolling would drop a page widget from the tree, and add a new one
 ****** when fetching a new page, the page widget would show a progress indicator
 ****** the "dropped" pages would be changed to consist of placeholders to free memory
-***** using the carousel style navigation arrows?
+***** using carousel style navigation arrows?
 ***** small dots instead of large buttons with numbers in them?
 ***** still good to have a quick way to jump anywhere in the set of results
 **** quick import
@@ -220,7 +235,14 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ****** for image, expand temporarily in place
 ****** for video, start playing it
 **** image gallery selectors
-***** instead of showing all of the tags, years, locations at once
+***** header with several rows for entering and showing selectors
+****** one row for tags, another for locations, years/date range, etc
+****** each row starts with a label, e.g. ~Tags~
+****** after the label, an input field (show just an underline, rather than a box)
+****** typing into the input field will offer completion of tags, etc
+****** once entered, the selector is appended to the row, after the input field
+****** each label has a ~delete~ button to remove it from the list
+***** "crane" (flutter gallery sample) style input fields at the top
 ****** see the "crane" flutter gallery sample for the basic layout and appearance
 ****** use input fields with small icons on the left and drop-down button on the right
 ****** typing into the field will perform completion for tags, locations, years
@@ -329,6 +351,8 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ** Schema Growth
 *** ML will introduce new fields, like ~labels~ and ~keywords~
 *** Geolocation will introduce new data, like GPS coordinates
+*** Plan ahead for hierarchial location data (e.g. USA -> California -> Castro Valley -> our home)
+*** Plan ahead for hierarchical categories: People -> Friends -> School
 *** Customer user-provided metadata will need a place to live
 *** Perhaps use records with different key prefixes
 **** =metadata/= for user-provided name/value pairs
@@ -748,6 +772,8 @@ include it in the database records.
 *** Documentation
 **** Use GitBook and publish on the web site
 *** App Store
+**** TODO Look at ~Test Flight~ as a means of finding test users
+***** like a private version of App Store that limits the number of users
 **** TODO Get an Apple [[https://developer.apple.com/developer-id/][Developer ID]] certificate using Xcode or online
 - Need to register with Apple for $100/year to use app store
   - Need a Developer ID certificate for signing apps

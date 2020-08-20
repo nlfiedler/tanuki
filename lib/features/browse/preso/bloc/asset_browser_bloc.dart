@@ -71,6 +71,7 @@ class Loaded extends AssetBrowserState {
   final List<String> selectedLocations;
   final Option<int> selectedYear;
   final int pageNumber;
+  final int lastPage;
 
   Loaded({
     @required this.results,
@@ -78,6 +79,7 @@ class Loaded extends AssetBrowserState {
     @required tags,
     @required locations,
     @required this.selectedYear,
+    @required this.lastPage,
   })  : selectedTags = List.unmodifiable(tags),
         selectedLocations = List.unmodifiable(locations);
 
@@ -186,13 +188,17 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
       offset: offset,
     ));
     yield result.mapOrElse(
-      (results) => Loaded(
-        results: results,
-        pageNumber: pageNumber,
-        tags: tags,
-        locations: locations,
-        selectedYear: selectedYear,
-      ),
+      (results) {
+        final lastPage = (results.count / pageSize).ceil();
+        return Loaded(
+          results: results,
+          pageNumber: lastPage > 0 ? pageNumber : 0,
+          tags: tags,
+          locations: locations,
+          selectedYear: selectedYear,
+          lastPage: lastPage,
+        );
+      },
       (failure) => Error(message: failure.toString()),
     );
   }

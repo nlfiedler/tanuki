@@ -9,6 +9,7 @@ import 'all_locations.dart';
 import 'all_tags.dart';
 import 'all_years.dart';
 import 'assets_list.dart';
+import 'page_controls.dart';
 
 class AssetBrowser extends StatelessWidget {
   @override
@@ -16,11 +17,8 @@ class AssetBrowser extends StatelessWidget {
     return BlocProvider<AssetBrowserBloc>(
       create: (_) => getIt<AssetBrowserBloc>(),
       child: BlocBuilder<AssetBrowserBloc, AssetBrowserState>(
-        buildWhen: (previousState, state) {
-          if (previousState is Loaded && state is Loading) {
-            return false;
-          }
-          return true;
+        buildWhen: (previous, current) {
+          return !(previous is Loaded && current is Loading);
         },
         builder: (context, state) {
           if (state is Empty) {
@@ -37,6 +35,7 @@ class AssetBrowser extends StatelessWidget {
                 AllTags(),
                 AllLocations(),
                 AllYears(),
+                PageControls(),
                 Expanded(child: AssetsList()),
               ],
             );

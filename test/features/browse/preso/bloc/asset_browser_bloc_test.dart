@@ -56,6 +56,7 @@ void main() {
           tags: [],
           locations: [],
           selectedYear: None(),
+          lastPage: 1,
         )
       ],
     );
@@ -83,6 +84,7 @@ void main() {
           tags: [],
           locations: [],
           selectedYear: None(),
+          lastPage: 1,
         ),
         Loading(),
         Loaded(
@@ -91,6 +93,7 @@ void main() {
           tags: ['cats'],
           locations: [],
           selectedYear: None(),
+          lastPage: 1,
         ),
       ],
     );
@@ -118,6 +121,7 @@ void main() {
           tags: [],
           locations: [],
           selectedYear: None(),
+          lastPage: 1,
         ),
         Loading(),
         Loaded(
@@ -126,6 +130,7 @@ void main() {
           tags: [],
           locations: ['hawaii'],
           selectedYear: None(),
+          lastPage: 1,
         ),
       ],
     );
@@ -146,6 +151,7 @@ void main() {
           tags: [],
           locations: [],
           selectedYear: None(),
+          lastPage: 1,
         ),
         Loading(),
         Loaded(
@@ -154,6 +160,7 @@ void main() {
           tags: [],
           locations: [],
           selectedYear: Some(2009),
+          lastPage: 1,
         ),
       ],
     );
@@ -175,6 +182,7 @@ void main() {
           tags: [],
           locations: [],
           selectedYear: None(),
+          lastPage: 1,
         ),
         Loading(),
         Loaded(
@@ -183,6 +191,7 @@ void main() {
           tags: [],
           locations: [],
           selectedYear: Some(2009),
+          lastPage: 1,
         ),
         Loading(),
         Loaded(
@@ -191,17 +200,31 @@ void main() {
           tags: [],
           locations: [],
           selectedYear: None(),
+          lastPage: 1,
         ),
       ],
     );
   });
 
-  group('pagination cases', () {
+  group('pagination case: many', () {
+    final manyQueryResults = QueryResults(
+      results: [
+        SearchResult(
+          id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
+          filename: 'catmouse_1280p.jpg',
+          mimetype: 'image/jpeg',
+          location: Some('outdoors'),
+          datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
+        )
+      ],
+      count: 85,
+    );
+
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = QueryAssets(mockEntityRepository);
       when(mockEntityRepository.queryAssets(any, any, any))
-          .thenAnswer((_) async => Ok(tQueryResults));
+          .thenAnswer((_) async => Ok(manyQueryResults));
     });
 
     blocTest(
@@ -215,19 +238,21 @@ void main() {
       expect: [
         Loading(),
         Loaded(
-          results: tQueryResults,
+          results: manyQueryResults,
           pageNumber: 1,
           tags: [],
           locations: [],
           selectedYear: None(),
+          lastPage: 5,
         ),
         Loading(),
         Loaded(
-          results: tQueryResults,
+          results: manyQueryResults,
           pageNumber: 10,
           tags: [],
           locations: [],
           selectedYear: None(),
+          lastPage: 5,
         ),
       ],
     );
@@ -244,27 +269,58 @@ void main() {
       expect: [
         Loading(),
         Loaded(
-          results: tQueryResults,
+          results: manyQueryResults,
           pageNumber: 1,
           tags: [],
           locations: [],
           selectedYear: None(),
+          lastPage: 5,
         ),
         Loading(),
         Loaded(
-          results: tQueryResults,
+          results: manyQueryResults,
           pageNumber: 10,
           tags: [],
           locations: [],
           selectedYear: None(),
+          lastPage: 5,
         ),
         Loading(),
         Loaded(
-          results: tQueryResults,
+          results: manyQueryResults,
           pageNumber: 1,
           tags: ['cats'],
           locations: [],
           selectedYear: None(),
+          lastPage: 5,
+        ),
+      ],
+    );
+  });
+
+  group('pagination case: zero', () {
+    final zeroQueryResults = QueryResults(results: [], count: 0);
+
+    setUp(() {
+      mockEntityRepository = MockEntityRepository();
+      usecase = QueryAssets(mockEntityRepository);
+      when(mockEntityRepository.queryAssets(any, any, any))
+          .thenAnswer((_) async => Ok(zeroQueryResults));
+    });
+
+    blocTest(
+      'emits [Loading, Loaded] when Initial is added',
+      build: () => AssetBrowserBloc(usecase: usecase),
+      act: (bloc) => bloc.add(LoadInitialAssets()),
+      expect: [
+        Loading(),
+        Loaded(
+          results: zeroQueryResults,
+          pageNumber: 0,
+          tags: [],
+          locations: [],
+          selectedYear: None(),
+          lastPage: 0,
         ),
       ],
     );
