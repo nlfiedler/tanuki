@@ -19,6 +19,7 @@ dependencies:
   flutter_form_builder: ^3.14.0-alpha.1
   get_it: ^4.0.4
   graphql: ^3.1.0
+  intl: ^0.16.1
   oxidized: ^3.1.0
 
 dev_dependencies:
