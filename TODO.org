@@ -158,6 +158,12 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** TODO enhance browse page
 ***** DONE add pagination controls
 ***** TODO display thumbnails with captions in a grid instead of list view
+****** try using =Image.network= to load the thumbnails via URL
+****** try using =Wrap= to do what =flex-flow: row wrap;= does in CSS
+****** or perhaps use =GridView.count= with a fixed count of 3 for now
+******* eventually can compute a better number based on viewport size
+******* see https://flutter.dev/docs/development/ui/layout for various layouts
+******* also ^^^ gives a way to deal with "portrait" and "landscape" modes
 ***** TODO maybe offer a control to change page size
 ***** TODO try to get the Enter key in page input field to submit
 ***** TODO try to remove the =SizedBox= in the pagination control
@@ -196,9 +202,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** update =.gitignore= and =.dockerignore=
 *** TODO Improve User Experience
 **** [promote this group up one level and prioritize tasks]
-**** layout builder: consider early on how to use this for responsive design
-***** see https://flutter.dev/docs/development/ui/layout for various layouts
-***** also ^^^ gives a way to deal with "portrait" and "landscape" modes
 **** browse and search
 ***** unify the two pages into one
 ***** with the "crane" like selectors, the search is just another row of inputs
@@ -207,6 +210,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** look at flutter form builder "chips input" which has suggestion support
 ***** flutter form build also has a "type ahead" text input with suggestion support
 ***** try using the date range picker function in material
+****** flutter form builder also has a date range picker
 ****** c.f. https://api.flutter.dev/flutter/material/showDatePicker.html
 **** image gallery paging
 ***** consider other ways of showing lots of results w/o paging
@@ -281,13 +285,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** use =RichText= widget to style the captions (e.g. make tags bold)
 **** tags in caption could be "gesture sensitive" (i.e. clickable) to show assets with that tag
 **** paging list view with fetching logic: https://pub.dev/packages/uic
-**** =ListView.builder= allows building list items on demand
-***** c.f. https://medium.com/flutter-community/flutter-infinite-list-tutorial-with-flutter-bloc-2fc7a272ec67
-**** =Image= has a loading builder for showing progress of network images
 **** use =semanticLabel= on =Image= for accessibility
-**** =Wrap= will do what =flex-flow: row wrap;= does in CSS
-**** alternative to row wrapping would be columns of images
-***** need to make the number of columns responsive to window width
 **** =FutureBuilder= for showing things that load asynchronously
 **** use =SliverAppBar= in place of =AppBar=, it will shrink when content is scrolled
 ***** could be a good way to keep controls above scrolling content
@@ -772,6 +770,9 @@ include it in the database records.
 *** Documentation
 **** Use GitBook and publish on the web site
 *** App Store
+**** Using the App Store(s) at first is necessary to build a reputation
+***** Once a reputation is established, purchases can be safely made outside
+***** c.f. https://www.ben-evans.com/benedictevans/2020/8/18/app-stores
 **** TODO Look at ~Test Flight~ as a means of finding test users
 ***** like a private version of App Store that limits the number of users
 **** TODO Get an Apple [[https://developer.apple.com/developer-id/][Developer ID]] certificate using Xcode or online
