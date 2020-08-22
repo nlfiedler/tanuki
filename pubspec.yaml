@@ -15,7 +15,8 @@ dependencies:
 
   equatable: ^1.2.3
   flutter_bloc: ^6.0.1
-  flutter_form_builder: ^3.13.2
+  # workaround for https://github.com/danvick/flutter_form_builder/issues/382
+  flutter_form_builder: ^3.14.0-alpha.1
   get_it: ^4.0.4
   graphql: ^3.1.0
   oxidized: ^3.1.0
