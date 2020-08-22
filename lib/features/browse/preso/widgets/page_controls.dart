@@ -119,9 +119,12 @@ class _PageInputFormState extends State<PageInputForm> {
             ),
           ),
         ),
-        RaisedButton(
-          child: const Text('GO'),
-          onPressed: widget.lastPage < 2 ? null : goButtonPressed,
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: RaisedButton(
+            child: const Text('GO'),
+            onPressed: widget.lastPage < 2 ? null : goButtonPressed,
+          ),
         ),
       ],
     );
