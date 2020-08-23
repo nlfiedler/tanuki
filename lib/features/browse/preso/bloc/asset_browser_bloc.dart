@@ -52,6 +52,14 @@ class ShowPage extends AssetBrowserEvent {
   });
 }
 
+class SetPageSize extends AssetBrowserEvent {
+  final int size;
+
+  SetPageSize({
+    @required this.size,
+  });
+}
+
 //
 // states
 //
@@ -70,6 +78,7 @@ class Loaded extends AssetBrowserState {
   final List<String> selectedTags;
   final List<String> selectedLocations;
   final Option<int> selectedYear;
+  final int pageSize;
   final int pageNumber;
   final int lastPage;
 
@@ -80,6 +89,7 @@ class Loaded extends AssetBrowserState {
     @required locations,
     @required this.selectedYear,
     @required this.lastPage,
+    @required this.pageSize,
   })  : selectedTags = List.unmodifiable(tags),
         selectedLocations = List.unmodifiable(locations);
 
@@ -107,10 +117,10 @@ class Error extends AssetBrowserState {
 //
 
 class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
-  final int pageSize = 18;
   final List<String> tags = [];
   final List<String> locations = [];
   final QueryAssets usecase;
+  int pageSize = 18;
   int pageNumber = 1;
   Option<int> selectedYear = const None();
 
@@ -140,6 +150,11 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
     } else if (event is ShowPage) {
       if (state is Loaded) {
         pageNumber = event.page;
+        yield* _loadAssets();
+      }
+    } else if (event is SetPageSize) {
+      pageSize = event.size;
+      if (state is Loaded) {
         yield* _loadAssets();
       }
     }
@@ -197,6 +212,7 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
           locations: locations,
           selectedYear: selectedYear,
           lastPage: lastPage,
+          pageSize: pageSize,
         );
       },
       (failure) => Error(message: failure.toString()),

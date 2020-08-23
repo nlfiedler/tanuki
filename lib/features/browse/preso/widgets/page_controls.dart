@@ -49,11 +49,39 @@ class PageControls extends StatelessWidget {
                   width: 48.0,
                 ),
                 PageInputForm(
-                    lastPage: state.lastPage,
-                    onSubmit: (page) {
-                      BlocProvider.of<AssetBrowserBloc>(context)
-                          .add(ShowPage(page: page));
-                    }),
+                  lastPage: state.lastPage,
+                  onSubmit: (page) {
+                    BlocProvider.of<AssetBrowserBloc>(context)
+                        .add(ShowPage(page: page));
+                  },
+                ),
+                PopupMenuButton<int>(
+                  tooltip: 'Set page size',
+                  icon: Icon(Icons.pages),
+                  initialValue: state.pageSize,
+                  onSelected: (int value) {
+                    BlocProvider.of<AssetBrowserBloc>(context)
+                        .add(SetPageSize(size: value));
+                  },
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
+                    const PopupMenuItem<int>(
+                      value: 18,
+                      child: const Text('18'),
+                    ),
+                    const PopupMenuItem<int>(
+                      value: 36,
+                      child: const Text('36'),
+                    ),
+                    const PopupMenuItem<int>(
+                      value: 54,
+                      child: const Text('54'),
+                    ),
+                    const PopupMenuItem<int>(
+                      value: 72,
+                      child: const Text('72'),
+                    ),
+                  ],
+                ),
               ],
             );
           }
@@ -83,7 +111,7 @@ class PageInputForm extends StatefulWidget {
 class _PageInputFormState extends State<PageInputForm> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
 
-  void goButtonPressed() {
+  void submitPageInput() {
     if (_fbKey.currentState.saveAndValidate()) {
       widget.onSubmit(_fbKey.currentState.value['page']);
     }
@@ -98,6 +126,9 @@ class _PageInputFormState extends State<PageInputForm> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: SizedBox(
+            // The text field needs to be wide enough for the validation text
+            // which is controlled by the form builder package, but it must be
+            // constrained somehow (a column would also work).
             width: 256,
             child: FormBuilder(
               key: _fbKey,
@@ -114,6 +145,9 @@ class _PageInputFormState extends State<PageInputForm> {
                 valueTransformer: (text) {
                   return text == null ? null : num.tryParse(text);
                 },
+                onFieldSubmitted: (text) {
+                  submitPageInput();
+                },
                 keyboardType: TextInputType.number,
               ),
             ),
@@ -121,9 +155,9 @@ class _PageInputFormState extends State<PageInputForm> {
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: RaisedButton(
+          child: FlatButton(
             child: const Text('GO'),
-            onPressed: widget.lastPage < 2 ? null : goButtonPressed,
+            onPressed: widget.lastPage < 2 ? null : submitPageInput,
           ),
         ),
       ],

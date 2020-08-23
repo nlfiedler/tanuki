@@ -57,6 +57,7 @@ void main() {
           locations: [],
           selectedYear: None(),
           lastPage: 1,
+          pageSize: 18,
         )
       ],
     );
@@ -85,6 +86,7 @@ void main() {
           locations: [],
           selectedYear: None(),
           lastPage: 1,
+          pageSize: 18,
         ),
         Loading(),
         Loaded(
@@ -94,6 +96,7 @@ void main() {
           locations: [],
           selectedYear: None(),
           lastPage: 1,
+          pageSize: 18,
         ),
       ],
     );
@@ -122,6 +125,7 @@ void main() {
           locations: [],
           selectedYear: None(),
           lastPage: 1,
+          pageSize: 18,
         ),
         Loading(),
         Loaded(
@@ -131,6 +135,7 @@ void main() {
           locations: ['hawaii'],
           selectedYear: None(),
           lastPage: 1,
+          pageSize: 18,
         ),
       ],
     );
@@ -152,6 +157,7 @@ void main() {
           locations: [],
           selectedYear: None(),
           lastPage: 1,
+          pageSize: 18,
         ),
         Loading(),
         Loaded(
@@ -161,6 +167,7 @@ void main() {
           locations: [],
           selectedYear: Some(2009),
           lastPage: 1,
+          pageSize: 18,
         ),
       ],
     );
@@ -183,6 +190,7 @@ void main() {
           locations: [],
           selectedYear: None(),
           lastPage: 1,
+          pageSize: 18,
         ),
         Loading(),
         Loaded(
@@ -192,6 +200,7 @@ void main() {
           locations: [],
           selectedYear: Some(2009),
           lastPage: 1,
+          pageSize: 18,
         ),
         Loading(),
         Loaded(
@@ -201,6 +210,7 @@ void main() {
           locations: [],
           selectedYear: None(),
           lastPage: 1,
+          pageSize: 18,
         ),
       ],
     );
@@ -244,6 +254,7 @@ void main() {
           locations: [],
           selectedYear: None(),
           lastPage: 5,
+          pageSize: 18,
         ),
         Loading(),
         Loaded(
@@ -253,6 +264,7 @@ void main() {
           locations: [],
           selectedYear: None(),
           lastPage: 5,
+          pageSize: 18,
         ),
       ],
     );
@@ -275,6 +287,7 @@ void main() {
           locations: [],
           selectedYear: None(),
           lastPage: 5,
+          pageSize: 18,
         ),
         Loading(),
         Loaded(
@@ -284,6 +297,7 @@ void main() {
           locations: [],
           selectedYear: None(),
           lastPage: 5,
+          pageSize: 18,
         ),
         Loading(),
         Loaded(
@@ -293,6 +307,7 @@ void main() {
           locations: [],
           selectedYear: None(),
           lastPage: 5,
+          pageSize: 18,
         ),
       ],
     );
@@ -321,6 +336,7 @@ void main() {
           locations: [],
           selectedYear: None(),
           lastPage: 0,
+          pageSize: 18,
         ),
       ],
     );
