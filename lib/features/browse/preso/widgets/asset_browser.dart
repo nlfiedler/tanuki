@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tanuki/container.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
-import 'all_locations.dart';
-import 'all_tags.dart';
 import 'all_years.dart';
 import 'assets_list.dart';
+import 'locations_selector.dart';
 import 'page_controls.dart';
+import 'tags_selector.dart';
 
 class AssetBrowser extends StatelessWidget {
   @override
@@ -32,9 +32,24 @@ class AssetBrowser extends StatelessWidget {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                AllTags(),
-                AllLocations(),
-                AllYears(),
+                Row(children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: TagsSelector(),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: LocationsSelector(),
+                    ),
+                  ),
+                ]),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: AllYears(),
+                ),
                 PageControls(),
                 Expanded(child: AssetsList()),
               ],

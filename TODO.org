@@ -155,20 +155,17 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** replace the hard-coded ~cat~ query in =AssetsList= with dynamic filters
 ***** how to make the circular progress indicator not stretch?
 ***** fix the page size, only showing 10, should be 18
-**** TODO enhance browse page
+**** DONE enhance browse page
 ***** DONE add pagination controls
-***** TODO display thumbnails with captions in a grid instead of list view
-****** try using =Image.network= to load the thumbnails via URL
-****** try using =Wrap= to do what =flex-flow: row wrap;= does in CSS
-****** or perhaps use =GridView.count= with a fixed count of 3 for now
-******* eventually can compute a better number based on viewport size
-******* see https://flutter.dev/docs/development/ui/layout for various layouts
-******* also ^^^ gives a way to deal with "portrait" and "landscape" modes
-***** TODO maybe offer a control to change page size
-***** TODO try to get the Enter key in page input field to submit
-***** TODO try to remove the =SizedBox= in the pagination control
+***** DONE display thumbnails with captions in a grid instead of list view
+***** DONE offer a control to change page size
+***** DONE try to get the Enter key in page input field to submit
+***** DONE make the selectors look good
 **** TODO consider how to show bloc errors using the snackbar
 ***** that is, do not disturb whatever is already on the screen
+***** zorigami does this I think
+***** use a bloc listener to render the error message
+***** normal widget still needs something to render in case of error
 **** TODO use case: fetch asset details
 **** TODO develop page for uploading/importing assets
 ***** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
@@ -201,15 +198,30 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
 *** TODO Improve User Experience
-**** [promote this group up one level and prioritize tasks]
 **** browse and search
+***** [reorganize this section]
 ***** unify the two pages into one
 ***** with the "crane" like selectors, the search is just another row of inputs
+***** "crane" (flutter gallery sample) style input fields at the top
+****** see the "crane" flutter gallery sample for the basic layout and appearance
+****** use input fields with small icons on the left and drop-down button on the right
+****** typing into the field will perform completion
+****** clicking on the drop-down will offer selection of attributes
+****** once entered or selected, input fields show active selectors
+****** maybe have a small x to deactive active selectors
+****** can also remove selectors by backspacing
+***** header with several rows for entering and showing selectors
+****** one row for tags, another for locations, date range, etc
+****** each row starts with a label, e.g. ~Tags~
+****** after the label, an input field (show just an underline, rather than a box)
+****** typing into the input field will offer completion of tags, etc
+****** once entered, the selector is appended to the row, after the input field
+****** each label has a ~delete~ button to remove it from the list
 ***** that is, normally the second row is collapsed, but clicking a button expands it
 ***** the second row would have the date range, file name, and media type
 ***** look at flutter form builder "chips input" which has suggestion support
 ***** flutter form build also has a "type ahead" text input with suggestion support
-***** try using the date range picker function in material
+***** try using the date range picker function in material instead of a list of years
 ****** flutter form builder also has a date range picker
 ****** c.f. https://api.flutter.dev/flutter/material/showDatePicker.html
 **** image gallery paging
@@ -238,39 +250,40 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** hover over an asset to show a larger version
 ****** for image, expand temporarily in place
 ****** for video, start playing it
-**** image gallery selectors
-***** header with several rows for entering and showing selectors
-****** one row for tags, another for locations, years/date range, etc
-****** each row starts with a label, e.g. ~Tags~
-****** after the label, an input field (show just an underline, rather than a box)
-****** typing into the input field will offer completion of tags, etc
-****** once entered, the selector is appended to the row, after the input field
-****** each label has a ~delete~ button to remove it from the list
-***** "crane" (flutter gallery sample) style input fields at the top
-****** see the "crane" flutter gallery sample for the basic layout and appearance
-****** use input fields with small icons on the left and drop-down button on the right
-****** typing into the field will perform completion for tags, locations, years
-****** clicking on the drop-down will offer selection of attributes
-****** once entered or selected, input fields show active selectors
-****** maybe have a small x to deactive active selectors
-****** can also remove selectors by backspacing
 **** image gallery display
+***** different modes of display
+****** grid of just images, maybe 180x180 (a la Apple Photos)
+****** grid of images with caption info (300x300, shows title, location, date) (a la PhotoPrism)
+****** list of rows, tiny thumbnail (96x96), title, location, date, likes
+****** material has several ~view~ icons that may be appropriate
 ***** show selectors for months of the year to jump to that time range
 ****** eventually this selector needs to consider the sort field and order
+****** could use a navigation rail for this (https://pub.dev/packages/navigation_rail)
 ***** show additional details on mouse hover
 ***** button in corner of thumbnail to select assets to edit, download, etc
-***** toggle view display
-****** grid of just images, maybe 180x180
-****** grid of images with caption info (300x300, shows title, location, date)
-****** list of rows, tiny thumbnail (96x96), title, location, date, likes
 **** asset detail page
 ***** seems popular to show the gallery items as small thumbnails along the top (horizontally scrollable)
 ***** have chevron buttons on both sides to navigate through gallery items (e.g. "lightbox")
 ***** display location as a city/country pair
 ***** display select information from EXIF metadata (e.g. camera)
+**** screen for showing all tags and locations, with count values
+***** selecting one offers a rename function
+***** selecting multiple offers option to remove from all assets
+**** quick editing on browse page
+***** use =ExpansionPanel= for thumbnail caption that allows editing common fields
+**** navigation between sceens
+***** do not want to have to build all of the screens at the same time, probably
+***** can add actions to the =Appbar= with an overflow popup menu button
+****** the popup menu button would be the navigation selector
+****** the other actions would be appropriate to the current screen
+***** maybe use =TabBar=
+***** maybe use =BottomNavigationBar=
 **** timeline style display for all assets
 ***** without any selectors, just show most recent going back in time
 ***** c.f. https://pub.dev/packages/flutter_timeline
+**** navigation rail for filtering gallery view
+***** c.f. https://pub.dev/packages/navigation_rail
+***** maybe selectors for "portrait", "selfie", that kind of thing
 **** flutter allows for a custom error handler (i.e. override the ugly red screen)
 *** ideas and widget usage
 **** Look at the Flutter "Gallery" app ("crane") for a pretty example
@@ -294,34 +307,34 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** click on item in a list/grid and it expands to the details page
 **** can use =DataTable= to display labeled data (like asset details, metadata)
 **** use pointer enter/exit events to start playing a video in place
+** Known Issues
+*** flutter form builder
+**** chips input keyboard focus: https://github.com/danvick/flutter_form_builder/issues/313
 ** Bulk edit
 *** need to set the custom date on many assets at once
-*** Short term solution akin to perkeep web interface
-**** hover over thumbnail, shows checkbox button in the corner
+*** Short term solution akin to perkeep/photoprism web interface
+**** hover over thumbnail, shows checkbox in the corner
 **** click on the checkbox to select the asset
-**** once selected, the actions panel slides in from the side
-**** image gallery shrinks to fit the actions panel
-- [ ] Easy selection with hover checkbox button
-  - Could use =svg= tag to render the button
-  - See pexels.com in that it uses article tag, with nested img and button with nested svg
-- [ ] When selections, filters panel changes to show available actions
-- [ ] Actions include adding, deleting tags, setting location
-  - This is basically a simplified bulk edit
-- [ ] Use a prefix for the checksum values
-*** Design bulk edit solution, probably similar to JIRA
-- [ ] Access the bulk edit screen via a menu item
-- [ ] Use search form
-- [ ] Perform search, present results using "list" view
-- [ ] Check off results as desired
-- [ ] Next page presents several operations
-  - [ ] add location
-  - [ ] remove location
-  - [ ] rename location
-  - [ ] add a tag
-  - [ ] remove a tag
-  - [ ] rename a tag
-  - [ ] set caption
-  - [ ] change media type
+**** once selected, the action popup menu becomes enabled
+***** where should the popup menu live?
+****** could be in the appbar actions area
+****** photoprism adds a FAB that shows the selected count
+*** More sophisticated edits, similar to JIRA
+**** start by browsing/searching for assets
+**** use the selection checkbox on each asset to select
+**** offer a "select all" operation
+**** access the operation popup menu to edit selected items
+**** menu contains item to perform a bulk edit
+**** navigates to screen with form for changing multiple properties
+***** set a custom date
+***** add a location
+***** remove a location
+***** rename a location
+***** add a tag
+***** remove a tag
+***** rename a tag
+***** set caption
+***** change media type
 ** Asynchronous
 *** Will need to start using =async/await= as more libraries return =Future=
 *** Use of actix means that tokio runtime is already in place

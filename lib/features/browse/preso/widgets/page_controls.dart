@@ -20,67 +20,86 @@ class PageControls extends StatelessWidget {
             return Text('Error: ' + state.message);
           }
           if (state is Loaded) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                RaisedButton(
-                  child: Icon(Icons.chevron_left),
-                  onPressed: state.pageNumber > 1
-                      ? () {
-                          BlocProvider.of<AssetBrowserBloc>(context)
-                              .add(ShowPage(page: state.pageNumber - 1));
-                        }
-                      : null,
+            final prevPageButton = RaisedButton(
+              child: Icon(Icons.chevron_left),
+              onPressed: state.pageNumber > 1
+                  ? () {
+                      BlocProvider.of<AssetBrowserBloc>(context)
+                          .add(ShowPage(page: state.pageNumber - 1));
+                    }
+                  : null,
+            );
+            final nextPageButton = RaisedButton(
+              child: Icon(Icons.chevron_right),
+              onPressed: state.pageNumber < state.lastPage
+                  ? () {
+                      BlocProvider.of<AssetBrowserBloc>(context)
+                          .add(ShowPage(page: state.pageNumber + 1));
+                    }
+                  : null,
+            );
+            final pageNumberText =
+                Text('Page ${state.pageNumber} of ${state.lastPage}');
+            final pageSizePopup = PopupMenuButton<int>(
+              tooltip: 'Set page size',
+              icon: Icon(Icons.pages),
+              initialValue: state.pageSize,
+              onSelected: (int value) {
+                BlocProvider.of<AssetBrowserBloc>(context)
+                    .add(SetPageSize(size: value));
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
+                const PopupMenuItem<int>(
+                  value: 18,
+                  child: const Text('18'),
                 ),
+                const PopupMenuItem<int>(
+                  value: 36,
+                  child: const Text('36'),
+                ),
+                const PopupMenuItem<int>(
+                  value: 54,
+                  child: const Text('54'),
+                ),
+                const PopupMenuItem<int>(
+                  value: 72,
+                  child: const Text('72'),
+                ),
+              ],
+            );
+            final resultsCountText = state.results.count > 0
+                ? Expanded(
+                    flex: 1,
+                    child: Center(
+                      child: Text('${state.results.count} results'),
+                    ),
+                  )
+                : Spacer(flex: 1);
+            return Row(
+              children: [
+                resultsCountText,
+                prevPageButton,
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text('Page ${state.pageNumber} of ${state.lastPage}'),
+                  child: pageNumberText,
                 ),
-                RaisedButton(
-                  child: Icon(Icons.chevron_right),
-                  onPressed: state.pageNumber < state.lastPage
-                      ? () {
-                          BlocProvider.of<AssetBrowserBloc>(context)
-                              .add(ShowPage(page: state.pageNumber + 1));
-                        }
-                      : null,
-                ),
+                nextPageButton,
                 SizedBox(
                   width: 48.0,
                 ),
-                PageInputForm(
-                  lastPage: state.lastPage,
-                  onSubmit: (page) {
-                    BlocProvider.of<AssetBrowserBloc>(context)
-                        .add(ShowPage(page: page));
-                  },
+                Expanded(
+                  flex: 2,
+                  child: PageInputForm(
+                    lastPage: state.lastPage,
+                    onSubmit: (page) {
+                      BlocProvider.of<AssetBrowserBloc>(context)
+                          .add(ShowPage(page: page));
+                    },
+                  ),
                 ),
-                PopupMenuButton<int>(
-                  tooltip: 'Set page size',
-                  icon: Icon(Icons.pages),
-                  initialValue: state.pageSize,
-                  onSelected: (int value) {
-                    BlocProvider.of<AssetBrowserBloc>(context)
-                        .add(SetPageSize(size: value));
-                  },
-                  itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
-                    const PopupMenuItem<int>(
-                      value: 18,
-                      child: const Text('18'),
-                    ),
-                    const PopupMenuItem<int>(
-                      value: 36,
-                      child: const Text('36'),
-                    ),
-                    const PopupMenuItem<int>(
-                      value: 54,
-                      child: const Text('54'),
-                    ),
-                    const PopupMenuItem<int>(
-                      value: 72,
-                      child: const Text('72'),
-                    ),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: pageSizePopup,
                 ),
               ],
             );
@@ -120,16 +139,11 @@ class _PageInputFormState extends State<PageInputForm> {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
         const Text('Go to page:'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: SizedBox(
-            // The text field needs to be wide enough for the validation text
-            // which is controlled by the form builder package, but it must be
-            // constrained somehow (a column would also work).
-            width: 256,
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: FormBuilder(
               key: _fbKey,
               initialValue: {'page': '1'},
@@ -143,7 +157,7 @@ class _PageInputFormState extends State<PageInputForm> {
                   FormBuilderValidators.max(widget.lastPage),
                 ],
                 valueTransformer: (text) {
-                  return text == null ? null : num.tryParse(text);
+                  return text == null ? null : int.tryParse(text);
                 },
                 onFieldSubmitted: (text) {
                   submitPageInput();

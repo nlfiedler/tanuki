@@ -65,7 +65,7 @@ void main() {
     blocTest(
       'emits [] when ToggleTag is added w/o LoadInitial',
       build: () => AssetBrowserBloc(usecase: usecase),
-      act: (bloc) => bloc.add(ToggleTag(tag: 'cats')),
+      act: (bloc) => bloc.add(SelectTags(tags: ['cats'])),
       expect: [],
     );
 
@@ -74,7 +74,7 @@ void main() {
       build: () => AssetBrowserBloc(usecase: usecase),
       act: (bloc) {
         bloc.add(LoadInitialAssets());
-        bloc.add(ToggleTag(tag: 'cats'));
+        bloc.add(SelectTags(tags: ['cats']));
         return;
       },
       expect: [
@@ -104,7 +104,7 @@ void main() {
     blocTest(
       'emits [] when ToggleLocation is added w/o LoadInitial',
       build: () => AssetBrowserBloc(usecase: usecase),
-      act: (bloc) => bloc.add(ToggleLocation(location: 'hawaii')),
+      act: (bloc) => bloc.add(SelectLocations(locations: ['hawaii'])),
       expect: [],
     );
 
@@ -113,7 +113,7 @@ void main() {
       build: () => AssetBrowserBloc(usecase: usecase),
       act: (bloc) {
         bloc.add(LoadInitialAssets());
-        bloc.add(ToggleLocation(location: 'hawaii'));
+        bloc.add(SelectLocations(locations: ['hawaii']));
         return;
       },
       expect: [
@@ -275,7 +275,7 @@ void main() {
       act: (bloc) {
         bloc.add(LoadInitialAssets());
         bloc.add(ShowPage(page: 10));
-        bloc.add(ToggleTag(tag: 'cats'));
+        bloc.add(SelectTags(tags: ['cats']));
         return;
       },
       expect: [

@@ -20,19 +20,19 @@ abstract class AssetBrowserEvent extends Equatable {
 
 class LoadInitialAssets extends AssetBrowserEvent {}
 
-class ToggleTag extends AssetBrowserEvent {
-  final String tag;
+class SelectTags extends AssetBrowserEvent {
+  final List<String> tags;
 
-  ToggleTag({
-    @required this.tag,
+  SelectTags({
+    @required this.tags,
   });
 }
 
-class ToggleLocation extends AssetBrowserEvent {
-  final String location;
+class SelectLocations extends AssetBrowserEvent {
+  final List<String> locations;
 
-  ToggleLocation({
-    @required this.location,
+  SelectLocations({
+    @required this.locations,
   });
 }
 
@@ -117,9 +117,9 @@ class Error extends AssetBrowserState {
 //
 
 class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
-  final List<String> tags = [];
-  final List<String> locations = [];
   final QueryAssets usecase;
+  List<String> tags = [];
+  List<String> locations = [];
   int pageSize = 18;
   int pageNumber = 1;
   Option<int> selectedYear = const None();
@@ -132,14 +132,16 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
   ) async* {
     if (event is LoadInitialAssets) {
       yield* _loadAssets();
-    } else if (event is ToggleTag) {
+    } else if (event is SelectTags) {
       if (state is Loaded) {
-        _toggleTag(event.tag);
+        tags = event.tags;
+        pageNumber = 1;
         yield* _loadAssets();
       }
-    } else if (event is ToggleLocation) {
+    } else if (event is SelectLocations) {
       if (state is Loaded) {
-        _toggleLocation(event.location);
+        locations = event.locations;
+        pageNumber = 1;
         yield* _loadAssets();
       }
     } else if (event is ToggleYear) {
@@ -158,24 +160,6 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
         yield* _loadAssets();
       }
     }
-  }
-
-  void _toggleTag(String tag) {
-    if (tags.contains(tag)) {
-      tags.remove(tag);
-    } else {
-      tags.add(tag);
-    }
-    pageNumber = 1;
-  }
-
-  void _toggleLocation(String location) {
-    if (locations.contains(location)) {
-      locations.remove(location);
-    } else {
-      locations.add(location);
-    }
-    pageNumber = 1;
   }
 
   void _toggleYear(int year) {
