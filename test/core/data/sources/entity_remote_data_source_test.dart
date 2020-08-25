@@ -7,6 +7,7 @@ import 'package:graphql/client.dart' as gql;
 import 'package:http/http.dart' as http;
 import 'package:mockito/mockito.dart';
 import 'package:oxidized/oxidized.dart';
+import 'package:tanuki/core/data/models/asset_model.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
 import 'package:tanuki/core/data/models/search_model.dart';
 import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
@@ -351,6 +352,111 @@ void main() {
     );
   });
 
+  group('getAsset', () {
+    void setUpMockHttpClientGraphQLResponse() {
+      final response = {
+        'data': {
+          'asset': {
+            'id': 'asset123',
+            'checksum': 'sha1-cafebabe',
+            'filename': 'img_1234.jpg',
+            'filesize': '1048576',
+            'datetime': '2003-08-30T00:00:00.0+00:00',
+            'mimetype': 'image/jpeg',
+            'tags': ['clowns', 'snakes'],
+            'userdate': null,
+            'caption': '#snakes and #clowns are in my @batcave',
+            'location': 'batcave'
+          }
+        }
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return results of the query',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLResponse();
+        // act
+        final result = await dataSource.getAsset('asset123');
+        // assert
+        final expected = AssetModel(
+          id: 'asset123',
+          checksum: 'sha1-cafebabe',
+          filename: 'img_1234.jpg',
+          filesize: 1048576,
+          datetime: DateTime.utc(2003, 8, 30),
+          mimetype: 'image/jpeg',
+          tags: ['clowns', 'snakes'],
+          userdate: None(),
+          caption: Some('#snakes and #clowns are in my @batcave'),
+          location: Some('batcave'),
+        );
+        expect(result, equals(expected));
+      },
+    );
+
+    test(
+      'should report failure when response unsuccessful',
+      () async {
+        // arrange
+        setUpMockHttpClientFailure403();
+        // act, assert
+        try {
+          await dataSource.getAsset('asset123');
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    test(
+      'should raise error when GraphQL server returns an error',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLError();
+        // act, assert
+        try {
+          await dataSource.getAsset('asset123');
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    void setUpMockGraphQLNullResponse() {
+      final response = {
+        'data': {'search': null}
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return null when response is null',
+      () async {
+        // arrange
+        setUpMockGraphQLNullResponse();
+        // act
+        final result = await dataSource.getAsset('asset123');
+        // assert
+        expect(result, isNull);
+      },
+    );
+  });
+
   group('getAssetCount', () {
     void setUpMockHttpClientGraphQLResponse() {
       final response = {
@@ -462,7 +568,7 @@ void main() {
       () async {
         // arrange
         setUpMockHttpClientGraphQLResponse();
-        final params = SearchParams(tags: ["mouse"]);
+        final params = SearchParams(tags: ['mouse']);
         // act
         final result = await dataSource.queryAssets(params, 10, 0);
         // assert
@@ -488,7 +594,7 @@ void main() {
       () async {
         // arrange
         setUpMockHttpClientFailure403();
-        final params = SearchParams(tags: ["mouse"]);
+        final params = SearchParams(tags: ['mouse']);
         // act, assert
         try {
           await dataSource.queryAssets(params, 10, 0);
@@ -504,7 +610,7 @@ void main() {
       () async {
         // arrange
         setUpMockHttpClientGraphQLError();
-        final params = SearchParams(tags: ["mouse"]);
+        final params = SearchParams(tags: ['mouse']);
         // act, assert
         try {
           await dataSource.queryAssets(params, 10, 0);
@@ -532,7 +638,7 @@ void main() {
       () async {
         // arrange
         setUpMockGraphQLNullResponse();
-        final params = SearchParams(tags: ["mouse"]);
+        final params = SearchParams(tags: ['mouse']);
         // act
         final result = await dataSource.queryAssets(params, 10, 0);
         // assert

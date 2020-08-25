@@ -161,25 +161,26 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** DONE offer a control to change page size
 ***** DONE try to get the Enter key in page input field to submit
 ***** DONE make the selectors look good
-**** TODO consider how to show bloc errors using the snackbar
-***** that is, do not disturb whatever is already on the screen
-***** zorigami does this I think
-***** use a bloc listener to render the error message
-***** normal widget still needs something to render in case of error
-**** TODO use case: fetch asset details
+**** DONE use case: fetch asset details
+**** TODO develop page for showing assets details
+***** use a =Hero= so as not to disturb the search in progress
 **** TODO develop page for uploading/importing assets
 ***** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
 ***** example code: https://github.com/rjcalifornia/web_upload
 ***** drop zone gist: https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
 ***** for now this is not so important, just use file selector a la =web_upload= example
+***** use =BlocListener= or =BlocConsumer= to show save errors via snackbar
 **** TODO permit dragging and dropping assets to import
 **** TODO use case: query recent imports
 **** TODO develop page for processing recent imports
+***** use =BlocListener= or =BlocConsumer= to show save errors via snackbar
 **** TODO use case: edit asset details
 **** TODO develop page for editing assets details
+***** use =BlocListener= or =BlocConsumer= to show save errors via snackbar
 **** TODO enhance browse page to perform advanced search functions
-***** add event to =AssetBrowserBloc= that sets before date filter (clears selected year)
-***** add event to =AssetBrowserBloc= that sets after date filter (clears selected year)
+***** add event to =AssetBrowserBloc= that sets before date filter
+***** add event to =AssetBrowserBloc= that sets after date filter
+***** remove the selected year feature in favor of the date range
 ***** add event to =AssetBrowserBloc= that sets filename filter
 ***** add event to =AssetBrowserBloc= that sets mimetype filter
 ***** extra input fields would be hidden normally, expanded by clicking arrow button

@@ -4,6 +4,7 @@
 import 'package:meta/meta.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
@@ -51,6 +52,19 @@ class EntityRepositoryImpl extends EntityRepository {
         return Err(ServerFailure('got null result for years'));
       }
       return Ok(years);
+    } on ServerException catch (e) {
+      return Err(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<Asset, Failure>> getAsset(String id) async {
+    try {
+      final results = await remoteDataSource.getAsset(id);
+      if (results == null) {
+        return Err(ServerFailure('got null result for query'));
+      }
+      return Ok(results);
     } on ServerException catch (e) {
       return Err(ServerFailure(e.toString()));
     }

@@ -6,6 +6,7 @@ import 'package:mockito/mockito.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
 import 'package:tanuki/core/data/models/search_model.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/error/exceptions.dart';
 import 'package:tanuki/core/error/failures.dart';
@@ -167,6 +168,60 @@ void main() {
         final result = await repository.getAllYears();
         // assert
         verify(mockRemoteDataSource.getAllYears());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+  });
+
+  group('getAsset', () {
+    test(
+      'should return remote data when remote data source returns data',
+      () async {
+        // arrange
+        final expected = Asset(
+          id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
+          checksum: 'sha256-34641209e88f3a59b-mini-2dfdcb00f8a533ac80ba',
+          filename: 'catmouse_1280p.jpg',
+          filesize: 160852,
+          datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
+          mimetype: 'image/jpeg',
+          tags: ['cat', 'mouse'],
+          userdate: None(),
+          caption: Some('#cat @outdoors #mouse'),
+          location: Some('outdoors'),
+        );
+        when(mockRemoteDataSource.getAsset(any))
+            .thenAnswer((_) async => expected);
+        // act
+        final result = await repository.getAsset(expected.id);
+        // assert
+        verify(mockRemoteDataSource.getAsset(expected.id));
+        expect(result.unwrap(), equals(expected));
+      },
+    );
+
+    test(
+      'should return failure when remote data source returns null',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.getAsset(any)).thenAnswer((_) async => null);
+        // act
+        final result = await repository.getAsset('asset123');
+        // assert
+        verify(mockRemoteDataSource.getAsset('asset123'));
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+
+    test(
+      'should return failure when remote data source is unsuccessful',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.getAsset(any)).thenThrow(ServerException());
+        // act
+        final result = await repository.getAsset('asset123');
+        // assert
+        verify(mockRemoteDataSource.getAsset('asset123'));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );

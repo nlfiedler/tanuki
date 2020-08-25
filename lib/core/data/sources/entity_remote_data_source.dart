@@ -3,8 +3,10 @@
 //
 import 'package:graphql/client.dart' as gql;
 import 'package:meta/meta.dart';
+import 'package:tanuki/core/data/models/asset_model.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
 import 'package:tanuki/core/data/models/search_model.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/error/exceptions.dart';
@@ -13,6 +15,7 @@ abstract class EntityRemoteDataSource {
   Future<List<Location>> getAllLocations();
   Future<List<Tag>> getAllTags();
   Future<List<Year>> getAllYears();
+  Future<Asset> getAsset(String id);
   Future<int> getAssetCount();
   Future<QueryResults> queryAssets(
     SearchParams params,
@@ -114,6 +117,39 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
       }),
     );
     return results;
+  }
+
+  @override
+  Future<Asset> getAsset(String id) async {
+    final query = r'''
+      query Fetch($identifier: String!) {
+        asset(id: $identifier) {
+          id
+          caption
+          datetime
+          filename
+          filesize
+          location
+          mimetype
+          tags
+          userdate
+        }
+      }
+    ''';
+    final queryOptions = gql.QueryOptions(
+      documentNode: gql.gql(query),
+      variables: <String, dynamic>{
+        'identifier': id,
+      },
+      fetchPolicy: gql.FetchPolicy.noCache,
+    );
+    final gql.QueryResult result = await client.query(queryOptions);
+    if (result.hasException) {
+      throw ServerException(result.exception.toString());
+    }
+    final Map<String, dynamic> object =
+        result.data['asset'] as Map<String, dynamic>;
+    return object == null ? null : AssetModel.fromJson(object);
   }
 
   @override
