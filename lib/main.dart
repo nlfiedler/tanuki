@@ -2,6 +2,9 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
+import 'package:tanuki/features/browse/preso/screens/asset_screen.dart';
 import 'package:tanuki/features/browse/preso/screens/home_screen.dart';
 import 'container.dart' as ioc;
 
@@ -13,15 +16,19 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tanuki',
-      initialRoute: '/',
-      routes: {
-        '/': (context) => HomeScreen(),
-      },
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+    return BlocProvider<AssetBrowserBloc>(
+      create: (_) => ioc.getIt<AssetBrowserBloc>(),
+      child: MaterialApp(
+        title: 'Tanuki',
+        initialRoute: '/',
+        routes: {
+          '/': (context) => HomeScreen(),
+          '/asset': (context) => AssetScreen(),
+        },
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
       ),
     );
   }

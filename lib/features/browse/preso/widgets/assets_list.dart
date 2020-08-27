@@ -19,7 +19,7 @@ class AssetsList extends StatelessWidget {
             return Text('Error: ' + state.message);
           }
           if (state is Loaded) {
-            return buildThumbnails(state.results.results);
+            return buildThumbnails(context, state.results.results);
           }
           return Center(child: CircularProgressIndicator());
         },
@@ -30,27 +30,35 @@ class AssetsList extends StatelessWidget {
 
 const thumbnail300 = '/api/thumbnail/300/300/';
 
-Widget buildThumbnails(List<SearchResult> results) {
-  final format = DateFormat.EEEE().add_yMMMMd();
+Widget buildThumbnails(BuildContext context, List<SearchResult> results) {
+  final datefmt = DateFormat.EEEE().add_yMMMMd();
   final elements = List<Widget>.from(
     results.map((e) {
       final uri = '${EnvironmentConfig.base_url}$thumbnail300${e.id}';
-      final dateString = format.format(e.datetime);
+      final dateString = datefmt.format(e.datetime);
       return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Image.network(uri, width: 300.0, height: 300.0),
-            SizedBox(
-              width: 300.0,
-              // try keeping the text in a column, the text will automatically
-              // wrap to fix the available space
-              child: Column(children: [
-                Text(dateString),
-                Text(e.filename),
-              ]),
+        padding: const EdgeInsets.all(8.0),
+        child: FlatButton(
+          onPressed: () {
+            Navigator.pushNamed(context, '/asset', arguments: e.id);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Image.network(uri, fit: BoxFit.contain),
+                SizedBox(
+                  width: 300.0,
+                  // try keeping the text in a column, the text will automatically
+                  // wrap to fix the available space
+                  child: Column(children: [
+                    Text(dateString),
+                    Text(e.filename),
+                  ]),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }),

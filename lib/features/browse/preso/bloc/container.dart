@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import 'all_locations_bloc.dart';
 import 'all_tags_bloc.dart';
 import 'all_years_bloc.dart';
+import 'asset_bloc.dart';
 import 'asset_browser_bloc.dart';
 import 'asset_count_bloc.dart';
 
@@ -17,6 +18,9 @@ void initBrowseBlocs(GetIt getIt) {
   );
   getIt.registerFactory(
     () => AllYearsBloc(usecase: getIt()),
+  );
+  getIt.registerFactory(
+    () => AssetBloc(usecase: getIt()),
   );
   getIt.registerFactory(
     () => AssetBrowserBloc(usecase: getIt()),

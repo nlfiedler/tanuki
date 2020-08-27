@@ -3,7 +3,6 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tanuki/container.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
 import 'all_years.dart';
 import 'assets_list.dart';
@@ -14,8 +13,8 @@ import 'tags_selector.dart';
 class AssetBrowser extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<AssetBrowserBloc>(
-      create: (_) => getIt<AssetBrowserBloc>(),
+    return BlocProvider.value(
+      value: BlocProvider.of<AssetBrowserBloc>(context),
       child: BlocBuilder<AssetBrowserBloc, AssetBrowserState>(
         buildWhen: (previous, current) {
           return !(previous is Loaded && current is Loading);

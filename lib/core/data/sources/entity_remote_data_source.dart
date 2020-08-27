@@ -125,14 +125,15 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
       query Fetch($identifier: String!) {
         asset(id: $identifier) {
           id
-          caption
-          datetime
+          checksum
           filename
           filesize
-          location
+          datetime
           mimetype
           tags
           userdate
+          caption
+          location
         }
       }
     ''';

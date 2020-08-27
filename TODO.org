@@ -162,14 +162,20 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** DONE try to get the Enter key in page input field to submit
 ***** DONE make the selectors look good
 **** DONE use case: fetch asset details
-**** TODO develop page for showing assets details
-***** use a =Hero= so as not to disturb the search in progress
+**** DONE develop page for showing assets details
+***** DONE move the browser bloc creation up to the app
+***** DONE change all other widgets to use =BlocProvider.value=
+***** DONE add a bloc to get the asset details
+***** DONE add a new route to the asset details screen
+***** DONE use readonly form to show asset details for now
 **** TODO develop page for uploading/importing assets
 ***** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
 ***** example code: https://github.com/rjcalifornia/web_upload
 ***** drop zone gist: https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
 ***** for now this is not so important, just use file selector a la =web_upload= example
 ***** use =BlocListener= or =BlocConsumer= to show save errors via snackbar
+**** TODO use case: signal server to ingest assets in =uploads= directory
+***** just a simple GraphQL mutation invoked from the upload page
 **** TODO permit dragging and dropping assets to import
 **** TODO use case: query recent imports
 **** TODO develop page for processing recent imports
@@ -263,10 +269,13 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** show additional details on mouse hover
 ***** button in corner of thumbnail to select assets to edit, download, etc
 **** asset detail page
+***** display the date and caption prominently
+***** display the other details using a smaller format
 ***** seems popular to show the gallery items as small thumbnails along the top (horizontally scrollable)
 ***** have chevron buttons on both sides to navigate through gallery items (e.g. "lightbox")
 ***** display location as a city/country pair
 ***** display select information from EXIF metadata (e.g. camera)
+***** add a button to download the raw asset
 **** screen for showing all tags and locations, with count values
 ***** selecting one offers a rename function
 ***** selecting multiple offers option to remove from all assets
