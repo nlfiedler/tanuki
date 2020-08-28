@@ -30,7 +30,7 @@ class LocationsSelector extends StatelessWidget {
           if (state is Loaded) {
             return LocationSelectorForm(locations: state.locations);
           }
-          return CircularProgressIndicator();
+          return Center(child: CircularProgressIndicator());
         },
       ),
     );

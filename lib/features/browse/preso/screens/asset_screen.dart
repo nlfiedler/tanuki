@@ -36,7 +36,7 @@ class AssetScreen extends StatelessWidget {
               body: AssetPreview(asset: state.asset),
             );
           }
-          return CircularProgressIndicator();
+          return Center(child: CircularProgressIndicator());
         },
       ),
     );

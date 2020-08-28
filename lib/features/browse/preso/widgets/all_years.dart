@@ -32,7 +32,7 @@ class AllYears extends StatelessWidget {
             ));
             return Wrap(children: chips);
           }
-          return CircularProgressIndicator();
+          return Center(child: CircularProgressIndicator());
         },
       ),
     );

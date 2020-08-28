@@ -30,7 +30,7 @@ class TagsSelector extends StatelessWidget {
           if (state is Loaded) {
             return TagSelectorForm(tags: state.tags);
           }
-          return CircularProgressIndicator();
+          return Center(child: CircularProgressIndicator());
         },
       ),
     );
