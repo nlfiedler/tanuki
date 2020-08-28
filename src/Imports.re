@@ -138,11 +138,13 @@ module ThumbCard = {
       );
     <figure className="image">
       {state.thumbless
-         ? <img
-             src={"/images/" ++ brokenThumbnailPlaceholder(entry##filename)}
-             alt=entry##filename
-             style={ReactDOMRe.Style.make(~width="auto", ())}
-           />
+         ? <a href={"/api/asset/" ++ entry##id} target="_blank">
+             <img
+               src={"/images/" ++ brokenThumbnailPlaceholder(entry##filename)}
+               alt=entry##filename
+               style={ReactDOMRe.Style.make(~width="auto", ())}
+             />
+           </a>
          : (
            if (Js.String.startsWith("video/", entry##mimetype)) {
              <video width="300" controls=true preload="auto">
@@ -157,12 +159,14 @@ module ThumbCard = {
                {ReasonReact.string("tag.")}
              </video>;
            } else {
-             <img
-               src={"/api/thumbnail/300/300/" ++ entry##id}
-               alt=entry##filename
-               onError={_ => dispatch(MarkThumbless)}
-               style={ReactDOMRe.Style.make(~width="auto", ())}
-             />;
+             <a href={"/api/asset/" ++ entry##id} target="_blank">
+               <img
+                 src={"/api/thumbnail/300/300/" ++ entry##id}
+                 alt=entry##filename
+                 onError={_ => dispatch(MarkThumbless)}
+                 style={ReactDOMRe.Style.make(~width="auto", ())}
+               />
+             </a>;
            }
          )}
     </figure>;
@@ -197,7 +201,6 @@ module BulkForm = {
         }>
         <div
           className="column is-one-third"
-          onClick={_ => ReasonReact.Router.push("/assets/" ++ entry##id)}
           style={ReactDOMRe.Style.make(~cursor="pointer", ())}>
           <ThumbCard entry />
           <small style={ReactDOMRe.Style.make(~wordWrap="break-word", ())}>
