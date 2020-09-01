@@ -8,6 +8,7 @@ import 'get_all_years.dart';
 import 'get_asset.dart';
 import 'get_asset_count.dart';
 import 'query_assets.dart';
+import 'upload_asset.dart';
 
 void initUseCases(GetIt getIt) {
   getIt.registerLazySingleton(() => GetAllLocations(getIt()));
@@ -16,4 +17,5 @@ void initUseCases(GetIt getIt) {
   getIt.registerLazySingleton(() => GetAsset(getIt()));
   getIt.registerLazySingleton(() => GetAssetCount(getIt()));
   getIt.registerLazySingleton(() => QueryAssets(getIt()));
+  getIt.registerLazySingleton(() => UploadAsset(getIt()));
 }

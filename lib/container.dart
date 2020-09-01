@@ -3,17 +3,20 @@
 //
 import 'package:get_it/get_it.dart';
 import 'package:graphql/client.dart';
+import 'package:http/http.dart' as http;
 import 'package:tanuki/core/data/repositories/container.dart';
 import 'package:tanuki/core/data/sources/container.dart';
 import 'package:tanuki/core/domain/usecases/container.dart';
 import 'package:tanuki/environment_config.dart';
 import 'package:tanuki/features/browse/preso/bloc/container.dart';
+import 'package:tanuki/features/upload/preso/bloc/container.dart';
 
 final getIt = GetIt.instance;
 
 void init() {
   // bloc
   initBrowseBlocs(getIt);
+  initUploadBlocs(getIt);
 
   // widgets
 
@@ -32,4 +35,6 @@ void init() {
       cache: InMemoryCache(),
     );
   });
+
+  getIt.registerLazySingleton(() => http.Client());
 }

@@ -127,58 +127,14 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO Replace Reason-React
-**** DONE create the flutter (web) files
-**** DONE set up environment config
-**** DONE use case: count assets
-**** DONE use case: fetch years
-**** DONE use case: fetch locations
-**** DONE use case: fetch tags
-**** DONE use case: query assets using hard-coded attributes
-***** search result entity
-***** search result model
-***** data source API
-***** repository API
-***** use case
-***** bloc
-***** show simple results based on attribute selection
-***** no paging at this time
-**** DONE develop home page with dynamic asset selection and paging
-***** read https://pub.dev/packages/flutter_bloc_patterns for ideas
-***** design a new browser bloc to handle filters and results
-****** holds the selected filters and current "page"
-****** selectors will fire events to add/remove filters for the query
-****** viewer receives resulting set of results via state update
-****** viewer will fire events to manage fetching pages of results
-***** see =FilterChip= in flutter for an example of ui for filtering lists
-****** c.f. https://api.flutter.dev/flutter/material/FilterChip-class.html
-***** avoid repainting the entire asset browser on every state change
-***** replace the hard-coded ~cat~ query in =AssetsList= with dynamic filters
-***** how to make the circular progress indicator not stretch?
-***** fix the page size, only showing 10, should be 18
-**** DONE enhance browse page
-***** DONE add pagination controls
-***** DONE display thumbnails with captions in a grid instead of list view
-***** DONE offer a control to change page size
-***** DONE try to get the Enter key in page input field to submit
-***** DONE make the selectors look good
-**** DONE use case: fetch asset details
-**** DONE develop page for showing assets details
-***** DONE move the browser bloc creation up to the app
-***** DONE change all other widgets to use =BlocProvider.value=
-***** DONE add a bloc to get the asset details
-***** DONE add a new route to the asset details screen
-***** DONE use readonly form to show asset details for now
-**** TODO develop page for uploading/importing assets
-***** https://rodolfohernan20.blogspot.com/2019/12/upload-files-to-server-with-flutter-web.html
-***** example code: https://github.com/rjcalifornia/web_upload
-***** drop zone gist: https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
-***** for now this is not so important, just use file selector a la =web_upload= example
-***** use =BlocListener= or =BlocConsumer= to show save errors via snackbar
+**** TODO fix broken tests after running =flutter pub upgrade=
+***** look for any known issues that match the error message
 **** TODO use case: signal server to ingest assets in =uploads= directory
 ***** just a simple GraphQL mutation invoked from the upload page
 **** TODO permit dragging and dropping assets to import
 **** TODO use case: query recent imports
 **** TODO develop page for processing recent imports
+***** be sure to sort the incoming files by filename for consistency
 ***** use =BlocListener= or =BlocConsumer= to show save errors via snackbar
 **** TODO use case: edit asset details
 **** TODO develop page for editing assets details
@@ -190,19 +146,21 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** add event to =AssetBrowserBloc= that sets filename filter
 ***** add event to =AssetBrowserBloc= that sets mimetype filter
 ***** extra input fields would be hidden normally, expanded by clicking arrow button
+**** TODO eventually try to get drag and drop to work for uploading files
+***** c.f. https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
 *** TODO change docker to build flutter web assets
 *** TODO remove ReasonML and Node files
 **** should be nothing JavaScript/Node/Reason left at this point
 **** =bsconfig.json=
 **** =graphql_schema.json=
 **** =gulpfile.js=
+**** =lib/bs=
+**** =lib/js=
 **** =node_modules=
 **** =package.json=
 **** =package-lock.json=
 **** =public=
 **** =src/*.re=
-**** =lib/js=
-**** =lib/bs=
 **** update =.gitignore= and =.dockerignore=
 *** TODO Improve User Experience
 **** browse and search

@@ -10,6 +10,14 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('all your assets are belong to us'),
+        actions: [
+          FlatButton(
+            child: Icon(Icons.file_upload),
+            onPressed: () {
+              Navigator.pushNamed(context, '/upload');
+            },
+          ),
+        ],
       ),
       body: AssetBrowser(),
     );
