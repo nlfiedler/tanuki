@@ -127,8 +127,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO Replace Reason-React
-**** TODO fix broken tests after running =flutter pub upgrade=
-***** look for any known issues that match the error message
 **** TODO use case: signal server to ingest assets in =uploads= directory
 ***** just a simple GraphQL mutation invoked from the upload page
 **** TODO permit dragging and dropping assets to import
