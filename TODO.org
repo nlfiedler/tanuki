@@ -127,9 +127,8 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO Replace Reason-React
-**** TODO use case: signal server to ingest assets in =uploads= directory
-***** just a simple GraphQL mutation invoked from the upload page
-**** TODO permit dragging and dropping assets to import
+**** TODO add button to upload page to run ingest mutation
+***** bloc to perform the call to the use case
 **** TODO use case: query recent imports
 **** TODO develop page for processing recent imports
 ***** be sure to sort the incoming files by filename for consistency
@@ -144,7 +143,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** add event to =AssetBrowserBloc= that sets filename filter
 ***** add event to =AssetBrowserBloc= that sets mimetype filter
 ***** extra input fields would be hidden normally, expanded by clicking arrow button
-**** TODO eventually try to get drag and drop to work for uploading files
+**** TODO try to get drag and drop to work for uploading files
 ***** c.f. https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
 *** TODO change docker to build flutter web assets
 *** TODO remove ReasonML and Node files

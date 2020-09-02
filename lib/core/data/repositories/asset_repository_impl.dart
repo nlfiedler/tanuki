@@ -17,6 +17,19 @@ class AssetRepositoryImpl extends AssetRepository {
   });
 
   @override
+  Future<Result<int, Failure>> ingestAssets() async {
+    try {
+      final results = await remoteDataSource.ingestAssets();
+      if (results == null) {
+        return Err(ServerFailure('got null result for upload'));
+      }
+      return Ok(results);
+    } on ServerException catch (e) {
+      return Err(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Result<String, Failure>> uploadAsset(String filepath) async {
     try {
       final results = await remoteDataSource.uploadAsset(filepath);

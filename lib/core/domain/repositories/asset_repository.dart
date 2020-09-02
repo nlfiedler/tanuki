@@ -6,6 +6,9 @@ import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/error/failures.dart';
 
 abstract class AssetRepository {
+  /// Import all of the assets in the 'uploads' directory.
+  Future<Result<int, Failure>> ingestAssets();
+
   /// Upload the given asset to the asset store.
   Future<Result<String, Failure>> uploadAsset(String filepath);
 

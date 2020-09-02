@@ -9,8 +9,9 @@ import 'entity_remote_data_source.dart';
 void initDataSources(GetIt getIt) {
   getIt.registerLazySingleton<AssetRemoteDataSource>(
     () => AssetRemoteDataSourceImpl(
-      client: getIt(),
+      httpClient: getIt(),
       baseUrl: EnvironmentConfig.base_url,
+      gqlClient: getIt(),
     ),
   );
   getIt.registerLazySingleton<EntityRemoteDataSource>(

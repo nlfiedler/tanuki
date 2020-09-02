@@ -3,6 +3,7 @@
 //
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:graphql/client.dart' as gql;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' as parser;
 import 'package:meta/meta.dart';
@@ -11,6 +12,9 @@ import 'package:path/path.dart' as p;
 import 'package:tanuki/core/error/exceptions.dart';
 
 abstract class AssetRemoteDataSource {
+  /// Import all of the assets in the 'uploads' directory.
+  Future<int> ingestAssets();
+
   /// Upload the given asset to the asset store.
   Future<String> uploadAsset(String filepath);
 
@@ -19,13 +23,34 @@ abstract class AssetRemoteDataSource {
 }
 
 class AssetRemoteDataSourceImpl extends AssetRemoteDataSource {
-  final http.Client client;
+  final http.Client httpClient;
+  final gql.GraphQLClient gqlClient;
   final String baseUrl;
 
   AssetRemoteDataSourceImpl({
-    @required this.client,
+    @required this.httpClient,
     @required this.baseUrl,
+    @required this.gqlClient,
   });
+
+  @override
+  Future<int> ingestAssets() async {
+    final getStore = r'''
+      mutation {
+        ingest
+      }
+    ''';
+    final mutationOptions = gql.MutationOptions(
+      documentNode: gql.gql(getStore),
+      // variables: <String, dynamic>{},
+    );
+    final gql.QueryResult result = await gqlClient.mutate(mutationOptions);
+    if (result.hasException) {
+      throw ServerException(result.exception.toString());
+    }
+    final identifier = result.data['ingest'] as int;
+    return identifier;
+  }
 
   @override
   Future<String> uploadAsset(String filepath) async {
@@ -56,7 +81,7 @@ class AssetRemoteDataSourceImpl extends AssetRemoteDataSource {
 
   Future<String> _performUpload(http.MultipartRequest request) async {
     // send the request using our http client instance
-    final resp = await client.send(request);
+    final resp = await httpClient.send(request);
     if (resp.statusCode != 200) {
       throw ServerException('unexpected response: ${resp.statusCode}');
     }

@@ -22,6 +22,48 @@ void main() {
     );
   });
 
+  group('ingestAssets', () {
+    test(
+      'should return remote data when remote data source returns data',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.ingestAssets()).thenAnswer((_) async => 123);
+        // act
+        final result = await repository.ingestAssets();
+        // assert
+        verify(mockRemoteDataSource.ingestAssets());
+        expect(result.unwrap(), isA<int>());
+        expect(result.unwrap(), equals(123));
+      },
+    );
+
+    test(
+      'should return failure when remote data source returns null',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.ingestAssets()).thenAnswer((_) async => null);
+        // act
+        final result = await repository.ingestAssets();
+        // assert
+        verify(mockRemoteDataSource.ingestAssets());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+
+    test(
+      'should return failure when remote data source is unsuccessful',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.ingestAssets()).thenThrow(ServerException());
+        // act
+        final result = await repository.ingestAssets();
+        // assert
+        verify(mockRemoteDataSource.ingestAssets());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+  });
+
   group('uploadAsset', () {
     test(
       'should return remote data when remote data source returns data',
