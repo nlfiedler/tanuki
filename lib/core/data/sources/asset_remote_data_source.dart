@@ -42,7 +42,6 @@ class AssetRemoteDataSourceImpl extends AssetRemoteDataSource {
     ''';
     final mutationOptions = gql.MutationOptions(
       documentNode: gql.gql(getStore),
-      // variables: <String, dynamic>{},
     );
     final gql.QueryResult result = await gqlClient.mutate(mutationOptions);
     if (result.hasException) {

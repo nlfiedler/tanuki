@@ -127,8 +127,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO Replace Reason-React
-**** TODO add button to upload page to run ingest mutation
-***** bloc to perform the call to the use case
 **** TODO use case: query recent imports
 **** TODO develop page for processing recent imports
 ***** be sure to sort the incoming files by filename for consistency
@@ -673,7 +671,9 @@ include it in the database records.
 - pictous: $1895
 - picuno: $1895
 - pictasa: $1675
-**** Suggestions
+**** Names suggested by others
+***** Joseph: Treasure Box
+**** Names Nathan thought up or found
 - fotopyle
   - startup name check is green across the board
 - fotopile
