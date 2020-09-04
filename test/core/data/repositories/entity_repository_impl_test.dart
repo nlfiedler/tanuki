@@ -7,6 +7,7 @@ import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
 import 'package:tanuki/core/data/models/search_model.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
+import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/error/exceptions.dart';
 import 'package:tanuki/core/error/failures.dart';
@@ -383,6 +384,60 @@ void main() {
         final result = await repository.queryRecents(since);
         // assert
         verify(mockRemoteDataSource.queryRecents(since));
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+  });
+
+  group('bulkUpdate', () {
+    final inputId = AssetInputId(
+      id: 'asset123',
+      input: AssetInput(
+        tags: ['clowns', 'snakes'],
+        caption: Some('#snakes and #clowns are in my @batcave'),
+        location: Some('batcave'),
+        datetime: Some(DateTime.utc(2003, 8, 30)),
+        mimetype: Some('image/jpeg'),
+        filename: Some('img_1234.jpg'),
+      ),
+    );
+
+    test(
+      'should return remote data when remote data source returns data',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.bulkUpdate(any)).thenAnswer((_) async => 32);
+        // act
+        final result = await repository.bulkUpdate([inputId]);
+        // assert
+        verify(mockRemoteDataSource.bulkUpdate([inputId]));
+        expect(result.unwrap(), equals(32));
+      },
+    );
+
+    test(
+      'should return failure when remote data source returns null',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.bulkUpdate(any))
+            .thenAnswer((_) async => null);
+        // act
+        final result = await repository.bulkUpdate([inputId]);
+        // assert
+        verify(mockRemoteDataSource.bulkUpdate([inputId]));
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+
+    test(
+      'should return failure when remote data source is unsuccessful',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.bulkUpdate(any)).thenThrow(ServerException());
+        // act
+        final result = await repository.bulkUpdate([inputId]);
+        // assert
+        verify(mockRemoteDataSource.bulkUpdate([inputId]));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );

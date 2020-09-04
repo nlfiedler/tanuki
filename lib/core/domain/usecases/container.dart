@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'package:get_it/get_it.dart';
+import 'bulk_update.dart';
 import 'get_all_locations.dart';
 import 'get_all_tags.dart';
 import 'get_all_years.dart';
@@ -13,6 +14,7 @@ import 'query_recents.dart';
 import 'upload_asset.dart';
 
 void initUseCases(GetIt getIt) {
+  getIt.registerLazySingleton(() => BulkUpdate(getIt()));
   getIt.registerLazySingleton(() => GetAllLocations(getIt()));
   getIt.registerLazySingleton(() => GetAllTags(getIt()));
   getIt.registerLazySingleton(() => GetAllYears(getIt()));

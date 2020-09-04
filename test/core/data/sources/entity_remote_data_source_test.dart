@@ -9,6 +9,7 @@ import 'package:mockito/mockito.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/asset_model.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
+import 'package:tanuki/core/data/models/input_model.dart';
 import 'package:tanuki/core/data/models/search_model.dart';
 import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
@@ -751,6 +752,98 @@ void main() {
         final since = DateTime.now();
         // act
         final result = await dataSource.queryRecents(since);
+        // assert
+        expect(result, isNull);
+      },
+    );
+  });
+
+  group('bulkUpdate', () {
+    void setUpMockHttpClientGraphQLResponse() {
+      final response = {
+        'data': {'bulkUpdate': 32}
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    final inputModel = AssetInputIdModel(
+      id: 'asset123',
+      input: AssetInputModel(
+        tags: ['clowns', 'snakes'],
+        caption: Some('#snakes and #clowns are in my @batcave'),
+        location: Some('batcave'),
+        datetime: Some(DateTime.utc(2003, 8, 30)),
+        mimetype: Some('image/jpeg'),
+        filename: Some('img_1234.jpg'),
+      ),
+    );
+
+    test(
+      'should return results of the mutation',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLResponse();
+        // act
+        final result = await dataSource.bulkUpdate([inputModel]);
+        // assert
+        expect(result, equals(32));
+      },
+    );
+
+    test(
+      'should report failure when response unsuccessful',
+      () async {
+        // arrange
+        setUpMockHttpClientFailure403();
+        // act, assert
+        try {
+          await dataSource.bulkUpdate([inputModel]);
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    test(
+      'should raise error when GraphQL server returns an error',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLError();
+        // act, assert
+        try {
+          await dataSource.bulkUpdate([inputModel]);
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    void setUpMockGraphQLNullResponse() {
+      final response = {
+        'data': {'recent': null}
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return null when response is null',
+      () async {
+        // arrange
+        setUpMockGraphQLNullResponse();
+        // act
+        final result = await dataSource.bulkUpdate([inputModel]);
         // assert
         expect(result, isNull);
       },

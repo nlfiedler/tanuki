@@ -4,6 +4,7 @@
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
+import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/error/failures.dart';
 
@@ -32,4 +33,7 @@ abstract class EntityRepository {
 
   /// Query for the recent imports since the given date/time.
   Future<Result<QueryResults, Failure>> queryRecents(DateTime since);
+
+  /// Update multiple asset records in the repository.
+  Future<Result<int, Failure>> bulkUpdate(List<AssetInputId> assets);
 }

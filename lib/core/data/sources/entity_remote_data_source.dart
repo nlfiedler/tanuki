@@ -5,9 +5,11 @@ import 'package:graphql/client.dart' as gql;
 import 'package:meta/meta.dart';
 import 'package:tanuki/core/data/models/asset_model.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
+import 'package:tanuki/core/data/models/input_model.dart';
 import 'package:tanuki/core/data/models/search_model.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
+import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/error/exceptions.dart';
 
@@ -23,6 +25,7 @@ abstract class EntityRemoteDataSource {
     int offset,
   );
   Future<QueryResults> queryRecents(DateTime since);
+  Future<int> bulkUpdate(List<AssetInputId> assets);
 }
 
 class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
@@ -243,5 +246,29 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     final Map<String, dynamic> object =
         result.data['recent'] as Map<String, dynamic>;
     return object == null ? null : QueryResultsModel.fromJson(object);
+  }
+
+  @override
+  Future<int> bulkUpdate(List<AssetInputId> assets) async {
+    final query = r'''
+      mutation BulkUpdate($assets: [AssetInputId!]!) {
+        bulkUpdate(assets: $assets)
+      }
+    ''';
+    final models = List.of(
+      assets.map((e) => AssetInputIdModel.from(e).toJson()),
+    );
+    final mutationOptions = gql.MutationOptions(
+      documentNode: gql.gql(query),
+      variables: <String, dynamic>{
+        'assets': models,
+      },
+    );
+    final gql.QueryResult result = await client.mutate(mutationOptions);
+    if (result.hasException) {
+      throw ServerException(result.exception.toString());
+    }
+    final count = result.data['bulkUpdate'];
+    return count == null ? null : count as int;
   }
 }

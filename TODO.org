@@ -128,7 +128,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO Replace Reason-React
 **** DONE use case: query recent imports
-**** TODO use case: bulk update of assets
+**** DONE use case: bulk update of assets
 **** TODO develop page for processing recent imports
 ***** be sure to sort the incoming files by filename for consistency
 ***** use =BlocListener= or =BlocConsumer= to show save errors via snackbar

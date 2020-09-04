@@ -6,6 +6,7 @@ import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
+import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/error/exceptions.dart';
@@ -108,6 +109,19 @@ class EntityRepositoryImpl extends EntityRepository {
   Future<Result<QueryResults, Failure>> queryRecents(DateTime since) async {
     try {
       final results = await remoteDataSource.queryRecents(since);
+      if (results == null) {
+        return Err(ServerFailure('got null result for query'));
+      }
+      return Ok(results);
+    } on ServerException catch (e) {
+      return Err(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<int, Failure>> bulkUpdate(List<AssetInputId> assets) async {
+    try {
+      final results = await remoteDataSource.bulkUpdate(assets);
       if (results == null) {
         return Err(ServerFailure('got null result for query'));
       }
