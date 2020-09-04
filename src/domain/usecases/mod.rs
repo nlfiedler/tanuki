@@ -87,18 +87,16 @@ fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTim
             return get_avi_date(filepath);
         }
         // For any other type of video, just hope that it is mp4 compatible.
-        fn err_convert(err: mp4::Error) -> Error {
-            err_msg(format!("{:?}", err))
-        }
         let file = File::open(filepath)?;
-        let bmff = mp4::read_mp4(file).map_err(err_convert)?;
-        let moov = bmff.moov.ok_or_else(|| err_msg("missing moov atom"))?;
-        let creation_time = if moov.mvhd.creation_time > 2082844800 {
+        let size = file.metadata()?.len();
+        let reader = std::io::BufReader::new(file);
+        let mp4 = mp4::Mp4Reader::read_header(reader, size)?;
+        let creation_time = if mp4.moov.mvhd.creation_time > 2082844800 {
             // subtract the difference in seconds between 1904-01-01 and UTC
             // epoch for those times that are clearly not "Unix time"
-            moov.mvhd.creation_time - 2082844800
+            mp4.moov.mvhd.creation_time - 2082844800
         } else {
-            moov.mvhd.creation_time
+            mp4.moov.mvhd.creation_time
         };
         return Ok(Utc.timestamp(creation_time as i64, 0));
     }
