@@ -29,4 +29,7 @@ abstract class EntityRepository {
     int count,
     int offset,
   );
+
+  /// Query for the recent imports since the given date/time.
+  Future<Result<QueryResults, Failure>> queryRecents(DateTime since);
 }

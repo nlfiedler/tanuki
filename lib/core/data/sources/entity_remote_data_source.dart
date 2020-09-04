@@ -22,6 +22,7 @@ abstract class EntityRemoteDataSource {
     int count,
     int offset,
   );
+  Future<QueryResults> queryRecents(DateTime since);
 }
 
 class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
@@ -209,6 +210,38 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     }
     final Map<String, dynamic> object =
         result.data['search'] as Map<String, dynamic>;
+    return object == null ? null : QueryResultsModel.fromJson(object);
+  }
+
+  @override
+  Future<QueryResults> queryRecents(DateTime since) async {
+    final query = r'''
+      query Recent($since: DateTimeUtc) {
+        recent(since: $since) {
+          results {
+            id
+            datetime
+            filename
+            location
+            mimetype
+          }
+          count
+        }
+      }
+    ''';
+    final queryOptions = gql.QueryOptions(
+      documentNode: gql.gql(query),
+      variables: <String, dynamic>{
+        'since': since.toIso8601String(),
+      },
+      fetchPolicy: gql.FetchPolicy.noCache,
+    );
+    final gql.QueryResult result = await client.query(queryOptions);
+    if (result.hasException) {
+      throw ServerException(result.exception.toString());
+    }
+    final Map<String, dynamic> object =
+        result.data['recent'] as Map<String, dynamic>;
     return object == null ? null : QueryResultsModel.fromJson(object);
   }
 }

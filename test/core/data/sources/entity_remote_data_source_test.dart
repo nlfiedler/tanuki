@@ -646,4 +646,114 @@ void main() {
       },
     );
   });
+
+  group('queryRecents', () {
+    void setUpMockHttpClientGraphQLResponse() {
+      final response = {
+        'data': {
+          'recent': {
+            'results': [
+              {
+                'id': 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
+                'filename': 'catmouse_1280p.jpg',
+                'mimetype': 'image/jpeg',
+                'location': 'outdoors',
+                'datetime': '2020-05-24T18:02:15.0+00:00'
+              }
+            ],
+            'count': 1
+          }
+        }
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return results of the query',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLResponse();
+        final since = DateTime.now();
+        // act
+        final result = await dataSource.queryRecents(since);
+        // assert
+        final expected = QueryResultsModel(
+          results: [
+            SearchResultModel(
+              id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
+              filename: 'catmouse_1280p.jpg',
+              mimetype: 'image/jpeg',
+              location: Some('outdoors'),
+              datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
+            )
+          ],
+          count: 1,
+        );
+        expect(result, equals(expected));
+        expect(result.results, equals(expected.results));
+      },
+    );
+
+    test(
+      'should report failure when response unsuccessful',
+      () async {
+        // arrange
+        setUpMockHttpClientFailure403();
+        final since = DateTime.now();
+        // act, assert
+        try {
+          await dataSource.queryRecents(since);
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    test(
+      'should raise error when GraphQL server returns an error',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLError();
+        final since = DateTime.now();
+        // act, assert
+        try {
+          await dataSource.queryRecents(since);
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    void setUpMockGraphQLNullResponse() {
+      final response = {
+        'data': {'recent': null}
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return null when response is null',
+      () async {
+        // arrange
+        setUpMockGraphQLNullResponse();
+        final since = DateTime.now();
+        // act
+        final result = await dataSource.queryRecents(since);
+        // assert
+        expect(result, isNull);
+      },
+    );
+  });
 }

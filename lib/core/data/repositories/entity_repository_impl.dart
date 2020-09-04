@@ -103,4 +103,17 @@ class EntityRepositoryImpl extends EntityRepository {
       return Err(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Result<QueryResults, Failure>> queryRecents(DateTime since) async {
+    try {
+      final results = await remoteDataSource.queryRecents(since);
+      if (results == null) {
+        return Err(ServerFailure('got null result for query'));
+      }
+      return Ok(results);
+    } on ServerException catch (e) {
+      return Err(ServerFailure(e.toString()));
+    }
+  }
 }

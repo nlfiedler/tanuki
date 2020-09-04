@@ -328,4 +328,63 @@ void main() {
       },
     );
   });
+
+  group('queryRecents', () {
+    test(
+      'should return remote data when remote data source returns data',
+      () async {
+        // arrange
+        final expected = QueryResultsModel(
+          results: [
+            SearchResultModel(
+              id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
+              filename: 'catmouse_1280p.jpg',
+              mimetype: 'image/jpeg',
+              location: Some('outdoors'),
+              datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
+            )
+          ],
+          count: 1,
+        );
+        when(mockRemoteDataSource.queryRecents(any))
+            .thenAnswer((_) async => expected);
+        // act
+        final since = DateTime.now();
+        final result = await repository.queryRecents(since);
+        // assert
+        verify(mockRemoteDataSource.queryRecents(since));
+        expect(result.unwrap(), equals(expected));
+      },
+    );
+
+    test(
+      'should return failure when remote data source returns null',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.queryRecents(any))
+            .thenAnswer((_) async => null);
+        // act
+        final since = DateTime.now();
+        final result = await repository.queryRecents(since);
+        // assert
+        verify(mockRemoteDataSource.queryRecents(since));
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+
+    test(
+      'should return failure when remote data source is unsuccessful',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.queryRecents(any))
+            .thenThrow(ServerException());
+        // act
+        final since = DateTime.now();
+        final result = await repository.queryRecents(since);
+        // assert
+        verify(mockRemoteDataSource.queryRecents(since));
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+  });
 }

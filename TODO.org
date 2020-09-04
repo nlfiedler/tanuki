@@ -127,7 +127,8 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO Replace Reason-React
-**** TODO use case: query recent imports
+**** DONE use case: query recent imports
+**** TODO use case: bulk update of assets
 **** TODO develop page for processing recent imports
 ***** be sure to sort the incoming files by filename for consistency
 ***** use =BlocListener= or =BlocConsumer= to show save errors via snackbar
@@ -143,6 +144,9 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** extra input fields would be hidden normally, expanded by clicking arrow button
 **** TODO try to get drag and drop to work for uploading files
 ***** c.f. https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
+**** TODO show broken thumbnail placeholder for missing thumbnails
+***** browse page
+***** recents page
 *** TODO change docker to build flutter web assets
 *** TODO remove ReasonML and Node files
 **** should be nothing JavaScript/Node/Reason left at this point
@@ -592,6 +596,7 @@ include it in the database records.
 *** Branding: name, logo
 *** Tracking issues and releases on a schedule (SCM)
 **** Consider if using GitLab (in a container) would be helpful
+***** c.f. https://docs.gitlab.com/omnibus/docker/
 ** Documentation
 *** Uploads directory
 **** asset importer ignores hidden files and directories
