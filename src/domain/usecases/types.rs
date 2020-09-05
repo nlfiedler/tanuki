@@ -58,9 +58,15 @@ mod tests {
         assert!(result.is_ok());
         let actual = result.unwrap();
         assert_eq!(actual.len(), 3);
-        assert!(actual.iter().any(|l| l.label == "image/jpeg" && l.count == 42));
-        assert!(actual.iter().any(|l| l.label == "video/mpeg" && l.count == 101));
-        assert!(actual.iter().any(|l| l.label == "text/plain" && l.count == 14));
+        assert!(actual
+            .iter()
+            .any(|l| l.label == "image/jpeg" && l.count == 42));
+        assert!(actual
+            .iter()
+            .any(|l| l.label == "video/mpeg" && l.count == 101));
+        assert!(actual
+            .iter()
+            .any(|l| l.label == "text/plain" && l.count == 14));
     }
 
     #[test]

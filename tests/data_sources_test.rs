@@ -230,9 +230,15 @@ fn test_all_media_types() {
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_media_types().unwrap();
     assert_eq!(actual.len(), 3);
-    assert!(actual.iter().any(|l| l.label == "image/jpeg" && l.count == 2));
-    assert!(actual.iter().any(|l| l.label == "video/mpeg" && l.count == 1));
-    assert!(actual.iter().any(|l| l.label == "video/x-msvideo" && l.count == 1));
+    assert!(actual
+        .iter()
+        .any(|l| l.label == "image/jpeg" && l.count == 2));
+    assert!(actual
+        .iter()
+        .any(|l| l.label == "video/mpeg" && l.count == 1));
+    assert!(actual
+        .iter()
+        .any(|l| l.label == "video/x-msvideo" && l.count == 1));
 }
 
 #[test]

@@ -474,16 +474,14 @@ mod tests {
         let new_asset = asset1_clone.clone();
         let mut records = MockRecordRepository::new();
         let mut all_assets_count = 0;
-        records
-            .expect_all_assets()
-            .returning(move || {
-                all_assets_count += 1;
-                if all_assets_count > 0 {
-                    Ok(new_asset_ids.clone())
-                } else {
-                    Ok(asset_ids.clone())
-                }
-            });
+        records.expect_all_assets().returning(move || {
+            all_assets_count += 1;
+            if all_assets_count > 0 {
+                Ok(new_asset_ids.clone())
+            } else {
+                Ok(asset_ids.clone())
+            }
+        });
         records
             .expect_get_asset()
             .with(eq(asset1_id))
