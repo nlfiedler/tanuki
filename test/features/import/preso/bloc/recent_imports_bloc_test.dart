@@ -9,7 +9,7 @@ import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/query_recents.dart';
 import 'package:tanuki/core/error/failures.dart';
-import 'package:tanuki/features/upload/preso/bloc/recent_imports_bloc.dart';
+import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
 
 class MockAssetRepository extends Mock implements EntityRepository {}
 

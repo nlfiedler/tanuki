@@ -9,7 +9,7 @@ import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/repositories/asset_repository.dart';
 import 'package:tanuki/core/domain/usecases/upload_asset.dart';
 import 'package:tanuki/core/error/failures.dart';
-import 'package:tanuki/features/upload/preso/bloc/upload_file_bloc.dart';
+import 'package:tanuki/features/import/preso/bloc/upload_file_bloc.dart';
 
 class MockAssetRepository extends Mock implements AssetRepository {}
 

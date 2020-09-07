@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tanuki/container.dart';
-import 'package:tanuki/features/upload/preso/bloc/ingest_assets_bloc.dart';
+import 'package:tanuki/features/import/preso/bloc/ingest_assets_bloc.dart';
 
 class IngestsForm extends StatelessWidget {
   @override

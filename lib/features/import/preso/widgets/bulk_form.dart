@@ -9,7 +9,7 @@ import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/environment_config.dart';
-import 'package:tanuki/features/upload/preso/bloc/recent_imports_bloc.dart';
+import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
 
 import 'bulk_submit.dart';
 

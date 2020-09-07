@@ -8,7 +8,7 @@ import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/bulk_update.dart';
 import 'package:tanuki/core/error/failures.dart';
-import 'package:tanuki/features/upload/preso/bloc/bulk_update_bloc.dart';
+import 'package:tanuki/features/import/preso/bloc/bulk_update_bloc.dart';
 
 class MockEntityRepository extends Mock implements EntityRepository {}
 

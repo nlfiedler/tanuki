@@ -9,7 +9,7 @@ import 'package:tanuki/core/data/sources/container.dart';
 import 'package:tanuki/core/domain/usecases/container.dart';
 import 'package:tanuki/environment_config.dart';
 import 'package:tanuki/features/browse/preso/bloc/container.dart';
-import 'package:tanuki/features/upload/preso/bloc/container.dart';
+import 'package:tanuki/features/import/preso/bloc/container.dart';
 
 final getIt = GetIt.instance;
 

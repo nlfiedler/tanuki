@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tanuki/container.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
-import 'package:tanuki/features/upload/preso/bloc/bulk_update_bloc.dart';
+import 'package:tanuki/features/import/preso/bloc/bulk_update_bloc.dart';
 
 typedef BulkCallback = List<AssetInputId> Function();
 

@@ -104,8 +104,8 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** define the features
 ***** browse
 ***** import
+***** modify
 ***** export
-***** edit
 *** Thumbnail Serving Strategy
 **** capture the image/video dimensions during import, save to asset record
 ***** a larger asset record in CBOR format is ~260 bytes, a few more bytes is okay

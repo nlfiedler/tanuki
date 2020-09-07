@@ -6,8 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
 import 'package:tanuki/features/browse/preso/screens/asset_screen.dart';
 import 'package:tanuki/features/browse/preso/screens/home_screen.dart';
-import 'package:tanuki/features/upload/preso/screens/recents_screen.dart';
-import 'package:tanuki/features/upload/preso/screens/upload_screen.dart';
+import 'package:tanuki/features/import/preso/screens/recents_screen.dart';
+import 'package:tanuki/features/import/preso/screens/upload_screen.dart';
 import 'container.dart' as ioc;
 
 void main() {

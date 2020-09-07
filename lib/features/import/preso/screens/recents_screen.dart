@@ -4,8 +4,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tanuki/container.dart';
-import 'package:tanuki/features/upload/preso/bloc/recent_imports_bloc.dart';
-import 'package:tanuki/features/upload/preso/widgets/bulk_form.dart';
+import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
+import 'package:tanuki/features/import/preso/widgets/bulk_form.dart';
 
 class RecentsScreen extends StatelessWidget {
   @override

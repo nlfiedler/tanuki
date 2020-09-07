@@ -2,8 +2,8 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
-import 'package:tanuki/features/upload/preso/widgets/ingests_form.dart';
-import 'package:tanuki/features/upload/preso/widgets/upload_form.dart';
+import 'package:tanuki/features/import/preso/widgets/ingests_form.dart';
+import 'package:tanuki/features/import/preso/widgets/upload_form.dart';
 
 class UploadScreen extends StatelessWidget {
   @override
