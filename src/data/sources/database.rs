@@ -61,6 +61,10 @@ impl Database {
         let mut opts = Options::default();
         opts.create_if_missing(true);
         opts.set_keep_log_file_num(10);
+        // Set the max open files; the default (-1) keeps all of the files open,
+        // which is simply insane for desktop systems like macOS, where the
+        // default max open files (ulimit -a) is 256.
+        opts.set_max_open_files(128);
         let db = mokuroku::Database::open(db_path.as_ref(), views, mapper, opts)?;
         let arc = Arc::new(Mutex::new(db));
         db_refs.insert(buf, Arc::downgrade(&arc));
