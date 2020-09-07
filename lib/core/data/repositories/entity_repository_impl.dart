@@ -106,7 +106,8 @@ class EntityRepositoryImpl extends EntityRepository {
   }
 
   @override
-  Future<Result<QueryResults, Failure>> queryRecents(DateTime since) async {
+  Future<Result<QueryResults, Failure>> queryRecents(
+      Option<DateTime> since) async {
     try {
       final results = await remoteDataSource.queryRecents(since);
       if (results == null) {

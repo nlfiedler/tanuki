@@ -17,6 +17,12 @@ class HomeScreen extends StatelessWidget {
               Navigator.pushNamed(context, '/upload');
             },
           ),
+          FlatButton(
+            child: Icon(Icons.history),
+            onPressed: () {
+              Navigator.pushNamed(context, '/recents');
+            },
+          ),
         ],
       ),
       body: AssetBrowser(),

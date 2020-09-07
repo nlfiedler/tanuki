@@ -15,7 +15,7 @@ class UploadScreen extends StatelessWidget {
       body: Column(
         children: [
           IngestsForm(),
-          UploadForm(),
+          Expanded(child: UploadForm()),
         ],
       ),
     );

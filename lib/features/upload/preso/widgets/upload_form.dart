@@ -40,12 +40,13 @@ class _UploadFormState extends State<UploadForm> {
         return Column(
           children: [
             Text('The following files could not be copied:'),
-            ListView.builder(
-              shrinkWrap: true,
-              itemBuilder: (BuildContext context, int index) {
-                return Text(state.skipped[index].name);
-              },
-              itemCount: state.skipped.length,
+            Expanded(
+              child: ListView.builder(
+                itemBuilder: (BuildContext context, int index) {
+                  return Text(state.skipped[index].name);
+                },
+                itemCount: state.skipped.length,
+              ),
             ),
           ],
         );
@@ -151,32 +152,21 @@ class _UploadFormState extends State<UploadForm> {
 
 Widget _buildFileList(List<File> files, UploadFileState state) {
   if (files.isNotEmpty) {
-    return Column(
-      children: [
-        Text('Selected files...'),
-        _buildListView(files),
-      ],
-    );
+    return _buildListView(files);
+  } else if (state is Uploading) {
+    return _buildListView(state.pending);
   } else {
-    if (state is Uploading) {
-      return Column(
-        children: [
-          Text('Pending files...'),
-          _buildListView(state.pending),
-        ],
-      );
-    } else {
-      return Container();
-    }
+    return Container();
   }
 }
 
 Widget _buildListView(List<dynamic> files) {
-  return ListView.builder(
-    shrinkWrap: true,
-    itemBuilder: (BuildContext context, int index) {
-      return ListTile(title: Text(files[index].name));
-    },
-    itemCount: files.length,
+  return Expanded(
+    child: ListView.builder(
+      itemBuilder: (BuildContext context, int index) {
+        return ListTile(title: Text(files[index].name));
+      },
+      itemCount: files.length,
+    ),
   );
 }

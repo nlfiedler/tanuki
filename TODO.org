@@ -129,9 +129,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 *** TODO Replace Reason-React
 **** DONE use case: query recent imports
 **** DONE use case: bulk update of assets
-**** TODO develop page for processing recent imports
-***** be sure to sort the incoming files by filename for consistency
-***** use =BlocListener= or =BlocConsumer= to show save errors via snackbar
+**** DONE develop page for processing recent imports
 **** TODO use case: edit asset details
 **** TODO develop page for editing assets details
 ***** use =BlocListener= or =BlocConsumer= to show save errors via snackbar
@@ -142,11 +140,15 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** add event to =AssetBrowserBloc= that sets filename filter
 ***** add event to =AssetBrowserBloc= that sets mimetype filter
 ***** extra input fields would be hidden normally, expanded by clicking arrow button
+**** TODO add link/button to download raw asset
 **** TODO try to get drag and drop to work for uploading files
 ***** c.f. https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
 **** TODO show broken thumbnail placeholder for missing thumbnails
 ***** browse page
 ***** recents page
+**** TODO home page needs to refresh tags/locations when navigating back
+***** also refresh known years
+***** sometimes it works?
 *** TODO change docker to build flutter web assets
 *** TODO remove ReasonML and Node files
 **** should be nothing JavaScript/Node/Reason left at this point
@@ -205,6 +207,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** small dots instead of large buttons with numbers in them?
 ***** still good to have a quick way to jump anywhere in the set of results
 **** quick import
+***** look for a way to allow zoom on the recent imports thumbnails
 ***** drag/drop and/or file open to add lots of assets
 ***** immediately import everything to the backend
 ***** show progress and display thumbnails as assets are successfully imported
@@ -245,6 +248,9 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ****** the other actions would be appropriate to the current screen
 ***** maybe use =TabBar=
 ***** maybe use =BottomNavigationBar=
+**** error handling
+***** many screens/widgets just display a message without any means of recovery
+***** see any of the widgets using bloc providers and how they become useless upon error
 **** timeline style display for all assets
 ***** without any selectors, just show most recent going back in time
 ***** c.f. https://pub.dev/packages/flutter_timeline
@@ -275,6 +281,15 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** can use =DataTable= to display labeled data (like asset details, metadata)
 **** use pointer enter/exit events to start playing a video in place
 ** Known Issues
+*** too many open files
+**** happens when uploading numerous files
+**** seems to hit RocksDB the hardest
+**** error message
+#+BEGIN_SRC
+thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Error {
+ message: "IO error: While open a file for appending: tmp/rocksdb/000733.sst: Too many open files"
+}', src/main.rs:88:71
+#+END_SRC
 *** flutter form builder
 **** chips input keyboard focus: https://github.com/danvick/flutter_form_builder/issues/313
 ** Bulk edit

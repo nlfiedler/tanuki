@@ -38,7 +38,7 @@ void main() {
       when(mockEntityRepository.queryRecents(any))
           .thenAnswer((_) async => Ok(expected));
       // act
-      final since = DateTime.now();
+      final Option<DateTime> since = Some(DateTime.now());
       final params = Params(since: since);
       final result = await usecase(params);
       // assert

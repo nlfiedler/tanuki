@@ -32,7 +32,7 @@ abstract class EntityRepository {
   );
 
   /// Query for the recent imports since the given date/time.
-  Future<Result<QueryResults, Failure>> queryRecents(DateTime since);
+  Future<Result<QueryResults, Failure>> queryRecents(Option<DateTime> since);
 
   /// Update multiple asset records in the repository.
   Future<Result<int, Failure>> bulkUpdate(List<AssetInputId> assets);

@@ -679,7 +679,33 @@ void main() {
       () async {
         // arrange
         setUpMockHttpClientGraphQLResponse();
-        final since = DateTime.now();
+        final Option<DateTime> since = Some(DateTime.now().toUtc());
+        // act
+        final result = await dataSource.queryRecents(since);
+        // assert
+        final expected = QueryResultsModel(
+          results: [
+            SearchResultModel(
+              id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
+              filename: 'catmouse_1280p.jpg',
+              mimetype: 'image/jpeg',
+              location: Some('outdoors'),
+              datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
+            )
+          ],
+          count: 1,
+        );
+        expect(result, equals(expected));
+        expect(result.results, equals(expected.results));
+      },
+    );
+
+    test(
+      'should return results of the query if no time',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLResponse();
+        final Option<DateTime> since = None();
         // act
         final result = await dataSource.queryRecents(since);
         // assert
@@ -705,7 +731,7 @@ void main() {
       () async {
         // arrange
         setUpMockHttpClientFailure403();
-        final since = DateTime.now();
+        final Option<DateTime> since = Some(DateTime.now().toUtc());
         // act, assert
         try {
           await dataSource.queryRecents(since);
@@ -721,7 +747,7 @@ void main() {
       () async {
         // arrange
         setUpMockHttpClientGraphQLError();
-        final since = DateTime.now();
+        final Option<DateTime> since = Some(DateTime.now().toUtc());
         // act, assert
         try {
           await dataSource.queryRecents(since);
@@ -749,7 +775,7 @@ void main() {
       () async {
         // arrange
         setUpMockGraphQLNullResponse();
-        final since = DateTime.now();
+        final Option<DateTime> since = Some(DateTime.now().toUtc());
         // act
         final result = await dataSource.queryRecents(since);
         // assert

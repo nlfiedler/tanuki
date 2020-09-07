@@ -21,7 +21,7 @@ class QueryRecents implements UseCase<QueryResults, Params> {
 }
 
 class Params extends Equatable {
-  final DateTime since;
+  final Option<DateTime> since;
 
   Params({
     @required this.since,

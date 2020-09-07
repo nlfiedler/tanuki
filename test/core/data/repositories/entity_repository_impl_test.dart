@@ -350,7 +350,7 @@ void main() {
         when(mockRemoteDataSource.queryRecents(any))
             .thenAnswer((_) async => expected);
         // act
-        final since = DateTime.now();
+        final Option<DateTime> since = Some(DateTime.now());
         final result = await repository.queryRecents(since);
         // assert
         verify(mockRemoteDataSource.queryRecents(since));
@@ -365,7 +365,7 @@ void main() {
         when(mockRemoteDataSource.queryRecents(any))
             .thenAnswer((_) async => null);
         // act
-        final since = DateTime.now();
+        final Option<DateTime> since = Some(DateTime.now());
         final result = await repository.queryRecents(since);
         // assert
         verify(mockRemoteDataSource.queryRecents(since));
@@ -380,7 +380,7 @@ void main() {
         when(mockRemoteDataSource.queryRecents(any))
             .thenThrow(ServerException());
         // act
-        final since = DateTime.now();
+        final Option<DateTime> since = Some(DateTime.now());
         final result = await repository.queryRecents(since);
         // assert
         verify(mockRemoteDataSource.queryRecents(since));

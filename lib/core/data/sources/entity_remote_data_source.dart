@@ -3,6 +3,7 @@
 //
 import 'package:graphql/client.dart' as gql;
 import 'package:meta/meta.dart';
+import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/asset_model.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
 import 'package:tanuki/core/data/models/input_model.dart';
@@ -24,7 +25,7 @@ abstract class EntityRemoteDataSource {
     int count,
     int offset,
   );
-  Future<QueryResults> queryRecents(DateTime since);
+  Future<QueryResults> queryRecents(Option<DateTime> since);
   Future<int> bulkUpdate(List<AssetInputId> assets);
 }
 
@@ -217,7 +218,11 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
   }
 
   @override
-  Future<QueryResults> queryRecents(DateTime since) async {
+  Future<QueryResults> queryRecents(Option<DateTime> since) async {
+    final validDate = since.mapOr((v) => v.isUtc, true);
+    if (!validDate) {
+      throw ServerException('since must be a UTC date/time');
+    }
     final query = r'''
       query Recent($since: DateTimeUtc) {
         recent(since: $since) {
@@ -235,7 +240,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     final queryOptions = gql.QueryOptions(
       documentNode: gql.gql(query),
       variables: <String, dynamic>{
-        'since': since.toIso8601String(),
+        'since': since.mapOr((v) => v.toIso8601String(), null),
       },
       fetchPolicy: gql.FetchPolicy.noCache,
     );
