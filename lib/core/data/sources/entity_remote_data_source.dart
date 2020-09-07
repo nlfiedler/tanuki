@@ -15,6 +15,7 @@ import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/error/exceptions.dart';
 
 abstract class EntityRemoteDataSource {
+  Future<int> bulkUpdate(List<AssetInputId> assets);
   Future<List<Location>> getAllLocations();
   Future<List<Tag>> getAllTags();
   Future<List<Year>> getAllYears();
@@ -26,13 +27,37 @@ abstract class EntityRemoteDataSource {
     int offset,
   );
   Future<QueryResults> queryRecents(Option<DateTime> since);
-  Future<int> bulkUpdate(List<AssetInputId> assets);
+  Future<Asset> updateAsset(AssetInputId asset);
 }
 
 class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
   final gql.GraphQLClient client;
 
   EntityRemoteDataSourceImpl({@required this.client});
+
+  @override
+  Future<int> bulkUpdate(List<AssetInputId> assets) async {
+    final query = r'''
+      mutation BulkUpdate($assets: [AssetInputId!]!) {
+        bulkUpdate(assets: $assets)
+      }
+    ''';
+    final models = List.of(
+      assets.map((e) => AssetInputIdModel.from(e).toJson()),
+    );
+    final mutationOptions = gql.MutationOptions(
+      documentNode: gql.gql(query),
+      variables: <String, dynamic>{
+        'assets': models,
+      },
+    );
+    final gql.QueryResult result = await client.mutate(mutationOptions);
+    if (result.hasException) {
+      throw ServerException(result.exception.toString());
+    }
+    final count = result.data['bulkUpdate'];
+    return count == null ? null : count as int;
+  }
 
   @override
   Future<List<Location>> getAllLocations() async {
@@ -254,26 +279,37 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
   }
 
   @override
-  Future<int> bulkUpdate(List<AssetInputId> assets) async {
+  Future<Asset> updateAsset(AssetInputId asset) async {
     final query = r'''
-      mutation BulkUpdate($assets: [AssetInputId!]!) {
-        bulkUpdate(assets: $assets)
+      mutation Update($identifier: String!, $input: AssetInput!) {
+        update(id: $identifier, asset: $input) {
+          id
+          checksum
+          filename
+          filesize
+          datetime
+          mimetype
+          tags
+          userdate
+          caption
+          location
+        }
       }
     ''';
-    final models = List.of(
-      assets.map((e) => AssetInputIdModel.from(e).toJson()),
-    );
+    final model = AssetInputModel.from(asset.input).toJson();
     final mutationOptions = gql.MutationOptions(
       documentNode: gql.gql(query),
       variables: <String, dynamic>{
-        'assets': models,
+        'identifier': asset.id,
+        'assets': model,
       },
     );
     final gql.QueryResult result = await client.mutate(mutationOptions);
     if (result.hasException) {
       throw ServerException(result.exception.toString());
     }
-    final count = result.data['bulkUpdate'];
-    return count == null ? null : count as int;
+    final Map<String, dynamic> object =
+        result.data['update'] as Map<String, dynamic>;
+    return object == null ? null : AssetModel.fromJson(object);
   }
 }

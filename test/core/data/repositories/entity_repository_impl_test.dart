@@ -442,4 +442,72 @@ void main() {
       },
     );
   });
+
+  group('updateAsset', () {
+    final inputId = AssetInputId(
+      id: 'asset123',
+      input: AssetInput(
+        tags: ['clowns', 'snakes'],
+        caption: Some('#snakes and #clowns are in my @batcave'),
+        location: Some('batcave'),
+        datetime: Some(DateTime.utc(2003, 8, 30)),
+        mimetype: Some('image/jpeg'),
+        filename: Some('img_1234.jpg'),
+      ),
+    );
+
+    test(
+      'should return remote data when remote data source returns data',
+      () async {
+        // arrange
+        final expected = Asset(
+          id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
+          checksum: 'sha256-34641209e88f3a59b-mini-2dfdcb00f8a533ac80ba',
+          filename: 'catmouse_1280p.jpg',
+          filesize: 160852,
+          datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
+          mimetype: 'image/jpeg',
+          tags: ['cat', 'mouse'],
+          userdate: None(),
+          caption: Some('#cat @outdoors #mouse'),
+          location: Some('outdoors'),
+        );
+        when(mockRemoteDataSource.updateAsset(any))
+            .thenAnswer((_) async => expected);
+        // act
+        final result = await repository.updateAsset(inputId);
+        // assert
+        verify(mockRemoteDataSource.updateAsset(inputId));
+        expect(result.unwrap(), equals(expected));
+      },
+    );
+
+    test(
+      'should return failure when remote data source returns null',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.updateAsset(any))
+            .thenAnswer((_) async => null);
+        // act
+        final result = await repository.updateAsset(inputId);
+        // assert
+        verify(mockRemoteDataSource.updateAsset(inputId));
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+
+    test(
+      'should return failure when remote data source is unsuccessful',
+      () async {
+        // arrange
+        when(mockRemoteDataSource.updateAsset(any))
+            .thenThrow(ServerException());
+        // act
+        final result = await repository.updateAsset(inputId);
+        // assert
+        verify(mockRemoteDataSource.updateAsset(inputId));
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+  });
 }

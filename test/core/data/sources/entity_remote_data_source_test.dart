@@ -853,7 +853,7 @@ void main() {
 
     void setUpMockGraphQLNullResponse() {
       final response = {
-        'data': {'recent': null}
+        'data': {'bulkUpdate': null}
       };
       // graphql client uses the 'send' method
       when(mockHttpClient.send(any)).thenAnswer((_) async {
@@ -870,6 +870,123 @@ void main() {
         setUpMockGraphQLNullResponse();
         // act
         final result = await dataSource.bulkUpdate([inputModel]);
+        // assert
+        expect(result, isNull);
+      },
+    );
+  });
+
+  group('updateAsset', () {
+    void setUpMockHttpClientGraphQLResponse() {
+      final response = {
+        'data': {
+          'update': {
+            'id': 'asset123',
+            'checksum': 'sha1-cafebabe',
+            'filename': 'img_1234.jpg',
+            'filesize': '1048576',
+            'datetime': '2003-08-30T00:00:00.0+00:00',
+            'mimetype': 'image/jpeg',
+            'tags': ['clowns', 'snakes'],
+            'userdate': null,
+            'caption': '#snakes and #clowns are in my @batcave',
+            'location': 'batcave'
+          },
+        }
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    final inputModel = AssetInputIdModel(
+      id: 'asset123',
+      input: AssetInputModel(
+        tags: ['clowns', 'snakes'],
+        caption: Some('#snakes and #clowns are in my @batcave'),
+        location: Some('batcave'),
+        datetime: Some(DateTime.utc(2003, 8, 30)),
+        mimetype: Some('image/jpeg'),
+        filename: Some('img_1234.jpg'),
+      ),
+    );
+
+    test(
+      'should return results of the mutation',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLResponse();
+        // act
+        final result = await dataSource.updateAsset(inputModel);
+        // assert
+        final expected = AssetModel(
+          id: 'asset123',
+          checksum: 'sha1-cafebabe',
+          filename: 'img_1234.jpg',
+          filesize: 1048576,
+          datetime: DateTime.utc(2003, 8, 30),
+          mimetype: 'image/jpeg',
+          tags: ['clowns', 'snakes'],
+          userdate: None(),
+          caption: Some('#snakes and #clowns are in my @batcave'),
+          location: Some('batcave'),
+        );
+        expect(result, equals(expected));
+      },
+    );
+
+    test(
+      'should report failure when response unsuccessful',
+      () async {
+        // arrange
+        setUpMockHttpClientFailure403();
+        // act, assert
+        try {
+          await dataSource.updateAsset(inputModel);
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    test(
+      'should raise error when GraphQL server returns an error',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLError();
+        // act, assert
+        try {
+          await dataSource.updateAsset(inputModel);
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    void setUpMockGraphQLNullResponse() {
+      final response = {
+        'data': {'update': null}
+      };
+      // graphql client uses the 'send' method
+      when(mockHttpClient.send(any)).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return null when response is null',
+      () async {
+        // arrange
+        setUpMockGraphQLNullResponse();
+        // act
+        final result = await dataSource.updateAsset(inputModel);
         // assert
         expect(result, isNull);
       },

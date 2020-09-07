@@ -20,6 +20,19 @@ class EntityRepositoryImpl extends EntityRepository {
   });
 
   @override
+  Future<Result<int, Failure>> bulkUpdate(List<AssetInputId> assets) async {
+    try {
+      final results = await remoteDataSource.bulkUpdate(assets);
+      if (results == null) {
+        return Err(ServerFailure('got null result for query'));
+      }
+      return Ok(results);
+    } on ServerException catch (e) {
+      return Err(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Result<List<Location>, Failure>> getAllLocations() async {
     try {
       final locations = await remoteDataSource.getAllLocations();
@@ -120,9 +133,9 @@ class EntityRepositoryImpl extends EntityRepository {
   }
 
   @override
-  Future<Result<int, Failure>> bulkUpdate(List<AssetInputId> assets) async {
+  Future<Result<Asset, Failure>> updateAsset(AssetInputId asset) async {
     try {
-      final results = await remoteDataSource.bulkUpdate(assets);
+      final results = await remoteDataSource.updateAsset(asset);
       if (results == null) {
         return Err(ServerFailure('got null result for query'));
       }

@@ -130,7 +130,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** DONE use case: query recent imports
 **** DONE use case: bulk update of assets
 **** DONE develop page for processing recent imports
-**** TODO use case: edit asset details
+**** DONE use case: update asset details
 **** TODO develop page for editing assets details
 ***** use =BlocListener= or =BlocConsumer= to show save errors via snackbar
 **** TODO enhance browse page to perform advanced search functions
@@ -256,7 +256,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** c.f. https://pub.dev/packages/flutter_timeline
 **** navigation rail for filtering gallery view
 ***** c.f. https://pub.dev/packages/navigation_rail
-***** maybe selectors for "portrait", "selfie", that kind of thing
+***** maybe selectors for "portrait", "selfie", "screen shots"
 **** flutter allows for a custom error handler (i.e. override the ugly red screen)
 *** ideas and widget usage
 **** Look at the Flutter "Gallery" app ("crane") for a pretty example
@@ -338,6 +338,7 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 *** TODO Support wildcards in filename, mimetype (others?)
 **** likely would involve a full table scan
 *** TODO searching for images by dimensions (~pano~, ~landscape~, ~portrait~)
+*** TODO searching for images based on type (~selfie~, ~screen shot~)
 *** TODO searching assets by metadata values (=meta:exif:field=value=)
 *** TODO search for images similar to a selected image (a la geeqie)
 *** TODO search for images taken with certain cameras
