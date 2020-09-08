@@ -301,7 +301,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
       documentNode: gql.gql(query),
       variables: <String, dynamic>{
         'identifier': asset.id,
-        'assets': model,
+        'input': model,
       },
     );
     final gql.QueryResult result = await client.mutate(mutationOptions);
