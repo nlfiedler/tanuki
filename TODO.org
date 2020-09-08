@@ -131,8 +131,15 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** DONE use case: bulk update of assets
 **** DONE develop page for processing recent imports
 **** DONE use case: update asset details
-**** TODO develop page for editing assets details
-***** use =BlocListener= or =BlocConsumer= to show save errors via snackbar
+**** DONE develop page for editing assets details
+**** TODO home page needs to refresh tags/locations/years when navigating back
+***** after upload (new dates)
+***** after bulk update
+***** after asset edit
+**** TODO dates should be displayed using local time
+***** asset browser list
+***** asset details page
+***** asset editor page
 **** TODO enhance browse page to perform advanced search functions
 ***** add event to =AssetBrowserBloc= that sets before date filter
 ***** add event to =AssetBrowserBloc= that sets after date filter
@@ -146,9 +153,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** TODO show broken thumbnail placeholder for missing thumbnails
 ***** browse page
 ***** recents page
-**** TODO home page needs to refresh tags/locations when navigating back
-***** also refresh known years
-***** sometimes it works?
 *** TODO change docker to build flutter web assets
 *** TODO remove ReasonML and Node files
 **** should be nothing JavaScript/Node/Reason left at this point
@@ -292,6 +296,8 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 #+END_SRC
 *** flutter form builder
 **** chips input keyboard focus: https://github.com/danvick/flutter_form_builder/issues/313
+*** preview of small images makes them large
+**** should instead only serve original size for smaller images
 ** Bulk edit
 *** need to set the custom date on many assets at once
 *** Short term solution akin to perkeep/photoprism web interface

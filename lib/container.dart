@@ -10,13 +10,15 @@ import 'package:tanuki/core/domain/usecases/container.dart';
 import 'package:tanuki/environment_config.dart';
 import 'package:tanuki/features/browse/preso/bloc/container.dart';
 import 'package:tanuki/features/import/preso/bloc/container.dart';
+import 'package:tanuki/features/modify/preso/bloc/container.dart';
 
 final getIt = GetIt.instance;
 
 void init() {
   // bloc
   initBrowseBlocs(getIt);
-  initUploadBlocs(getIt);
+  initImportBlocs(getIt);
+  initModifyBlocs(getIt);
 
   // widgets
 

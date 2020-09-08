@@ -31,7 +31,7 @@ void main() {
     );
 
     blocTest(
-      'emits [Processing, Finished] when ProcessUploads is added',
+      'emits [Processing, Finished] when SubmitUpdates is added',
       build: () => BulkUpdateBloc(usecase: usecase),
       act: (bloc) => bloc.add(SubmitUpdates(inputs: [])),
       expect: [

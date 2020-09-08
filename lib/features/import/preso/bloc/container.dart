@@ -7,7 +7,7 @@ import 'ingest_assets_bloc.dart';
 import 'recent_imports_bloc.dart';
 import 'upload_file_bloc.dart';
 
-void initUploadBlocs(GetIt getIt) {
+void initImportBlocs(GetIt getIt) {
   getIt.registerFactory(
     () => BulkUpdateBloc(usecase: getIt()),
   );

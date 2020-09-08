@@ -5,14 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:intl/intl.dart';
+import 'package:tanuki/container.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/environment_config.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_bloc.dart';
-import 'package:tanuki/container.dart';
+import 'package:tanuki/features/modify/preso/validators/media_type.dart';
+import 'package:tanuki/features/modify/preso/widgets/update_submit.dart';
 
-class AssetScreen extends StatelessWidget {
+final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
+
+class EditAssetScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // fetch the asset again just in case of concurrent edits
     final String assetId = ModalRoute.of(context).settings.arguments;
     return BlocProvider<AssetBloc>(
       create: (_) => getIt<AssetBloc>(),
@@ -31,19 +36,12 @@ class AssetScreen extends StatelessWidget {
           if (state is Loaded) {
             return Scaffold(
               appBar: AppBar(
-                title: Text('Details for ${state.asset.filename}'),
+                title: Text('Editing ${state.asset.filename}'),
                 actions: [
-                  FlatButton(
-                    child: Icon(Icons.edit),
-                    onPressed: () {
-                      // replace the route for viewing the asset
-                      Navigator.pushReplacementNamed(context, '/edit',
-                          arguments: state.asset.id);
-                    },
-                  ),
+                  UpdateSubmit(assetId: assetId, formKey: _fbKey),
                 ],
               ),
-              body: AssetPreview(asset: state.asset),
+              body: AssetEditor(asset: state.asset),
             );
           }
           return Center(child: CircularProgressIndicator());
@@ -55,10 +53,10 @@ class AssetScreen extends StatelessWidget {
 
 const thumbnail640 = '/api/thumbnail/640/640/';
 
-class AssetPreview extends StatelessWidget {
+class AssetEditor extends StatelessWidget {
   final Asset asset;
 
-  AssetPreview({
+  AssetEditor({
     Key key,
     @required this.asset,
   }) : super(key: key);
@@ -96,28 +94,19 @@ class AssetEditForm extends StatefulWidget {
 }
 
 class _AssetEditFormState extends State<AssetEditForm> {
-  final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
+  final DateFormat datefmt = DateFormat.yMd().add_jm();
 
   @override
   Widget build(BuildContext context) {
-    final datefmt = DateFormat.yMd().add_jm();
-    //
-    // Other asset properties not shown here:
-    //
-    // - asset.id
-    // - asset.checksum
-    // - asset.userdate
-    //
     return FormBuilder(
       key: _fbKey,
       initialValue: {
         'datetime': datefmt.format(widget.asset.datetime),
-        'filename': widget.asset.filename,
-        'filesize': widget.asset.filesize.toString(),
+        'userdate': widget.asset.userdate.unwrapOr(null),
         'mimetype': widget.asset.mimetype,
         'tags': widget.asset.tags.join(', '),
-        'caption': widget.asset.caption.unwrapOr('(none)'),
-        'location': widget.asset.location.unwrapOr('(none)'),
+        'caption': widget.asset.caption.unwrapOr(''),
+        'location': widget.asset.location.unwrapOr(''),
       },
       child: Column(
         children: [
@@ -129,13 +118,20 @@ class _AssetEditFormState extends State<AssetEditForm> {
             ),
             readOnly: true,
           ),
+          FormBuilderDateTimePicker(
+            attribute: 'userdate',
+            decoration: InputDecoration(
+              icon: Icon(Icons.calendar_today),
+              labelText: 'Custom Date',
+            ),
+            inputType: InputType.both,
+          ),
           FormBuilderTextField(
             attribute: 'caption',
             decoration: InputDecoration(
               icon: Icon(Icons.format_quote),
               labelText: 'Caption',
             ),
-            readOnly: true,
           ),
           FormBuilderTextField(
             attribute: 'tags',
@@ -143,7 +139,12 @@ class _AssetEditFormState extends State<AssetEditForm> {
               icon: Icon(Icons.label),
               labelText: 'Tags',
             ),
-            readOnly: true,
+            valueTransformer: (text) {
+              final List<String> tags = text.split(',');
+              return List.of(
+                tags.map((e) => e.trim()).where((e) => e.isNotEmpty),
+              );
+            },
           ),
           FormBuilderTextField(
             attribute: 'location',
@@ -151,23 +152,6 @@ class _AssetEditFormState extends State<AssetEditForm> {
               icon: Icon(Icons.location_on),
               labelText: 'Location',
             ),
-            readOnly: true,
-          ),
-          FormBuilderTextField(
-            attribute: 'filename',
-            decoration: InputDecoration(
-              icon: Icon(Icons.folder_outlined),
-              labelText: 'File name',
-            ),
-            readOnly: true,
-          ),
-          FormBuilderTextField(
-            attribute: 'filesize',
-            decoration: InputDecoration(
-              icon: Icon(Icons.info_outline),
-              labelText: 'File size',
-            ),
-            readOnly: true,
           ),
           FormBuilderTextField(
             attribute: 'mimetype',
@@ -175,7 +159,12 @@ class _AssetEditFormState extends State<AssetEditForm> {
               icon: Icon(Icons.code),
               labelText: 'Media type',
             ),
-            readOnly: true,
+            autovalidate: true,
+            validators: [
+              (val) {
+                return validateMediaType(val.toString());
+              },
+            ],
           ),
         ],
       ),

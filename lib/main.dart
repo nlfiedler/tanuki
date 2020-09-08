@@ -8,6 +8,7 @@ import 'package:tanuki/features/browse/preso/screens/asset_screen.dart';
 import 'package:tanuki/features/browse/preso/screens/home_screen.dart';
 import 'package:tanuki/features/import/preso/screens/recents_screen.dart';
 import 'package:tanuki/features/import/preso/screens/upload_screen.dart';
+import 'package:tanuki/features/modify/preso/screens/edit_asset_screen.dart';
 import 'container.dart' as ioc;
 
 void main() {
@@ -26,6 +27,7 @@ class MyApp extends StatelessWidget {
         routes: {
           '/': (context) => HomeScreen(),
           '/asset': (context) => AssetScreen(),
+          '/edit': (context) => EditAssetScreen(),
           '/recents': (context) => RecentsScreen(),
           '/upload': (context) => UploadScreen(),
         },
