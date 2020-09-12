@@ -101,7 +101,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
     return FormBuilder(
       key: _fbKey,
       initialValue: {
-        'datetime': datefmt.format(widget.asset.datetime),
+        'datetime': datefmt.format(widget.asset.datetime.toLocal()),
         'userdate': widget.asset.userdate.unwrapOr(null),
         'mimetype': widget.asset.mimetype,
         'tags': widget.asset.tags.join(', '),

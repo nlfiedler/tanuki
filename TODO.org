@@ -132,11 +132,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** DONE develop page for processing recent imports
 **** DONE use case: update asset details
 **** DONE develop page for editing assets details
-**** TODO home page needs to refresh tags/locations/years when navigating back
-***** after upload (new dates)
-***** after bulk update
-***** after asset edit
-**** TODO dates should be displayed using local time
+**** DONE dates should be displayed using local time
 ***** asset browser list
 ***** asset details page
 ***** asset editor page
@@ -168,6 +164,19 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** =src/*.re=
 **** update =.gitignore= and =.dockerignore=
 *** TODO Improve User Experience
+**** home page needs to refresh tags/locations/years when navigating back
+***** can use =NavigatorObserver= with =MaterialApp= to watch for changes
+***** consider replacing routes vs pushing and navigate using another means
+***** after upload (new dates)
+***** after bulk update
+***** after asset edit
+**** look at GMail for ideas on navigation, filtering, etc
+***** filters (icons w/names) displayed on the left side
+***** sidebar on the right for extra features/extensions
+***** hamburger icon in upper left toggles filter names vs just icons
+***** search bar along the very top
+***** waffle icon to navigate to other applications
+***** help and settings icons next to waffle
 **** browse and search
 ***** [reorganize this section]
 ***** unify the two pages into one

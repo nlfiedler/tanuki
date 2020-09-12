@@ -35,7 +35,7 @@ Widget buildThumbnails(BuildContext context, List<SearchResult> results) {
   final elements = List<Widget>.from(
     results.map((e) {
       final uri = '${EnvironmentConfig.base_url}$thumbnail300${e.id}';
-      final dateString = datefmt.format(e.datetime);
+      final dateString = datefmt.format(e.datetime.toLocal());
       return Padding(
         padding: const EdgeInsets.all(8.0),
         child: FlatButton(
