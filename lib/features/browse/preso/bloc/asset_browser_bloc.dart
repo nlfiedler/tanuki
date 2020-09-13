@@ -36,11 +36,11 @@ class SelectLocations extends AssetBrowserEvent {
   });
 }
 
-class ToggleYear extends AssetBrowserEvent {
-  final int year;
+class SelectDates extends AssetBrowserEvent {
+  final List<DateTime> dates;
 
-  ToggleYear({
-    @required this.year,
+  SelectDates({
+    @required this.dates,
   });
 }
 
@@ -77,7 +77,7 @@ class Loaded extends AssetBrowserState {
   final QueryResults results;
   final List<String> selectedTags;
   final List<String> selectedLocations;
-  final Option<int> selectedYear;
+  final List<DateTime> selectedDates;
   final int pageSize;
   final int pageNumber;
   final int lastPage;
@@ -87,18 +87,19 @@ class Loaded extends AssetBrowserState {
     @required this.pageNumber,
     @required tags,
     @required locations,
-    @required this.selectedYear,
+    @required dates,
     @required this.lastPage,
     @required this.pageSize,
   })  : selectedTags = List.unmodifiable(tags),
-        selectedLocations = List.unmodifiable(locations);
+        selectedLocations = List.unmodifiable(locations),
+        selectedDates = List.unmodifiable(dates);
 
   @override
   List<Object> get props => [
         results,
         selectedTags,
         selectedLocations,
-        selectedYear,
+        selectedDates,
         pageNumber,
       ];
 }
@@ -120,9 +121,9 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
   final QueryAssets usecase;
   List<String> tags = [];
   List<String> locations = [];
+  List<DateTime> dates = [];
   int pageSize = 18;
   int pageNumber = 1;
-  Option<int> selectedYear = const None();
 
   AssetBrowserBloc({this.usecase}) : super(Empty());
 
@@ -144,9 +145,10 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
         pageNumber = 1;
         yield* _loadAssets();
       }
-    } else if (event is ToggleYear) {
+    } else if (event is SelectDates) {
       if (state is Loaded) {
-        _toggleYear(event.year);
+        dates = event.dates;
+        pageNumber = 1;
         yield* _loadAssets();
       }
     } else if (event is ShowPage) {
@@ -162,23 +164,27 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
     }
   }
 
-  void _toggleYear(int year) {
-    selectedYear = selectedYear.mapOrElse(
-      (value) => value == year ? None() : Some(year),
-      () => Some(year),
-    );
-    pageNumber = 1;
+  Option<DateTime> getFirstDate(List<DateTime> dates) {
+    if (dates.length > 0) {
+      return Some(dates[0].toUtc());
+    }
+    return None();
+  }
+
+  Option<DateTime> getLastDate(List<DateTime> dates) {
+    if (dates.length == 2) {
+      return Some(dates[1].toUtc());
+    }
+    return None();
   }
 
   Stream<AssetBrowserState> _loadAssets() async* {
     yield Loading();
-    final after = selectedYear.map((t) => DateTime.utc(t, 1, 1));
-    final before = selectedYear.map((t) => DateTime.utc(t + 1, 1, 1));
     final params = SearchParams(
       tags: tags,
       locations: locations,
-      after: after,
-      before: before,
+      after: getFirstDate(dates),
+      before: getLastDate(dates),
     );
     final offset = pageSize * (pageNumber - 1);
     final result = await usecase(Params(
@@ -194,7 +200,7 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
           pageNumber: lastPage > 0 ? pageNumber : 0,
           tags: tags,
           locations: locations,
-          selectedYear: selectedYear,
+          dates: dates,
           lastPage: lastPage,
           pageSize: pageSize,
         );

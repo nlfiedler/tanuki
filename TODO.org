@@ -127,22 +127,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO Replace Reason-React
-**** DONE use case: query recent imports
-**** DONE use case: bulk update of assets
-**** DONE develop page for processing recent imports
-**** DONE use case: update asset details
-**** DONE develop page for editing assets details
-**** DONE dates should be displayed using local time
-***** asset browser list
-***** asset details page
-***** asset editor page
-**** TODO enhance browse page to perform advanced search functions
-***** add event to =AssetBrowserBloc= that sets before date filter
-***** add event to =AssetBrowserBloc= that sets after date filter
-***** remove the selected year feature in favor of the date range
-***** add event to =AssetBrowserBloc= that sets filename filter
-***** add event to =AssetBrowserBloc= that sets mimetype filter
-***** extra input fields would be hidden normally, expanded by clicking arrow button
 **** TODO add link/button to download raw asset
 **** TODO try to get drag and drop to work for uploading files
 ***** c.f. https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
@@ -249,9 +233,9 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** display location as a city/country pair
 ***** display select information from EXIF metadata (e.g. camera)
 ***** add a button to download the raw asset
-**** screen for showing all tags and locations, with count values
-***** selecting one offers a rename function
-***** selecting multiple offers option to remove from all assets
+**** screen for showing all tags, locations, years, with count values
+***** selecting a tag or location offers a rename function
+***** selecting multiple tags/locations offers option to remove from all assets
 **** quick editing on browse page
 ***** use =ExpansionPanel= for thumbnail caption that allows editing common fields
 **** navigation between sceens
@@ -336,6 +320,9 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 *** Will need to start using =async/await= as more libraries return =Future=
 *** Use of actix means that tokio runtime is already in place
 ** Search Improvements
+*** TODO Add support for searching by filename
+**** extra input fields would be hidden normally, expanded by clicking arrow button
+*** TODO Add support for searching by mimetype
 *** TODO Begin search when user pauses typing
 **** Use =debounceTime= operator in RxDart with BLoC state for this
 *** TODO Support advanced queries using Google-style operators

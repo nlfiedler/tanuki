@@ -17,6 +17,10 @@ void main() {
   MockEntityRepository mockEntityRepository;
   QueryAssets usecase;
 
+  final selectedDates = [
+    DateTime.utc(2009),
+    DateTime.utc(2010),
+  ];
   final tQueryResults = QueryResults(
     results: [
       SearchResult(
@@ -55,7 +59,7 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          selectedYear: None(),
+          dates: [],
           lastPage: 1,
           pageSize: 18,
         )
@@ -84,7 +88,7 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          selectedYear: None(),
+          dates: [],
           lastPage: 1,
           pageSize: 18,
         ),
@@ -94,7 +98,7 @@ void main() {
           pageNumber: 1,
           tags: ['cats'],
           locations: [],
-          selectedYear: None(),
+          dates: [],
           lastPage: 1,
           pageSize: 18,
         ),
@@ -123,7 +127,7 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          selectedYear: None(),
+          dates: [],
           lastPage: 1,
           pageSize: 18,
         ),
@@ -133,7 +137,7 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: ['hawaii'],
-          selectedYear: None(),
+          dates: [],
           lastPage: 1,
           pageSize: 18,
         ),
@@ -145,7 +149,7 @@ void main() {
       build: () => AssetBrowserBloc(usecase: usecase),
       act: (bloc) {
         bloc.add(LoadInitialAssets());
-        bloc.add(ToggleYear(year: 2009));
+        bloc.add(SelectDates(dates: selectedDates));
         return;
       },
       expect: [
@@ -155,7 +159,7 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          selectedYear: None(),
+          dates: [],
           lastPage: 1,
           pageSize: 18,
         ),
@@ -165,50 +169,7 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          selectedYear: Some(2009),
-          lastPage: 1,
-          pageSize: 18,
-        ),
-      ],
-    );
-
-    blocTest(
-      'unselects year if toggled twice',
-      build: () => AssetBrowserBloc(usecase: usecase),
-      act: (bloc) {
-        bloc.add(LoadInitialAssets());
-        bloc.add(ToggleYear(year: 2009));
-        bloc.add(ToggleYear(year: 2009));
-        return;
-      },
-      expect: [
-        Loading(),
-        Loaded(
-          results: tQueryResults,
-          pageNumber: 1,
-          tags: [],
-          locations: [],
-          selectedYear: None(),
-          lastPage: 1,
-          pageSize: 18,
-        ),
-        Loading(),
-        Loaded(
-          results: tQueryResults,
-          pageNumber: 1,
-          tags: [],
-          locations: [],
-          selectedYear: Some(2009),
-          lastPage: 1,
-          pageSize: 18,
-        ),
-        Loading(),
-        Loaded(
-          results: tQueryResults,
-          pageNumber: 1,
-          tags: [],
-          locations: [],
-          selectedYear: None(),
+          dates: selectedDates,
           lastPage: 1,
           pageSize: 18,
         ),
@@ -252,7 +213,7 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          selectedYear: None(),
+          dates: [],
           lastPage: 5,
           pageSize: 18,
         ),
@@ -262,7 +223,7 @@ void main() {
           pageNumber: 10,
           tags: [],
           locations: [],
-          selectedYear: None(),
+          dates: [],
           lastPage: 5,
           pageSize: 18,
         ),
@@ -285,7 +246,7 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          selectedYear: None(),
+          dates: [],
           lastPage: 5,
           pageSize: 18,
         ),
@@ -295,7 +256,7 @@ void main() {
           pageNumber: 10,
           tags: [],
           locations: [],
-          selectedYear: None(),
+          dates: [],
           lastPage: 5,
           pageSize: 18,
         ),
@@ -305,7 +266,7 @@ void main() {
           pageNumber: 1,
           tags: ['cats'],
           locations: [],
-          selectedYear: None(),
+          dates: [],
           lastPage: 5,
           pageSize: 18,
         ),
@@ -334,7 +295,7 @@ void main() {
           pageNumber: 0,
           tags: [],
           locations: [],
-          selectedYear: None(),
+          dates: [],
           lastPage: 0,
           pageSize: 18,
         ),
