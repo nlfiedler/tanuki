@@ -9,6 +9,7 @@ import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/environment_config.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_bloc.dart';
 import 'package:tanuki/container.dart';
+import 'package:url_launcher/url_launcher.dart' as launcher;
 
 class AssetScreen extends StatelessWidget {
   @override
@@ -34,6 +35,12 @@ class AssetScreen extends StatelessWidget {
                 title: Text('Details for ${state.asset.filename}'),
                 actions: [
                   FlatButton(
+                    child: Icon(Icons.file_download),
+                    onPressed: () async {
+                      await downloadAsset(context, state.asset);
+                    },
+                  ),
+                  FlatButton(
                     child: Icon(Icons.edit),
                     onPressed: () {
                       // replace the route for viewing the asset
@@ -48,6 +55,23 @@ class AssetScreen extends StatelessWidget {
           }
           return Center(child: CircularProgressIndicator());
         },
+      ),
+    );
+  }
+}
+
+Future<void> downloadAsset(BuildContext context, Asset asset) async {
+  final baseUrl = EnvironmentConfig.base_url;
+  final url = '$baseUrl/api/asset/${asset.id}';
+  if (await launcher.canLaunch(url)) {
+    await launcher.launch(url);
+  } else {
+    Scaffold.of(context).showSnackBar(
+      SnackBar(
+        content: ListTile(
+          title: Text('Could not launch URL'),
+          subtitle: Text(url),
+        ),
       ),
     );
   }

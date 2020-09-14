@@ -127,7 +127,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO Replace Reason-React
-**** TODO add link/button to download raw asset
 **** TODO try to get drag and drop to work for uploading files
 ***** c.f. https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
 **** TODO show broken thumbnail placeholder for missing thumbnails
@@ -278,6 +277,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** can use =DataTable= to display labeled data (like asset details, metadata)
 **** use pointer enter/exit events to start playing a video in place
 ** Known Issues
+*** graphql errors are handled poorly everywhere
 *** too many open files
 **** happens when uploading numerous files
 **** seems to hit RocksDB the hardest
@@ -464,6 +464,7 @@ include it in the database records.
 ** Mobile app
 *** Will likely need the Flutter =AboutDialog= to show legalese for app stores
 *** Use [[https://pub.dev/packages/image_picker][image_picker]] to allow user to select images from photo library
+*** Allow downloading images and such to the phone for offline browsing
 *** Upload while away from home
 **** mobile app with upload to a "drop box", backend then retrieves those (on a schedule?)
 **** evaluate [[https://github.com/warner/magic-wormhole][magic-wormhole]] as a means of transferring directly to the home computer
