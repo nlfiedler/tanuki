@@ -69,7 +69,11 @@ class AssetEditor extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Image.network(uri, fit: BoxFit.contain),
+            child: Image.network(
+              uri,
+              fit: BoxFit.contain,
+              errorBuilder: imageErrorBuilder,
+            ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 32.0),
@@ -79,6 +83,26 @@ class AssetEditor extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget imageErrorBuilder(
+  BuildContext context,
+  Object error,
+  StackTrace stackTrace,
+) {
+  return SizedBox(
+    width: 640,
+    height: 640,
+    child: Center(
+      child: Card(
+        child: ListTile(
+          leading: Icon(Icons.error_outline),
+          title: Text('Unable to load thumbnail'),
+          subtitle: Text(error.toString()),
+        ),
+      ),
+    ),
+  );
 }
 
 class AssetEditForm extends StatefulWidget {

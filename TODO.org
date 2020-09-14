@@ -129,9 +129,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 *** TODO Replace Reason-React
 **** TODO try to get drag and drop to work for uploading files
 ***** c.f. https://gist.github.com/PlugFox/ffe83a91ce50f9c78a5b1d6674e36d1b
-**** TODO show broken thumbnail placeholder for missing thumbnails
-***** browse page
-***** recents page
 *** TODO change docker to build flutter web assets
 *** TODO remove ReasonML and Node files
 **** should be nothing JavaScript/Node/Reason left at this point

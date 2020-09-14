@@ -193,7 +193,11 @@ class BulkThumbnail extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
-          Image.network(uri, fit: BoxFit.contain),
+          Image.network(
+            uri,
+            fit: BoxFit.contain,
+            errorBuilder: imageErrorBuilder,
+          ),
           SizedBox(
             width: 300.0,
             // try keeping the text in a column, the text will automatically
@@ -207,4 +211,24 @@ class BulkThumbnail extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget imageErrorBuilder(
+  BuildContext context,
+  Object error,
+  StackTrace stackTrace,
+) {
+  return SizedBox(
+    width: 300,
+    height: 300,
+    child: Center(
+      child: Card(
+        child: ListTile(
+          leading: Icon(Icons.error_outline),
+          title: Text('Unable to load thumbnail'),
+          subtitle: Text(error.toString()),
+        ),
+      ),
+    ),
+  );
 }
