@@ -20,24 +20,25 @@ COPY healthcheck/src src/
 RUN cargo build --release
 
 #
-# build the frontend
+# build the flutter app
 #
-FROM node:lts AS webster
-ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get -q update && \
-    apt-get -q -y install apt-utils build-essential python
-RUN npm install -q -g gulp-cli
-WORKDIR /webster
-COPY bsconfig.json .
-COPY graphql_schema.json .
-COPY gulpfile.js .
-COPY package.json .
-COPY package-lock.json .
-COPY public public/
-COPY src/*.re src/
-RUN npm ci
-ENV BUILD_ENV production
-RUN gulp build
+# Use their "beta" tag, but also set the channel to beta anyway, and make sure
+# it is completely up-to-date, and then enable the web channel as well.
+#
+FROM cirrusci/flutter:beta AS flutter
+ARG BASE_URL=http://localhost:8080
+RUN flutter channel beta
+RUN flutter upgrade
+RUN flutter config --enable-web
+WORKDIR /flutter
+COPY fonts fonts/
+COPY lib lib/
+COPY pubspec.yaml .
+COPY web web/
+RUN flutter pub get
+ENV BASE_URL ${BASE_URL}
+RUN flutter pub run environment_config:generate
+RUN flutter build web
 
 #
 # build the final image
@@ -48,7 +49,7 @@ USER tanuki
 WORKDIR /tanuki
 COPY --from=builder /build/target/release/tanuki .
 COPY --from=healthy /health/target/release/healthcheck .
-COPY --from=webster /webster/public public/
+COPY --from=flutter /flutter/build/web web/
 VOLUME /blobstore
 VOLUME /database
 VOLUME /uploads

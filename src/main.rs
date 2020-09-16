@@ -52,7 +52,7 @@ lazy_static! {
     };
     // Path to the static web files.
     static ref STATIC_PATH: PathBuf = {
-        let path = env::var("STATIC_FILES").unwrap_or_else(|_| "./public/".to_owned());
+        let path = env::var("STATIC_FILES").unwrap_or_else(|_| "./web/".to_owned());
         PathBuf::from(path)
     };
     // Path of the fallback page for web requests.
