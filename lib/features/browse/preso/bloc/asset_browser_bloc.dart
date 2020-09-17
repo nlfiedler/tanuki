@@ -165,7 +165,7 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
   }
 
   Option<DateTime> getFirstDate(List<DateTime> dates) {
-    if (dates.length > 0) {
+    if (dates.isNotEmpty) {
       return Some(dates[0].toUtc());
     }
     return None();

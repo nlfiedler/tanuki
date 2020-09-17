@@ -163,8 +163,8 @@ class BulkFormRow extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
-                    'Enter a description, including #tags and @location' +
-                        ' or @"some location"',
+                    'Enter a description, including #tags and @location'
+                    ' or @"some location"',
                     style: smallerStyle,
                   ),
                 ),

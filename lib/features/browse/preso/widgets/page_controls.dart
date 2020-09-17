@@ -51,19 +51,19 @@ class PageControls extends StatelessWidget {
               itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
                 const PopupMenuItem<int>(
                   value: 18,
-                  child: const Text('18'),
+                  child: Text('18'),
                 ),
                 const PopupMenuItem<int>(
                   value: 36,
-                  child: const Text('36'),
+                  child: Text('36'),
                 ),
                 const PopupMenuItem<int>(
                   value: 54,
-                  child: const Text('54'),
+                  child: Text('54'),
                 ),
                 const PopupMenuItem<int>(
                   value: 72,
-                  child: const Text('72'),
+                  child: Text('72'),
                 ),
               ],
             );

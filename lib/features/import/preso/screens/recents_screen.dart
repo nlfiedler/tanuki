@@ -101,14 +101,14 @@ extension RecentTimeRangeExt on RecentTimeRange {
   String get label {
     switch (this) {
       case RecentTimeRange.day:
-        return "Day";
+        return 'Day';
       case RecentTimeRange.week:
-        return "Week";
+        return 'Week';
       case RecentTimeRange.month:
-        return "Month";
+        return 'Month';
       case RecentTimeRange.ever:
-        return "All Time";
+        return 'All Time';
     }
-    return "All Time";
+    return 'All Time';
   }
 }
