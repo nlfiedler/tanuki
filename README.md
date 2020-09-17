@@ -1,32 +1,16 @@
 # Tanuki
 
 A system for importing, storing, categorizing, browsing, displaying, and
-searching files, primarily images and videos. Attributes regarding the files are
-stored in a key-value store. Designed to store millions of files. Provides a
-simple web interface with basic browsing and editing capabilities.
+searching assets, primarily images and videos. Attributes regarding the assets
+are stored in a key-value store. Provides a simple web interface with basic
+browsing and editing capabilities.
 
 ## Building and Testing
 
 ### Prerequisites
 
 * [Rust](https://www.rust-lang.org) stable (2018 edition)
-* [Node.js](https://nodejs.org/) LTS
-* [Gulp](https://gulpjs.com) CLI: `npm -g install gulp-cli`
 * [Flutter](https://flutter.dev) beta channel
-    - Enable the **web** configuration
-
-#### Example for macOS
-
-This example assumes you are using [Homebrew](http://brew.sh) to install the
-dependencies, which provides up-to-date versions of everything needed. The
-`xcode-select --install` is there just because the command-line tools sometimes
-get out of date, and some of the dependencies will fail to build without them.
-
-```shell
-$ xcode-select --install
-$ brew install node
-$ npm -g install gulp-cli
-```
 
 ### Building, Testing, Starting the Backend
 
@@ -43,30 +27,11 @@ volumes of output.
 
 ### Building, Testing, Starting the Frontend
 
-#### Flutter
-
 ```shell
 $ flutter pub get
 $ flutter pub run environment_config:generate
 $ flutter test
 $ flutter run -d chrome
-```
-
-#### ReasonML
-
-```shell
-$ npm install
-$ gulp build
-```
-
-### Updating the GraphQL PPX schema
-
-The ReasonML support for GraphQL uses a JSON formatted representation of the
-schema, which is generated using the following command (after starting a local
-server in another window):
-
-```shell
-$ npx apollo-codegen introspect-schema http://localhost:3000/graphql --output graphql_schema.json
 ```
 
 ### environment_config
@@ -133,16 +98,16 @@ that are compatible with MIT/Apache are also compatible with GPL.
 
 Assets stored as-is in date/time formatted directory structure, metadata stored
 in a key-value store, an HTTP server backend, and a single-page application for
-a front-end. Backend written in Rust, front-end written in
-[ReasonML](https://reasonml.github.io/en/), database is
-[RocksDB](https://rocksdb.org). The client/server protocol consists mostly of
-[GraphQL](https://graphql.org) queries and HTTP requests for asset data.
+a frontend.
+
+* Backend written in [Rust](https://www.rust-lang.org)
+* Front-end written in [Flutter](https://flutter.dev)
+* Data store is [RocksDB](https://rocksdb.org)
+* Wire protocol is [GraphQL](https://graphql.org) and HTTP
 
 ### Clean Architecture
 
-The backend is designed using the [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) in which the application is divided into three layers: domain, data, and presentation. The domain layer defines the "policy" or business logic of the application, consisting of entities, use cases, and repositories. The data layer is the interface to the underlying system, defining the data models that are ultimately stored in a database. The presentation layer is what the user generally sees, the web interface, and to some extent, the GraphQL interface.
-
-## Design
+The application is designed using the [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) in which the application is divided into three layers: domain, data, and presentation. The domain layer defines the "policy" or business logic of the application, consisting of entities, use cases, and repositories. The data layer is the interface to the underlying system, defining the data models that are ultimately stored in a database. The presentation layer is what the user generally sees, the web interface, and to some extent, the GraphQL interface.
 
 ### Storage
 
@@ -158,13 +123,18 @@ When an asset is added to the system, several steps are performed:
     - the base filename is the ULID
     - the original file extension is retained
 
+In previous versions of the application, assets were stored in a directory
+structure reflecting the checksum of the asset, similar to the object store in
+Git. There were two directory levels consisting of two pairs of leading digits
+from the checksum, and the filename was the remainder of the checksum.
+
 #### Benefits
 
 * Assets are stored in directory structure reflecting time and order of addition
     - ULID sorts by time, so order of insertion is retained
 * Number of directories and files at any particular level is reasonable
     - at most 96 directories per calendar day
-    - files per directory limited to what can be uploaded in 15 minutes
+    - files per directory limited to what can be processed within 15 minutes
 * Can rebuild some of the metadata from the directory structure and file names
     - import date/time from file path
     - media type from extension
@@ -183,48 +153,25 @@ In other cases, the names are something ridiculous, like
 some seemingly random sequence of letters and numbers. The good news is the
 original file name is recorded in the database.
 
-#### Some History
-
-From the very beginning of the project, assets were stored in a directory
-structure reflecting the checksum, reminiscent of Git. For instance, if the file
-checksum was `938f831fb02b313e7317c1e0631b86108a9e4a197e33d581fb68be91a3c6ce2f`,
-then the file would be stored in a directory path `93/8f` with a filename of
-`831fb02b313e7317c1e0631b86108a9e4a197e33d581fb68be91a3c6ce2f`. Using the
-checksum as the asset identifier made it very easy to serve the asset without a
-database lookup.
-
-However, this design had several problems:
-
-* Discarded most information about the asset:
-    - file name and extension
-    - media type cannot be guessed
-    - import date/time
-* With only 256 by 256 directories, the files-per-directory scales linearly
-    - for 100,000 assets, ~1.5 files in each directory
-    - for 1,000,000 assets, ~15 files in each directory
-    - for 1,000,000,000 assets, ~15,000 files in each directory
-* Looks scary to normal people
-
 ## Project History
 
 Original idea was inspired by [perkeep](https://perkeep.org) (née camlistore).
-However, installing [Go](https://golang.org) on
-[Solaris](https://www.oracle.com/solaris/) was difficult. Given the operating
-system there would not be any readily available software to serve the purpose.
-Would later learn that this application space is referred to as "digital asset
-management."
+However, installing [Go](https://golang.org) on the server system in use at the
+time, [Solaris](https://www.oracle.com/solaris/), was too difficult. Given the
+operating system there would not be any readily available software to serve the
+purpose. Would later learn that this application space is referred to as
+"digital asset management."
 
 ### July 2014
 
 [Python](https://www.python.org) script to ingest assets, insert records into
 [CouchDB](http://couchdb.apache.org).
 [Erlang](http://www.erlang.org)/[Nitrogen](http://nitrogenproject.com) interface
-to display assets by one tag, in a long, single-column list (i.e. no
-pagination).
+to display assets by one tag, in a long, single-column list.
 
 ### March 2015
 
-Replaced the Python ingest script with Erlang, no more Python in the main
+Replaced the Python ingestion script with Erlang, no more Python in the main
 application.
 
 ### January 2017
@@ -236,14 +183,14 @@ pagination of assets; basic asset editor.
 ### March 2017
 
 Replace static Elixir/Phoenix web pages with dynamic [Elm](http://elm-lang.org)
-front-end, supporting multiple tags, locations, and years. Hides less frequently
+frontend, supporting multiple tags, locations, and years. Hides less frequently
 used tags and locations by default, with expanders for showing everything. Form
 input validation for asset edit page.
 
 ### November 2017
 
 [Node.js](https://nodejs.org/) rewrite of the Elixir/Phoenix backend, using
-[PouchDB](https://pouchdb.com) instead of CouchDB; Elm front-end still in place.
+[PouchDB](https://pouchdb.com) instead of CouchDB; Elm frontend still in place.
 
 ### March 2018
 
@@ -258,7 +205,7 @@ to Apple Photos (see above).
 
 ### October 2018
 
-Replace front-end Elm code with [ReasonML](https://reasonml.github.io/en/).
+Replace frontend Elm code with [ReasonML](https://reasonml.github.io/en/).
 
 ### December 2019
 
@@ -267,12 +214,13 @@ Started to rewrite the Node.js backend in [Rust](https://www.rust-lang.org).
 ### February 2020
 
 Started rewrite in [Dart](https://dart.dev) and [Flutter](https://flutter.dev)
-with the intention of replacing all of the Node.js and ReasonML code.
+with the intention of replacing all of the Node.js and ReasonML code. Would
+later abandon using Dart (see architecture decision records).
 
 ### April 2020
 
-Switch from Dart back to Rust. Long live Rust.
+Replaced backend Node.js code with [Rust](https://www.rust-lang.org).
 
-### August 2020
+### September 2020
 
-Started frontend rewrite in [Flutter](https://flutter.dev).
+Replaced frontend ReasonML code with [Flutter](https://flutter.dev).

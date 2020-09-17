@@ -126,19 +126,11 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** TODO remove ReasonML and Node files
-**** should be nothing JavaScript/Node/Reason left at this point
-**** =bsconfig.json=
-**** =graphql_schema.json=
-**** =gulpfile.js=
-**** =lib/bs=
-**** =lib/js=
-**** =node_modules=
-**** =package.json=
-**** =package-lock.json=
-**** =public=
-**** =src/*.re=
-**** update =.gitignore= and =.dockerignore=
+*** TODO Fork flutter form builder and try addressing recent issues
+**** https://github.com/danvick/flutter_form_builder/issues/465
+**** chip input issue in production builds
+*** TODO Filter input chips are broken: freeze after first typed character
+*** TODO Sort the filter input chip suggestions
 *** TODO Show thumbnails for videos
 *** TODO Get video playback to work
 *** TODO Improve User Experience

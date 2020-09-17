@@ -1,16 +1,6 @@
 .DS_Store
 .vscode
 
-# Node.js files
-node_modules
-
-# ReasonML/BuckleScript
-.merlin
-.graphql_ppx_cache
-lib/bs
-lib/js
-public/javascripts/main.js
-
 # Rust build artifacts
 Cargo.lock
 target
