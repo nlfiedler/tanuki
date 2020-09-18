@@ -19,7 +19,12 @@ dependencies:
   flutter_bloc: ^6.0.1
   flutter_dropzone: ^1.0.9
   # workaround for https://github.com/danvick/flutter_form_builder/issues/382
-  flutter_form_builder: ^3.14.0-alpha.2
+  # flutter_form_builder: ^3.14.0-alpha.2
+  # workaround for https://github.com/danvick/flutter_form_builder/issues/465
+  flutter_form_builder:
+    git:
+      url: https://github.com/knaeckeKami/flutter_form_builder.git
+      ref: v3.14.0-alpha.2-fix
   get_it: ^4.0.4
   graphql: ^3.1.0
   http: ^0.12.2
