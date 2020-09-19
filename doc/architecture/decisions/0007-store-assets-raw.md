@@ -12,7 +12,7 @@ One is to not do anything with the assets, but rather maintain a database with p
 
 Two is to moves the assets into a blob store, where the address of the asset is the hash digest of the file contents. In some cases, the blob store may split the asset into pieces (as with content-defined chunking) and store the chunks individually. One example of this is [perkeep](https://perkeep.org) which is designed to store any sort of data indefinitely. The store model lends itself well to synchronization with remote blob stores.
 
-A third option is to move the assets into a special directory structure, and give the files special names. Apple Photos uses this method when importing photos and videos from a camera or smart phone. This has the benefit of not mangling the files, and yet ensuring that files with the same original name never collide. By "hiding" the assets in this manner, the user is less likely to accidently remove the files.
+A third option is to move the assets into a special directory structure, and give the files special names. Apple Photos uses this method when importing photos and videos from a camera or smart phone. This has the benefit of not mangling the files, and yet ensuring that files with the same original name never collide. By "hiding" the assets in this manner, the user is less likely to accidentally remove the files.
 
 ## Decision
 

@@ -126,11 +126,11 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** TODO Fork flutter form builder and try addressing recent issues
-**** https://github.com/danvick/flutter_form_builder/issues/465
-**** chip input issue in production builds
 *** TODO Filter input chips are broken: freeze after first typed character
-*** TODO Sort the filter input chip suggestions
+**** only effects production builds, probably a dart2js issue
+**** look for tools to debug production web code
+**** consider alternatives to filter input chips
+*** TODO Sort the filter input chip suggestions by count
 *** TODO Show thumbnails for videos
 *** TODO Get video playback to work
 *** TODO Improve User Experience
