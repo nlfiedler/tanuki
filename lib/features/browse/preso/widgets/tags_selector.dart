@@ -74,6 +74,8 @@ class _TagSelectorFormState extends State<TagSelectorForm> {
               maxChips: 10,
               findSuggestions: (String query) {
                 if (query.isNotEmpty) {
+                  // Looks complicated but this code is sorting the results by
+                  // the offset from the start where the query is found.
                   var lowercaseQuery = query.toLowerCase();
                   return widget.tags.where((tag) {
                     return tag.label

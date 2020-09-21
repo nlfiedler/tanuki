@@ -75,6 +75,8 @@ class _LocationSelectorFormState extends State<LocationSelectorForm> {
               maxChips: 10,
               findSuggestions: (String query) {
                 if (query.isNotEmpty) {
+                  // Looks complicated but this code is sorting the results by
+                  // the offset from the start where the query is found.
                   var lowercaseQuery = query.toLowerCase();
                   return widget.locations.where((location) {
                     return location.label
