@@ -10,7 +10,16 @@ browsing and editing capabilities.
 ### Prerequisites
 
 * [Rust](https://www.rust-lang.org) stable (2018 edition)
-* [Flutter](https://flutter.dev) beta channel
+* [Flutter](https://flutter.dev) **dev** channel
+
+### Initial Setup
+
+```shell
+$ flutter channel dev
+$ flutter upgrade
+$ flutter config --enable-macos-desktop
+$ flutter config --enable-web
+```
 
 ### Building, Testing, Starting the Backend
 
@@ -33,6 +42,8 @@ $ flutter pub run environment_config:generate
 $ flutter test
 $ flutter run -d chrome
 ```
+
+For macOS, `flutter run -d macos` to run and `flutter build macos` to build.
 
 ### environment_config
 

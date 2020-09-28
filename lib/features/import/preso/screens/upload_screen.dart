@@ -3,7 +3,9 @@
 //
 import 'package:flutter/material.dart';
 import 'package:tanuki/features/import/preso/widgets/ingests_form.dart';
-import 'package:tanuki/features/import/preso/widgets/upload_form.dart';
+import '../widgets/upload_form.dart'
+    if (dart.library.io) '../widgets/upload_form_desktop.dart'
+    if (dart.library.html) '../widgets/upload_form_web.dart';
 
 class UploadScreen extends StatelessWidget {
   @override
