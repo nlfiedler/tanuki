@@ -26,7 +26,7 @@ RUN cargo build --release
 # it is completely up-to-date, and then enable the web channel as well.
 #
 FROM cirrusci/flutter:beta AS flutter
-ARG BASE_URL=http://localhost:8080
+ARG BASE_URL=http://localhost:3000
 RUN flutter channel beta
 RUN flutter upgrade
 RUN flutter config --enable-web
