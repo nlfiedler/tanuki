@@ -128,7 +128,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO change to use =mime= package instead of =mime_type= in frontend
 **** c.f. https://pub.dev/packages/mime
-*** TODO Rename =DottedBorder.dart= to correct Dart naming convention
 *** TODO Improve User Experience
 **** home page needs to refresh tags/locations/years when navigating back
 ***** can use =NavigatorObserver= with =MaterialApp= to watch for changes

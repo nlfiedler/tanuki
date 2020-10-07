@@ -10,7 +10,7 @@ import 'package:flutter_dropzone/flutter_dropzone.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tanuki/container.dart';
-import 'package:tanuki/core/preso/widgets/DottedBorder.dart';
+import 'package:tanuki/core/preso/widgets/dotted_border.dart';
 import 'package:tanuki/features/import/preso/bloc/upload_file_bloc.dart';
 
 class UploadForm extends StatefulWidget {
