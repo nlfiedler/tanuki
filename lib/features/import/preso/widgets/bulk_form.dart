@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
-import 'package:tanuki/environment_config.dart';
+import 'package:tanuki/core/preso/widgets/asset_display.dart';
 import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
 
 import 'bulk_submit.dart';
@@ -177,8 +177,6 @@ class BulkFormRow extends StatelessWidget {
   }
 }
 
-const thumbnail300 = '/api/thumbnail/300/300/';
-
 class BulkThumbnail extends StatelessWidget {
   final SearchResult result;
 
@@ -187,48 +185,23 @@ class BulkThumbnail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final datefmt = DateFormat.EEEE().add_yMMMMd();
-    final uri = '${EnvironmentConfig.base_url}$thumbnail300${result.id}';
     final dateString = datefmt.format(result.datetime);
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Column(
-        children: [
-          Image.network(
-            uri,
-            fit: BoxFit.contain,
-            errorBuilder: imageErrorBuilder,
+      child: SizedBox(
+        width: 300.0,
+        // try keeping the text in a column, the text will automatically
+        // wrap to fix the available space
+        child: Column(children: [
+          AssetDisplay(
+            assetId: result.id,
+            mimetype: result.mimetype,
+            displayWidth: 300,
           ),
-          SizedBox(
-            width: 300.0,
-            // try keeping the text in a column, the text will automatically
-            // wrap to fix the available space
-            child: Column(children: [
-              Text(dateString),
-              Text(result.filename),
-            ]),
-          ),
-        ],
+          Text(dateString),
+          Text(result.filename),
+        ]),
       ),
     );
   }
-}
-
-Widget imageErrorBuilder(
-  BuildContext context,
-  Object error,
-  StackTrace stackTrace,
-) {
-  return SizedBox(
-    width: 300,
-    height: 300,
-    child: Center(
-      child: Card(
-        child: ListTile(
-          leading: Icon(Icons.error_outline),
-          title: Text('Unable to load thumbnail'),
-          subtitle: Text(error.toString()),
-        ),
-      ),
-    ),
-  );
 }

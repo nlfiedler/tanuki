@@ -126,14 +126,9 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** TODO Filter input chips are broken: freeze after first typed character
-**** happens with release =beta= channel web build
-**** happens with debug =dev= channel web build
-**** probably a dart2js issue
-*** TODO Try building for iOS (and hosting on the "test" app store)
-**** consider different screen sizes (iPhone, iPad)
-*** TODO Show thumbnails for videos
-*** TODO Get video playback to work
+*** TODO change to use =mime= package instead of =mime_type= in frontend
+**** c.f. https://pub.dev/packages/mime
+*** TODO Rename =DottedBorder.dart= to correct Dart naming convention
 *** TODO Improve User Experience
 **** home page needs to refresh tags/locations/years when navigating back
 ***** can use =NavigatorObserver= with =MaterialApp= to watch for changes
@@ -212,6 +207,8 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ****** could use a navigation rail for this (https://pub.dev/packages/navigation_rail)
 ***** show additional details on mouse hover
 ***** button in corner of thumbnail to select assets to edit, download, etc
+****** use =Stack= and =Align= to put a floating button in the corner
+****** c.f. example in the =video_player= package
 **** asset detail page
 ***** display the date and caption prominently
 ***** display the other details using a smaller format
@@ -242,6 +239,13 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** c.f. https://pub.dev/packages/navigation_rail
 ***** maybe selectors for "portrait", "selfie", "screen shots"
 **** flutter allows for a custom error handler (i.e. override the ugly red screen)
+*** TODO Filter input chips are broken: freeze after first typed character
+**** happens with release =beta= channel web build
+**** happens with debug =dev= channel web build
+**** does _not_ happen with =dev= channel macos build
+**** maybe a dart2js issue
+*** TODO Try building for iOS (and hosting on the "test" app store)
+**** consider different screen sizes (iPhone, iPad)
 *** ideas and widget usage
 **** Look at the Flutter "Gallery" app ("crane") for a pretty example
 ***** gently rounded image corners
@@ -435,6 +439,7 @@ include it in the database records.
 *** Look for package that enables user to select photos to upload
 **** e.g. =image_picker= or =file_picker= packages
 ** Desktop app
+*** macOS: need an entitlement? to play videos using =video_player=
 *** macOS: likely need to add entitlement for =com.apple.security.network.server=
 **** entitlements are part of the app signing process, allowing apps certain abilities
 **** c.f. https://flutter.dev/desktop#entitlements-and-the-app-sandbox

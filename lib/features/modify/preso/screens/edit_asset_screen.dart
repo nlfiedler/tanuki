@@ -7,7 +7,7 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:intl/intl.dart';
 import 'package:tanuki/container.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
-import 'package:tanuki/environment_config.dart';
+import 'package:tanuki/core/preso/widgets/asset_display.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_bloc.dart';
 import 'package:tanuki/features/modify/preso/validators/media_type.dart';
 import 'package:tanuki/features/modify/preso/widgets/update_submit.dart';
@@ -51,8 +51,6 @@ class EditAssetScreen extends StatelessWidget {
   }
 }
 
-const thumbnail640 = '/api/thumbnail/640/640/';
-
 class AssetEditor extends StatelessWidget {
   final Asset asset;
 
@@ -63,16 +61,15 @@ class AssetEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uri = '${EnvironmentConfig.base_url}$thumbnail640${asset.id}';
     return SingleChildScrollView(
       child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Image.network(
-              uri,
-              fit: BoxFit.contain,
-              errorBuilder: imageErrorBuilder,
+            child: AssetDisplay(
+              assetId: asset.id,
+              mimetype: asset.mimetype,
+              displayWidth: 640,
             ),
           ),
           Padding(
@@ -83,26 +80,6 @@ class AssetEditor extends StatelessWidget {
       ),
     );
   }
-}
-
-Widget imageErrorBuilder(
-  BuildContext context,
-  Object error,
-  StackTrace stackTrace,
-) {
-  return SizedBox(
-    width: 640,
-    height: 640,
-    child: Center(
-      child: Card(
-        child: ListTile(
-          leading: Icon(Icons.error_outline),
-          title: Text('Unable to load thumbnail'),
-          subtitle: Text(error.toString()),
-        ),
-      ),
-    ),
-  );
 }
 
 class AssetEditForm extends StatefulWidget {
