@@ -7,7 +7,7 @@ import 'package:graphql/client.dart' as gql;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' as parser;
 import 'package:meta/meta.dart';
-import 'package:mime_type/mime_type.dart';
+import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 import 'package:tanuki/core/error/exceptions.dart';
 
@@ -57,8 +57,9 @@ class AssetRemoteDataSourceImpl extends AssetRemoteDataSource {
     final uri = Uri.parse('$baseUrl/api/import');
     final request = http.MultipartRequest('POST', uri);
     final filename = p.basename(filepath);
-    final mimeType = mime(filename).split('/');
-    final mediaType = parser.MediaType(mimeType[0], mimeType[1]);
+    final mimeType = lookupMimeType(filename) ?? 'application/octet-stream';
+    final mimeParts = mimeType.split('/');
+    final mediaType = parser.MediaType(mimeParts[0], mimeParts[1]);
     final multiFile = await http.MultipartFile.fromPath('asset', filepath,
         filename: filename, contentType: mediaType);
     request.files.add(multiFile);
@@ -70,8 +71,9 @@ class AssetRemoteDataSourceImpl extends AssetRemoteDataSource {
     // build up a multipart request based on the given information
     final uri = Uri.parse('$baseUrl/api/import');
     final request = http.MultipartRequest('POST', uri);
-    final mimeType = mime(filename).split('/');
-    final mediaType = parser.MediaType(mimeType[0], mimeType[1]);
+    final mimeType = lookupMimeType(filename) ?? 'application/octet-stream';
+    final mimeParts = mimeType.split('/');
+    final mediaType = parser.MediaType(mimeParts[0], mimeParts[1]);
     final multiFile = http.MultipartFile.fromBytes('asset', contents,
         filename: filename, contentType: mediaType);
     request.files.add(multiFile);
