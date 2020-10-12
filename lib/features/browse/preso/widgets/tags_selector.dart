@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:tanuki/container.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart'
@@ -13,8 +12,8 @@ import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart'
 class TagsSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<AllTagsBloc>(
-      create: (_) => getIt<AllTagsBloc>(),
+    return BlocProvider.value(
+      value: BlocProvider.of<AllTagsBloc>(context),
       child: BlocBuilder<AllTagsBloc, AllTagsState>(
         buildWhen: (previous, current) {
           return !(previous is Loaded && current is Loading);

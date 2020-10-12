@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:intl/intl.dart';
-import 'package:tanuki/container.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_years_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart'
@@ -14,8 +13,8 @@ import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart'
 class DatesSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<AllYearsBloc>(
-      create: (_) => getIt<AllYearsBloc>(),
+    return BlocProvider.value(
+      value: BlocProvider.of<AllYearsBloc>(context),
       child: BlocBuilder<AllYearsBloc, AllYearsState>(
         buildWhen: (previous, current) {
           return !(previous is Loaded && current is Loading);

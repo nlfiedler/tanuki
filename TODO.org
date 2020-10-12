@@ -127,13 +127,6 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO Improve User Experience
-**** home page needs to refresh tags/locations/years when navigating back
-***** c.f. https://medium.com/flutter/learning-flutters-new-navigation-and-routing-system-7c9068155ade
-***** see the =onPopPage()= of the =Navigator= for a way to update state
-***** use =Navigator= in =MyApp= to set up the set of pages
-***** combine the various blocs so the =onPopPage()= can fire update events
-****** either combine the blocs themselves into one, or use =MultiBlocProvider=
-***** alternative: can use =NavigatorObserver= with =MaterialApp= to watch for changes
 **** look at GMail for ideas on navigation, filtering, etc
 ***** c.f. https://gallery.flutter.dev/#/reply a mail client demo
 ***** filters (icons w/names) displayed on the left side
@@ -597,6 +590,9 @@ include it in the database records.
 - EXIF data does not contain timezone information after all
 - [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
 ** Architecture Review
+*** Page navigation update in Flutter
+**** Someday the Navigator 2.0 will be a part of dev/beta/stable
+**** It is page based and offers an improved API for page navigation
 *** Large file upload
 **** split file into chunks, upload one-by-one, showing progress
 ***** default to 8MB chunks, most images will be smaller than that

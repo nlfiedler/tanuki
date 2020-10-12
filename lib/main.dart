@@ -3,6 +3,9 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tanuki/features/browse/preso/bloc/all_locations_bloc.dart';
+import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart';
+import 'package:tanuki/features/browse/preso/bloc/all_years_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
 import 'package:tanuki/features/browse/preso/screens/asset_screen.dart';
 import 'package:tanuki/features/browse/preso/screens/home_screen.dart';
@@ -19,8 +22,21 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<AssetBrowserBloc>(
-      create: (_) => ioc.getIt<AssetBrowserBloc>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AssetBrowserBloc>(
+          create: (_) => ioc.getIt<AssetBrowserBloc>(),
+        ),
+        BlocProvider<AllLocationsBloc>(
+          create: (_) => ioc.getIt<AllLocationsBloc>(),
+        ),
+        BlocProvider<AllTagsBloc>(
+          create: (_) => ioc.getIt<AllTagsBloc>(),
+        ),
+        BlocProvider<AllYearsBloc>(
+          create: (_) => ioc.getIt<AllYearsBloc>(),
+        ),
+      ],
       child: MaterialApp(
         title: 'Tanuki',
         initialRoute: '/',
@@ -31,11 +47,30 @@ class MyApp extends StatelessWidget {
           '/recents': (context) => RecentsScreen(),
           '/upload': (context) => UploadScreen(),
         },
+        navigatorObservers: [_AttributeRefresher()],
         theme: ThemeData(
           brightness: Brightness.dark,
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
       ),
     );
+  }
+}
+
+class _AttributeRefresher extends NavigatorObserver {
+  @override
+  void didPop(Route route, Route previousRoute) {
+    // The route and previousRoute values seem backward to what their names
+    // imply (e.g. route is where we are coming from and previousRoute is the
+    // one to which we are returning).
+    if (previousRoute.isFirst) {
+      // If returning to the home screen, signal the selector blocs to refresh
+      // their state since the page we just left may have altered the data in
+      // some manner.
+      final context = navigator.context;
+      BlocProvider.of<AllLocationsBloc>(context).add(LoadAllLocations());
+      BlocProvider.of<AllTagsBloc>(context).add(LoadAllTags());
+      BlocProvider.of<AllYearsBloc>(context).add(LoadAllYears());
+    }
   }
 }
