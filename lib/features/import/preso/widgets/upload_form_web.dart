@@ -5,7 +5,7 @@
 import 'dart:html';
 import 'dart:typed_data';
 
-import 'package:file_picker_web/file_picker_web.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_dropzone/flutter_dropzone.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -19,14 +19,18 @@ class UploadForm extends StatefulWidget {
 }
 
 class _UploadFormState extends State<UploadForm> {
-  List<File> _selectedFiles = [];
+  // Selected files come from either the file picker or the drop zone,
+  // and they have different types (PlatformFile vs dart::html::File).
+  List<dynamic> _selectedFiles = [];
   bool highlightDropZone = false;
 
   void _pickFiles(BuildContext context) async {
-    final files = await FilePicker.getMultiFile();
-    setState(() {
-      _selectedFiles.addAll(files);
-    });
+    final result = await FilePicker.platform.pickFiles(allowMultiple: true);
+    if (result != null) {
+      setState(() {
+        _selectedFiles.addAll(result.files);
+      });
+    }
   }
 
   Widget _buildUploadStatus(BuildContext context, UploadFileState state) {
@@ -69,32 +73,43 @@ class _UploadFormState extends State<UploadForm> {
     });
   }
 
-  void _uploadFile(BuildContext context, File uploading) {
-    // It is easier to manage the callbacks here in the widgets than for the
-    // bloc to manage this in response to events coming from the widgets.
-    FileReader reader = FileReader();
-    reader.onLoadEnd.listen((_) {
-      final Uint8List contents = reader.result;
+  void _uploadFile(BuildContext context, dynamic uploading) {
+    if (uploading is PlatformFile) {
+      // file_picker 2.0 provides the file data as a property
       BlocProvider.of<UploadFileBloc>(context).add(
         UploadFile(
           filename: uploading.name,
-          contents: contents,
+          contents: uploading.bytes,
         ),
       );
-    });
-    reader.onError.listen((_) {
-      final String errorMsg = reader.error.message;
-      Scaffold.of(context).showSnackBar(
-        SnackBar(
-          content: ListTile(
-            title: Text('Error reading file ${uploading.name}'),
-            subtitle: Text(errorMsg),
+    } else {
+      // With the html files, it is easier to manage the callbacks here in the
+      // widgets than for the bloc to manage this in response to events coming
+      // from the widgets.
+      FileReader reader = FileReader();
+      reader.onLoadEnd.listen((_) {
+        final Uint8List contents = reader.result;
+        BlocProvider.of<UploadFileBloc>(context).add(
+          UploadFile(
+            filename: uploading.name,
+            contents: contents,
           ),
-        ),
-      );
-      BlocProvider.of<UploadFileBloc>(context).add(SkipCurrent());
-    });
-    reader.readAsArrayBuffer(uploading);
+        );
+      });
+      reader.onError.listen((_) {
+        final String errorMsg = reader.error.message;
+        Scaffold.of(context).showSnackBar(
+          SnackBar(
+            content: ListTile(
+              title: Text('Error reading file ${uploading.name}'),
+              subtitle: Text(errorMsg),
+            ),
+          ),
+        );
+        BlocProvider.of<UploadFileBloc>(context).add(SkipCurrent());
+      });
+      reader.readAsArrayBuffer(uploading);
+    }
   }
 
   @override
@@ -160,7 +175,7 @@ class _UploadFormState extends State<UploadForm> {
         ? theme.colorScheme.secondary
         : theme.colorScheme.primary;
     // Instead of a hard-coded size for the drop zone, make it a factor of the
-    // size of the headline text in the current them.
+    // size of the headline text in the current theme.
     final boxHeight = theme.textTheme.headline1.fontSize;
     return DottedBorder(
       color: borderColor,
@@ -187,7 +202,7 @@ class _UploadFormState extends State<UploadForm> {
                   // Even when dropping multiple files, this gets called once
                   // for each file in the set, so must append to the list.
                   setState(() {
-                    _selectedFiles.add(ev as File);
+                    _selectedFiles.add(ev);
                     highlightDropZone = false;
                   });
                 },
@@ -201,7 +216,7 @@ class _UploadFormState extends State<UploadForm> {
   }
 }
 
-Widget _buildFileList(List<File> files, UploadFileState state) {
+Widget _buildFileList(List<dynamic> files, UploadFileState state) {
   if (files.isNotEmpty) {
     return _buildListView(files);
   } else if (state is Uploading) {
