@@ -77,7 +77,7 @@ AssetInputId buildAssetInputId(String assetId, Map<String, dynamic> inputs) {
       tags: inputs['tags'] as List<String>,
       caption: Option.some(caption.isEmpty ? null : caption),
       location: Option.some(location.isEmpty ? null : location),
-      datetime: Option.some(datetime.toUtc()),
+      datetime: Option.some(datetime).map((v) => v.toUtc()),
       mimetype: Some(inputs['mimetype']),
       filename: None(),
     ),
