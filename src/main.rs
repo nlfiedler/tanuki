@@ -141,7 +141,7 @@ async fn get_thumbnail(req: HttpRequest) -> HttpResponse {
         match result {
             Ok(data) => HttpResponse::Ok()
                 .content_type("image/jpeg")
-                .content_length(data.len() as u64)
+                .header(header::CONTENT_LENGTH, data.len() as u64)
                 .header(header::ETAG, etag)
                 .body(data),
             Err(err) => {
@@ -184,12 +184,13 @@ async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> 
     .await;
     if let Ok(asset) = result {
         let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
-        // other errors are indeed "internal server errors" so let the default
-        // error handler raise those to the client
-        let filepath = blobs.blob_path(&asset.key)?;
-        let file = NamedFile::open(filepath)?;
-        let mime_type: mime::Mime = asset.media_type.parse().unwrap();
-        Ok(Either::A(file.set_content_type(mime_type)))
+        if let Ok(filepath) = blobs.blob_path(&asset.key) {
+            let file = NamedFile::open(filepath)?;
+            let mime_type: mime::Mime = asset.media_type.parse().unwrap();
+            Ok(Either::A(file.set_content_type(mime_type)))
+        } else {
+            Ok(Either::B(HttpResponse::InternalServerError().finish()))
+        }
     } else {
         Ok(Either::B(HttpResponse::NotFound().finish()))
     }
