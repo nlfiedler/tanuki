@@ -128,12 +128,14 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
 *** TODO Improve User Experience
 **** home page needs to refresh tags/locations/years when navigating back
-***** can use =NavigatorObserver= with =MaterialApp= to watch for changes
-***** consider replacing routes vs pushing and navigate using another means
-***** after upload (new dates)
-***** after bulk update
-***** after asset edit
+***** c.f. https://medium.com/flutter/learning-flutters-new-navigation-and-routing-system-7c9068155ade
+***** see the =onPopPage()= of the =Navigator= for a way to update state
+***** use =Navigator= in =MyApp= to set up the set of pages
+***** combine the various blocs so the =onPopPage()= can fire update events
+****** either combine the blocs themselves into one, or use =MultiBlocProvider=
+***** alternative: can use =NavigatorObserver= with =MaterialApp= to watch for changes
 **** look at GMail for ideas on navigation, filtering, etc
+***** c.f. https://gallery.flutter.dev/#/reply a mail client demo
 ***** filters (icons w/names) displayed on the left side
 ***** sidebar on the right for extra features/extensions
 ***** hamburger icon in upper left toggles filter names vs just icons
@@ -141,31 +143,9 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** waffle icon to navigate to other applications
 ***** help and settings icons next to waffle
 **** browse and search
-***** [reorganize this section]
-***** unify the two pages into one
-***** with the "crane" like selectors, the search is just another row of inputs
-***** "crane" (flutter gallery sample) style input fields at the top
-****** see the "crane" flutter gallery sample for the basic layout and appearance
-****** use input fields with small icons on the left and drop-down button on the right
-****** typing into the field will perform completion
-****** clicking on the drop-down will offer selection of attributes
-****** once entered or selected, input fields show active selectors
-****** maybe have a small x to deactive active selectors
-****** can also remove selectors by backspacing
-***** header with several rows for entering and showing selectors
-****** one row for tags, another for locations, date range, etc
-****** each row starts with a label, e.g. ~Tags~
-****** after the label, an input field (show just an underline, rather than a box)
-****** typing into the input field will offer completion of tags, etc
-****** once entered, the selector is appended to the row, after the input field
-****** each label has a ~delete~ button to remove it from the list
-***** that is, normally the second row is collapsed, but clicking a button expands it
-***** the second row would have the date range, file name, and media type
-***** look at flutter form builder "chips input" which has suggestion support
-***** flutter form build also has a "type ahead" text input with suggestion support
-***** try using the date range picker function in material instead of a list of years
-****** flutter form builder also has a date range picker
-****** c.f. https://api.flutter.dev/flutter/material/showDatePicker.html
+***** consider copying =FormBuilderChipsInput= and adding a drop-down selector
+***** user can type or use selector to add attributes to the field
+***** consider where to display file name and media type search fields
 **** image gallery paging
 ***** consider other ways of showing lots of results w/o paging
 ****** look at some examples and packages for ideas on design and implementation
@@ -180,14 +160,8 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ****** when fetching a new page, the page widget would show a progress indicator
 ****** the "dropped" pages would be changed to consist of placeholders to free memory
 ***** using carousel style navigation arrows?
-***** small dots instead of large buttons with numbers in them?
-***** still good to have a quick way to jump anywhere in the set of results
 **** quick import
 ***** look for a way to allow zoom on the recent imports thumbnails
-***** drag/drop and/or file open to add lots of assets
-***** immediately import everything to the backend
-***** show progress and display thumbnails as assets are successfully imported
-***** switch to the "recent imports" screen showing just these new assets
 ***** user selects multiple assets and applies tags and locations to them
 ***** click on an asset to enter a caption in place (without leaving the gallery view)
 ***** hover over an asset to show a larger version
@@ -241,6 +215,7 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 **** happens with debug =dev= channel web build
 **** does _not_ happen with =dev= channel macos build
 **** maybe a dart2js issue
+*** TODO Try building for Windows (see if video player works)
 *** TODO Try building for iOS (and hosting on the "test" app store)
 **** consider different screen sizes (iPhone, iPad)
 *** ideas and widget usage
