@@ -13,6 +13,15 @@ class UploadScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('all your assets will belong to us'),
+        actions: [
+          FlatButton(
+            child: Icon(Icons.history),
+            onPressed: () {
+              // replace the route for viewing the asset
+              Navigator.pushReplacementNamed(context, '/recents');
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
