@@ -1,94 +1,12 @@
 * Tanuki
-** [#A] Get existing assets into tanuki
-*** DONE limiting to 100 assets on recents page is not working, shows all
-*** DONE disable the file open button on upload page during upload
-*** DONE extract creation data from video files (mp4)
-**** https://github.com/alfg/mp4rs (MIT)
-***** creation time is in =moov.mvhd.creation_time=
-***** results of testing with various video files
-| filename     | mp4 creation time | minus 1904 | minus formatted     | ffprobe             |
-|--------------+-------------------+------------+---------------------+---------------------|
-| 100_1206.MOV |        3272616440 | 1189771640 | 2007-09-14 05:07:20 | 2007-09-14 12:07:20 |
-| IMG_3094.MOV |        3463750916 | 1380906116 | 2013-10-04 10:01:56 | 2013-10-04 17:01:56 |
-| flower.mpg   |        3603280881 | 1520436081 | 2018-03-07 07:21:21 | 2018-03-07 15:21:21 |
-**** https://github.com/mozilla/mp4parse-rust (MPL-2.0)
-***** intentionally skips the creation time fields
-*** DONE large file import (or simply direct file import)
-**** photoprism has an ~import~ folder and command to bring in assets
-**** on upload screen, provide button to process anything sitting in ~uploads~ directory
-**** guess the media type, create a record, move file into place
-**** DONE write a new usecase that invokes =ImportAsset=
-***** test that it ignores dot files and directories
-**** DONE write a new GraphQL mutation that invokes the new usecase
-***** return the number of assets processed
-**** DONE add the button on upload screen to invoke GraphQL mutation
-***** display the results (number of assets)
-*** DONE imports screen should first sort results by filename
-*** DONE need to make sure the other AVI files in shared are really AVI files
-**** rename the files before importing
-**** they all check out as proper RIFF encoded AVI files
-*** DONE extension repair should replace the extension, not append
-*** DONE some of the supposed avi files are QuickTime
-**** probably need to fix the media type by hand and then run a repair
-**** they are probably the ones that got "fixed" a week ago
-***** their names were probably wrong but the media type was correct?
-**** these are all quicktime videos with non-trivial length
-***** does play in Finder
-***** does download via link
-***** does not play in Firefox
-***** does not play in Safari
-***** changing the media type fixes it for Safari
-**** these have been fixed, however they are very short
-***** does not load properly in Firefox
-***** displays normally in Safari, shows as 0 seconds long
-#+BEGIN_SRC
-MjAxNC8xMi8yMS8wMDE1LzAxY2UxcWQ3cWVwMndiMWY4OWduNW1kNHpqLmF2aS5tb3Y=
-#+END_SRC
-**** only these two are actual RIFF AVI files
-#+BEGIN_SRC
-MjAyMC8wNS8yMC8yMzQ1LzAxZTh0OGUzMDU4ajZlcXg1MDIwZmZtemN0LmF2aQ==
-MjAyMC8wNS8zMC8yMTMwLzAxZTlrcjFrZjJqcTlteHY3eGR5eGV5MTJnLmF2aQ==
-#+END_SRC
-*** TODO some videos have trouble playing in Firefox but are okay in Safari
-**** maybe something to do with the bytes range request?
-**** maybe =main.rs= should convert =video/quicktime= to =video/mp4=
-***** that made no difference
-**** Firefox says this video is not supported
-***** it has a reasonable date
-***** it has =.mov= extension in the original filename
-***** it is very large (573mb)
-#+BEGIN_SRC
-MjAyMC8wNS8zMC8yMjE1LzAxZTlrdjNoZXI2NjQ2bng3cmVlbjVqcHd6Lm1vdg==
-#+END_SRC
-**** Firefox will play with sound only
-***** they all have =.avi= extension in the original filename
-***** they all have weird dates (=12/31/1969, 4:00:00 PM=)
-#+BEGIN_SRC
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ3YjIxMHpmOGRrN3RhdjU3Zzh3Lm1vdg==
-MjAxNS8wMi8wMi8wMjE1LzAxY2UxcWQ4d2gxM3NoYmJyZmo4bWM2czZrLm1vdg==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ3c3BhODBid2I1cnk5NGZtcXZrLm1vdg==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ4Y2txOWhuYWdqYjN0dDgzN3hlLm1vdg==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ4Z3d6M2UzbnQ0am02cjgyYWN0Lm1vdg==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ4bTlrZzV0Y2pkMzA0OHhrMmdrLm1vdg==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ5YnM2MHJoaDAzbjdrZDBoOGt5Lm1vdg==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ5Z2hjeTZwdmdjanQ3aGthYzZzLm1vdg==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWQ5azNxZTA0eGdubmJ4N3poOWtlLm1vdg==
-MjAxNS8wNC8xNC8wMzE1LzAxY2UxcWRhZGYweWVoOXA0czdnMjdtNnF0Lm1vdg==
-MjAxNS8wNC8xNC8wNDE1LzAxY2UxcWQ4enNweWF3Ymd6a2hqYjY5M2prLm1vdg==
-MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5MmR3emJiYWd5NTJ0c2FwcjY3Lm1vdg==
-MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
-#+END_SRC
-*** DONE extract original date from avi files
-**** evaluate https://crates.io/crates/riff to see if it decodes metadata
-**** c.f. https://en.wikipedia.org/wiki/Resource_Interchange_File_Format
-**** c.f. https://www.eden-foundation.org/products/code/film_date_stamp/index.html
-**** date may be a string (in =IDIT= chunk?): =SAT DEC 19 05:46:12 2009= with newline and null
-**** date may also be encoded as =DTIM= (see wikipedia RIFF article on how to convert)
-*** DONE select on media type just like location, year, tags
-**** would be nice to get all unique media types (like locations and tags)
-*** TODO shared folder cleanup
-**** dump everything into the =uploads= directory and process anything new
-*** DONE ensure assets are readable by all (=chmod 644=) on import
+** [#A] Quick improvements
+*** enhance attribute selector with a drop-down selector
+**** maybe copy =FormBuilderChipsInput= code and modify appropriately
+**** maybe use =Stack= and =Align= and combine with a drop-down
+**** user can type or use selector to add attributes to the field
+*** use =semanticLabel= on =Image= for accessibility
+** [#B] Enable basic bulk update of user date
+*** Need to fix a lot of the older assets to have the correct date
 ** [#C] Prepare for Christmas calendar
 *** easy selection and export of images
 **** Selection process
@@ -99,141 +17,98 @@ MjAxNy8wMy8wMi8wNjMwLzAxY2UxcWQ5NXg1czJwczNhZnkxY3NwMThtLm1vdg==
 ***** Maybe action panel appears when there are selections
 ***** Show "file save" dialog to choose local file path
 ***** Save assets using their unique filename
-** [#B] New Interface
-*** Use Clean Architecture
-**** define the features
-***** browse
-***** import
-***** modify
-***** export
+** Interface improvements
 *** Thumbnail Serving Strategy
-**** capture the image/video dimensions during import, save to asset record
-***** a larger asset record in CBOR format is ~260 bytes, a few more bytes is okay
-***** in PouchDB, each record takes almost exactly 1 kilobyte
-***** use =u32= for each dimension (should be more than enough)
-**** on import, ensure asset identifier ends with correct media type extension
-***** if provided filename does not end in the correct extension, append it
-****** use the provided media type to know what extension to add
-***** this ensures correct guessing of media type when making thumbnails
-***** n.b. all thumbnails and previews are image/jpeg anyway so this is not necessary
-***** if, someday, the provided media type is "unknown", then use mime sniffer
-***** c.f. https://mimesniff.spec.whatwg.org
-***** c.f. https://developer.mozilla.org/en-US/docs/Mozilla/How_Mozilla_determines_MIME_Types
-***** c.f. https://github.com/flier/rust-mime-sniffer
 **** the frontend can use the image dimensions to compute the aspect ratio
 **** with the aspect ratio, frontend can request images of the desired size
 **** frontend can ask for images that are N pixels high or M pixels wide, or whatever
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** TODO Improve User Experience
-**** look at GMail for ideas on navigation, filtering, etc
-***** c.f. https://gallery.flutter.dev/#/reply a mail client demo
-***** filters (icons w/names) displayed on the left side
-***** sidebar on the right for extra features/extensions
-***** hamburger icon in upper left toggles filter names vs just icons
-***** search bar along the very top
-***** waffle icon to navigate to other applications
-***** help and settings icons next to waffle
-**** browse and search
-***** consider copying =FormBuilderChipsInput= and adding a drop-down selector
-***** user can type or use selector to add attributes to the field
-***** consider where to display file name and media type search fields
-**** image gallery paging
-***** consider other ways of showing lots of results w/o paging
-****** look at some examples and packages for ideas on design and implementation
-******* handles scrolling and waiting for data: https://pub.dev/packages/pagination_view
-******* has dots: https://pub.dev/packages/dot_pagination_swiper
-******* can show an error message: https://pub.dev/packages/flutter_pagination_helper
-******* infinite with limited caching: https://pub.dev/packages/infinite_pagination
-******* supports various views: https://pub.dev/packages/flutter_paginator
-***** consider how to display pages continuously (a la infinite list)
-****** would keep several pages in the widget tree at one time
-****** scrolling would drop a page widget from the tree, and add a new one
-****** when fetching a new page, the page widget would show a progress indicator
-****** the "dropped" pages would be changed to consist of placeholders to free memory
-***** using carousel style navigation arrows?
-**** quick import
-***** look for a way to allow zoom on the recent imports thumbnails
-***** user selects multiple assets and applies tags and locations to them
-***** click on an asset to enter a caption in place (without leaving the gallery view)
-***** hover over an asset to show a larger version
-****** for image, expand temporarily in place
-****** for video, start playing it
-**** image gallery display
-***** different modes of display
-****** grid of just images, maybe 180x180 (a la Apple Photos)
-****** grid of images with caption info (300x300, shows title, location, date) (a la PhotoPrism)
-****** list of rows, tiny thumbnail (96x96), title, location, date, likes
-****** material has several ~view~ icons that may be appropriate
-***** show selectors for months of the year to jump to that time range
-****** eventually this selector needs to consider the sort field and order
-****** could use a navigation rail for this (https://pub.dev/packages/navigation_rail)
-***** show additional details on mouse hover
-***** button in corner of thumbnail to select assets to edit, download, etc
-****** use =Stack= and =Align= to put a floating button in the corner
-****** c.f. example in the =video_player= package
-**** asset detail page
-***** display the date and caption prominently
-***** display the other details using a smaller format
-***** seems popular to show the gallery items as small thumbnails along the top (horizontally scrollable)
-***** have chevron buttons on both sides to navigate through gallery items (e.g. "lightbox")
-***** display location as a city/country pair
-***** display select information from EXIF metadata (e.g. camera)
-***** add a button to download the raw asset
-**** screen for showing all tags, locations, years, with count values
-***** selecting a tag or location offers a rename function
-***** selecting multiple tags/locations offers option to remove from all assets
-**** quick editing on browse page
-***** use =ExpansionPanel= for thumbnail caption that allows editing common fields
-**** navigation between sceens
-***** do not want to have to build all of the screens at the same time, probably
-***** can add actions to the =Appbar= with an overflow popup menu button
-****** the popup menu button would be the navigation selector
-****** the other actions would be appropriate to the current screen
-***** maybe use =TabBar=
-***** maybe use =BottomNavigationBar=
-**** error handling
-***** many screens/widgets just display a message without any means of recovery
-***** see any of the widgets using bloc providers and how they become useless upon error
-**** timeline style display for all assets
-***** without any selectors, just show most recent going back in time
-***** c.f. https://pub.dev/packages/flutter_timeline
-**** navigation rail for filtering gallery view
-***** c.f. https://pub.dev/packages/navigation_rail
-***** maybe selectors for "portrait", "selfie", "screen shots"
+*** look at GMail for ideas on navigation, filtering, etc
+**** c.f. https://gallery.flutter.dev/#/reply a mail client demo
+**** filters (icons w/names) displayed on the left side
+**** sidebar on the right for extra features/extensions
+**** hamburger icon in upper left toggles filter names vs just icons
+**** search bar along the very top
+**** waffle icon to navigate to other applications
+**** help and settings icons next to waffle
+*** browse and search
+**** consider where to display file name and media type search fields
+*** image gallery paging
+**** consider other ways of showing lots of results w/o paging
+***** look at some examples and packages for ideas on design and implementation
+****** handles scrolling and waiting for data: https://pub.dev/packages/pagination_view
+****** has dots: https://pub.dev/packages/dot_pagination_swiper
+****** can show an error message: https://pub.dev/packages/flutter_pagination_helper
+****** infinite with limited caching: https://pub.dev/packages/infinite_pagination
+****** supports various views: https://pub.dev/packages/flutter_paginator
+**** consider how to display pages continuously (a la infinite list)
+***** would keep several pages in the widget tree at one time
+***** scrolling would drop a page widget from the tree, and add a new one
+***** when fetching a new page, the page widget would show a progress indicator
+***** the "dropped" pages would be changed to consist of placeholders to free memory
+**** using carousel style navigation arrows?
+*** quick import
+**** user selects multiple assets and applies tags and locations to them
+**** click on an asset to enter a caption in place (without leaving the gallery view)
+**** recents page: hover over an asset to show a larger version
+***** for image, expand temporarily in place
+***** for video, start playing it
+*** image gallery display
+**** different modes of display
+***** grid of just images, maybe 180x180 (a la Apple Photos)
+***** grid of images with caption info (300x300, shows title, location, date) (a la PhotoPrism)
+***** list of rows, tiny thumbnail (96x96), title, location, date, likes
+***** material has several ~view~ icons that may be appropriate
+**** show selectors for months of the year to jump to that time range
+***** eventually this selector needs to consider the sort field and order
+***** could use a navigation rail for this (https://pub.dev/packages/navigation_rail)
+**** show additional details on mouse hover
+**** button in corner of thumbnail to select assets to edit, download, etc
+***** use =Stack= and =Align= to put a floating button in the corner
+***** c.f. example in the =video_player= package
+*** asset detail page
+**** display the date and caption prominently
+**** display the other details using a smaller format
+**** seems popular to show the gallery items as small thumbnails along the top (horizontally scrollable)
+**** have chevron buttons on both sides to navigate through gallery items (e.g. "lightbox")
+**** display location as a city/country pair
+**** display select information from EXIF metadata (e.g. camera)
+**** add a button to download the raw asset
+*** screen for showing all tags, locations, years, with count values
+**** selecting a tag or location offers a rename function
+**** selecting multiple tags/locations offers option to remove from all assets
+*** quick editing on browse page
+**** use =ExpansionPanel= for thumbnail caption that allows editing common fields
+*** navigation between sceens
+**** do not want to have to build all of the screens at the same time, probably
+**** can add actions to the =Appbar= with an overflow popup menu button
+***** the popup menu button would be the navigation selector
+***** the other actions would be appropriate to the current screen
+**** maybe use =TabBar=
+**** maybe use =BottomNavigationBar=
+*** error handling
+**** many screens/widgets just display a message without any means of recovery
+**** see any of the widgets using bloc providers and how they become useless upon error
 **** flutter allows for a custom error handler (i.e. override the ugly red screen)
-*** TODO Filter input chips are broken: freeze after first typed character
+*** timeline style display for all assets
+**** without any selectors, just show most recent going back in time
+**** c.f. https://pub.dev/packages/flutter_timeline
+*** navigation rail for filtering gallery view
+**** c.f. https://pub.dev/packages/navigation_rail
+**** maybe selectors for "portrait", "selfie", "screen shots"
+*** use =RichText= widget to style the captions (e.g. make tags bold)
+*** tags in caption could be "gesture sensitive" (i.e. clickable) to show assets with that tag
+*** can use =DataTable= to display labeled data (like asset details, metadata)
+*** use pointer enter/exit events to start playing a video in place
+** Known Issues
+*** filter input chips are broken on first typed character
+**** seems like focus goes somewhere, clicking in input field lets you type another character
 **** happens with release =beta= channel web build
 **** happens with debug =dev= channel web build
 **** does _not_ happen with =dev= channel macos build
 **** maybe a dart2js issue
-*** TODO Try building for Windows (see if video player works)
-*** TODO Try building for iOS (and hosting on the "test" app store)
-**** consider different screen sizes (iPhone, iPad)
-*** ideas and widget usage
-**** Look at the Flutter "Gallery" app ("crane") for a pretty example
-***** gently rounded image corners
-***** gallery background has rounded corners
-***** pleasing captions
-***** interesting not-quite-grid (column oriented) arrangement
-***** selectors across the top
-***** floating ~Back~ button at the bottom left
-**** Consider how to have a "light" and "dark" mode
-**** Look for the =video_player= web plugin for playing video in webui
-**** use =RichText= widget to style the captions (e.g. make tags bold)
-**** tags in caption could be "gesture sensitive" (i.e. clickable) to show assets with that tag
-**** paging list view with fetching logic: https://pub.dev/packages/uic
-**** use =semanticLabel= on =Image= for accessibility
-**** =FutureBuilder= for showing things that load asynchronously
-**** use =SliverAppBar= in place of =AppBar=, it will shrink when content is scrolled
-***** could be a good way to keep controls above scrolling content
-**** use =FadeInImage= to show a placeholder while loading a remote image
-**** maybe use =Hero= to animate/transition from image gallery to a single image
-***** click on item in a list/grid and it expands to the details page
-**** can use =DataTable= to display labeled data (like asset details, metadata)
-**** use pointer enter/exit events to start playing a video in place
-** Known Issues
 *** graphql errors are handled poorly everywhere
 *** too many open files
 **** happens when uploading numerous files
@@ -273,9 +148,6 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 ***** rename a tag
 ***** set caption
 ***** change media type
-** Asynchronous
-*** Will need to start using =async/await= as more libraries return =Future=
-*** Use of actix means that tokio runtime is already in place
 ** Search Improvements
 *** TODO Add support for searching by filename
 **** extra input fields would be hidden normally, expanded by clicking arrow button
@@ -590,7 +462,10 @@ include it in the database records.
 - EXIF data does not contain timezone information after all
 - [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
 ** Architecture Review
-*** Page navigation update in Flutter
+*** Asynchronous
+**** Will need to start using =async/await= as more libraries return =Future=
+**** Use of actix means that tokio runtime is already in place
+*** Navigation update in Flutter
 **** Someday the Navigator 2.0 will be a part of dev/beta/stable
 **** It is page based and offers an improved API for page navigation
 *** Large file upload
