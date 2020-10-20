@@ -57,59 +57,99 @@ class _TagSelectorFormState extends State<TagSelectorForm> {
       value: BlocProvider.of<abb.AssetBrowserBloc>(context),
       child: BlocBuilder<abb.AssetBrowserBloc, abb.AssetBrowserState>(
         builder: (context, state) {
+          final List<String> selected =
+              state is abb.Loaded ? state.selectedTags : [];
           return FormBuilder(
             key: _fbKey,
-            child: FormBuilderChipsInput(
-              attribute: 'tags',
-              decoration: const InputDecoration(labelText: 'Tags'),
-              onChanged: (val) {
-                // Need to explicitly convert the value, whatever it is, even a
-                // list of strings, to a list of strings, so may as well use a
-                // list of Tags throughout.
-                final List<String> tags = List.from(val.map((t) => t.label));
-                BlocProvider.of<abb.AssetBrowserBloc>(context)
-                    .add(abb.SelectTags(tags: tags));
-              },
-              maxChips: 10,
-              findSuggestions: (String query) {
-                if (query.isNotEmpty) {
-                  // Looks complicated but this code is sorting the results by
-                  // the offset from the start where the query is found.
-                  var lowercaseQuery = query.toLowerCase();
-                  return widget.tags.where((tag) {
-                    return tag.label
-                        .toLowerCase()
-                        .contains(query.toLowerCase());
-                  }).toList(growable: false)
-                    ..sort((a, b) => a.label
-                        .toLowerCase()
-                        .indexOf(lowercaseQuery)
-                        .compareTo(
-                            b.label.toLowerCase().indexOf(lowercaseQuery)));
-                } else {
-                  return const <Tag>[];
-                }
-              },
-              chipBuilder: (context, state, tag) {
-                return InputChip(
-                  key: ObjectKey(tag),
-                  label: Text(tag.label),
-                  onDeleted: () => state.deleteChip(tag),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                );
-              },
-              suggestionBuilder: (context, state, tag) {
-                return ListTile(
-                  key: ObjectKey(tag),
-                  leading: Icon(Icons.label),
-                  title: Text(tag.label),
-                  onTap: () => state.selectSuggestion(tag),
-                );
-              },
-            ),
+            child: buildAttributeSelector(context, selected),
           );
         },
       ),
+    );
+  }
+
+  Widget buildAttributeSelector(BuildContext context, List<String> selected) {
+    return Stack(
+      children: [
+        buildChipsInput(context),
+        Align(
+          alignment: Alignment.centerRight,
+          child: DropdownButton(
+            onChanged: (value) {
+              // value is of type Tag(Model)
+              //
+              // Add the new value to the end of the currently selected items.
+              final List<String> values = List.from(selected);
+              values.add(value.label);
+              // Trying to rebuild the form with a different initialValue has no
+              // effect, so instead simulate a user action by telling the field
+              // that it has been changed (this is, in fact, the way this is
+              // intended to work).
+              final List<Tag> tags = List.of(values.map(
+                (v) => Tag(label: v, count: 1),
+              ));
+              _fbKey.currentState.fields['tags'].currentState.didChange(tags);
+              BlocProvider.of<abb.AssetBrowserBloc>(context)
+                  .add(abb.SelectTags(tags: values));
+            },
+            items: [
+              for (final tag in widget.tags)
+                DropdownMenuItem(
+                  value: tag,
+                  child: Text(tag.label),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  FormBuilderChipsInput buildChipsInput(BuildContext context) {
+    return FormBuilderChipsInput(
+      attribute: 'tags',
+      decoration: const InputDecoration(labelText: 'Tags'),
+      onChanged: (val) {
+        // Need to explicitly convert the value, whatever it is, even a
+        // list of strings, to a list of strings, so may as well use a
+        // list of Tags throughout.
+        final List<String> tags = List.from(val.map((t) => t.label));
+        BlocProvider.of<abb.AssetBrowserBloc>(context)
+            .add(abb.SelectTags(tags: tags));
+      },
+      maxChips: 10,
+      findSuggestions: (String query) {
+        if (query.isNotEmpty) {
+          // Looks complicated but this code is sorting the results by
+          // the offset from the start where the query is found.
+          var lowercaseQuery = query.toLowerCase();
+          return widget.tags.where((tag) {
+            return tag.label.toLowerCase().contains(query.toLowerCase());
+          }).toList(growable: false)
+            ..sort((a, b) => a.label
+                .toLowerCase()
+                .indexOf(lowercaseQuery)
+                .compareTo(b.label.toLowerCase().indexOf(lowercaseQuery)));
+        } else {
+          return const <Tag>[];
+        }
+      },
+      chipBuilder: (context, state, tag) {
+        return InputChip(
+          key: ObjectKey(tag),
+          label: Text(tag.label),
+          onDeleted: () => state.deleteChip(tag),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        );
+      },
+      suggestionBuilder: (context, state, tag) {
+        return ListTile(
+          key: ObjectKey(tag),
+          leading: Icon(Icons.label),
+          title: Text(tag.label),
+          onTap: () => state.selectSuggestion(tag),
+        );
+      },
     );
   }
 }

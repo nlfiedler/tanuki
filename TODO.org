@@ -1,9 +1,5 @@
 * Tanuki
 ** [#A] Quick improvements
-*** enhance attribute selector with a drop-down selector
-**** maybe copy =FormBuilderChipsInput= code and modify appropriately
-**** maybe use =Stack= and =Align= and combine with a drop-down
-**** user can type or use selector to add attributes to the field
 *** use =semanticLabel= on =Image= for accessibility
 ** [#B] Enable basic bulk update of user date
 *** Need to fix a lot of the older assets to have the correct date

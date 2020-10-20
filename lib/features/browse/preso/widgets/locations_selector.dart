@@ -57,60 +57,100 @@ class _LocationSelectorFormState extends State<LocationSelectorForm> {
       value: BlocProvider.of<abb.AssetBrowserBloc>(context),
       child: BlocBuilder<abb.AssetBrowserBloc, abb.AssetBrowserState>(
         builder: (context, state) {
+          final List<String> selected =
+              state is abb.Loaded ? state.selectedLocations : [];
           return FormBuilder(
             key: _fbKey,
-            child: FormBuilderChipsInput(
-              attribute: 'locations',
-              decoration: const InputDecoration(labelText: 'Locations'),
-              onChanged: (val) {
-                // Need to explicitly convert the value, whatever it is, even a
-                // list of strings, to a list of strings, so may as well use a
-                // list of Locations throughout.
-                final List<String> locations =
-                    List.from(val.map((t) => t.label));
-                BlocProvider.of<abb.AssetBrowserBloc>(context)
-                    .add(abb.SelectLocations(locations: locations));
-              },
-              maxChips: 10,
-              findSuggestions: (String query) {
-                if (query.isNotEmpty) {
-                  // Looks complicated but this code is sorting the results by
-                  // the offset from the start where the query is found.
-                  var lowercaseQuery = query.toLowerCase();
-                  return widget.locations.where((location) {
-                    return location.label
-                        .toLowerCase()
-                        .contains(query.toLowerCase());
-                  }).toList(growable: false)
-                    ..sort((a, b) => a.label
-                        .toLowerCase()
-                        .indexOf(lowercaseQuery)
-                        .compareTo(
-                            b.label.toLowerCase().indexOf(lowercaseQuery)));
-                } else {
-                  return const <Location>[];
-                }
-              },
-              chipBuilder: (context, state, location) {
-                return InputChip(
-                  key: ObjectKey(location),
-                  label: Text(location.label),
-                  onDeleted: () => state.deleteChip(location),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                );
-              },
-              suggestionBuilder: (context, state, location) {
-                return ListTile(
-                  key: ObjectKey(location),
-                  leading: Icon(Icons.label),
-                  title: Text(location.label),
-                  onTap: () => state.selectSuggestion(location),
-                );
-              },
-            ),
+            child: buildAttributeSelector(context, selected),
           );
         },
       ),
+    );
+  }
+
+  Widget buildAttributeSelector(BuildContext context, List<String> selected) {
+    return Stack(
+      children: [
+        buildChipsInput(context),
+        Align(
+          alignment: Alignment.centerRight,
+          child: DropdownButton(
+            onChanged: (value) {
+              // value is of type Location(Model)
+              //
+              // Add the new value to the end of the currently selected items.
+              final List<String> values = List.from(selected);
+              values.add(value.label);
+              // Trying to rebuild the form with a different initialValue has no
+              // effect, so instead simulate a user action by telling the field
+              // that it has been changed (this is, in fact, the way this is
+              // intended to work).
+              final List<Location> locations = List.of(values.map(
+                (v) => Location(label: v, count: 1),
+              ));
+              _fbKey.currentState.fields['locations'].currentState
+                  .didChange(locations);
+              BlocProvider.of<abb.AssetBrowserBloc>(context)
+                  .add(abb.SelectLocations(locations: values));
+            },
+            items: [
+              for (final location in widget.locations)
+                DropdownMenuItem(
+                  value: location,
+                  child: Text(location.label),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  FormBuilderChipsInput buildChipsInput(BuildContext context) {
+    return FormBuilderChipsInput(
+      attribute: 'locations',
+      decoration: const InputDecoration(labelText: 'Locations'),
+      onChanged: (val) {
+        // Need to explicitly convert the value, whatever it is, even a
+        // list of strings, to a list of strings, so may as well use a
+        // list of Locations throughout.
+        final List<String> locations = List.from(val.map((t) => t.label));
+        BlocProvider.of<abb.AssetBrowserBloc>(context)
+            .add(abb.SelectLocations(locations: locations));
+      },
+      maxChips: 10,
+      findSuggestions: (String query) {
+        if (query.isNotEmpty) {
+          // Looks complicated but this code is sorting the results by
+          // the offset from the start where the query is found.
+          var lowercaseQuery = query.toLowerCase();
+          return widget.locations.where((location) {
+            return location.label.toLowerCase().contains(query.toLowerCase());
+          }).toList(growable: false)
+            ..sort((a, b) => a.label
+                .toLowerCase()
+                .indexOf(lowercaseQuery)
+                .compareTo(b.label.toLowerCase().indexOf(lowercaseQuery)));
+        } else {
+          return const <Location>[];
+        }
+      },
+      chipBuilder: (context, state, location) {
+        return InputChip(
+          key: ObjectKey(location),
+          label: Text(location.label),
+          onDeleted: () => state.deleteChip(location),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        );
+      },
+      suggestionBuilder: (context, state, location) {
+        return ListTile(
+          key: ObjectKey(location),
+          leading: Icon(Icons.label),
+          title: Text(location.label),
+          onTap: () => state.selectSuggestion(location),
+        );
+      },
     );
   }
 }
