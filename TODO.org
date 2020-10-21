@@ -1,9 +1,7 @@
 * Tanuki
-** [#A] Quick improvements
-*** use =semanticLabel= on =Image= for accessibility
-** [#B] Enable basic bulk update of user date
+** [#A] Enable basic bulk update of user date
 *** Need to fix a lot of the older assets to have the correct date
-** [#C] Prepare for Christmas calendar
+** [#B] Prepare for Christmas calendar
 *** easy selection and export of images
 **** Selection process
 ***** Maybe show selection icon thingy on hover, click to select
