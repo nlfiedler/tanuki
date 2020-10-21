@@ -219,12 +219,12 @@ async fn main() -> std::io::Result<()> {
             .wrap(
                 // Respond to OPTIONS requests for CORS support, which is common
                 // with some GraphQL clients, including the Dart package.
-                Cors::new()
+                Cors::default()
+                    .allow_any_origin()
                     .allowed_methods(vec!["GET", "POST"])
                     .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
                     .allowed_header(header::CONTENT_TYPE)
-                    .max_age(3600)
-                    .finish(),
+                    .max_age(3600),
             )
             .service(web::resource("/graphql").route(web::post().to(graphql)))
             .service(web::resource("/graphiql").route(web::get().to(graphiql)))
