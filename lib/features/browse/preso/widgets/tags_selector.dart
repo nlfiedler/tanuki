@@ -76,19 +76,10 @@ class _TagSelectorFormState extends State<TagSelectorForm> {
           alignment: Alignment.centerRight,
           child: DropdownButton(
             onChanged: (value) {
-              // value is of type Tag(Model)
-              //
-              // Add the new value to the end of the currently selected items.
-              final List<String> values = List.from(selected);
-              values.add(value.label);
-              // Trying to rebuild the form with a different initialValue has no
-              // effect, so instead simulate a user action by telling the field
-              // that it has been changed (this is, in fact, the way this is
-              // intended to work).
-              final List<Tag> tags = List.of(values.map(
-                (v) => Tag(label: v, count: 1),
-              ));
-              _fbKey.currentState.fields['tags'].currentState.didChange(tags);
+              // Toggle the item in the selected list.
+              final values = toggleSelection(selected, value.label);
+              // Update the chips input form field to match.
+              updateChipsInput(values);
               BlocProvider.of<abb.AssetBrowserBloc>(context)
                   .add(abb.SelectTags(tags: values));
             },
@@ -152,4 +143,24 @@ class _TagSelectorFormState extends State<TagSelectorForm> {
       },
     );
   }
+
+  void updateChipsInput(List<String> values) {
+    // Trying to rebuild the form with a different initialValue has no effect,
+    // so instead simulate a user action by telling the field that it has been
+    // changed (this is, in fact, the way this is intended to work).
+    final List<Tag> tags = List.of(values.map(
+      (v) => Tag(label: v, count: 1),
+    ));
+    _fbKey.currentState.fields['tags'].currentState.didChange(tags);
+  }
+}
+
+List<String> toggleSelection(List<String> selected, String value) {
+  final List<String> values = List.from(selected);
+  if (values.contains(value)) {
+    values.remove(value);
+  } else {
+    values.add(value);
+  }
+  return values;
 }

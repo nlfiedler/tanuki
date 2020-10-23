@@ -76,20 +76,10 @@ class _LocationSelectorFormState extends State<LocationSelectorForm> {
           alignment: Alignment.centerRight,
           child: DropdownButton(
             onChanged: (value) {
-              // value is of type Location(Model)
-              //
-              // Add the new value to the end of the currently selected items.
-              final List<String> values = List.from(selected);
-              values.add(value.label);
-              // Trying to rebuild the form with a different initialValue has no
-              // effect, so instead simulate a user action by telling the field
-              // that it has been changed (this is, in fact, the way this is
-              // intended to work).
-              final List<Location> locations = List.of(values.map(
-                (v) => Location(label: v, count: 1),
-              ));
-              _fbKey.currentState.fields['locations'].currentState
-                  .didChange(locations);
+              // Toggle the item in the selected list.
+              final values = toggleSelection(selected, value.label);
+              // Update the chips input form field to match.
+              updateChipsInput(values);
               BlocProvider.of<abb.AssetBrowserBloc>(context)
                   .add(abb.SelectLocations(locations: values));
             },
@@ -153,4 +143,24 @@ class _LocationSelectorFormState extends State<LocationSelectorForm> {
       },
     );
   }
+
+  void updateChipsInput(List<String> values) {
+    // Trying to rebuild the form with a different initialValue has no effect,
+    // so instead simulate a user action by telling the field that it has been
+    // changed (this is, in fact, the way this is intended to work).
+    final List<Location> locations = List.of(values.map(
+      (v) => Location(label: v, count: 1),
+    ));
+    _fbKey.currentState.fields['locations'].currentState.didChange(locations);
+  }
+}
+
+List<String> toggleSelection(List<String> selected, String value) {
+  final List<String> values = List.from(selected);
+  if (values.contains(value)) {
+    values.remove(value);
+  } else {
+    values.add(value);
+  }
+  return values;
 }
