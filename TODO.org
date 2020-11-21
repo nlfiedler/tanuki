@@ -1,17 +1,8 @@
 * Tanuki
-** [#A] Enable basic bulk update of user date
+** [#B] Enable basic bulk update of user date
 *** Need to fix a lot of the older assets to have the correct date
-** [#B] Prepare for Christmas calendar
-*** easy selection and export of images
-**** Selection process
-***** Maybe show selection icon thingy on hover, click to select
-***** Maybe shift-click to select by thumbnails
-**** Export process
-***** Maybe main menu has "export" feature to export selected assets
-***** Maybe action panel appears when there are selections
-***** Show "file save" dialog to choose local file path
-***** Save assets using their unique filename
 ** Interface improvements
+*** reference: https://flutter.github.io/samples/
 *** Thumbnail Serving Strategy
 **** the frontend can use the image dimensions to compute the aspect ratio
 **** with the aspect ratio, frontend can request images of the desired size
@@ -30,6 +21,10 @@
 *** browse and search
 **** consider where to display file name and media type search fields
 *** image gallery paging
+**** spring-loaded next-page navigation
+***** scroll to the bottom and keep trying to scroll
+***** show some indication (e.g. a spinner) that holding will fetch the next page
+***** after two seconds or so, navigate to the next page
 **** consider other ways of showing lots of results w/o paging
 ***** look at some examples and packages for ideas on design and implementation
 ****** handles scrolling and waiting for data: https://pub.dev/packages/pagination_view
@@ -256,6 +251,10 @@ include it in the database records.
 **** c.f. https://simonwillison.net/2020/May/21/dogsheep-photos/
 **** ML assigns scores on aesthetics, interest, etc
 ** Asset organization
+*** Events
+**** e.g. school performances, vacations
+**** Means of assigning assets to a particular event
+**** Browsing by events
 *** Albums
 **** i.e. organize assets by project, subject, event
 **** Apple Photos has ~smart~ albums
@@ -326,6 +325,19 @@ include it in the database records.
 *** Add controls for dumping and loading the database
 **** provides another mechanism for backup
 **** power users could perform large bulk edits of data
+** Bulk Export
+*** Easy selection and export of multiple images
+**** Selection process
+***** Maybe show selection icon thingy on hover, click to select
+****** use =Stack= with =Align= and a flat button
+***** Maybe shift-click to select by thumbnails
+**** Export process
+***** Maybe app bar has "export" feature to export selected assets
+***** Maybe action panel appears when there are selections
+***** Show "file save" dialog to choose local file path
+***** Save assets using their unique filename
+**** Web support is lacking
+***** JS has a =showSaveFilePicker()= but seems like =dart:html= does not expose this API
 ** Performance
 *** measure and improve the thumbnail serving
 **** thoughts on image crate vs magick-rust vs node.js
@@ -682,6 +694,8 @@ include it in the database records.
 *** TODO Copyright the source code [0/2]
 - [ ] Add copyright header to the top of all source code
 - [ ] Register with the government
+*** TODO Choose a name, ensure it is not used in California
+**** c.f. https://www.sos.ca.gov/business-programs
 *** TODO Trademark the product name
 - [ ] Register with the [[https://www.uspto.gov][US Patent & Trademark Office]]
 *** TODO Put a plan in place to open source everything upon my unexpected demise
