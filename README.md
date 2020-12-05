@@ -65,9 +65,9 @@ On the build host:
 
 ```shell
 $ docker-compose build --pull --build-arg BASE_URL=http://192.168.1.1:3000
-$ docker image rm 192.168.1.1:5000/tanuki_app
-$ docker image tag tanuki_app 192.168.1.1:5000/tanuki_app
-$ docker push 192.168.1.1:5000/tanuki_app
+$ docker image rm 192.168.1.1:5000/tanuki
+$ docker image tag tanuki_app 192.168.1.1:5000/tanuki
+$ docker push 192.168.1.1:5000/tanuki
 ```
 
 On the server, with a production version of the `docker-compose.yml` file:
@@ -76,6 +76,35 @@ On the server, with a production version of the `docker-compose.yml` file:
 $ docker-compose pull
 $ docker-compose rm -f -s
 $ docker-compose up -d
+```
+
+### Using Podman
+
+**Note: currently podman on macOS is failing with this error:**
+
+```
+Error: failed Request: Unable to copy tar file from request body
+```
+
+Similar to Docker, [Podman](https://podman.io) runs applications in lightweight
+containers, and the command line tool `podman` is nearly identical to `docker`
+in both commands and options. On macOS, the critical difference is that Podman
+is acting against a remote container system, unlike Docker Desktop. Thus, when
+using macOS or Windows, a couple of preliminary steps are necessary.
+
+#### Preliminary Setup
+
+```shell
+podman system connection add --identity ~/.ssh/id_rsa label1 user1@server1
+```
+
+#### Build Steps
+
+```shell
+$ podman build --pull --build-arg BASE_URL=http://192.168.1.1:3000 .
+$ podman image rm 192.168.1.1:5000/tanuki
+$ podman image tag tanuki 192.168.1.1:5000/tanuki
+$ podman push 192.168.1.1:5000/tanuki
 ```
 
 ## Tools

@@ -44,8 +44,6 @@ RUN flutter build web
 # build the final image
 #
 FROM debian:latest
-RUN adduser --disabled-password --gecos '' tanuki
-USER tanuki
 WORKDIR /tanuki
 COPY --from=builder /build/target/release/tanuki .
 COPY --from=healthy /health/target/release/healthcheck .
@@ -53,6 +51,9 @@ COPY --from=flutter /flutter/build/web web/
 VOLUME /blobstore
 VOLUME /database
 VOLUME /uploads
+ENV DB_PATH "/database"
+ENV UPLOAD_PATH "/uploads"
+ENV ASSETS_PATH "/blobstore"
 ENV HOST "0.0.0.0"
 ENV PORT 3000
 EXPOSE ${PORT}
