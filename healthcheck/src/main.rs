@@ -1,7 +1,6 @@
+use hyper::{http::StatusCode, Client};
 use std::env;
 use std::process::exit;
-
-use hyper::{http::StatusCode, Client};
 
 #[tokio::main]
 async fn main() {
@@ -11,16 +10,13 @@ async fn main() {
     };
     let path = match env::var("HEALTHCHECK_PATH") {
         Ok(p) => p,
-        Err(_) => String::from(""),
+        Err(_) => String::from("/"),
     };
-
+    let client = Client::new();
     let url = format!("http://localhost:{}{}", port, path)
         .parse()
         .unwrap();
-
-    let client = Client::new();
     let res = client.get(url).await;
-
     res.map(|res| {
         let status_code = res.status();
         if status_code < StatusCode::from_u16(200).unwrap()

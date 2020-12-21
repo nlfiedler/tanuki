@@ -73,9 +73,8 @@ $ docker push 192.168.1.1:5000/tanuki
 On the server, with a production version of the `docker-compose.yml` file:
 
 ```shell
-$ docker-compose pull
-$ docker-compose rm -f -s
-$ docker-compose up -d
+$ docker-compose down
+$ docker-compose up --build -d
 ```
 
 ### Using Podman

@@ -1,4 +1,15 @@
 * Tanuki
+** Quick fixes
+*** Replace =provider= usage with =riverpod=, a better Provider
+**** c.f. https://resocoder.com/2020/11/27/flutter-riverpod-tutorial-the-better-provider/
+**** offers a streamlined way to code async interfaces like fetching remote data
+**** https://pub.dev/packages/riverpod
+**** https://pub.dev/packages/flutter_riverpod
+**** currently only the snapshot screen is using =Provider=
+**** this is not a replacement for BLoC, only Provider
+**** may be useful for replacing =get_it=, needs evaluation
+*** Update the healthcheck code: https://github.com/mastertinner/healthcheck
+*** Try basing final image from alpine
 ** [#B] Enable basic bulk update of user date
 *** Need to fix a lot of the older assets to have the correct date
 ** Interface improvements
@@ -92,6 +103,7 @@
 *** can use =DataTable= to display labeled data (like asset details, metadata)
 *** use pointer enter/exit events to start playing a video in place
 ** Known Issues
+*** clicking on portrait avi(?) shows widened image and page does not scroll to show details
 *** filter input chips are broken on first typed character
 **** seems like focus goes somewhere, clicking in input field lets you type another character
 **** happens with release =beta= channel web build
@@ -468,6 +480,9 @@ include it in the database records.
 - EXIF data does not contain timezone information after all
 - [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
 ** Architecture Review
+*** Alternative to running HTTP server
+**** Use a socket file
+**** Link Dart code to Rust using FFI
 *** Asynchronous
 **** Will need to start using =async/await= as more libraries return =Future=
 **** Use of actix means that tokio runtime is already in place

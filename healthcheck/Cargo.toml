@@ -3,9 +3,14 @@ name = "healthcheck"
 version = "0.1.0"
 authors = ["Tobi Fuhrimann <tobias.fuhrimann@gmail.com>"]
 edition = "2018"
+description = "Make an HTTP request and exit non-zero if an error occurs."
+homepage = "https://github.com/mastertinner/healthcheck"
+license = "Apache-2.0"
 
 [dependencies]
 hyper = "0.13"
+# must match tokio release to dependency in hyper, otherwise get an error at
+# startup: not currently running on the Tokio runtime.
 tokio = { version = "0.2", features = ["full"] }
 
 [profile.release]
