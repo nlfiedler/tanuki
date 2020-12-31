@@ -9,7 +9,7 @@
 **** this is not a replacement for BLoC, only Provider
 **** may be useful for replacing =get_it=, needs evaluation
 *** Update the healthcheck code: https://github.com/mastertinner/healthcheck
-*** Try basing final image from alpine
+*** Update =juniper= to latest release, requires API changes
 ** [#B] Enable basic bulk update of user date
 *** Need to fix a lot of the older assets to have the correct date
 ** Interface improvements

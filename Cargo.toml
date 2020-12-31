@@ -12,7 +12,7 @@ default-run = "tanuki"
 
 [dependencies]
 actix-cors = "0.5"
-actix-files = "0.4"
+actix-files = "0.5"
 actix-multipart = "0.3"
 actix-rt = "1.1.0"
 actix-web = "3.1"
@@ -41,5 +41,5 @@ serde_json = "1.0"
 sha2 = "0.9.0"
 
 [dev-dependencies]
-mockall = "0.8.0"
+mockall = "0.9"
 tempfile = "3.1.0"
