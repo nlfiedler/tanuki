@@ -99,7 +99,7 @@ class _UploadFormState extends State<UploadForm> {
       });
       reader.onError.listen((_) {
         final String errorMsg = reader.error.message;
-        Scaffold.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: ListTile(
               title: Text('Error reading file ${uploading.name}'),

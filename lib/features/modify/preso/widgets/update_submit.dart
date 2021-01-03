@@ -27,7 +27,7 @@ class UpdateSubmit extends StatelessWidget {
       child: BlocConsumer<UpdateAssetBloc, UpdateAssetState>(
         listener: (context, state) {
           if (state is Finished) {
-            Scaffold.of(context).showSnackBar(
+            ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: ListTile(
                   title: Text('Updated asset'),
@@ -35,7 +35,7 @@ class UpdateSubmit extends StatelessWidget {
               ),
             );
           } else if (state is Error) {
-            Scaffold.of(context).showSnackBar(
+            ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: ListTile(
                   title: Text('Error updating asset'),

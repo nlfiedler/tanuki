@@ -68,7 +68,7 @@ Future<void> downloadAsset(BuildContext context, Asset asset) async {
   if (await launcher.canLaunch(url)) {
     await launcher.launch(url);
   } else {
-    Scaffold.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: ListTile(
           title: Text('Could not launch URL'),

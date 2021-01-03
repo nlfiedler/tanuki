@@ -1,6 +1,5 @@
 * Tanuki
 ** Quick fixes
-*** Fix the =showSnackBar= deprecated API usage
 *** routing appears to have changed and is now broken
 **** open asset, edit details, submit -> empty snackbar appears
 #+BEGIN_SRC
