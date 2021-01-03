@@ -81,12 +81,7 @@ class _UploadFormState extends State<UploadForm> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: ListTile(
-            title: Text('Error reading file ${uploading}'),
-            subtitle: Text(e.toString()),
-          ),
-        ),
+        SnackBar(content: Text('Error reading file ${uploading}: $e')),
       );
       BlocProvider.of<UploadFileBloc>(context).add(SkipCurrent());
     }

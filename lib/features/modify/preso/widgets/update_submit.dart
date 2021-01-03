@@ -28,20 +28,11 @@ class UpdateSubmit extends StatelessWidget {
         listener: (context, state) {
           if (state is Finished) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: ListTile(
-                  title: Text('Updated asset'),
-                ),
-              ),
+              SnackBar(content: Text('Updated asset')),
             );
           } else if (state is Error) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: ListTile(
-                  title: Text('Error updating asset'),
-                  subtitle: Text(state.message),
-                ),
-              ),
+              SnackBar(content: Text('Error: ${state.message}')),
             );
           }
         },

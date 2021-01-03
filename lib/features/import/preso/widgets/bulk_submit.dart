@@ -29,20 +29,11 @@ class BulkSubmit extends StatelessWidget {
           if (state is Finished) {
             onComplete();
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: ListTile(
-                  title: Text('Updated ${state.count} assets'),
-                ),
-              ),
+              SnackBar(content: Text('Updated ${state.count} assets')),
             );
           } else if (state is Error) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: ListTile(
-                  title: Text('Error updating assets'),
-                  subtitle: Text(state.message),
-                ),
-              ),
+              SnackBar(content: Text('Error: ${state.message}')),
             );
           }
         },

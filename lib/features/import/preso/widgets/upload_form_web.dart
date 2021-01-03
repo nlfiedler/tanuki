@@ -101,10 +101,7 @@ class _UploadFormState extends State<UploadForm> {
         final String errorMsg = reader.error.message;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: ListTile(
-              title: Text('Error reading file ${uploading.name}'),
-              subtitle: Text(errorMsg),
-            ),
+            content: Text('Error reading file ${uploading.name}: $errorMsg'),
           ),
         );
         BlocProvider.of<UploadFileBloc>(context).add(SkipCurrent());

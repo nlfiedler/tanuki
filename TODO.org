@@ -1,33 +1,5 @@
 * Tanuki
 ** Quick fixes
-*** routing appears to have changed and is now broken
-**** open asset, edit details, submit -> empty snackbar appears
-#+BEGIN_SRC
-Error: Assertion failed: org-dartlang-sdk:///flutter_web_sdk/lib/_engine/engine/navigation/history.dart:284:14
-_userProvidedRouteName != null
-is not true
-    at Object.throw_ [as throw] (http://localhost:50789/dart_sdk.js:5287:11)
-    at Object.assertFailed (http://localhost:50789/dart_sdk.js:5223:15)
-    at _engine.SingleEntryBrowserHistory.new.onPopState (http://localhost:50789/dart_sdk.js:146926:59)
-Error: Assertion failed: org-dartlang-sdk:///flutter_web_sdk/lib/_engine/engine/navigation/history.dart:239:12
-_isOriginEntry(state)
-is not true
-    at Object.throw_ [as throw] (http://localhost:50789/dart_sdk.js:5287:11)
-    at Object.assertFailed (http://localhost:50789/dart_sdk.js:5223:15)
-    at _engine.SingleEntryBrowserHistory.new.[_unwrapOriginState] (http://localhost:50789/dart_sdk.js:146902:57)
-    at _engine.SingleEntryBrowserHistory.new.tearDown (http://localhost:50789/dart_sdk.js:146962:79)
-    at tearDown.next (<anonymous>)
-    at http://localhost:50789/dart_sdk.js:38530:33
-    at _RootZone.runUnary (http://localhost:50789/dart_sdk.js:38387:58)
-    at _FutureListener.thenAwait.handleValue (http://localhost:50789/dart_sdk.js:33377:29)
-    at handleValueCallback (http://localhost:50789/dart_sdk.js:33925:49)
-    at Function._propagateToListeners (http://localhost:50789/dart_sdk.js:33963:17)
-    at _Future.new.[_completeWithValue] (http://localhost:50789/dart_sdk.js:33805:23)
-    at async._AsyncCallbackEntry.new.callback (http://localhost:50789/dart_sdk.js:33828:35)
-    at Object._microtaskLoop (http://localhost:50789/dart_sdk.js:38645:13)
-    at _startMicrotaskLoop (http://localhost:50789/dart_sdk.js:38651:13)
-    at http://localhost:50789/dart_sdk.js:34178:9
-#+END_SRC
 *** Update the healthcheck code: https://github.com/mastertinner/healthcheck
 *** Update =juniper= to latest release, requires API changes
 ** [#B] Enable basic bulk update of user date
