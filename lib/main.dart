@@ -3,20 +3,20 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_locations_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_years_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
+import 'package:tanuki/features/browse/preso/bloc/providers.dart';
 import 'package:tanuki/features/browse/preso/screens/asset_screen.dart';
 import 'package:tanuki/features/browse/preso/screens/home_screen.dart';
 import 'package:tanuki/features/import/preso/screens/recents_screen.dart';
 import 'package:tanuki/features/import/preso/screens/upload_screen.dart';
 import 'package:tanuki/features/modify/preso/screens/edit_asset_screen.dart';
-import 'container.dart' as ioc;
 
 void main() {
-  ioc.init();
-  runApp(MyApp());
+  runApp(ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -25,16 +25,16 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AssetBrowserBloc>(
-          create: (_) => ioc.getIt<AssetBrowserBloc>(),
+          create: (_) => BuildContextX(context).read(assetBrowserBlocProvider),
         ),
         BlocProvider<AllLocationsBloc>(
-          create: (_) => ioc.getIt<AllLocationsBloc>(),
+          create: (_) => BuildContextX(context).read(allLocationsBlocProvider),
         ),
         BlocProvider<AllTagsBloc>(
-          create: (_) => ioc.getIt<AllTagsBloc>(),
+          create: (_) => BuildContextX(context).read(allTagsBlocProvider),
         ),
         BlocProvider<AllYearsBloc>(
-          create: (_) => ioc.getIt<AllYearsBloc>(),
+          create: (_) => BuildContextX(context).read(allYearsBlocProvider),
         ),
       ],
       child: MaterialApp(

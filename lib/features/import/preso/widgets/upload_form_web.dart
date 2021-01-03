@@ -9,9 +9,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_dropzone/flutter_dropzone.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tanuki/container.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/core/preso/widgets/dotted_border.dart';
 import 'package:tanuki/features/import/preso/bloc/upload_file_bloc.dart';
+import 'package:tanuki/features/import/preso/bloc/providers.dart';
 
 class UploadForm extends StatefulWidget {
   @override
@@ -115,7 +116,7 @@ class _UploadFormState extends State<UploadForm> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<UploadFileBloc>(
-      create: (_) => getIt<UploadFileBloc>(),
+      create: (_) => BuildContextX(context).read(uploadFileBlocProvider),
       child: BlocConsumer<UploadFileBloc, UploadFileState>(
         listener: (context, state) {
           if (state is Uploading) {

@@ -3,9 +3,10 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tanuki/container.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/features/import/preso/bloc/bulk_update_bloc.dart';
+import 'package:tanuki/features/import/preso/bloc/providers.dart';
 
 typedef BulkCallback = List<AssetInputId> Function();
 
@@ -22,7 +23,7 @@ class BulkSubmit extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<BulkUpdateBloc>(
-      create: (_) => getIt<BulkUpdateBloc>(),
+      create: (_) => BuildContextX(context).read(bulkUpdateBlocProvider),
       child: BlocConsumer<BulkUpdateBloc, BulkUpdateState>(
         listener: (context, state) {
           if (state is Finished) {

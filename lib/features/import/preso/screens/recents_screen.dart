@@ -3,8 +3,9 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tanuki/container.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
+import 'package:tanuki/features/import/preso/bloc/providers.dart';
 import 'package:tanuki/features/import/preso/widgets/bulk_form.dart';
 
 class RecentsScreen extends StatelessWidget {
@@ -15,7 +16,7 @@ class RecentsScreen extends StatelessWidget {
         title: Text('all your assets now belong to us'),
       ),
       body: BlocProvider<RecentImportsBloc>(
-        create: (_) => getIt<RecentImportsBloc>(),
+        create: (_) => BuildContextX(context).read(recentImportsBlocProvider),
         child: BlocBuilder<RecentImportsBloc, RecentImportsState>(
           builder: (context, state) {
             if (state is Empty) {

@@ -5,9 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:oxidized/oxidized.dart';
-import 'package:tanuki/container.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/features/modify/preso/bloc/update_asset_bloc.dart';
+import 'package:tanuki/features/modify/preso/bloc/providers.dart';
 
 class UpdateSubmit extends StatelessWidget {
   final GlobalKey<FormBuilderState> formKey;
@@ -22,7 +23,7 @@ class UpdateSubmit extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<UpdateAssetBloc>(
-      create: (_) => getIt<UpdateAssetBloc>(),
+      create: (_) => BuildContextX(context).read(updateAssetBlocProvider),
       child: BlocConsumer<UpdateAssetBloc, UpdateAssetState>(
         listener: (context, state) {
           if (state is Finished) {

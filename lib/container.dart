@@ -1,42 +1,49 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-import 'package:get_it/get_it.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:graphql/client.dart';
 import 'package:http/http.dart' as http;
-import 'package:tanuki/core/data/repositories/container.dart';
-import 'package:tanuki/core/data/sources/container.dart';
-import 'package:tanuki/core/domain/usecases/container.dart';
+import 'package:tanuki/core/data/repositories/asset_repository_impl.dart';
+import 'package:tanuki/core/data/repositories/entity_repository_impl.dart';
+import 'package:tanuki/core/data/sources/asset_remote_data_source.dart';
+import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
+import 'package:tanuki/core/domain/repositories/asset_repository.dart';
+import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/environment_config.dart';
-import 'package:tanuki/features/browse/preso/bloc/container.dart';
-import 'package:tanuki/features/import/preso/bloc/container.dart';
-import 'package:tanuki/features/modify/preso/bloc/container.dart';
 
-final getIt = GetIt.instance;
+final httpClientProvider = Provider<http.Client>((_) => http.Client());
 
-void init() {
-  // bloc
-  initBrowseBlocs(getIt);
-  initImportBlocs(getIt);
-  initModifyBlocs(getIt);
+final graphqlProvider = Provider<GraphQLClient>((ref) {
+  final uri = '${EnvironmentConfig.base_url}/graphql';
+  return GraphQLClient(
+    link: HttpLink(uri: uri),
+    cache: InMemoryCache(),
+  );
+});
 
-  // widgets
+final assetDataSourceProvider = Provider<AssetRemoteDataSource>((ref) {
+  return AssetRemoteDataSourceImpl(
+    httpClient: ref.read(httpClientProvider),
+    baseUrl: EnvironmentConfig.base_url,
+    gqlClient: ref.read(graphqlProvider),
+  );
+});
 
-  initUseCases(getIt);
-  initRepositories(getIt);
-  initDataSources(getIt);
+final entityDataSourceProvider = Provider<EntityRemoteDataSource>((ref) {
+  return EntityRemoteDataSourceImpl(
+    client: ref.read(graphqlProvider),
+  );
+});
 
-  // core
+final assetRepositoryProvider = Provider<AssetRepository>(
+  (ref) => AssetRepositoryImpl(
+    remoteDataSource: ref.read(assetDataSourceProvider),
+  ),
+);
 
-  // external
-  getIt.registerLazySingleton(() {
-    // seems a relative URL is not supported by the client package
-    final uri = '${EnvironmentConfig.base_url}/graphql';
-    return GraphQLClient(
-      link: HttpLink(uri: uri),
-      cache: InMemoryCache(),
-    );
-  });
-
-  getIt.registerLazySingleton(() => http.Client());
-}
+final entityRepositoryProvider = Provider<EntityRepository>(
+  (ref) => EntityRepositoryImpl(
+    remoteDataSource: ref.read(entityDataSourceProvider),
+  ),
+);

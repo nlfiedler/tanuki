@@ -5,10 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:intl/intl.dart';
-import 'package:tanuki/container.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/preso/widgets/asset_display.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_bloc.dart';
+import 'package:tanuki/features/browse/preso/bloc/providers.dart';
 import 'package:tanuki/features/modify/preso/validators/media_type.dart';
 import 'package:tanuki/features/modify/preso/widgets/update_submit.dart';
 
@@ -20,7 +21,7 @@ class EditAssetScreen extends StatelessWidget {
     // fetch the asset again just in case of concurrent edits
     final String assetId = ModalRoute.of(context).settings.arguments;
     return BlocProvider<AssetBloc>(
-      create: (_) => getIt<AssetBloc>(),
+      create: (_) => BuildContextX(context).read(assetBlocProvider),
       child: BlocBuilder<AssetBloc, AssetState>(
         buildWhen: (previous, current) {
           return !(previous is Loaded && current is Loading);

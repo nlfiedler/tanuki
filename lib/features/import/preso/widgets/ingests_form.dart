@@ -3,14 +3,15 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tanuki/container.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/features/import/preso/bloc/ingest_assets_bloc.dart';
+import 'package:tanuki/features/import/preso/bloc/providers.dart';
 
 class IngestsForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<IngestAssetsBloc>(
-      create: (_) => getIt<IngestAssetsBloc>(),
+      create: (_) => BuildContextX(context).read(ingestAssetsBlocProvider),
       child: BlocBuilder<IngestAssetsBloc, IngestAssetsState>(
         builder: (context, state) {
           return Padding(

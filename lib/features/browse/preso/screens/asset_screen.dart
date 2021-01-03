@@ -4,12 +4,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/preso/widgets/asset_display.dart';
 import 'package:tanuki/environment_config.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_bloc.dart';
-import 'package:tanuki/container.dart';
+import 'package:tanuki/features/browse/preso/bloc/providers.dart';
 import 'package:url_launcher/url_launcher.dart' as launcher;
 
 class AssetScreen extends StatelessWidget {
@@ -17,7 +18,7 @@ class AssetScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final String assetId = ModalRoute.of(context).settings.arguments;
     return BlocProvider<AssetBloc>(
-      create: (_) => getIt<AssetBloc>(),
+      create: (_) => BuildContextX(context).read(assetBlocProvider),
       child: BlocBuilder<AssetBloc, AssetState>(
         buildWhen: (previous, current) {
           return !(previous is Loaded && current is Loading);
