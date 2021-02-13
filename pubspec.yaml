@@ -47,12 +47,9 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  # bloc_test version closely tied to mockito version
-  bloc_test: ^7.0.0
+  bloc_test: ^7.1.0
   environment_config: ^2.2.3
-  # mockito 4.1.2 breaks bloc_test (https://github.com/felangel/bloc/issues/1676)
-  # (issue is marked fixed but still not released)
-  mockito: 4.1.1
+  mockito: ^4.1.4
   pedantic: ^1.8.0
 
 flutter:
