@@ -14,11 +14,16 @@ browsing and editing capabilities.
 
 ### Initial Setup
 
+Use [fvm](https://pub.dev/packages/fvm) to select a specific version of Flutter
+to be installed and used by the application. This is the most reliable method
+and produces consistent results when building the application.
+
 ```shell
-$ flutter channel dev
-$ flutter upgrade
-$ flutter config --enable-macos-desktop
-$ flutter config --enable-web
+$ brew install dart
+$ pub global activate fvm
+$ fvm install 1.26.0-1.0.pre
+$ fvm flutter config --enable-macos-desktop
+$ fvm flutter config --enable-web
 ```
 
 ### Building, Testing, Starting the Backend
@@ -37,13 +42,13 @@ volumes of output.
 ### Building, Testing, Starting the Frontend
 
 ```shell
-$ flutter pub get
-$ flutter pub run environment_config:generate
-$ flutter test
-$ flutter run -d chrome
+$ fvm flutter pub get
+$ fvm flutter pub run environment_config:generate
+$ fvm flutter test
+$ fvm flutter run -d chrome
 ```
 
-For macOS, `flutter run -d macos` to run and `flutter build macos` to build.
+For macOS, `fvm flutter run -d macos` to run and `fvm flutter build macos` to build.
 
 ### environment_config
 
@@ -75,35 +80,6 @@ On the server, with a production version of the `docker-compose.yml` file:
 ```shell
 $ docker-compose down
 $ docker-compose up --build -d
-```
-
-### Using Podman
-
-**Note: currently podman on macOS is failing with this error:**
-
-```
-Error: failed Request: Unable to copy tar file from request body
-```
-
-Similar to Docker, [Podman](https://podman.io) runs applications in lightweight
-containers, and the command line tool `podman` is nearly identical to `docker`
-in both commands and options. On macOS, the critical difference is that Podman
-is acting against a remote container system, unlike Docker Desktop. Thus, when
-using macOS or Windows, a couple of preliminary steps are necessary.
-
-#### Preliminary Setup
-
-```shell
-podman system connection add --identity ~/.ssh/id_rsa label1 user1@server1
-```
-
-#### Build Steps
-
-```shell
-$ podman build --pull --build-arg BASE_URL=http://192.168.1.1:3000 .
-$ podman image rm 192.168.1.1:5000/tanuki
-$ podman image tag tanuki 192.168.1.1:5000/tanuki
-$ podman push 192.168.1.1:5000/tanuki
 ```
 
 ## Tools

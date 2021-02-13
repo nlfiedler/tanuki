@@ -22,23 +22,28 @@ RUN cargo build --release
 #
 # build the flutter app
 #
-# Use their "beta" tag, but also set the channel to beta anyway, and make sure
-# it is completely up-to-date, and then enable the web channel as well.
+# For consistency, use the Dart image as a base, add a version of Flutter that
+# is known to work via the fvm tool, and then enable the web platform as a build
+# target.
 #
-FROM cirrusci/flutter:beta AS flutter
+FROM google/dart AS flutter
 ARG BASE_URL=http://localhost:3000
-RUN flutter channel beta
-RUN flutter upgrade
-RUN flutter config --enable-web
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get -q update && \
+    apt-get -q -y install unzip
+RUN pub global activate fvm
+RUN fvm install 1.26.0-1.0.pre
 WORKDIR /flutter
 COPY fonts fonts/
 COPY lib lib/
 COPY pubspec.yaml .
 COPY web web/
-RUN flutter pub get
+RUN fvm use 1.26.0-1.0.pre
+RUN fvm flutter config --enable-web
+RUN fvm flutter pub get
 ENV BASE_URL ${BASE_URL}
-RUN flutter pub run environment_config:generate
-RUN flutter build web
+RUN fvm flutter pub run environment_config:generate
+RUN fvm flutter build web
 
 #
 # build the final image

@@ -1,6 +1,5 @@
 * Tanuki
 ** Quick fixes
-*** Update the healthcheck code: https://github.com/mastertinner/healthcheck
 *** Update =juniper= to latest release, requires API changes
 ** [#B] Enable basic bulk update of user date
 *** Need to fix a lot of the older assets to have the correct date
@@ -22,6 +21,10 @@
 **** waffle icon to navigate to other applications
 **** help and settings icons next to waffle
 *** browse and search
+**** unified search bar (text input field)
+***** completion on tags, locations, etc
+***** completion list should indicate if entry is a tag, location, etc
+***** accepted items shown with ~#~ and ~@~ prefix to indicate tag or location
 **** consider where to display file name and media type search fields
 *** image gallery paging
 **** spring-loaded next-page navigation
@@ -102,6 +105,27 @@
 **** happens with debug =dev= channel web build
 **** does _not_ happen with =dev= channel macos build
 **** maybe a dart2js issue
+**** see work-around in issue #313 of https://github.com/danvick/flutter_form_builder
+#+BEGIN_SRC
+FocusNode focusNode;
+
+@override
+void initState() {
+  super.initState();
+  focusNode = FocusNode();
+}
+
+@override
+void dispose() {
+  focusNode.dispose();
+  super.dispose();
+}
+
+FormBuilderChoiceChip(
+  focusNode: focusNode,
+  ...
+)
+#+END_SRC
 *** graphql errors are handled poorly everywhere
 *** too many open files
 **** happens when uploading numerous files
