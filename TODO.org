@@ -1,6 +1,6 @@
 * Tanuki
 ** Quick fixes
-*** Update easy flutter dependencies
+*** Update tricky flutter dependencies
 *** Revisit hard-coded flutter dependencies
 *** Update =juniper= to latest release, requires API changes
 ** [#B] Enable basic bulk update of user date
