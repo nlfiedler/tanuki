@@ -1,12 +1,15 @@
-* Tanuki
-** Quick fixes
+* Action Items
+** Fix issues found by Dart extension in VS Code
+*** TODO open the console and fix all of the warnings
+** Update flutter dependencies
 *** Update tricky flutter dependencies
 *** Revisit hard-coded flutter dependencies
+** Update rust dependencies
 *** Update =juniper= to latest release, requires API changes
-** [#B] Enable basic bulk update of user date
-*** Need to fix a lot of the older assets to have the correct date
 ** Interface improvements
 *** reference: https://flutter.github.io/samples/
+*** Flutter Folio example app that works well for all screen sizes
+**** c.f. https://flutter.gskinner.com
 *** Thumbnail Serving Strategy
 **** the frontend can use the image dimensions to compute the aspect ratio
 **** with the aspect ratio, frontend can request images of the desired size
@@ -102,11 +105,11 @@
 ** Known Issues
 *** clicking on portrait avi(?) shows widened image and page does not scroll to show details
 *** filter input chips are broken on first typed character
+**** chips input keyboard focus: https://github.com/danvick/flutter_form_builder/issues/313
 **** seems like focus goes somewhere, clicking in input field lets you type another character
 **** happens with release =beta= channel web build
 **** happens with debug =dev= channel web build
 **** does _not_ happen with =dev= channel macos build
-**** maybe a dart2js issue
 **** see work-around in issue #313 of https://github.com/danvick/flutter_form_builder
 #+BEGIN_SRC
 FocusNode focusNode;
@@ -128,6 +131,27 @@ FormBuilderChoiceChip(
   ...
 )
 #+END_SRC
+**** see another comment and work-around to the same issue
+: Ran into the same problem. After testing different combinations of
+: interactions, I discovered that if I restart the application, and interact
+: with the FormBuilderDateTimePicker control first, it works. However, if I
+: interact with a FormBuilderSegmentedControl, and then try to click on
+: FormBuilderDateTimePicker control, the date time picker throws the focus
+: exception.
+:
+: The solution that worked for me, without making any modifications to the
+: original flutter_form_builder code was to update my calls to
+: FormBuilderSegmentedControl, and set the focusNode property. See below.
+#+begin_src dart
+FormBuilderSegmentedControl(
+...
+focusNode: FocusNode(), // added attribute
+...
+)
+#+end_src
+: There is an issue w/ how FormBuilderField is disposing the focusNode. It
+: becomes an issue if application is hot reloaded. You may have to do a hot
+: restart instead.
 *** graphql errors are handled poorly everywhere
 *** too many open files
 **** happens when uploading numerous files
@@ -138,8 +162,6 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
  message: "IO error: While open a file for appending: tmp/rocksdb/000733.sst: Too many open files"
 }', src/main.rs:88:71
 #+END_SRC
-*** flutter form builder
-**** chips input keyboard focus: https://github.com/danvick/flutter_form_builder/issues/313
 *** preview of small images makes them large
 **** should instead only serve original size for smaller images
 ** Bulk edit
@@ -168,8 +190,6 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 ***** set caption
 ***** change media type
 ** Search Improvements
-*** TODO Add support for searching by filename
-**** extra input fields would be hidden normally, expanded by clicking arrow button
 *** TODO Add support for searching by mimetype
 *** TODO Begin search when user pauses typing
 **** Use =debounceTime= operator in RxDart with BLoC state for this
@@ -184,8 +204,6 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 *** TODO Support searching for assets that have no location at all
 *** TODO Support searching for assets that have no caption at all
 *** TODO Support searching the caption text
-**** likely would involve a full table scan
-*** TODO Support wildcards in filename, mimetype (others?)
 **** likely would involve a full table scan
 *** TODO searching for images by dimensions (~pano~, ~landscape~, ~portrait~)
 *** TODO searching for images based on type (~selfie~, ~screen shot~)
@@ -486,17 +504,6 @@ include it in the database records.
 *** Tracking issues and releases on a schedule (SCM)
 **** Consider if using GitLab (in a container) would be helpful
 ***** c.f. https://docs.gitlab.com/omnibus/docker/
-** Documentation
-*** Uploads directory
-**** asset importer ignores hidden files and directories
-*** Case Sensitivity
-- Data is stored as entered (case preservative)
-- Attribute lists are all lowercased
-- Search is always case insensitive
-*** Date/Time values
-- Everything is treated as UTC
-- EXIF data does not contain timezone information after all
-- [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
 ** Architecture Review
 *** Alternative to running HTTP server
 **** Use a socket file
@@ -561,6 +568,7 @@ include it in the database records.
 *** Scripting support
 *** portable mode for thumb-drive based usage
 *** demo bundle that includes some preloaded assets
+* Product
 ** Productization
 *** Application name
 **** TODO Try to get a name with "photo", "pic", or something like that
@@ -639,7 +647,9 @@ include it in the database records.
 - There is a logo design app on App Store called Logoist, check it out.
 - See [[https://www.brandbucket.com][brandbucket.com]] and look for "pictous.com", has a neat logo
   basically a smart phone turned sideways with a camera lens on front
-*** TODO Include list of all dependencies and their copyright/license as appropriate
+*** TODO Third party license attributions
+**** Include any/all third party license attribution somewhere
+**** =cargo lichking bundle= will dump everything to the console
 *** TODO Packaging
 **** TODO Set up a package build environment
 - Look for "authenticode certificate", pay no more than $100/year for a cert
@@ -881,3 +891,14 @@ include it in the database records.
 *** [[http://x.photoscape.org][Photoscape X]]
 - Mac and Windows
 - Focus on editing
+* Documentation
+** Uploads directory
+*** asset importer ignores hidden files and directories
+** Case Sensitivity
+- Data is stored as entered (case preservative)
+- Attribute lists are all lowercased
+- Search is always case insensitive
+** Date/Time values
+- Everything is treated as UTC
+- EXIF data does not contain timezone information after all
+- [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
