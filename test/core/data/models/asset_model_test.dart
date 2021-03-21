@@ -69,7 +69,7 @@ void main() {
             'checksum': 'sha1-cafebabe',
             'filename': 'img_1234.jpg',
             'filesize': '1048576',
-            'datetime': "2003-08-30T00:00:00.000Z",
+            'datetime': '2003-08-30T00:00:00.000Z',
             'mimetype': 'image/jpeg',
             'tags': ['clowns', 'snakes'],
             'userdate': null,

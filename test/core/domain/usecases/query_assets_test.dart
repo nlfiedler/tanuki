@@ -38,7 +38,7 @@ void main() {
       when(mockEntityRepository.queryAssets(any, any, any))
           .thenAnswer((_) async => Ok(expected));
       // act
-      final searchParams = SearchParams(tags: ["mouse"]);
+      final searchParams = SearchParams(tags: ['mouse']);
       final params = Params(
         params: searchParams,
         count: 10,

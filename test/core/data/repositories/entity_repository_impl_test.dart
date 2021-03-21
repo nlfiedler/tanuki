@@ -291,7 +291,7 @@ void main() {
         when(mockRemoteDataSource.queryAssets(any, any, any))
             .thenAnswer((_) async => expected);
         // act
-        final params = SearchParams(tags: ["mouse"]);
+        final params = SearchParams(tags: ['mouse']);
         final result = await repository.queryAssets(params, 10, 0);
         // assert
         verify(mockRemoteDataSource.queryAssets(params, 10, 0));
@@ -306,7 +306,7 @@ void main() {
         when(mockRemoteDataSource.queryAssets(any, any, any))
             .thenAnswer((_) async => null);
         // act
-        final params = SearchParams(tags: ["mouse"]);
+        final params = SearchParams(tags: ['mouse']);
         final result = await repository.queryAssets(params, 10, 0);
         // assert
         verify(mockRemoteDataSource.queryAssets(params, 10, 0));
@@ -321,7 +321,7 @@ void main() {
         when(mockRemoteDataSource.queryAssets(any, any, any))
             .thenThrow(ServerException());
         // act
-        final params = SearchParams(tags: ["mouse"]);
+        final params = SearchParams(tags: ['mouse']);
         final result = await repository.queryAssets(params, 10, 0);
         // assert
         verify(mockRemoteDataSource.queryAssets(params, 10, 0));

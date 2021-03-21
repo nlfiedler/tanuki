@@ -23,7 +23,7 @@ class _BulkFormState extends State<BulkForm> {
   // The inputValues map holds the input from the user, since the text field
   // that does not have focus will toss its contents when scrolled out of view.
   // And apparently the form builder state also loses the values?
-  final Map<String, dynamic> inputValues = Map<String, dynamic>();
+  final Map<String, dynamic> inputValues = {};
 
   // Convert the input fields into a list of asset inputs.
   //

@@ -38,7 +38,7 @@ void main() {
   void setUpMockHttpClientJsonError() {
     when(mockHttpClient.send(any)).thenAnswer((_) async {
       // empty response should be sufficiently wrong
-      final bytes = List<int>();
+      final bytes = List<int>.empty();
       final stream = http.ByteStream.fromBytes(bytes);
       return http.StreamedResponse(stream, 200);
     });
@@ -66,7 +66,7 @@ void main() {
 
   void setUpMockHttpClientFailure403() {
     when(mockHttpClient.send(any)).thenAnswer((_) async {
-      final bytes = List<int>();
+      final bytes = List<int>.empty();
       final stream = http.ByteStream.fromBytes(bytes);
       return http.StreamedResponse(stream, 403);
     });

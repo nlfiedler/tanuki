@@ -1,6 +1,4 @@
 * Action Items
-** Fix issues found by Dart extension in VS Code
-*** TODO open the console and fix all of the warnings
 ** Update flutter dependencies
 *** Update tricky flutter dependencies
 *** Revisit hard-coded flutter dependencies

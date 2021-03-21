@@ -58,7 +58,7 @@ void main() {
           // assert
           final expectedMap = {
             'filename': 'img_1234.jpg',
-            'datetime': "2003-08-30T00:00:00.000Z",
+            'datetime': '2003-08-30T00:00:00.000Z',
             'mimetype': 'image/jpeg',
             'tags': ['clowns', 'snakes'],
             'caption': '#snakes and #clowns are in my @batcave',
@@ -128,7 +128,7 @@ void main() {
             'id': 'asset123',
             'input': {
               'filename': 'img_1234.jpg',
-              'datetime': "2003-08-30T00:00:00.000Z",
+              'datetime': '2003-08-30T00:00:00.000Z',
               'mimetype': 'image/jpeg',
               'tags': ['clowns', 'snakes'],
               'caption': '#snakes and #clowns are in my @batcave',
