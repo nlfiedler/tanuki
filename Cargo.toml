@@ -30,10 +30,10 @@ log = "0.4.8"
 lru = "0.6.0"
 mime = "0.3.16"
 mime_guess = "2.0.3"
-mokuroku = { git = "https://github.com/nlfiedler/mokuroku.git" }
+mokuroku = "2.5.0"
 mp4 = "0.8"
 riff = "1.0.0"
-rocksdb = { git = "https://github.com/rust-rocksdb/rust-rocksdb.git" }
+rocksdb = "0.16.0"
 rusty_ulid = "0.10.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_cbor = "0.11.1"
