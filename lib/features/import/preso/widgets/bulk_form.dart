@@ -152,7 +152,7 @@ class BulkFormRow extends StatelessWidget {
             child: Column(
               children: [
                 FormBuilderTextField(
-                  attribute: attribute,
+                  name: attribute,
                   initialValue: initial,
                   decoration: InputDecoration(
                     icon: Icon(Icons.format_quote),

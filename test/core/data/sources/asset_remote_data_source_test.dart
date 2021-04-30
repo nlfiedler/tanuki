@@ -12,7 +12,7 @@ import 'package:tanuki/core/error/exceptions.dart';
 
 class MockHttpClient extends Mock implements http.Client {}
 
-const happyCowPath = '../tests/fixtures/dcp_1069.jpg';
+const happyCowPath = 'tests/fixtures/dcp_1069.jpg';
 
 void main() {
   AssetRemoteDataSource dataSource;

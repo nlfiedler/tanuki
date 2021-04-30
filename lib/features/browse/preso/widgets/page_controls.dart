@@ -20,23 +20,23 @@ class PageControls extends StatelessWidget {
             return Text('Error: ' + state.message);
           }
           if (state is Loaded) {
-            final prevPageButton = RaisedButton(
-              child: Icon(Icons.chevron_left),
+            final prevPageButton = ElevatedButton(
               onPressed: state.pageNumber > 1
                   ? () {
                       BlocProvider.of<AssetBrowserBloc>(context)
                           .add(ShowPage(page: state.pageNumber - 1));
                     }
                   : null,
+              child: Icon(Icons.chevron_left),
             );
-            final nextPageButton = RaisedButton(
-              child: Icon(Icons.chevron_right),
+            final nextPageButton = ElevatedButton(
               onPressed: state.pageNumber < state.lastPage
                   ? () {
                       BlocProvider.of<AssetBrowserBloc>(context)
                           .add(ShowPage(page: state.pageNumber + 1));
                     }
                   : null,
+              child: Icon(Icons.chevron_right),
             );
             final pageNumberText =
                 Text('Page ${state.pageNumber} of ${state.lastPage}');
@@ -149,17 +149,17 @@ class _PageInputFormState extends State<PageInputForm> {
               initialValue: {'page': '1'},
               child: FormBuilderTextField(
                 readOnly: widget.lastPage < 2,
-                attribute: 'page',
-                validators: [
-                  FormBuilderValidators.required(),
-                  FormBuilderValidators.numeric(),
-                  FormBuilderValidators.min(1),
-                  FormBuilderValidators.max(widget.lastPage),
-                ],
+                name: 'page',
+                validator: FormBuilderValidators.compose([
+                  FormBuilderValidators.required(context),
+                  FormBuilderValidators.numeric(context),
+                  FormBuilderValidators.min(context, 1),
+                  FormBuilderValidators.max(context, widget.lastPage),
+                ]),
                 valueTransformer: (text) {
                   return text == null ? null : int.tryParse(text);
                 },
-                onFieldSubmitted: (text) {
+                onSubmitted: (text) {
                   submitPageInput();
                 },
                 keyboardType: TextInputType.number,
@@ -169,9 +169,9 @@ class _PageInputFormState extends State<PageInputForm> {
         ),
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: FlatButton(
-            child: const Text('GO'),
+          child: TextButton(
             onPressed: widget.lastPage < 2 ? null : submitPageInput,
+            child: const Text('GO'),
           ),
         ),
       ],

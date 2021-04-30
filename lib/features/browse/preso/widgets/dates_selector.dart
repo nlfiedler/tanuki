@@ -70,7 +70,6 @@ class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
 
   @override
   Widget build(BuildContext context) {
-    final datefmt = DateFormat.yMd();
     return BlocProvider.value(
       value: BlocProvider.of<abb.AssetBrowserBloc>(context),
       child: BlocBuilder<abb.AssetBrowserBloc, abb.AssetBrowserState>(
@@ -78,27 +77,21 @@ class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
           return FormBuilder(
             key: _fbKey,
             child: FormBuilderDateRangePicker(
-              attribute: 'dates',
-              format: datefmt,
+              name: 'dates',
+              format: DateFormat.yMd(),
               firstDate: firstDate,
               lastDate: lastDate,
               decoration: const InputDecoration(labelText: 'Dates'),
               onChanged: (val) {
                 // Without a form-save invocation, the value transformer does
-                // not get called, so do the parsing here and send the dates
-                // over to the bloc to take effect immediately.
-                final dates = parseRangeValue(val, datefmt);
+                // not get called, so send the dates over to the bloc to take
+                // effect immediately.
+                final dates = [val.start, val.end];
                 BlocProvider.of<abb.AssetBrowserBloc>(context)
                     .add(abb.SelectDates(dates: dates));
               },
-              valueTransformer: (text) {
-                // Due to the following bug, need to work around the issue of
-                // the value being a formatted date range, rather than a list of
-                // DateTime (which is the case in the latest 3.x release).
-                //
-                // https://github.com/danvick/flutter_form_builder/issues/458
-                //
-                return parseRangeValue(text, datefmt);
+              valueTransformer: (val) {
+                return [val.start, val.end];
               },
             ),
           );
@@ -106,15 +99,4 @@ class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
       ),
     );
   }
-}
-
-List<DateTime> parseRangeValue(String val, DateFormat fmt) {
-  if (val.isEmpty) {
-    return [];
-  }
-  if (val.contains(' - ')) {
-    final parts = val.split(' - ');
-    return List.of(parts.map((v) => fmt.parse(v)));
-  }
-  return [fmt.parse(val)];
 }

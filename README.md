@@ -10,7 +10,7 @@ browsing and editing capabilities.
 ### Prerequisites
 
 * [Rust](https://www.rust-lang.org) stable (2018 edition)
-* [Flutter](https://flutter.dev) **dev** channel
+* [Flutter](https://flutter.dev) **stable** channel
 
 ### Initial Setup
 
@@ -21,7 +21,7 @@ and produces consistent results when building the application.
 ```shell
 $ brew install dart
 $ pub global activate fvm
-$ fvm install 1.26.0-1.0.pre
+$ fvm install stable
 $ fvm flutter config --enable-macos-desktop
 $ fvm flutter config --enable-web
 ```

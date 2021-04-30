@@ -158,6 +158,7 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
       }
     } else if (event is SetPageSize) {
       pageSize = event.size;
+      pageNumber = 1;
       if (state is Loaded) {
         yield* _loadAssets();
       }

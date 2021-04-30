@@ -21,7 +21,7 @@ class AssetDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     final baseUrl = EnvironmentConfig.base_url;
     if (mimetype.startsWith('video/')) {
-      final uri = '$baseUrl/api/asset/${assetId}';
+      final uri = '$baseUrl/api/asset/$assetId';
       return _AssetVideo(uri: uri);
     } else {
       final tail = '$displayWidth/$displayWidth/$assetId';

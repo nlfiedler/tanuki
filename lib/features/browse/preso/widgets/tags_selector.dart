@@ -3,6 +3,7 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_chips_input/flutter_chips_input.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart';
@@ -50,6 +51,7 @@ class TagSelectorForm extends StatefulWidget {
 
 class _TagSelectorFormState extends State<TagSelectorForm> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
+  final GlobalKey<ChipsInputState> _chipKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -77,9 +79,7 @@ class _TagSelectorFormState extends State<TagSelectorForm> {
           child: DropdownButton(
             onChanged: (value) {
               // Toggle the item in the selected list.
-              final values = toggleSelection(selected, value.label);
-              // Update the chips input form field to match.
-              updateChipsInput(values);
+              final values = toggleSelection(selected, value.label, value);
               BlocProvider.of<abb.AssetBrowserBloc>(context)
                   .add(abb.SelectTags(tags: values));
             },
@@ -96,9 +96,9 @@ class _TagSelectorFormState extends State<TagSelectorForm> {
     );
   }
 
-  FormBuilderChipsInput buildChipsInput(BuildContext context) {
-    return FormBuilderChipsInput(
-      attribute: 'tags',
+  ChipsInput buildChipsInput(BuildContext context) {
+    return ChipsInput(
+      key: _chipKey,
       decoration: const InputDecoration(labelText: 'Tags'),
       onChanged: (val) {
         // Need to explicitly convert the value, whatever it is, even a
@@ -144,23 +144,20 @@ class _TagSelectorFormState extends State<TagSelectorForm> {
     );
   }
 
-  void updateChipsInput(List<String> values) {
-    // Trying to rebuild the form with a different initialValue has no effect,
-    // so instead simulate a user action by telling the field that it has been
-    // changed (this is, in fact, the way this is intended to work).
-    final List<Tag> tags = List.of(values.map(
-      (v) => Tag(label: v, count: 1),
-    ));
-    _fbKey.currentState.fields['tags'].currentState.didChange(tags);
+  // Side-effect: adds/removes a chip from the chips input.
+  List<String> toggleSelection(
+    List<String> selected,
+    String label,
+    Tag value,
+  ) {
+    final List<String> values = List.from(selected);
+    if (values.contains(label)) {
+      values.remove(label);
+      _chipKey.currentState.deleteChip(value);
+    } else {
+      values.add(label);
+      _chipKey.currentState.selectSuggestion(value);
+    }
+    return values;
   }
-}
-
-List<String> toggleSelection(List<String> selected, String value) {
-  final List<String> values = List.from(selected);
-  if (values.contains(value)) {
-    values.remove(value);
-  } else {
-    values.add(value);
-  }
-  return values;
 }

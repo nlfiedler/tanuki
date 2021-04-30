@@ -127,7 +127,7 @@ class _UploadFormState extends State<UploadForm> {
             children: <Widget>[
               Padding(
                 padding: const EdgeInsets.fromLTRB(96.0, 48.0, 16.0, 16.0),
-                child: RaisedButton(
+                child: ElevatedButton(
                   onPressed: () => _pickFiles(context),
                   child: Text('Choose Files'),
                 ),
@@ -153,7 +153,7 @@ class _UploadFormState extends State<UploadForm> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16.0, 48.0, 96.0, 16.0),
-                child: RaisedButton(
+                child: ElevatedButton(
                   onPressed: _selectedFiles.isNotEmpty
                       ? () => _startUpload(context)
                       : null,

@@ -37,7 +37,7 @@ Widget buildThumbnails(BuildContext context, List<SearchResult> results) {
       final dateString = datefmt.format(e.datetime.toLocal());
       return Padding(
         padding: const EdgeInsets.all(8.0),
-        child: FlatButton(
+        child: TextButton(
           onPressed: () {
             Navigator.pushNamed(context, '/asset', arguments: e.id);
           },

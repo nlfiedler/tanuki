@@ -14,7 +14,10 @@ default-run = "tanuki"
 actix-cors = "0.5"
 actix-files = "0.5"
 actix-multipart = "0.3"
-actix-rt = "2.0"
+# cannot update actix-rt until actix-web also updates its tokio dependency
+# otherwise get a "system is not running" error at startup
+# (c.f. https://github.com/actix/actix-net/issues/281)
+actix-rt = "1.1"
 actix-web = "3.1"
 base64 = "0.13"
 chrono = { version = "0.4", features = ["serde"] }

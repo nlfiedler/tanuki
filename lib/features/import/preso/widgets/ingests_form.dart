@@ -49,13 +49,13 @@ class IngestsForm extends StatelessWidget {
           ),
         ),
         SizedBox(width: 8.0),
-        RaisedButton(
-          child: Text('IMPORT'),
+        ElevatedButton(
           onPressed: () {
             BlocProvider.of<IngestAssetsBloc>(context).add(
               ProcessUploads(),
             );
           },
+          child: Text('IMPORT'),
         ),
       ],
     );

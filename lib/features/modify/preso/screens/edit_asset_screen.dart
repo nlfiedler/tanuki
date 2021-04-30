@@ -113,7 +113,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
       child: Column(
         children: [
           FormBuilderTextField(
-            attribute: 'datetime',
+            name: 'datetime',
             decoration: InputDecoration(
               icon: Icon(Icons.calendar_today),
               labelText: 'Date',
@@ -121,7 +121,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
             readOnly: true,
           ),
           FormBuilderDateTimePicker(
-            attribute: 'userdate',
+            name: 'userdate',
             decoration: InputDecoration(
               icon: Icon(Icons.calendar_today),
               labelText: 'Custom Date',
@@ -129,14 +129,14 @@ class _AssetEditFormState extends State<AssetEditForm> {
             inputType: InputType.both,
           ),
           FormBuilderTextField(
-            attribute: 'caption',
+            name: 'caption',
             decoration: InputDecoration(
               icon: Icon(Icons.format_quote),
               labelText: 'Caption',
             ),
           ),
           FormBuilderTextField(
-            attribute: 'tags',
+            name: 'tags',
             decoration: InputDecoration(
               icon: Icon(Icons.label),
               labelText: 'Tags',
@@ -149,24 +149,22 @@ class _AssetEditFormState extends State<AssetEditForm> {
             },
           ),
           FormBuilderTextField(
-            attribute: 'location',
+            name: 'location',
             decoration: InputDecoration(
               icon: Icon(Icons.location_on),
               labelText: 'Location',
             ),
           ),
           FormBuilderTextField(
-            attribute: 'mimetype',
+            name: 'mimetype',
             decoration: InputDecoration(
               icon: Icon(Icons.code),
               labelText: 'Media type',
             ),
-            autovalidate: true,
-            validators: [
-              (val) {
-                return validateMediaType(val.toString());
-              },
-            ],
+            autovalidateMode: AutovalidateMode.always,
+            validator: (val) {
+              return validateMediaType(val.toString());
+            },
           ),
         ],
       ),

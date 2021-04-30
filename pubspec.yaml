@@ -13,9 +13,10 @@ dependencies:
   flutter:
     sdk: flutter
 
-  equatable: ^1.2.3
+  equatable: ^1.2.5
   file_picker: ^2.0.11
-  flutter_bloc: ^6.0.6
+  flutter_bloc: ^6.1.1
+  flutter_chips_input: ^1.9.5
   # use file_chooser vs file_picker on desktop to avoid installing golang
   # (temporary solution for desktop file chooser, no package yet available)
   file_chooser:
@@ -24,19 +25,11 @@ dependencies:
       path: plugins/file_chooser
       ref: 927f8cbc09b35d85245c095f2db8df9b186f6618
   flutter_dropzone: ^1.0.9
-  # flutter_form_builder 3.14.0 only works with flutter 1.22.*
-  # flutter_form_builder: ^3.14.0
-  # workaround for https://github.com/danvick/flutter_form_builder/issues/382
-  # flutter_form_builder: ^3.14.0-alpha.2
-  # workaround for https://github.com/danvick/flutter_form_builder/issues/465
-  flutter_form_builder:
-    git:
-      url: https://github.com/knaeckeKami/flutter_form_builder.git
-      ref: v3.14.0-alpha.2-fix
-  flutter_riverpod: ^0.12.1
+  flutter_form_builder: ^6.0.0
+  flutter_riverpod: ^0.14.0+2
   graphql: ^3.1.0
   http: ^0.12.2
-  intl: ^0.16.1
+  intl: ^0.17.0
   mime: ^0.9.7
   oxidized: ^3.1.0
   path: ^1.7.0

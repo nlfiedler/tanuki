@@ -46,8 +46,7 @@ class BulkSubmit extends StatelessWidget {
                 Text('Fill in some or all of the fields and then'),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8.0, 0, 8.0, 0),
-                  child: RaisedButton(
-                    child: Text('SAVE'),
+                  child: ElevatedButton(
                     onPressed: () {
                       final inputs = onSubmit();
                       if (inputs.isNotEmpty) {
@@ -56,6 +55,7 @@ class BulkSubmit extends StatelessWidget {
                         );
                       }
                     },
+                    child: Text('SAVE'),
                   ),
                 ),
               ],

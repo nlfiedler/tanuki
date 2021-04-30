@@ -81,7 +81,7 @@ class _UploadFormState extends State<UploadForm> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error reading file ${uploading}: $e')),
+        SnackBar(content: Text('Error reading file $uploading: $e')),
       );
       BlocProvider.of<UploadFileBloc>(context).add(SkipCurrent());
     }
@@ -94,7 +94,7 @@ class _UploadFormState extends State<UploadForm> {
       child: BlocConsumer<UploadFileBloc, UploadFileState>(
         listener: (context, state) async {
           if (state is Uploading) {
-            await _uploadFile(context, state.current);
+            _uploadFile(context, state.current);
           }
         },
         builder: (context, state) {
@@ -104,7 +104,7 @@ class _UploadFormState extends State<UploadForm> {
             children: <Widget>[
               Padding(
                 padding: const EdgeInsets.fromLTRB(96.0, 48.0, 16.0, 16.0),
-                child: RaisedButton(
+                child: ElevatedButton(
                   onPressed: () => _pickFiles(context),
                   child: Text('Choose Files'),
                 ),
@@ -135,7 +135,7 @@ class _UploadFormState extends State<UploadForm> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16.0, 48.0, 96.0, 16.0),
-                child: RaisedButton(
+                child: ElevatedButton(
                   onPressed: _selectedFiles.isNotEmpty
                       ? () => _startUpload(context)
                       : null,

@@ -37,8 +37,7 @@ class UpdateSubmit extends StatelessWidget {
           }
         },
         builder: (context, state) {
-          return RaisedButton(
-            child: Text('SAVE'),
+          return ElevatedButton(
             onPressed: () {
               if (formKey.currentState.saveAndValidate()) {
                 final input = buildAssetInputId(
@@ -50,6 +49,7 @@ class UpdateSubmit extends StatelessWidget {
                 );
               }
             },
+            child: Text('SAVE'),
           );
         },
       ),

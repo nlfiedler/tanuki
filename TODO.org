@@ -1,9 +1,18 @@
 * Action Items
-** Update flutter dependencies
-*** Update tricky flutter dependencies
-*** Revisit hard-coded flutter dependencies
-** Update rust dependencies
+** TODO Update flutter dependencies
+** TODO Update rust dependencies
 *** Update =juniper= to latest release, requires API changes
+** TODO Try to fix the null safety compiler warning
+*** c.f. https://dart.dev/null-safety/unsound-null-safety
+** TODO Form builder widget changes that need attention
+*** date(range) selector is super huge now
+*** error: text input is not attached
+1) open then close the date range selector
+2) use dropdown to add a new tag
+3) seemingly nothing happens: error in console
+** Quick import directly from the phone, tablet
+*** Ensure web interface works well for small screens
+*** Support easy import of photos from phone collection via web interface
 ** Interface improvements
 *** reference: https://flutter.github.io/samples/
 *** Flutter Folio example app that works well for all screen sizes
@@ -103,6 +112,7 @@
 ** Known Issues
 *** clicking on portrait avi(?) shows widened image and page does not scroll to show details
 *** filter input chips are broken on first typed character
+**** TODO see the new =ChipsInput= which has a focus node property
 **** chips input keyboard focus: https://github.com/danvick/flutter_form_builder/issues/313
 **** seems like focus goes somewhere, clicking in input field lets you type another character
 **** happens with release =beta= channel web build

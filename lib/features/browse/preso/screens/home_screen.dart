@@ -11,17 +11,17 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('all your assets are belong to us'),
         actions: [
-          FlatButton(
-            child: Icon(Icons.file_upload),
+          TextButton(
             onPressed: () {
               Navigator.pushNamed(context, '/upload');
             },
+            child: Icon(Icons.file_upload),
           ),
-          FlatButton(
-            child: Icon(Icons.history),
+          TextButton(
             onPressed: () {
               Navigator.pushNamed(context, '/recents');
             },
+            child: Icon(Icons.history),
           ),
         ],
       ),

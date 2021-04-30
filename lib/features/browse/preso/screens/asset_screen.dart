@@ -36,19 +36,19 @@ class AssetScreen extends StatelessWidget {
               appBar: AppBar(
                 title: Text('Details for ${state.asset.filename}'),
                 actions: [
-                  FlatButton(
-                    child: Icon(Icons.file_download),
+                  TextButton(
                     onPressed: () async {
                       await downloadAsset(context, state.asset);
                     },
+                    child: Icon(Icons.file_download),
                   ),
-                  FlatButton(
-                    child: Icon(Icons.edit),
+                  TextButton(
                     onPressed: () {
                       // replace the route for viewing the asset
                       Navigator.pushReplacementNamed(context, '/edit',
                           arguments: state.asset.id);
                     },
+                    child: Icon(Icons.edit),
                   ),
                 ],
               ),
@@ -144,7 +144,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
       child: Column(
         children: [
           FormBuilderTextField(
-            attribute: 'datetime',
+            name: 'datetime',
             decoration: InputDecoration(
               icon: Icon(Icons.calendar_today),
               labelText: 'Date',
@@ -152,7 +152,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
             readOnly: true,
           ),
           FormBuilderTextField(
-            attribute: 'caption',
+            name: 'caption',
             decoration: InputDecoration(
               icon: Icon(Icons.format_quote),
               labelText: 'Caption',
@@ -160,7 +160,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
             readOnly: true,
           ),
           FormBuilderTextField(
-            attribute: 'tags',
+            name: 'tags',
             decoration: InputDecoration(
               icon: Icon(Icons.label),
               labelText: 'Tags',
@@ -168,7 +168,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
             readOnly: true,
           ),
           FormBuilderTextField(
-            attribute: 'location',
+            name: 'location',
             decoration: InputDecoration(
               icon: Icon(Icons.location_on),
               labelText: 'Location',
@@ -176,7 +176,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
             readOnly: true,
           ),
           FormBuilderTextField(
-            attribute: 'filename',
+            name: 'filename',
             decoration: InputDecoration(
               icon: Icon(Icons.folder_outlined),
               labelText: 'File name',
@@ -184,7 +184,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
             readOnly: true,
           ),
           FormBuilderTextField(
-            attribute: 'filesize',
+            name: 'filesize',
             decoration: InputDecoration(
               icon: Icon(Icons.info_outline),
               labelText: 'File size',
@@ -192,7 +192,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
             readOnly: true,
           ),
           FormBuilderTextField(
-            attribute: 'mimetype',
+            name: 'mimetype',
             decoration: InputDecoration(
               icon: Icon(Icons.code),
               labelText: 'Media type',
