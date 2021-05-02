@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:oxidized/oxidized.dart';
 
 enum SortField { date, identifier, filename, mediaType, location }
@@ -80,11 +79,11 @@ class SearchResult extends Equatable {
   final DateTime datetime;
 
   SearchResult({
-    @required this.id,
-    @required this.filename,
-    @required this.mimetype,
-    @required this.location,
-    @required this.datetime,
+    required this.id,
+    required this.filename,
+    required this.mimetype,
+    required this.location,
+    required this.datetime,
   });
 
   @override
@@ -104,8 +103,8 @@ class QueryResults extends Equatable {
   final int count;
 
   QueryResults({
-    @required this.results,
-    @required this.count,
+    required this.results,
+    required this.count,
   });
 
   @override

@@ -2,7 +2,8 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 
-String validateMediaType(String val) {
+// Returns null if no error.
+String? validateMediaType(String val) {
   if (val.contains(RegExp(r'\s+'))) {
     return 'Media type must not contain white space';
   }

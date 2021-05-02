@@ -15,9 +15,9 @@ class UpdateSubmit extends StatelessWidget {
   final String assetId;
 
   UpdateSubmit({
-    Key key,
-    @required this.assetId,
-    @required this.formKey,
+    Key? key,
+    required this.assetId,
+    required this.formKey,
   }) : super(key: key);
 
   @override
@@ -39,10 +39,10 @@ class UpdateSubmit extends StatelessWidget {
         builder: (context, state) {
           return ElevatedButton(
             onPressed: () {
-              if (formKey.currentState.saveAndValidate()) {
+              if (formKey.currentState!.saveAndValidate()) {
                 final input = buildAssetInputId(
                   assetId,
-                  formKey.currentState.value,
+                  formKey.currentState!.value,
                 );
                 BlocProvider.of<UpdateAssetBloc>(context).add(
                   SubmitUpdate(input: input),
@@ -59,17 +59,17 @@ class UpdateSubmit extends StatelessWidget {
 
 AssetInputId buildAssetInputId(String assetId, Map<String, dynamic> inputs) {
   // Undefined values are treated as empty string, so we can treat empty
-  // and undefined in the same manner down below with Option.some().
+  // and undefined in the same manner down below with Option.from().
   final String caption = inputs['caption'] ?? '';
   final String location = inputs['location'] ?? '';
-  final DateTime datetime = inputs['userdate'] as DateTime;
+  final DateTime? datetime = inputs['userdate'] as DateTime;
   return AssetInputId(
     id: assetId,
     input: AssetInput(
       tags: inputs['tags'] as List<String>,
-      caption: Option.some(caption.isEmpty ? null : caption),
-      location: Option.some(location.isEmpty ? null : location),
-      datetime: Option.some(datetime).map((v) => v.toUtc()),
+      caption: Option.from(caption.isEmpty ? null : caption),
+      location: Option.from(location.isEmpty ? null : location),
+      datetime: Option.from(datetime).map((v) => v.toUtc()),
       mimetype: Some(inputs['mimetype']),
       filename: None(),
     ),

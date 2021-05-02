@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/usecases/query_assets.dart';
@@ -24,7 +23,7 @@ class SelectTags extends AssetBrowserEvent {
   final List<String> tags;
 
   SelectTags({
-    @required this.tags,
+    required this.tags,
   });
 }
 
@@ -32,7 +31,7 @@ class SelectLocations extends AssetBrowserEvent {
   final List<String> locations;
 
   SelectLocations({
-    @required this.locations,
+    required this.locations,
   });
 }
 
@@ -40,7 +39,7 @@ class SelectDates extends AssetBrowserEvent {
   final List<DateTime> dates;
 
   SelectDates({
-    @required this.dates,
+    required this.dates,
   });
 }
 
@@ -48,7 +47,7 @@ class ShowPage extends AssetBrowserEvent {
   final int page;
 
   ShowPage({
-    @required this.page,
+    required this.page,
   });
 }
 
@@ -56,7 +55,7 @@ class SetPageSize extends AssetBrowserEvent {
   final int size;
 
   SetPageSize({
-    @required this.size,
+    required this.size,
   });
 }
 
@@ -83,14 +82,14 @@ class Loaded extends AssetBrowserState {
   final int lastPage;
 
   Loaded({
-    @required this.results,
-    @required this.pageNumber,
-    @required tags,
-    @required locations,
-    @required dates,
-    @required this.lastPage,
-    @required this.pageSize,
-  })  : selectedTags = List.unmodifiable(tags),
+    required this.results,
+    required this.pageNumber,
+    required tags,
+    required locations,
+    required dates,
+    required this.lastPage,
+    required this.pageSize,
+  })   : selectedTags = List.unmodifiable(tags),
         selectedLocations = List.unmodifiable(locations),
         selectedDates = List.unmodifiable(dates);
 
@@ -107,7 +106,7 @@ class Loaded extends AssetBrowserState {
 class Error extends AssetBrowserState {
   final String message;
 
-  Error({@required this.message});
+  Error({required this.message});
 
   @override
   List<Object> get props => [message];
@@ -125,7 +124,7 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
   int pageSize = 18;
   int pageNumber = 1;
 
-  AssetBrowserBloc({this.usecase}) : super(Empty());
+  AssetBrowserBloc({required this.usecase}) : super(Empty());
 
   @override
   Stream<AssetBrowserState> mapEventToState(

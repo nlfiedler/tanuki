@@ -4,10 +4,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:graphql/client.dart' as gql;
+import 'package:gql/language.dart' as lang;
+import 'package:gql/ast.dart' as ast;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' as parser;
-import 'package:meta/meta.dart';
 import 'package:mime/mime.dart';
+import 'package:normalize/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:tanuki/core/error/exceptions.dart';
 
@@ -22,15 +24,32 @@ abstract class AssetRemoteDataSource {
   Future<String> uploadAssetBytes(String filename, Uint8List contents);
 }
 
+// Work around bug in juniper in which it fails to implement __typename for the
+// root query, which is in violation of the GraphQL spec.
+//
+// c.f. https://github.com/graphql-rust/juniper/issues/372
+class AddNestedTypenameVisitor extends AddTypenameVisitor {
+  @override
+  ast.OperationDefinitionNode visitOperationDefinitionNode(
+    ast.OperationDefinitionNode node,
+  ) =>
+      node;
+}
+
+ast.DocumentNode gqlNoTypename(String document) => ast.transform(
+      lang.parseString(document),
+      [AddNestedTypenameVisitor()],
+    );
+
 class AssetRemoteDataSourceImpl extends AssetRemoteDataSource {
   final http.Client httpClient;
   final gql.GraphQLClient gqlClient;
   final String baseUrl;
 
   AssetRemoteDataSourceImpl({
-    @required this.httpClient,
-    @required this.baseUrl,
-    @required this.gqlClient,
+    required this.httpClient,
+    required this.baseUrl,
+    required this.gqlClient,
   });
 
   @override
@@ -41,14 +60,13 @@ class AssetRemoteDataSourceImpl extends AssetRemoteDataSource {
       }
     ''';
     final mutationOptions = gql.MutationOptions(
-      documentNode: gql.gql(getStore),
+      document: gqlNoTypename(getStore),
     );
     final gql.QueryResult result = await gqlClient.mutate(mutationOptions);
     if (result.hasException) {
       throw ServerException(result.exception.toString());
     }
-    final identifier = result.data['ingest'] as int;
-    return identifier;
+    return (result.data?['ingest'] ?? 0) as int;
   }
 
   @override

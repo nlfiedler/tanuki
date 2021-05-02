@@ -59,15 +59,15 @@ class MyApp extends StatelessWidget {
 
 class _AttributeRefresher extends NavigatorObserver {
   @override
-  void didPop(Route route, Route previousRoute) {
+  void didPop(Route route, Route? previousRoute) {
     // The route and previousRoute values seem backward to what their names
     // imply (e.g. route is where we are coming from and previousRoute is the
     // one to which we are returning).
-    if (previousRoute.isFirst) {
+    if (previousRoute?.isFirst ?? false) {
       // If returning to the home screen, signal the selector blocs to refresh
       // their state since the page we just left may have altered the data in
       // some manner.
-      final context = navigator.context;
+      final context = navigator!.context;
       BlocProvider.of<AllLocationsBloc>(context).add(LoadAllLocations());
       BlocProvider.of<AllTagsBloc>(context).add(LoadAllTags());
       BlocProvider.of<AllYearsBloc>(context).add(LoadAllYears());

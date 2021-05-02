@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:tanuki/core/domain/usecases/ingest_assets.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
 
@@ -35,7 +34,7 @@ class Processing extends IngestAssetsState {}
 class Finished extends IngestAssetsState {
   final int count;
 
-  Finished({@required this.count});
+  Finished({required this.count});
 
   @override
   List<Object> get props => [count];
@@ -44,7 +43,7 @@ class Finished extends IngestAssetsState {
 class Error extends IngestAssetsState {
   final String message;
 
-  Error({@required this.message});
+  Error({required this.message});
 
   @override
   List<Object> get props => [message];
@@ -57,7 +56,7 @@ class Error extends IngestAssetsState {
 class IngestAssetsBloc extends Bloc<IngestAssetsEvent, IngestAssetsState> {
   final IngestAssets usecase;
 
-  IngestAssetsBloc({this.usecase}) : super(Initial());
+  IngestAssetsBloc({required this.usecase}) : super(Initial());
 
   @override
   Stream<IngestAssetsState> mapEventToState(

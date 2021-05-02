@@ -3,16 +3,17 @@
 //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/bulk_update.dart';
+import './bulk_update_test.mocks.dart';
 
-class MockEntityRepository extends Mock implements EntityRepository {}
-
+@GenerateMocks([EntityRepository])
 void main() {
-  BulkUpdate usecase;
-  MockEntityRepository mockEntityRepository;
+  late BulkUpdate usecase;
+  late MockEntityRepository mockEntityRepository;
 
   setUp(() {
     mockEntityRepository = MockEntityRepository();

@@ -4,18 +4,19 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/query_recents.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
+import './recent_imports_bloc_test.mocks.dart';
 
-class MockAssetRepository extends Mock implements EntityRepository {}
-
+@GenerateMocks([EntityRepository])
 void main() {
-  MockAssetRepository mockAssetRepository;
-  QueryRecents usecase;
+  late MockEntityRepository mockAssetRepository;
+  late QueryRecents usecase;
 
   final tQueryResults = QueryResults(
     results: [
@@ -32,7 +33,7 @@ void main() {
 
   group('normal cases', () {
     setUp(() {
-      mockAssetRepository = MockAssetRepository();
+      mockAssetRepository = MockEntityRepository();
       usecase = QueryRecents(mockAssetRepository);
       when(mockAssetRepository.queryRecents(any))
           .thenAnswer((_) async => Ok(tQueryResults));
@@ -41,14 +42,15 @@ void main() {
     blocTest(
       'emits [] when nothing is added',
       build: () => RecentImportsBloc(usecase: usecase),
-      expect: [],
+      expect: () => [],
     );
 
     blocTest(
       'emits [Loading, Loaded] when FindRecents is added',
       build: () => RecentImportsBloc(usecase: usecase),
-      act: (bloc) => bloc.add(FindRecents(range: RecentTimeRange.day)),
-      expect: [
+      act: (RecentImportsBloc bloc) =>
+          bloc.add(FindRecents(range: RecentTimeRange.day)),
+      expect: () => [
         Loading(),
         Loaded(
           results: tQueryResults,
@@ -60,8 +62,8 @@ void main() {
     blocTest(
       'emits [Loading, Loaded] when RefreshResults is added',
       build: () => RecentImportsBloc(usecase: usecase),
-      act: (bloc) => bloc.add(RefreshResults()),
-      expect: [
+      act: (RecentImportsBloc bloc) => bloc.add(RefreshResults()),
+      expect: () => [
         Loading(),
         Loaded(
           results: tQueryResults,
@@ -73,7 +75,7 @@ void main() {
 
   group('error cases', () {
     setUp(() {
-      mockAssetRepository = MockAssetRepository();
+      mockAssetRepository = MockEntityRepository();
       usecase = QueryRecents(mockAssetRepository);
       when(mockAssetRepository.queryRecents(any))
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
@@ -82,8 +84,9 @@ void main() {
     blocTest(
       'emits [Loading, Error] when FindRecents is added',
       build: () => RecentImportsBloc(usecase: usecase),
-      act: (bloc) => bloc.add(FindRecents(range: RecentTimeRange.day)),
-      expect: [Loading(), Error(message: 'ServerFailure(oh no!)')],
+      act: (RecentImportsBloc bloc) =>
+          bloc.add(FindRecents(range: RecentTimeRange.day)),
+      expect: () => [Loading(), Error(message: 'ServerFailure(oh no!)')],
     );
   });
 }

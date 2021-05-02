@@ -1,7 +1,6 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-import 'package:meta/meta.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 
@@ -46,10 +45,14 @@ class SearchParamsModel extends SearchParams {
     final List<String> locations = json['locations'] == null
         ? []
         : List.from(json['locations'].map((t) => t.toString()));
-    final after = Option.some(json['after']).map((v) => DateTime.parse(v));
-    final before = Option.some(json['before']).map((v) => DateTime.parse(v));
-    final Option<String> filename = Option.some(json['filename']);
-    final Option<String> mimetype = Option.some(json['mimetype']);
+    final after = Option.from(json['after']).map(
+      (v) => DateTime.parse(v as String),
+    );
+    final before = Option.from(json['before']).map(
+      (v) => DateTime.parse(v as String),
+    );
+    final Option<String> filename = Option.from(json['filename']);
+    final Option<String> mimetype = Option.from(json['mimetype']);
     final sortField = decodeSortField(json['sortField']);
     final sortOrder = decodeSortOrder(json['sortOrder']);
     return SearchParamsModel(
@@ -70,91 +73,75 @@ class SearchParamsModel extends SearchParams {
       'locations': locations.isEmpty ? null : locations,
       'after': after.mapOr((v) => v.toIso8601String(), null),
       'before': before.mapOr((v) => v.toIso8601String(), null),
-      'filename': filename.unwrapOr(null),
-      'mimetype': mimetype.unwrapOr(null),
+      'filename': filename.toNullable(),
+      'mimetype': mimetype.toNullable(),
       'sortField': encodeSortField(sortField),
       'sortOrder': encodeSortOrder(sortOrder),
     };
   }
 }
 
-Option<SortField> decodeSortField(String field) {
+Option<SortField> decodeSortField(String? field) {
   switch (field) {
     case 'DATE':
       return Some(SortField.date);
-      break;
     case 'IDENTIFIER':
       return Some(SortField.identifier);
-      break;
     case 'FILENAME':
       return Some(SortField.filename);
-      break;
     case 'MEDIA_TYPE':
       return Some(SortField.mediaType);
-      break;
     case 'LOCATION':
       return Some(SortField.location);
-      break;
   }
   return None();
 }
 
-String encodeSortField(Option<SortField> field) {
+String? encodeSortField(Option<SortField> field) {
   return field.mapOr((SortField sf) {
     switch (sf) {
       case SortField.date:
         return 'DATE';
-        break;
       case SortField.identifier:
         return 'IDENTIFIER';
-        break;
       case SortField.filename:
         return 'FILENAME';
-        break;
       case SortField.mediaType:
         return 'MEDIA_TYPE';
-        break;
       case SortField.location:
         return 'LOCATION';
-        break;
     }
-    return null;
   }, null);
 }
 
-Option<SortOrder> decodeSortOrder(String order) {
+Option<SortOrder> decodeSortOrder(String? order) {
   switch (order) {
     case 'ASCENDING':
       return Some(SortOrder.ascending);
-      break;
     case 'DESCENDING':
       return Some(SortOrder.descending);
-      break;
   }
   return None();
 }
 
-String encodeSortOrder(Option<SortOrder> order) {
+String? encodeSortOrder(Option<SortOrder> order) {
   return order.mapOr((SortOrder so) {
     switch (so) {
       case SortOrder.ascending:
         return 'ASCENDING';
-        break;
       case SortOrder.descending:
         return 'DESCENDING';
-        break;
     }
-    return null;
   }, null);
 }
 
 class SearchResultModel extends SearchResult {
   SearchResultModel({
-    @required String id,
-    @required String filename,
-    @required String mimetype,
-    @required Option<String> location,
-    @required DateTime datetime,
+    required String id,
+    required String filename,
+    required String mimetype,
+    required Option<String> location,
+    required DateTime datetime,
   }) : super(
           id: id,
           filename: filename,
@@ -178,7 +165,7 @@ class SearchResultModel extends SearchResult {
       id: json['id'],
       filename: json['filename'],
       mimetype: json['mimetype'],
-      location: Option.some(json['location']),
+      location: Option.from(json['location']),
       datetime: DateTime.parse(json['datetime']),
     );
   }
@@ -188,7 +175,7 @@ class SearchResultModel extends SearchResult {
       'id': id,
       'filename': filename,
       'mimetype': mimetype,
-      'location': location.unwrapOr(null),
+      'location': location.unwrapOr(''),
       'datetime': datetime.toIso8601String(),
     };
   }
@@ -196,8 +183,8 @@ class SearchResultModel extends SearchResult {
 
 class QueryResultsModel extends QueryResults {
   QueryResultsModel({
-    @required List<SearchResult> results,
-    @required int count,
+    required List<SearchResult> results,
+    required int count,
   }) : super(results: results, count: count);
 
   factory QueryResultsModel.fromJson(Map<String, dynamic> json) {

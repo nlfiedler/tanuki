@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/usecases/get_asset.dart';
 
@@ -20,7 +19,7 @@ abstract class AssetEvent extends Equatable {
 class LoadAsset extends AssetEvent {
   final String id;
 
-  LoadAsset({@required this.id});
+  LoadAsset({required this.id});
 }
 
 //
@@ -39,7 +38,7 @@ class Loading extends AssetState {}
 class Loaded extends AssetState {
   final Asset asset;
 
-  Loaded({@required this.asset});
+  Loaded({required this.asset});
 
   @override
   List<Object> get props => [asset];
@@ -48,7 +47,7 @@ class Loaded extends AssetState {
 class Error extends AssetState {
   final String message;
 
-  Error({@required this.message});
+  Error({required this.message});
 
   @override
   List<Object> get props => [message];
@@ -61,7 +60,7 @@ class Error extends AssetState {
 class AssetBloc extends Bloc<AssetEvent, AssetState> {
   final GetAsset usecase;
 
-  AssetBloc({this.usecase}) : super(Empty());
+  AssetBloc({required this.usecase}) : super(Empty());
 
   @override
   Stream<AssetState> mapEventToState(

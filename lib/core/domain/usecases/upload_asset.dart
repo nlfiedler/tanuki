@@ -3,7 +3,6 @@
 //
 import 'dart:typed_data';
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/repositories/asset_repository.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
@@ -25,8 +24,8 @@ class Params extends Equatable {
   final Uint8List contents;
 
   Params({
-    @required this.filename,
-    @required this.contents,
+    required this.filename,
+    required this.contents,
   });
 
   @override

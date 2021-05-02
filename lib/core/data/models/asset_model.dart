@@ -1,22 +1,21 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-import 'package:meta/meta.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 
 class AssetModel extends Asset {
   AssetModel({
-    @required String id,
-    @required String checksum,
-    @required String filename,
-    @required int filesize,
-    @required DateTime datetime,
-    @required String mimetype,
-    @required List<String> tags,
-    @required Option<DateTime> userdate,
-    @required Option<String> caption,
-    @required Option<String> location,
+    required String id,
+    required String checksum,
+    required String filename,
+    required int filesize,
+    required DateTime datetime,
+    required String mimetype,
+    required List<String> tags,
+    required Option<DateTime> userdate,
+    required Option<String> caption,
+    required Option<String> location,
   }) : super(
           id: id,
           checksum: checksum,
@@ -47,11 +46,11 @@ class AssetModel extends Asset {
 
   factory AssetModel.fromJson(Map<String, dynamic> json) {
     final List<String> tags = List.from(json['tags'].map((t) => t.toString()));
-    final Option<String> caption = Option.some(json['caption']);
-    final Option<String> location = Option.some(json['location']);
+    final Option<String> caption = Option.from(json['caption']);
+    final Option<String> location = Option.from(json['location']);
     final datetime = DateTime.parse(json['datetime']);
-    final userdate = Option.some(json['userdate']).map(
-      (v) => DateTime.parse(v),
+    final userdate = Option.from(json['userdate']).map(
+      (v) => DateTime.parse(v as String),
     );
     return AssetModel(
       id: json['id'],
@@ -78,8 +77,8 @@ class AssetModel extends Asset {
       'mimetype': mimetype,
       'tags': tags,
       'userdate': userdate.mapOr((v) => v.toIso8601String(), null),
-      'caption': caption.unwrapOr(null),
-      'location': location.unwrapOr(null),
+      'caption': caption.unwrapOr(''),
+      'location': location.unwrapOr(''),
     };
   }
 }

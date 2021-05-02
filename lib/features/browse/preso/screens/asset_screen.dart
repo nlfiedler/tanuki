@@ -16,7 +16,7 @@ import 'package:url_launcher/url_launcher.dart' as launcher;
 class AssetScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final String assetId = ModalRoute.of(context).settings.arguments;
+    final String assetId = ModalRoute.of(context)?.settings.arguments as String;
     return BlocProvider<AssetBloc>(
       create: (_) => BuildContextX(context).read(assetBlocProvider),
       child: BlocBuilder<AssetBloc, AssetState>(
@@ -78,8 +78,8 @@ class AssetPreview extends StatelessWidget {
   final Asset asset;
 
   AssetPreview({
-    Key key,
-    @required this.asset,
+    Key? key,
+    required this.asset,
   }) : super(key: key);
 
   @override
@@ -109,8 +109,8 @@ class AssetEditForm extends StatefulWidget {
   final Asset asset;
 
   AssetEditForm({
-    Key key,
-    @required this.asset,
+    Key? key,
+    required this.asset,
   }) : super(key: key);
 
   @override

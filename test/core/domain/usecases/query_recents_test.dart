@@ -3,16 +3,17 @@
 //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/query_recents.dart';
+import './query_recents_test.mocks.dart';
 
-class MockEntityRepository extends Mock implements EntityRepository {}
-
+@GenerateMocks([EntityRepository])
 void main() {
-  QueryRecents usecase;
-  MockEntityRepository mockEntityRepository;
+  late QueryRecents usecase;
+  late MockEntityRepository mockEntityRepository;
 
   setUp(() {
     mockEntityRepository = MockEntityRepository();

@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/usecases/get_all_locations.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
@@ -36,7 +35,7 @@ class Loading extends AllLocationsState {}
 class Loaded extends AllLocationsState {
   final List<Location> locations;
 
-  Loaded({@required this.locations});
+  Loaded({required this.locations});
 
   @override
   List<Object> get props => [locations];
@@ -45,7 +44,7 @@ class Loaded extends AllLocationsState {
 class Error extends AllLocationsState {
   final String message;
 
-  Error({@required this.message});
+  Error({required this.message});
 
   @override
   List<Object> get props => [message];
@@ -58,7 +57,7 @@ class Error extends AllLocationsState {
 class AllLocationsBloc extends Bloc<AllLocationsEvent, AllLocationsState> {
   final GetAllLocations usecase;
 
-  AllLocationsBloc({this.usecase}) : super(Empty());
+  AllLocationsBloc({required this.usecase}) : super(Empty());
 
   @override
   Stream<AllLocationsState> mapEventToState(

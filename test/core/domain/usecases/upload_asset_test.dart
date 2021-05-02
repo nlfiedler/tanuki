@@ -4,15 +4,16 @@
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/repositories/asset_repository.dart';
 import 'package:tanuki/core/domain/usecases/upload_asset.dart';
+import './upload_asset_test.mocks.dart';
 
-class MockAssetRepository extends Mock implements AssetRepository {}
-
+@GenerateMocks([AssetRepository])
 void main() {
-  UploadAsset usecase;
-  MockAssetRepository mockAssetRepository;
+  late UploadAsset usecase;
+  late MockAssetRepository mockAssetRepository;
 
   setUp(() {
     mockAssetRepository = MockAssetRepository();

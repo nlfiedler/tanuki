@@ -19,7 +19,7 @@ class EditAssetScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // fetch the asset again just in case of concurrent edits
-    final String assetId = ModalRoute.of(context).settings.arguments;
+    final String assetId = ModalRoute.of(context)?.settings.arguments as String;
     return BlocProvider<AssetBloc>(
       create: (_) => BuildContextX(context).read(assetBlocProvider),
       child: BlocBuilder<AssetBloc, AssetState>(
@@ -56,8 +56,8 @@ class AssetEditor extends StatelessWidget {
   final Asset asset;
 
   AssetEditor({
-    Key key,
-    @required this.asset,
+    Key? key,
+    required this.asset,
   }) : super(key: key);
 
   @override
@@ -87,8 +87,8 @@ class AssetEditForm extends StatefulWidget {
   final Asset asset;
 
   AssetEditForm({
-    Key key,
-    @required this.asset,
+    Key? key,
+    required this.asset,
   }) : super(key: key);
 
   @override
@@ -104,7 +104,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
       key: _fbKey,
       initialValue: {
         'datetime': datefmt.format(widget.asset.datetime.toLocal()),
-        'userdate': widget.asset.userdate.unwrapOr(null),
+        'userdate': widget.asset.userdate.toNullable(),
         'mimetype': widget.asset.mimetype,
         'tags': widget.asset.tags.join(', '),
         'caption': widget.asset.caption.unwrapOr(''),

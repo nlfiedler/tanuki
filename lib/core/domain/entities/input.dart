@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:oxidized/oxidized.dart';
 
 /// An `AssetInput` is ued to update an asset.
@@ -21,12 +20,12 @@ class AssetInput extends Equatable {
   final Option<String> filename;
 
   AssetInput({
-    @required this.tags,
-    @required this.caption,
-    @required this.location,
-    @required this.datetime,
-    @required this.mimetype,
-    @required this.filename,
+    required this.tags,
+    required this.caption,
+    required this.location,
+    required this.datetime,
+    required this.mimetype,
+    required this.filename,
   });
 
   @override
@@ -41,7 +40,7 @@ class AssetInputId extends Equatable {
   final String id;
   final AssetInput input;
 
-  AssetInputId({@required this.id, @required this.input});
+  AssetInputId({required this.id, required this.input});
 
   @override
   List<Object> get props => [id];

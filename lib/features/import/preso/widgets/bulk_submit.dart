@@ -15,9 +15,9 @@ class BulkSubmit extends StatelessWidget {
   final VoidCallback onComplete;
 
   BulkSubmit({
-    Key key,
-    @required this.onSubmit,
-    @required this.onComplete,
+    Key? key,
+    required this.onSubmit,
+    required this.onComplete,
   }) : super(key: key);
 
   @override

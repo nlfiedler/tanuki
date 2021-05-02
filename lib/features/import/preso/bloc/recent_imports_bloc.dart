@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/usecases/query_recents.dart';
@@ -33,14 +32,13 @@ extension RecentTimeRangeExt on RecentTimeRange {
       case RecentTimeRange.ever:
         return None();
     }
-    return None();
   }
 }
 
 class FindRecents extends RecentImportsEvent {
   final RecentTimeRange range;
 
-  FindRecents({@required this.range});
+  FindRecents({required this.range});
 }
 
 /// Submit the query again for the same time range as before.
@@ -63,7 +61,7 @@ class Loaded extends RecentImportsState {
   final QueryResults results;
   final RecentTimeRange range;
 
-  Loaded({@required this.results, @required this.range});
+  Loaded({required this.results, required this.range});
 
   @override
   List<Object> get props => [range, results];
@@ -72,7 +70,7 @@ class Loaded extends RecentImportsState {
 class Error extends RecentImportsState {
   final String message;
 
-  Error({@required this.message});
+  Error({required this.message});
 
   @override
   List<Object> get props => [message];
@@ -86,7 +84,7 @@ class RecentImportsBloc extends Bloc<RecentImportsEvent, RecentImportsState> {
   final QueryRecents usecase;
   RecentTimeRange prevQueryRange = RecentTimeRange.day;
 
-  RecentImportsBloc({this.usecase}) : super(Empty());
+  RecentImportsBloc({required this.usecase}) : super(Empty());
 
   @override
   Stream<RecentImportsState> mapEventToState(

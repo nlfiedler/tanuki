@@ -4,18 +4,19 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_all_locations.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_locations_bloc.dart';
+import './all_locations_bloc_test.mocks.dart';
 
-class MockEntityRepository extends Mock implements EntityRepository {}
-
+@GenerateMocks([EntityRepository])
 void main() {
-  MockEntityRepository mockEntityRepository;
-  GetAllLocations usecase;
+  late MockEntityRepository mockEntityRepository;
+  late GetAllLocations usecase;
 
   group('normal cases', () {
     final locations = [
@@ -33,14 +34,14 @@ void main() {
     blocTest(
       'emits [] when nothing is added',
       build: () => AllLocationsBloc(usecase: usecase),
-      expect: [],
+      expect: () => [],
     );
 
     blocTest(
       'emits [Loading, Loaded] when LoadAllLocations is added',
       build: () => AllLocationsBloc(usecase: usecase),
-      act: (bloc) => bloc.add(LoadAllLocations()),
-      expect: [Loading(), Loaded(locations: locations)],
+      act: (AllLocationsBloc bloc) => bloc.add(LoadAllLocations()),
+      expect: () => [Loading(), Loaded(locations: locations)],
     );
   });
 
@@ -55,8 +56,8 @@ void main() {
     blocTest(
       'emits [Loading, Error] when LoadAllLocations is added',
       build: () => AllLocationsBloc(usecase: usecase),
-      act: (bloc) => bloc.add(LoadAllLocations()),
-      expect: [Loading(), Error(message: 'ServerFailure(oh no!)')],
+      act: (AllLocationsBloc bloc) => bloc.add(LoadAllLocations()),
+      expect: () => [Loading(), Error(message: 'ServerFailure(oh no!)')],
     );
   });
 }

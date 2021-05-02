@@ -4,18 +4,19 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_all_tags.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart';
+import './all_tags_bloc_test.mocks.dart';
 
-class MockEntityRepository extends Mock implements EntityRepository {}
-
+@GenerateMocks([EntityRepository])
 void main() {
-  MockEntityRepository mockEntityRepository;
-  GetAllTags usecase;
+  late MockEntityRepository mockEntityRepository;
+  late GetAllTags usecase;
 
   group('normal cases', () {
     final tags = [
@@ -32,14 +33,14 @@ void main() {
     blocTest(
       'emits [] when nothing is added',
       build: () => AllTagsBloc(usecase: usecase),
-      expect: [],
+      expect: () => [],
     );
 
     blocTest(
       'emits [Loading, Loaded] when LoadAllTags is added',
       build: () => AllTagsBloc(usecase: usecase),
-      act: (bloc) => bloc.add(LoadAllTags()),
-      expect: [Loading(), Loaded(tags: tags)],
+      act: (AllTagsBloc bloc) => bloc.add(LoadAllTags()),
+      expect: () => [Loading(), Loaded(tags: tags)],
     );
   });
 
@@ -54,8 +55,8 @@ void main() {
     blocTest(
       'emits [Loading, Error] when LoadAllTags is added',
       build: () => AllTagsBloc(usecase: usecase),
-      act: (bloc) => bloc.add(LoadAllTags()),
-      expect: [Loading(), Error(message: 'ServerFailure(oh no!)')],
+      act: (AllTagsBloc bloc) => bloc.add(LoadAllTags()),
+      expect: () => [Loading(), Error(message: 'ServerFailure(oh no!)')],
     );
   });
 }

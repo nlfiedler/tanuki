@@ -1,9 +1,9 @@
 * Action Items
 ** TODO Update flutter dependencies
+*** TODO try to fix null unsafe flutter_chips_input
+*** TODO replace file_chooser with file_selector
 ** TODO Update rust dependencies
 *** Update =juniper= to latest release, requires API changes
-** TODO Try to fix the null safety compiler warning
-*** c.f. https://dart.dev/null-safety/unsound-null-safety
 ** TODO Form builder widget changes that need attention
 *** date(range) selector is super huge now
 *** error: text input is not attached

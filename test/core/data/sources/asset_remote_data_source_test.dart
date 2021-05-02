@@ -7,26 +7,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:graphql/client.dart' as gql;
 import 'package:http/http.dart' as http;
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:tanuki/core/data/sources/asset_remote_data_source.dart';
 import 'package:tanuki/core/error/exceptions.dart';
-
-class MockHttpClient extends Mock implements http.Client {}
+import './asset_remote_data_source_test.mocks.dart';
 
 const happyCowPath = 'tests/fixtures/dcp_1069.jpg';
 
+@GenerateMocks([http.Client])
 void main() {
-  AssetRemoteDataSource dataSource;
-  MockHttpClient mockHttpClient;
+  late AssetRemoteDataSource dataSource;
+  late MockClient mockHttpClient;
 
   setUp(() {
-    mockHttpClient = MockHttpClient();
+    mockHttpClient = MockClient();
     final link = gql.HttpLink(
-      uri: 'http://example.com',
+      'http://example.com',
       httpClient: mockHttpClient,
     );
     final graphQLCient = gql.GraphQLClient(
       link: link,
-      cache: gql.InMemoryCache(),
+      cache: gql.GraphQLCache(),
     );
     dataSource = AssetRemoteDataSourceImpl(
       httpClient: mockHttpClient,
@@ -75,7 +76,10 @@ void main() {
   group('ingestAssets', () {
     void setUpMockHttpClientGraphQLResponse() {
       final response = {
-        'data': {'ingest': 101}
+        'data': {
+          '__typename': 'Int',
+          'ingest': 101,
+        }
       };
       // graphql client uses the 'send' method
       when(mockHttpClient.send(any)).thenAnswer((_) async {
@@ -129,7 +133,10 @@ void main() {
 
     void setUpMockGraphQLNullResponse() {
       final response = {
-        'data': {'locations': null}
+        'data': {
+          '__typename': 'Int',
+          'ingest': null,
+        }
       };
       // graphql client uses the 'send' method
       when(mockHttpClient.send(any)).thenAnswer((_) async {
@@ -147,7 +154,7 @@ void main() {
         // act
         final result = await dataSource.ingestAssets();
         // assert
-        expect(result, isNull);
+        expect(result, equals(0));
       },
     );
   });

@@ -4,18 +4,19 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_all_years.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_years_bloc.dart';
+import './all_years_bloc_test.mocks.dart';
 
-class MockEntityRepository extends Mock implements EntityRepository {}
-
+@GenerateMocks([EntityRepository])
 void main() {
-  MockEntityRepository mockEntityRepository;
-  GetAllYears usecase;
+  late MockEntityRepository mockEntityRepository;
+  late GetAllYears usecase;
 
   group('normal cases', () {
     final years = [
@@ -33,14 +34,14 @@ void main() {
     blocTest(
       'emits [] when nothing is added',
       build: () => AllYearsBloc(usecase: usecase),
-      expect: [],
+      expect: () => [],
     );
 
     blocTest(
       'emits [Loading, Loaded] when LoadAllYears is added',
       build: () => AllYearsBloc(usecase: usecase),
-      act: (bloc) => bloc.add(LoadAllYears()),
-      expect: [Loading(), Loaded(years: years)],
+      act: (AllYearsBloc bloc) => bloc.add(LoadAllYears()),
+      expect: () => [Loading(), Loaded(years: years)],
     );
   });
 
@@ -55,8 +56,8 @@ void main() {
     blocTest(
       'emits [Loading, Error] when LoadAllYears is added',
       build: () => AllYearsBloc(usecase: usecase),
-      act: (bloc) => bloc.add(LoadAllYears()),
-      expect: [Loading(), Error(message: 'ServerFailure(oh no!)')],
+      act: (AllYearsBloc bloc) => bloc.add(LoadAllYears()),
+      expect: () => [Loading(), Error(message: 'ServerFailure(oh no!)')],
     );
   });
 }

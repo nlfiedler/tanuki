@@ -4,17 +4,18 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/bulk_update.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/import/preso/bloc/bulk_update_bloc.dart';
+import './bulk_update_bloc_test.mocks.dart';
 
-class MockEntityRepository extends Mock implements EntityRepository {}
-
+@GenerateMocks([EntityRepository])
 void main() {
-  MockEntityRepository mockAssetRepository;
-  BulkUpdate usecase;
+  late MockEntityRepository mockAssetRepository;
+  late BulkUpdate usecase;
 
   group('normal cases', () {
     setUp(() {
@@ -27,14 +28,14 @@ void main() {
     blocTest(
       'emits [] when nothing is added',
       build: () => BulkUpdateBloc(usecase: usecase),
-      expect: [],
+      expect: () => [],
     );
 
     blocTest(
       'emits [Processing, Finished] when SubmitUpdates is added',
       build: () => BulkUpdateBloc(usecase: usecase),
-      act: (bloc) => bloc.add(SubmitUpdates(inputs: [])),
-      expect: [
+      act: (BulkUpdateBloc bloc) => bloc.add(SubmitUpdates(inputs: [])),
+      expect: () => [
         Processing(),
         Finished(count: 101),
       ],
@@ -52,8 +53,8 @@ void main() {
     blocTest(
       'emits [Uploading, Error] when repository returns an error',
       build: () => BulkUpdateBloc(usecase: usecase),
-      act: (bloc) => bloc.add(SubmitUpdates(inputs: [])),
-      expect: [
+      act: (BulkUpdateBloc bloc) => bloc.add(SubmitUpdates(inputs: [])),
+      expect: () => [
         Processing(),
         Error(message: 'ServerFailure(oh no!)'),
       ],

@@ -4,7 +4,7 @@
 
 /// Thrown when remote server error occurs.
 class ServerException implements Exception {
-  final String message;
+  final String? message;
 
   const ServerException([this.message]);
 

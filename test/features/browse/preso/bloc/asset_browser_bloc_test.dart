@@ -4,18 +4,19 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/query_assets.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
+import './asset_browser_bloc_test.mocks.dart';
 
-class MockEntityRepository extends Mock implements EntityRepository {}
-
+@GenerateMocks([EntityRepository])
 void main() {
-  MockEntityRepository mockEntityRepository;
-  QueryAssets usecase;
+  late MockEntityRepository mockEntityRepository;
+  late QueryAssets usecase;
 
   final selectedDates = [
     DateTime.utc(2009),
@@ -45,14 +46,14 @@ void main() {
     blocTest(
       'emits [] when nothing is added',
       build: () => AssetBrowserBloc(usecase: usecase),
-      expect: [],
+      expect: () => [],
     );
 
     blocTest(
       'emits [Loading, Loaded] when LoadInitialAssets is added',
       build: () => AssetBrowserBloc(usecase: usecase),
-      act: (bloc) => bloc.add(LoadInitialAssets()),
-      expect: [
+      act: (AssetBrowserBloc bloc) => bloc.add(LoadInitialAssets()),
+      expect: () => [
         Loading(),
         Loaded(
           results: tQueryResults,
@@ -69,19 +70,19 @@ void main() {
     blocTest(
       'emits [] when ToggleTag is added w/o LoadInitial',
       build: () => AssetBrowserBloc(usecase: usecase),
-      act: (bloc) => bloc.add(SelectTags(tags: ['cats'])),
-      expect: [],
+      act: (AssetBrowserBloc bloc) => bloc.add(SelectTags(tags: ['cats'])),
+      expect: () => [],
     );
 
     blocTest(
       'emits [Loading, Loaded, x2] when Initial + ToggleTag is added',
       build: () => AssetBrowserBloc(usecase: usecase),
-      act: (bloc) {
+      act: (AssetBrowserBloc bloc) {
         bloc.add(LoadInitialAssets());
         bloc.add(SelectTags(tags: ['cats']));
         return;
       },
-      expect: [
+      expect: () => [
         Loading(),
         Loaded(
           results: tQueryResults,
@@ -108,19 +109,20 @@ void main() {
     blocTest(
       'emits [] when ToggleLocation is added w/o LoadInitial',
       build: () => AssetBrowserBloc(usecase: usecase),
-      act: (bloc) => bloc.add(SelectLocations(locations: ['hawaii'])),
-      expect: [],
+      act: (AssetBrowserBloc bloc) =>
+          bloc.add(SelectLocations(locations: ['hawaii'])),
+      expect: () => [],
     );
 
     blocTest(
       'emits [Loading, Loaded, x2] when Initial + ToggleLocation is added',
       build: () => AssetBrowserBloc(usecase: usecase),
-      act: (bloc) {
+      act: (AssetBrowserBloc bloc) {
         bloc.add(LoadInitialAssets());
         bloc.add(SelectLocations(locations: ['hawaii']));
         return;
       },
-      expect: [
+      expect: () => [
         Loading(),
         Loaded(
           results: tQueryResults,
@@ -147,12 +149,12 @@ void main() {
     blocTest(
       'emits [Loading, Loaded, x2] when Initial + ToggleYear is added',
       build: () => AssetBrowserBloc(usecase: usecase),
-      act: (bloc) {
+      act: (AssetBrowserBloc bloc) {
         bloc.add(LoadInitialAssets());
         bloc.add(SelectDates(dates: selectedDates));
         return;
       },
-      expect: [
+      expect: () => [
         Loading(),
         Loaded(
           results: tQueryResults,
@@ -201,12 +203,12 @@ void main() {
     blocTest(
       'emits [Loading, Loaded, x2] when Initial + ShowPage is added',
       build: () => AssetBrowserBloc(usecase: usecase),
-      act: (bloc) {
+      act: (AssetBrowserBloc bloc) {
         bloc.add(LoadInitialAssets());
         bloc.add(ShowPage(page: 10));
         return;
       },
-      expect: [
+      expect: () => [
         Loading(),
         Loaded(
           results: manyQueryResults,
@@ -233,13 +235,13 @@ void main() {
     blocTest(
       'page number resets when Initial + ShowPage + ToggleTag is added',
       build: () => AssetBrowserBloc(usecase: usecase),
-      act: (bloc) {
+      act: (AssetBrowserBloc bloc) {
         bloc.add(LoadInitialAssets());
         bloc.add(ShowPage(page: 10));
         bloc.add(SelectTags(tags: ['cats']));
         return;
       },
-      expect: [
+      expect: () => [
         Loading(),
         Loaded(
           results: manyQueryResults,
@@ -287,8 +289,8 @@ void main() {
     blocTest(
       'emits [Loading, Loaded] when Initial is added',
       build: () => AssetBrowserBloc(usecase: usecase),
-      act: (bloc) => bloc.add(LoadInitialAssets()),
-      expect: [
+      act: (AssetBrowserBloc bloc) => bloc.add(LoadInitialAssets()),
+      expect: () => [
         Loading(),
         Loaded(
           results: zeroQueryResults,
@@ -314,8 +316,8 @@ void main() {
     blocTest(
       'emits [Loading, Error] when LoadInitialAssets is added',
       build: () => AssetBrowserBloc(usecase: usecase),
-      act: (bloc) => bloc.add(LoadInitialAssets()),
-      expect: [Loading(), Error(message: 'ServerFailure(oh no!)')],
+      act: (AssetBrowserBloc bloc) => bloc.add(LoadInitialAssets()),
+      expect: () => [Loading(), Error(message: 'ServerFailure(oh no!)')],
     );
   });
 }

@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
@@ -30,9 +29,9 @@ class Params extends Equatable {
   final int offset;
 
   Params({
-    @required this.params,
-    @required this.count,
-    @required this.offset,
+    required this.params,
+    required this.count,
+    required this.offset,
   });
 
   @override

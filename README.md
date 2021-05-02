@@ -41,11 +41,15 @@ volumes of output.
 
 ### Building, Testing, Starting the Frontend
 
+Until all of the dependencies have null-safety, must use `--no-sound-null-safety`
+option when running the application to avoid an exception.
+
 ```shell
 $ fvm flutter pub get
 $ fvm flutter pub run environment_config:generate
+$ fvm flutter pub run build_runner build
 $ fvm flutter test
-$ fvm flutter run -d chrome
+$ fvm flutter run --no-sound-null-safety -d chrome
 ```
 
 For macOS, `fvm flutter run -d macos` to run and `fvm flutter build macos` to build.

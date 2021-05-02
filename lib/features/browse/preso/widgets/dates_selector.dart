@@ -41,8 +41,8 @@ class DateRangeSelectorForm extends StatefulWidget {
   final List<Year> years;
 
   const DateRangeSelectorForm({
-    Key key,
-    @required this.years,
+    Key? key,
+    required this.years,
   }) : super(key: key);
 
   @override
@@ -64,8 +64,8 @@ class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
   final DateTime lastDate;
 
   _DateRangeSelectorFormState({
-    @required this.firstDate,
-    @required this.lastDate,
+    required this.firstDate,
+    required this.lastDate,
   }) : super();
 
   @override

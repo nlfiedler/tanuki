@@ -118,9 +118,9 @@ class PageInputForm extends StatefulWidget {
   final PageCallback onSubmit;
 
   PageInputForm({
-    Key key,
-    @required this.lastPage,
-    @required this.onSubmit,
+    Key? key,
+    required this.lastPage,
+    required this.onSubmit,
   }) : super(key: key);
 
   @override
@@ -131,8 +131,8 @@ class _PageInputFormState extends State<PageInputForm> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
 
   void submitPageInput() {
-    if (_fbKey.currentState.saveAndValidate()) {
-      widget.onSubmit(_fbKey.currentState.value['page']);
+    if (_fbKey.currentState?.saveAndValidate() ?? false) {
+      widget.onSubmit(_fbKey.currentState?.value['page']);
     }
   }
 
@@ -157,7 +157,7 @@ class _PageInputFormState extends State<PageInputForm> {
                   FormBuilderValidators.max(context, widget.lastPage),
                 ]),
                 valueTransformer: (text) {
-                  return text == null ? null : int.tryParse(text);
+                  return int.tryParse(text);
                 },
                 onSubmitted: (text) {
                   submitPageInput();

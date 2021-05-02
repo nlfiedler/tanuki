@@ -4,6 +4,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
@@ -11,12 +12,12 @@ import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/update_asset.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/modify/preso/bloc/update_asset_bloc.dart';
+import './update_asset_bloc_test.mocks.dart';
 
-class MockEntityRepository extends Mock implements EntityRepository {}
-
+@GenerateMocks([EntityRepository])
 void main() {
-  MockEntityRepository mockAssetRepository;
-  UpdateAsset usecase;
+  late MockEntityRepository mockAssetRepository;
+  late UpdateAsset usecase;
 
   final inputId = AssetInputId(
     id: 'asset123',
@@ -54,14 +55,14 @@ void main() {
     blocTest(
       'emits [] when nothing is added',
       build: () => UpdateAssetBloc(usecase: usecase),
-      expect: [],
+      expect: () => [],
     );
 
     blocTest(
       'emits [Processing, Finished] when ProcessUploads is added',
       build: () => UpdateAssetBloc(usecase: usecase),
-      act: (bloc) => bloc.add(SubmitUpdate(input: inputId)),
-      expect: [
+      act: (UpdateAssetBloc bloc) => bloc.add(SubmitUpdate(input: inputId)),
+      expect: () => [
         Processing(),
         Finished(asset: expected),
       ],
@@ -79,8 +80,8 @@ void main() {
     blocTest(
       'emits [Uploading, Error] when repository returns an error',
       build: () => UpdateAssetBloc(usecase: usecase),
-      act: (bloc) => bloc.add(SubmitUpdate(input: inputId)),
-      expect: [
+      act: (UpdateAssetBloc bloc) => bloc.add(SubmitUpdate(input: inputId)),
+      expect: () => [
         Processing(),
         Error(message: 'ServerFailure(oh no!)'),
       ],

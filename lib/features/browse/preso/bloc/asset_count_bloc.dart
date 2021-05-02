@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:tanuki/core/domain/usecases/get_asset_count.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
 
@@ -35,7 +34,7 @@ class Loading extends AssetCountState {}
 class Loaded extends AssetCountState {
   final int count;
 
-  Loaded({@required this.count});
+  Loaded({required this.count});
 
   @override
   List<Object> get props => [count];
@@ -44,7 +43,7 @@ class Loaded extends AssetCountState {
 class Error extends AssetCountState {
   final String message;
 
-  Error({@required this.message});
+  Error({required this.message});
 
   @override
   List<Object> get props => [message];
@@ -57,7 +56,7 @@ class Error extends AssetCountState {
 class AssetCountBloc extends Bloc<AssetCountEvent, AssetCountState> {
   final GetAssetCount usecase;
 
-  AssetCountBloc({this.usecase}) : super(Empty());
+  AssetCountBloc({required this.usecase}) : super(Empty());
 
   @override
   Stream<AssetCountState> mapEventToState(

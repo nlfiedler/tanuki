@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'dart:typed_data';
-import 'package:meta/meta.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/sources/asset_remote_data_source.dart';
 import 'package:tanuki/core/domain/repositories/asset_repository.dart';
@@ -13,17 +12,13 @@ class AssetRepositoryImpl extends AssetRepository {
   final AssetRemoteDataSource remoteDataSource;
 
   AssetRepositoryImpl({
-    @required this.remoteDataSource,
+    required this.remoteDataSource,
   });
 
   @override
   Future<Result<int, Failure>> ingestAssets() async {
     try {
-      final results = await remoteDataSource.ingestAssets();
-      if (results == null) {
-        return Err(ServerFailure('got null result for upload'));
-      }
-      return Ok(results);
+      return Ok(await remoteDataSource.ingestAssets());
     } on ServerException catch (e) {
       return Err(ServerFailure(e.toString()));
     }
@@ -32,11 +27,7 @@ class AssetRepositoryImpl extends AssetRepository {
   @override
   Future<Result<String, Failure>> uploadAsset(String filepath) async {
     try {
-      final results = await remoteDataSource.uploadAsset(filepath);
-      if (results == null) {
-        return Err(ServerFailure('got null result for upload'));
-      }
-      return Ok(results);
+      return Ok(await remoteDataSource.uploadAsset(filepath));
     } on ServerException catch (e) {
       return Err(ServerFailure(e.toString()));
     }
@@ -48,14 +39,10 @@ class AssetRepositoryImpl extends AssetRepository {
     Uint8List contents,
   ) async {
     try {
-      final results = await remoteDataSource.uploadAssetBytes(
+      return Ok(await remoteDataSource.uploadAssetBytes(
         filename,
         contents,
-      );
-      if (results == null) {
-        return Err(ServerFailure('got null result for upload'));
-      }
-      return Ok(results);
+      ));
     } on ServerException catch (e) {
       return Err(ServerFailure(e.toString()));
     }

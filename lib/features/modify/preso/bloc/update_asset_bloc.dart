@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/usecases/update_asset.dart';
@@ -21,7 +20,7 @@ abstract class UpdateAssetEvent extends Equatable {
 class SubmitUpdate extends UpdateAssetEvent {
   final AssetInputId input;
 
-  SubmitUpdate({@required this.input});
+  SubmitUpdate({required this.input});
 }
 
 //
@@ -40,7 +39,7 @@ class Processing extends UpdateAssetState {}
 class Finished extends UpdateAssetState {
   final Asset asset;
 
-  Finished({@required this.asset});
+  Finished({required this.asset});
 
   @override
   List<Object> get props => [asset];
@@ -49,7 +48,7 @@ class Finished extends UpdateAssetState {
 class Error extends UpdateAssetState {
   final String message;
 
-  Error({@required this.message});
+  Error({required this.message});
 
   @override
   List<Object> get props => [message];
@@ -62,7 +61,7 @@ class Error extends UpdateAssetState {
 class UpdateAssetBloc extends Bloc<UpdateAssetEvent, UpdateAssetState> {
   final UpdateAsset usecase;
 
-  UpdateAssetBloc({this.usecase}) : super(Initial());
+  UpdateAssetBloc({required this.usecase}) : super(Initial());
 
   @override
   Stream<UpdateAssetState> mapEventToState(

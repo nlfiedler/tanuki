@@ -39,7 +39,7 @@ class _UploadFormState extends State<UploadForm> {
       return Text('Upload error: ' + state.message);
     }
     if (state is Uploading) {
-      return Text('Uploading ${state.current.name}...');
+      return Text('Uploading ${(state.current as dynamic).name}...');
     }
     if (_selectedFiles.isNotEmpty) {
       return Text('Use the Upload button to upload the files.');
@@ -75,12 +75,13 @@ class _UploadFormState extends State<UploadForm> {
   }
 
   void _uploadFile(BuildContext context, dynamic uploading) {
+    // could be PlatformFile or dart::html::File
     if (uploading is PlatformFile) {
       // file_picker 2.0 provides the file data as a property
       BlocProvider.of<UploadFileBloc>(context).add(
         UploadFile(
-          filename: uploading.name,
-          contents: uploading.bytes,
+          filename: uploading.name!,
+          contents: uploading.bytes!,
         ),
       );
     } else {
@@ -89,7 +90,7 @@ class _UploadFormState extends State<UploadForm> {
       // from the widgets.
       FileReader reader = FileReader();
       reader.onLoadEnd.listen((_) {
-        final Uint8List contents = reader.result;
+        final Uint8List contents = reader.result as Uint8List;
         BlocProvider.of<UploadFileBloc>(context).add(
           UploadFile(
             filename: uploading.name,
@@ -98,7 +99,7 @@ class _UploadFormState extends State<UploadForm> {
         );
       });
       reader.onError.listen((_) {
-        final String errorMsg = reader.error.message;
+        final String errorMsg = reader.error?.message ?? '(none)';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error reading file ${uploading.name}: $errorMsg'),
@@ -174,7 +175,7 @@ class _UploadFormState extends State<UploadForm> {
         : theme.colorScheme.primary;
     // Instead of a hard-coded size for the drop zone, make it a factor of the
     // size of the headline text in the current theme.
-    final boxHeight = theme.textTheme.headline1.fontSize;
+    final boxHeight = theme.textTheme.headline1?.fontSize;
     return DottedBorder(
       color: borderColor,
       strokeWidth: 1.0,

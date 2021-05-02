@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 
 /// A `Location` holds the label and count for a single location value.
 class Location extends Equatable implements Comparable<Location> {
@@ -12,8 +11,8 @@ class Location extends Equatable implements Comparable<Location> {
   final int count;
 
   Location({
-    @required this.label,
-    @required this.count,
+    required this.label,
+    required this.count,
   });
 
   @override
@@ -36,8 +35,8 @@ class Tag extends Equatable implements Comparable<Tag> {
   final int count;
 
   Tag({
-    @required this.label,
-    @required this.count,
+    required this.label,
+    required this.count,
   });
 
   @override
@@ -60,8 +59,8 @@ class Year extends Equatable implements Comparable<Year> {
   final int count;
 
   Year({
-    @required this.label,
-    @required this.count,
+    required this.label,
+    required this.count,
   });
 
   @override

@@ -5,17 +5,18 @@ import 'dart:typed_data';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/repositories/asset_repository.dart';
 import 'package:tanuki/core/domain/usecases/upload_asset.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/import/preso/bloc/upload_file_bloc.dart';
+import './upload_file_bloc_test.mocks.dart';
 
-class MockAssetRepository extends Mock implements AssetRepository {}
-
+@GenerateMocks([AssetRepository])
 void main() {
-  MockAssetRepository mockAssetRepository;
-  UploadAsset usecase;
+  late MockAssetRepository mockAssetRepository;
+  late UploadAsset usecase;
 
   final tAssetId = 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==';
 
@@ -30,17 +31,17 @@ void main() {
     blocTest(
       'emits [] when nothing is added',
       build: () => UploadFileBloc(usecase: usecase),
-      expect: [],
+      expect: () => [],
     );
 
     blocTest(
       'emits [Uploading, Finished] when uploading/upload are added',
       build: () => UploadFileBloc<String>(usecase: usecase),
-      act: (bloc) {
+      act: (UploadFileBloc bloc) {
         bloc.add(StartUploading<String>(files: ['foo']));
         bloc.add(UploadFile(filename: 'foo', contents: Uint8List(0)));
       },
-      expect: [
+      expect: () => [
         Uploading<String>(pending: [], current: 'foo'),
         Finished<String>(skipped: []),
       ],
@@ -49,11 +50,11 @@ void main() {
     blocTest(
       'emits [Uploading, Finished] when uploading/skip are added',
       build: () => UploadFileBloc<String>(usecase: usecase),
-      act: (bloc) {
+      act: (UploadFileBloc bloc) {
         bloc.add(StartUploading<String>(files: ['foo']));
         bloc.add(SkipCurrent());
       },
-      expect: [
+      expect: () => [
         Uploading<String>(pending: [], current: 'foo'),
         Finished<String>(skipped: ['foo']),
       ],
@@ -62,12 +63,12 @@ void main() {
     blocTest(
       'emits [Uploading(x2), Finished] when multiple files are uploaded',
       build: () => UploadFileBloc<String>(usecase: usecase),
-      act: (bloc) {
+      act: (UploadFileBloc bloc) {
         bloc.add(StartUploading<String>(files: ['foo', 'bar']));
         bloc.add(SkipCurrent());
         bloc.add(UploadFile(filename: 'foo', contents: Uint8List(0)));
       },
-      expect: [
+      expect: () => [
         Uploading<String>(pending: ['foo'], current: 'bar'),
         Uploading<String>(pending: [], current: 'foo'),
         Finished<String>(skipped: ['bar']),
@@ -86,11 +87,11 @@ void main() {
     blocTest(
       'emits [Uploading, Error] when repository returns an error',
       build: () => UploadFileBloc<String>(usecase: usecase),
-      act: (bloc) {
+      act: (UploadFileBloc bloc) {
         bloc.add(StartUploading<String>(files: ['foo']));
         bloc.add(UploadFile(filename: 'foo', contents: Uint8List(0)));
       },
-      expect: [
+      expect: () => [
         Uploading<String>(pending: [], current: 'foo'),
         Error(message: 'ServerFailure(oh no!)'),
       ],

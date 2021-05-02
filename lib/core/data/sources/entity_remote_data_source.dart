@@ -2,7 +2,9 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'package:graphql/client.dart' as gql;
-import 'package:meta/meta.dart';
+import 'package:gql/language.dart' as lang;
+import 'package:gql/ast.dart' as ast;
+import 'package:normalize/utils.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/asset_model.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
@@ -19,21 +21,38 @@ abstract class EntityRemoteDataSource {
   Future<List<Location>> getAllLocations();
   Future<List<Tag>> getAllTags();
   Future<List<Year>> getAllYears();
-  Future<Asset> getAsset(String id);
+  Future<Asset?> getAsset(String id);
   Future<int> getAssetCount();
-  Future<QueryResults> queryAssets(
+  Future<QueryResults?> queryAssets(
     SearchParams params,
     int count,
     int offset,
   );
-  Future<QueryResults> queryRecents(Option<DateTime> since);
-  Future<Asset> updateAsset(AssetInputId asset);
+  Future<QueryResults?> queryRecents(Option<DateTime> since);
+  Future<Asset?> updateAsset(AssetInputId asset);
 }
+
+// Work around bug in juniper in which it fails to implement __typename for the
+// root query, which is in violation of the GraphQL spec.
+//
+// c.f. https://github.com/graphql-rust/juniper/issues/372
+class AddNestedTypenameVisitor extends AddTypenameVisitor {
+  @override
+  ast.OperationDefinitionNode visitOperationDefinitionNode(
+    ast.OperationDefinitionNode node,
+  ) =>
+      node;
+}
+
+ast.DocumentNode gqlNoTypename(String document) => ast.transform(
+      lang.parseString(document),
+      [AddNestedTypenameVisitor()],
+    );
 
 class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
   final gql.GraphQLClient client;
 
-  EntityRemoteDataSourceImpl({@required this.client});
+  EntityRemoteDataSourceImpl({required this.client});
 
   @override
   Future<int> bulkUpdate(List<AssetInputId> assets) async {
@@ -46,7 +65,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
       assets.map((e) => AssetInputIdModel.from(e).toJson()),
     );
     final mutationOptions = gql.MutationOptions(
-      documentNode: gql.gql(query),
+      document: gqlNoTypename(query),
       variables: <String, dynamic>{
         'assets': models,
       },
@@ -55,8 +74,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     if (result.hasException) {
       throw ServerException(result.exception.toString());
     }
-    final count = result.data['bulkUpdate'];
-    return count == null ? null : count as int;
+    return (result.data?['bulkUpdate'] ?? 0) as int;
   }
 
   @override
@@ -70,17 +88,17 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
       }
     ''';
     final queryOptions = gql.QueryOptions(
-      documentNode: gql.gql(query),
+      document: gqlNoTypename(query),
       fetchPolicy: gql.FetchPolicy.noCache,
     );
     final gql.QueryResult result = await client.query(queryOptions);
     if (result.hasException) {
       throw ServerException(result.exception.toString());
     }
-    final List<dynamic> locations = result.data['locations'] as List<dynamic>;
-    if (locations == null) {
-      return null;
+    if (result.data?['locations'] == null) {
+      return [];
     }
+    final List<dynamic> locations = result.data?['locations'] as List<dynamic>;
     final List<LocationModel> results = List.from(
       locations.map<LocationModel>((e) {
         return LocationModel.fromJson(e);
@@ -100,17 +118,17 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
       }
     ''';
     final queryOptions = gql.QueryOptions(
-      documentNode: gql.gql(query),
+      document: gqlNoTypename(query),
       fetchPolicy: gql.FetchPolicy.noCache,
     );
     final gql.QueryResult result = await client.query(queryOptions);
     if (result.hasException) {
       throw ServerException(result.exception.toString());
     }
-    final List<dynamic> tags = result.data['tags'] as List<dynamic>;
-    if (tags == null) {
-      return null;
+    if (result.data?['tags'] == null) {
+      return [];
     }
+    final List<dynamic> tags = result.data?['tags'] as List<dynamic>;
     final List<TagModel> results = List.from(
       tags.map<TagModel>((e) {
         return TagModel.fromJson(e);
@@ -130,17 +148,17 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
       }
     ''';
     final queryOptions = gql.QueryOptions(
-      documentNode: gql.gql(query),
+      document: gqlNoTypename(query),
       fetchPolicy: gql.FetchPolicy.noCache,
     );
     final gql.QueryResult result = await client.query(queryOptions);
     if (result.hasException) {
       throw ServerException(result.exception.toString());
     }
-    final List<dynamic> years = result.data['years'] as List<dynamic>;
-    if (years == null) {
-      return null;
+    if (result.data?['years'] == null) {
+      return [];
     }
+    final List<dynamic> years = result.data?['years'] as List<dynamic>;
     final List<YearModel> results = List.from(
       years.map<YearModel>((e) {
         return YearModel.fromJson(e);
@@ -150,7 +168,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
   }
 
   @override
-  Future<Asset> getAsset(String id) async {
+  Future<Asset?> getAsset(String id) async {
     final query = r'''
       query Fetch($identifier: String!) {
         asset(id: $identifier) {
@@ -168,7 +186,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
       }
     ''';
     final queryOptions = gql.QueryOptions(
-      documentNode: gql.gql(query),
+      document: gqlNoTypename(query),
       variables: <String, dynamic>{
         'identifier': id,
       },
@@ -178,9 +196,10 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     if (result.hasException) {
       throw ServerException(result.exception.toString());
     }
-    final Map<String, dynamic> object =
-        result.data['asset'] as Map<String, dynamic>;
-    return object == null ? null : AssetModel.fromJson(object);
+    if (result.data?['asset'] == null) {
+      return null;
+    }
+    return AssetModel.fromJson(result.data?['asset'] as Map<String, dynamic>);
   }
 
   @override
@@ -191,19 +210,18 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
       }
     ''';
     final queryOptions = gql.QueryOptions(
-      documentNode: gql.gql(query),
+      document: gqlNoTypename(query),
       fetchPolicy: gql.FetchPolicy.noCache,
     );
     final gql.QueryResult result = await client.query(queryOptions);
     if (result.hasException) {
       throw ServerException(result.exception.toString());
     }
-    final count = result.data['count'];
-    return count == null ? null : count as int;
+    return (result.data?['count'] ?? 0) as int;
   }
 
   @override
-  Future<QueryResults> queryAssets(
+  Future<QueryResults?> queryAssets(
     SearchParams params,
     int count,
     int offset,
@@ -225,7 +243,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     final paramsModel = SearchParamsModel.from(params);
     final encodedParams = paramsModel.toJson();
     final queryOptions = gql.QueryOptions(
-      documentNode: gql.gql(query),
+      document: gqlNoTypename(query),
       variables: <String, dynamic>{
         'params': encodedParams,
         'count': count,
@@ -237,13 +255,16 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     if (result.hasException) {
       throw ServerException(result.exception.toString());
     }
-    final Map<String, dynamic> object =
-        result.data['search'] as Map<String, dynamic>;
-    return object == null ? null : QueryResultsModel.fromJson(object);
+    if (result.data?['search'] == null) {
+      return null;
+    }
+    return QueryResultsModel.fromJson(
+      result.data?['search'] as Map<String, dynamic>,
+    );
   }
 
   @override
-  Future<QueryResults> queryRecents(Option<DateTime> since) async {
+  Future<QueryResults?> queryRecents(Option<DateTime> since) async {
     final validDate = since.mapOr((v) => v.isUtc, true);
     if (!validDate) {
       throw ServerException('since must be a UTC date/time');
@@ -263,7 +284,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
       }
     ''';
     final queryOptions = gql.QueryOptions(
-      documentNode: gql.gql(query),
+      document: gqlNoTypename(query),
       variables: <String, dynamic>{
         'since': since.mapOr((v) => v.toIso8601String(), null),
       },
@@ -273,13 +294,16 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     if (result.hasException) {
       throw ServerException(result.exception.toString());
     }
-    final Map<String, dynamic> object =
-        result.data['recent'] as Map<String, dynamic>;
-    return object == null ? null : QueryResultsModel.fromJson(object);
+    if (result.data?['recent'] == null) {
+      return null;
+    }
+    return QueryResultsModel.fromJson(
+      result.data?['recent'] as Map<String, dynamic>,
+    );
   }
 
   @override
-  Future<Asset> updateAsset(AssetInputId asset) async {
+  Future<Asset?> updateAsset(AssetInputId asset) async {
     final query = r'''
       mutation Update($identifier: String!, $input: AssetInput!) {
         update(id: $identifier, asset: $input) {
@@ -298,7 +322,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     ''';
     final model = AssetInputModel.from(asset.input).toJson();
     final mutationOptions = gql.MutationOptions(
-      documentNode: gql.gql(query),
+      document: gqlNoTypename(query),
       variables: <String, dynamic>{
         'identifier': asset.id,
         'input': model,
@@ -308,8 +332,9 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     if (result.hasException) {
       throw ServerException(result.exception.toString());
     }
-    final Map<String, dynamic> object =
-        result.data['update'] as Map<String, dynamic>;
-    return object == null ? null : AssetModel.fromJson(object);
+    if (result.data?['update'] == null) {
+      return null;
+    }
+    return AssetModel.fromJson(result.data?['update'] as Map<String, dynamic>);
   }
 }

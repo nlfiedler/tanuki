@@ -11,10 +11,10 @@ class AssetDisplay extends StatelessWidget {
   final int displayWidth;
 
   AssetDisplay({
-    Key key,
-    @required this.assetId,
-    @required this.mimetype,
-    @required this.displayWidth,
+    Key? key,
+    required this.assetId,
+    required this.mimetype,
+    required this.displayWidth,
   }) : super(key: key);
 
   @override
@@ -38,7 +38,7 @@ class AssetDisplay extends StatelessWidget {
 Widget _imageErrorBuilder(
   BuildContext context,
   Object error,
-  StackTrace stackTrace,
+  StackTrace? stackTrace,
 ) {
   return Center(
     child: Card(
@@ -55,23 +55,25 @@ class _AssetVideo extends StatefulWidget {
   final String uri;
 
   _AssetVideo({
-    Key key,
-    @required this.uri,
+    Key? key,
+    required this.uri,
   }) : super(key: key);
 
   @override
-  _AssetVideoState createState() => _AssetVideoState();
+  _AssetVideoState createState() => _AssetVideoState(uri: uri);
 }
 
 class _AssetVideoState extends State<_AssetVideo> {
-  VideoPlayerController _controller;
+  final VideoPlayerController _controller;
+
+  _AssetVideoState({required String uri})
+      : _controller = VideoPlayerController.network(uri);
 
   @override
   void initState() {
     // known to work (web): .mov .mp4 .ogg .webm
     // does not work (web): .avi .wmv
     super.initState();
-    _controller = VideoPlayerController.network(widget.uri);
     _controller.addListener(() {
       setState(() {});
     });
@@ -108,7 +110,8 @@ class _AssetVideoState extends State<_AssetVideo> {
 class _ControlsOverlay extends StatelessWidget {
   final VideoPlayerController controller;
 
-  const _ControlsOverlay({Key key, this.controller}) : super(key: key);
+  const _ControlsOverlay({Key? key, required this.controller})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {

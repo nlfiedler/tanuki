@@ -4,18 +4,19 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_asset.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_bloc.dart';
+import './asset_bloc_test.mocks.dart';
 
-class MockAssetRepository extends Mock implements EntityRepository {}
-
+@GenerateMocks([EntityRepository])
 void main() {
-  MockAssetRepository mockAssetRepository;
-  GetAsset usecase;
+  late MockEntityRepository mockEntityRepository;
+  late GetAsset usecase;
 
   final tAsset = Asset(
     id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
@@ -32,39 +33,39 @@ void main() {
 
   group('normal cases', () {
     setUp(() {
-      mockAssetRepository = MockAssetRepository();
-      usecase = GetAsset(mockAssetRepository);
-      when(mockAssetRepository.getAsset(any))
+      mockEntityRepository = MockEntityRepository();
+      usecase = GetAsset(mockEntityRepository);
+      when(mockEntityRepository.getAsset(any))
           .thenAnswer((_) async => Ok(tAsset));
     });
 
     blocTest(
       'emits [] when nothing is added',
       build: () => AssetBloc(usecase: usecase),
-      expect: [],
+      expect: () => [],
     );
 
     blocTest(
       'emits [Loading, Loaded] when LoadAllDataSets is added',
       build: () => AssetBloc(usecase: usecase),
-      act: (bloc) => bloc.add(LoadAsset(id: 'cafebabe')),
-      expect: [Loading(), Loaded(asset: tAsset)],
+      act: (AssetBloc bloc) => bloc.add(LoadAsset(id: 'cafebabe')),
+      expect: () => [Loading(), Loaded(asset: tAsset)],
     );
   });
 
   group('error cases', () {
     setUp(() {
-      mockAssetRepository = MockAssetRepository();
-      usecase = GetAsset(mockAssetRepository);
-      when(mockAssetRepository.getAsset(any))
+      mockEntityRepository = MockEntityRepository();
+      usecase = GetAsset(mockEntityRepository);
+      when(mockEntityRepository.getAsset(any))
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
     });
 
     blocTest(
       'emits [Loading, Error] when LoadAllDataSets is added',
       build: () => AssetBloc(usecase: usecase),
-      act: (bloc) => bloc.add(LoadAsset(id: 'cafebabe')),
-      expect: [Loading(), Error(message: 'ServerFailure(oh no!)')],
+      act: (AssetBloc bloc) => bloc.add(LoadAsset(id: 'cafebabe')),
+      expect: () => [Loading(), Error(message: 'ServerFailure(oh no!)')],
     );
   });
 }

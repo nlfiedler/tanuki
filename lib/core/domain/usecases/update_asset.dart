@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
@@ -25,7 +24,7 @@ class Params extends Equatable {
   final AssetInputId asset;
 
   Params({
-    @required this.asset,
+    required this.asset,
   });
 
   @override

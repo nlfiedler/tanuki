@@ -41,8 +41,8 @@ class TagSelectorForm extends StatefulWidget {
   final List<Tag> tags;
 
   const TagSelectorForm({
-    Key key,
-    @required this.tags,
+    Key? key,
+    required this.tags,
   }) : super(key: key);
 
   @override
@@ -79,7 +79,11 @@ class _TagSelectorFormState extends State<TagSelectorForm> {
           child: DropdownButton(
             onChanged: (value) {
               // Toggle the item in the selected list.
-              final values = toggleSelection(selected, value.label, value);
+              final values = toggleSelection(
+                selected,
+                (value as Tag).label,
+                value,
+              );
               BlocProvider.of<abb.AssetBrowserBloc>(context)
                   .add(abb.SelectTags(tags: values));
             },
@@ -148,15 +152,15 @@ class _TagSelectorFormState extends State<TagSelectorForm> {
   List<String> toggleSelection(
     List<String> selected,
     String label,
-    Tag value,
+    Tag? value,
   ) {
     final List<String> values = List.from(selected);
     if (values.contains(label)) {
       values.remove(label);
-      _chipKey.currentState.deleteChip(value);
+      _chipKey.currentState?.deleteChip(value);
     } else {
       values.add(label);
-      _chipKey.currentState.selectSuggestion(value);
+      _chipKey.currentState?.selectSuggestion(value);
     }
     return values;
   }

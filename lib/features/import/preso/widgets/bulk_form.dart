@@ -37,16 +37,16 @@ class _BulkFormState extends State<BulkForm> {
     // We actually don't care about the form state, since it gets wrecked when
     // the text field is discarded when it scrolls out of view, but to keep up
     // appearances we will validate the form anyway.
-    if (_fbKey.currentState.saveAndValidate()) {
+    if (_fbKey.currentState!.saveAndValidate()) {
       final List<AssetInputId> inputs = List.generate(results.length, (idx) {
         // Undefined values are treated as empty string, so we can treat empty
-        // and undefined in the same manner down below with Option.some().
+        // and undefined in the same manner down below with Option.from().
         final String caption = inputValues['caption-$idx'] ?? '';
         return AssetInputId(
           id: results[idx].id,
           input: AssetInput(
             tags: [],
-            caption: Option.some(caption.isEmpty ? null : caption),
+            caption: Option.from(caption.isEmpty ? null : caption),
             location: None(),
             datetime: None(),
             mimetype: None(),
@@ -91,8 +91,7 @@ class _BulkFormState extends State<BulkForm> {
       child: Column(
         children: [
           BulkSubmit(
-            onSubmit:
-                results.isEmpty ? null : () => _onSubmit(context, results),
+            onSubmit: () => _onSubmit(context, results),
             onComplete: () {
               BlocProvider.of<RecentImportsBloc>(context).add(
                 RefreshResults(),
@@ -130,11 +129,11 @@ class BulkFormRow extends StatelessWidget {
   final ValueChanged onChanged;
 
   BulkFormRow({
-    Key key,
-    @required this.result,
-    @required this.attribute,
-    @required this.initial,
-    @required this.onChanged,
+    Key? key,
+    required this.result,
+    required this.attribute,
+    required this.initial,
+    required this.onChanged,
   }) : super(key: key);
 
   @override
@@ -180,7 +179,7 @@ class BulkFormRow extends StatelessWidget {
 class BulkThumbnail extends StatelessWidget {
   final SearchResult result;
 
-  BulkThumbnail({Key key, @required this.result}) : super(key: key);
+  BulkThumbnail({Key? key, required this.result}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

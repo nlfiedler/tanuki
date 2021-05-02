@@ -3,16 +3,17 @@
 //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_asset_count.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
+import './get_asset_count_test.mocks.dart';
 
-class MockEntityRepository extends Mock implements EntityRepository {}
-
+@GenerateMocks([EntityRepository])
 void main() {
-  GetAssetCount usecase;
-  MockEntityRepository mockEntityRepository;
+  late GetAssetCount usecase;
+  late MockEntityRepository mockEntityRepository;
 
   setUp(() {
     mockEntityRepository = MockEntityRepository();

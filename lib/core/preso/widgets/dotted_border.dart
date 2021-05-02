@@ -16,10 +16,8 @@ class DottedBorder extends StatelessWidget {
     this.strokeWidth = 1.0,
     this.gap = 5.0,
     this.padding = const EdgeInsets.all(8.0),
-    @required this.child,
-  }) {
-    assert(child != null);
-  }
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -100,15 +98,15 @@ class _DashRectPainter extends CustomPainter {
   }
 
   Path getDashedPath({
-    @required math.Point<double> a,
-    @required math.Point<double> b,
-    @required gap,
+    required math.Point<double> a,
+    required math.Point<double> b,
+    required gap,
   }) {
     Size size = Size(b.x - a.x, b.y - a.y);
     Path path = Path();
     path.moveTo(a.x, a.y);
     bool shouldDraw = true;
-    math.Point currentPoint = math.Point(a.x, a.y);
+    math.Point<double> currentPoint = math.Point(a.x, a.y);
 
     num radians = math.atan(size.height / size.width);
 

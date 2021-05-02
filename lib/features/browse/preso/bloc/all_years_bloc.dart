@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/usecases/get_all_years.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
@@ -36,7 +35,7 @@ class Loading extends AllYearsState {}
 class Loaded extends AllYearsState {
   final List<Year> years;
 
-  Loaded({@required this.years});
+  Loaded({required this.years});
 
   @override
   List<Object> get props => [years];
@@ -45,7 +44,7 @@ class Loaded extends AllYearsState {
 class Error extends AllYearsState {
   final String message;
 
-  Error({@required this.message});
+  Error({required this.message});
 
   @override
   List<Object> get props => [message];
@@ -58,7 +57,7 @@ class Error extends AllYearsState {
 class AllYearsBloc extends Bloc<AllYearsEvent, AllYearsState> {
   final GetAllYears usecase;
 
-  AllYearsBloc({this.usecase}) : super(Empty());
+  AllYearsBloc({required this.usecase}) : super(Empty());
 
   @override
   Stream<AllYearsState> mapEventToState(

@@ -3,6 +3,7 @@
 //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
 import 'package:tanuki/core/data/models/search_model.dart';
@@ -13,15 +14,15 @@ import 'package:tanuki/core/error/exceptions.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
 import 'package:tanuki/core/data/repositories/entity_repository_impl.dart';
+import './entity_repository_impl_test.mocks.dart';
 
-class MockRemoteDataSource extends Mock implements EntityRemoteDataSource {}
-
+@GenerateMocks([EntityRemoteDataSource])
 void main() {
-  EntityRepositoryImpl repository;
-  MockRemoteDataSource mockRemoteDataSource;
+  late EntityRepositoryImpl repository;
+  late MockEntityRemoteDataSource mockRemoteDataSource;
 
   setUp(() {
-    mockRemoteDataSource = MockRemoteDataSource();
+    mockRemoteDataSource = MockEntityRemoteDataSource();
     repository = EntityRepositoryImpl(
       remoteDataSource: mockRemoteDataSource,
     );
@@ -46,20 +47,6 @@ void main() {
         expect(result.unwrap(), isA<List>());
         expect(result.unwrap().length, equals(3));
         expect(result.unwrap(), containsAll(locations));
-      },
-    );
-
-    test(
-      'should return failure when remote data source returns null',
-      () async {
-        // arrange
-        when(mockRemoteDataSource.getAllLocations())
-            .thenAnswer((_) async => null);
-        // act
-        final result = await repository.getAllLocations();
-        // assert
-        verify(mockRemoteDataSource.getAllLocations());
-        expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
 
@@ -100,19 +87,6 @@ void main() {
     );
 
     test(
-      'should return failure when remote data source returns null',
-      () async {
-        // arrange
-        when(mockRemoteDataSource.getAllTags()).thenAnswer((_) async => null);
-        // act
-        final result = await repository.getAllTags();
-        // assert
-        verify(mockRemoteDataSource.getAllTags());
-        expect(result.err().unwrap(), isA<ServerFailure>());
-      },
-    );
-
-    test(
       'should return failure when remote data source is unsuccessful',
       () async {
         // arrange
@@ -144,19 +118,6 @@ void main() {
         expect(result.unwrap(), isA<List>());
         expect(result.unwrap().length, equals(3));
         expect(result.unwrap(), containsAll(years));
-      },
-    );
-
-    test(
-      'should return failure when remote data source returns null',
-      () async {
-        // arrange
-        when(mockRemoteDataSource.getAllYears()).thenAnswer((_) async => null);
-        // act
-        final result = await repository.getAllYears();
-        // assert
-        verify(mockRemoteDataSource.getAllYears());
-        expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
 
@@ -240,20 +201,6 @@ void main() {
         // assert
         verify(mockRemoteDataSource.getAssetCount());
         expect(result.unwrap(), equals(9413));
-      },
-    );
-
-    test(
-      'should return failure when remote data source returns null',
-      () async {
-        // arrange
-        when(mockRemoteDataSource.getAssetCount())
-            .thenAnswer((_) async => null);
-        // act
-        final result = await repository.getAssetCount();
-        // assert
-        verify(mockRemoteDataSource.getAssetCount());
-        expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
 
@@ -412,20 +359,6 @@ void main() {
         // assert
         verify(mockRemoteDataSource.bulkUpdate([inputId]));
         expect(result.unwrap(), equals(32));
-      },
-    );
-
-    test(
-      'should return failure when remote data source returns null',
-      () async {
-        // arrange
-        when(mockRemoteDataSource.bulkUpdate(any))
-            .thenAnswer((_) async => null);
-        // act
-        final result = await repository.bulkUpdate([inputId]);
-        // assert
-        verify(mockRemoteDataSource.bulkUpdate([inputId]));
-        expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
 

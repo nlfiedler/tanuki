@@ -94,7 +94,7 @@ class _UploadFormState extends State<UploadForm> {
       child: BlocConsumer<UploadFileBloc, UploadFileState>(
         listener: (context, state) async {
           if (state is Uploading) {
-            _uploadFile(context, state.current);
+            _uploadFile(context, state.current as String);
           }
         },
         builder: (context, state) {

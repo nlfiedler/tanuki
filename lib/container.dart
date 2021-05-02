@@ -17,8 +17,8 @@ final httpClientProvider = Provider<http.Client>((_) => http.Client());
 final graphqlProvider = Provider<GraphQLClient>((ref) {
   final uri = '${EnvironmentConfig.base_url}/graphql';
   return GraphQLClient(
-    link: HttpLink(uri: uri),
-    cache: InMemoryCache(),
+    link: HttpLink(uri),
+    cache: GraphQLCache(),
   );
 });
 

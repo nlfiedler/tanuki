@@ -4,17 +4,18 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_asset_count.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_count_bloc.dart';
+import './asset_count_bloc_test.mocks.dart';
 
-class MockEntityRepository extends Mock implements EntityRepository {}
-
+@GenerateMocks([EntityRepository])
 void main() {
-  MockEntityRepository mockEntityRepository;
-  GetAssetCount usecase;
+  late MockEntityRepository mockEntityRepository;
+  late GetAssetCount usecase;
 
   group('normal cases', () {
     setUp(() {
@@ -27,14 +28,14 @@ void main() {
     blocTest(
       'emits [] when nothing is added',
       build: () => AssetCountBloc(usecase: usecase),
-      expect: [],
+      expect: () => [],
     );
 
     blocTest(
       'emits [Loading, Loaded] when LoadAssetCount is added',
       build: () => AssetCountBloc(usecase: usecase),
-      act: (bloc) => bloc.add(LoadAssetCount()),
-      expect: [Loading(), Loaded(count: 9413)],
+      act: (AssetCountBloc bloc) => bloc.add(LoadAssetCount()),
+      expect: () => [Loading(), Loaded(count: 9413)],
     );
   });
 
@@ -49,8 +50,8 @@ void main() {
     blocTest(
       'emits [Loading, Error] when LoadAssetCount is added',
       build: () => AssetCountBloc(usecase: usecase),
-      act: (bloc) => bloc.add(LoadAssetCount()),
-      expect: [Loading(), Error(message: 'ServerFailure(oh no!)')],
+      act: (AssetCountBloc bloc) => bloc.add(LoadAssetCount()),
+      expect: () => [Loading(), Error(message: 'ServerFailure(oh no!)')],
     );
   });
 }

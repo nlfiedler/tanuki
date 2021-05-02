@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/usecases/bulk_update.dart';
 
@@ -20,7 +19,7 @@ abstract class BulkUpdateEvent extends Equatable {
 class SubmitUpdates extends BulkUpdateEvent {
   final List<AssetInputId> inputs;
 
-  SubmitUpdates({@required this.inputs});
+  SubmitUpdates({required this.inputs});
 }
 
 //
@@ -39,7 +38,7 @@ class Processing extends BulkUpdateState {}
 class Finished extends BulkUpdateState {
   final int count;
 
-  Finished({@required this.count});
+  Finished({required this.count});
 
   @override
   List<Object> get props => [count];
@@ -48,7 +47,7 @@ class Finished extends BulkUpdateState {
 class Error extends BulkUpdateState {
   final String message;
 
-  Error({@required this.message});
+  Error({required this.message});
 
   @override
   List<Object> get props => [message];
@@ -61,7 +60,7 @@ class Error extends BulkUpdateState {
 class BulkUpdateBloc extends Bloc<BulkUpdateEvent, BulkUpdateState> {
   final BulkUpdate usecase;
 
-  BulkUpdateBloc({this.usecase}) : super(Initial());
+  BulkUpdateBloc({required this.usecase}) : super(Initial());
 
   @override
   Stream<BulkUpdateState> mapEventToState(

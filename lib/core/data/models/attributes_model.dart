@@ -1,13 +1,12 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-import 'package:meta/meta.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 
 class LocationModel extends Location {
   LocationModel({
-    @required String label,
-    @required int count,
+    required String label,
+    required int count,
   }) : super(
           label: label,
           count: count,
@@ -37,8 +36,8 @@ class LocationModel extends Location {
 
 class TagModel extends Tag {
   TagModel({
-    @required String label,
-    @required int count,
+    required String label,
+    required int count,
   }) : super(
           label: label,
           count: count,
@@ -68,8 +67,8 @@ class TagModel extends Tag {
 
 class YearModel extends Year {
   YearModel({
-    @required String label,
-    @required int count,
+    required String label,
+    required int count,
   }) : super(
           label: label,
           count: count,

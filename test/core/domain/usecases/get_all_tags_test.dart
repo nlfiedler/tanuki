@@ -3,17 +3,18 @@
 //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_all_tags.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
+import './get_all_tags_test.mocks.dart';
 
-class MockEntityRepository extends Mock implements EntityRepository {}
-
+@GenerateMocks([EntityRepository])
 void main() {
-  GetAllTags usecase;
-  MockEntityRepository mockEntityRepository;
+  late GetAllTags usecase;
+  late MockEntityRepository mockEntityRepository;
 
   final tags = [
     Tag(label: 'kittens', count: 806),

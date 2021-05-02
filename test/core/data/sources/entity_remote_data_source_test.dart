@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:graphql/client.dart' as gql;
 import 'package:http/http.dart' as http;
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/asset_model.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
@@ -14,22 +15,22 @@ import 'package:tanuki/core/data/models/search_model.dart';
 import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/error/exceptions.dart';
+import './entity_remote_data_source_test.mocks.dart';
 
-class MockHttpClient extends Mock implements http.Client {}
-
+@GenerateMocks([http.Client])
 void main() {
-  EntityRemoteDataSourceImpl dataSource;
-  MockHttpClient mockHttpClient;
+  late EntityRemoteDataSourceImpl dataSource;
+  late MockClient mockHttpClient;
 
   setUp(() {
-    mockHttpClient = MockHttpClient();
+    mockHttpClient = MockClient();
     final link = gql.HttpLink(
-      uri: 'http://example.com',
+      'http://example.com',
       httpClient: mockHttpClient,
     );
     final graphQLCient = gql.GraphQLClient(
       link: link,
-      cache: gql.InMemoryCache(),
+      cache: gql.GraphQLCache(),
     );
     dataSource = EntityRemoteDataSourceImpl(client: graphQLCient);
   });
@@ -147,14 +148,15 @@ void main() {
     }
 
     test(
-      'should return null when response is null',
+      'should return [] when response is null',
       () async {
         // arrange
         setUpMockGraphQLNullResponse();
         // act
         final result = await dataSource.getAllLocations();
         // assert
-        expect(result, isNull);
+        expect(result, isA<List>());
+        expect(result.length, equals(0));
       },
     );
   });
@@ -244,14 +246,15 @@ void main() {
     }
 
     test(
-      'should return null when response is null',
+      'should return [] when response is null',
       () async {
         // arrange
         setUpMockGraphQLNullResponse();
         // act
         final result = await dataSource.getAllTags();
         // assert
-        expect(result, isNull);
+        expect(result, isA<List>());
+        expect(result.length, equals(0));
       },
     );
   });
@@ -341,14 +344,15 @@ void main() {
     }
 
     test(
-      'should return null when response is null',
+      'should return [] when response is null',
       () async {
         // arrange
         setUpMockGraphQLNullResponse();
         // act
         final result = await dataSource.getAllYears();
         // assert
-        expect(result, isNull);
+        expect(result, isA<List>());
+        expect(result.length, equals(0));
       },
     );
   });
@@ -526,14 +530,14 @@ void main() {
     }
 
     test(
-      'should return null when response is null',
+      'should return 0 when response is null',
       () async {
         // arrange
         setUpMockGraphQLNullResponse();
         // act
         final result = await dataSource.getAssetCount();
         // assert
-        expect(result, isNull);
+        expect(result, equals(0));
       },
     );
   });
@@ -586,7 +590,7 @@ void main() {
           count: 1,
         );
         expect(result, equals(expected));
-        expect(result.results, equals(expected.results));
+        expect(result!.results, equals(expected.results));
       },
     );
 
@@ -696,7 +700,7 @@ void main() {
           count: 1,
         );
         expect(result, equals(expected));
-        expect(result.results, equals(expected.results));
+        expect(result!.results, equals(expected.results));
       },
     );
 
@@ -722,7 +726,7 @@ void main() {
           count: 1,
         );
         expect(result, equals(expected));
-        expect(result.results, equals(expected.results));
+        expect(result!.results, equals(expected.results));
       },
     );
 
@@ -787,7 +791,10 @@ void main() {
   group('bulkUpdate', () {
     void setUpMockHttpClientGraphQLResponse() {
       final response = {
-        'data': {'bulkUpdate': 32}
+        'data': {
+          '__typename': 'Int',
+          'bulkUpdate': 32,
+        }
       };
       // graphql client uses the 'send' method
       when(mockHttpClient.send(any)).thenAnswer((_) async {
@@ -853,7 +860,10 @@ void main() {
 
     void setUpMockGraphQLNullResponse() {
       final response = {
-        'data': {'bulkUpdate': null}
+        'data': {
+          '__typename': 'Int',
+          'bulkUpdate': null,
+        }
       };
       // graphql client uses the 'send' method
       when(mockHttpClient.send(any)).thenAnswer((_) async {
@@ -864,14 +874,14 @@ void main() {
     }
 
     test(
-      'should return null when response is null',
+      'should return 0 when response is null',
       () async {
         // arrange
         setUpMockGraphQLNullResponse();
         // act
         final result = await dataSource.bulkUpdate([inputModel]);
         // assert
-        expect(result, isNull);
+        expect(result, equals(0));
       },
     );
   });
@@ -880,7 +890,9 @@ void main() {
     void setUpMockHttpClientGraphQLResponse() {
       final response = {
         'data': {
+          '__typename': 'Asset',
           'update': {
+            '__typename': 'Asset',
             'id': 'asset123',
             'checksum': 'sha1-cafebabe',
             'filename': 'img_1234.jpg',
@@ -970,7 +982,10 @@ void main() {
 
     void setUpMockGraphQLNullResponse() {
       final response = {
-        'data': {'update': null}
+        'data': {
+          '__typename': 'Asset',
+          'update': null,
+        }
       };
       // graphql client uses the 'send' method
       when(mockHttpClient.send(any)).thenAnswer((_) async {

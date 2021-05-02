@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
@@ -24,7 +23,7 @@ class Params extends Equatable {
   final Option<DateTime> since;
 
   Params({
-    @required this.since,
+    required this.since,
   });
 
   @override

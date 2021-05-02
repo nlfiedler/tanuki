@@ -43,7 +43,8 @@ RUN fvm flutter config --enable-web
 RUN fvm flutter pub get
 ENV BASE_URL ${BASE_URL}
 RUN fvm flutter pub run environment_config:generate
-RUN fvm flutter build web
+# for now, no null safety until all dependencies build successfully with it
+RUN fvm flutter build web --no-sound-null-safety
 
 #
 # build the final image

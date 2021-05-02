@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:tanuki/core/domain/usecases/upload_asset.dart';
 
 //
@@ -20,7 +19,7 @@ abstract class UploadFileEvent extends Equatable {
 class StartUploading<T> extends UploadFileEvent {
   final List<T> files;
 
-  StartUploading({@required this.files});
+  StartUploading({required this.files});
 
   @override
   List<Object> get props => [files];
@@ -30,7 +29,7 @@ class UploadFile extends UploadFileEvent {
   final String filename;
   final Uint8List contents;
 
-  UploadFile({@required this.filename, @required this.contents});
+  UploadFile({required this.filename, required this.contents});
 
   @override
   List<Object> get props => [filename];
@@ -50,11 +49,11 @@ abstract class UploadFileState extends Equatable {
 
 class Initial extends UploadFileState {}
 
-class Uploading<T> extends UploadFileState {
+class Uploading<T extends Object> extends UploadFileState {
   final List<T> pending;
   final T current;
 
-  Uploading({@required pending, @required this.current})
+  Uploading({required pending, required this.current})
       : pending = List.unmodifiable(pending);
 
   @override
@@ -64,7 +63,7 @@ class Uploading<T> extends UploadFileState {
 class Finished<T> extends UploadFileState {
   final List<T> skipped;
 
-  Finished({@required skipped}) : skipped = List.unmodifiable(skipped);
+  Finished({required skipped}) : skipped = List.unmodifiable(skipped);
 
   @override
   List<Object> get props => [skipped];
@@ -73,7 +72,7 @@ class Finished<T> extends UploadFileState {
 class Error extends UploadFileState {
   final String message;
 
-  Error({@required this.message});
+  Error({required this.message});
 
   @override
   List<Object> get props => [message];
@@ -83,16 +82,17 @@ class Error extends UploadFileState {
 // bloc
 //
 
-class UploadFileBloc<T> extends Bloc<UploadFileEvent, UploadFileState> {
+class UploadFileBloc<T extends Object>
+    extends Bloc<UploadFileEvent, UploadFileState> {
   final UploadAsset usecase;
   // those file that were skipped along the way
   final List<T> skipped = [];
   // queue of files waiting to be uploaded
-  List<T> pending;
+  late List<T> pending;
   // current file being processed
-  T current;
+  late T current;
 
-  UploadFileBloc({this.usecase}) : super(Initial());
+  UploadFileBloc({required this.usecase}) : super(Initial());
 
   @override
   Stream<UploadFileState> mapEventToState(
@@ -103,7 +103,7 @@ class UploadFileBloc<T> extends Bloc<UploadFileEvent, UploadFileState> {
       // indicates the caller should load the current file.
       skipped.clear();
       current = event.files.last;
-      pending = event.files.sublist(0, event.files.length - 1);
+      pending = event.files.sublist(0, event.files.length - 1) as List<T>;
       yield Uploading<T>(pending: pending, current: current);
     } else if (event is UploadFile) {
       // Caller has loaded the current file and is ready to upload.

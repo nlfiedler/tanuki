@@ -110,6 +110,5 @@ extension RecentTimeRangeExt on RecentTimeRange {
       case RecentTimeRange.ever:
         return 'All Time';
     }
-    return 'All Time';
   }
 }

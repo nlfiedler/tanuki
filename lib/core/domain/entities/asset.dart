@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 import 'package:oxidized/oxidized.dart';
 
 /// An `Asset` holds information about a single asset.
@@ -29,16 +28,16 @@ class Asset extends Equatable {
   final Option<String> location;
 
   Asset({
-    @required this.id,
-    @required this.checksum,
-    @required this.filename,
-    @required this.filesize,
-    @required this.datetime,
-    @required this.mimetype,
-    @required this.tags,
-    @required this.userdate,
-    @required this.caption,
-    @required this.location,
+    required this.id,
+    required this.checksum,
+    required this.filename,
+    required this.filesize,
+    required this.datetime,
+    required this.mimetype,
+    required this.tags,
+    required this.userdate,
+    required this.caption,
+    required this.location,
   });
 
   @override

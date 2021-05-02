@@ -41,8 +41,8 @@ class LocationSelectorForm extends StatefulWidget {
   final List<Location> locations;
 
   const LocationSelectorForm({
-    Key key,
-    @required this.locations,
+    Key? key,
+    required this.locations,
   }) : super(key: key);
 
   @override
@@ -79,7 +79,11 @@ class _LocationSelectorFormState extends State<LocationSelectorForm> {
           child: DropdownButton(
             onChanged: (value) {
               // Toggle the item in the selected list.
-              final values = toggleSelection(selected, value.label, value);
+              final values = toggleSelection(
+                selected,
+                (value as Location).label,
+                value,
+              );
               BlocProvider.of<abb.AssetBrowserBloc>(context)
                   .add(abb.SelectLocations(locations: values));
             },
@@ -148,15 +152,15 @@ class _LocationSelectorFormState extends State<LocationSelectorForm> {
   List<String> toggleSelection(
     List<String> selected,
     String label,
-    Location value,
+    Location? value,
   ) {
     final List<String> values = List.from(selected);
     if (values.contains(label)) {
       values.remove(label);
-      _chipKey.currentState.deleteChip(value);
+      _chipKey.currentState?.deleteChip(value);
     } else {
       values.add(label);
-      _chipKey.currentState.selectSuggestion(value);
+      _chipKey.currentState?.selectSuggestion(value);
     }
     return values;
   }
