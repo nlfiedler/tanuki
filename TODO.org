@@ -1,9 +1,5 @@
 * Action Items
-** TODO Update flutter dependencies
-*** TODO try to fix null unsafe flutter_chips_input
-*** TODO replace file_chooser with file_selector
-** TODO Update rust dependencies
-*** Update =juniper= to latest release, requires API changes
+** TODO Update =juniper= to latest release, requires API changes
 ** TODO Form builder widget changes that need attention
 *** date(range) selector is super huge now
 *** error: text input is not attached
@@ -325,6 +321,8 @@ include it in the database records.
 *** Look for package that enables user to select photos to upload
 **** e.g. =image_picker= or =file_picker= packages
 ** Desktop app
+*** macOS: cocoapods and M1 support is pending a bug fix
+**** c.f. https://github.com/CocoaPods/CocoaPods/issues/9907
 *** macOS: need an entitlement? to play videos using =video_player=
 *** macOS: likely need to add entitlement for =com.apple.security.network.server=
 **** entitlements are part of the app signing process, allowing apps certain abilities

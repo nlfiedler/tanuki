@@ -3,7 +3,7 @@
 //
 import 'dart:io';
 
-import 'package:file_chooser/file_chooser.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,14 +19,12 @@ class _UploadFormState extends State<UploadForm> {
   List<String> _selectedFiles = [];
 
   void _pickFiles(BuildContext context) async {
-    final FileChooserResult results = await showOpenPanel(
-      allowsMultipleSelection: true,
-    );
-    if (!results.canceled) {
-      setState(() {
-        _selectedFiles.addAll(results.paths);
-      });
-    }
+    final files = await openFiles();
+    setState(() {
+      for (var entry in files) {
+        _selectedFiles.add(entry.path);
+      }
+    });
   }
 
   Widget _buildUploadStatus(BuildContext context, UploadFileState state) {

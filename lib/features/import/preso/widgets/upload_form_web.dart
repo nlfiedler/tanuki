@@ -5,7 +5,12 @@
 import 'dart:html';
 import 'dart:typed_data';
 
-import 'package:file_picker/file_picker.dart';
+//
+// The web version of the upload form also supports drag and drop, which for now
+// is only available on the web platform (c.f. flutter_dropzone package).
+//
+
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter_dropzone/flutter_dropzone.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,18 +25,16 @@ class UploadForm extends StatefulWidget {
 }
 
 class _UploadFormState extends State<UploadForm> {
-  // Selected files come from either the file picker or the drop zone,
-  // and they have different types (PlatformFile vs dart::html::File).
+  // Selected files come from either the file selector or the drop zone, and
+  // they have different types (cross_file::XFile vs dart::html::File).
   List<dynamic> _selectedFiles = [];
   bool highlightDropZone = false;
 
   void _pickFiles(BuildContext context) async {
-    final result = await FilePicker.platform.pickFiles(allowMultiple: true);
-    if (result != null) {
-      setState(() {
-        _selectedFiles.addAll(result.files);
-      });
-    }
+    final files = await openFiles();
+    setState(() {
+      _selectedFiles.addAll(files);
+    });
   }
 
   Widget _buildUploadStatus(BuildContext context, UploadFileState state) {
@@ -74,14 +77,14 @@ class _UploadFormState extends State<UploadForm> {
     });
   }
 
-  void _uploadFile(BuildContext context, dynamic uploading) {
-    // could be PlatformFile or dart::html::File
-    if (uploading is PlatformFile) {
-      // file_picker 2.0 provides the file data as a property
+  void _uploadFile(BuildContext context, dynamic uploading) async {
+    // could be cross_file::XFile or dart::html::File
+    if (uploading is XFile) {
+      final contents = await uploading.readAsBytes();
       BlocProvider.of<UploadFileBloc>(context).add(
         UploadFile(
-          filename: uploading.name!,
-          contents: uploading.bytes!,
+          filename: uploading.name,
+          contents: contents,
         ),
       );
     } else {
