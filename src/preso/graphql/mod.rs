@@ -7,8 +7,8 @@ use crate::domain::entities::{Asset, LabeledCount, SearchResult};
 use crate::domain::usecases::diagnose::Diagnosis;
 use chrono::prelude::*;
 use juniper::{
-    graphql_scalar, FieldResult, GraphQLEnum, GraphQLInputObject, ParseScalarResult,
-    ParseScalarValue, RootNode, Value,
+    graphql_scalar, EmptySubscription, FieldResult, GraphQLEnum, GraphQLInputObject,
+    ParseScalarResult, ParseScalarValue, RootNode, Value,
 };
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -62,28 +62,30 @@ impl From<u32> for BigInt {
     }
 }
 
-// need `where Scalar = <S>` parameterization to use this with objects
-// c.f. https://github.com/graphql-rust/juniper/issues/358 for details
-graphql_scalar!(BigInt where Scalar = <S> {
-    description: "An integer type larger than the standard signed 32-bit."
-
-    resolve(&self) -> Value {
+#[graphql_scalar(description = "An integer type larger than the standard signed 32-bit.")]
+impl<S> GraphQLScalar for BigInt
+where
+    S: ScalarValue,
+{
+    fn resolve(&self) -> Value {
         Value::scalar(format!("{}", self.0))
     }
 
-    from_input_value(v: &InputValue) -> Option<BigInt> {
-        v.as_scalar_value::<String>().filter(|s| {
-            // make sure the input value parses as an integer
-            i64::from_str_radix(s, 10).is_ok()
-        }).map(|s| BigInt(i64::from_str_radix(s, 10).unwrap()))
+    fn from_input_value(v: &InputValue) -> Option<BigInt> {
+        v.as_scalar_value()
+            .and_then(|v| v.as_str())
+            .and_then(|s| i64::from_str_radix(s, 10).ok())
+            .map(|i| BigInt(i))
     }
 
-    from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
+    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
         <String as ParseScalarValue<S>>::from_str(value)
     }
-});
+}
 
-#[juniper::object(description = "An `Asset` defines a single entity in the storage system.")]
+#[juniper::graphql_object(
+    description = "An `Asset` defines a single entity in the storage system."
+)]
 impl Asset {
     /// The unique asset identifier.
     fn id(&self) -> String {
@@ -142,7 +144,9 @@ impl Asset {
     }
 }
 
-#[juniper::object(description = "An attribute name and the number of assets it references.")]
+#[juniper::graphql_object(
+    description = "An attribute name and the number of assets it references."
+)]
 impl LabeledCount {
     /// Label for an asset attribute, such as a tag or location.
     fn label(&self) -> String {
@@ -237,7 +241,9 @@ impl Into<crate::domain::usecases::search::Params> for SearchParams {
     }
 }
 
-#[juniper::object(description = "An attribute name and the number of assets it references.")]
+#[juniper::graphql_object(
+    description = "An attribute name and the number of assets it references."
+)]
 impl SearchResult {
     /// The identifier of the matching asset.
     fn id(&self) -> String {
@@ -270,7 +276,7 @@ struct SearchMeta {
     count: i32,
 }
 
-#[juniper::object(description = "`SearchMeta` is returned from the `search` query.")]
+#[juniper::graphql_object(description = "`SearchMeta` is returned from the `search` query.")]
 impl SearchMeta {
     /// The list of results retrieved via the query.
     fn results(&self) -> Vec<SearchResult> {
@@ -321,7 +327,7 @@ impl From<crate::domain::usecases::diagnose::ErrorCode> for ErrorCode {
     }
 }
 
-#[juniper::object(description = "`Diagnosis` is returned from the `diagnose` query.")]
+#[juniper::graphql_object(description = "`Diagnosis` is returned from the `diagnose` query.")]
 impl Diagnosis {
     /// Identifier for the asset.
     fn asset_id(&self) -> String {
@@ -384,7 +390,7 @@ pub struct AssetInputId {
 
 pub struct QueryRoot;
 
-#[juniper::object(Context = Arc<GraphContext>)]
+#[juniper::graphql_object(Context = Arc<GraphContext>)]
 impl QueryRoot {
     /// Retrieve an asset by its unique identifier.
     fn asset(executor: &Executor, id: String) -> FieldResult<Asset> {
@@ -560,7 +566,7 @@ fn paginate_vector<T>(input: &mut Vec<T>, offset: Option<i32>, count: Option<i32
 
 pub struct MutationRoot;
 
-#[juniper::object(Context = Arc<GraphContext>)]
+#[juniper::graphql_object(Context = Arc<GraphContext>)]
 impl MutationRoot {
     /// Perform an import on all files in the uploads directory.
     fn ingest(executor: &Executor) -> FieldResult<i32> {
@@ -617,17 +623,17 @@ impl MutationRoot {
         let usecase = UpdateAsset::new(Box::new(repo));
         for asset in assets.iter() {
             let params: Params = Params::new(asset.id.clone(), asset.input.clone().into());
-            let result: Asset = usecase.call(params)?;
+            usecase.call(params)?;
         }
         Ok(assets.len() as i32)
     }
 }
 
-pub type Schema = RootNode<'static, QueryRoot, MutationRoot>;
+pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<Arc<GraphContext>>>;
 
 /// Create the GraphQL schema.
 pub fn create_schema() -> Schema {
-    Schema::new(QueryRoot {}, MutationRoot {})
+    Schema::new(QueryRoot {}, MutationRoot {}, EmptySubscription::new())
 }
 
 #[cfg(test)]
@@ -713,7 +719,7 @@ mod tests {
         }"#;
         let mut vars = Variables::new();
         vars.insert("id".to_owned(), InputValue::scalar("abc123"));
-        let (res, _errors) = juniper::execute(query, None, &schema, &vars, &ctx).unwrap();
+        let (res, _errors) = juniper::execute_sync(query, None, &schema, &vars, &ctx).unwrap();
         // assert
         let res = res.as_object_value().unwrap();
         let res = res.get_field_value("asset").unwrap();
@@ -779,7 +785,7 @@ mod tests {
         }"#;
         let mut vars = Variables::new();
         vars.insert("id".to_owned(), InputValue::scalar("abc123"));
-        let (res, errors) = juniper::execute(query, None, &schema, &vars, &ctx).unwrap();
+        let (res, errors) = juniper::execute_sync(query, None, &schema, &vars, &ctx).unwrap();
         // assert
         assert!(res.is_null());
         assert_eq!(errors.len(), 1);
@@ -797,7 +803,8 @@ mod tests {
         // act
         let schema = create_schema();
         let (res, _errors) =
-            juniper::execute(r#"query { count }"#, None, &schema, &Variables::new(), &ctx).unwrap();
+            juniper::execute_sync(r#"query { count }"#, None, &schema, &Variables::new(), &ctx)
+                .unwrap();
         // assert
         let res = res.as_object_value().unwrap();
         let res = res.get_field_value("count").unwrap();
@@ -818,7 +825,8 @@ mod tests {
         // act
         let schema = create_schema();
         let (res, errors) =
-            juniper::execute(r#"query { count }"#, None, &schema, &Variables::new(), &ctx).unwrap();
+            juniper::execute_sync(r#"query { count }"#, None, &schema, &Variables::new(), &ctx)
+                .unwrap();
         // assert
         assert!(res.is_null());
         assert_eq!(errors.len(), 1);
@@ -851,7 +859,7 @@ mod tests {
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
-        let (res, _errors) = juniper::execute(
+        let (res, _errors) = juniper::execute_sync(
             r#"query { locations { label count } }"#,
             None,
             &schema,
@@ -888,7 +896,7 @@ mod tests {
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"query { locations { label count } }"#,
             None,
             &schema,
@@ -928,7 +936,7 @@ mod tests {
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
-        let (res, _errors) = juniper::execute(
+        let (res, _errors) = juniper::execute_sync(
             r#"query { mediaTypes { label count } }"#,
             None,
             &schema,
@@ -965,7 +973,7 @@ mod tests {
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"query { mediaTypes { label count } }"#,
             None,
             &schema,
@@ -1013,7 +1021,7 @@ mod tests {
         }"#;
         let mut vars = Variables::new();
         vars.insert("checksum".to_owned(), InputValue::scalar("cafebabe"));
-        let (res, _errors) = juniper::execute(query, None, &schema, &vars, &ctx).unwrap();
+        let (res, _errors) = juniper::execute_sync(query, None, &schema, &vars, &ctx).unwrap();
         // assert
         let res = res.as_object_value().unwrap();
         let res = res.get_field_value("lookup").unwrap();
@@ -1040,7 +1048,7 @@ mod tests {
         }"#;
         let mut vars = Variables::new();
         vars.insert("checksum".to_owned(), InputValue::scalar("cafebabe"));
-        let (res, errors) = juniper::execute(query, None, &schema, &vars, &ctx).unwrap();
+        let (res, errors) = juniper::execute_sync(query, None, &schema, &vars, &ctx).unwrap();
         // assert
         let res = res.as_object_value().unwrap();
         let res = res.get_field_value("lookup").unwrap();
@@ -1065,7 +1073,7 @@ mod tests {
         }"#;
         let mut vars = Variables::new();
         vars.insert("checksum".to_owned(), InputValue::scalar("cafebabe"));
-        let (res, errors) = juniper::execute(query, None, &schema, &vars, &ctx).unwrap();
+        let (res, errors) = juniper::execute_sync(query, None, &schema, &vars, &ctx).unwrap();
         // assert
         let res = res.as_object_value().unwrap();
         let res = res.get_field_value("lookup").unwrap();
@@ -1153,7 +1161,7 @@ mod tests {
             sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"query Search($params: SearchParams!) {
                 search(params: $params) {
                     results { id filename mimetype location datetime }
@@ -1258,7 +1266,7 @@ mod tests {
         let mut vars = Variables::new();
         let since = Some(Utc::now());
         vars.insert("since".to_owned(), since.to_input_value());
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"query Recent($since: DateTimeUtc) {
                 recent(since: $since) {
                     results { id }
@@ -1305,7 +1313,7 @@ mod tests {
         let mut vars = Variables::new();
         let since = Some(Utc::now());
         vars.insert("since".to_owned(), since.to_input_value());
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"query Recent($since: DateTimeUtc) {
                 recent(since: $since) {
                     results { id }
@@ -1349,7 +1357,7 @@ mod tests {
             sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"query Search($params: SearchParams!) {
                 search(params: $params, count: 10) {
                     results { id }
@@ -1412,7 +1420,7 @@ mod tests {
             sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"query Search($params: SearchParams!) {
                 search(params: $params, count: 10, offset: 20) {
                     results { id }
@@ -1475,7 +1483,7 @@ mod tests {
             sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"query Search($params: SearchParams!) {
                 search(params: $params, count: 100, offset: 80) {
                     results { id }
@@ -1539,7 +1547,7 @@ mod tests {
             sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"query Search($params: SearchParams!) {
                 search(params: $params, count: 100) {
                     results { id }
@@ -1601,7 +1609,7 @@ mod tests {
             sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"query Search($params: SearchParams!) {
                 search(params: $params) {
                     results { id filename mimetype location datetime }
@@ -1651,7 +1659,7 @@ mod tests {
             sort_order: Some(SortOrder::Ascending),
         };
         vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"query Search($params: SearchParams!) {
                 search(params: $params) {
                     results { id }
@@ -1696,7 +1704,7 @@ mod tests {
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
-        let (res, _errors) = juniper::execute(
+        let (res, _errors) = juniper::execute_sync(
             r#"query { tags { label count } }"#,
             None,
             &schema,
@@ -1733,7 +1741,7 @@ mod tests {
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"query { tags { label count } }"#,
             None,
             &schema,
@@ -1773,7 +1781,7 @@ mod tests {
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
-        let (res, _errors) = juniper::execute(
+        let (res, _errors) = juniper::execute_sync(
             r#"query { years { label count } }"#,
             None,
             &schema,
@@ -1810,7 +1818,7 @@ mod tests {
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
         // act
         let schema = create_schema();
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"query { years { label count } }"#,
             None,
             &schema,
@@ -1861,7 +1869,7 @@ mod tests {
             filename: None,
         };
         vars.insert("input".to_owned(), input.to_input_value());
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"mutation Update($input: AssetInput!) {
                 update(id: "abc123", asset: $input) {
                     id tags location caption
@@ -1918,7 +1926,7 @@ mod tests {
             filename: None,
         };
         vars.insert("input".to_owned(), input.to_input_value());
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"mutation Update($input: AssetInput!) {
                 update(id: "abc123", asset: $input) { id }
             }"#,
@@ -1971,7 +1979,7 @@ mod tests {
             filename: None,
         };
         vars.insert("input".to_owned(), input.to_input_value());
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"mutation Update($input: AssetInput!) {
                 update(id: "abc123", asset: $input) {
                     id tags location caption
@@ -2062,7 +2070,7 @@ mod tests {
             },
         ];
         vars.insert("assets".to_owned(), assets.to_input_value());
-        let (res, errors) = juniper::execute(
+        let (res, errors) = juniper::execute_sync(
             r#"mutation BulkUpdate($assets: [AssetInputId!]!) {
                 bulkUpdate(assets: $assets)
             }"#,

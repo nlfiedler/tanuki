@@ -1,5 +1,4 @@
 * Action Items
-** TODO Update =juniper= to latest release, requires API changes
 ** TODO Form builder widget changes that need attention
 *** date(range) selector is super huge now
 *** error: text input is not attached
