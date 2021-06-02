@@ -1,17 +1,11 @@
 * Action Items
-** TODO Form builder widget changes that need attention
-*** date(range) selector is super huge now
-*** error: text input is not attached
-1) open then close the date range selector
-2) use dropdown to add a new tag
-3) seemingly nothing happens: error in console
 ** Quick import directly from the phone, tablet
 *** Ensure web interface works well for small screens
+**** Flutter Folio example app that works well for all screen sizes
+***** c.f. https://flutter.gskinner.com
 *** Support easy import of photos from phone collection via web interface
 ** Interface improvements
 *** reference: https://flutter.github.io/samples/
-*** Flutter Folio example app that works well for all screen sizes
-**** c.f. https://flutter.gskinner.com
 *** Thumbnail Serving Strategy
 **** the frontend can use the image dimensions to compute the aspect ratio
 **** with the aspect ratio, frontend can request images of the desired size
@@ -105,6 +99,18 @@
 *** can use =DataTable= to display labeled data (like asset details, metadata)
 *** use pointer enter/exit events to start playing a video in place
 ** Known Issues
+*** date(range) selector is super huge now
+*** error: text input is not attached
+**** cause 1: clearing all selected attributes
+1) select a tag
+2) select a location
+3) clear selected location
+4) clear selected tag
+5) seemingly nothing happens: error in console
+**** cause 2: date selector
+1) open then close the date range selector
+2) use dropdown to add a new tag
+3) seemingly nothing happens: error in console
 *** clicking on portrait avi(?) shows widened image and page does not scroll to show details
 *** filter input chips are broken on first typed character
 **** TODO see the new =ChipsInput= which has a focus node property
@@ -167,6 +173,8 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 #+END_SRC
 *** preview of small images makes them large
 **** should instead only serve original size for smaller images
+** Consider using =dart:html= to get the current URL vs setting at build time
+*** GraphQL client needs the full address of the server
 ** Bulk edit
 *** need to set the custom date on many assets at once
 *** Short term solution akin to perkeep/photoprism web interface
