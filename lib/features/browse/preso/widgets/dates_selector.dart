@@ -82,11 +82,11 @@ class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
               firstDate: firstDate,
               lastDate: lastDate,
               decoration: const InputDecoration(labelText: 'Dates'),
-              onChanged: (val) {
+              onChanged: (DateTimeRange? val) {
                 // Without a form-save invocation, the value transformer does
                 // not get called, so send the dates over to the bloc to take
                 // effect immediately.
-                final dates = [val.start, val.end];
+                final dates = [val!.start, val.end];
                 BlocProvider.of<abb.AssetBrowserBloc>(context)
                     .add(abb.SelectDates(dates: dates));
               },
