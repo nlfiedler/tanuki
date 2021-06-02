@@ -117,7 +117,7 @@ async fn graphql(
         datasource,
         Box::new(ASSETS_PATH.clone()),
     ));
-    let res = data.execute_sync(&st, &ctx);
+    let res = data.execute(&st, &ctx).await;
     let body = serde_json::to_string(&res)?;
     Ok(HttpResponse::Ok()
         .content_type("application/json")
