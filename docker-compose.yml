@@ -6,19 +6,16 @@ services:
       context: .
     environment:
       DB_PATH: /database
-      UPLOAD_PATH: /uploads
-      ASSETS_PATH: /blobstore
+      UPLOAD_PATH: /assets/uploads
+      ASSETS_PATH: /assets/blobstore
       PORT: 3000
       RUST_LOG: "info"
     ports:
       - "3000:3000"
     volumes:
       - type: bind
-        source: ./tmp/blobs
-        target: /blobstore
+        source: ./tmp/docker/assets
+        target: /assets
       - type: bind
-        source: ./tmp/rocksdb
+        source: ./tmp/docker/database
         target: /database
-      - type: bind
-        source: ./tmp/uploads
-        target: /uploads

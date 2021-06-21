@@ -54,15 +54,14 @@ WORKDIR /tanuki
 COPY --from=builder /build/target/release/tanuki .
 COPY --from=healthy /health/target/release/healthcheck .
 COPY --from=flutter /flutter/build/web web/
-VOLUME /blobstore
+VOLUME /assets
 VOLUME /database
-VOLUME /uploads
 ENV DB_PATH "/database"
-ENV UPLOAD_PATH "/uploads"
-ENV ASSETS_PATH "/blobstore"
+ENV UPLOAD_PATH "/assets/uploads"
+ENV ASSETS_PATH "/assets/blobstore"
 ENV HOST "0.0.0.0"
 ENV PORT 3000
+ENV RUST_LOG info
 EXPOSE ${PORT}
 HEALTHCHECK CMD ./healthcheck
-ENV RUST_LOG info
 ENTRYPOINT ["./tanuki"]
