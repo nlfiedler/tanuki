@@ -99,8 +99,8 @@
 *** can use =DataTable= to display labeled data (like asset details, metadata)
 *** use pointer enter/exit events to start playing a video in place
 ** Known Issues
-*** date(range) selector is super huge now
 *** error: text input is not attached
+**** filed https://github.com/danvick/flutter_chips_input/issues/92
 **** cause 1: clearing all selected attributes
 1) select a tag
 2) select a location
@@ -111,9 +111,33 @@
 1) open then close the date range selector
 2) use dropdown to add a new tag
 3) seemingly nothing happens: error in console
+**** partial stack trace
+#+begin_src
+The following assertion was thrown while handling a gesture:
+Assertion failed:
+file:///Users/nfiedler/fvm/versions/stable/packages/flutter/lib/src/services/text_input.dart:981:12
+attached is not true
+
+When the exception was thrown, this was the stack:
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 236:49  throw_
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 29:3    assertFailed
+packages/flutter/src/services/text_input.dart 981:12                          setEditingState
+packages/flutter_chips_input/src/chips_input.dart 356:27                      [_updateTextInputState]
+packages/flutter_chips_input/src/chips_input.dart 269:7                       deleteChip
+packages/tanuki/features/browse/preso/widgets/tags_selector.dart 136:33       <fn>
+packages/flutter/src/material/chip.dart 1888:24                               <fn>
+...
+Handler: "onTap"
+Recognizer:
+  TapGestureRecognizer#17924
+#+end_src
+*** unable to clear the before/after dates; form doesn't have a reset button?
+**** probably need to overlay our own ~close~ button to reset the field
+**** the date/time picker field already has has ~reset~ icon but does not appear
 *** clicking on portrait avi(?) shows widened image and page does not scroll to show details
 *** filter input chips are broken on first typed character
 **** TODO see the new =ChipsInput= which has a focus node property
+**** TODO c.f. https://github.com/danvick/flutter_form_builder/issues/313#issuecomment-861586184
 **** chips input keyboard focus: https://github.com/danvick/flutter_form_builder/issues/313
 **** seems like focus goes somewhere, clicking in input field lets you type another character
 **** happens with release =beta= channel web build

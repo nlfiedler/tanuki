@@ -76,23 +76,33 @@ class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
         builder: (context, state) {
           return FormBuilder(
             key: _fbKey,
-            child: FormBuilderDateRangePicker(
-              name: 'dates',
-              format: DateFormat.yMd(),
-              firstDate: firstDate,
-              lastDate: lastDate,
-              decoration: const InputDecoration(labelText: 'Dates'),
-              onChanged: (DateTimeRange? val) {
-                // Without a form-save invocation, the value transformer does
-                // not get called, so send the dates over to the bloc to take
-                // effect immediately.
-                final dates = [val!.start, val.end];
-                BlocProvider.of<abb.AssetBrowserBloc>(context)
-                    .add(abb.SelectDates(dates: dates));
-              },
-              valueTransformer: (val) {
-                return [val.start, val.end];
-              },
+            child: Row(
+              children: [
+                Expanded(
+                  child: FormBuilderDateTimePicker(
+                    name: 'afterDate',
+                    format: DateFormat.yMd(),
+                    inputType: InputType.date,
+                    decoration: const InputDecoration(labelText: 'After'),
+                    onChanged: (DateTime? val) {
+                      BlocProvider.of<abb.AssetBrowserBloc>(context)
+                          .add(abb.SetAfterDate(date: val));
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: FormBuilderDateTimePicker(
+                    name: 'beforeDate',
+                    format: DateFormat.yMd(),
+                    inputType: InputType.date,
+                    decoration: const InputDecoration(labelText: 'Before'),
+                    onChanged: (DateTime? val) {
+                      BlocProvider.of<abb.AssetBrowserBloc>(context)
+                          .add(abb.SetBeforeDate(date: val));
+                    },
+                  ),
+                ),
+              ],
             ),
           );
         },

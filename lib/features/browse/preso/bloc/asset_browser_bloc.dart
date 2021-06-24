@@ -35,11 +35,19 @@ class SelectLocations extends AssetBrowserEvent {
   });
 }
 
-class SelectDates extends AssetBrowserEvent {
-  final List<DateTime> dates;
+class SetBeforeDate extends AssetBrowserEvent {
+  final DateTime? date;
 
-  SelectDates({
-    required this.dates,
+  SetBeforeDate({
+    required this.date,
+  });
+}
+
+class SetAfterDate extends AssetBrowserEvent {
+  final DateTime? date;
+
+  SetAfterDate({
+    required this.date,
   });
 }
 
@@ -76,7 +84,8 @@ class Loaded extends AssetBrowserState {
   final QueryResults results;
   final List<String> selectedTags;
   final List<String> selectedLocations;
-  final List<DateTime> selectedDates;
+  final DateTime? beforeDate;
+  final DateTime? afterDate;
   final int pageSize;
   final int pageNumber;
   final int lastPage;
@@ -86,19 +95,20 @@ class Loaded extends AssetBrowserState {
     required this.pageNumber,
     required tags,
     required locations,
-    required dates,
+    required this.beforeDate,
+    required this.afterDate,
     required this.lastPage,
     required this.pageSize,
-  })   : selectedTags = List.unmodifiable(tags),
-        selectedLocations = List.unmodifiable(locations),
-        selectedDates = List.unmodifiable(dates);
+  })  : selectedTags = List.unmodifiable(tags),
+        selectedLocations = List.unmodifiable(locations);
 
   @override
   List<Object> get props => [
         results,
         selectedTags,
         selectedLocations,
-        selectedDates,
+        beforeDate ?? 'none',
+        afterDate ?? 'none',
         pageNumber,
       ];
 }
@@ -120,7 +130,8 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
   final QueryAssets usecase;
   List<String> tags = [];
   List<String> locations = [];
-  List<DateTime> dates = [];
+  DateTime? beforeDate;
+  DateTime? afterDate;
   int pageSize = 18;
   int pageNumber = 1;
 
@@ -144,9 +155,15 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
         pageNumber = 1;
         yield* _loadAssets();
       }
-    } else if (event is SelectDates) {
+    } else if (event is SetBeforeDate) {
       if (state is Loaded) {
-        dates = event.dates;
+        beforeDate = event.date;
+        pageNumber = 1;
+        yield* _loadAssets();
+      }
+    } else if (event is SetAfterDate) {
+      if (state is Loaded) {
+        afterDate = event.date;
         pageNumber = 1;
         yield* _loadAssets();
       }
@@ -164,18 +181,14 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
     }
   }
 
-  Option<DateTime> getFirstDate(List<DateTime> dates) {
-    if (dates.isNotEmpty) {
-      return Some(dates[0].toUtc());
-    }
-    return None();
+  Option<DateTime> getFirstDate() {
+    // start of the date range (after the "after")
+    return Option.from(afterDate).map((t) => t.toUtc());
   }
 
-  Option<DateTime> getLastDate(List<DateTime> dates) {
-    if (dates.length == 2) {
-      return Some(dates[1].toUtc());
-    }
-    return None();
+  Option<DateTime> getLastDate() {
+    // end of the date range (before the "before")
+    return Option.from(beforeDate).map((t) => t.toUtc());
   }
 
   Stream<AssetBrowserState> _loadAssets() async* {
@@ -183,8 +196,8 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
     final params = SearchParams(
       tags: tags,
       locations: locations,
-      after: getFirstDate(dates),
-      before: getLastDate(dates),
+      after: getFirstDate(),
+      before: getLastDate(),
     );
     final offset = pageSize * (pageNumber - 1);
     final result = await usecase(Params(
@@ -200,7 +213,8 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
           pageNumber: lastPage > 0 ? pageNumber : 0,
           tags: tags,
           locations: locations,
-          dates: dates,
+          beforeDate: beforeDate,
+          afterDate: afterDate,
           lastPage: lastPage,
           pageSize: pageSize,
         );

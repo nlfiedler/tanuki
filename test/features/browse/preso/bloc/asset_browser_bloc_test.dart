@@ -18,10 +18,8 @@ void main() {
   late MockEntityRepository mockEntityRepository;
   late QueryAssets usecase;
 
-  final selectedDates = [
-    DateTime.utc(2009),
-    DateTime.utc(2010),
-  ];
+  final afterDate = DateTime.utc(2009);
+  final beforeDate = DateTime.utc(2010);
   final tQueryResults = QueryResults(
     results: [
       SearchResult(
@@ -60,7 +58,8 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          dates: [],
+          beforeDate: null,
+          afterDate: null,
           lastPage: 1,
           pageSize: 18,
         )
@@ -89,7 +88,8 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          dates: [],
+          beforeDate: null,
+          afterDate: null,
           lastPage: 1,
           pageSize: 18,
         ),
@@ -99,7 +99,8 @@ void main() {
           pageNumber: 1,
           tags: ['cats'],
           locations: [],
-          dates: [],
+          beforeDate: null,
+          afterDate: null,
           lastPage: 1,
           pageSize: 18,
         ),
@@ -129,7 +130,8 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          dates: [],
+          beforeDate: null,
+          afterDate: null,
           lastPage: 1,
           pageSize: 18,
         ),
@@ -139,7 +141,8 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: ['hawaii'],
-          dates: [],
+          beforeDate: null,
+          afterDate: null,
           lastPage: 1,
           pageSize: 18,
         ),
@@ -147,11 +150,11 @@ void main() {
     );
 
     blocTest(
-      'emits [Loading, Loaded, x2] when Initial + ToggleYear is added',
+      'emits [Loading, Loaded, x2] when Initial + SetBeforeDate is added',
       build: () => AssetBrowserBloc(usecase: usecase),
       act: (AssetBrowserBloc bloc) {
         bloc.add(LoadInitialAssets());
-        bloc.add(SelectDates(dates: selectedDates));
+        bloc.add(SetBeforeDate(date: beforeDate));
         return;
       },
       expect: () => [
@@ -161,7 +164,8 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          dates: [],
+          beforeDate: null,
+          afterDate: null,
           lastPage: 1,
           pageSize: 18,
         ),
@@ -171,7 +175,42 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          dates: selectedDates,
+          beforeDate: beforeDate,
+          afterDate: null,
+          lastPage: 1,
+          pageSize: 18,
+        ),
+      ],
+    );
+
+    blocTest(
+      'emits [Loading, Loaded, x2] when Initial + SetAfterDate is added',
+      build: () => AssetBrowserBloc(usecase: usecase),
+      act: (AssetBrowserBloc bloc) {
+        bloc.add(LoadInitialAssets());
+        bloc.add(SetAfterDate(date: afterDate));
+        return;
+      },
+      expect: () => [
+        Loading(),
+        Loaded(
+          results: tQueryResults,
+          pageNumber: 1,
+          tags: [],
+          locations: [],
+          beforeDate: null,
+          afterDate: null,
+          lastPage: 1,
+          pageSize: 18,
+        ),
+        Loading(),
+        Loaded(
+          results: tQueryResults,
+          pageNumber: 1,
+          tags: [],
+          locations: [],
+          beforeDate: null,
+          afterDate: afterDate,
           lastPage: 1,
           pageSize: 18,
         ),
@@ -215,7 +254,8 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          dates: [],
+          beforeDate: null,
+          afterDate: null,
           lastPage: 5,
           pageSize: 18,
         ),
@@ -225,7 +265,8 @@ void main() {
           pageNumber: 10,
           tags: [],
           locations: [],
-          dates: [],
+          beforeDate: null,
+          afterDate: null,
           lastPage: 5,
           pageSize: 18,
         ),
@@ -248,7 +289,8 @@ void main() {
           pageNumber: 1,
           tags: [],
           locations: [],
-          dates: [],
+          beforeDate: null,
+          afterDate: null,
           lastPage: 5,
           pageSize: 18,
         ),
@@ -258,7 +300,8 @@ void main() {
           pageNumber: 10,
           tags: [],
           locations: [],
-          dates: [],
+          beforeDate: null,
+          afterDate: null,
           lastPage: 5,
           pageSize: 18,
         ),
@@ -268,7 +311,8 @@ void main() {
           pageNumber: 1,
           tags: ['cats'],
           locations: [],
-          dates: [],
+          beforeDate: null,
+          afterDate: null,
           lastPage: 5,
           pageSize: 18,
         ),
@@ -297,7 +341,8 @@ void main() {
           pageNumber: 0,
           tags: [],
           locations: [],
-          dates: [],
+          beforeDate: null,
+          afterDate: null,
           lastPage: 0,
           pageSize: 18,
         ),
