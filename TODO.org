@@ -135,56 +135,8 @@ Recognizer:
 **** probably need to overlay our own ~close~ button to reset the field
 **** the date/time picker field already has has ~reset~ icon but does not appear
 *** clicking on portrait avi(?) shows widened image and page does not scroll to show details
-*** filter input chips are broken on first typed character
-**** TODO see the new =ChipsInput= which has a focus node property
-**** TODO c.f. https://github.com/danvick/flutter_form_builder/issues/313#issuecomment-861586184
-**** chips input keyboard focus: https://github.com/danvick/flutter_form_builder/issues/313
-**** seems like focus goes somewhere, clicking in input field lets you type another character
-**** happens with release =beta= channel web build
-**** happens with debug =dev= channel web build
-**** does _not_ happen with =dev= channel macos build
-**** see work-around in issue #313 of https://github.com/danvick/flutter_form_builder
-#+BEGIN_SRC
-FocusNode focusNode;
-
-@override
-void initState() {
-  super.initState();
-  focusNode = FocusNode();
-}
-
-@override
-void dispose() {
-  focusNode.dispose();
-  super.dispose();
-}
-
-FormBuilderChoiceChip(
-  focusNode: focusNode,
-  ...
-)
-#+END_SRC
-**** see another comment and work-around to the same issue
-: Ran into the same problem. After testing different combinations of
-: interactions, I discovered that if I restart the application, and interact
-: with the FormBuilderDateTimePicker control first, it works. However, if I
-: interact with a FormBuilderSegmentedControl, and then try to click on
-: FormBuilderDateTimePicker control, the date time picker throws the focus
-: exception.
-:
-: The solution that worked for me, without making any modifications to the
-: original flutter_form_builder code was to update my calls to
-: FormBuilderSegmentedControl, and set the focusNode property. See below.
-#+begin_src dart
-FormBuilderSegmentedControl(
-...
-focusNode: FocusNode(), // added attribute
-...
-)
-#+end_src
-: There is an issue w/ how FormBuilderField is disposing the focusNode. It
-: becomes an issue if application is hot reloaded. You may have to do a hot
-: restart instead.
+*** filter input chips cause exception in the console with ~Tab~ key
+**** c.f. https://github.com/danvick/flutter_form_builder/issues/703
 *** graphql errors are handled poorly everywhere
 *** too many open files
 **** happens when uploading numerous files
