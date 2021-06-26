@@ -1,10 +1,34 @@
 * Action Items
+** Low hanging fruit
+*** recents page should have tab key order for the input fields
+**** pressing tab should go from one text field to the next
+*** recents page: shift keys move focus to previous text field
+**** does not always happen, difficult to make it stop when it does
+**** seems like backspace will also navigate backward
+*** unable to clear the before/after dates; form doesn't have a reset button?
+**** probably need to overlay our own ~close~ button to reset the field
+**** the date/time picker field already has has ~reset~ icon but does not appear
+*** clicking on portrait avi(?) shows widened image and page does not scroll to show details
+*** preview of small images makes them large
+**** should instead only serve original size for smaller images
+*** graphql errors are handled poorly everywhere
+*** too many open files
+**** happens when uploading numerous files
+**** seems to hit RocksDB the hardest
+**** error message
+#+BEGIN_SRC
+thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Error {
+ message: "IO error: While open a file for appending: tmp/rocksdb/000733.sst: Too many open files"
+}', src/main.rs:88:71
+#+END_SRC
+*** Consider using =dart:html= to get the current URL vs setting at build time
+**** GraphQL client needs the full address of the server
 ** Quick import directly from the phone, tablet
 *** Ensure web interface works well for small screens
 **** Flutter Folio example app that works well for all screen sizes
 ***** c.f. https://flutter.gskinner.com
 *** Support easy import of photos from phone collection via web interface
-** Interface improvements
+** Interface Redesign
 *** reference: https://flutter.github.io/samples/
 *** Thumbnail Serving Strategy
 **** the frontend can use the image dimensions to compute the aspect ratio
@@ -131,26 +155,8 @@ Handler: "onTap"
 Recognizer:
   TapGestureRecognizer#17924
 #+end_src
-*** unable to clear the before/after dates; form doesn't have a reset button?
-**** probably need to overlay our own ~close~ button to reset the field
-**** the date/time picker field already has has ~reset~ icon but does not appear
-*** clicking on portrait avi(?) shows widened image and page does not scroll to show details
 *** filter input chips cause exception in the console with ~Tab~ key
 **** c.f. https://github.com/danvick/flutter_form_builder/issues/703
-*** graphql errors are handled poorly everywhere
-*** too many open files
-**** happens when uploading numerous files
-**** seems to hit RocksDB the hardest
-**** error message
-#+BEGIN_SRC
-thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Error {
- message: "IO error: While open a file for appending: tmp/rocksdb/000733.sst: Too many open files"
-}', src/main.rs:88:71
-#+END_SRC
-*** preview of small images makes them large
-**** should instead only serve original size for smaller images
-** Consider using =dart:html= to get the current URL vs setting at build time
-*** GraphQL client needs the full address of the server
 ** Bulk edit
 *** need to set the custom date on many assets at once
 *** Short term solution akin to perkeep/photoprism web interface

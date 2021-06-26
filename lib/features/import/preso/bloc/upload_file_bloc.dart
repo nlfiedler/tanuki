@@ -52,12 +52,16 @@ class Initial extends UploadFileState {}
 class Uploading<T extends Object> extends UploadFileState {
   final List<T> pending;
   final T current;
+  final int uploaded;
 
-  Uploading({required pending, required this.current})
-      : pending = List.unmodifiable(pending);
+  Uploading({
+    required pending,
+    required this.current,
+    this.uploaded = 0,
+  }) : pending = List.unmodifiable(pending);
 
   @override
-  List<Object> get props => [current];
+  List<Object> get props => [current, uploaded];
 }
 
 class Finished<T> extends UploadFileState {
@@ -91,6 +95,7 @@ class UploadFileBloc<T extends Object>
   late List<T> pending;
   // current file being processed
   late T current;
+  late int uploaded;
 
   UploadFileBloc({required this.usecase}) : super(Initial());
 
@@ -102,6 +107,7 @@ class UploadFileBloc<T extends Object>
       // Start the process of uploading the files, yielding a state that
       // indicates the caller should load the current file.
       skipped.clear();
+      uploaded = 0;
       current = event.files.last;
       pending = event.files.sublist(0, event.files.length - 1) as List<T>;
       yield Uploading<T>(pending: pending, current: current);
@@ -129,8 +135,10 @@ class UploadFileBloc<T extends Object>
     if (pending.isEmpty) {
       return Finished<T>(skipped: skipped);
     } else {
+      uploaded++;
       current = pending.removeLast();
-      return Uploading<T>(pending: pending, current: current);
+      return Uploading<T>(
+          pending: pending, current: current, uploaded: uploaded);
     }
   }
 }

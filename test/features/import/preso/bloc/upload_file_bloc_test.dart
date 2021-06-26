@@ -70,7 +70,7 @@ void main() {
       },
       expect: () => [
         Uploading<String>(pending: ['foo'], current: 'bar'),
-        Uploading<String>(pending: [], current: 'foo'),
+        Uploading<String>(pending: [], current: 'foo', uploaded: 1),
         Finished<String>(skipped: ['bar']),
       ],
     );

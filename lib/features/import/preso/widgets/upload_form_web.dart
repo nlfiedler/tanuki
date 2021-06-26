@@ -42,7 +42,16 @@ class _UploadFormState extends State<UploadForm> {
       return Text('Upload error: ' + state.message);
     }
     if (state is Uploading) {
-      return Text('Uploading ${(state.current as dynamic).name}...');
+      var value = state.uploaded / (state.pending.length + state.uploaded);
+      return Row(
+        children: [
+          CircularProgressIndicator(value: value),
+          SizedBox(width: 16.0),
+          Expanded(
+            child: Text('Uploading ${(state.current as dynamic).name}...'),
+          ),
+        ],
+      );
     }
     if (_selectedFiles.isNotEmpty) {
       return Text('Use the Upload button to upload the files.');
