@@ -1,5 +1,6 @@
 * Action Items
 ** Low hanging fruit
+*** upload a sinble file and maybe get exception about progress value
 *** recents page should have tab key order for the input fields
 **** pressing tab should go from one text field to the next
 *** recents page: shift keys move focus to previous text field

@@ -8,6 +8,7 @@ import 'package:tanuki/features/browse/preso/bloc/all_locations_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_years_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
+import 'package:tanuki/features/browse/preso/bloc/asset_count_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/providers.dart';
 import 'package:tanuki/features/browse/preso/screens/asset_screen.dart';
 import 'package:tanuki/features/browse/preso/screens/home_screen.dart';
@@ -24,6 +25,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider<AssetCountBloc>(
+          create: (_) => BuildContextX(context).read(assetCountBlocProvider),
+        ),
         BlocProvider<AssetBrowserBloc>(
           create: (_) => BuildContextX(context).read(assetBrowserBlocProvider),
         ),
@@ -68,6 +72,7 @@ class _AttributeRefresher extends NavigatorObserver {
       // their state since the page we just left may have altered the data in
       // some manner.
       final context = navigator!.context;
+      BlocProvider.of<AssetCountBloc>(context).add(LoadAssetCount());
       BlocProvider.of<AllLocationsBloc>(context).add(LoadAllLocations());
       BlocProvider.of<AllTagsBloc>(context).add(LoadAllTags());
       BlocProvider.of<AllYearsBloc>(context).add(LoadAllYears());
