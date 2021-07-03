@@ -62,6 +62,9 @@ class Uploading<T extends Object> extends UploadFileState {
 
   @override
   List<Object> get props => [current, uploaded];
+
+  // There is always one active upload, plus those waiting.
+  int get active => pending.length + 1;
 }
 
 class Finished<T> extends UploadFileState {

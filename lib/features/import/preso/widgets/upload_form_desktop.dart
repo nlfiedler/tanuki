@@ -32,7 +32,7 @@ class _UploadFormState extends State<UploadForm> {
       return Text('Upload error: ' + state.message);
     }
     if (state is Uploading) {
-      var value = state.uploaded / (state.pending.length + state.uploaded);
+      var value = state.uploaded / (state.active + state.uploaded);
       return Row(
         children: [
           CircularProgressIndicator(value: value),
