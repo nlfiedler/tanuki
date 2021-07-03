@@ -47,6 +47,12 @@ class DateRangeSelectorForm extends StatefulWidget {
 
   @override
   _DateRangeSelectorFormState createState() {
+    if (years.isEmpty) {
+      return _DateRangeSelectorFormState(
+        firstDate: DateTime.utc(1920, 1, 1),
+        lastDate: DateTime.utc(2120, 1, 1),
+      );
+    }
     final firstYear = int.parse(years.first.label);
     final firstDate = DateTime.utc(firstYear, 1, 1);
     final lastYear = int.parse(years.last.label);
