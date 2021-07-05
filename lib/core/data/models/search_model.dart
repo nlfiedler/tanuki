@@ -175,7 +175,7 @@ class SearchResultModel extends SearchResult {
       'id': id,
       'filename': filename,
       'mimetype': mimetype,
-      'location': location.unwrapOr(''),
+      'location': location.toNullable(),
       'datetime': datetime.toIso8601String(),
     };
   }

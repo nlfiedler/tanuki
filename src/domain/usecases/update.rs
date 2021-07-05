@@ -109,7 +109,9 @@ fn merge_asset_input(asset: &mut Asset, input: AssetInput) {
         asset.tags = tags;
     }
     if let Some(filename) = input.filename {
-        asset.filename = filename;
+        if filename.len() > 0 {
+            asset.filename = filename;
+        }
     }
     if input.location.is_some() {
         // permit clearing the location value
@@ -132,8 +134,11 @@ fn merge_asset_input(asset: &mut Asset, input: AssetInput) {
     }
     // permit user to update/remove the custom date/time
     asset.user_date = input.datetime;
+    // do not overwrite media_type with null/blank values
     if let Some(mt) = input.media_type {
-        asset.media_type = mt.to_lowercase();
+        if mt.len() > 0 {
+            asset.media_type = mt.to_lowercase();
+        }
     }
 }
 
@@ -456,6 +461,44 @@ mod tests {
         assert_eq!(asset.location.unwrap(), "hawaii");
         assert!(asset.user_date.is_none());
         assert_eq!(asset.media_type, "image/jpeg");
+        assert_eq!(asset.filename, "fighting_kittens.jpg");
+    }
+
+    #[test]
+    fn test_merge_asset_input_no_clobber_blank() {
+        let mut asset = Asset {
+            key: "abc123".to_owned(),
+            checksum: "cafebabe".to_owned(),
+            filename: "fighting_kittens.jpg".to_owned(),
+            byte_length: 39932,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["cute".to_owned()],
+            import_date: Utc::now(),
+            caption: None,
+            location: Some("hawaii".to_owned()),
+            user_date: None,
+            original_date: None,
+            dimensions: None,
+        };
+        let input = AssetInput {
+            tags: vec![],
+            caption: Some("#kittens and #puppies @paris".to_owned()),
+            location: None,
+            datetime: None,
+            media_type: Some("".to_owned()),
+            filename: Some("".to_owned()),
+        };
+        // blank filename and media type should not overwrite record
+        merge_asset_input(&mut asset, input);
+        assert_eq!(asset.tags.len(), 3);
+        assert!(asset.tags.iter().any(|l| l == "cute"));
+        assert!(asset.tags.iter().any(|l| l == "kittens"));
+        assert!(asset.tags.iter().any(|l| l == "puppies"));
+        assert_eq!(asset.caption.unwrap(), "#kittens and #puppies @paris");
+        assert_eq!(asset.location.unwrap(), "hawaii");
+        assert!(asset.user_date.is_none());
+        assert_eq!(asset.media_type, "image/jpeg");
+        assert_eq!(asset.filename, "fighting_kittens.jpg");
     }
 
     #[test]

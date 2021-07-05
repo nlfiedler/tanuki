@@ -77,8 +77,8 @@ class AssetModel extends Asset {
       'mimetype': mimetype,
       'tags': tags,
       'userdate': userdate.mapOr((v) => v.toIso8601String(), null),
-      'caption': caption.unwrapOr(''),
-      'location': location.unwrapOr(''),
+      'caption': caption.toNullable(),
+      'location': location.toNullable(),
     };
   }
 }

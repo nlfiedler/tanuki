@@ -54,11 +54,11 @@ class AssetInputModel extends AssetInput {
   Map<String, dynamic> toJson() {
     return {
       'tags': tags,
-      'caption': caption.unwrapOr(''),
-      'location': location.unwrapOr(''),
+      'caption': caption.toNullable(),
+      'location': location.toNullable(),
       'datetime': datetime.mapOr((v) => v.toIso8601String(), null),
-      'mimetype': mimetype.unwrapOr(''),
-      'filename': filename.unwrapOr(''),
+      'mimetype': mimetype.toNullable(),
+      'filename': filename.toNullable(),
     };
   }
 }

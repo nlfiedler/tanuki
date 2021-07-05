@@ -1,13 +1,11 @@
 * Action Items
 ** Low hanging fruit
-*** recents page should have tab key order for the input fields
-**** pressing tab should go from one text field to the next
-*** recents page: shift keys move focus to previous text field
-**** does not always happen, difficult to make it stop when it does
-**** seems like backspace will also navigate backward
+*** need to repair production database
 *** unable to clear the before/after dates; form doesn't have a reset button?
 **** probably need to overlay our own ~close~ button to reset the field
 **** the date/time picker field already has has ~reset~ icon but does not appear
+*** should use =FocusTraversalGroup= to set tab order of bulk input text fields
+**** scrolling causes the order to get scrambled
 *** clicking on portrait avi(?) shows widened image and page does not scroll to show details
 *** preview of small images makes them large
 **** should instead only serve original size for smaller images
