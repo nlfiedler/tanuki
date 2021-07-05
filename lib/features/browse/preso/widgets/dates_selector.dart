@@ -76,6 +76,16 @@ class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
 
   @override
   Widget build(BuildContext context) {
+    // use the default first/last dates from flutter form builder unless the
+    // desired dates are outside of that range
+    var afterFirstDate = DateTime(1900);
+    var beforeLastDate = DateTime(2100);
+    if (firstDate.isBefore(afterFirstDate)) {
+      afterFirstDate = firstDate;
+    }
+    if (lastDate.isAfter(beforeLastDate)) {
+      beforeLastDate = lastDate;
+    }
     return BlocProvider.value(
       value: BlocProvider.of<abb.AssetBrowserBloc>(context),
       child: BlocBuilder<abb.AssetBrowserBloc, abb.AssetBrowserState>(
@@ -87,8 +97,10 @@ class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
                 Expanded(
                   child: FormBuilderDateTimePicker(
                     name: 'afterDate',
+                    helpText: 'Select earliest date',
                     format: DateFormat.yMd(),
                     inputType: InputType.date,
+                    firstDate: afterFirstDate,
                     decoration: const InputDecoration(labelText: 'After'),
                     onChanged: (DateTime? val) {
                       BlocProvider.of<abb.AssetBrowserBloc>(context)
@@ -96,11 +108,14 @@ class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
                     },
                   ),
                 ),
+                SizedBox(width: 8.0),
                 Expanded(
                   child: FormBuilderDateTimePicker(
                     name: 'beforeDate',
+                    helpText: 'Select latest date',
                     format: DateFormat.yMd(),
                     inputType: InputType.date,
+                    lastDate: beforeLastDate,
                     decoration: const InputDecoration(labelText: 'Before'),
                     onChanged: (DateTime? val) {
                       BlocProvider.of<abb.AssetBrowserBloc>(context)

@@ -1,9 +1,10 @@
 * Action Items
+** Repairs
+*** need to repair production database to fix missing media types
 ** Low hanging fruit
-*** need to repair production database
 *** unable to clear the before/after dates; form doesn't have a reset button?
-**** probably need to overlay our own ~close~ button to reset the field
-**** the date/time picker field already has has ~reset~ icon but does not appear
+**** split the before and after fields into separate forms so they can be reset individually
+**** use a =Stack= to overlay our own ~close~ button to reset the field
 *** should use =FocusTraversalGroup= to set tab order of bulk input text fields
 **** scrolling causes the order to get scrambled
 *** clicking on portrait avi(?) shows widened image and page does not scroll to show details
