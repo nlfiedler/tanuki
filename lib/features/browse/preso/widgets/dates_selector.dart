@@ -49,8 +49,8 @@ class DateRangeSelectorForm extends StatefulWidget {
   _DateRangeSelectorFormState createState() {
     if (years.isEmpty) {
       return _DateRangeSelectorFormState(
-        firstDate: DateTime.utc(1920, 1, 1),
-        lastDate: DateTime.utc(2120, 1, 1),
+        firstDate: DateTime.utc(1900),
+        lastDate: DateTime.utc(2100),
       );
     }
     final firstYear = int.parse(years.first.label);
@@ -78,8 +78,8 @@ class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
   Widget build(BuildContext context) {
     // use the default first/last dates from flutter form builder unless the
     // desired dates are outside of that range
-    var afterFirstDate = DateTime(1900);
-    var beforeLastDate = DateTime(2100);
+    var afterFirstDate = DateTime.utc(1900);
+    var beforeLastDate = DateTime.utc(2100);
     if (firstDate.isBefore(afterFirstDate)) {
       afterFirstDate = firstDate;
     }
@@ -101,7 +101,17 @@ class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
                     format: DateFormat.yMd(),
                     inputType: InputType.date,
                     firstDate: afterFirstDate,
-                    decoration: const InputDecoration(labelText: 'After'),
+                    decoration: InputDecoration(
+                      labelText: 'After',
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.clear),
+                        onPressed: () {
+                          BlocProvider.of<abb.AssetBrowserBloc>(context)
+                              .add(abb.SetAfterDate(date: null));
+                          _fbKey.currentState?.fields['afterDate']?.reset();
+                        },
+                      ),
+                    ),
                     onChanged: (DateTime? val) {
                       BlocProvider.of<abb.AssetBrowserBloc>(context)
                           .add(abb.SetAfterDate(date: val));
@@ -116,7 +126,17 @@ class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
                     format: DateFormat.yMd(),
                     inputType: InputType.date,
                     lastDate: beforeLastDate,
-                    decoration: const InputDecoration(labelText: 'Before'),
+                    decoration: InputDecoration(
+                      labelText: 'Before',
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.clear),
+                        onPressed: () {
+                          BlocProvider.of<abb.AssetBrowserBloc>(context)
+                              .add(abb.SetBeforeDate(date: null));
+                          _fbKey.currentState?.fields['beforeDate']?.reset();
+                        },
+                      ),
+                    ),
                     onChanged: (DateTime? val) {
                       BlocProvider.of<abb.AssetBrowserBloc>(context)
                           .add(abb.SetBeforeDate(date: val));
