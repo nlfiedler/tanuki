@@ -34,7 +34,9 @@ lru = "0.6.0"
 mime = "0.3.16"
 mime_guess = "2.0.3"
 mokuroku = "2.5.0"
-mp4 = "0.8"
+# c.f. https://github.com/alfg/mp4-rust/issues/43
+# mp4 = "0.8"
+mp4 = { git = "https://github.com/nlfiedler/mp4rs.git", branch = "assertions" }
 riff = "1.0.0"
 rocksdb = "0.16.0"
 rusty_ulid = "0.11.0"

@@ -48,6 +48,9 @@ impl Diagnose {
                         diagnoses.push(Diagnosis::new(&asset_id, ErrorCode::Access));
                     }
                 }
+                if asset.filename.is_empty() {
+                    diagnoses.push(Diagnosis::new(&asset_id, ErrorCode::Filename));
+                }
                 // check media_type and original_date
                 if let Ok(mime_type) = asset.media_type.parse::<mime::Mime>() {
                     if let Ok(original) = get_original_date(&mime_type, &blob_path) {
@@ -122,6 +125,28 @@ impl Diagnose {
             }
         } else {
             warn!("error getting blob path: {}", asset_id);
+        }
+    }
+
+    // Replace the incorrect media type value in the asset record.
+    fn fix_filename(&self, asset_id: &str) {
+        if let Ok(mut asset) = self.records.get_asset(&asset_id) {
+            let mut fixed = false;
+            if let Ok(vector) = base64::decode(asset_id) {
+                if let Ok(string) = str::from_utf8(&vector) {
+                    let filepath = Path::new(string);
+                    if let Some(filename) = filepath.file_name() {
+                        asset.filename = filename.to_string_lossy().into();
+                        let _ = self.records.put_asset(&asset);
+                        fixed = true;
+                    }
+                }
+            }
+            if !fixed {
+                warn!("could not repair filename: {}", asset_id);
+            }
+        } else {
+            warn!("error reading database record: {}", asset_id);
         }
     }
 
@@ -237,6 +262,7 @@ impl super::UseCase<Vec<Diagnosis>, Params> for Diagnose {
                     ErrorCode::Access => info!("cannot fix access error: {}", issue.asset_id),
                     ErrorCode::Digest => self.fix_checksum(&issue.asset_id),
                     ErrorCode::Size => self.fix_byte_length(&issue.asset_id),
+                    ErrorCode::Filename => self.fix_filename(&issue.asset_id),
                     ErrorCode::MediaType => self.fix_media_type(&issue.asset_id),
                     ErrorCode::OriginalDate => self.fix_original_date(&issue.asset_id),
                     ErrorCode::Extension => (),
@@ -318,6 +344,8 @@ pub enum ErrorCode {
     MediaType,
     /// Asset record original_date property missing or incorrect.
     OriginalDate,
+    /// Missing original filename.
+    Filename,
     /// Asset identifier/filename extension missing or incorrect.
     Extension,
 }
@@ -422,6 +450,107 @@ mod tests {
     }
 
     #[test]
+    fn test_diagnose_filename_mimetype() {
+        // arrange
+        let asset1_id = "dGVzdHMvZml4dHVyZXMvZmlnaHRpbmdfa2l0dGVucy5qcGc=";
+        let asset_ids = vec![asset1_id.to_owned()];
+        let digest1 = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
+        let asset1 = Asset {
+            key: asset1_id.to_owned(),
+            checksum: digest1.to_owned(),
+            filename: String::from(""),
+            byte_length: 39932,
+            media_type: String::from(""),
+            tags: vec!["kitten".to_owned()],
+            import_date: Utc::now(),
+            caption: None,
+            location: None,
+            user_date: None,
+            original_date: None,
+            dimensions: None,
+        };
+        let asset1_clone = asset1.clone();
+        let fixed_asset = Asset {
+            key: asset1_id.to_owned(),
+            checksum: digest1.to_owned(),
+            filename: "fighting_kittens.jpg".to_owned(),
+            byte_length: 39932,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["kitten".to_owned()],
+            import_date: Utc::now(),
+            caption: None,
+            location: None,
+            user_date: None,
+            original_date: None,
+            dimensions: None,
+        };
+        let mut records = MockRecordRepository::new();
+        records
+            .expect_all_assets()
+            .returning(move || Ok(asset_ids.clone()));
+        records
+            .expect_get_asset()
+            .with(eq(asset1_id))
+            .returning(move |_| Ok(asset1_clone.clone()));
+        let mut blobs = MockBlobRepository::new();
+        blobs
+            .expect_blob_path()
+            .with(eq(asset1_id))
+            .returning(|_| Ok(PathBuf::from("tests/fixtures/fighting_kittens.jpg")));
+        // act
+        let usecase = Diagnose::new(Box::new(records), Box::new(blobs));
+        let params: Params = Default::default();
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let diagnoses = result.unwrap();
+        assert_eq!(diagnoses.len(), 2);
+        assert_eq!(diagnoses[0].asset_id, asset1_id);
+        assert_eq!(diagnoses[0].error_code, ErrorCode::Filename);
+        assert_eq!(diagnoses[1].asset_id, asset1_id);
+        assert_eq!(diagnoses[1].error_code, ErrorCode::MediaType);
+
+        // reset all expectations
+        let asset1_id = "dGVzdHMvZml4dHVyZXMvZmlnaHRpbmdfa2l0dGVucy5qcGc=";
+        let asset_ids = vec![asset1_id.to_owned()];
+        let mut records = MockRecordRepository::new();
+        records
+            .expect_all_assets()
+            .returning(move || Ok(asset_ids.clone()));
+        let mut get_asset_count = 0;
+        records
+            .expect_get_asset()
+            .with(eq(asset1_id))
+            .returning(move |_| {
+                get_asset_count += 1;
+                if get_asset_count > 1 {
+                    Ok(fixed_asset.clone())
+                } else {
+                    Ok(asset1.clone())
+                }
+            });
+        records
+            .expect_put_asset()
+            .withf(move |asset| asset.key == asset1_id)
+            .returning(|_| Ok(()));
+        let mut blobs = MockBlobRepository::new();
+        blobs
+            .expect_blob_path()
+            .with(eq(asset1_id))
+            .returning(|_| Ok(PathBuf::from("tests/fixtures/fighting_kittens.jpg")));
+
+        // fix the issue(s)
+        let usecase = Diagnose::new(Box::new(records), Box::new(blobs));
+        let mut params: Params = Default::default();
+        params.repair = true;
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let diagnoses = result.unwrap();
+        assert_eq!(diagnoses.len(), 0);
+    }
+
+    #[test]
     fn test_diagnose_extension() {
         // arrange
         let asset1_id = "dGVzdHMvZml4dHVyZXMvZmlnaHRpbmdfa2l0dGVucy5qcGc=";
@@ -468,20 +597,13 @@ mod tests {
 
         // reset all expectations
         let asset1_id = "dGVzdHMvZml4dHVyZXMvZmlnaHRpbmdfa2l0dGVucy5qcGc=";
-        let asset_ids = vec![asset1_id.to_owned()];
         let new_asset_id = "dGVzdHMvZml4dHVyZXMvZmlnaHRpbmdfa2l0dGVucy5tcDQ=";
         let new_asset_ids = vec![new_asset_id.to_owned()];
         let new_asset = asset1_clone.clone();
         let mut records = MockRecordRepository::new();
-        let mut all_assets_count = 0;
-        records.expect_all_assets().returning(move || {
-            all_assets_count += 1;
-            if all_assets_count > 0 {
-                Ok(new_asset_ids.clone())
-            } else {
-                Ok(asset_ids.clone())
-            }
-        });
+        records
+            .expect_all_assets()
+            .returning(move || Ok(new_asset_ids.clone()));
         records
             .expect_get_asset()
             .with(eq(asset1_id))

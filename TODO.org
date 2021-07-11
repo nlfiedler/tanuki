@@ -1,6 +1,4 @@
 * Action Items
-** Repairs
-*** need to repair production database to fix missing media types
 ** Low hanging fruit
 *** should use =FocusTraversalGroup= to set tab order of bulk input text fields
 **** scrolling causes the order to get scrambled

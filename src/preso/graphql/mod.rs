@@ -307,6 +307,8 @@ pub enum ErrorCode {
     MediaType,
     /// Asset record original_date property missing or incorrect.
     OriginalDate,
+    /// Missing original filename.
+    Filename,
     /// Asset identifier/filename extension missing or incorrect.
     Extension,
 }
@@ -322,6 +324,7 @@ impl From<crate::domain::usecases::diagnose::ErrorCode> for ErrorCode {
             crate::domain::usecases::diagnose::ErrorCode::Digest => ErrorCode::Digest,
             crate::domain::usecases::diagnose::ErrorCode::MediaType => ErrorCode::MediaType,
             crate::domain::usecases::diagnose::ErrorCode::OriginalDate => ErrorCode::OriginalDate,
+            crate::domain::usecases::diagnose::ErrorCode::Filename => ErrorCode::Filename,
             crate::domain::usecases::diagnose::ErrorCode::Extension => ErrorCode::Extension,
         }
     }

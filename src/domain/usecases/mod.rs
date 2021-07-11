@@ -334,6 +334,18 @@ mod tests {
         assert_eq!(date.month(), 9);
         assert_eq!(date.day(), 14);
 
+        // MP4 file with out-of-order tracks
+        // (currently mp4-rust does not handle this well)
+        let filename = "./tests/fixtures/ooo_tracks.mp4";
+        let mt: mime::Mime = "video/mp4".parse().unwrap();
+        let filepath = Path::new(filename);
+        let actual = get_original_date(&mt, filepath);
+        assert!(actual.is_err());
+        // let date = actual.unwrap();
+        // assert_eq!(date.year(), 2016);
+        // assert_eq!(date.month(), 9);
+        // assert_eq!(date.day(), 5);
+
         // RIFF-encoded AVI video file
         let filename = "./tests/fixtures/MVI_0727.AVI";
         let mt: mime::Mime = "video/x-msvideo".parse().unwrap();
