@@ -35,6 +35,38 @@ class SelectLocations extends AssetBrowserEvent {
   });
 }
 
+class SelectYear extends AssetBrowserEvent {
+  final int? year;
+
+  SelectYear({
+    required this.year,
+  });
+}
+
+/// Seasons akin to anime "seasons", just a convenient specifier, not at all
+/// related to the weather or astronomy.
+enum Season {
+  /// January to March
+  spring,
+
+  /// April to June
+  summer,
+
+  /// July to September
+  autumn,
+
+  /// October to December
+  winter,
+}
+
+class SelectSeason extends AssetBrowserEvent {
+  final Season? season;
+
+  SelectSeason({
+    required this.season,
+  });
+}
+
 class SetBeforeDate extends AssetBrowserEvent {
   final DateTime? date;
 
@@ -84,8 +116,10 @@ class Loaded extends AssetBrowserState {
   final QueryResults results;
   final List<String> selectedTags;
   final List<String> selectedLocations;
-  final DateTime? beforeDate;
-  final DateTime? afterDate;
+  final int? selectedYear;
+  final Season? selectedSeason;
+  final DateTime? beforeDate = null;
+  final DateTime? afterDate = null;
   final int pageSize;
   final int pageNumber;
   final int lastPage;
@@ -95,8 +129,8 @@ class Loaded extends AssetBrowserState {
     required this.pageNumber,
     required tags,
     required locations,
-    required this.beforeDate,
-    required this.afterDate,
+    required this.selectedYear,
+    required this.selectedSeason,
     required this.lastPage,
     required this.pageSize,
   })  : selectedTags = List.unmodifiable(tags),
@@ -107,8 +141,7 @@ class Loaded extends AssetBrowserState {
         results,
         selectedTags,
         selectedLocations,
-        beforeDate ?? 'none',
-        afterDate ?? 'none',
+        selectedYear ?? 0,
         pageNumber,
       ];
 }
@@ -130,8 +163,8 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
   final QueryAssets usecase;
   List<String> tags = [];
   List<String> locations = [];
-  DateTime? beforeDate;
-  DateTime? afterDate;
+  int? year;
+  Season? season;
   int pageSize = 18;
   int pageNumber = 1;
 
@@ -155,15 +188,16 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
         pageNumber = 1;
         yield* _loadAssets();
       }
-    } else if (event is SetBeforeDate) {
+    } else if (event is SelectYear) {
       if (state is Loaded) {
-        beforeDate = event.date;
+        year = event.year;
         pageNumber = 1;
         yield* _loadAssets();
       }
-    } else if (event is SetAfterDate) {
+    } else if (event is SelectSeason) {
       if (state is Loaded) {
-        afterDate = event.date;
+        season = event.season;
+        year ??= DateTime.now().year;
         pageNumber = 1;
         yield* _loadAssets();
       }
@@ -182,13 +216,41 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
   }
 
   Option<DateTime> getFirstDate() {
-    // start of the date range (after the "after")
-    return Option.from(afterDate).map((t) => t.toUtc());
+    if (year != null) {
+      if (season != null) {
+        switch (season) {
+          case Season.summer:
+            return Option.some(DateTime.utc(year!, 4, 1));
+          case Season.autumn:
+            return Option.some(DateTime.utc(year!, 7, 1));
+          case Season.winter:
+            return Option.some(DateTime.utc(year!, 10, 1));
+          default:
+            break;
+        }
+      }
+      return Option.some(DateTime.utc(year!));
+    }
+    return Option.none();
   }
 
   Option<DateTime> getLastDate() {
-    // end of the date range (before the "before")
-    return Option.from(beforeDate).map((t) => t.toUtc());
+    if (year != null) {
+      if (season != null) {
+        switch (season) {
+          case Season.spring:
+            return Option.some(DateTime.utc(year!, 4, 1));
+          case Season.summer:
+            return Option.some(DateTime.utc(year!, 7, 1));
+          case Season.autumn:
+            return Option.some(DateTime.utc(year!, 10, 1));
+          default:
+            break;
+        }
+      }
+      return Option.some(DateTime.utc(year! + 1));
+    }
+    return Option.none();
   }
 
   Stream<AssetBrowserState> _loadAssets() async* {
@@ -213,8 +275,8 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
           pageNumber: lastPage > 0 ? pageNumber : 0,
           tags: tags,
           locations: locations,
-          beforeDate: beforeDate,
-          afterDate: afterDate,
+          selectedYear: year,
+          selectedSeason: season,
           lastPage: lastPage,
           pageSize: pageSize,
         );

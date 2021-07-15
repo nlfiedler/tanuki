@@ -28,7 +28,11 @@ class DatesSelector extends StatelessWidget {
             return Text('Error: ' + state.message);
           }
           if (state is Loaded) {
-            return DateRangeSelectorForm(years: state.years);
+            final List<Year> years = List.from(state.years);
+            // sort in reverse chronological order for selection convenience
+            // (most recent years near the top of the dropdown menu)
+            years.sort((a, b) => b.value.compareTo(a.value));
+            return DateRangeSelectorForm(years: years);
           }
           return Center(child: CircularProgressIndicator());
         },
@@ -47,99 +51,96 @@ class DateRangeSelectorForm extends StatefulWidget {
 
   @override
   _DateRangeSelectorFormState createState() {
-    if (years.isEmpty) {
-      return _DateRangeSelectorFormState(
-        firstDate: DateTime.utc(1900),
-        lastDate: DateTime.utc(2100),
-      );
-    }
-    final firstYear = int.parse(years.first.label);
-    final firstDate = DateTime.utc(firstYear, 1, 1);
-    final lastYear = int.parse(years.last.label);
-    final lastDate = DateTime.utc(lastYear, 12, 31);
-    return _DateRangeSelectorFormState(
-      firstDate: firstDate,
-      lastDate: lastDate,
-    );
+    return _DateRangeSelectorFormState();
   }
 }
 
 class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
-  final DateTime firstDate;
-  final DateTime lastDate;
 
-  _DateRangeSelectorFormState({
-    required this.firstDate,
-    required this.lastDate,
-  }) : super();
+  Year? getSelectedYear(abb.Loaded state) {
+    if (state.selectedYear != null) {
+      final index = widget.years.indexWhere(
+        (y) => y.value == state.selectedYear,
+      );
+      if (index >= 0) {
+        return widget.years[index];
+      }
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
-    // use the default first/last dates from flutter form builder unless the
-    // desired dates are outside of that range
-    var afterFirstDate = DateTime.utc(1900);
-    var beforeLastDate = DateTime.utc(2100);
-    if (firstDate.isBefore(afterFirstDate)) {
-      afterFirstDate = firstDate;
-    }
-    if (lastDate.isAfter(beforeLastDate)) {
-      beforeLastDate = lastDate;
-    }
     return BlocProvider.value(
       value: BlocProvider.of<abb.AssetBrowserBloc>(context),
-      child: BlocBuilder<abb.AssetBrowserBloc, abb.AssetBrowserState>(
+      child: BlocConsumer<abb.AssetBrowserBloc, abb.AssetBrowserState>(
+        listener: (context, state) {
+          if (state is abb.Loaded) {
+            // Consider if the chosen year was implicitly changed by the bloc,
+            // as will happen if the season is selected before the year.
+            final selectedYear = getSelectedYear(state);
+            if (selectedYear != null &&
+                _fbKey.currentState?.fields['year']?.value != selectedYear) {
+              _fbKey.currentState?.fields['year']?.didChange(selectedYear);
+            }
+          }
+        },
         builder: (context, state) {
           return FormBuilder(
             key: _fbKey,
             child: Row(
               children: [
                 Expanded(
-                  child: FormBuilderDateTimePicker(
-                    name: 'afterDate',
-                    helpText: 'Select earliest date',
-                    format: DateFormat.yMd(),
-                    inputType: InputType.date,
-                    firstDate: afterFirstDate,
+                  child: FormBuilderDropdown(
+                    name: 'year',
                     decoration: InputDecoration(
-                      labelText: 'After',
-                      suffixIcon: IconButton(
-                        icon: Icon(Icons.clear),
-                        onPressed: () {
-                          BlocProvider.of<abb.AssetBrowserBloc>(context)
-                              .add(abb.SetAfterDate(date: null));
-                          _fbKey.currentState?.fields['afterDate']?.reset();
-                        },
-                      ),
+                      labelText: 'Year',
                     ),
-                    onChanged: (DateTime? val) {
+                    allowClear: true,
+                    hint: Text('Any'),
+                    items: widget.years
+                        .map((year) => DropdownMenuItem(
+                              value: year,
+                              child: Text(year.label),
+                            ))
+                        .toList(),
+                    onChanged: (Year? val) {
                       BlocProvider.of<abb.AssetBrowserBloc>(context)
-                          .add(abb.SetAfterDate(date: val));
+                          .add(abb.SelectYear(year: val?.value));
                     },
                   ),
                 ),
-                SizedBox(width: 8.0),
+                SizedBox(width: 16.0),
                 Expanded(
-                  child: FormBuilderDateTimePicker(
-                    name: 'beforeDate',
-                    helpText: 'Select latest date',
-                    format: DateFormat.yMd(),
-                    inputType: InputType.date,
-                    lastDate: beforeLastDate,
+                  child: FormBuilderDropdown(
+                    name: 'season',
                     decoration: InputDecoration(
-                      labelText: 'Before',
-                      suffixIcon: IconButton(
-                        icon: Icon(Icons.clear),
-                        onPressed: () {
-                          BlocProvider.of<abb.AssetBrowserBloc>(context)
-                              .add(abb.SetBeforeDate(date: null));
-                          _fbKey.currentState?.fields['beforeDate']?.reset();
-                        },
-                      ),
+                      labelText: 'Season',
                     ),
-                    onChanged: (DateTime? val) {
+                    allowClear: true,
+                    hint: Text('Any'),
+                    items: [
+                      DropdownMenuItem(
+                        value: abb.Season.spring,
+                        child: Text('Jan-Mar'),
+                      ),
+                      DropdownMenuItem(
+                        value: abb.Season.summer,
+                        child: Text('Apr-Jun'),
+                      ),
+                      DropdownMenuItem(
+                        value: abb.Season.autumn,
+                        child: Text('Jul-Sep'),
+                      ),
+                      DropdownMenuItem(
+                        value: abb.Season.winter,
+                        child: Text('Oct-Dec'),
+                      ),
+                    ],
+                    onChanged: (abb.Season? val) {
                       BlocProvider.of<abb.AssetBrowserBloc>(context)
-                          .add(abb.SetBeforeDate(date: val));
+                          .add(abb.SelectSeason(season: val));
                     },
                   ),
                 ),

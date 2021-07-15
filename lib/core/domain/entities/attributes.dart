@@ -55,24 +55,24 @@ class Tag extends Equatable implements Comparable<Tag> {
 class Year extends Equatable implements Comparable<Year> {
   // Label for the given attribute (e.g. "2019").
   final String label;
+  // Numeric value of the year (e.g. 2019).
+  final int value;
   // Count of assets with this attribute.
   final int count;
 
   Year({
     required this.label,
     required this.count,
-  });
+  }) : value = int.parse(label);
 
   @override
-  List<Object> get props => [label, count];
+  List<Object> get props => [value, count];
 
   @override
   bool get stringify => true;
 
   @override
   int compareTo(Year other) {
-    final parsedLabel = int.parse(label);
-    final parsedOther = int.parse(other.label);
-    return parsedLabel.compareTo(parsedOther);
+    return value.compareTo(other.value);
   }
 }

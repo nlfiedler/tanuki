@@ -1,28 +1,46 @@
 * Action Items
-** Low hanging fruit
-*** should use =FocusTraversalGroup= to set tab order of bulk input text fields
-**** scrolling causes the order to get scrambled
-*** clicking on portrait avi(?) shows widened image and page does not scroll to show details
-*** preview of small images makes them large
-**** should instead only serve original size for smaller images
-*** graphql errors are handled poorly everywhere
-*** too many open files
-**** happens when uploading numerous files
-**** seems to hit RocksDB the hardest
-**** error message
-#+BEGIN_SRC
-thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Error {
- message: "IO error: While open a file for appending: tmp/rocksdb/000733.sst: Too many open files"
-}', src/main.rs:88:71
-#+END_SRC
-*** Consider using =dart:html= to get the current URL vs setting at build time
-**** GraphQL client needs the full address of the server
-** Quick import directly from the phone, tablet
+** Import from web-enabled handheld device
 *** Ensure web interface works well for small screens
 **** Flutter Folio example app that works well for all screen sizes
 ***** c.f. https://flutter.gskinner.com
 *** Support easy import of photos from phone collection via web interface
-** Interface Redesign
+*** Look for package that enables user to select photos to upload
+**** e.g. =image_picker= or =file_picker= packages
+** Better tagging of recent imports
+*** show paginated gallery view of recent imports
+*** user selects multiple assets and applies tags and locations to them
+*** click on an asset to enter a caption in place (without leaving the gallery view)
+*** hover over an image to show a larger version
+*** hover over a video to start playing it
+** Gallery display modes
+*** different modes of display
+**** grid of just images, maybe 180x180 (a la Apple Photos)
+**** grid of images with caption info (300x300, shows title, location, date) (a la PhotoPrism)
+**** list of rows, tiny thumbnail (96x96), caption, location, date
+**** material has several ~view~ icons that may be appropriate
+*** show additional details on mouse hover
+** Better search controls
+*** Simplified controls with selected attributes shown separately
+**** See anilist.co search page (https://anilist.co/search/anime)
+***** search text input field
+***** selectors for genre, year, season, format
+***** selections are shown below the row of selectors (prefixed by ~tag~ icon)
+***** far right has view option buttons (list, grid, etc)
+***** settings-like icon on far right displays dialog with advanced options
+**** Text input field with completion of tags and locations
+**** Dropdowns to select tag, location, year, season
+***** Can only select a single year
+***** Can only select a single season (i.e. ~Jan-Mar~, ~Apr-Jun~, ~Jul-Sep~, ~Oct-Dec~)
+***** With only year, search within the entire calendar year
+***** With only season, do not apply any date range filter
+***** With year + season, search that year narrowed to the season
+**** Selections are shown below the row of selectors as raised buttons
+***** Mousing over selection shows a ~delete~ icon
+***** Mousing over the row shows a "Clear All" button
+** Deployment issues
+*** Consider using =dart:html= to get the current URL vs setting at build time
+**** GraphQL client needs the full address of the server
+** Interface improvements
 *** reference: https://flutter.github.io/samples/
 *** Thumbnail Serving Strategy
 **** the frontend can use the image dimensions to compute the aspect ratio
@@ -63,36 +81,12 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 ***** when fetching a new page, the page widget would show a progress indicator
 ***** the "dropped" pages would be changed to consist of placeholders to free memory
 **** using carousel style navigation arrows?
-*** quick import
-**** user selects multiple assets and applies tags and locations to them
-**** click on an asset to enter a caption in place (without leaving the gallery view)
-**** recents page: hover over an asset to show a larger version
-***** for image, expand temporarily in place
-***** for video, start playing it
-*** image gallery display
-**** different modes of display
-***** grid of just images, maybe 180x180 (a la Apple Photos)
-***** grid of images with caption info (300x300, shows title, location, date) (a la PhotoPrism)
-***** list of rows, tiny thumbnail (96x96), title, location, date, likes
-***** material has several ~view~ icons that may be appropriate
-**** show selectors for months of the year to jump to that time range
-***** eventually this selector needs to consider the sort field and order
-***** could use a navigation rail for this (https://pub.dev/packages/navigation_rail)
-**** show additional details on mouse hover
-**** button in corner of thumbnail to select assets to edit, download, etc
-***** use =Stack= and =Align= to put a floating button in the corner
-***** c.f. example in the =video_player= package
 *** asset detail page
 **** display the date and caption prominently
-**** display the other details using a smaller format
+**** display the other details using a smaller font
 **** seems popular to show the gallery items as small thumbnails along the top (horizontally scrollable)
 **** have chevron buttons on both sides to navigate through gallery items (e.g. "lightbox")
-**** display location as a city/country pair
 **** display select information from EXIF metadata (e.g. camera)
-**** add a button to download the raw asset
-*** screen for showing all tags, locations, years, with count values
-**** selecting a tag or location offers a rename function
-**** selecting multiple tags/locations offers option to remove from all assets
 *** quick editing on browse page
 **** use =ExpansionPanel= for thumbnail caption that allows editing common fields
 *** navigation between sceens
@@ -117,6 +111,15 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 *** can use =DataTable= to display labeled data (like asset details, metadata)
 *** use pointer enter/exit events to start playing a video in place
 ** Known Issues
+*** clicking on portrait avi(?) shows widened image and page does not scroll to show details
+*** preview of small images makes them large; should serve original size for smaller images
+*** graphql errors are handled poorly everywhere
+*** RocksDB fails with ~too many open files~ when uploading numerous files
+#+BEGIN_SRC
+thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Error {
+ message: "IO error: While open a file for appending: tmp/rocksdb/000733.sst: Too many open files"
+}', src/main.rs:88:71
+#+END_SRC
 *** error: text input is not attached
 **** filed https://github.com/danvick/flutter_chips_input/issues/92
 **** cause 1: clearing all selected attributes
@@ -151,6 +154,10 @@ Recognizer:
 #+end_src
 *** filter input chips cause exception in the console with ~Tab~ key
 **** c.f. https://github.com/danvick/flutter_form_builder/issues/703
+** Attribute management
+*** screen for showing all tags, locations, years, with count values
+**** selecting a tag or location offers a rename function
+**** selecting multiple tags/locations offers option to remove from all assets
 ** Bulk edit
 *** need to set the custom date on many assets at once
 *** Short term solution akin to perkeep/photoprism web interface
@@ -301,8 +308,6 @@ include it in the database records.
 ** Mobile web support
 *** Progressive Web App support in Flutter is coming as of 2020/04
 *** Use PWA to get app-like behavior on mobile devices
-*** Look for package that enables user to select photos to upload
-**** e.g. =image_picker= or =file_picker= packages
 ** Desktop app
 *** macOS: cocoapods and M1 support is pending a bug fix
 **** c.f. https://github.com/CocoaPods/CocoaPods/issues/9907
