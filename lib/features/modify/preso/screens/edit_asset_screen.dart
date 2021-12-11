@@ -141,8 +141,8 @@ class _AssetEditFormState extends State<AssetEditForm> {
               icon: Icon(Icons.label),
               labelText: 'Tags',
             ),
-            valueTransformer: (text) {
-              final List<String> tags = text.split(',');
+            valueTransformer: (String? text) {
+              final List<String> tags = text?.split(',') ?? [];
               return List.of(
                 tags.map((e) => e.trim()).where((e) => e.isNotEmpty),
               );

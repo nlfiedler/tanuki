@@ -156,8 +156,8 @@ class _PageInputFormState extends State<PageInputForm> {
                   FormBuilderValidators.min(context, 1),
                   FormBuilderValidators.max(context, widget.lastPage),
                 ]),
-                valueTransformer: (text) {
-                  return int.tryParse(text);
+                valueTransformer: (String? text) {
+                  return int.tryParse(text ?? '1');
                 },
                 onSubmitted: (text) {
                   submitPageInput();
