@@ -7,11 +7,56 @@
 *** Look for package that enables user to select photos to upload
 **** e.g. =image_picker= or =file_picker= packages
 ** Better tagging of recent imports
-*** show paginated gallery view of recent imports
-*** user selects multiple assets and applies tags and locations to them
-*** click on an asset to enter a caption in place (without leaving the gallery view)
+*** design objectives
+**** save time when applying similar tags to lots of assets
+**** show paginated gallery view of recent imports
+**** user selects multiple assets and applies tags and locations to them
+**** consider how controls should look and operate on a tablet
+*** perkeep-style multi-selection with editing
+**** description of perkeep behavior
+***** user clicks on selection button overlay on asset thumbnail
+***** sidebar appears (image gallery shrinks to accomodate)
+***** shows superset of all tags on all selected assets
+***** indicates those tags that are on _all_ selected assets
+***** clicking on a tag of a subset of selected assets will apply it to all selected assets
+***** tags can be removed via ~delete~ button attached to tag
+**** drawbacks of this approach
+***** this method is tedious with lots of assets needing tagging
+***** you need to keep track of which ones you've finished processing since there is no other indication
+*** design proposal
+**** input fields placed above image gallery, like search page
+**** input fields disabled until one or more assets are selected
+**** input fields are chip inputs with dropdown, like search page
+***** be sure to allow more than 10 chips for tags, sometimes have a bunch
+**** can type in new tags and locations (assuming w/o immediate commit)
+***** need to update list of tags and locations, rebuild dropdowns, chip inputs
+***** probably need to use =StatefulWidget= and change its state to cause a rebuild
+**** selecting tags and location will apply them to all selected assets
+**** allow only one (or zero) locations at a time
+**** deleting the tag/location chip will remove that information from selected assets
+*** TODO start by building a prototype
+**** look at the source for =ChipsInput= to see how text is being handled
+**** search =ChipsInput= issues for any hint of allowing chip creation
+**** =onChanged()= is called for each complete chip input, but not free-form text
+**** anything can be entered, but does not become a chip automatically
+**** seems like suggestions list does not appear without some help
+**** =ChipsInput.allowChipEditing= allows backspace on chip to edit the text again
+*** implementation considerations
+**** BLoC for managing recents page
+***** track selected assets
+***** track newly added tags and locations prior to committing
+***** Q: how will bloc know which tags/locations are new?
+**** lazy apply of updates to avoid frequent update of indices
+***** that is, updating the assets with each tag addition/deletion would cause the indices to be rebuilt
 *** hover over an image to show a larger version
 *** hover over a video to start playing it
+** Add date order button on gallery (ascending/descending)
+*** the GraphQL operation supports sorting, should use it for something
+** Secondary index performance
+*** When doing the bulk update, need to use a bulk update operation to avoid building the index repeatedly
+** Possible poor use of flutter
+*** TODO Evaluate use of =StatefulWidget= to ensure correctness
+**** e.g. does =TagSelectorForm= really need to be a stateful widget?
 ** Gallery display modes
 *** different modes of display
 **** grid of just images, maybe 180x180 (a la Apple Photos)
@@ -19,6 +64,16 @@
 **** list of rows, tiny thumbnail (96x96), caption, location, date
 **** material has several ~view~ icons that may be appropriate
 *** show additional details on mouse hover
+** Lightbox style asset browsing
+*** Q: would this be a separate screen from the asset details?
+*** show large image (scaled to fit?) with date and caption and/or location
+**** select from date, filename, tags, location, caption to make up a "description"
+**** use whatever fields are not blank to make up a decent amount of text
+*** show chevron arrows on left and right to navigate among search results
+*** controls appear when mouse moves over asset display, then fade away
+** Quick edit without leaving gallery page
+*** On-hover button to display modal to edit certain fields
+*** Clicking on asset (i.e. not the button) displays details page
 ** Better search controls
 *** Simplified controls with selected attributes shown separately
 **** See anilist.co search page (https://anilist.co/search/anime)
@@ -84,8 +139,6 @@
 *** asset detail page
 **** display the date and caption prominently
 **** display the other details using a smaller font
-**** seems popular to show the gallery items as small thumbnails along the top (horizontally scrollable)
-**** have chevron buttons on both sides to navigate through gallery items (e.g. "lightbox")
 **** display select information from EXIF metadata (e.g. camera)
 *** quick editing on browse page
 **** use =ExpansionPanel= for thumbnail caption that allows editing common fields
@@ -100,9 +153,6 @@
 **** many screens/widgets just display a message without any means of recovery
 **** see any of the widgets using bloc providers and how they become useless upon error
 **** flutter allows for a custom error handler (i.e. override the ugly red screen)
-*** timeline style display for all assets
-**** without any selectors, just show most recent going back in time
-**** c.f. https://pub.dev/packages/flutter_timeline
 *** navigation rail for filtering gallery view
 **** c.f. https://pub.dev/packages/navigation_rail
 **** maybe selectors for "portrait", "selfie", "screen shots"
@@ -110,6 +160,10 @@
 *** tags in caption could be "gesture sensitive" (i.e. clickable) to show assets with that tag
 *** can use =DataTable= to display labeled data (like asset details, metadata)
 *** use pointer enter/exit events to start playing a video in place
+** Timeline style display for all assets
+*** without any selectors, just show most recent going back in time
+*** c.f. https://pub.dev/packages/flutter_timeline
+*** PhotoPrism has a ~calendar~ view that shows months of years in random order with a (random?) thumbnail
 ** Known Issues
 *** clicking on portrait avi(?) shows widened image and page does not scroll to show details
 *** preview of small images makes them large; should serve original size for smaller images
@@ -187,6 +241,8 @@ Recognizer:
 *** TODO Add support for searching by mimetype
 *** TODO Begin search when user pauses typing
 **** Use =debounceTime= operator in RxDart with BLoC state for this
+*** TODO Compute Levenshtein distance when comparing strings
+**** that is, try to adjust for misspells and minor variations
 *** TODO Support advanced queries using Google-style operators
 **** c.f. https://support.google.com/websearch/answer/2466433?hl=en
 **** move perkeep style query support from mujina to tanuki
@@ -499,6 +555,7 @@ include it in the database records.
 **** Consider if using GitLab (in a container) would be helpful
 ***** c.f. https://docs.gitlab.com/omnibus/docker/
 ** Architecture Review
+*** Alternative to actix might be axum (https://crates.io/crates/axum)
 *** Alternative to running HTTP server
 **** Use a socket file
 **** Link Dart code to Rust using FFI
