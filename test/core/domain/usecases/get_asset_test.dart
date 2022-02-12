@@ -8,6 +8,7 @@ import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_asset.dart';
+import 'package:tanuki/core/error/failures.dart';
 import './get_asset_test.mocks.dart';
 
 @GenerateMocks([EntityRepository])
@@ -24,7 +25,7 @@ void main() {
     'should get asset from the repository',
     () async {
       // arrange
-      final expected = Asset(
+      final expectedAsset = Asset(
         id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
         checksum: 'sha256-34641209e88f3a59b-mini-2dfdcb00f8a533ac80ba',
         filename: 'catmouse_1280p.jpg',
@@ -36,16 +37,17 @@ void main() {
         caption: Some('#cat @outdoors #mouse'),
         location: Some('outdoors'),
       );
+      final Result<Asset, Failure> expected = Ok(expectedAsset);
       when(mockEntityRepository.getAsset(any))
-          .thenAnswer((_) async => Ok(expected));
+          .thenAnswer((_) async => Ok(expectedAsset));
       // act
       final params = Params(
         assetId: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
       );
       final result = await usecase(params);
       // assert
-      expect(result, Ok(expected));
-      expect(result.unwrap(), equals(expected));
+      expect(result, expected);
+      expect(result.unwrap(), equals(expectedAsset));
       verify(mockEntityRepository.getAsset(params.assetId));
       verifyNoMoreInteractions(mockEntityRepository);
     },

@@ -9,6 +9,7 @@ import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_all_tags.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
+import 'package:tanuki/core/error/failures.dart';
 import './get_all_tags_test.mocks.dart';
 
 @GenerateMocks([EntityRepository])
@@ -31,11 +32,12 @@ void main() {
     'should get the list of tags from the repository',
     () async {
       // arrange
+      final Result<List<Tag>, Failure> expected = Ok(tags);
       when(mockEntityRepository.getAllTags()).thenAnswer((_) async => Ok(tags));
       // act
       final result = await usecase(NoParams());
       // assert
-      expect(result, Ok(tags));
+      expect(result, expected);
       expect(result.unwrap()[0].label, 'birds');
       expect(result.unwrap()[1].label, 'kittens');
       expect(result.unwrap()[2].label, 'snakes');

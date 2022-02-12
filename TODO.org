@@ -555,6 +555,9 @@ include it in the database records.
 **** Consider if using GitLab (in a container) would be helpful
 ***** c.f. https://docs.gitlab.com/omnibus/docker/
 ** Architecture Review
+*** Rewrite application in Dart
+**** database: https://github.com/isar/isar
+***** supports composite indices, filters, sorting
 *** Alternative to actix might be axum (https://crates.io/crates/axum)
 *** Alternative to running HTTP server
 **** Use a socket file

@@ -8,6 +8,7 @@ import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/bulk_update.dart';
+import 'package:tanuki/core/error/failures.dart';
 import './bulk_update_test.mocks.dart';
 
 @GenerateMocks([EntityRepository])
@@ -24,6 +25,7 @@ void main() {
     'should update assets in the repository',
     () async {
       // arrange
+      final Result<int, Failure> expected = Ok(32);
       when(mockEntityRepository.bulkUpdate(any))
           .thenAnswer((_) async => Ok(32));
       // act
@@ -41,7 +43,7 @@ void main() {
       final params = Params(assets: [inputId]);
       final result = await usecase(params);
       // assert
-      expect(result, Ok(32));
+      expect(result, expected);
       verify(mockEntityRepository.bulkUpdate(params.assets));
       verifyNoMoreInteractions(mockEntityRepository);
     },

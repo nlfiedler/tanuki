@@ -8,6 +8,7 @@ import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/query_assets.dart';
+import 'package:tanuki/core/error/failures.dart';
 import './query_assets_test.mocks.dart';
 
 @GenerateMocks([EntityRepository])
@@ -24,7 +25,7 @@ void main() {
     'should query assets from the repository',
     () async {
       // arrange
-      final expected = QueryResults(
+      final expectedResults = QueryResults(
         results: [
           SearchResult(
             id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
@@ -36,8 +37,9 @@ void main() {
         ],
         count: 1,
       );
+      final Result<QueryResults, Failure> expected = Ok(expectedResults);
       when(mockEntityRepository.queryAssets(any, any, any))
-          .thenAnswer((_) async => Ok(expected));
+          .thenAnswer((_) async => Ok(expectedResults));
       // act
       final searchParams = SearchParams(tags: ['mouse']);
       final params = Params(
@@ -47,8 +49,8 @@ void main() {
       );
       final result = await usecase(params);
       // assert
-      expect(result, Ok(expected));
-      expect(result.unwrap().results, equals(expected.results));
+      expect(result, expected);
+      expect(result.unwrap().results, equals(expectedResults.results));
       verify(mockEntityRepository.queryAssets(searchParams, 10, 0));
       verifyNoMoreInteractions(mockEntityRepository);
     },

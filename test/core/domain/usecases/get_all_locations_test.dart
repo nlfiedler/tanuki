@@ -9,6 +9,7 @@ import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_all_locations.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
+import 'package:tanuki/core/error/failures.dart';
 import './get_all_locations_test.mocks.dart';
 
 @GenerateMocks([EntityRepository])
@@ -31,12 +32,13 @@ void main() {
     'should get the list of locations from the repository',
     () async {
       // arrange
+      final Result<List<Location>, Failure> expected = Ok(locations);
       when(mockEntityRepository.getAllLocations())
           .thenAnswer((_) async => Ok(locations));
       // act
       final result = await usecase(NoParams());
       // assert
-      expect(result, Ok(locations));
+      expect(result, expected);
       expect(result.unwrap()[0].label, 'london');
       expect(result.unwrap()[1].label, 'paris');
       expect(result.unwrap()[2].label, 'tokyo');

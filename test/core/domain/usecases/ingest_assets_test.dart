@@ -8,6 +8,7 @@ import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/repositories/asset_repository.dart';
 import 'package:tanuki/core/domain/usecases/ingest_assets.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
+import 'package:tanuki/core/error/failures.dart';
 import './ingest_assets_test.mocks.dart';
 
 @GenerateMocks([AssetRepository])
@@ -24,15 +25,14 @@ void main() {
     'should query assets from the repository',
     () async {
       // arrange
-      final expected = 101;
-      when(mockAssetRepository.ingestAssets())
-          .thenAnswer((_) async => Ok(expected));
+      final Result<int, Failure> expected = Ok(101);
+      when(mockAssetRepository.ingestAssets()).thenAnswer((_) async => Ok(101));
       // act
       final params = NoParams();
       final result = await usecase(params);
       // assert
-      expect(result, Ok(expected));
-      expect(result.unwrap(), equals(expected));
+      expect(result, expected);
+      expect(result.unwrap(), equals(101));
       verify(mockAssetRepository.ingestAssets());
       verifyNoMoreInteractions(mockAssetRepository);
     },

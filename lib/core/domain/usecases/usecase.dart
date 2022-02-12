@@ -5,7 +5,7 @@ import 'package:equatable/equatable.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/error/failures.dart';
 
-abstract class UseCase<Type, Params> {
+abstract class UseCase<Type extends Object, Params> {
   Future<Result<Type, Failure>> call(Params params);
 }
 

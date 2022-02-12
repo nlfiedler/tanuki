@@ -9,6 +9,7 @@ import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/update_asset.dart';
+import 'package:tanuki/core/error/failures.dart';
 import './update_asset_test.mocks.dart';
 
 @GenerateMocks([EntityRepository])
@@ -25,7 +26,7 @@ void main() {
     'should update assets in the repository',
     () async {
       // arrange
-      final expected = Asset(
+      final expectedAsset = Asset(
         id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
         checksum: 'sha256-34641209e88f3a59b-mini-2dfdcb00f8a533ac80ba',
         filename: 'catmouse_1280p.jpg',
@@ -37,8 +38,9 @@ void main() {
         caption: Some('#cat @outdoors #mouse'),
         location: Some('outdoors'),
       );
+      final Result<Asset, Failure> expected = Ok(expectedAsset);
       when(mockEntityRepository.updateAsset(any))
-          .thenAnswer((_) async => Ok(expected));
+          .thenAnswer((_) async => Ok(expectedAsset));
       // act
       final inputId = AssetInputId(
         id: 'asset123',
@@ -54,7 +56,7 @@ void main() {
       final params = Params(asset: inputId);
       final result = await usecase(params);
       // assert
-      expect(result, Ok(expected));
+      expect(result, expected);
       verify(mockEntityRepository.updateAsset(params.asset));
       verifyNoMoreInteractions(mockEntityRepository);
     },
