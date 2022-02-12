@@ -200,7 +200,7 @@ fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8
             return Ok(reference.to_owned());
         }
     }
-    let mut buffer: Vec<u8> = Vec::new();
+    let mut cursor = std::io::Cursor::new(Vec::new());
     // The image crate does not recognize .jpe extension as jpeg, so load the
     // image into memory to force it to interpret the raw bytes.
     let raw_bytes = std::fs::read(filepath)?;
@@ -222,8 +222,9 @@ fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8
     // might be 50kb, while at 75% it is 10kb, and at 50% it is 9kb. However, at
     // low quality levels the image looks rather poor. The libvips library uses
     // a default quality factor of 0.75, so use that here as well.
-    img.write_to(&mut buffer, image::ImageOutputFormat::Jpeg(75))?;
+    img.write_to(&mut cursor, image::ImageOutputFormat::Jpeg(75))?;
     let mut cache = LRU_CACHE.lock().unwrap();
+    let buffer: Vec<u8> = cursor.into_inner();
     cache.put(cache_key, buffer.clone());
     Ok(buffer)
 }
@@ -1213,7 +1214,7 @@ mod tests {
         let img = image::load_from_memory(&data).unwrap();
         let (width, height) = img.dimensions();
         assert_eq!(width, 300);
-        assert_eq!(height, 168);
+        assert_eq!(height, 169);
 
         // has EXIF header and requires orientation (swap width/height)
         let filepath = Path::new("./tests/fixtures/fighting_kittens.jpg");

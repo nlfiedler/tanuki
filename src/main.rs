@@ -204,7 +204,7 @@ async fn default_index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
     Ok(file.use_last_modified(true))
 }
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
     let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_owned());
@@ -245,7 +245,7 @@ mod tests {
     use super::*;
     use actix_web::{http, test, web, App};
 
-    #[actix_rt::test]
+    #[actix::test]
     async fn test_index_get() {
         // arrange
         let mut app =
@@ -257,7 +257,7 @@ mod tests {
         assert!(resp.status().is_success());
     }
 
-    #[actix_rt::test]
+    #[actix::test]
     async fn test_import_assets_ok() {
         let boundary = "----WebKitFormBoundary0gYa4NfETro6nMot";
         // arrange
@@ -290,7 +290,7 @@ mod tests {
         assert!(resp.status().is_success());
     }
 
-    #[actix_rt::test]
+    #[actix::test]
     async fn test_get_thumbnail_ok() {
         // arrange
         let src_filename = "./tests/fixtures/dcp_1069.jpg";
