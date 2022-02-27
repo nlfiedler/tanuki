@@ -4,7 +4,7 @@
 use crate::domain::entities::LabeledCount;
 use crate::domain::repositories::RecordRepository;
 use crate::domain::usecases::NoParams;
-use failure::Error;
+use anyhow::Error;
 
 pub struct AllYears {
     repo: Box<dyn RecordRepository>,
@@ -27,7 +27,7 @@ mod tests {
     use super::super::{NoParams, UseCase};
     use super::*;
     use crate::domain::repositories::MockRecordRepository;
-    use failure::err_msg;
+    use anyhow::anyhow;
 
     #[test]
     fn test_all_years_ok() {
@@ -69,7 +69,7 @@ mod tests {
         let mut mock = MockRecordRepository::new();
         mock.expect_all_years()
             .with()
-            .returning(|| Err(err_msg("oh no")));
+            .returning(|| Err(anyhow!("oh no")));
         // act
         let usecase = AllYears::new(Box::new(mock));
         let params = NoParams {};

@@ -4,7 +4,7 @@
 use crate::domain::entities::SearchResult;
 use crate::domain::repositories::RecordRepository;
 use chrono::prelude::*;
-use failure::Error;
+use anyhow::Error;
 use std::cmp;
 use std::fmt;
 
@@ -55,7 +55,7 @@ mod tests {
     use super::super::UseCase;
     use super::*;
     use crate::domain::repositories::MockRecordRepository;
-    use failure::err_msg;
+    use anyhow::anyhow;
     use mockall::predicate::*;
 
     #[test]
@@ -63,7 +63,7 @@ mod tests {
         // arrange
         let mut mock = MockRecordRepository::new();
         mock.expect_query_newborn()
-            .returning(move |_| Err(err_msg("oh no")));
+            .returning(move |_| Err(anyhow!("oh no")));
         // act
         let usecase = RecentImports::new(Box::new(mock));
         let params: Params = Default::default();

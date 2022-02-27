@@ -3,7 +3,7 @@
 //
 use crate::domain::entities::{Asset, LabeledCount, SearchResult};
 use chrono::prelude::*;
-use failure::Error;
+use anyhow::Error;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
 use std::path::{Path, PathBuf};

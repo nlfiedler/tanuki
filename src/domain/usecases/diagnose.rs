@@ -4,7 +4,7 @@
 use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
 use crate::domain::usecases::{checksum_file, get_original_date, infer_media_type};
-use failure::Error;
+use anyhow::Error;
 use log::{info, warn};
 use std::cmp;
 use std::ffi::OsStr;

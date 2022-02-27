@@ -3,8 +3,8 @@
 //
 use crate::data::models::AssetModel;
 use crate::domain::entities::{Asset, LabeledCount, SearchResult};
+use anyhow::{anyhow, Error};
 use chrono::prelude::*;
-use failure::{err_msg, Error};
 #[cfg(test)]
 use mockall::automock;
 use mokuroku::{base32, Document, Emitter, QueryResult};
@@ -126,7 +126,7 @@ impl EntityDataSource for EntityDataSourceImpl {
     fn get_asset(&self, asset_id: &str) -> Result<Asset, Error> {
         let db_key = format!("asset/{}", asset_id);
         let maybe_asset = self.database.get_asset(&db_key)?;
-        maybe_asset.ok_or_else(|| err_msg(format!("missing asset {}", asset_id)))
+        maybe_asset.ok_or_else(|| anyhow!(format!("missing asset {}", asset_id)))
     }
 
     fn put_asset(&self, asset: &Asset) -> Result<(), Error> {
@@ -290,7 +290,7 @@ fn encode_datetime(date: &DateTime<Utc>) -> Vec<u8> {
 }
 
 impl Document for Asset {
-    fn from_bytes(key: &[u8], value: &[u8]) -> Result<Self, Error> {
+    fn from_bytes(key: &[u8], value: &[u8]) -> Result<Self, mokuroku::Error> {
         let mut de = serde_cbor::Deserializer::from_slice(value);
         let mut result = AssetModel::deserialize(&mut de)?;
         // remove the "asset/" key prefix added by the data source
@@ -298,14 +298,14 @@ impl Document for Asset {
         Ok(result)
     }
 
-    fn to_bytes(&self) -> Result<Vec<u8>, Error> {
+    fn to_bytes(&self) -> Result<Vec<u8>, mokuroku::Error> {
         let mut encoded: Vec<u8> = Vec::new();
         let mut ser = serde_cbor::Serializer::new(&mut encoded);
         AssetModel::serialize(self, &mut ser)?;
         Ok(encoded)
     }
 
-    fn map(&self, view: &str, emitter: &Emitter) -> Result<(), Error> {
+    fn map(&self, view: &str, emitter: &Emitter) -> Result<(), mokuroku::Error> {
         // make the index value assuming we will emit something
         let value = SearchResult::new(self);
         let idv: Vec<u8> = value.to_bytes()?;
@@ -364,7 +364,12 @@ impl Document for Asset {
     }
 }
 
-pub fn mapper(key: &[u8], value: &[u8], view: &str, emitter: &Emitter) -> Result<(), Error> {
+pub fn mapper(
+    key: &[u8],
+    value: &[u8],
+    view: &str,
+    emitter: &Emitter,
+) -> Result<(), mokuroku::Error> {
     if &key[..6] == b"asset/".as_ref() {
         let doc = Asset::from_bytes(key, value)?;
         doc.map(view, emitter)?;
@@ -410,7 +415,7 @@ impl SearchResult {
 }
 
 impl TryFrom<QueryResult> for SearchResult {
-    type Error = failure::Error;
+    type Error = anyhow::Error;
 
     fn try_from(value: QueryResult) -> Result<Self, Self::Error> {
         let mut result = SearchResult::from_bytes(value.value.as_ref())?;

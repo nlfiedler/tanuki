@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 use chrono::prelude::*;
-use failure::{err_msg, Error};
+use anyhow::{anyhow, Error};
 use std::cmp;
 use std::fmt;
 use std::fs::File;
@@ -73,12 +73,12 @@ fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTim
         let exif = reader.read_from_container(&mut buffer)?;
         let field = exif
             .get_field(exif::Tag::DateTimeOriginal, exif::In::PRIMARY)
-            .ok_or_else(|| err_msg("no date/time field"))?;
+            .ok_or_else(|| anyhow!("no date/time field"))?;
         if let exif::Value::Ascii(data) = &field.value {
             let value = str::from_utf8(&data[0])?;
             return Utc
                 .datetime_from_str(value, "%Y:%m:%d %H:%M:%S")
-                .map_err(|_| err_msg("could not parse data"));
+                .map_err(|_| anyhow!("could not parse data"));
         }
     } else if media_type.type_() == mime::VIDEO {
         // check for certain types of video formats
@@ -100,7 +100,7 @@ fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTim
         };
         return Ok(Utc.timestamp(creation_time as i64, 0));
     }
-    Err(err_msg("could not read any date"))
+    Err(anyhow!("could not read any date"))
 }
 
 // Try reading the date from a RIFF-encoded AVI file.
@@ -120,10 +120,10 @@ fn get_avi_date(filepath: &Path) -> Result<DateTime<Utc>, Error> {
                 // conversion as noted in the RIFF wikipedia article
                 // (https://en.wikipedia.org/wiki/Resource_Interchange_File_Format)
             }
-            return Err(err_msg("AVI does not contain a date"));
+            return Err(anyhow!("AVI does not contain a date"));
         }
     }
-    Err(err_msg("not RIFF encoded AVI"))
+    Err(anyhow!("not RIFF encoded AVI"))
 }
 
 //

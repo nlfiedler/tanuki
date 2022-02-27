@@ -643,7 +643,7 @@ pub fn create_schema() -> Schema {
 mod tests {
     use super::*;
     use crate::data::sources::MockEntityDataSource;
-    use failure::err_msg;
+    use anyhow::anyhow;
     use juniper::{InputValue, ToInputValue, Variables};
     use mockall::predicate::*;
 
@@ -774,7 +774,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_get_asset()
             .with(eq("abc123"))
-            .returning(|_| Err(err_msg("oh no")));
+            .returning(|_| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
@@ -821,7 +821,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_count_assets()
             .with()
-            .returning(|| Err(err_msg("oh no")));
+            .returning(|| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
@@ -893,7 +893,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_locations()
             .with()
-            .returning(|| Err(err_msg("oh no")));
+            .returning(|| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
@@ -970,7 +970,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_media_types()
             .with()
-            .returning(|| Err(err_msg("oh no")));
+            .returning(|| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
@@ -1065,7 +1065,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_by_checksum()
             .with(eq("cafebabe"))
-            .returning(|_| Err(err_msg("oh no")));
+            .returning(|_| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
@@ -1307,7 +1307,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_newborn()
             .with(always())
-            .returning(|_| Err(err_msg("oh no")));
+            .returning(|_| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
@@ -1644,7 +1644,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_by_tags()
             .with(eq(vec!["cat".to_owned()]))
-            .returning(|_| Err(err_msg("oh no")));
+            .returning(|_| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
@@ -1738,7 +1738,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_tags()
             .with()
-            .returning(|| Err(err_msg("oh no")));
+            .returning(|| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
@@ -1815,7 +1815,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_years()
             .with()
-            .returning(|| Err(err_msg("oh no")));
+            .returning(|| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
@@ -1913,7 +1913,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_get_asset()
             .with(always())
-            .returning(|_| Err(err_msg("oh no")));
+            .returning(|_| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));

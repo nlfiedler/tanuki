@@ -4,7 +4,7 @@
 use crate::domain::entities::Asset;
 use crate::domain::repositories::RecordRepository;
 use chrono::prelude::*;
-use failure::Error;
+use anyhow::Error;
 use std::cmp;
 use std::fmt;
 
@@ -356,7 +356,7 @@ mod tests {
     use super::super::UseCase;
     use super::*;
     use crate::domain::repositories::MockRecordRepository;
-    use failure::err_msg;
+    use anyhow::anyhow;
     use mockall::predicate::*;
 
     #[test]
@@ -725,7 +725,7 @@ mod tests {
         let mut mock = MockRecordRepository::new();
         mock.expect_get_asset()
             .with(eq("abc123"))
-            .returning(move |_| Err(err_msg("oh no")));
+            .returning(move |_| Err(anyhow!("oh no")));
         // act
         let usecase = UpdateAsset::new(Box::new(mock));
         let input = AssetInput {

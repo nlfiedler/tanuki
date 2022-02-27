@@ -6,7 +6,7 @@ use crate::domain::entities::{Asset, LabeledCount, SearchResult};
 use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
 use chrono::prelude::*;
-use failure::{err_msg, Error};
+use anyhow::{anyhow, Error};
 use lazy_static::lazy_static;
 use std::path::{Path, PathBuf};
 use std::str;
@@ -137,7 +137,7 @@ impl BlobRepository for BlobRepositoryImpl {
         if !dest_path.exists() {
             let parent = dest_path
                 .parent()
-                .ok_or_else(|| err_msg(format!("no parent for {:?}", dest_path)))?;
+                .ok_or_else(|| anyhow!(format!("no parent for {:?}", dest_path)))?;
             std::fs::create_dir_all(parent)?;
             // Use file copy to handle crossing file systems, then remove the
             // original afterward.
@@ -239,11 +239,11 @@ fn get_image_orientation(filepath: &Path) -> Result<u16, Error> {
     let exif = reader.read_from_container(&mut buffer)?;
     let field = exif
         .get_field(exif::Tag::Orientation, exif::In::PRIMARY)
-        .ok_or_else(|| err_msg("no orientation field"))?;
+        .ok_or_else(|| anyhow!("no orientation field"))?;
     if let exif::Value::Short(data) = &field.value {
         return Ok(data[0]);
     }
-    Err(err_msg("not an image"))
+    Err(anyhow!("not an image"))
 }
 
 // Flip and/or rotate the image to have the correct rendering.
@@ -266,7 +266,7 @@ fn correct_orientation(orientation: u16, img: image::DynamicImage) -> image::Dyn
 mod tests {
     use super::*;
     use crate::data::sources::MockEntityDataSource;
-    use failure::err_msg;
+    use anyhow::anyhow;
     use mockall::predicate::*;
     use tempfile::tempdir;
 
@@ -306,7 +306,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_get_asset()
             .with(eq("abc123"))
-            .returning(move |_| Err(err_msg("oh no")));
+            .returning(move |_| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.get_asset("abc123");
@@ -368,7 +368,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_by_checksum()
             .with(eq("abc123"))
-            .returning(move |_| Err(err_msg("oh no")));
+            .returning(move |_| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.get_asset_by_digest("abc123");
@@ -421,7 +421,7 @@ mod tests {
         };
         let mut mock = MockEntityDataSource::new();
         mock.expect_put_asset()
-            .returning(move |_| Err(err_msg("oh no")));
+            .returning(move |_| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.put_asset(&asset1);
@@ -449,7 +449,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_delete_asset()
             .with(eq("abc123"))
-            .returning(move |_| Err(err_msg("oh no")));
+            .returning(move |_| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.delete_asset("abc123");
@@ -476,7 +476,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_count_assets()
             .with()
-            .returning(|| Err(err_msg("oh no")));
+            .returning(|| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.count_assets();
@@ -523,7 +523,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_locations()
             .with()
-            .returning(|| Err(err_msg("oh no")));
+            .returning(|| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_locations();
@@ -570,7 +570,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_years()
             .with()
-            .returning(|| Err(err_msg("oh no")));
+            .returning(|| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_years();
@@ -617,7 +617,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_tags()
             .with()
-            .returning(|| Err(err_msg("oh no")));
+            .returning(|| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_tags();
@@ -670,7 +670,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_media_types()
             .with()
-            .returning(|| Err(err_msg("oh no")));
+            .returning(|| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_media_types();
@@ -712,7 +712,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_assets()
             .with()
-            .returning(|| Err(err_msg("oh no")));
+            .returning(|| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_assets();
@@ -749,7 +749,7 @@ mod tests {
         // arrange
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_by_tags()
-            .returning(move |_| Err(err_msg("oh no")));
+            .returning(move |_| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let tags = vec!["kitten".to_owned()];
@@ -790,7 +790,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_before_date()
             .with(eq(before))
-            .returning(move |_| Err(err_msg("oh no")));
+            .returning(move |_| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_before_date(before);
@@ -830,7 +830,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_after_date()
             .with(eq(after))
-            .returning(move |_| Err(err_msg("oh no")));
+            .returning(move |_| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_after_date(after);
@@ -872,7 +872,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_date_range()
             .with(eq(after), eq(before))
-            .returning(move |_, _| Err(err_msg("oh no")));
+            .returning(move |_, _| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_date_range(after, before);
@@ -912,7 +912,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_newborn()
             .with(eq(after))
-            .returning(move |_| Err(err_msg("oh no")));
+            .returning(move |_| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_newborn(after);
@@ -949,7 +949,7 @@ mod tests {
         // arrange
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_by_locations()
-            .returning(move |_| Err(err_msg("oh no")));
+            .returning(move |_| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let locations = vec!["hawaii".to_owned()];
@@ -988,7 +988,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_by_filename()
             .with(eq("img_1234.jpg"))
-            .returning(move |_| Err(err_msg("oh no")));
+            .returning(move |_| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_by_filename("img_1234.jpg");
@@ -1026,7 +1026,7 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_by_media_type()
             .with(eq("image/jpeg"))
-            .returning(move |_| Err(err_msg("oh no")));
+            .returning(move |_| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.query_by_media_type("image/jpeg");

@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 use crate::domain::entities::Asset;
-use failure::Error;
+use anyhow::Error;
 use lazy_static::lazy_static;
 use rocksdb::backup::{BackupEngine, BackupEngineOptions};
 use rocksdb::Options;
@@ -135,7 +135,8 @@ impl Database {
     ///
     pub fn delete_document(&self, key: &[u8]) -> Result<(), Error> {
         let mut db = self.db.lock().unwrap();
-        db.delete(key)
+        db.delete(key)?;
+        Ok(())
     }
 
     ///
@@ -145,7 +146,8 @@ impl Database {
     ///
     pub fn put_asset(&self, key: &str, asset: &Asset) -> Result<(), Error> {
         let mut db = self.db.lock().unwrap();
-        db.put(key, asset)
+        db.put(key, asset)?;
+        Ok(())
     }
 
     ///
@@ -155,7 +157,7 @@ impl Database {
     ///
     pub fn get_asset(&self, key: &str) -> Result<Option<Asset>, Error> {
         let db = self.db.lock().unwrap();
-        db.get(key)
+        Ok(db.get(key)?)
     }
 
     ///
@@ -208,7 +210,7 @@ impl Database {
                 exact_key
             })
             .collect();
-        db.query_all_keys(view, exact_keys)
+        Ok(db.query_all_keys(view, exact_keys)?)
     }
 
     ///
@@ -281,7 +283,7 @@ impl Database {
     ///
     pub fn count_all_keys(&self, view: &str) -> Result<HashMap<Box<[u8]>, usize>, Error> {
         let mut db = self.db.lock().unwrap();
-        db.count_all_keys(view)
+        Ok(db.count_all_keys(view)?)
     }
 
     ///

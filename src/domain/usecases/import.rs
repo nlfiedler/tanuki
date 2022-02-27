@@ -6,7 +6,7 @@ use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
 use crate::domain::usecases::{checksum_file, get_original_date, infer_media_type};
 use chrono::prelude::*;
-use failure::{err_msg, Error};
+use anyhow::{anyhow, Error};
 use rusty_ulid::generate_ulid_string;
 use std::cmp;
 use std::ffi::OsStr;
@@ -166,7 +166,7 @@ fn get_dimensions(media_type: &mime::Mime, filepath: &Path) -> Result<Dimensions
         let dim = image::image_dimensions(filepath)?;
         return Ok(Dimensions(dim.0, dim.1));
     }
-    Err(err_msg("not an image"))
+    Err(anyhow!("not an image"))
 }
 
 #[cfg(test)]

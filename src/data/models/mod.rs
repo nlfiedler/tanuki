@@ -82,7 +82,7 @@ pub struct AssetModel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use failure::Error;
+    use anyhow::Error;
 
     #[test]
     fn test_asset_serde_min() -> Result<(), Error> {

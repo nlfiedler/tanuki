@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 use chrono::prelude::*;
-use failure::Error;
+use anyhow::Error;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;

@@ -5,7 +5,7 @@ use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
 use crate::domain::usecases::import;
 use crate::domain::usecases::infer_media_type;
-use failure::Error;
+use anyhow::Error;
 use std::cmp;
 use std::ffi::OsStr;
 use std::fmt;
