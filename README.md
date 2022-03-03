@@ -90,7 +90,7 @@ $ docker compose up --build -d
 
 ### Finding Outdated Crates
 
-Use https://github.com/kbknapp/cargo-outdated and run `cargo outdated`
+Use https://github.com/kbknapp/cargo-outdated and run `cargo outdated -R`
 
 ### License checking
 

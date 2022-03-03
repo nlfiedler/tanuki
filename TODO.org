@@ -1,6 +1,4 @@
 * Action Items
-** Update Actix Web
-*** c.f. https://github.com/actix/actix-web/wiki/v4-Announcement
 ** Import from web-enabled handheld device
 *** Ensure web interface works well for small screens
 **** Flutter Folio example app that works well for all screen sizes

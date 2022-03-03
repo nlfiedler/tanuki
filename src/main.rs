@@ -5,8 +5,8 @@ use actix_cors::Cors;
 use actix_files::{Files, NamedFile};
 use actix_multipart::Multipart;
 use actix_web::{
-    http::header, middleware, web, App, Either, Error, HttpMessage, HttpRequest, HttpResponse,
-    HttpServer,
+    error::InternalError, http::header, http::StatusCode, middleware, web, App, Either, Error,
+    HttpMessage, HttpRequest, HttpResponse, HttpServer,
 };
 use futures::{StreamExt, TryStreamExt};
 use juniper::http::graphiql::graphiql_source;
@@ -67,25 +67,25 @@ async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
     // iterate over multipart stream
     let mut asset_ids: Vec<String> = Vec::new();
     while let Ok(Some(mut field)) = payload.try_next().await {
-        let disposition = field.content_disposition().unwrap();
+        let disposition = field.content_disposition();
         let content_type = field.content_type().to_owned();
-        let filename = disposition.get_filename().unwrap();
+        let filename = disposition
+            .get_filename()
+            .ok_or_else(|| actix_web::error::ContentTypeError::ParseError)?;
         let mut filepath = UPLOAD_PATH.clone();
         std::fs::create_dir_all(&filepath)?;
         filepath.push(filename);
         let filepath_clone = filepath.clone();
         // File::create is blocking operation, use threadpool
-        let mut f = web::block(|| std::fs::File::create(filepath))
-            .await
-            .unwrap();
+        let mut f = web::block(|| std::fs::File::create(filepath)).await??;
         // each Field is a stream of *Bytes* object
         while let Some(chunk) = field.next().await {
-            let data = chunk.unwrap();
+            let data = chunk?;
             // filesystem operations are blocking, we have to use threadpool
-            f = web::block(move || f.write_all(&data).map(|_| f)).await?;
+            f = web::block(move || f.write_all(&data).map(|_| f)).await??;
         }
         let asset = web::block(move || {
-            let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
+            let source = EntityDataSourceImpl::new(DB_PATH.as_path())?;
             let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
             let records = RecordRepositoryImpl::new(ctx);
             let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
@@ -94,17 +94,21 @@ async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
             usecase.call(params)
         })
         .await?;
-        asset_ids.push(asset.key);
+        asset_ids.push(
+            asset
+                .map_err(|e| InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR))?
+                .key,
+        );
     }
     let body = serde_json::to_string(&asset_ids)?;
     Ok(HttpResponse::Ok().body(body))
 }
 
-fn graphiql() -> HttpResponse {
+async fn graphiql() -> actix_web::Result<HttpResponse> {
     let html = graphiql_source("/graphql", None);
-    HttpResponse::Ok()
+    Ok(HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
-        .body(html)
+        .body(html))
 }
 
 async fn graphql(
@@ -131,18 +135,20 @@ async fn get_thumbnail(req: HttpRequest) -> HttpResponse {
     let height: u32 = req.match_info().get("h").unwrap().parse().unwrap();
     let identifier: String = req.match_info().get("id").unwrap().to_owned();
     let etag_value = format!("{}:{}:{}", width, height, &identifier);
-    let etag: header::EntityTag = header::EntityTag::strong(etag_value);
+    let etag: header::EntityTag = header::EntityTag::new_strong(etag_value);
     if none_match(&etag, &req) {
         let result = web::block(move || {
             let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
             blobs.thumbnail(width, height, &identifier)
         })
-        .await;
+        // TODO: i do not understand why ? will not work for this result
+        .await
+        .unwrap();
         match result {
             Ok(data) => HttpResponse::Ok()
                 .content_type("image/jpeg")
-                .header(header::CONTENT_LENGTH, data.len() as u64)
-                .header(header::ETAG, etag)
+                .append_header((header::CONTENT_LENGTH, data.len() as u64))
+                .append_header((header::ETAG, etag))
                 .body(data),
             Err(err) => {
                 debug!("get_thumbnail result: {}", err);
@@ -181,18 +187,18 @@ async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> 
         let records = RecordRepositoryImpl::new(ctx);
         records.get_asset(&info)
     })
-    .await;
+    .await?;
     if let Ok(asset) = result {
         let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
         if let Ok(filepath) = blobs.blob_path(&asset.key) {
             let file = NamedFile::open(filepath)?;
             let mime_type: mime::Mime = asset.media_type.parse().unwrap();
-            Ok(Either::A(file.set_content_type(mime_type)))
+            Ok(Either::Left(file.set_content_type(mime_type)))
         } else {
-            Ok(Either::B(HttpResponse::InternalServerError().finish()))
+            Ok(Either::Right(HttpResponse::InternalServerError().finish()))
         }
     } else {
-        Ok(Either::B(HttpResponse::NotFound().finish()))
+        Ok(Either::Right(HttpResponse::NotFound().finish()))
     }
 }
 
@@ -212,9 +218,9 @@ async fn main() -> std::io::Result<()> {
     let addr = format!("{}:{}", host, port);
     info!("listening on http://{}/...", addr);
     HttpServer::new(|| {
-        let schema = std::sync::Arc::new(graphql::create_schema());
+        let schema = web::Data::new(std::sync::Arc::new(graphql::create_schema()));
         App::new()
-            .data(schema)
+            .app_data(schema)
             .wrap(middleware::Logger::default())
             .wrap(
                 // Respond to OPTIONS requests for CORS support, which is common
@@ -245,7 +251,7 @@ mod tests {
     use super::*;
     use actix_web::{http, test, web, App};
 
-    #[actix::test]
+    #[actix_web::test]
     async fn test_index_get() {
         // arrange
         let mut app =
@@ -257,7 +263,7 @@ mod tests {
         assert!(resp.status().is_success());
     }
 
-    #[actix::test]
+    #[actix_web::test]
     async fn test_import_assets_ok() {
         let boundary = "----WebKitFormBoundary0gYa4NfETro6nMot";
         // arrange
@@ -281,8 +287,8 @@ mod tests {
         payload.write(boundary_after.as_bytes()).unwrap();
         let req = test::TestRequest::with_uri("/import")
             .method(http::Method::POST)
-            .header(header::CONTENT_TYPE, ct_header)
-            .header(header::CONTENT_LENGTH, payload.len())
+            .append_header((header::CONTENT_TYPE, ct_header))
+            .append_header((header::CONTENT_LENGTH, payload.len()))
             .set_payload(payload)
             .to_request();
         let resp = test::call_service(&mut app, req).await;
@@ -290,7 +296,7 @@ mod tests {
         assert!(resp.status().is_success());
     }
 
-    #[actix::test]
+    #[actix_web::test]
     async fn test_get_thumbnail_ok() {
         // arrange
         let src_filename = "./tests/fixtures/dcp_1069.jpg";
@@ -324,7 +330,7 @@ mod tests {
 
         // assert the etag/if-none-match functionality
         let req = test::TestRequest::with_uri(&uri)
-            .header(header::ETAG, etag.to_str().unwrap())
+            .append_header((header::ETAG, etag.to_str().unwrap()))
             .to_request();
         let resp = test::call_service(&mut app, req).await;
         assert!(resp.status().is_success());
