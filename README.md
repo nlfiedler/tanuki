@@ -51,7 +51,22 @@ $ fvm flutter test
 $ fvm flutter run --no-sound-null-safety -d chrome
 ```
 
-For macOS, `fvm flutter run -d macos` to run and `fvm flutter build macos` to build.
+#### macOS
+
+Building the macOS desktop application on Apple Silicon (M1) requires a
+temporary work-around to an issue with installing the Ruby `ffi` library.
+
+```shell
+$ arch -x86_64 sudo gem install ffi
+```
+
+Until all of the dependencies have null-safety, must use
+`--no-sound-null-safety` option when building the application.
+
+```shell
+$ fvm flutter build macos --no-sound-null-safety
+$ fvm flutter run --no-sound-null-safety -d macos
+```
 
 ### environment_config
 

@@ -1,9 +1,11 @@
 * Action Items
-** TODO Update more of the flutter dependencies [0/3]
-- [ ] file_selector
-- [ ] file_selector_macos
+** TODO Update more of the flutter dependencies [2/3]
+- [X] file_selector
+- [X] file_selector_macos
 - [ ] flutter_form_builder
-** TODO Test builds for macOS
+** TODO Test flutter app build for web
+** TODO Test flutter app build for macOS
+** TODO Test flutter app build for Windows
 ** TODO Fix all of the new flutter/dart warnings everywhere
 ** Import from web-enabled handheld device
 *** Ensure web interface works well for small screens
