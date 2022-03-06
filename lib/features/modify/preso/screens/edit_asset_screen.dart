@@ -15,13 +15,13 @@ import 'package:tanuki/features/modify/preso/widgets/update_submit.dart';
 
 final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
 
-class EditAssetScreen extends StatelessWidget {
+class EditAssetScreen extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // fetch the asset again just in case of concurrent edits
     final String assetId = ModalRoute.of(context)?.settings.arguments as String;
     return BlocProvider<AssetBloc>(
-      create: (_) => BuildContextX(context).read(assetBlocProvider),
+      create: (_) => ref.read(assetBlocProvider),
       child: BlocBuilder<AssetBloc, AssetState>(
         buildWhen: (previous, current) {
           return !(previous is Loaded && current is Loading);

@@ -10,7 +10,7 @@ import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/features/modify/preso/bloc/update_asset_bloc.dart';
 import 'package:tanuki/features/modify/preso/bloc/providers.dart';
 
-class UpdateSubmit extends StatelessWidget {
+class UpdateSubmit extends ConsumerWidget {
   final GlobalKey<FormBuilderState> formKey;
   final String assetId;
 
@@ -21,9 +21,9 @@ class UpdateSubmit extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return BlocProvider<UpdateAssetBloc>(
-      create: (_) => BuildContextX(context).read(updateAssetBlocProvider),
+      create: (_) => ref.read(updateAssetBlocProvider),
       child: BlocConsumer<UpdateAssetBloc, UpdateAssetState>(
         listener: (context, state) {
           if (state is Finished) {

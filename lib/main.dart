@@ -20,25 +20,25 @@ void main() {
   runApp(ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AssetCountBloc>(
-          create: (_) => BuildContextX(context).read(assetCountBlocProvider),
+          create: (_) => ref.read(assetCountBlocProvider),
         ),
         BlocProvider<AssetBrowserBloc>(
-          create: (_) => BuildContextX(context).read(assetBrowserBlocProvider),
+          create: (_) => ref.read(assetBrowserBlocProvider),
         ),
         BlocProvider<AllLocationsBloc>(
-          create: (_) => BuildContextX(context).read(allLocationsBlocProvider),
+          create: (_) => ref.read(allLocationsBlocProvider),
         ),
         BlocProvider<AllTagsBloc>(
-          create: (_) => BuildContextX(context).read(allTagsBlocProvider),
+          create: (_) => ref.read(allTagsBlocProvider),
         ),
         BlocProvider<AllYearsBloc>(
-          create: (_) => BuildContextX(context).read(allYearsBlocProvider),
+          create: (_) => ref.read(allYearsBlocProvider),
         ),
       ],
       child: MaterialApp(

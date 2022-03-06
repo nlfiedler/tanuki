@@ -10,7 +10,7 @@ import 'package:tanuki/features/import/preso/bloc/providers.dart';
 
 typedef BulkCallback = List<AssetInputId> Function();
 
-class BulkSubmit extends StatelessWidget {
+class BulkSubmit extends ConsumerWidget {
   final BulkCallback onSubmit;
   final VoidCallback onComplete;
 
@@ -21,9 +21,9 @@ class BulkSubmit extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return BlocProvider<BulkUpdateBloc>(
-      create: (_) => BuildContextX(context).read(bulkUpdateBlocProvider),
+      create: (_) => ref.read(bulkUpdateBlocProvider),
       child: BlocConsumer<BulkUpdateBloc, BulkUpdateState>(
         listener: (context, state) {
           if (state is Finished) {

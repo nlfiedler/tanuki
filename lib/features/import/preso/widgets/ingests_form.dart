@@ -7,11 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/features/import/preso/bloc/ingest_assets_bloc.dart';
 import 'package:tanuki/features/import/preso/bloc/providers.dart';
 
-class IngestsForm extends StatelessWidget {
+class IngestsForm extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return BlocProvider<IngestAssetsBloc>(
-      create: (_) => BuildContextX(context).read(ingestAssetsBlocProvider),
+      create: (_) => ref.read(ingestAssetsBlocProvider),
       child: BlocBuilder<IngestAssetsBloc, IngestAssetsState>(
         builder: (context, state) {
           return Padding(

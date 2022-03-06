@@ -19,12 +19,12 @@ import 'package:tanuki/core/preso/widgets/dotted_border.dart';
 import 'package:tanuki/features/import/preso/bloc/upload_file_bloc.dart';
 import 'package:tanuki/features/import/preso/bloc/providers.dart';
 
-class UploadForm extends StatefulWidget {
+class UploadForm extends ConsumerStatefulWidget {
   @override
   _UploadFormState createState() => _UploadFormState();
 }
 
-class _UploadFormState extends State<UploadForm> {
+class _UploadFormState extends ConsumerState<UploadForm> {
   // Selected files come from either the file selector or the drop zone, and
   // they have different types (cross_file::XFile vs dart::html::File).
   List<dynamic> _selectedFiles = [];
@@ -126,7 +126,7 @@ class _UploadFormState extends State<UploadForm> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<UploadFileBloc>(
-      create: (_) => BuildContextX(context).read(uploadFileBlocProvider),
+      create: (_) => ref.read(uploadFileBlocProvider),
       child: BlocConsumer<UploadFileBloc, UploadFileState>(
         listener: (context, state) {
           if (state is Uploading) {

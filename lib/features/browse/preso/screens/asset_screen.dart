@@ -13,12 +13,12 @@ import 'package:tanuki/features/browse/preso/bloc/asset_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/providers.dart';
 import 'package:url_launcher/url_launcher.dart' as launcher;
 
-class AssetScreen extends StatelessWidget {
+class AssetScreen extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final String assetId = ModalRoute.of(context)?.settings.arguments as String;
     return BlocProvider<AssetBloc>(
-      create: (_) => BuildContextX(context).read(assetBlocProvider),
+      create: (_) => ref.read(assetBlocProvider),
       child: BlocBuilder<AssetBloc, AssetState>(
         buildWhen: (previous, current) {
           return !(previous is Loaded && current is Loading);

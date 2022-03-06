@@ -10,12 +10,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/features/import/preso/bloc/upload_file_bloc.dart';
 import 'package:tanuki/features/import/preso/bloc/providers.dart';
 
-class UploadForm extends StatefulWidget {
+class UploadForm extends ConsumerStatefulWidget {
   @override
   _UploadFormState createState() => _UploadFormState();
 }
 
-class _UploadFormState extends State<UploadForm> {
+class _UploadFormState extends ConsumerState<UploadForm> {
   List<String> _selectedFiles = [];
 
   void _pickFiles(BuildContext context) async {
@@ -97,7 +97,7 @@ class _UploadFormState extends State<UploadForm> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<UploadFileBloc>(
-      create: (_) => BuildContextX(context).read(uploadFileBlocProvider),
+      create: (_) => ref.read(uploadFileBlocProvider),
       child: BlocConsumer<UploadFileBloc, UploadFileState>(
         listener: (context, state) async {
           if (state is Uploading) {

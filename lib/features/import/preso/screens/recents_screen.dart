@@ -8,15 +8,15 @@ import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
 import 'package:tanuki/features/import/preso/bloc/providers.dart';
 import 'package:tanuki/features/import/preso/widgets/bulk_form.dart';
 
-class RecentsScreen extends StatelessWidget {
+class RecentsScreen extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
         title: Text('all your assets now belong to us'),
       ),
       body: BlocProvider<RecentImportsBloc>(
-        create: (_) => BuildContextX(context).read(recentImportsBlocProvider),
+        create: (_) => ref.read(recentImportsBlocProvider),
         child: BlocBuilder<RecentImportsBloc, RecentImportsState>(
           builder: (context, state) {
             if (state is Empty) {
