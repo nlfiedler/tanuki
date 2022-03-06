@@ -1,7 +1,6 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
-import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
@@ -61,19 +60,14 @@ class Error extends UpdateAssetState {
 class UpdateAssetBloc extends Bloc<UpdateAssetEvent, UpdateAssetState> {
   final UpdateAsset usecase;
 
-  UpdateAssetBloc({required this.usecase}) : super(Initial());
-
-  @override
-  Stream<UpdateAssetState> mapEventToState(
-    UpdateAssetEvent event,
-  ) async* {
-    if (event is SubmitUpdate) {
-      yield Processing();
+  UpdateAssetBloc({required this.usecase}) : super(Initial()) {
+    on<SubmitUpdate>((event, emit) async {
+      emit(Processing());
       final result = await usecase(Params(asset: event.input));
-      yield result.mapOrElse(
+      emit(result.mapOrElse(
         (asset) => Finished(asset: asset),
         (failure) => Error(message: failure.toString()),
-      );
-    }
+      ));
+    });
   }
 }

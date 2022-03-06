@@ -1,26 +1,25 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:graphql/client.dart' as gql;
 import 'package:http/http.dart' as http;
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:tanuki/core/data/sources/asset_remote_data_source.dart';
 import 'package:tanuki/core/error/exceptions.dart';
-import './asset_remote_data_source_test.mocks.dart';
+
+class MockHttpClient extends Mock implements http.Client {}
 
 const happyCowPath = 'tests/fixtures/dcp_1069.jpg';
 
-@GenerateMocks([http.Client])
 void main() {
   late AssetRemoteDataSource dataSource;
-  late MockClient mockHttpClient;
+  late MockHttpClient mockHttpClient;
 
   setUp(() {
-    mockHttpClient = MockClient();
+    mockHttpClient = MockHttpClient();
     final link = gql.HttpLink(
       'http://example.com',
       httpClient: mockHttpClient,
@@ -36,8 +35,17 @@ void main() {
     );
   });
 
+  setUpAll(() {
+    // mocktail needs a fallback for any() that involves custom types
+    http.BaseRequest dummyRequest = http.Request(
+      'GET',
+      Uri(scheme: 'http', host: 'example.com', path: '/'),
+    );
+    registerFallbackValue(dummyRequest);
+  });
+
   void setUpMockHttpClientJsonError() {
-    when(mockHttpClient.send(any)).thenAnswer((_) async {
+    when(() => mockHttpClient.send(any())).thenAnswer((_) async {
       // empty response should be sufficiently wrong
       final bytes = List<int>.empty();
       final stream = http.ByteStream.fromBytes(bytes);
@@ -46,7 +54,7 @@ void main() {
   }
 
   void setUpMockHttpClientGraphQLError() {
-    when(mockHttpClient.send(any)).thenAnswer((_) async {
+    when(() => mockHttpClient.send(any())).thenAnswer((_) async {
       final response = {
         'data': null,
         'errors': [
@@ -66,7 +74,7 @@ void main() {
   }
 
   void setUpMockHttpClientFailure403() {
-    when(mockHttpClient.send(any)).thenAnswer((_) async {
+    when(() => mockHttpClient.send(any())).thenAnswer((_) async {
       final bytes = List<int>.empty();
       final stream = http.ByteStream.fromBytes(bytes);
       return http.StreamedResponse(stream, 403);
@@ -82,7 +90,7 @@ void main() {
         }
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -139,7 +147,7 @@ void main() {
         }
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -162,7 +170,7 @@ void main() {
   group('uploadAsset', () {
     void setUpMockHttpClientJsonResponse() {
       final response = ['MjAyMC8wOC8yOS8wMzMw-mini-ZzAzczZiLmpwZw=='];
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -216,7 +224,7 @@ void main() {
   group('uploadAssetBytes', () {
     void setUpMockHttpClientJsonResponse() {
       final response = ['MjAyMC8wOC8yOS8wMzMw-mini-ZzAzczZiLmpwZw=='];
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);

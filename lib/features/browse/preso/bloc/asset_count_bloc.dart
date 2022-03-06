@@ -1,7 +1,6 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
-import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:tanuki/core/domain/usecases/get_asset_count.dart';
@@ -56,19 +55,14 @@ class Error extends AssetCountState {
 class AssetCountBloc extends Bloc<AssetCountEvent, AssetCountState> {
   final GetAssetCount usecase;
 
-  AssetCountBloc({required this.usecase}) : super(Empty());
-
-  @override
-  Stream<AssetCountState> mapEventToState(
-    AssetCountEvent event,
-  ) async* {
-    if (event is LoadAssetCount) {
-      yield Loading();
+  AssetCountBloc({required this.usecase}) : super(Empty()) {
+    on<LoadAssetCount>((event, emit) async {
+      emit(Loading());
       final result = await usecase(NoParams());
-      yield result.mapOrElse(
+      emit(result.mapOrElse(
         (count) => Loaded(count: count),
         (failure) => Error(message: failure.toString()),
-      );
-    }
+      ));
+    });
   }
 }

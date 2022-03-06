@@ -1,18 +1,17 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/repositories/asset_repository.dart';
 import 'package:tanuki/core/domain/usecases/ingest_assets.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/import/preso/bloc/ingest_assets_bloc.dart';
-import './ingest_assets_bloc_test.mocks.dart';
 
-@GenerateMocks([AssetRepository])
+class MockAssetRepository extends Mock implements AssetRepository {}
+
 void main() {
   late MockAssetRepository mockAssetRepository;
   late IngestAssets usecase;
@@ -21,7 +20,8 @@ void main() {
     setUp(() {
       mockAssetRepository = MockAssetRepository();
       usecase = IngestAssets(mockAssetRepository);
-      when(mockAssetRepository.ingestAssets()).thenAnswer((_) async => Ok(101));
+      when(() => mockAssetRepository.ingestAssets())
+          .thenAnswer((_) async => Ok(101));
     });
 
     blocTest(
@@ -45,7 +45,7 @@ void main() {
     setUp(() {
       mockAssetRepository = MockAssetRepository();
       usecase = IngestAssets(mockAssetRepository);
-      when(mockAssetRepository.ingestAssets())
+      when(() => mockAssetRepository.ingestAssets())
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
     });
 

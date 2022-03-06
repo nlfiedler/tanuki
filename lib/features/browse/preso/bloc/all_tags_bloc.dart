@@ -1,7 +1,6 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
-import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
@@ -57,19 +56,14 @@ class Error extends AllTagsState {
 class AllTagsBloc extends Bloc<AllTagsEvent, AllTagsState> {
   final GetAllTags usecase;
 
-  AllTagsBloc({required this.usecase}) : super(Empty());
-
-  @override
-  Stream<AllTagsState> mapEventToState(
-    AllTagsEvent event,
-  ) async* {
-    if (event is LoadAllTags) {
-      yield Loading();
+  AllTagsBloc({required this.usecase}) : super(Empty()) {
+    on<LoadAllTags>((event, emit) async {
+      emit(Loading());
       final result = await usecase(NoParams());
-      yield result.mapOrElse(
+      emit(result.mapOrElse(
         (tags) => Loaded(tags: tags),
         (failure) => Error(message: failure.toString()),
-      );
-    }
+      ));
+    });
   }
 }

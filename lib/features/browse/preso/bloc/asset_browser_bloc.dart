@@ -1,8 +1,9 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'dart:async';
 import 'package:bloc/bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
@@ -168,49 +169,53 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
   int pageSize = 18;
   int pageNumber = 1;
 
-  AssetBrowserBloc({required this.usecase}) : super(Empty());
+  AssetBrowserBloc({required this.usecase}) : super(Empty()) {
+    // enforce sequential ordering of event mapping due to the asynchronous
+    // nature of this particular bloc
+    on<AssetBrowserEvent>(_onEvent, transformer: sequential());
+  }
 
-  @override
-  Stream<AssetBrowserState> mapEventToState(
+  FutureOr<void> _onEvent(
     AssetBrowserEvent event,
-  ) async* {
+    Emitter<AssetBrowserState> emit,
+  ) async {
     if (event is LoadInitialAssets) {
-      yield* _loadAssets();
+      return _loadAssets(emit);
     } else if (event is SelectTags) {
       if (state is Loaded) {
         tags = event.tags;
         pageNumber = 1;
-        yield* _loadAssets();
+        return _loadAssets(emit);
       }
     } else if (event is SelectLocations) {
       if (state is Loaded) {
         locations = event.locations;
         pageNumber = 1;
-        yield* _loadAssets();
+        return _loadAssets(emit);
       }
     } else if (event is SelectYear) {
       if (state is Loaded) {
         year = event.year;
         pageNumber = 1;
-        yield* _loadAssets();
+        return _loadAssets(emit);
       }
     } else if (event is SelectSeason) {
       if (state is Loaded) {
         season = event.season;
         year ??= DateTime.now().year;
         pageNumber = 1;
-        yield* _loadAssets();
+        return _loadAssets(emit);
       }
     } else if (event is ShowPage) {
       if (state is Loaded) {
         pageNumber = event.page;
-        yield* _loadAssets();
+        return _loadAssets(emit);
       }
     } else if (event is SetPageSize) {
       pageSize = event.size;
       pageNumber = 1;
       if (state is Loaded) {
-        yield* _loadAssets();
+        return _loadAssets(emit);
       }
     }
   }
@@ -253,8 +258,8 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
     return Option.none();
   }
 
-  Stream<AssetBrowserState> _loadAssets() async* {
-    yield Loading();
+  Future<void> _loadAssets(Emitter<AssetBrowserState> emit) async {
+    emit(Loading());
     final params = SearchParams(
       tags: tags,
       locations: locations,
@@ -267,7 +272,7 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
       count: pageSize,
       offset: offset,
     ));
-    yield result.mapOrElse(
+    emit(result.mapOrElse(
       (results) {
         final lastPage = (results.count / pageSize).ceil();
         return Loaded(
@@ -282,6 +287,6 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
         );
       },
       (failure) => Error(message: failure.toString()),
-    );
+    ));
   }
 }

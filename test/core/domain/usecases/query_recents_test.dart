@@ -1,17 +1,16 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/query_recents.dart';
 import 'package:tanuki/core/error/failures.dart';
-import './query_recents_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late QueryRecents usecase;
   late MockEntityRepository mockEntityRepository;
@@ -19,6 +18,12 @@ void main() {
   setUp(() {
     mockEntityRepository = MockEntityRepository();
     usecase = QueryRecents(mockEntityRepository);
+  });
+
+  setUpAll(() {
+    // mocktail needs a fallback for any() that involves custom types
+    const Option<DateTime> dummy = None();
+    registerFallbackValue(dummy);
   });
 
   test(
@@ -38,7 +43,7 @@ void main() {
         count: 1,
       );
       final Result<QueryResults, Failure> expected = Ok(expectedResults);
-      when(mockEntityRepository.queryRecents(any))
+      when(() => mockEntityRepository.queryRecents(any()))
           .thenAnswer((_) async => Ok(expectedResults));
       // act
       final Option<DateTime> since = Some(DateTime.now());
@@ -47,7 +52,7 @@ void main() {
       // assert
       expect(result, expected);
       expect(result.unwrap().results, equals(expectedResults.results));
-      verify(mockEntityRepository.queryRecents(since));
+      verify(() => mockEntityRepository.queryRecents(since));
       verifyNoMoreInteractions(mockEntityRepository);
     },
   );

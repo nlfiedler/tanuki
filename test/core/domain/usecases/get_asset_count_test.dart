@@ -1,17 +1,16 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_asset_count.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
 import 'package:tanuki/core/error/failures.dart';
-import './get_asset_count_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late GetAssetCount usecase;
   late MockEntityRepository mockEntityRepository;
@@ -26,13 +25,13 @@ void main() {
     () async {
       // arrange
       final Ok<int, Failure> expected = Ok(9413);
-      when(mockEntityRepository.getAssetCount())
+      when(() => mockEntityRepository.getAssetCount())
           .thenAnswer((_) async => Ok(9413));
       // act
       final result = await usecase(NoParams());
       // assert
       expect(result, expected);
-      verify(mockEntityRepository.getAssetCount());
+      verify(() => mockEntityRepository.getAssetCount());
       verifyNoMoreInteractions(mockEntityRepository);
     },
   );

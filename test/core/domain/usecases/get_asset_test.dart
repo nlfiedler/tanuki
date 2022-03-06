@@ -1,17 +1,16 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_asset.dart';
 import 'package:tanuki/core/error/failures.dart';
-import './get_asset_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late GetAsset usecase;
   late MockEntityRepository mockEntityRepository;
@@ -32,13 +31,13 @@ void main() {
         filesize: 160852,
         datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
         mimetype: 'image/jpeg',
-        tags: ['cat', 'mouse'],
-        userdate: None(),
+        tags: const ['cat', 'mouse'],
+        userdate: const None(),
         caption: Some('#cat @outdoors #mouse'),
         location: Some('outdoors'),
       );
       final Result<Asset, Failure> expected = Ok(expectedAsset);
-      when(mockEntityRepository.getAsset(any))
+      when(() => mockEntityRepository.getAsset(any()))
           .thenAnswer((_) async => Ok(expectedAsset));
       // act
       final params = Params(
@@ -48,7 +47,7 @@ void main() {
       // assert
       expect(result, expected);
       expect(result.unwrap(), equals(expectedAsset));
-      verify(mockEntityRepository.getAsset(params.assetId));
+      verify(() => mockEntityRepository.getAsset(params.assetId));
       verifyNoMoreInteractions(mockEntityRepository);
     },
   );

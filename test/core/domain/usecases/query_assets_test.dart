@@ -1,17 +1,16 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/query_assets.dart';
 import 'package:tanuki/core/error/failures.dart';
-import './query_assets_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late QueryAssets usecase;
   late MockEntityRepository mockEntityRepository;
@@ -19,6 +18,12 @@ void main() {
   setUp(() {
     mockEntityRepository = MockEntityRepository();
     usecase = QueryAssets(mockEntityRepository);
+  });
+
+  setUpAll(() {
+    // mocktail needs a fallback for any() that involves custom types
+    final SearchParams dummy = SearchParams();
+    registerFallbackValue(dummy);
   });
 
   test(
@@ -38,7 +43,7 @@ void main() {
         count: 1,
       );
       final Result<QueryResults, Failure> expected = Ok(expectedResults);
-      when(mockEntityRepository.queryAssets(any, any, any))
+      when(() => mockEntityRepository.queryAssets(any(), any(), any()))
           .thenAnswer((_) async => Ok(expectedResults));
       // act
       final searchParams = SearchParams(tags: ['mouse']);
@@ -51,7 +56,7 @@ void main() {
       // assert
       expect(result, expected);
       expect(result.unwrap().results, equals(expectedResults.results));
-      verify(mockEntityRepository.queryAssets(searchParams, 10, 0));
+      verify(() => mockEntityRepository.queryAssets(searchParams, 10, 0));
       verifyNoMoreInteractions(mockEntityRepository);
     },
   );

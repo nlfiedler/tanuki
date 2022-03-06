@@ -1,19 +1,18 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_all_locations.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_locations_bloc.dart';
-import './all_locations_bloc_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late MockEntityRepository mockEntityRepository;
   late GetAllLocations usecase;
@@ -27,7 +26,7 @@ void main() {
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = GetAllLocations(mockEntityRepository);
-      when(mockEntityRepository.getAllLocations())
+      when(() => mockEntityRepository.getAllLocations())
           .thenAnswer((_) async => Ok(locations));
     });
 
@@ -49,7 +48,7 @@ void main() {
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = GetAllLocations(mockEntityRepository);
-      when(mockEntityRepository.getAllLocations())
+      when(() => mockEntityRepository.getAllLocations())
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
     });
 

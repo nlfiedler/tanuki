@@ -1,18 +1,17 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_all_tags.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
 import 'package:tanuki/core/error/failures.dart';
-import './get_all_tags_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late GetAllTags usecase;
   late MockEntityRepository mockEntityRepository;
@@ -33,7 +32,8 @@ void main() {
     () async {
       // arrange
       final Result<List<Tag>, Failure> expected = Ok(tags);
-      when(mockEntityRepository.getAllTags()).thenAnswer((_) async => Ok(tags));
+      when(() => mockEntityRepository.getAllTags())
+          .thenAnswer((_) async => Ok(tags));
       // act
       final result = await usecase(NoParams());
       // assert
@@ -41,7 +41,7 @@ void main() {
       expect(result.unwrap()[0].label, 'birds');
       expect(result.unwrap()[1].label, 'kittens');
       expect(result.unwrap()[2].label, 'snakes');
-      verify(mockEntityRepository.getAllTags());
+      verify(() => mockEntityRepository.getAllTags());
       verifyNoMoreInteractions(mockEntityRepository);
     },
   );

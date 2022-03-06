@@ -1,7 +1,6 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
-import 'dart:async';
 import 'dart:typed_data';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -100,41 +99,38 @@ class UploadFileBloc<T extends Object>
   late T current;
   late int uploaded;
 
-  UploadFileBloc({required this.usecase}) : super(Initial());
-
-  @override
-  Stream<UploadFileState> mapEventToState(
-    UploadFileEvent event,
-  ) async* {
-    if (event is StartUploading) {
+  UploadFileBloc({required this.usecase}) : super(Initial()) {
+    on<StartUploading>((event, emit) {
       // Start the process of uploading the files, yielding a state that
       // indicates the caller should load the current file.
       skipped.clear();
       uploaded = 0;
       current = event.files.last;
       pending = event.files.sublist(0, event.files.length - 1) as List<T>;
-      yield Uploading<T>(pending: pending, current: current);
-    } else if (event is UploadFile) {
+      emit(Uploading<T>(pending: pending, current: current));
+    });
+    on<UploadFile>((event, emit) async {
       // Caller has loaded the current file and is ready to upload.
       final result = await usecase(Params(
         filename: event.filename,
         contents: event.contents,
       ));
-      yield result.mapOrElse(
+      emit(result.mapOrElse(
         (assetId) => _processNext(),
         (failure) => Error(message: failure.toString()),
-      );
-    } else if (event is SkipCurrent) {
+      ));
+    });
+    on<SkipCurrent>((event, emit) {
       // Something probably went wrong with loading the file, caller wants to
       // skip it and move on to the next file.
       skipped.add(current);
-      yield _processNext();
-    }
+      emit(_processNext());
+    });
   }
 
   UploadFileState _processNext() {
-    // Continue processing the remaining files, or signal that the end has
-    // been reached if the pending queue is now empty.
+    // Continue processing the remaining files, or signal that the end has been
+    // reached if the pending queue is now empty.
     if (pending.isEmpty) {
       return Finished<T>(skipped: skipped);
     } else {

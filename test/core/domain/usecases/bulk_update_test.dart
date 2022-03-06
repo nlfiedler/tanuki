@@ -1,17 +1,16 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/bulk_update.dart';
 import 'package:tanuki/core/error/failures.dart';
-import './bulk_update_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late BulkUpdate usecase;
   late MockEntityRepository mockEntityRepository;
@@ -21,18 +20,24 @@ void main() {
     usecase = BulkUpdate(mockEntityRepository);
   });
 
+  setUpAll(() {
+    // mocktail needs a fallback for any() that involves custom types
+    const List<AssetInputId> dummy = [];
+    registerFallbackValue(dummy);
+  });
+
   test(
     'should update assets in the repository',
     () async {
       // arrange
       final Result<int, Failure> expected = Ok(32);
-      when(mockEntityRepository.bulkUpdate(any))
+      when(() => mockEntityRepository.bulkUpdate(any()))
           .thenAnswer((_) async => Ok(32));
       // act
       final inputId = AssetInputId(
         id: 'asset123',
         input: AssetInput(
-          tags: ['clowns', 'snakes'],
+          tags: const ['clowns', 'snakes'],
           caption: Some('#snakes and #clowns are in my @batcave'),
           location: Some('batcave'),
           datetime: Some(DateTime.utc(2003, 8, 30)),
@@ -44,7 +49,7 @@ void main() {
       final result = await usecase(params);
       // assert
       expect(result, expected);
-      verify(mockEntityRepository.bulkUpdate(params.assets));
+      verify(() => mockEntityRepository.bulkUpdate(params.assets));
       verifyNoMoreInteractions(mockEntityRepository);
     },
   );

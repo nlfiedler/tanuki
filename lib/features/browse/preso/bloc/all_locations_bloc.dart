@@ -1,7 +1,6 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
-import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
@@ -57,19 +56,14 @@ class Error extends AllLocationsState {
 class AllLocationsBloc extends Bloc<AllLocationsEvent, AllLocationsState> {
   final GetAllLocations usecase;
 
-  AllLocationsBloc({required this.usecase}) : super(Empty());
-
-  @override
-  Stream<AllLocationsState> mapEventToState(
-    AllLocationsEvent event,
-  ) async* {
-    if (event is LoadAllLocations) {
-      yield Loading();
+  AllLocationsBloc({required this.usecase}) : super(Empty()) {
+    on<LoadAllLocations>((event, emit) async {
+      emit(Loading());
       final result = await usecase(NoParams());
-      yield result.mapOrElse(
+      emit(result.mapOrElse(
         (locations) => Loaded(locations: locations),
         (failure) => Error(message: failure.toString()),
-      );
-    }
+      ));
+    });
   }
 }

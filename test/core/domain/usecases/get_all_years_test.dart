@@ -1,18 +1,17 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_all_years.dart';
 import 'package:tanuki/core/domain/usecases/usecase.dart';
 import 'package:tanuki/core/error/failures.dart';
-import './get_all_years_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late GetAllYears usecase;
   late MockEntityRepository mockEntityRepository;
@@ -33,7 +32,7 @@ void main() {
     () async {
       // arrange
       final Ok<List<Year>, Failure> expected = Ok(years);
-      when(mockEntityRepository.getAllYears())
+      when(() => mockEntityRepository.getAllYears())
           .thenAnswer((_) async => Ok(years));
       // act
       final result = await usecase(NoParams());
@@ -42,7 +41,7 @@ void main() {
       expect(result.unwrap()[0].label, '1999');
       expect(result.unwrap()[1].label, '2009');
       expect(result.unwrap()[2].label, '2019');
-      verify(mockEntityRepository.getAllYears());
+      verify(() => mockEntityRepository.getAllYears());
       verifyNoMoreInteractions(mockEntityRepository);
     },
   );

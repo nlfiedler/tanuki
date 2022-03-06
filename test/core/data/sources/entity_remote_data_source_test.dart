@@ -1,12 +1,11 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:graphql/client.dart' as gql;
 import 'package:http/http.dart' as http;
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/asset_model.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
@@ -15,15 +14,15 @@ import 'package:tanuki/core/data/models/search_model.dart';
 import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/error/exceptions.dart';
-import './entity_remote_data_source_test.mocks.dart';
 
-@GenerateMocks([http.Client])
+class MockHttpClient extends Mock implements http.Client {}
+
 void main() {
   late EntityRemoteDataSourceImpl dataSource;
-  late MockClient mockHttpClient;
+  late MockHttpClient mockHttpClient;
 
   setUp(() {
-    mockHttpClient = MockClient();
+    mockHttpClient = MockHttpClient();
     final link = gql.HttpLink(
       'http://example.com',
       httpClient: mockHttpClient,
@@ -35,8 +34,17 @@ void main() {
     dataSource = EntityRemoteDataSourceImpl(client: graphQLCient);
   });
 
+  setUpAll(() {
+    // mocktail needs a fallback for any() that involves custom types
+    http.BaseRequest dummyRequest = http.Request(
+      'GET',
+      Uri(scheme: 'http', host: 'example.com', path: '/'),
+    );
+    registerFallbackValue(dummyRequest);
+  });
+
   void setUpMockHttpClientGraphQLError() {
-    when(mockHttpClient.send(any)).thenAnswer((_) async {
+    when(() => mockHttpClient.send(any())).thenAnswer((_) async {
       final response = {
         'data': null,
         'errors': [
@@ -56,7 +64,7 @@ void main() {
   }
 
   void setUpMockHttpClientFailure403() {
-    when(mockHttpClient.send(any)).thenAnswer((_) async {
+    when(() => mockHttpClient.send(any())).thenAnswer((_) async {
       final bytes = List<int>.empty();
       final stream = http.ByteStream.fromBytes(bytes);
       return http.StreamedResponse(stream, 403);
@@ -75,7 +83,7 @@ void main() {
         }
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -140,7 +148,7 @@ void main() {
         'data': {'locations': null}
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -173,7 +181,7 @@ void main() {
         }
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -238,7 +246,7 @@ void main() {
         'data': {'tags': null}
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -271,7 +279,7 @@ void main() {
         }
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -336,7 +344,7 @@ void main() {
         'data': {'years': null}
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -376,7 +384,7 @@ void main() {
         }
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -398,8 +406,8 @@ void main() {
           filesize: 1048576,
           datetime: DateTime.utc(2003, 8, 30),
           mimetype: 'image/jpeg',
-          tags: ['clowns', 'snakes'],
-          userdate: None(),
+          tags: const ['clowns', 'snakes'],
+          userdate: const None(),
           caption: Some('#snakes and #clowns are in my @batcave'),
           location: Some('batcave'),
         );
@@ -442,7 +450,7 @@ void main() {
         'data': {'search': null}
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -468,7 +476,7 @@ void main() {
         'data': {'count': 9413}
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -522,7 +530,7 @@ void main() {
         'data': {'count': null}
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -561,7 +569,7 @@ void main() {
         }
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -573,7 +581,7 @@ void main() {
       () async {
         // arrange
         setUpMockHttpClientGraphQLResponse();
-        final params = SearchParams(tags: ['mouse']);
+        final params = SearchParams(tags: const ['mouse']);
         // act
         final result = await dataSource.queryAssets(params, 10, 0);
         // assert
@@ -599,7 +607,7 @@ void main() {
       () async {
         // arrange
         setUpMockHttpClientFailure403();
-        final params = SearchParams(tags: ['mouse']);
+        final params = SearchParams(tags: const ['mouse']);
         // act, assert
         try {
           await dataSource.queryAssets(params, 10, 0);
@@ -615,7 +623,7 @@ void main() {
       () async {
         // arrange
         setUpMockHttpClientGraphQLError();
-        final params = SearchParams(tags: ['mouse']);
+        final params = SearchParams(tags: const ['mouse']);
         // act, assert
         try {
           await dataSource.queryAssets(params, 10, 0);
@@ -631,7 +639,7 @@ void main() {
         'data': {'search': null}
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -643,7 +651,7 @@ void main() {
       () async {
         // arrange
         setUpMockGraphQLNullResponse();
-        final params = SearchParams(tags: ['mouse']);
+        final params = SearchParams(tags: const ['mouse']);
         // act
         final result = await dataSource.queryAssets(params, 10, 0);
         // assert
@@ -671,7 +679,7 @@ void main() {
         }
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -709,7 +717,7 @@ void main() {
       () async {
         // arrange
         setUpMockHttpClientGraphQLResponse();
-        final Option<DateTime> since = None();
+        const Option<DateTime> since = None();
         // act
         final result = await dataSource.queryRecents(since);
         // assert
@@ -767,7 +775,7 @@ void main() {
         'data': {'recent': null}
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -797,7 +805,7 @@ void main() {
         }
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -807,7 +815,7 @@ void main() {
     final inputModel = AssetInputIdModel(
       id: 'asset123',
       input: AssetInputModel(
-        tags: ['clowns', 'snakes'],
+        tags: const ['clowns', 'snakes'],
         caption: Some('#snakes and #clowns are in my @batcave'),
         location: Some('batcave'),
         datetime: Some(DateTime.utc(2003, 8, 30)),
@@ -866,7 +874,7 @@ void main() {
         }
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -907,7 +915,7 @@ void main() {
         }
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);
@@ -917,7 +925,7 @@ void main() {
     final inputModel = AssetInputIdModel(
       id: 'asset123',
       input: AssetInputModel(
-        tags: ['clowns', 'snakes'],
+        tags: const ['clowns', 'snakes'],
         caption: Some('#snakes and #clowns are in my @batcave'),
         location: Some('batcave'),
         datetime: Some(DateTime.utc(2003, 8, 30)),
@@ -941,8 +949,8 @@ void main() {
           filesize: 1048576,
           datetime: DateTime.utc(2003, 8, 30),
           mimetype: 'image/jpeg',
-          tags: ['clowns', 'snakes'],
-          userdate: None(),
+          tags: const ['clowns', 'snakes'],
+          userdate: const None(),
           caption: Some('#snakes and #clowns are in my @batcave'),
           location: Some('batcave'),
         );
@@ -988,7 +996,7 @@ void main() {
         }
       };
       // graphql client uses the 'send' method
-      when(mockHttpClient.send(any)).thenAnswer((_) async {
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
         final bytes = utf8.encode(json.encode(response));
         final stream = http.ByteStream.fromBytes(bytes);
         return http.StreamedResponse(stream, 200);

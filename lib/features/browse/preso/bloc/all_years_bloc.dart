@@ -1,7 +1,6 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
-import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
@@ -57,19 +56,14 @@ class Error extends AllYearsState {
 class AllYearsBloc extends Bloc<AllYearsEvent, AllYearsState> {
   final GetAllYears usecase;
 
-  AllYearsBloc({required this.usecase}) : super(Empty());
-
-  @override
-  Stream<AllYearsState> mapEventToState(
-    AllYearsEvent event,
-  ) async* {
-    if (event is LoadAllYears) {
-      yield Loading();
+  AllYearsBloc({required this.usecase}) : super(Empty()) {
+    on<LoadAllYears>((event, emit) async {
+      emit(Loading());
       final result = await usecase(NoParams());
-      yield result.mapOrElse(
+      emit(result.mapOrElse(
         (years) => Loaded(years: years),
         (failure) => Error(message: failure.toString()),
-      );
-    }
+      ));
+    });
   }
 }

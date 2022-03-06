@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
 import 'package:tanuki/core/data/models/search_model.dart';
@@ -14,9 +13,10 @@ import 'package:tanuki/core/error/exceptions.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
 import 'package:tanuki/core/data/repositories/entity_repository_impl.dart';
-import './entity_repository_impl_test.mocks.dart';
 
-@GenerateMocks([EntityRemoteDataSource])
+class MockEntityRemoteDataSource extends Mock
+    implements EntityRemoteDataSource {}
+
 void main() {
   late EntityRepositoryImpl repository;
   late MockEntityRemoteDataSource mockRemoteDataSource;
@@ -26,6 +26,26 @@ void main() {
     repository = EntityRepositoryImpl(
       remoteDataSource: mockRemoteDataSource,
     );
+  });
+
+  setUpAll(() {
+    // mocktail needs a fallback for any() that involves custom types
+    final SearchParams dummySearchParams = SearchParams();
+    registerFallbackValue(dummySearchParams);
+    final dummyAssetInputId = AssetInputId(
+      id: 'asset123',
+      input: AssetInput(
+        tags: const ['clowns', 'snakes'],
+        caption: Some('#snakes and #clowns are in my @batcave'),
+        location: Some('batcave'),
+        datetime: Some(DateTime.utc(2003, 8, 30)),
+        mimetype: Some('image/jpeg'),
+        filename: Some('img_1234.jpg'),
+      ),
+    );
+    registerFallbackValue(dummyAssetInputId);
+    const Option<DateTime> dummyDateTime = None();
+    registerFallbackValue(dummyDateTime);
   });
 
   group('getAllLocations', () {
@@ -38,12 +58,12 @@ void main() {
           LocationModel(label: 'paris', count: 269),
           LocationModel(label: 'london', count: 23),
         ];
-        when(mockRemoteDataSource.getAllLocations())
+        when(() => mockRemoteDataSource.getAllLocations())
             .thenAnswer((_) async => locations);
         // act
         final result = await repository.getAllLocations();
         // assert
-        verify(mockRemoteDataSource.getAllLocations());
+        verify(() => mockRemoteDataSource.getAllLocations());
         expect(result.unwrap(), isA<List>());
         expect(result.unwrap().length, equals(3));
         expect(result.unwrap(), containsAll(locations));
@@ -54,12 +74,12 @@ void main() {
       'should return failure when remote data source is unsuccessful',
       () async {
         // arrange
-        when(mockRemoteDataSource.getAllLocations())
-            .thenThrow(ServerException());
+        when(() => mockRemoteDataSource.getAllLocations())
+            .thenThrow(const ServerException());
         // act
         final result = await repository.getAllLocations();
         // assert
-        verify(mockRemoteDataSource.getAllLocations());
+        verify(() => mockRemoteDataSource.getAllLocations());
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -75,11 +95,12 @@ void main() {
           TagModel(label: 'snakes', count: 269),
           TagModel(label: 'clouds', count: 23),
         ];
-        when(mockRemoteDataSource.getAllTags()).thenAnswer((_) async => tags);
+        when(() => mockRemoteDataSource.getAllTags())
+            .thenAnswer((_) async => tags);
         // act
         final result = await repository.getAllTags();
         // assert
-        verify(mockRemoteDataSource.getAllTags());
+        verify(() => mockRemoteDataSource.getAllTags());
         expect(result.unwrap(), isA<List>());
         expect(result.unwrap().length, equals(3));
         expect(result.unwrap(), containsAll(tags));
@@ -90,11 +111,12 @@ void main() {
       'should return failure when remote data source is unsuccessful',
       () async {
         // arrange
-        when(mockRemoteDataSource.getAllTags()).thenThrow(ServerException());
+        when(() => mockRemoteDataSource.getAllTags())
+            .thenThrow(const ServerException());
         // act
         final result = await repository.getAllTags();
         // assert
-        verify(mockRemoteDataSource.getAllTags());
+        verify(() => mockRemoteDataSource.getAllTags());
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -110,11 +132,12 @@ void main() {
           YearModel(label: '2009', count: 269),
           YearModel(label: '1999', count: 23),
         ];
-        when(mockRemoteDataSource.getAllYears()).thenAnswer((_) async => years);
+        when(() => mockRemoteDataSource.getAllYears())
+            .thenAnswer((_) async => years);
         // act
         final result = await repository.getAllYears();
         // assert
-        verify(mockRemoteDataSource.getAllYears());
+        verify(() => mockRemoteDataSource.getAllYears());
         expect(result.unwrap(), isA<List>());
         expect(result.unwrap().length, equals(3));
         expect(result.unwrap(), containsAll(years));
@@ -125,11 +148,12 @@ void main() {
       'should return failure when remote data source is unsuccessful',
       () async {
         // arrange
-        when(mockRemoteDataSource.getAllYears()).thenThrow(ServerException());
+        when(() => mockRemoteDataSource.getAllYears())
+            .thenThrow(const ServerException());
         // act
         final result = await repository.getAllYears();
         // assert
-        verify(mockRemoteDataSource.getAllYears());
+        verify(() => mockRemoteDataSource.getAllYears());
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -147,17 +171,17 @@ void main() {
           filesize: 160852,
           datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
           mimetype: 'image/jpeg',
-          tags: ['cat', 'mouse'],
-          userdate: None(),
+          tags: const ['cat', 'mouse'],
+          userdate: const None(),
           caption: Some('#cat @outdoors #mouse'),
           location: Some('outdoors'),
         );
-        when(mockRemoteDataSource.getAsset(any))
+        when(() => mockRemoteDataSource.getAsset(any()))
             .thenAnswer((_) async => expected);
         // act
         final result = await repository.getAsset(expected.id);
         // assert
-        verify(mockRemoteDataSource.getAsset(expected.id));
+        verify(() => mockRemoteDataSource.getAsset(expected.id));
         expect(result.unwrap(), equals(expected));
       },
     );
@@ -166,11 +190,12 @@ void main() {
       'should return failure when remote data source returns null',
       () async {
         // arrange
-        when(mockRemoteDataSource.getAsset(any)).thenAnswer((_) async => null);
+        when(() => mockRemoteDataSource.getAsset(any()))
+            .thenAnswer((_) async => null);
         // act
         final result = await repository.getAsset('asset123');
         // assert
-        verify(mockRemoteDataSource.getAsset('asset123'));
+        verify(() => mockRemoteDataSource.getAsset('asset123'));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -179,11 +204,12 @@ void main() {
       'should return failure when remote data source is unsuccessful',
       () async {
         // arrange
-        when(mockRemoteDataSource.getAsset(any)).thenThrow(ServerException());
+        when(() => mockRemoteDataSource.getAsset(any()))
+            .thenThrow(const ServerException());
         // act
         final result = await repository.getAsset('asset123');
         // assert
-        verify(mockRemoteDataSource.getAsset('asset123'));
+        verify(() => mockRemoteDataSource.getAsset('asset123'));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -194,12 +220,12 @@ void main() {
       'should return remote data when remote data source returns data',
       () async {
         // arrange
-        when(mockRemoteDataSource.getAssetCount())
+        when(() => mockRemoteDataSource.getAssetCount())
             .thenAnswer((_) async => 9413);
         // act
         final result = await repository.getAssetCount();
         // assert
-        verify(mockRemoteDataSource.getAssetCount());
+        verify(() => mockRemoteDataSource.getAssetCount());
         expect(result.unwrap(), equals(9413));
       },
     );
@@ -208,11 +234,12 @@ void main() {
       'should return failure when remote data source is unsuccessful',
       () async {
         // arrange
-        when(mockRemoteDataSource.getAssetCount()).thenThrow(ServerException());
+        when(() => mockRemoteDataSource.getAssetCount())
+            .thenThrow(const ServerException());
         // act
         final result = await repository.getAssetCount();
         // assert
-        verify(mockRemoteDataSource.getAssetCount());
+        verify(() => mockRemoteDataSource.getAssetCount());
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -235,13 +262,13 @@ void main() {
           ],
           count: 1,
         );
-        when(mockRemoteDataSource.queryAssets(any, any, any))
+        when(() => mockRemoteDataSource.queryAssets(any(), any(), any()))
             .thenAnswer((_) async => expected);
         // act
-        final params = SearchParams(tags: ['mouse']);
+        final params = SearchParams(tags: const ['mouse']);
         final result = await repository.queryAssets(params, 10, 0);
         // assert
-        verify(mockRemoteDataSource.queryAssets(params, 10, 0));
+        verify(() => mockRemoteDataSource.queryAssets(params, 10, 0));
         expect(result.unwrap(), equals(expected));
       },
     );
@@ -250,13 +277,13 @@ void main() {
       'should return failure when remote data source returns null',
       () async {
         // arrange
-        when(mockRemoteDataSource.queryAssets(any, any, any))
+        when(() => mockRemoteDataSource.queryAssets(any(), any(), any()))
             .thenAnswer((_) async => null);
         // act
-        final params = SearchParams(tags: ['mouse']);
+        final params = SearchParams(tags: const ['mouse']);
         final result = await repository.queryAssets(params, 10, 0);
         // assert
-        verify(mockRemoteDataSource.queryAssets(params, 10, 0));
+        verify(() => mockRemoteDataSource.queryAssets(params, 10, 0));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -265,13 +292,13 @@ void main() {
       'should return failure when remote data source is unsuccessful',
       () async {
         // arrange
-        when(mockRemoteDataSource.queryAssets(any, any, any))
-            .thenThrow(ServerException());
+        when(() => mockRemoteDataSource.queryAssets(any(), any(), any()))
+            .thenThrow(const ServerException());
         // act
-        final params = SearchParams(tags: ['mouse']);
+        final params = SearchParams(tags: const ['mouse']);
         final result = await repository.queryAssets(params, 10, 0);
         // assert
-        verify(mockRemoteDataSource.queryAssets(params, 10, 0));
+        verify(() => mockRemoteDataSource.queryAssets(params, 10, 0));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -294,13 +321,13 @@ void main() {
           ],
           count: 1,
         );
-        when(mockRemoteDataSource.queryRecents(any))
+        when(() => mockRemoteDataSource.queryRecents(any()))
             .thenAnswer((_) async => expected);
         // act
         final Option<DateTime> since = Some(DateTime.now());
         final result = await repository.queryRecents(since);
         // assert
-        verify(mockRemoteDataSource.queryRecents(since));
+        verify(() => mockRemoteDataSource.queryRecents(since));
         expect(result.unwrap(), equals(expected));
       },
     );
@@ -309,13 +336,13 @@ void main() {
       'should return failure when remote data source returns null',
       () async {
         // arrange
-        when(mockRemoteDataSource.queryRecents(any))
+        when(() => mockRemoteDataSource.queryRecents(any()))
             .thenAnswer((_) async => null);
         // act
         final Option<DateTime> since = Some(DateTime.now());
         final result = await repository.queryRecents(since);
         // assert
-        verify(mockRemoteDataSource.queryRecents(since));
+        verify(() => mockRemoteDataSource.queryRecents(since));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -324,13 +351,13 @@ void main() {
       'should return failure when remote data source is unsuccessful',
       () async {
         // arrange
-        when(mockRemoteDataSource.queryRecents(any))
-            .thenThrow(ServerException());
+        when(() => mockRemoteDataSource.queryRecents(any()))
+            .thenThrow(const ServerException());
         // act
         final Option<DateTime> since = Some(DateTime.now());
         final result = await repository.queryRecents(since);
         // assert
-        verify(mockRemoteDataSource.queryRecents(since));
+        verify(() => mockRemoteDataSource.queryRecents(since));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -340,7 +367,7 @@ void main() {
     final inputId = AssetInputId(
       id: 'asset123',
       input: AssetInput(
-        tags: ['clowns', 'snakes'],
+        tags: const ['clowns', 'snakes'],
         caption: Some('#snakes and #clowns are in my @batcave'),
         location: Some('batcave'),
         datetime: Some(DateTime.utc(2003, 8, 30)),
@@ -353,11 +380,12 @@ void main() {
       'should return remote data when remote data source returns data',
       () async {
         // arrange
-        when(mockRemoteDataSource.bulkUpdate(any)).thenAnswer((_) async => 32);
+        when(() => mockRemoteDataSource.bulkUpdate(any()))
+            .thenAnswer((_) async => 32);
         // act
         final result = await repository.bulkUpdate([inputId]);
         // assert
-        verify(mockRemoteDataSource.bulkUpdate([inputId]));
+        verify(() => mockRemoteDataSource.bulkUpdate([inputId]));
         expect(result.unwrap(), equals(32));
       },
     );
@@ -366,11 +394,12 @@ void main() {
       'should return failure when remote data source is unsuccessful',
       () async {
         // arrange
-        when(mockRemoteDataSource.bulkUpdate(any)).thenThrow(ServerException());
+        when(() => mockRemoteDataSource.bulkUpdate(any()))
+            .thenThrow(const ServerException());
         // act
         final result = await repository.bulkUpdate([inputId]);
         // assert
-        verify(mockRemoteDataSource.bulkUpdate([inputId]));
+        verify(() => mockRemoteDataSource.bulkUpdate([inputId]));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -380,7 +409,7 @@ void main() {
     final inputId = AssetInputId(
       id: 'asset123',
       input: AssetInput(
-        tags: ['clowns', 'snakes'],
+        tags: const ['clowns', 'snakes'],
         caption: Some('#snakes and #clowns are in my @batcave'),
         location: Some('batcave'),
         datetime: Some(DateTime.utc(2003, 8, 30)),
@@ -400,17 +429,17 @@ void main() {
           filesize: 160852,
           datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
           mimetype: 'image/jpeg',
-          tags: ['cat', 'mouse'],
-          userdate: None(),
+          tags: const ['cat', 'mouse'],
+          userdate: const None(),
           caption: Some('#cat @outdoors #mouse'),
           location: Some('outdoors'),
         );
-        when(mockRemoteDataSource.updateAsset(any))
+        when(() => mockRemoteDataSource.updateAsset(any()))
             .thenAnswer((_) async => expected);
         // act
         final result = await repository.updateAsset(inputId);
         // assert
-        verify(mockRemoteDataSource.updateAsset(inputId));
+        verify(() => mockRemoteDataSource.updateAsset(inputId));
         expect(result.unwrap(), equals(expected));
       },
     );
@@ -419,12 +448,12 @@ void main() {
       'should return failure when remote data source returns null',
       () async {
         // arrange
-        when(mockRemoteDataSource.updateAsset(any))
+        when(() => mockRemoteDataSource.updateAsset(any()))
             .thenAnswer((_) async => null);
         // act
         final result = await repository.updateAsset(inputId);
         // assert
-        verify(mockRemoteDataSource.updateAsset(inputId));
+        verify(() => mockRemoteDataSource.updateAsset(inputId));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -433,12 +462,12 @@ void main() {
       'should return failure when remote data source is unsuccessful',
       () async {
         // arrange
-        when(mockRemoteDataSource.updateAsset(any))
-            .thenThrow(ServerException());
+        when(() => mockRemoteDataSource.updateAsset(any()))
+            .thenThrow(const ServerException());
         // act
         final result = await repository.updateAsset(inputId);
         // assert
-        verify(mockRemoteDataSource.updateAsset(inputId));
+        verify(() => mockRemoteDataSource.updateAsset(inputId));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );

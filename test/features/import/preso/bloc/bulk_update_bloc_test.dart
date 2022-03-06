@@ -1,27 +1,33 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
+import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/bulk_update.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/import/preso/bloc/bulk_update_bloc.dart';
-import './bulk_update_bloc_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late MockEntityRepository mockAssetRepository;
   late BulkUpdate usecase;
+
+  setUpAll(() {
+    // mocktail needs a fallback for any() that involves custom types
+    const List<AssetInputId> dummy = [];
+    registerFallbackValue(dummy);
+  });
 
   group('normal cases', () {
     setUp(() {
       mockAssetRepository = MockEntityRepository();
       usecase = BulkUpdate(mockAssetRepository);
-      when(mockAssetRepository.bulkUpdate(any))
+      when(() => mockAssetRepository.bulkUpdate(any()))
           .thenAnswer((_) async => Ok(101));
     });
 
@@ -46,7 +52,7 @@ void main() {
     setUp(() {
       mockAssetRepository = MockEntityRepository();
       usecase = BulkUpdate(mockAssetRepository);
-      when(mockAssetRepository.bulkUpdate(any))
+      when(() => mockAssetRepository.bulkUpdate(any()))
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
     });
 

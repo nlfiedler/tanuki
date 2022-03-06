@@ -1,4 +1,13 @@
 * Action Items
+** Update flutter/dart dependencies
+*** DONE flutter_bloc, bloc_test
+**** DONE fix all of the blocs and tests to use new API
+**** DONE remove =mockito= dependency
+**** DONE update =README= regarding builder
+**** DONE fix all of the blocs not waiting on futures
+*** TODO flutter_riverpod
+**** seems that =BuildContextX= went away, no idea how to fix
+** TODO Fix all of the new flutter/dart warnings everywhere
 ** Import from web-enabled handheld device
 *** Ensure web interface works well for small screens
 **** Flutter Folio example app that works well for all screen sizes

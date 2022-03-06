@@ -24,13 +24,13 @@ extension RecentTimeRangeExt on RecentTimeRange {
     final now = DateTime.now();
     switch (this) {
       case RecentTimeRange.day:
-        return Some(now.subtract(Duration(days: 1)));
+        return Some(now.subtract(const Duration(days: 1)));
       case RecentTimeRange.week:
-        return Some(now.subtract(Duration(days: 7)));
+        return Some(now.subtract(const Duration(days: 7)));
       case RecentTimeRange.month:
-        return Some(now.subtract(Duration(days: 30)));
+        return Some(now.subtract(const Duration(days: 30)));
       case RecentTimeRange.ever:
-        return None();
+        return const None();
     }
   }
 }
@@ -84,25 +84,24 @@ class RecentImportsBloc extends Bloc<RecentImportsEvent, RecentImportsState> {
   final QueryRecents usecase;
   RecentTimeRange prevQueryRange = RecentTimeRange.day;
 
-  RecentImportsBloc({required this.usecase}) : super(Empty());
-
-  @override
-  Stream<RecentImportsState> mapEventToState(
-    RecentImportsEvent event,
-  ) async* {
-    if (event is FindRecents) {
+  RecentImportsBloc({required this.usecase}) : super(Empty()) {
+    on<FindRecents>((event, emit) {
       prevQueryRange = event.range;
-      yield* _runQuery(event.range);
-    } else if (event is RefreshResults) {
-      yield* _runQuery(prevQueryRange);
-    }
+      return _runQuery(event.range, emit);
+    });
+    on<RefreshResults>((event, emit) {
+      return _runQuery(prevQueryRange, emit);
+    });
   }
 
-  Stream<RecentImportsState> _runQuery(RecentTimeRange range) async* {
-    yield Loading();
+  Future<void> _runQuery(
+    RecentTimeRange range,
+    Emitter<RecentImportsState> emit,
+  ) async {
+    emit(Loading());
     final since = range.asDate.map((v) => v.toUtc());
     final result = await usecase(Params(since: since));
-    yield result.mapOrElse(
+    emit(result.mapOrElse(
       (results) {
         // Sort the results by filename for consistency, that way images taken
         // around the same time will be near each other in the list, which is
@@ -111,7 +110,7 @@ class RecentImportsBloc extends Bloc<RecentImportsEvent, RecentImportsState> {
         return Loaded(results: results, range: range);
       },
       (failure) => Error(message: failure.toString()),
-    );
+    ));
   }
 }
 

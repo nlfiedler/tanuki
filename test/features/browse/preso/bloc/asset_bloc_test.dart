@@ -1,19 +1,18 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_asset.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_bloc.dart';
-import './asset_bloc_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late MockEntityRepository mockEntityRepository;
   late GetAsset usecase;
@@ -25,8 +24,8 @@ void main() {
     filesize: 160852,
     datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
     mimetype: 'image/jpeg',
-    tags: ['cat', 'mouse'],
-    userdate: None(),
+    tags: const ['cat', 'mouse'],
+    userdate: const None(),
     caption: Some('#cat @outdoors #mouse'),
     location: Some('outdoors'),
   );
@@ -35,7 +34,7 @@ void main() {
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = GetAsset(mockEntityRepository);
-      when(mockEntityRepository.getAsset(any))
+      when(() => mockEntityRepository.getAsset(any()))
           .thenAnswer((_) async => Ok(tAsset));
     });
 
@@ -57,7 +56,7 @@ void main() {
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = GetAsset(mockEntityRepository);
-      when(mockEntityRepository.getAsset(any))
+      when(() => mockEntityRepository.getAsset(any()))
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
     });
 

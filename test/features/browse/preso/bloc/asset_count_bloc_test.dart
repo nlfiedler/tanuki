@@ -1,18 +1,17 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_asset_count.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_count_bloc.dart';
-import './asset_count_bloc_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late MockEntityRepository mockEntityRepository;
   late GetAssetCount usecase;
@@ -21,7 +20,7 @@ void main() {
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = GetAssetCount(mockEntityRepository);
-      when(mockEntityRepository.getAssetCount())
+      when(() => mockEntityRepository.getAssetCount())
           .thenAnswer((_) async => Ok(9413));
     });
 
@@ -43,7 +42,7 @@ void main() {
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = GetAssetCount(mockEntityRepository);
-      when(mockEntityRepository.getAssetCount())
+      when(() => mockEntityRepository.getAssetCount())
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
     });
 

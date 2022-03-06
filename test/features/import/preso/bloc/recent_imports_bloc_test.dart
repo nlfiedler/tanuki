@@ -1,19 +1,18 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/query_recents.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
-import './recent_imports_bloc_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late MockEntityRepository mockAssetRepository;
   late QueryRecents usecase;
@@ -31,11 +30,17 @@ void main() {
     count: 1,
   );
 
+  setUpAll(() {
+    // mocktail needs a fallback for any() that involves custom types
+    const Option<DateTime> dummy = None();
+    registerFallbackValue(dummy);
+  });
+
   group('normal cases', () {
     setUp(() {
       mockAssetRepository = MockEntityRepository();
       usecase = QueryRecents(mockAssetRepository);
-      when(mockAssetRepository.queryRecents(any))
+      when(() => mockAssetRepository.queryRecents(any()))
           .thenAnswer((_) async => Ok(tQueryResults));
     });
 
@@ -77,7 +82,7 @@ void main() {
     setUp(() {
       mockAssetRepository = MockEntityRepository();
       usecase = QueryRecents(mockAssetRepository);
-      when(mockAssetRepository.queryRecents(any))
+      when(() => mockAssetRepository.queryRecents(any()))
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
     });
 

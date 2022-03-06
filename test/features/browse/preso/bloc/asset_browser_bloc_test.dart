@@ -1,24 +1,23 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/query_assets.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
-import './asset_browser_bloc_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late MockEntityRepository mockEntityRepository;
   late QueryAssets usecase;
 
-  final chosenYear = 2009;
+  const chosenYear = 2009;
   final tQueryResults = QueryResults(
     results: [
       SearchResult(
@@ -32,11 +31,17 @@ void main() {
     count: 1,
   );
 
+  setUpAll(() {
+    // mocktail needs a fallback for any() that involves custom types
+    final SearchParams dummy = SearchParams();
+    registerFallbackValue(dummy);
+  });
+
   group('toggle selector cases', () {
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = QueryAssets(mockEntityRepository);
-      when(mockEntityRepository.queryAssets(any, any, any))
+      when(() => mockEntityRepository.queryAssets(any(), any(), any()))
           .thenAnswer((_) async => Ok(tQueryResults));
     });
 
@@ -55,8 +60,8 @@ void main() {
         Loaded(
           results: tQueryResults,
           pageNumber: 1,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 1,
@@ -68,7 +73,8 @@ void main() {
     blocTest(
       'emits [] when ToggleTag is added w/o LoadInitial',
       build: () => AssetBrowserBloc(usecase: usecase),
-      act: (AssetBrowserBloc bloc) => bloc.add(SelectTags(tags: ['cats'])),
+      act: (AssetBrowserBloc bloc) =>
+          bloc.add(SelectTags(tags: const ['cats'])),
       expect: () => [],
     );
 
@@ -77,7 +83,7 @@ void main() {
       build: () => AssetBrowserBloc(usecase: usecase),
       act: (AssetBrowserBloc bloc) {
         bloc.add(LoadInitialAssets());
-        bloc.add(SelectTags(tags: ['cats']));
+        bloc.add(SelectTags(tags: const ['cats']));
         return;
       },
       expect: () => [
@@ -85,8 +91,8 @@ void main() {
         Loaded(
           results: tQueryResults,
           pageNumber: 1,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 1,
@@ -96,8 +102,8 @@ void main() {
         Loaded(
           results: tQueryResults,
           pageNumber: 1,
-          tags: ['cats'],
-          locations: [],
+          tags: const ['cats'],
+          locations: const [],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 1,
@@ -110,7 +116,7 @@ void main() {
       'emits [] when ToggleLocation is added w/o LoadInitial',
       build: () => AssetBrowserBloc(usecase: usecase),
       act: (AssetBrowserBloc bloc) =>
-          bloc.add(SelectLocations(locations: ['hawaii'])),
+          bloc.add(SelectLocations(locations: const ['hawaii'])),
       expect: () => [],
     );
 
@@ -119,7 +125,7 @@ void main() {
       build: () => AssetBrowserBloc(usecase: usecase),
       act: (AssetBrowserBloc bloc) {
         bloc.add(LoadInitialAssets());
-        bloc.add(SelectLocations(locations: ['hawaii']));
+        bloc.add(SelectLocations(locations: const ['hawaii']));
         return;
       },
       expect: () => [
@@ -127,8 +133,8 @@ void main() {
         Loaded(
           results: tQueryResults,
           pageNumber: 1,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 1,
@@ -138,8 +144,8 @@ void main() {
         Loaded(
           results: tQueryResults,
           pageNumber: 1,
-          tags: [],
-          locations: ['hawaii'],
+          tags: const [],
+          locations: const ['hawaii'],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 1,
@@ -161,8 +167,8 @@ void main() {
         Loaded(
           results: tQueryResults,
           pageNumber: 1,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 1,
@@ -172,8 +178,8 @@ void main() {
         Loaded(
           results: tQueryResults,
           pageNumber: 1,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: chosenYear,
           selectedSeason: null,
           lastPage: 1,
@@ -195,8 +201,8 @@ void main() {
         Loaded(
           results: tQueryResults,
           pageNumber: 1,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 1,
@@ -206,8 +212,8 @@ void main() {
         Loaded(
           results: tQueryResults,
           pageNumber: 1,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: DateTime.now().year,
           selectedSeason: Season.summer,
           lastPage: 1,
@@ -230,8 +236,8 @@ void main() {
         Loaded(
           results: tQueryResults,
           pageNumber: 1,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 1,
@@ -241,8 +247,8 @@ void main() {
         Loaded(
           results: tQueryResults,
           pageNumber: 1,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: chosenYear,
           selectedSeason: null,
           lastPage: 1,
@@ -252,8 +258,8 @@ void main() {
         Loaded(
           results: tQueryResults,
           pageNumber: 1,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: chosenYear,
           selectedSeason: Season.summer,
           lastPage: 1,
@@ -280,7 +286,7 @@ void main() {
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = QueryAssets(mockEntityRepository);
-      when(mockEntityRepository.queryAssets(any, any, any))
+      when(() => mockEntityRepository.queryAssets(any(), any(), any()))
           .thenAnswer((_) async => Ok(manyQueryResults));
     });
 
@@ -297,8 +303,8 @@ void main() {
         Loaded(
           results: manyQueryResults,
           pageNumber: 1,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 5,
@@ -308,8 +314,8 @@ void main() {
         Loaded(
           results: manyQueryResults,
           pageNumber: 10,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 5,
@@ -324,7 +330,7 @@ void main() {
       act: (AssetBrowserBloc bloc) {
         bloc.add(LoadInitialAssets());
         bloc.add(ShowPage(page: 10));
-        bloc.add(SelectTags(tags: ['cats']));
+        bloc.add(SelectTags(tags: const ['cats']));
         return;
       },
       expect: () => [
@@ -332,8 +338,8 @@ void main() {
         Loaded(
           results: manyQueryResults,
           pageNumber: 1,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 5,
@@ -343,8 +349,8 @@ void main() {
         Loaded(
           results: manyQueryResults,
           pageNumber: 10,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 5,
@@ -354,8 +360,8 @@ void main() {
         Loaded(
           results: manyQueryResults,
           pageNumber: 1,
-          tags: ['cats'],
-          locations: [],
+          tags: const ['cats'],
+          locations: const [],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 5,
@@ -366,12 +372,12 @@ void main() {
   });
 
   group('pagination case: zero', () {
-    final zeroQueryResults = QueryResults(results: [], count: 0);
+    final zeroQueryResults = QueryResults(results: const [], count: 0);
 
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = QueryAssets(mockEntityRepository);
-      when(mockEntityRepository.queryAssets(any, any, any))
+      when(() => mockEntityRepository.queryAssets(any(), any(), any()))
           .thenAnswer((_) async => Ok(zeroQueryResults));
     });
 
@@ -384,8 +390,8 @@ void main() {
         Loaded(
           results: zeroQueryResults,
           pageNumber: 0,
-          tags: [],
-          locations: [],
+          tags: const [],
+          locations: const [],
           selectedYear: 0,
           selectedSeason: null,
           lastPage: 0,
@@ -399,7 +405,7 @@ void main() {
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = QueryAssets(mockEntityRepository);
-      when(mockEntityRepository.queryAssets(any, any, any))
+      when(() => mockEntityRepository.queryAssets(any(), any(), any()))
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
     });
 

@@ -1,7 +1,6 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
-import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:tanuki/core/domain/usecases/ingest_assets.dart';
@@ -56,19 +55,14 @@ class Error extends IngestAssetsState {
 class IngestAssetsBloc extends Bloc<IngestAssetsEvent, IngestAssetsState> {
   final IngestAssets usecase;
 
-  IngestAssetsBloc({required this.usecase}) : super(Initial());
-
-  @override
-  Stream<IngestAssetsState> mapEventToState(
-    IngestAssetsEvent event,
-  ) async* {
-    if (event is ProcessUploads) {
-      yield Processing();
+  IngestAssetsBloc({required this.usecase}) : super(Initial()) {
+    on<ProcessUploads>((event, emit) async {
+      emit(Processing());
       final result = await usecase(NoParams());
-      yield result.mapOrElse(
+      emit(result.mapOrElse(
         (count) => Finished(count: count),
         (failure) => Error(message: failure.toString()),
-      );
-    }
+      ));
+    });
   }
 }

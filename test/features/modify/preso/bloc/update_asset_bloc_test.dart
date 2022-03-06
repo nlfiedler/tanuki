@@ -1,10 +1,9 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
@@ -12,9 +11,9 @@ import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/update_asset.dart';
 import 'package:tanuki/core/error/failures.dart';
 import 'package:tanuki/features/modify/preso/bloc/update_asset_bloc.dart';
-import './update_asset_bloc_test.mocks.dart';
 
-@GenerateMocks([EntityRepository])
+class MockEntityRepository extends Mock implements EntityRepository {}
+
 void main() {
   late MockEntityRepository mockAssetRepository;
   late UpdateAsset usecase;
@@ -22,7 +21,7 @@ void main() {
   final inputId = AssetInputId(
     id: 'asset123',
     input: AssetInput(
-      tags: ['clowns', 'snakes'],
+      tags: const ['clowns', 'snakes'],
       caption: Some('#snakes and #clowns are in my @batcave'),
       location: Some('batcave'),
       datetime: Some(DateTime.utc(2003, 8, 30)),
@@ -38,17 +37,22 @@ void main() {
     filesize: 160852,
     datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
     mimetype: 'image/jpeg',
-    tags: ['cat', 'mouse'],
-    userdate: None(),
+    tags: const ['cat', 'mouse'],
+    userdate: const None(),
     caption: Some('#cat @outdoors #mouse'),
     location: Some('outdoors'),
   );
+
+  setUpAll(() {
+    // mocktail needs a fallback for any() that involves custom types
+    registerFallbackValue(inputId);
+  });
 
   group('normal cases', () {
     setUp(() {
       mockAssetRepository = MockEntityRepository();
       usecase = UpdateAsset(mockAssetRepository);
-      when(mockAssetRepository.updateAsset(any))
+      when(() => mockAssetRepository.updateAsset(any()))
           .thenAnswer((_) async => Ok(expected));
     });
 
@@ -73,7 +77,7 @@ void main() {
     setUp(() {
       mockAssetRepository = MockEntityRepository();
       usecase = UpdateAsset(mockAssetRepository);
-      when(mockAssetRepository.updateAsset(any))
+      when(() => mockAssetRepository.updateAsset(any()))
           .thenAnswer((_) async => Err(ServerFailure('oh no!')));
     });
 
