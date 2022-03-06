@@ -18,11 +18,12 @@ dependencies:
   file_selector: ^0.8.4
   file_selector_macos: ^0.8.2
   file_selector_web: ^0.8.1
+  form_builder_validators: ^7.6.1
   flutter_bloc: ^8.0.1
   # lock on 1.9.3 for https://github.com/danvick/flutter_chips_input/issues/66
   flutter_chips_input: 1.9.3
   flutter_dropzone: ^3.0.5
-  flutter_form_builder: ^6.0.0
+  flutter_form_builder: ^7.1.1
   flutter_riverpod: ^1.0.1
   graphql: ^5.0.0
   http: ^0.13.2
@@ -38,9 +39,6 @@ dev_dependencies:
     sdk: flutter
 
   bloc_test: ^9.0.3
-  build_runner: ^2.0.1
-  # not sure how to use this with fvm and flutter
-  # build_test: ^2.1.5
   environment_config: ^3.0.0
   flutter_lints: ^1.0.4
   mocktail: ^0.3.0
