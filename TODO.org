@@ -1,5 +1,8 @@
 * Action Items
+** TODO Filenames seems to be the generated ulids instead of original names
+*** seems like the drag-and-drop does not get the original file names
 ** TODO Fix all of the new flutter/dart warnings everywhere
+** TODO Find tanuki image and add to upper left
 ** Import from web-enabled handheld device
 *** Ensure web interface works well for small screens
 **** Flutter Folio example app that works well for all screen sizes
@@ -401,6 +404,7 @@ include it in the database records.
 *** apply common filters
 **** c.f. https://github.com/silvia-odwyer/photon
 *** open asset in external program in temporary file
+**** easy-to-use app: https://github.com/robaho/seashore
 ** Data Integrity
 *** Guard against concurrent modifications
 **** consider how to manage multiple users making changes
