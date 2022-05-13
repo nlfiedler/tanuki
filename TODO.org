@@ -1,8 +1,6 @@
 * Action Items
-** TODO Filenames seems to be the generated ulids instead of original names
-*** seems like the drag-and-drop does not get the original file names
 ** TODO Fix all of the new flutter/dart warnings everywhere
-** TODO Find tanuki image and add to upper left
+** TODO Put tanuki image in upper left
 ** Import from web-enabled handheld device
 *** Ensure web interface works well for small screens
 **** Flutter Folio example app that works well for all screen sizes
@@ -56,6 +54,8 @@
 *** hover over a video to start playing it
 ** Add date order button on gallery (ascending/descending)
 *** the GraphQL operation supports sorting, should use it for something
+** Better search interface
+*** Flutter has a search field and suggestions API, try using that instead of buggy chips input
 ** Secondary index performance
 *** When doing the bulk update, need to use a bulk update operation to avoid building the index repeatedly
 ** Possible poor use of flutter

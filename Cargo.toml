@@ -35,7 +35,7 @@ lru = "0.7.2"
 mime = "0.3.16"
 mime_guess = "2.0.3"
 mokuroku = { version = "3.0.0", features = ["anyhow", "serde_cbor"] }
-mp4 = "0.9.2"
+mp4 = "0.10.0"
 riff = "1.0.0"
 rocksdb = "0.18.0"
 rusty_ulid = "1.0.0"
