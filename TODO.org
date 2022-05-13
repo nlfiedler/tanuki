@@ -1,6 +1,4 @@
 * Action Items
-** TODO Fix all of the new flutter/dart warnings everywhere
-** TODO Put tanuki image in upper left
 ** Import from web-enabled handheld device
 *** Ensure web interface works well for small screens
 **** Flutter Folio example app that works well for all screen sizes
@@ -54,13 +52,14 @@
 *** hover over a video to start playing it
 ** Add date order button on gallery (ascending/descending)
 *** the GraphQL operation supports sorting, should use it for something
-** Better search interface
-*** Flutter has a search field and suggestions API, try using that instead of buggy chips input
 ** Secondary index performance
 *** When doing the bulk update, need to use a bulk update operation to avoid building the index repeatedly
 ** Possible poor use of flutter
 *** TODO Evaluate use of =StatefulWidget= to ensure correctness
 **** e.g. does =TagSelectorForm= really need to be a stateful widget?
+** Fix chips input
+*** fork the repo and fix the issues
+*** find all the issues mentioned herein
 ** Gallery display modes
 *** different modes of display
 **** grid of just images, maybe 180x180 (a la Apple Photos)
@@ -241,7 +240,7 @@ Recognizer:
 ***** rename a tag
 ***** set caption
 ***** change media type
-** Search Improvements
+** Advanced Search
 *** TODO Add support for searching by mimetype
 *** TODO Begin search when user pauses typing
 **** Use =debounceTime= operator in RxDart with BLoC state for this
@@ -254,9 +253,9 @@ Recognizer:
 **** =is:image= and similar to filter by media type
 **** =with:<name>= to filter by people (need to know the people though)
 **** =AND= and =OR= operators and grouping with parentheses
-*** TODO Support searching for assets that have no tags at all
-*** TODO Support searching for assets that have no location at all
-*** TODO Support searching for assets that have no caption at all
+*** TODO Support searching for assets that have no tags
+*** TODO Support searching for assets that have no location
+*** TODO Support searching for assets that have no caption
 *** TODO Support searching the caption text
 **** likely would involve a full table scan
 *** TODO searching for images by dimensions (~pano~, ~landscape~, ~portrait~)

@@ -1,29 +1,31 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_count_bloc.dart';
 import 'package:tanuki/features/browse/preso/widgets/asset_browser.dart';
 
+// ignore: use_key_in_widget_constructors
 class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('all your assets are belong to us'),
+        leading: Image.asset('public/images/tanuki.png'),
+        title: const Text('all your assets are belong to us'),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pushNamed(context, '/upload');
             },
-            child: Icon(Icons.file_upload),
+            child: const Icon(Icons.file_upload),
           ),
           TextButton(
             onPressed: () {
               Navigator.pushNamed(context, '/recents');
             },
-            child: Icon(Icons.history),
+            child: const Icon(Icons.history),
           ),
         ],
       ),
@@ -34,6 +36,7 @@ class HomeScreen extends StatelessWidget {
 
 // Show either a help screen when the database is empty, or show the asset
 // browser if there is anything to see.
+// ignore: use_key_in_widget_constructors
 class HomeMainWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -57,7 +60,7 @@ class HomeMainWidget extends StatelessWidget {
             }
             return AssetBrowser();
           }
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         },
       ),
     );
@@ -69,13 +72,13 @@ Widget buildEmptyHelp(BuildContext context) {
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('Nothing to show, please add something.'),
-        SizedBox(height: 8.0),
+        const Text('Nothing to show, please add something.'),
+        const SizedBox(height: 8.0),
         ElevatedButton(
           onPressed: () {
             Navigator.pushNamed(context, '/upload');
           },
-          child: Text('Upload'),
+          child: const Text('Upload'),
         ),
       ],
     ),
