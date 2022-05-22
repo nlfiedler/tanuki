@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html';
@@ -15,11 +15,14 @@ import 'package:flutter_dropzone/flutter_dropzone.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/core/preso/widgets/dotted_border.dart';
 import 'package:tanuki/features/import/preso/bloc/upload_file_bloc.dart';
 import 'package:tanuki/features/import/preso/bloc/providers.dart';
 
 class UploadForm extends ConsumerStatefulWidget {
+  const UploadForm({Key? key}) : super(key: key);
+
   @override
   _UploadFormState createState() => _UploadFormState();
 }
@@ -46,7 +49,7 @@ class _UploadFormState extends ConsumerState<UploadForm> {
       return Row(
         children: [
           CircularProgressIndicator(value: value),
-          SizedBox(width: 16.0),
+          const SizedBox(width: 16.0),
           Expanded(
             child: Text('Uploading ${(state.current as dynamic).name}...'),
           ),
@@ -54,13 +57,13 @@ class _UploadFormState extends ConsumerState<UploadForm> {
       );
     }
     if (_selectedFiles.isNotEmpty) {
-      return Text('Use the Upload button to upload the files.');
+      return const Text('Tap [Upload] button');
     }
     if (state is Finished) {
       if (state.skipped.isNotEmpty) {
         return Column(
           children: [
-            Text('The following files could not be copied:'),
+            const Text('These files could not be uploaded:'),
             Expanded(
               child: ListView.builder(
                 itemBuilder: (BuildContext context, int index) {
@@ -72,9 +75,9 @@ class _UploadFormState extends ConsumerState<UploadForm> {
           ],
         );
       }
-      return Text('All done!');
+      return const Text('All done!');
     }
-    return Text('Use the Choose Files button to get started.');
+    return const Text('Tap [Choose Files] button');
   }
 
   void _startUpload(BuildContext context) {
@@ -134,45 +137,56 @@ class _UploadFormState extends ConsumerState<UploadForm> {
           }
         },
         builder: (context, state) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(96.0, 48.0, 16.0, 16.0),
-                child: ElevatedButton(
-                  onPressed: () => _pickFiles(context),
-                  child: Text('Choose Files'),
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          16.0,
-                          48.0,
-                          16.0,
-                          16.0,
-                        ),
-                        child: _buildUploadStatus(context, state),
-                      ),
+          return Column(
+            children: [
+              ResponsiveRowColumn(
+                columnCrossAxisAlignment: CrossAxisAlignment.center,
+                columnMainAxisAlignment: MainAxisAlignment.start,
+                columnMainAxisSize: MainAxisSize.min,
+                columnPadding: const EdgeInsets.all(16.0),
+                rowPadding: const EdgeInsets.all(16.0),
+                rowCrossAxisAlignment: CrossAxisAlignment.start,
+                rowMainAxisAlignment: MainAxisAlignment.spaceAround,
+                layout: ResponsiveWrapper.of(context).isSmallerThan(TABLET)
+                    ? ResponsiveRowColumnType.COLUMN
+                    : ResponsiveRowColumnType.ROW,
+                children: [
+                  ResponsiveRowColumnItem(
+                    rowFlex: 1,
+                    columnFlex: 1,
+                    child: ElevatedButton(
+                      onPressed: () => _pickFiles(context),
+                      child: const Text('Choose Files'),
                     ),
-                    _buildDropZone(context),
-                    _buildFileList(_selectedFiles, state),
-                  ],
-                ),
+                  ),
+                  ResponsiveRowColumnItem(
+                    rowFlex: 1,
+                    rowFit: FlexFit.tight,
+                    columnFlex: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: _buildUploadStatus(context, state),
+                    ),
+                  ),
+                  ResponsiveRowColumnItem(
+                    rowFlex: 1,
+                    columnFlex: 1,
+                    child: ElevatedButton(
+                      onPressed: _selectedFiles.isNotEmpty
+                          ? () => _startUpload(context)
+                          : null,
+                      child: const Text('Upload'),
+                    ),
+                  )
+                ],
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 48.0, 96.0, 16.0),
-                child: ElevatedButton(
-                  onPressed: _selectedFiles.isNotEmpty
-                      ? () => _startUpload(context)
-                      : null,
-                  child: Text('Upload'),
-                ),
-              )
+              ResponsiveVisibility(
+                hiddenWhen: const [
+                  Condition.smallerThan(name: TABLET),
+                ],
+                child: _buildDropZone(context),
+              ),
+              _buildFileList(_selectedFiles, state),
             ],
           );
         },
@@ -188,39 +202,42 @@ class _UploadFormState extends ConsumerState<UploadForm> {
     // Instead of a hard-coded size for the drop zone, make it a factor of the
     // size of the headline text in the current theme.
     final boxHeight = theme.textTheme.headline1?.fontSize;
-    return DottedBorder(
-      color: borderColor,
-      strokeWidth: 1.0,
-      gap: 4.0,
-      child: Container(
-        height: boxHeight,
-        padding: EdgeInsets.all(8.0),
-        child: Stack(
-          children: [
-            Builder(
-              builder: (context) => DropzoneView(
-                operation: DragOperation.copy,
-                cursor: CursorType.grab,
-                onHover: () {
-                  if (!highlightDropZone) {
-                    setState(() => highlightDropZone = true);
-                  }
-                },
-                onLeave: () {
-                  setState(() => highlightDropZone = false);
-                },
-                onDrop: (ev) {
-                  // Even when dropping multiple files, this gets called once
-                  // for each file in the set, so must append to the list.
-                  setState(() {
-                    _selectedFiles.add(ev);
-                    highlightDropZone = false;
-                  });
-                },
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: DottedBorder(
+        color: borderColor,
+        strokeWidth: 1.0,
+        gap: 4.0,
+        child: Container(
+          height: boxHeight,
+          padding: const EdgeInsets.all(8.0),
+          child: Stack(
+            children: [
+              Builder(
+                builder: (context) => DropzoneView(
+                  operation: DragOperation.copy,
+                  cursor: CursorType.grab,
+                  onHover: () {
+                    if (!highlightDropZone) {
+                      setState(() => highlightDropZone = true);
+                    }
+                  },
+                  onLeave: () {
+                    setState(() => highlightDropZone = false);
+                  },
+                  onDrop: (ev) {
+                    // Even when dropping multiple files, this gets called once
+                    // for each file in the set, so must append to the list.
+                    setState(() {
+                      _selectedFiles.add(ev);
+                      highlightDropZone = false;
+                    });
+                  },
+                ),
               ),
-            ),
-            Center(child: Text('You can drag and drop files here')),
-          ],
+              const Center(child: Text('You can drag and drop files here')),
+            ],
+          ),
         ),
       ),
     );

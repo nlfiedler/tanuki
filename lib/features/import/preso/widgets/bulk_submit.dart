@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,7 +14,7 @@ class BulkSubmit extends ConsumerWidget {
   final BulkCallback onSubmit;
   final VoidCallback onComplete;
 
-  BulkSubmit({
+  const BulkSubmit({
     Key? key,
     required this.onSubmit,
     required this.onComplete,
@@ -43,7 +43,7 @@ class BulkSubmit extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Fill in some or all of the fields and then'),
+                const Text('Fill in some or all captions and then'),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8.0, 0, 8.0, 0),
                   child: ElevatedButton(
@@ -55,7 +55,7 @@ class BulkSubmit extends ConsumerWidget {
                         );
                       }
                     },
-                    child: Text('SAVE'),
+                    child: const Text('SAVE'),
                   ),
                 ),
               ],

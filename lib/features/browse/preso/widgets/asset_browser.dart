@@ -1,8 +1,9 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
 import 'assets_list.dart';
 import 'dates_selector.dart';
@@ -11,6 +12,8 @@ import 'page_controls.dart';
 import 'tags_selector.dart';
 
 class AssetBrowser extends StatelessWidget {
+  const AssetBrowser({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -48,21 +51,26 @@ class AssetBrowser extends StatelessWidget {
                         child: LocationsSelector(),
                       ),
                     ),
-                    Expanded(
-                      flex: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: DatesSelector(),
+                    ResponsiveVisibility(
+                      hiddenWhen: const [
+                        Condition.smallerThan(name: TABLET),
+                      ],
+                      child: Expanded(
+                        flex: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: DatesSelector(),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                PageControls(),
-                Expanded(child: AssetsList()),
+                const PageControls(),
+                const Expanded(child: AssetsList()),
               ],
             );
           }
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         },
       ),
     );

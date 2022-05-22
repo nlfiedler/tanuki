@@ -3,6 +3,7 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_count_bloc.dart';
 import 'package:tanuki/features/browse/preso/widgets/asset_browser.dart';
 
@@ -13,7 +14,20 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         leading: Image.asset('public/images/tanuki.png'),
-        title: const Text('all your assets are belong to us'),
+        title: ResponsiveValue(
+          context,
+          defaultValue: const Text('we have your assets'),
+          valueWhen: const [
+            Condition.smallerThan(
+              name: MOBILE,
+              value: Text('your assets'),
+            ),
+            Condition.largerThan(
+              name: TABLET,
+              value: Text('all your assets are belong to us'),
+            )
+          ],
+        ).value,
         actions: [
           TextButton(
             onPressed: () {
@@ -58,7 +72,7 @@ class HomeMainWidget extends StatelessWidget {
             if (state.count == 0) {
               return buildEmptyHelp(context);
             }
-            return AssetBrowser();
+            return const AssetBrowser();
           }
           return const Center(child: CircularProgressIndicator());
         },

@@ -1,19 +1,22 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
 import 'package:tanuki/features/import/preso/bloc/providers.dart';
 import 'package:tanuki/features/import/preso/widgets/bulk_form.dart';
 
 class RecentsScreen extends ConsumerWidget {
+  const RecentsScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('all your assets now belong to us'),
+        title: const Text('all your assets now belong to us'),
       ),
       body: BlocProvider<RecentImportsBloc>(
         create: (_) => ref.read(recentImportsBlocProvider),
@@ -26,12 +29,15 @@ class RecentsScreen extends ConsumerWidget {
               );
             } else if (state is Loaded) {
               return Column(
-                children: [RecentsSelector(), Expanded(child: BulkForm())],
+                children: [
+                  const RecentsSelector(),
+                  Expanded(child: BulkForm())
+                ],
               );
             } else if (state is Error) {
               return Text('Query error: ' + state.message);
             }
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           },
         ),
       ),
@@ -40,6 +46,8 @@ class RecentsScreen extends ConsumerWidget {
 }
 
 class RecentsSelector extends StatelessWidget {
+  const RecentsSelector({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -53,12 +61,18 @@ class RecentsSelector extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Pending assets: ${state.results.count}',
-                        style: biggerStyle,
+                  ResponsiveVisibility(
+                    hiddenWhen: const [
+                      Condition.smallerThan(name: TABLET),
+                    ],
+                    child: Expanded(
+                      child: Center(
+                        child: Text(
+                          'Pending assets: ${state.results.count}',
+                          style: biggerStyle,
+                        ),
                       ),
                     ),
                   ),

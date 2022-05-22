@@ -1,11 +1,10 @@
 * Action Items
-** Import from web-enabled handheld device
-*** Ensure web interface works well for small screens
-**** Flutter Folio example app that works well for all screen sizes
-***** c.f. https://flutter.gskinner.com
-*** Support easy import of photos from phone collection via web interface
-*** Look for package that enables user to select photos to upload
-**** e.g. =image_picker= or =file_picker= packages
+** Responsive interface
+*** Flutter Folio example app that works well for all screen sizes
+**** c.f. https://flutter.gskinner.com
+** Update flutter navigator
+*** Someday the Navigator 2.0 will be a part of stable
+*** It is page based and offers an improved API for page navigation
 ** Better tagging of recent imports
 *** design objectives
 **** save time when applying similar tags to lots of assets
@@ -52,11 +51,6 @@
 *** hover over a video to start playing it
 ** Add date order button on gallery (ascending/descending)
 *** the GraphQL operation supports sorting, should use it for something
-** Secondary index performance
-*** When doing the bulk update, need to use a bulk update operation to avoid building the index repeatedly
-** Possible poor use of flutter
-*** TODO Evaluate use of =StatefulWidget= to ensure correctness
-**** e.g. does =TagSelectorForm= really need to be a stateful widget?
 ** Fix chips input
 *** fork the repo and fix the issues
 *** find all the issues mentioned herein
@@ -98,6 +92,7 @@
 ** Deployment issues
 *** Consider using =dart:html= to get the current URL vs setting at build time
 **** GraphQL client needs the full address of the server
+**** However, running in dev mode the url in the browser has a weird port
 ** Interface improvements
 *** reference: https://flutter.github.io/samples/
 *** Thumbnail Serving Strategy
@@ -569,9 +564,6 @@ include it in the database records.
 *** Asynchronous
 **** Will need to start using =async/await= as more libraries return =Future=
 **** Use of actix means that tokio runtime is already in place
-*** Navigation update in Flutter
-**** Someday the Navigator 2.0 will be a part of dev/beta/stable
-**** It is page based and offers an improved API for page navigation
 *** Large file upload
 **** split file into chunks, upload one-by-one, showing progress
 ***** default to 8MB chunks, most images will be smaller than that

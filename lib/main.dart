@@ -1,9 +1,10 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_locations_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_years_bloc.dart';
@@ -17,10 +18,12 @@ import 'package:tanuki/features/import/preso/screens/upload_screen.dart';
 import 'package:tanuki/features/modify/preso/screens/edit_asset_screen.dart';
 
 void main() {
-  runApp(ProviderScope(child: MyApp()));
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MultiBlocProvider(
@@ -42,12 +45,24 @@ class MyApp extends ConsumerWidget {
         ),
       ],
       child: MaterialApp(
+        builder: (context, child) => ResponsiveWrapper.builder(
+          BouncingScrollWrapper.builder(context, child!),
+          defaultScale: true,
+          breakpoints: [
+            const ResponsiveBreakpoint.resize(450, name: MOBILE),
+            const ResponsiveBreakpoint.autoScale(800, name: TABLET),
+            const ResponsiveBreakpoint.autoScale(1000, name: TABLET),
+            const ResponsiveBreakpoint.resize(1200, name: DESKTOP),
+            const ResponsiveBreakpoint.autoScale(2460, name: "4K"),
+          ],
+          background: Container(color: const Color(0xFFF5F5F5)),
+        ),
         title: 'Tanuki',
         initialRoute: '/',
         routes: {
           '/': (context) => HomeScreen(),
-          '/asset': (context) => AssetScreen(),
-          '/edit': (context) => EditAssetScreen(),
+          '/asset': (context) => const AssetScreen(),
+          '/edit': (context) => const EditAssetScreen(),
           '/recents': (context) => RecentsScreen(),
           '/upload': (context) => UploadScreen(),
         },

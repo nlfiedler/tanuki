@@ -1,11 +1,12 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/preso/widgets/asset_display.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_bloc.dart';
@@ -16,6 +17,8 @@ import 'package:tanuki/features/modify/preso/widgets/update_submit.dart';
 final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
 
 class EditAssetScreen extends ConsumerWidget {
+  const EditAssetScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // fetch the asset again just in case of concurrent edits
@@ -37,7 +40,16 @@ class EditAssetScreen extends ConsumerWidget {
           if (state is Loaded) {
             return Scaffold(
               appBar: AppBar(
-                title: Text('Editing ${state.asset.filename}'),
+                title: ResponsiveValue(
+                  context,
+                  defaultValue: Text('Editing ${state.asset.filename}'),
+                  valueWhen: [
+                    Condition.smallerThan(
+                      name: TABLET,
+                      value: Text(state.asset.filename),
+                    )
+                  ],
+                ).value,
                 actions: [
                   UpdateSubmit(assetId: assetId, formKey: _fbKey),
                 ],
@@ -45,7 +57,7 @@ class EditAssetScreen extends ConsumerWidget {
               body: AssetEditor(asset: state.asset),
             );
           }
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         },
       ),
     );
@@ -55,7 +67,7 @@ class EditAssetScreen extends ConsumerWidget {
 class AssetEditor extends StatelessWidget {
   final Asset asset;
 
-  AssetEditor({
+  const AssetEditor({
     Key? key,
     required this.asset,
   }) : super(key: key);
@@ -86,7 +98,7 @@ class AssetEditor extends StatelessWidget {
 class AssetEditForm extends StatefulWidget {
   final Asset asset;
 
-  AssetEditForm({
+  const AssetEditForm({
     Key? key,
     required this.asset,
   }) : super(key: key);
@@ -114,7 +126,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
         children: [
           FormBuilderTextField(
             name: 'datetime',
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.calendar_today),
               labelText: 'Date',
             ),
@@ -122,7 +134,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
           ),
           FormBuilderDateTimePicker(
             name: 'userdate',
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.calendar_today),
               labelText: 'Custom Date',
             ),
@@ -130,14 +142,14 @@ class _AssetEditFormState extends State<AssetEditForm> {
           ),
           FormBuilderTextField(
             name: 'caption',
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.format_quote),
               labelText: 'Caption',
             ),
           ),
           FormBuilderTextField(
             name: 'tags',
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.label),
               labelText: 'Tags',
             ),
@@ -150,14 +162,14 @@ class _AssetEditFormState extends State<AssetEditForm> {
           ),
           FormBuilderTextField(
             name: 'location',
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.location_on),
               labelText: 'Location',
             ),
           ),
           FormBuilderTextField(
             name: 'mimetype',
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.code),
               labelText: 'Media type',
             ),

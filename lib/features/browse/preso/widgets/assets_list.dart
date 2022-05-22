@@ -1,14 +1,17 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/preso/widgets/asset_display.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
 
 class AssetsList extends StatelessWidget {
+  const AssetsList({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -21,7 +24,7 @@ class AssetsList extends StatelessWidget {
           if (state is Loaded) {
             return buildThumbnails(context, state.results.results);
           }
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         },
       ),
     );
@@ -54,7 +57,12 @@ Widget buildThumbnails(BuildContext context, List<SearchResult> results) {
                   displayWidth: 300,
                 ),
                 Text(dateString),
-                Text(e.filename),
+                ResponsiveVisibility(
+                  hiddenWhen: const [
+                    Condition.smallerThan(name: TABLET),
+                  ],
+                  child: Text(e.filename),
+                ),
               ]),
             ),
           ),
@@ -78,8 +86,8 @@ Widget imageErrorBuilder(
     child: Center(
       child: Card(
         child: ListTile(
-          leading: Icon(Icons.error_outline),
-          title: Text('Unable to load thumbnail'),
+          leading: const Icon(Icons.error_outline),
+          title: const Text('Unable to load thumbnail'),
           subtitle: Text(error.toString()),
         ),
       ),

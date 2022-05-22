@@ -1,11 +1,12 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:intl/intl.dart';
 import 'package:oxidized/oxidized.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/preso/widgets/asset_display.dart';
@@ -14,6 +15,8 @@ import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
 import 'bulk_submit.dart';
 
 class BulkForm extends StatefulWidget {
+  const BulkForm({Key? key}) : super(key: key);
+
   @override
   _BulkFormState createState() => _BulkFormState();
 }
@@ -45,12 +48,12 @@ class _BulkFormState extends State<BulkForm> {
         return AssetInputId(
           id: results[idx].id,
           input: AssetInput(
-            tags: [],
+            tags: const [],
             caption: Option.from(caption.isEmpty ? null : caption),
-            location: None(),
-            datetime: None(),
-            mimetype: None(),
-            filename: None(),
+            location: const None(),
+            datetime: const None(),
+            mimetype: const None(),
+            filename: const None(),
           ),
         );
       });
@@ -70,7 +73,7 @@ class _BulkFormState extends State<BulkForm> {
             if (state.results.count > 0) {
               return _buildForm(state.results);
             } else {
-              return Center(
+              return const Center(
                 child: Text(
                   'Use the time period selectors to find pending assets.',
                 ),
@@ -128,7 +131,7 @@ class BulkFormRow extends StatelessWidget {
   final String initial;
   final ValueChanged onChanged;
 
-  BulkFormRow({
+  const BulkFormRow({
     Key? key,
     required this.result,
     required this.attribute,
@@ -153,7 +156,7 @@ class BulkFormRow extends StatelessWidget {
                 FormBuilderTextField(
                   name: attribute,
                   initialValue: initial,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     icon: Icon(Icons.format_quote),
                     labelText: 'Caption',
                   ),
@@ -179,7 +182,7 @@ class BulkFormRow extends StatelessWidget {
 class BulkThumbnail extends StatelessWidget {
   final SearchResult result;
 
-  BulkThumbnail({Key? key, required this.result}) : super(key: key);
+  const BulkThumbnail({Key? key, required this.result}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +201,12 @@ class BulkThumbnail extends StatelessWidget {
             displayWidth: 300,
           ),
           Text(dateString),
-          Text(result.filename),
+          ResponsiveVisibility(
+            hiddenWhen: const [
+              Condition.smallerThan(name: TABLET),
+            ],
+            child: Text(result.filename),
+          ),
         ]),
       ),
     );

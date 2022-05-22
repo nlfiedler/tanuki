@@ -1,11 +1,12 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/preso/widgets/asset_display.dart';
 import 'package:tanuki/environment_config.dart';
@@ -14,6 +15,8 @@ import 'package:tanuki/features/browse/preso/bloc/providers.dart';
 import 'package:url_launcher/url_launcher.dart' as launcher;
 
 class AssetScreen extends ConsumerWidget {
+  const AssetScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final String assetId = ModalRoute.of(context)?.settings.arguments as String;
@@ -34,13 +37,22 @@ class AssetScreen extends ConsumerWidget {
           if (state is Loaded) {
             return Scaffold(
               appBar: AppBar(
-                title: Text('Details for ${state.asset.filename}'),
+                title: ResponsiveValue(
+                  context,
+                  defaultValue: Text('Details for ${state.asset.filename}'),
+                  valueWhen: [
+                    Condition.smallerThan(
+                      name: TABLET,
+                      value: Text(state.asset.filename),
+                    )
+                  ],
+                ).value,
                 actions: [
                   TextButton(
                     onPressed: () async {
                       await downloadAsset(context, state.asset);
                     },
-                    child: Icon(Icons.file_download),
+                    child: const Icon(Icons.file_download),
                   ),
                   TextButton(
                     onPressed: () {
@@ -48,14 +60,14 @@ class AssetScreen extends ConsumerWidget {
                       Navigator.pushReplacementNamed(context, '/edit',
                           arguments: state.asset.id);
                     },
-                    child: Icon(Icons.edit),
+                    child: const Icon(Icons.edit),
                   ),
                 ],
               ),
               body: AssetPreview(asset: state.asset),
             );
           }
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         },
       ),
     );
@@ -63,13 +75,13 @@ class AssetScreen extends ConsumerWidget {
 }
 
 Future<void> downloadAsset(BuildContext context, Asset asset) async {
-  final baseUrl = EnvironmentConfig.base_url;
+  const baseUrl = EnvironmentConfig.base_url;
   final url = '$baseUrl/api/asset/${asset.id}';
   if (await launcher.canLaunch(url)) {
     await launcher.launch(url);
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Could not launch URL')),
+      const SnackBar(content: Text('Could not launch URL')),
     );
   }
 }
@@ -77,7 +89,7 @@ Future<void> downloadAsset(BuildContext context, Asset asset) async {
 class AssetPreview extends StatelessWidget {
   final Asset asset;
 
-  AssetPreview({
+  const AssetPreview({
     Key? key,
     required this.asset,
   }) : super(key: key);
@@ -108,7 +120,7 @@ class AssetPreview extends StatelessWidget {
 class AssetEditForm extends StatefulWidget {
   final Asset asset;
 
-  AssetEditForm({
+  const AssetEditForm({
     Key? key,
     required this.asset,
   }) : super(key: key);
@@ -145,7 +157,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
         children: [
           FormBuilderTextField(
             name: 'datetime',
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.calendar_today),
               labelText: 'Date',
             ),
@@ -153,7 +165,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
           ),
           FormBuilderTextField(
             name: 'caption',
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.format_quote),
               labelText: 'Caption',
             ),
@@ -161,7 +173,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
           ),
           FormBuilderTextField(
             name: 'tags',
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.label),
               labelText: 'Tags',
             ),
@@ -169,7 +181,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
           ),
           FormBuilderTextField(
             name: 'location',
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.location_on),
               labelText: 'Location',
             ),
@@ -177,7 +189,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
           ),
           FormBuilderTextField(
             name: 'filename',
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.folder_outlined),
               labelText: 'File name',
             ),
@@ -185,7 +197,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
           ),
           FormBuilderTextField(
             name: 'filesize',
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.info_outline),
               labelText: 'File size',
             ),
@@ -193,7 +205,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
           ),
           FormBuilderTextField(
             name: 'mimetype',
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.code),
               labelText: 'Media type',
             ),

@@ -1,13 +1,16 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2022 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
 
 class PageControls extends StatelessWidget {
+  const PageControls({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -28,7 +31,7 @@ class PageControls extends StatelessWidget {
                           .add(ShowPage(page: state.pageNumber - 1));
                     }
                   : null,
-              child: Icon(Icons.chevron_left),
+              child: const Icon(Icons.chevron_left),
             );
             final nextPageButton = ElevatedButton(
               onPressed: state.pageNumber < state.lastPage
@@ -37,13 +40,13 @@ class PageControls extends StatelessWidget {
                           .add(ShowPage(page: state.pageNumber + 1));
                     }
                   : null,
-              child: Icon(Icons.chevron_right),
+              child: const Icon(Icons.chevron_right),
             );
             final pageNumberText =
                 Text('Page ${state.pageNumber} of ${state.lastPage}');
             final pageSizePopup = PopupMenuButton<int>(
               tooltip: 'Set page size',
-              icon: Icon(Icons.pages),
+              icon: const Icon(Icons.pages),
               initialValue: state.pageSize,
               onSelected: (int value) {
                 BlocProvider.of<AssetBrowserBloc>(context)
@@ -75,7 +78,7 @@ class PageControls extends StatelessWidget {
                       child: Text('${state.results.count} results'),
                     ),
                   )
-                : Spacer(flex: 1);
+                : const Spacer(flex: 1);
             return Row(
               children: [
                 resultsCountText,
@@ -85,17 +88,22 @@ class PageControls extends StatelessWidget {
                   child: pageNumberText,
                 ),
                 nextPageButton,
-                SizedBox(
+                const SizedBox(
                   width: 48.0,
                 ),
-                Expanded(
-                  flex: 2,
-                  child: PageInputForm(
-                    lastPage: state.lastPage,
-                    onSubmit: (page) {
-                      BlocProvider.of<AssetBrowserBloc>(context)
-                          .add(ShowPage(page: page));
-                    },
+                ResponsiveVisibility(
+                  hiddenWhen: const [
+                    Condition.smallerThan(name: TABLET),
+                  ],
+                  child: Expanded(
+                    flex: 2,
+                    child: PageInputForm(
+                      lastPage: state.lastPage,
+                      onSubmit: (page) {
+                        BlocProvider.of<AssetBrowserBloc>(context)
+                            .add(ShowPage(page: page));
+                      },
+                    ),
                   ),
                 ),
                 Padding(
@@ -105,7 +113,7 @@ class PageControls extends StatelessWidget {
               ],
             );
           }
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         },
       ),
     );
@@ -118,7 +126,7 @@ class PageInputForm extends StatefulWidget {
   final int lastPage;
   final PageCallback onSubmit;
 
-  PageInputForm({
+  const PageInputForm({
     Key? key,
     required this.lastPage,
     required this.onSubmit,
@@ -147,7 +155,7 @@ class _PageInputFormState extends State<PageInputForm> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: FormBuilder(
               key: _fbKey,
-              initialValue: {'page': '1'},
+              initialValue: const {'page': '1'},
               child: FormBuilderTextField(
                 readOnly: widget.lastPage < 2,
                 name: 'page',

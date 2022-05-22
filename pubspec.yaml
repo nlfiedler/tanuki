@@ -31,6 +31,7 @@ dependencies:
   mime: ^1.0.0
   oxidized: ^5.2.0
   path: ^1.8.0
+  responsive_framework: ^0.1.9
   url_launcher: ^6.0.3
   video_player: ^2.1.1
 
