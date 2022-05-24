@@ -207,7 +207,7 @@ async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> 
 // error condition.
 async fn default_index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
     let file = NamedFile::open(DEFAULT_INDEX.as_path())?;
-    Ok(file.use_last_modified(true))
+    Ok(file.use_etag(true).use_last_modified(true))
 }
 
 #[actix_web::main]
@@ -238,7 +238,12 @@ async fn main() -> std::io::Result<()> {
             .route("/api/asset/{id}", web::get().to(raw_asset))
             .route("/api/asset/{id}", web::head().to(raw_asset))
             .route("/api/import", web::post().to(import_assets))
-            .service(Files::new("/", STATIC_PATH.clone()).index_file("index.html"))
+            .service(
+                Files::new("/", STATIC_PATH.clone())
+                    .use_etag(true)
+                    .use_last_modified(true)
+                    .index_file("index.html"),
+            )
             .default_service(web::get().to(default_index))
     })
     .bind(addr)?
