@@ -1,4 +1,23 @@
 * Action Items
+** TODO Fix chips input
+*** TODO fork the repo and fix the issues
+*** TODO find all the issues mentioned herein
+*** TODO update to work with latest flutter
+** TODO doc: advanced GraphQL ops
+*** diagnosing issues
+#+begin_src shell
+#!/bin/sh
+curl -g -X POST -H "Content-Type: application/json" \
+     -d '{"query":"query{diagnose(checksum: null) { assetId errorCode } }"}' \
+     http://192.168.1.1:3000/graphql
+#+end_src
+*** repairing issues
+#+begin_src shell
+#!/bin/sh
+curl -g -X POST -H "Content-Type: application/json" \
+     -d '{"query":"mutation{repair(checksum: null) { assetId errorCode } }"}' \
+     http://192.168.1.1:3000/graphql
+#+end_src
 ** Responsive interface
 *** Flutter Folio example app that works well for all screen sizes
 **** c.f. https://flutter.gskinner.com
@@ -51,9 +70,6 @@
 *** hover over a video to start playing it
 ** Add date order button on gallery (ascending/descending)
 *** the GraphQL operation supports sorting, should use it for something
-** Fix chips input
-*** fork the repo and fix the issues
-*** find all the issues mentioned herein
 ** Gallery display modes
 *** different modes of display
 **** grid of just images, maybe 180x180 (a la Apple Photos)

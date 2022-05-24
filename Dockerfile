@@ -32,13 +32,14 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get -q update && \
     apt-get -q -y install unzip
 RUN pub global activate fvm
-RUN fvm install stable
+RUN fvm install 2.10.5
 WORKDIR /flutter
 COPY fonts fonts/
 COPY lib lib/
 COPY pubspec.yaml .
+COPY public public/
 COPY web web/
-RUN fvm use stable
+RUN fvm use 2.10.5
 RUN fvm flutter config --enable-web
 RUN fvm flutter pub get
 ENV BASE_URL ${BASE_URL}
