@@ -1,7 +1,12 @@
 * Action Items
 ** TODO Fix chips input
-*** TODO fork the repo and fix the issues
-*** TODO find all the issues mentioned herein
+*** DONE set up flutter sdk, pub get, test
+*** TODO learn to use debugger to track focus
+*** TODO bug #66: web version loses focus after 1 character
+**** happens in ios simulator
+*** TODO bug #92: add more form elements to try to reproduce
+*** TODO bug #703: add radio buttons to try to reproduce
+*** TODO fix broken network image links in example
 *** TODO update to work with latest flutter
 ** TODO doc: advanced GraphQL ops
 *** diagnosing issues
