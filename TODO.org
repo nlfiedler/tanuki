@@ -2,6 +2,8 @@
 ** TODO Fix chips input
 *** DONE set up flutter sdk, pub get, test
 *** TODO learn to use debugger to track focus
+*** TODO bug #3: FocusNode was used after being disposed
+**** c.f. https://github.com/flutter-form-builder-ecosystem/form_builder_extra_fields/issues/3
 *** TODO bug #66: web version loses focus after 1 character
 **** happens in ios simulator
 *** TODO bug #92: add more form elements to try to reproduce
