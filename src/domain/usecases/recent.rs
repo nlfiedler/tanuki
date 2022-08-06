@@ -22,7 +22,7 @@ impl RecentImports {
 impl super::UseCase<Vec<SearchResult>, Params> for RecentImports {
     fn call(&self, params: Params) -> Result<Vec<SearchResult>, Error> {
         let after = params.after_date.unwrap_or_else(|| {
-            let date = chrono::MIN_DATE;
+            let date = chrono::Date::<Utc>::MIN_UTC;
             Utc.ymd(date.year(), date.month(), date.day())
                 .and_hms(0, 0, 0)
         });

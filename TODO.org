@@ -1,4 +1,6 @@
 * Action Items
+** TODO Try to update Flutter SDK
+*** may encounter problems with certain pinned dependencies
 ** TODO Fix chips input
 *** DONE set up flutter sdk, pub get, test
 *** TODO learn to use debugger to track focus

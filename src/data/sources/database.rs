@@ -265,7 +265,8 @@ impl Database {
         let db = self.db.lock().unwrap();
         let iter = db.db().prefix_iterator(pre_bytes);
         let mut count = 0;
-        for (key, _value) in iter {
+        for item in iter {
+            let (key, _value) = item?;
             let pre = &key[..pre_bytes.len()];
             if pre != pre_bytes {
                 break;
@@ -297,7 +298,8 @@ impl Database {
         let db = self.db.lock().unwrap();
         let iter = db.db().prefix_iterator(pre_bytes);
         let mut results: Vec<String> = Vec::new();
-        for (key, _value) in iter {
+        for item in iter {
+            let (key, _value) = item?;
             let pre = &key[..pre_bytes.len()];
             if pre != pre_bytes {
                 break;
@@ -319,7 +321,8 @@ impl Database {
         let db = self.db.lock().unwrap();
         let iter = db.db().prefix_iterator(pre_bytes);
         let mut results: HashMap<String, Box<[u8]>> = HashMap::new();
-        for (key, value) in iter {
+        for item in iter {
+            let (key, value) = item?;
             let pre = &key[..pre_bytes.len()];
             if pre != pre_bytes {
                 break;
