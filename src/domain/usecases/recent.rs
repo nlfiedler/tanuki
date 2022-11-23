@@ -3,8 +3,8 @@
 //
 use crate::domain::entities::SearchResult;
 use crate::domain::repositories::RecordRepository;
-use chrono::prelude::*;
 use anyhow::Error;
+use chrono::prelude::*;
 use std::cmp;
 use std::fmt;
 
@@ -22,9 +22,10 @@ impl RecentImports {
 impl super::UseCase<Vec<SearchResult>, Params> for RecentImports {
     fn call(&self, params: Params) -> Result<Vec<SearchResult>, Error> {
         let after = params.after_date.unwrap_or_else(|| {
-            let date = chrono::Date::<Utc>::MIN_UTC;
-            Utc.ymd(date.year(), date.month(), date.day())
-                .and_hms(0, 0, 0)
+            let date = chrono::DateTime::<Utc>::MIN_UTC;
+            Utc.with_ymd_and_hms(date.year(), date.month(), date.day(), 0, 0, 0)
+                .earliest()
+                .unwrap_or_else(|| Utc::now())
         });
         let results = self.repo.query_newborn(after)?;
         Ok(results)
@@ -107,7 +108,10 @@ mod tests {
             location: None,
             datetime: Utc::now(),
         }];
-        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let after = Utc
+            .with_ymd_and_hms(2018, 5, 31, 21, 10, 11)
+            .single()
+            .unwrap();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_newborn()
             .with(eq(after))

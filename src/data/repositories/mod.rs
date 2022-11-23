@@ -5,9 +5,10 @@ use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, SearchResult};
 use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
-use chrono::prelude::*;
 use anyhow::{anyhow, Error};
+use chrono::prelude::*;
 use lazy_static::lazy_static;
+use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 use std::str;
 use std::sync::{Arc, Mutex};
@@ -19,7 +20,7 @@ lazy_static! {
     //
     // If the Mutex proves to be problematic, switch to ReentrantMutex in the
     // parking_lot crate, which allows recursive locking.
-    static ref LRU_CACHE: Mutex<lru::LruCache<String, Vec<u8>>> = Mutex::new(lru::LruCache::new(100));
+    static ref LRU_CACHE: Mutex<lru::LruCache<String, Vec<u8>>> = Mutex::new(lru::LruCache::new(NonZeroUsize::new(100).unwrap()));
 }
 
 // Use an `Arc` to hold the data source to make cloning easy for the caller. If
@@ -269,6 +270,19 @@ mod tests {
     use anyhow::anyhow;
     use mockall::predicate::*;
     use tempfile::tempdir;
+
+    fn make_date_time(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        minute: u32,
+        second: u32,
+    ) -> chrono::DateTime<Utc> {
+        Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
+            .single()
+            .unwrap()
+    }
 
     #[test]
     fn test_get_asset_ok() {
@@ -768,7 +782,7 @@ mod tests {
             location: Some("hawaii".to_owned()),
             datetime: Utc::now(),
         }];
-        let before = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let before = make_date_time(2018, 5, 31, 21, 10, 11);
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_before_date()
             .with(eq(before))
@@ -786,7 +800,7 @@ mod tests {
     #[test]
     fn test_query_before_date_err() {
         // arrange
-        let before = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let before = make_date_time(2018, 5, 31, 21, 10, 11);
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_before_date()
             .with(eq(before))
@@ -808,7 +822,7 @@ mod tests {
             location: Some("hawaii".to_owned()),
             datetime: Utc::now(),
         }];
-        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let after = make_date_time(2018, 5, 31, 21, 10, 11);
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_after_date()
             .with(eq(after))
@@ -826,7 +840,7 @@ mod tests {
     #[test]
     fn test_query_after_date_err() {
         // arrange
-        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let after = make_date_time(2018, 5, 31, 21, 10, 11);
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_after_date()
             .with(eq(after))
@@ -848,8 +862,8 @@ mod tests {
             location: Some("hawaii".to_owned()),
             datetime: Utc::now(),
         }];
-        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
-        let before = Utc.ymd(2019, 7, 4).and_hms(21, 10, 11);
+        let after = make_date_time(2018, 5, 31, 21, 10, 11);
+        let before = make_date_time(2019, 7, 4, 21, 10, 11);
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_date_range()
             .with(eq(after), eq(before))
@@ -867,8 +881,8 @@ mod tests {
     #[test]
     fn test_query_date_range_err() {
         // arrange
-        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
-        let before = Utc.ymd(2019, 7, 4).and_hms(21, 10, 11);
+        let after = make_date_time(2018, 5, 31, 21, 10, 11);
+        let before = make_date_time(2019, 7, 4, 21, 10, 11);
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_date_range()
             .with(eq(after), eq(before))
@@ -890,7 +904,7 @@ mod tests {
             location: None,
             datetime: Utc::now(),
         }];
-        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let after = make_date_time(2018, 5, 31, 21, 10, 11);
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_newborn()
             .with(eq(after))
@@ -908,7 +922,7 @@ mod tests {
     #[test]
     fn test_query_newborn_err() {
         // arrange
-        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let after = make_date_time(2018, 5, 31, 21, 10, 11);
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_newborn()
             .with(eq(after))
@@ -1037,7 +1051,7 @@ mod tests {
     #[test]
     fn test_store_blob_ok() {
         // arrange
-        let import_date = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let import_date = make_date_time(2018, 5, 31, 21, 10, 11);
         let id_path = "2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg";
         let id = base64::encode(id_path);
         let digest = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
@@ -1078,7 +1092,7 @@ mod tests {
         use std::fs::Permissions;
         use std::os::unix::fs::PermissionsExt;
         // arrange
-        let import_date = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let import_date = make_date_time(2018, 5, 31, 21, 10, 11);
         let id_path = "2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg";
         let id = base64::encode(id_path);
         let digest = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
@@ -1125,7 +1139,7 @@ mod tests {
     #[test]
     fn test_blob_path_ok() {
         // arrange
-        let import_date = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let import_date = make_date_time(2018, 5, 31, 21, 10, 11);
         let id_path = "2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg";
         let id = base64::encode(id_path);
         let digest = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";

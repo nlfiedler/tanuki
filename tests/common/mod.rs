@@ -88,7 +88,10 @@ impl AsRef<Path> for DBPath {
 /// Construct a simple asset instance.
 pub fn build_basic_asset() -> Asset {
     // use a predictable date for the date-related tests
-    let import_date = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+    let import_date = Utc
+        .with_ymd_and_hms(2018, 5, 31, 21, 10, 11)
+        .single()
+        .unwrap();
     Asset {
         key: "basic113".to_owned(),
         checksum: "cafebabe".to_owned(),

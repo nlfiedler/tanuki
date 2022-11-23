@@ -1,8 +1,8 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-use chrono::prelude::*;
 use anyhow::{anyhow, Error};
+use chrono::prelude::*;
 use std::cmp;
 use std::fmt;
 use std::fs::File;
@@ -98,7 +98,10 @@ fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTim
         } else {
             mp4.moov.mvhd.creation_time
         };
-        return Ok(Utc.timestamp(creation_time as i64, 0));
+        return Ok(Utc
+            .timestamp_opt(creation_time as i64, 0)
+            .single()
+            .unwrap_or_else(|| Utc::now()));
     }
     Err(anyhow!("could not read any date"))
 }

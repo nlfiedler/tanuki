@@ -822,6 +822,19 @@ mod tests {
         assert_eq!(diagnoses.len(), 0);
     }
 
+    fn make_date_time(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        minute: u32,
+        second: u32,
+    ) -> chrono::DateTime<Utc> {
+        Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
+            .single()
+            .unwrap()
+    }
+
     #[test]
     fn test_diagnose_original_date() {
         // arrange
@@ -840,12 +853,12 @@ mod tests {
             caption: None,
             location: None,
             user_date: None,
-            original_date: Some(Utc.ymd(2018, 5, 13).and_hms(12, 11, 0)),
+            original_date: Some(make_date_time(2018, 5, 13, 12, 11, 0)),
             dimensions: None,
         };
         let asset_bad_clone = asset_bad.clone();
         let mut asset_good = asset_bad.clone();
-        let original_date = Some(Utc.ymd(2003, 9, 3).and_hms(17, 24, 35));
+        let original_date = Some(make_date_time(2003, 9, 3, 17, 24, 35));
         asset_good.original_date = original_date;
         let mut records = MockRecordRepository::new();
         records

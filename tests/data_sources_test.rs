@@ -121,6 +121,19 @@ fn test_all_locations() {
     assert!(actual.iter().any(|l| l.label == "paris" && l.count == 1));
 }
 
+fn make_date_time(
+    year: i32,
+    month: u32,
+    day: u32,
+    hour: u32,
+    minute: u32,
+    second: u32,
+) -> chrono::DateTime<Utc> {
+    Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
+        .single()
+        .unwrap()
+}
+
 #[test]
 fn test_all_years() {
     let db_path = DBPath::new("_test_all_years");
@@ -141,15 +154,15 @@ fn test_all_years() {
     // multiple years and occurrences
     let mut asset = common::build_basic_asset();
     asset.key = "single999".to_owned();
-    asset.import_date = Utc.ymd(2018, 7, 4).and_hms(12, 12, 12);
+    asset.import_date = make_date_time(2018, 7, 4, 12, 12, 12);
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wonder101".to_owned();
-    asset.import_date = Utc.ymd(2017, 7, 4).and_hms(12, 12, 12);
+    asset.import_date = make_date_time(2017, 7, 4, 12, 12, 12);
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "tuesday42".to_owned();
-    asset.import_date = Utc.ymd(2016, 7, 4).and_hms(12, 12, 12);
+    asset.import_date = make_date_time(2016, 7, 4, 12, 12, 12);
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_years().unwrap();
     assert_eq!(actual.len(), 3);
@@ -361,11 +374,11 @@ fn test_query_by_dates() {
     let db_path = DBPath::new("_test_query_by_dates");
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
 
-    let date1 = Utc.ymd(2011, 8, 30).and_hms(12, 12, 12);
-    let date2 = Utc.ymd(2013, 8, 30).and_hms(12, 12, 12);
-    let date3 = Utc.ymd(2015, 8, 30).and_hms(12, 12, 12);
-    let date4 = Utc.ymd(2017, 8, 30).and_hms(12, 12, 12);
-    let date5 = Utc.ymd(2019, 8, 30).and_hms(12, 12, 12);
+    let date1 = make_date_time(2011, 8, 30, 12, 12, 12);
+    let date2 = make_date_time(2013, 8, 30, 12, 12, 12);
+    let date3 = make_date_time(2015, 8, 30, 12, 12, 12);
+    let date4 = make_date_time(2017, 8, 30, 12, 12, 12);
+    let date5 = make_date_time(2019, 8, 30, 12, 12, 12);
 
     // zero assets
     assert_eq!(datasource.query_before_date(date1).unwrap().len(), 0);
@@ -571,17 +584,17 @@ fn test_query_newborn() {
     let db_path = DBPath::new("_test_query_newborn");
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
 
-    let date1 = Utc.ymd(2011, 8, 30).and_hms(12, 12, 12);
-    let date2 = Utc.ymd(2013, 8, 30).and_hms(12, 12, 12);
-    let date3 = Utc.ymd(2015, 8, 30).and_hms(12, 12, 12);
-    let date4 = Utc.ymd(2017, 8, 30).and_hms(12, 12, 12);
-    let date5 = Utc.ymd(2019, 8, 30).and_hms(12, 12, 12);
+    let date1 = make_date_time(2011, 8, 30, 12, 12, 12);
+    let date2 = make_date_time(2013, 8, 30, 12, 12, 12);
+    let date3 = make_date_time(2015, 8, 30, 12, 12, 12);
+    let date4 = make_date_time(2017, 8, 30, 12, 12, 12);
+    let date5 = make_date_time(2019, 8, 30, 12, 12, 12);
 
     // zero assets
     assert_eq!(datasource.query_newborn(date1).unwrap().len(), 0);
 
     // one asset
-    let import_date = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+    let import_date = make_date_time(2018, 5, 31, 21, 10, 11);
     let asset = common::build_newborn_asset("abc123", import_date);
     datasource.put_asset(&asset).unwrap();
     assert_eq!(datasource.query_newborn(date4).unwrap().len(), 1);
@@ -616,29 +629,29 @@ fn test_query_newborn_old() {
     let db_path = DBPath::new("_test_query_newborn_old");
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
 
-    let import_date = Utc.ymd(1940, 8, 20).and_hms(12, 12, 12);
+    let import_date = make_date_time(1940, 8, 20, 12, 12, 12);
     let asset = common::build_newborn_asset("monday1", import_date);
     datasource.put_asset(&asset).unwrap();
 
-    let import_date = Utc.ymd(1960, 8, 20).and_hms(12, 12, 12);
+    let import_date = make_date_time(1960, 8, 20, 12, 12, 12);
     let asset = common::build_newborn_asset("tuesday2", import_date);
     datasource.put_asset(&asset).unwrap();
 
-    let import_date = Utc.ymd(1970, 8, 20).and_hms(12, 12, 12);
+    let import_date = make_date_time(1970, 8, 20, 12, 12, 12);
     let asset = common::build_newborn_asset("wednesday3", import_date);
     datasource.put_asset(&asset).unwrap();
 
-    let import_date = Utc.ymd(1980, 8, 20).and_hms(12, 12, 12);
+    let import_date = make_date_time(1980, 8, 20, 12, 12, 12);
     let asset = common::build_newborn_asset("thursday4", import_date);
     datasource.put_asset(&asset).unwrap();
 
-    let import_date = Utc.ymd(2010, 5, 13).and_hms(21, 10, 11);
+    let import_date = make_date_time(2010, 5, 13, 21, 10, 11);
     let asset = common::build_newborn_asset("friday5", import_date);
     datasource.put_asset(&asset).unwrap();
 
     // query for a time "less than" the Unix time, but "greater than" the
     // earliest asset in the system
-    let query_date = Utc.ymd(1950, 5, 13).and_hms(21, 10, 11);
+    let query_date = make_date_time(1950, 5, 13, 21, 10, 11);
     let actual = datasource.query_newborn(query_date).unwrap();
     assert_eq!(actual.len(), 4);
     assert!(actual.iter().any(|l| l.asset_id == "tuesday2"));

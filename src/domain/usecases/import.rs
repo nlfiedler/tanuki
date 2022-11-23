@@ -177,9 +177,22 @@ mod tests {
     use crate::domain::repositories::MockRecordRepository;
     use mockall::predicate::*;
 
+    fn make_date_time(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        minute: u32,
+        second: u32,
+    ) -> chrono::DateTime<Utc> {
+        Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
+            .single()
+            .unwrap()
+    }
+
     #[test]
     fn test_new_asset_id() {
-        let import_date = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let import_date = make_date_time(2018, 5, 31, 21, 10, 11);
         let filename = "fighting_kittens.jpg";
         let mt = mime::IMAGE_JPEG;
         let actual = new_asset_id(import_date, Path::new(filename), &mt);

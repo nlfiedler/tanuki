@@ -647,6 +647,19 @@ mod tests {
     use juniper::{InputValue, ToInputValue, Variables};
     use mockall::predicate::*;
 
+    fn make_date_time(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        minute: u32,
+        second: u32,
+    ) -> chrono::DateTime<Utc> {
+        Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
+            .single()
+            .unwrap()
+    }
+
     #[test]
     fn test_bounded_int_value() {
         assert_eq!(10, bounded_int_value(None, 10, 1, 250));
@@ -698,7 +711,7 @@ mod tests {
             byte_length: 1048576,
             media_type: "image/jpeg".to_owned(),
             tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
+            import_date: make_date_time(2018, 5, 31, 21, 10, 11),
             caption: None,
             location: Some("hawaii".to_owned()),
             user_date: None,
@@ -1000,7 +1013,7 @@ mod tests {
             byte_length: 1048576,
             media_type: "image/jpeg".to_owned(),
             tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
+            import_date: make_date_time(2018, 5, 31, 21, 10, 11),
             caption: None,
             location: Some("hawaii".to_owned()),
             user_date: None,
@@ -1092,49 +1105,49 @@ mod tests {
                 filename: "img_1234.png".to_owned(),
                 media_type: "image/png".to_owned(),
                 location: Some("hawaii".to_owned()),
-                datetime: Utc.ymd(2012, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2012, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "babecafe".to_owned(),
                 filename: "img_2345.gif".to_owned(),
                 media_type: "image/gif".to_owned(),
                 location: Some("london".to_owned()),
-                datetime: Utc.ymd(2013, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2013, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "cafed00d".to_owned(),
                 filename: "img_3456.mov".to_owned(),
                 media_type: "video/quicktime".to_owned(),
                 location: Some("paris".to_owned()),
-                datetime: Utc.ymd(2014, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2014, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "d00dcafe".to_owned(),
                 filename: "img_4567.jpg".to_owned(),
                 media_type: "image/jpeg".to_owned(),
                 location: Some("hawaii".to_owned()),
-                datetime: Utc.ymd(2015, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2015, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "deadbeef".to_owned(),
                 filename: "img_5678.mov".to_owned(),
                 media_type: "video/quicktime".to_owned(),
                 location: Some("london".to_owned()),
-                datetime: Utc.ymd(2016, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2016, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "cafebeef".to_owned(),
                 filename: "img_6789.jpg".to_owned(),
                 media_type: "image/jpeg".to_owned(),
                 location: Some("paris".to_owned()),
-                datetime: Utc.ymd(2017, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2017, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "deadcafe".to_owned(),
                 filename: "img_7890.jpg".to_owned(),
                 media_type: "image/jpeg".to_owned(),
                 location: Some("yosemite".to_owned()),
-                datetime: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2018, 5, 31, 21, 10, 11),
             },
         ]
     }
@@ -1232,7 +1245,7 @@ mod tests {
             // add leading zeros so sorting by id works naturally
             let asset_id = format!("cafebabe-{:04}", index);
             let filename = format!("img_1{}.jpg", index);
-            let base_time = Utc.ymd(2012, 5, 31).and_hms(21, 10, 11);
+            let base_time = make_date_time(2012, 5, 31, 21, 10, 11);
             let duration = chrono::Duration::days(index);
             let datetime = base_time + duration;
             let location_index = (index % locations.len() as i64) as usize;
@@ -1255,7 +1268,7 @@ mod tests {
             filename: "img_1234.png".to_owned(),
             media_type: "image/png".to_owned(),
             location: None,
-            datetime: Utc.ymd(2019, 5, 13).and_hms(20, 46, 11),
+            datetime: make_date_time(2019, 5, 13, 20, 46, 11),
         }];
         let mut mock = MockEntityDataSource::new();
         mock.expect_query_newborn()
@@ -1845,7 +1858,7 @@ mod tests {
             byte_length: 1048576,
             media_type: "image/jpeg".to_owned(),
             tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
+            import_date: make_date_time(2018, 5, 31, 21, 10, 11),
             caption: None,
             location: Some("hawaii".to_owned()),
             user_date: None,
@@ -1955,7 +1968,7 @@ mod tests {
             byte_length: 1048576,
             media_type: "image/jpeg".to_owned(),
             tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
+            import_date: make_date_time(2018, 5, 31, 21, 10, 11),
             caption: None,
             location: Some("hawaii".to_owned()),
             user_date: None,
@@ -2013,7 +2026,7 @@ mod tests {
             byte_length: 1048576,
             media_type: "image/jpeg".to_owned(),
             tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
+            import_date: make_date_time(2018, 5, 31, 21, 10, 11),
             caption: None,
             location: Some("hawaii".to_owned()),
             user_date: None,
@@ -2027,7 +2040,7 @@ mod tests {
             byte_length: 1048576,
             media_type: "image/jpeg".to_owned(),
             tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: Utc.ymd(2018, 6, 9).and_hms(14, 0, 11),
+            import_date: make_date_time(2018, 6, 9, 14, 0, 11),
             caption: None,
             location: Some("oakland".to_owned()),
             user_date: None,

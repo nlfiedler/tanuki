@@ -217,7 +217,7 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
-        let epoch = Utc.timestamp(0, 0);
+        let epoch = Utc.timestamp_opt(0, 0).unwrap();
         let key = encode_datetime(&after);
         let query_results = if epoch > after {
             // A Unix timestamp is encoded as seconds since the epoch using a

@@ -24,6 +24,7 @@ dependencies:
   flutter_chips_input: 1.9.3
   flutter_dropzone: ^3.0.5
   # lock on 7.1.1 for https://github.com/danvick/flutter_form_builder/issues/1028
+  # (issue seemingly punted, upgrade to 7.2.x for flutter 3)
   flutter_form_builder: 7.1.1
   flutter_riverpod: ^1.0.3
   graphql: ^5.0.0

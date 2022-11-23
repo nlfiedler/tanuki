@@ -3,8 +3,8 @@
 //
 use crate::domain::entities::SearchResult;
 use crate::domain::repositories::RecordRepository;
-use chrono::prelude::*;
 use anyhow::Error;
+use chrono::prelude::*;
 use std::cmp;
 use std::fmt;
 
@@ -293,6 +293,19 @@ mod tests {
     use anyhow::anyhow;
     use mockall::predicate::*;
 
+    fn make_date_time(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        minute: u32,
+        second: u32,
+    ) -> chrono::DateTime<Utc> {
+        Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
+            .single()
+            .unwrap()
+    }
+
     #[test]
     fn test_search_assets_tags_ok() {
         // arrange
@@ -343,7 +356,7 @@ mod tests {
             location: Some("hawaii".to_owned()),
             datetime: Utc::now(),
         }];
-        let after = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let after = make_date_time(2018, 5, 31, 21, 10, 11);
         let mut mock = MockRecordRepository::new();
         mock.expect_query_after_date()
             .with(eq(after))
@@ -370,7 +383,7 @@ mod tests {
             location: Some("hawaii".to_owned()),
             datetime: Utc::now(),
         }];
-        let before = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let before = make_date_time(2018, 5, 31, 21, 10, 11);
         let mut mock = MockRecordRepository::new();
         mock.expect_query_before_date()
             .with(eq(before))
@@ -397,8 +410,8 @@ mod tests {
             location: Some("hawaii".to_owned()),
             datetime: Utc::now(),
         }];
-        let after = Utc.ymd(2018, 1, 31).and_hms(21, 10, 11);
-        let before = Utc.ymd(2018, 5, 13).and_hms(21, 10, 11);
+        let after = make_date_time(2018, 1, 31, 21, 10, 11);
+        let before = make_date_time(2018, 5, 31, 21, 10, 11);
         let mut mock = MockRecordRepository::new();
         mock.expect_query_date_range()
             .with(eq(after), eq(before))
@@ -501,49 +514,49 @@ mod tests {
                 filename: "IMG_2431.PNG".to_owned(),
                 media_type: "IMAGE/PNG".to_owned(),
                 location: Some("HAWAII".to_owned()),
-                datetime: Utc.ymd(2012, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2012, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "babecafe".to_owned(),
                 filename: "IMG_2345.GIF".to_owned(),
                 media_type: "IMAGE/GIF".to_owned(),
                 location: Some("LONDON".to_owned()),
-                datetime: Utc.ymd(2013, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2013, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "cafed00d".to_owned(),
                 filename: "IMG_6431.MOV".to_owned(),
                 media_type: "VIDEO/QUICKTIME".to_owned(),
                 location: Some("PARIS".to_owned()),
-                datetime: Utc.ymd(2014, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2014, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "d00dcafe".to_owned(),
                 filename: "IMG_4567.JPG".to_owned(),
                 media_type: "IMAGE/JPEG".to_owned(),
                 location: Some("HAWAII".to_owned()),
-                datetime: Utc.ymd(2015, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2015, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "deadbeef".to_owned(),
                 filename: "IMG_5678.MOV".to_owned(),
                 media_type: "VIDEO/QUICKTIME".to_owned(),
                 location: Some("LONDON".to_owned()),
-                datetime: Utc.ymd(2016, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2016, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "cafebeef".to_owned(),
                 filename: "IMG_6789.JPG".to_owned(),
                 media_type: "IMAGE/JPEG".to_owned(),
                 location: Some("PARIS".to_owned()),
-                datetime: Utc.ymd(2017, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2017, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "deadcafe".to_owned(),
                 filename: "IMG_3142.JPG".to_owned(),
                 media_type: "IMAGE/JPEG".to_owned(),
                 location: Some("YOSEMITE".to_owned()),
-                datetime: Utc.ymd(2018, 5, 31).and_hms(21, 10, 11),
+                datetime: make_date_time(2018, 5, 31, 21, 10, 11),
             },
         ]
     }
@@ -623,8 +636,8 @@ mod tests {
         let usecase = SearchAssets::new(Box::new(mock));
         let mut params: Params = Default::default();
         params.tags = vec!["kitten".to_owned()];
-        params.after_date = Some(Utc.ymd(2014, 4, 28).and_hms(21, 10, 11));
-        params.before_date = Some(Utc.ymd(2017, 4, 28).and_hms(21, 10, 11));
+        params.after_date = Some(make_date_time(2014, 4, 28, 21, 10, 11));
+        params.before_date = Some(make_date_time(2017, 4, 28, 21, 10, 11));
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -646,7 +659,7 @@ mod tests {
         let usecase = SearchAssets::new(Box::new(mock));
         let mut params: Params = Default::default();
         params.tags = vec!["kitten".to_owned()];
-        params.after_date = Some(Utc.ymd(2016, 4, 28).and_hms(21, 10, 11));
+        params.after_date = Some(make_date_time(2016, 4, 28, 21, 10, 11));
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -668,7 +681,7 @@ mod tests {
         let usecase = SearchAssets::new(Box::new(mock));
         let mut params: Params = Default::default();
         params.tags = vec!["kitten".to_owned()];
-        params.before_date = Some(Utc.ymd(2016, 4, 28).and_hms(21, 10, 11));
+        params.before_date = Some(make_date_time(2016, 4, 28, 21, 10, 11));
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());

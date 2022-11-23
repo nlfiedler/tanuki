@@ -1,17 +1,22 @@
 * Action Items
-** TODO Try to update Flutter SDK
-*** may encounter problems with certain pinned dependencies
+** TODO Import hangs after ~140 assets
+*** seems like Firefox is completely frozen at some point
 ** TODO Fix chips input
 *** DONE set up flutter sdk, pub get, test
 *** TODO learn to use debugger to track focus
 *** TODO bug #3: FocusNode was used after being disposed
+**** =flutter_input_chips= changelog says an issue just like this one is fixed in 1.9.5
 **** c.f. https://github.com/flutter-form-builder-ecosystem/form_builder_extra_fields/issues/3
 *** TODO bug #66: web version loses focus after 1 character
 **** happens in ios simulator
 *** TODO bug #92: add more form elements to try to reproduce
 *** TODO bug #703: add radio buttons to try to reproduce
 *** TODO fix broken network image links in example
-*** TODO update to work with latest flutter
+** TODO Try to update Flutter SDK
+*** need =flutter_chips_input= verison 2.0 for flutter 3.0 support
+*** need to fix chips input to work with latest flutter
+*** then try updating as many dependencies as possible
+*** may encounter problems with other pinned dependencies
 ** TODO doc: advanced GraphQL ops
 *** diagnosing issues
 #+begin_src shell
@@ -27,6 +32,9 @@ curl -g -X POST -H "Content-Type: application/json" \
      -d '{"query":"mutation{repair(checksum: null) { assetId errorCode } }"}' \
      http://192.168.1.1:3000/graphql
 #+end_src
+** TODO evalutate: https://github.com/nextcloud/server
+*** look at its interface for ideas on ui design
+*** consider how it functions compared with tanuki
 ** Responsive interface
 *** Flutter Folio example app that works well for all screen sizes
 **** c.f. https://flutter.gskinner.com
@@ -558,9 +566,9 @@ include it in the database records.
 ***** Need this for building the application, not compiling code
 ****** dart, flutter, and rust/cargo all know how to compile code
 ****** need a process to assemble the application deliverable
-***** Supports Rust, Dart, Flutter
-***** Supports macOS, Windows?, Linux?
-***** Likely need a build machine for each target (mac, windows, linux)
+***** Should support Rust, Dart, Flutter
+***** Should support macOS, Windows
+***** Likely need a build machine for each target (mac, windows)
 ***** Contenders
 ******* https://bazel.build
 ******* https://please.build

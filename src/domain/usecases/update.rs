@@ -359,6 +359,19 @@ mod tests {
     use anyhow::anyhow;
     use mockall::predicate::*;
 
+    fn make_date_time(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        minute: u32,
+        second: u32,
+    ) -> chrono::DateTime<Utc> {
+        Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
+            .single()
+            .unwrap()
+    }
+
     #[test]
     fn test_merge_asset_input_noop() {
         let mut asset = Asset {
@@ -591,7 +604,7 @@ mod tests {
             original_date: None,
             dimensions: None,
         };
-        let user_date = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let user_date = make_date_time(2018, 5, 31, 21, 10, 11);
         let input = AssetInput {
             tags: vec![],
             caption: None,
@@ -621,7 +634,7 @@ mod tests {
             import_date: Utc::now(),
             caption: None,
             location: Some("hawaii".to_owned()),
-            user_date: Some(Utc.ymd(2018, 5, 31).and_hms(21, 10, 11)),
+            user_date: Some(make_date_time(2018, 5, 31, 21, 10, 11)),
             original_date: None,
             dimensions: None,
         };
@@ -673,7 +686,7 @@ mod tests {
     #[test]
     fn test_update_asset_ok() {
         // arrange
-        let user_date = Utc.ymd(2018, 5, 31).and_hms(21, 10, 11);
+        let user_date = make_date_time(2018, 5, 31, 21, 10, 11);
         let asset1 = Asset {
             key: "abc123".to_owned(),
             checksum: "cafebabe".to_owned(),

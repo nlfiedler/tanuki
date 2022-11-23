@@ -197,6 +197,19 @@ impl SearchResult {
 mod tests {
     use super::*;
 
+    fn make_date_time(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        minute: u32,
+        second: u32,
+    ) -> chrono::DateTime<Utc> {
+        Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
+            .single()
+            .unwrap()
+    }
+
     #[test]
     fn test_asset_builder() {
         let mut asset = Asset::new("abc123".to_owned());
@@ -206,11 +219,11 @@ mod tests {
             .filename("img_1234.jpg".to_owned());
         asset.byte_length(49152).media_type("image/jpeg".to_owned());
         asset.tags(vec!["cat".to_owned(), "dog".to_owned()]);
-        asset.import_date(Utc.ymd(2018, 5, 31).and_hms(21, 10, 11));
+        asset.import_date(make_date_time(2018, 5, 31, 21, 10, 11));
         asset.caption("this is a caption".to_owned());
         asset.location("hawaii".to_owned());
-        asset.user_date(Utc.ymd(2017, 6, 9).and_hms(21, 10, 11));
-        asset.original_date(Utc.ymd(2016, 10, 14).and_hms(21, 10, 11));
+        asset.user_date(make_date_time(2017, 6, 9, 21, 10, 11));
+        asset.original_date(make_date_time(2016, 10, 14, 21, 10, 11));
         asset.dimensions(Dimensions(640, 480));
         assert_eq!(asset.key, "abc123");
         assert_eq!(asset.checksum, "cafebabe");
@@ -309,11 +322,11 @@ mod tests {
             byte_length: 1024,
             media_type: "image/jpeg".to_owned(),
             tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: Utc.ymd(2017, 4, 28).and_hms(11, 12, 59),
+            import_date: make_date_time(2017, 4, 28, 11, 12, 59),
             caption: None,
             location: None,
-            user_date: Some(Utc.ymd(2018, 5, 31).and_hms(21, 10, 11)),
-            original_date: Some(Utc.ymd(2016, 8, 30).and_hms(12, 10, 30)),
+            user_date: Some(make_date_time(2018, 5, 31, 21, 10, 11)),
+            original_date: Some(make_date_time(2016, 8, 30, 12, 10, 30)),
             dimensions: None,
         };
         // act
@@ -332,11 +345,11 @@ mod tests {
             byte_length: 1024,
             media_type: "image/jpeg".to_owned(),
             tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: Utc.ymd(2017, 4, 28).and_hms(11, 12, 59),
+            import_date: make_date_time(2017, 4, 28, 11, 12, 59),
             caption: None,
             location: None,
             user_date: None,
-            original_date: Some(Utc.ymd(2016, 8, 30).and_hms(12, 10, 30)),
+            original_date: Some(make_date_time(2016, 8, 30, 12, 10, 30)),
             dimensions: None,
         };
         // act
@@ -355,7 +368,7 @@ mod tests {
             byte_length: 1024,
             media_type: "image/jpeg".to_owned(),
             tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: Utc.ymd(2017, 4, 28).and_hms(11, 12, 59),
+            import_date: make_date_time(2017, 4, 28, 11, 12, 59),
             caption: None,
             location: None,
             user_date: None,

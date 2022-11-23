@@ -1,8 +1,8 @@
 //
 // Copyright (c) 2020 Nathan Fiedler
 //
-use chrono::prelude::*;
 use anyhow::Error;
+use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
@@ -42,7 +42,9 @@ impl Into<tanuki::domain::entities::Asset> for ImportAsset {
             byte_length: self.doc.filesize,
             media_type: self.doc.mimetype,
             tags: self.doc.tags,
-            import_date: Utc.timestamp((self.doc.import_date / 1000) as i64, 0),
+            import_date: Utc
+                .timestamp_opt((self.doc.import_date / 1000) as i64, 0)
+                .unwrap(),
             caption: self.doc.caption,
             location: self
                 .doc
@@ -51,11 +53,11 @@ impl Into<tanuki::domain::entities::Asset> for ImportAsset {
             user_date: self
                 .doc
                 .user_date
-                .map(|d| Utc.timestamp((d / 1000) as i64, 0)),
+                .map(|d| Utc.timestamp_opt((d / 1000) as i64, 0).unwrap()),
             original_date: self
                 .doc
                 .original_date
-                .map(|d| Utc.timestamp((d / 1000) as i64, 0)),
+                .map(|d| Utc.timestamp_opt((d / 1000) as i64, 0).unwrap()),
             dimensions: None,
         }
     }
