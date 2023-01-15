@@ -33,6 +33,7 @@ curl -g -X POST -H "Content-Type: application/json" \
      http://192.168.1.1:3000/graphql
 #+end_src
 ** TODO evalutate: https://github.com/nextcloud/server
+*** c.f. https://hub.docker.com/_/nextcloud
 *** look at its interface for ideas on ui design
 *** consider how it functions compared with tanuki
 ** Responsive interface
@@ -323,6 +324,7 @@ Recognizer:
 ***** AV1 is the free alternative to encumbered HEVC
 ***** there are some crates for avif
 **** HEIF is an image file format employing HEVC (h.265) image coding
+**** https://crates.io/crates/libheif-rs (MIT)
 **** https://crates.io/crates/libvips (MIT) reads/writes HEIF
 ***** this library easily crashes with a segmentation fault
 **** https://github.com/oussama/libheif-rs (MIT)
@@ -587,6 +589,8 @@ include it in the database records.
 **** Consider if using GitLab (in a container) would be helpful
 ***** c.f. https://docs.gitlab.com/omnibus/docker/
 ** Architecture Review
+*** Flutter/Rust bridge, call Rust from Dart
+**** c.f. https://github.com/fzyzcjy/flutter_rust_bridge
 *** Rewrite application in Dart
 **** database: https://github.com/isar/isar
 ***** supports composite indices, filters, sorting

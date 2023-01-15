@@ -48,7 +48,6 @@ mod tests {
         ];
         let mut mock = MockRecordRepository::new();
         mock.expect_all_years()
-            .with()
             .returning(move || Ok(expected.clone()));
         // act
         let usecase = AllYears::new(Box::new(mock));
@@ -67,9 +66,7 @@ mod tests {
     fn test_all_years_err() {
         // arrange
         let mut mock = MockRecordRepository::new();
-        mock.expect_all_years()
-            .with()
-            .returning(|| Err(anyhow!("oh no")));
+        mock.expect_all_years().returning(|| Err(anyhow!("oh no")));
         // act
         let usecase = AllYears::new(Box::new(mock));
         let params = NoParams {};

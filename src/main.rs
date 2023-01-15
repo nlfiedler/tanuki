@@ -218,7 +218,7 @@ async fn main() -> std::io::Result<()> {
     let addr = format!("{}:{}", host, port);
     info!("listening on http://{}/...", addr);
     HttpServer::new(|| {
-        let schema = web::Data::new(std::sync::Arc::new(graphql::create_schema()));
+        let schema = web::Data::new(Arc::new(graphql::create_schema()));
         App::new()
             .app_data(schema)
             .wrap(middleware::Logger::default())

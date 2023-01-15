@@ -812,7 +812,7 @@ mod tests {
     fn test_query_count_ok() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_count_assets().with().returning(|| Ok(42));
+        mock.expect_count_assets().returning(|| Ok(42));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
@@ -833,7 +833,6 @@ mod tests {
         // arrange
         let mut mock = MockEntityDataSource::new();
         mock.expect_count_assets()
-            .with()
             .returning(|| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
@@ -868,7 +867,6 @@ mod tests {
         ];
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_locations()
-            .with()
             .returning(move || Ok(expected.clone()));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
@@ -905,7 +903,6 @@ mod tests {
         // arrange
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_locations()
-            .with()
             .returning(|| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
@@ -945,7 +942,6 @@ mod tests {
         ];
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_media_types()
-            .with()
             .returning(move || Ok(expected.clone()));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
@@ -982,7 +978,6 @@ mod tests {
         // arrange
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_media_types()
-            .with()
             .returning(|| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
@@ -1713,7 +1708,6 @@ mod tests {
         ];
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_tags()
-            .with()
             .returning(move || Ok(expected.clone()));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
@@ -1749,9 +1743,7 @@ mod tests {
     fn test_query_tags_err() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_all_tags()
-            .with()
-            .returning(|| Err(anyhow!("oh no")));
+        mock.expect_all_tags().returning(|| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
@@ -1790,7 +1782,6 @@ mod tests {
         ];
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_years()
-            .with()
             .returning(move || Ok(expected.clone()));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
@@ -1826,9 +1817,7 @@ mod tests {
     fn test_query_years_err() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_all_years()
-            .with()
-            .returning(|| Err(anyhow!("oh no")));
+        mock.expect_all_years().returning(|| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));

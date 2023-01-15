@@ -48,7 +48,6 @@ mod tests {
         ];
         let mut mock = MockRecordRepository::new();
         mock.expect_all_locations()
-            .with()
             .returning(move || Ok(expected.clone()));
         // act
         let usecase = AllLocations::new(Box::new(mock));
@@ -68,7 +67,6 @@ mod tests {
         // arrange
         let mut mock = MockRecordRepository::new();
         mock.expect_all_locations()
-            .with()
             .returning(|| Err(anyhow!("oh no")));
         // act
         let usecase = AllLocations::new(Box::new(mock));

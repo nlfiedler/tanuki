@@ -48,7 +48,6 @@ mod tests {
         ];
         let mut mock = MockRecordRepository::new();
         mock.expect_all_media_types()
-            .with()
             .returning(move || Ok(expected.clone()));
         // act
         let usecase = AllMediaTypes::new(Box::new(mock));
@@ -74,7 +73,6 @@ mod tests {
         // arrange
         let mut mock = MockRecordRepository::new();
         mock.expect_all_media_types()
-            .with()
             .returning(|| Err(anyhow!("oh no")));
         // act
         let usecase = AllMediaTypes::new(Box::new(mock));

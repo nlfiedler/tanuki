@@ -32,7 +32,7 @@ mod tests {
     fn test_count_assets_ok() {
         // arrange
         let mut mock = MockRecordRepository::new();
-        mock.expect_count_assets().with().returning(|| Ok(42));
+        mock.expect_count_assets().returning(|| Ok(42));
         // act
         let usecase = CountAssets::new(Box::new(mock));
         let params = NoParams {};
@@ -47,7 +47,6 @@ mod tests {
         // arrange
         let mut mock = MockRecordRepository::new();
         mock.expect_count_assets()
-            .with()
             .returning(|| Err(anyhow!("oh no")));
         // act
         let usecase = CountAssets::new(Box::new(mock));

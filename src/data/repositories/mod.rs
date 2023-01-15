@@ -475,7 +475,7 @@ mod tests {
     fn test_count_assets_ok() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_count_assets().with().returning(|| Ok(42));
+        mock.expect_count_assets().returning(|| Ok(42));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.count_assets();
@@ -489,7 +489,6 @@ mod tests {
         // arrange
         let mut mock = MockEntityDataSource::new();
         mock.expect_count_assets()
-            .with()
             .returning(|| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
@@ -517,7 +516,6 @@ mod tests {
         ];
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_locations()
-            .with()
             .returning(move || Ok(expected.clone()));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
@@ -536,7 +534,6 @@ mod tests {
         // arrange
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_locations()
-            .with()
             .returning(|| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
@@ -564,7 +561,6 @@ mod tests {
         ];
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_years()
-            .with()
             .returning(move || Ok(expected.clone()));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
@@ -582,9 +578,7 @@ mod tests {
     fn test_all_years_err() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_all_years()
-            .with()
-            .returning(|| Err(anyhow!("oh no")));
+        mock.expect_all_years().returning(|| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_years();
@@ -611,7 +605,6 @@ mod tests {
         ];
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_tags()
-            .with()
             .returning(move || Ok(expected.clone()));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
@@ -629,9 +622,7 @@ mod tests {
     fn test_all_tags_err() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_all_tags()
-            .with()
-            .returning(|| Err(anyhow!("oh no")));
+        mock.expect_all_tags().returning(|| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_tags();
@@ -658,7 +649,6 @@ mod tests {
         ];
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_media_types()
-            .with()
             .returning(move || Ok(expected.clone()));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
@@ -683,7 +673,6 @@ mod tests {
         // arrange
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_media_types()
-            .with()
             .returning(|| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
@@ -704,7 +693,6 @@ mod tests {
         ];
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_assets()
-            .with()
             .returning(move || Ok(expected.clone()));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
@@ -724,9 +712,7 @@ mod tests {
     fn test_all_assets_err() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_all_assets()
-            .with()
-            .returning(|| Err(anyhow!("oh no")));
+        mock.expect_all_assets().returning(|| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.all_assets();
