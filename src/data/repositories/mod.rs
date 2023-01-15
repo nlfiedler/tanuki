@@ -6,6 +6,7 @@ use crate::domain::entities::{Asset, LabeledCount, SearchResult};
 use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
 use anyhow::{anyhow, Error};
+use base64::{Engine as _, engine::general_purpose};
 use chrono::prelude::*;
 use lazy_static::lazy_static;
 use std::num::NonZeroUsize;
@@ -162,7 +163,7 @@ impl BlobRepository for BlobRepositoryImpl {
     }
 
     fn blob_path(&self, asset_id: &str) -> Result<PathBuf, Error> {
-        let decoded = base64::decode(asset_id)?;
+        let decoded = general_purpose::STANDARD.decode(asset_id)?;
         let as_string = str::from_utf8(&decoded)?;
         let rel_path = Path::new(&as_string);
         let mut full_path = self.basepath.clone();
@@ -1039,7 +1040,7 @@ mod tests {
         // arrange
         let import_date = make_date_time(2018, 5, 31, 21, 10, 11);
         let id_path = "2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg";
-        let id = base64::encode(id_path);
+        let id = general_purpose::STANDARD.encode(id_path);
         let digest = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
         let asset1 = Asset {
             key: id,
@@ -1080,7 +1081,7 @@ mod tests {
         // arrange
         let import_date = make_date_time(2018, 5, 31, 21, 10, 11);
         let id_path = "2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg";
-        let id = base64::encode(id_path);
+        let id = general_purpose::STANDARD.encode(id_path);
         let digest = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
         let asset1 = Asset {
             key: id,
@@ -1127,7 +1128,7 @@ mod tests {
         // arrange
         let import_date = make_date_time(2018, 5, 31, 21, 10, 11);
         let id_path = "2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg";
-        let id = base64::encode(id_path);
+        let id = general_purpose::STANDARD.encode(id_path);
         let digest = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
         let asset1 = Asset {
             key: id,

@@ -5,6 +5,7 @@ use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
 use crate::domain::usecases::{checksum_file, get_original_date, infer_media_type};
 use anyhow::Error;
+use base64::{Engine as _, engine::general_purpose};
 use log::{info, warn};
 use std::cmp;
 use std::ffi::OsStr;
@@ -82,7 +83,7 @@ impl Diagnose {
         } else {
             // failed to get asset path, either the identifier is not valid
             // base64 or the encoded value is not valid UTF-8
-            let diagnosis = if base64::decode(&asset_id).is_err() {
+            let diagnosis = if general_purpose::STANDARD.decode(&asset_id).is_err() {
                 Diagnosis::new(&asset_id, ErrorCode::Base64)
             } else {
                 Diagnosis::new(&asset_id, ErrorCode::Utf8)
@@ -132,7 +133,7 @@ impl Diagnose {
     fn fix_filename(&self, asset_id: &str) {
         if let Ok(mut asset) = self.records.get_asset(&asset_id) {
             let mut fixed = false;
-            if let Ok(vector) = base64::decode(asset_id) {
+            if let Ok(vector) = general_purpose::STANDARD.decode(asset_id) {
                 if let Ok(string) = str::from_utf8(&vector) {
                     let filepath = Path::new(string);
                     if let Some(filename) = filepath.file_name() {
@@ -195,7 +196,7 @@ impl Diagnose {
     //
     // N.B. This changes the identifier of the asset in the database.
     fn fix_extension(&self, old_asset_id: &str) {
-        if let Ok(old_decoded) = base64::decode(old_asset_id) {
+        if let Ok(old_decoded) = general_purpose::STANDARD.decode(old_asset_id) {
             if let Ok(old_path) = str::from_utf8(&old_decoded) {
                 if let Ok(old_asset) = self.records.get_asset(&old_asset_id) {
                     if let Ok(mime_type) = old_asset.media_type.parse::<mime::Mime>() {
@@ -239,7 +240,7 @@ fn replace_extension(path: &str, extension: &str) -> String {
         new_path.set_file_name(stem);
         new_path.set_extension(extension);
     }
-    base64::encode(new_path.to_string_lossy().as_bytes())
+    general_purpose::STANDARD.encode(new_path.to_string_lossy().as_bytes())
 }
 
 impl super::UseCase<Vec<Diagnosis>, Params> for Diagnose {

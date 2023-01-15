@@ -7,6 +7,7 @@ use crate::domain::repositories::RecordRepository;
 use crate::domain::usecases::{checksum_file, get_original_date, infer_media_type};
 use chrono::prelude::*;
 use anyhow::{anyhow, Error};
+use base64::{Engine as _, engine::general_purpose};
 use rusty_ulid::generate_ulid_string;
 use std::cmp;
 use std::ffi::OsStr;
@@ -153,7 +154,7 @@ fn new_asset_id(datetime: DateTime<Utc>, filepath: &Path, media_type: &mime::Mim
     }
     leading_path.push_str(&name);
     let rel_path = leading_path.to_lowercase();
-    base64::encode(&rel_path)
+    general_purpose::STANDARD.encode(&rel_path)
 }
 
 ///
@@ -199,7 +200,7 @@ mod tests {
         // Cannot compare the actual value because it incorporates a random
         // number, can only decode and check the basic format matches
         // expectations.
-        let decoded = base64::decode(&actual).unwrap();
+        let decoded = general_purpose::STANDARD.decode(&actual).unwrap();
         let as_string = std::str::from_utf8(&decoded).unwrap();
         assert!(as_string.starts_with("2018/05/31/2100/"));
         assert!(as_string.ends_with(".jpg"));
@@ -208,7 +209,7 @@ mod tests {
         // test with an image/jpeg asset with an incorrect extension
         let filename = "fighting_kittens.foo";
         let actual = new_asset_id(import_date, Path::new(filename), &mt);
-        let decoded = base64::decode(&actual).unwrap();
+        let decoded = general_purpose::STANDARD.decode(&actual).unwrap();
         let as_string = std::str::from_utf8(&decoded).unwrap();
         // jpe because it's first in the list of [jpe, jpeg, jpg]
         assert!(as_string.ends_with(".foo.jpe"));
@@ -216,7 +217,7 @@ mod tests {
         // test with an image/jpeg asset with _no_ extension
         let filename = "fighting_kittens";
         let actual = new_asset_id(import_date, Path::new(filename), &mt);
-        let decoded = base64::decode(&actual).unwrap();
+        let decoded = general_purpose::STANDARD.decode(&actual).unwrap();
         let as_string = std::str::from_utf8(&decoded).unwrap();
         // jpe because it's first in the list of [jpe, jpeg, jpg]
         assert!(as_string.ends_with(".jpe"));
