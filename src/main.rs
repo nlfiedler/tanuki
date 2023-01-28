@@ -68,7 +68,10 @@ async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut asset_ids: Vec<String> = Vec::new();
     while let Ok(Some(mut field)) = payload.try_next().await {
         let disposition = field.content_disposition();
-        let content_type = field.content_type().to_owned();
+        let content_type = field
+            .content_type()
+            .unwrap_or(&mime::APPLICATION_OCTET_STREAM)
+            .to_owned();
         let filename = disposition
             .get_filename()
             .ok_or_else(|| actix_web::error::ContentTypeError::ParseError)?;
