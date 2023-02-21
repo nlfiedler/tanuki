@@ -1,22 +1,18 @@
 * Action Items
-** TODO Import hangs after ~140 assets
-*** seems like Firefox is completely frozen at some point
-** TODO Fix chips input
-*** DONE set up flutter sdk, pub get, test
-*** TODO learn to use debugger to track focus
-*** TODO bug #3: FocusNode was used after being disposed
-**** =flutter_input_chips= changelog says an issue just like this one is fixed in 1.9.5
-**** c.f. https://github.com/flutter-form-builder-ecosystem/form_builder_extra_fields/issues/3
-*** TODO bug #66: web version loses focus after 1 character
-**** happens in ios simulator
-*** TODO bug #92: add more form elements to try to reproduce
-*** TODO bug #703: add radio buttons to try to reproduce
-*** TODO fix broken network image links in example
-** TODO Try to update Flutter SDK
-*** need =flutter_chips_input= verison 2.0 for flutter 3.0 support
-*** need to fix chips input to work with latest flutter
-*** then try updating as many dependencies as possible
-*** may encounter problems with other pinned dependencies
+** TODO update =mokuroku= dependency on =rust-rocksdb=
+** TODO Update remaining dart/flutter dependencies
+** TODO ~Year~ selection cannot be cleared, maybe need to add an ~Any~ option?
+** TODO ~Season~ selection cannot be cleared
+** TODO upload webui bug with parameter types
+*** drag and drop an image, press ~Upload~ button, see following in console
+#+begin_src
+Error: Expected a value of type 'List<Object>', but got one of type 'List<dynamic>'
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 266:49      throw_
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 99:3        castError
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 485:10  cast
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/classes.dart 638:14     as_C
+packages/tanuki/features/import/preso/bloc/upload_file_bloc.dart 109:64           <fn>
+#+end_src
 ** TODO doc: advanced GraphQL ops
 *** diagnosing issues
 #+begin_src shell
@@ -36,6 +32,8 @@ curl -g -X POST -H "Content-Type: application/json" \
 *** c.f. https://hub.docker.com/_/nextcloud
 *** look at its interface for ideas on ui design
 *** consider how it functions compared with tanuki
+** TODO Import hangs after ~140 assets
+*** seems like Firefox is completely frozen at some point
 ** Responsive interface
 *** Flutter Folio example app that works well for all screen sizes
 **** c.f. https://flutter.gskinner.com

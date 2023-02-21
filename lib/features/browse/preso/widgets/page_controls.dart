@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
@@ -160,10 +160,10 @@ class _PageInputFormState extends State<PageInputForm> {
                 readOnly: widget.lastPage < 2,
                 name: 'page',
                 validator: FormBuilderValidators.compose([
-                  FormBuilderValidators.required(context),
-                  FormBuilderValidators.numeric(context),
-                  FormBuilderValidators.min(context, 1),
-                  FormBuilderValidators.max(context, widget.lastPage),
+                  FormBuilderValidators.required(),
+                  FormBuilderValidators.numeric(),
+                  FormBuilderValidators.min(1),
+                  FormBuilderValidators.max(widget.lastPage),
                 ]),
                 valueTransformer: (String? text) {
                   return int.tryParse(text ?? '1');

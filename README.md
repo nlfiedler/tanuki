@@ -41,14 +41,11 @@ volumes of output.
 
 ### Building, Testing, Starting the Frontend
 
-Until all of the dependencies have null-safety, must use `--no-sound-null-safety`
-option when running the application to avoid an exception.
-
 ```shell
 $ fvm flutter pub get
 $ fvm flutter pub run environment_config:generate
 $ fvm flutter test
-$ fvm flutter run --no-sound-null-safety -d chrome
+$ fvm flutter run -d chrome
 ```
 
 #### macOS
@@ -60,12 +57,9 @@ temporary work-around to an issue with installing the Ruby `ffi` library.
 $ arch -x86_64 sudo gem install ffi
 ```
 
-Until all of the dependencies have null-safety, must use
-`--no-sound-null-safety` option when building the application.
-
 ```shell
-$ fvm flutter build macos --no-sound-null-safety
-$ fvm flutter run --no-sound-null-safety -d macos
+$ fvm flutter build macos
+$ fvm flutter run -d macos
 ```
 
 ### environment_config
