@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:graphql/client.dart' as gql;
 import 'package:gql/language.dart' as lang;
@@ -56,7 +56,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
 
   @override
   Future<int> bulkUpdate(List<AssetInputId> assets) async {
-    final query = r'''
+    const query = r'''
       mutation BulkUpdate($assets: [AssetInputId!]!) {
         bulkUpdate(assets: $assets)
       }
@@ -79,7 +79,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
 
   @override
   Future<List<Location>> getAllLocations() async {
-    final query = r'''
+    const query = r'''
       query {
         locations {
           label
@@ -109,7 +109,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
 
   @override
   Future<List<Tag>> getAllTags() async {
-    final query = r'''
+    const query = r'''
       query {
         tags {
           label
@@ -139,7 +139,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
 
   @override
   Future<List<Year>> getAllYears() async {
-    final query = r'''
+    const query = r'''
       query {
         years {
           label
@@ -169,7 +169,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
 
   @override
   Future<Asset?> getAsset(String id) async {
-    final query = r'''
+    const query = r'''
       query Fetch($identifier: String!) {
         asset(id: $identifier) {
           id
@@ -204,7 +204,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
 
   @override
   Future<int> getAssetCount() async {
-    final query = r'''
+    const query = r'''
       query {
         count
       }
@@ -226,7 +226,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     int count,
     int offset,
   ) async {
-    final query = r'''
+    const query = r'''
       query Search($params: SearchParams!, $count: Int, $offset: Int) {
         search(params: $params, count: $count, offset: $offset) {
           results {
@@ -267,9 +267,9 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
   Future<QueryResults?> queryRecents(Option<DateTime> since) async {
     final validDate = since.mapOr((v) => v.isUtc, true);
     if (!validDate) {
-      throw ServerException('since must be a UTC date/time');
+      throw const ServerException('since must be a UTC date/time');
     }
-    final query = r'''
+    const query = r'''
       query Recent($since: DateTimeUtc) {
         recent(since: $since) {
           results {
@@ -304,7 +304,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
 
   @override
   Future<Asset?> updateAsset(AssetInputId asset) async {
-    final query = r'''
+    const query = r'''
       mutation Update($identifier: String!, $input: AssetInput!) {
         update(id: $identifier, asset: $input) {
           id

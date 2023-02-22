@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,6 +10,7 @@ import 'package:tanuki/features/browse/preso/bloc/all_locations_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart'
     as abb;
 
+// ignore: use_key_in_widget_constructors
 class LocationsSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -30,7 +31,7 @@ class LocationsSelector extends StatelessWidget {
           if (state is Loaded) {
             return LocationSelectorForm(locations: state.locations);
           }
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         },
       ),
     );
@@ -140,7 +141,7 @@ class _LocationSelectorFormState extends State<LocationSelectorForm> {
       suggestionBuilder: (context, state, location) {
         return ListTile(
           key: ObjectKey(location),
-          leading: Icon(Icons.label),
+          leading: const Icon(Icons.label),
           title: Text(location.label),
           onTap: () => state.selectSuggestion(location),
         );

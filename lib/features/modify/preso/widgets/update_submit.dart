@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,7 +14,7 @@ class UpdateSubmit extends ConsumerWidget {
   final GlobalKey<FormBuilderState> formKey;
   final String assetId;
 
-  UpdateSubmit({
+  const UpdateSubmit({
     Key? key,
     required this.assetId,
     required this.formKey,
@@ -28,7 +28,7 @@ class UpdateSubmit extends ConsumerWidget {
         listener: (context, state) {
           if (state is Finished) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Updated asset')),
+              const SnackBar(content: Text('Updated asset')),
             );
           } else if (state is Error) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -49,7 +49,7 @@ class UpdateSubmit extends ConsumerWidget {
                 );
               }
             },
-            child: Text('SAVE'),
+            child: const Text('SAVE'),
           );
         },
       ),

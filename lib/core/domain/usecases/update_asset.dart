@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
 import 'package:oxidized/oxidized.dart';
@@ -23,7 +23,7 @@ class UpdateAsset implements UseCase<Asset, Params> {
 class Params extends Equatable {
   final AssetInputId asset;
 
-  Params({
+  const Params({
     required this.asset,
   });
 

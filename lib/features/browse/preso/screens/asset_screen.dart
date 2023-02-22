@@ -12,7 +12,7 @@ import 'package:tanuki/core/preso/widgets/asset_display.dart';
 import 'package:tanuki/environment_config.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/providers.dart';
-import 'package:url_launcher/url_launcher.dart' as launcher;
+import 'package:url_launcher/url_launcher_string.dart' as launcher;
 
 class AssetScreen extends ConsumerWidget {
   const AssetScreen({Key? key}) : super(key: key);
@@ -76,9 +76,11 @@ class AssetScreen extends ConsumerWidget {
 
 Future<void> downloadAsset(BuildContext context, Asset asset) async {
   const baseUrl = EnvironmentConfig.base_url;
+  // Use url_launcher_string since it is difficult to create a Uri that refers
+  // to the host of the current web page; some day need to fix this properly.
   final url = '$baseUrl/api/asset/${asset.id}';
-  if (await launcher.canLaunch(url)) {
-    await launcher.launch(url);
+  if (await launcher.canLaunchUrlString(url)) {
+    await launcher.launchUrlString(url);
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Could not launch URL')),

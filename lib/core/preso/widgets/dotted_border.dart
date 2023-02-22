@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -11,7 +11,8 @@ class DottedBorder extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
 
-  DottedBorder({
+  // ignore: use_key_in_widget_constructors
+  const DottedBorder({
     this.color = Colors.black,
     this.strokeWidth = 1.0,
     this.gap = 5.0,
@@ -21,26 +22,24 @@ class DottedBorder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Padding(
-        padding: EdgeInsets.all(strokeWidth / 2),
-        child: Stack(
-          children: <Widget>[
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _DashRectPainter(
-                  color: color,
-                  strokeWidth: strokeWidth,
-                  gap: gap,
-                ),
+    return Padding(
+      padding: EdgeInsets.all(strokeWidth / 2),
+      child: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _DashRectPainter(
+                color: color,
+                strokeWidth: strokeWidth,
+                gap: gap,
               ),
             ),
-            Padding(
-              padding: padding,
-              child: child,
-            ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: padding,
+            child: child,
+          ),
+        ],
       ),
     );
   }
@@ -68,7 +67,7 @@ class _DashRectPainter extends CustomPainter {
     double y = size.height;
 
     Path _topPath = getDashedPath(
-      a: math.Point(0, 0),
+      a: const math.Point(0, 0),
       b: math.Point(x, 0),
       gap: gap,
     );
@@ -86,7 +85,7 @@ class _DashRectPainter extends CustomPainter {
     );
 
     Path _leftPath = getDashedPath(
-      a: math.Point(0, 0),
+      a: const math.Point(0, 0),
       b: math.Point(0.001, y),
       gap: gap,
     );

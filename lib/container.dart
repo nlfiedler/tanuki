@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:graphql/client.dart';
@@ -15,7 +15,7 @@ import 'package:tanuki/environment_config.dart';
 final httpClientProvider = Provider<http.Client>((_) => http.Client());
 
 final graphqlProvider = Provider<GraphQLClient>((ref) {
-  final uri = '${EnvironmentConfig.base_url}/graphql';
+  const uri = '${EnvironmentConfig.base_url}/graphql';
   return GraphQLClient(
     link: HttpLink(uri),
     cache: GraphQLCache(),

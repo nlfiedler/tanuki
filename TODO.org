@@ -1,7 +1,4 @@
 * Action Items
-** TODO Update remaining dart/flutter dependencies
-** TODO ~Year~ selection cannot be cleared, maybe need to add an ~Any~ option?
-** TODO ~Season~ selection cannot be cleared
 ** TODO upload webui bug with parameter types
 *** drag and drop an image, press ~Upload~ button, see following in console
 #+begin_src
@@ -33,6 +30,7 @@ curl -g -X POST -H "Content-Type: application/json" \
 *** consider how it functions compared with tanuki
 ** TODO Import hangs after ~140 assets
 *** seems like Firefox is completely frozen at some point
+** TODO Selecting a season without a year should select the latest year
 ** Responsive interface
 *** Flutter Folio example app that works well for all screen sizes
 **** c.f. https://flutter.gskinner.com

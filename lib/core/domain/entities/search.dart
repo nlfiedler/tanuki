@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
 import 'package:oxidized/oxidized.dart';
@@ -36,7 +36,7 @@ class SearchParams extends Equatable {
   /// Order by which to sort the results.
   final Option<SortOrder> sortOrder;
 
-  SearchParams({
+  const SearchParams({
     this.tags = const [],
     this.locations = const [],
     this.after = const None(),
@@ -78,7 +78,7 @@ class SearchResult extends Equatable {
   /// The date/time for the matching asset.
   final DateTime datetime;
 
-  SearchResult({
+  const SearchResult({
     required this.id,
     required this.filename,
     required this.mimetype,
@@ -102,7 +102,7 @@ class QueryResults extends Equatable {
   /// Number of results overall matching the query.
   final int count;
 
-  QueryResults({
+  const QueryResults({
     required this.results,
     required this.count,
   });

@@ -1,15 +1,15 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:intl/intl.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_years_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart'
     as abb;
 
+// ignore: use_key_in_widget_constructors
 class DatesSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,7 @@ class DatesSelector extends StatelessWidget {
             years.sort((a, b) => b.value.compareTo(a.value));
             return DateRangeSelectorForm(years: years);
           }
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         },
       ),
     );
@@ -92,35 +92,43 @@ class _DateRangeSelectorFormState extends State<DateRangeSelectorForm> {
             child: Row(
               children: [
                 Expanded(
-                  child: FormBuilderDropdown(
+                  child: FormBuilderDropdown<Year>(
                     name: 'year',
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Year',
+                      hintText: 'Any',
                     ),
-                    allowClear: true,
-                    hint: Text('Any'),
-                    items: widget.years
-                        .map((year) => DropdownMenuItem(
-                              value: year,
-                              child: Text(year.label),
-                            ))
-                        .toList(),
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Any'),
+                      ),
+                      ...widget.years
+                          .map((year) => DropdownMenuItem(
+                                value: year,
+                                child: Text(year.label),
+                              ))
+                          .toList()
+                    ],
                     onChanged: (Year? val) {
                       BlocProvider.of<abb.AssetBrowserBloc>(context)
                           .add(abb.SelectYear(year: val?.value));
                     },
                   ),
                 ),
-                SizedBox(width: 16.0),
+                const SizedBox(width: 16.0),
                 Expanded(
-                  child: FormBuilderDropdown(
+                  child: FormBuilderDropdown<abb.Season>(
                     name: 'season',
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Season',
+                      hintText: 'Any',
                     ),
-                    allowClear: true,
-                    hint: Text('Any'),
-                    items: [
+                    items: const [
+                      DropdownMenuItem(
+                        value: null,
+                        child: Text('Any'),
+                      ),
                       DropdownMenuItem(
                         value: abb.Season.spring,
                         child: Text('Jan-Mar'),

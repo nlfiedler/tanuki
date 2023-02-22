@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/features/import/preso/bloc/ingest_assets_bloc.dart';
 import 'package:tanuki/features/import/preso/bloc/providers.dart';
 
+// ignore: use_key_in_widget_constructors
 class IngestsForm extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -36,7 +37,7 @@ class IngestsForm extends ConsumerWidget {
           text: TextSpan(
             text: 'To import files in the ',
             style: DefaultTextStyle.of(context).style,
-            children: <TextSpan>[
+            children: const <TextSpan>[
               TextSpan(
                 text: 'uploads',
                 style: TextStyle(
@@ -48,14 +49,14 @@ class IngestsForm extends ConsumerWidget {
             ],
           ),
         ),
-        SizedBox(width: 8.0),
+        const SizedBox(width: 8.0),
         ElevatedButton(
           onPressed: () {
             BlocProvider.of<IngestAssetsBloc>(context).add(
               ProcessUploads(),
             );
           },
-          child: Text('IMPORT'),
+          child: const Text('IMPORT'),
         ),
       ],
     );
@@ -63,7 +64,7 @@ class IngestsForm extends ConsumerWidget {
 
   Widget _buildStatusRow(BuildContext context, IngestAssetsState state) {
     if (state is Processing) {
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     }
     if (state is Error) {
       return Center(child: Text('Import error: ' + state.message));

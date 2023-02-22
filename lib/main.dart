@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -63,8 +63,8 @@ class MyApp extends ConsumerWidget {
           '/': (context) => HomeScreen(),
           '/asset': (context) => const AssetScreen(),
           '/edit': (context) => const EditAssetScreen(),
-          '/recents': (context) => RecentsScreen(),
-          '/upload': (context) => UploadScreen(),
+          '/recents': (context) => const RecentsScreen(),
+          '/upload': (context) => const UploadScreen(),
         },
         navigatorObservers: [_AttributeRefresher()],
         theme: ThemeData(

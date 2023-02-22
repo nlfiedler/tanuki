@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:tanuki/environment_config.dart';
@@ -10,7 +10,7 @@ class AssetDisplay extends StatelessWidget {
   final String mimetype;
   final int displayWidth;
 
-  AssetDisplay({
+  const AssetDisplay({
     Key? key,
     required this.assetId,
     required this.mimetype,
@@ -19,7 +19,7 @@ class AssetDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseUrl = EnvironmentConfig.base_url;
+    const baseUrl = EnvironmentConfig.base_url;
     if (mimetype.startsWith('video/')) {
       final uri = '$baseUrl/api/asset/$assetId';
       return _AssetVideo(uri: uri);
@@ -43,8 +43,8 @@ Widget _imageErrorBuilder(
   return Center(
     child: Card(
       child: ListTile(
-        leading: Icon(Icons.error_outline),
-        title: Text('Unable to display asset'),
+        leading: const Icon(Icons.error_outline),
+        title: const Text('Unable to display asset'),
         subtitle: Text(error.toString()),
       ),
     ),
@@ -54,12 +54,13 @@ Widget _imageErrorBuilder(
 class _AssetVideo extends StatefulWidget {
   final String uri;
 
-  _AssetVideo({
+  const _AssetVideo({
     Key? key,
     required this.uri,
   }) : super(key: key);
 
   @override
+  // ignore: no_logic_in_create_state
   _AssetVideoState createState() => _AssetVideoState(uri: uri);
 }
 
@@ -118,13 +119,13 @@ class _ControlsOverlay extends StatelessWidget {
     return Stack(
       children: <Widget>[
         AnimatedSwitcher(
-          duration: Duration(milliseconds: 50),
-          reverseDuration: Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 50),
+          reverseDuration: const Duration(milliseconds: 200),
           child: controller.value.isPlaying
-              ? SizedBox.shrink()
+              ? const SizedBox.shrink()
               : Container(
                   color: Colors.black26,
-                  child: Center(
+                  child: const Center(
                     child: Icon(
                       Icons.play_arrow,
                       color: Colors.white,

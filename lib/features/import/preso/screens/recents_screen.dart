@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,8 +29,8 @@ class RecentsScreen extends ConsumerWidget {
               );
             } else if (state is Loaded) {
               return Column(
-                children: [
-                  const RecentsSelector(),
+                children: const [
+                  RecentsSelector(),
                   Expanded(child: BulkForm())
                 ],
               );

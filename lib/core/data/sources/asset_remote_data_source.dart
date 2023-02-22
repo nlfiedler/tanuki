@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'dart:convert';
 import 'dart:typed_data';
@@ -54,7 +54,7 @@ class AssetRemoteDataSourceImpl extends AssetRemoteDataSource {
 
   @override
   Future<int> ingestAssets() async {
-    final getStore = r'''
+    const getStore = r'''
       mutation {
         ingest
       }

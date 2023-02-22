@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
 
@@ -17,9 +17,9 @@ abstract class Failure extends Equatable {
 
 // General failures
 class ServerFailure extends Failure {
-  ServerFailure(String message) : super(message: message);
+  const ServerFailure(String message) : super(message: message);
 }
 
 class ValidationFailure extends Failure {
-  ValidationFailure(String message) : super(message: message);
+  const ValidationFailure(String message) : super(message: message);
 }

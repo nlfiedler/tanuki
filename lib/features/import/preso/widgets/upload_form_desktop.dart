@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'dart:io';
 
@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/features/import/preso/bloc/upload_file_bloc.dart';
 import 'package:tanuki/features/import/preso/bloc/providers.dart';
 
+// ignore: use_key_in_widget_constructors
 class UploadForm extends ConsumerStatefulWidget {
   @override
   _UploadFormState createState() => _UploadFormState();
@@ -36,7 +37,7 @@ class _UploadFormState extends ConsumerState<UploadForm> {
       return Row(
         children: [
           CircularProgressIndicator(value: value),
-          SizedBox(width: 16.0),
+          const SizedBox(width: 16.0),
           Expanded(
             child: Text('Uploading ${state.current}...'),
           ),
@@ -44,13 +45,13 @@ class _UploadFormState extends ConsumerState<UploadForm> {
       );
     }
     if (_selectedFiles.isNotEmpty) {
-      return Text('Use the Upload button to upload the files.');
+      return const Text('Use the Upload button to upload the files.');
     }
     if (state is Finished) {
       if (state.skipped.isNotEmpty) {
         return Column(
           children: [
-            Text('The following files could not be copied:'),
+            const Text('The following files could not be copied:'),
             Expanded(
               child: ListView.builder(
                 itemBuilder: (BuildContext context, int index) {
@@ -62,9 +63,9 @@ class _UploadFormState extends ConsumerState<UploadForm> {
           ],
         );
       }
-      return Text('All done!');
+      return const Text('All done!');
     }
-    return Text('Use the Choose Files button to get started.');
+    return const Text('Use the Choose Files button to get started.');
   }
 
   void _startUpload(BuildContext context) {
@@ -113,7 +114,7 @@ class _UploadFormState extends ConsumerState<UploadForm> {
                 padding: const EdgeInsets.fromLTRB(96.0, 48.0, 16.0, 16.0),
                 child: ElevatedButton(
                   onPressed: () => _pickFiles(context),
-                  child: Text('Choose Files'),
+                  child: const Text('Choose Files'),
                 ),
               ),
               Expanded(
@@ -146,7 +147,7 @@ class _UploadFormState extends ConsumerState<UploadForm> {
                   onPressed: _selectedFiles.isNotEmpty
                       ? () => _startUpload(context)
                       : null,
-                  child: Text('Upload'),
+                  child: const Text('Upload'),
                 ),
               )
             ],

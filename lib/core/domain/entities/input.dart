@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
 import 'package:oxidized/oxidized.dart';
@@ -19,7 +19,7 @@ class AssetInput extends Equatable {
   // The original filename of the asset when it was imported.
   final Option<String> filename;
 
-  AssetInput({
+  const AssetInput({
     required this.tags,
     required this.caption,
     required this.location,
@@ -40,7 +40,7 @@ class AssetInputId extends Equatable {
   final String id;
   final AssetInput input;
 
-  AssetInputId({required this.id, required this.input});
+  const AssetInputId({required this.id, required this.input});
 
   @override
   List<Object> get props => [id];

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
 import 'package:oxidized/oxidized.dart';
@@ -22,7 +22,7 @@ class QueryRecents implements UseCase<QueryResults, Params> {
 class Params extends Equatable {
   final Option<DateTime> since;
 
-  Params({
+  const Params({
     required this.since,
   });
 

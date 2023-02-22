@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,6 +10,7 @@ import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart'
     as abb;
 
+// ignore: use_key_in_widget_constructors
 class TagsSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -30,7 +31,7 @@ class TagsSelector extends StatelessWidget {
           if (state is Loaded) {
             return TagSelectorForm(tags: state.tags);
           }
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         },
       ),
     );
@@ -140,7 +141,7 @@ class _TagSelectorFormState extends State<TagSelectorForm> {
       suggestionBuilder: (context, state, tag) {
         return ListTile(
           key: ObjectKey(tag),
-          leading: Icon(Icons.label),
+          leading: const Icon(Icons.label),
           title: Text(tag.label),
           onTap: () => state.selectSuggestion(tag),
         );

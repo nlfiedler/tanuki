@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
@@ -84,17 +84,17 @@ class SearchParamsModel extends SearchParams {
 Option<SortField> decodeSortField(String? field) {
   switch (field) {
     case 'DATE':
-      return Some(SortField.date);
+      return const Some(SortField.date);
     case 'IDENTIFIER':
-      return Some(SortField.identifier);
+      return const Some(SortField.identifier);
     case 'FILENAME':
-      return Some(SortField.filename);
+      return const Some(SortField.filename);
     case 'MEDIA_TYPE':
-      return Some(SortField.mediaType);
+      return const Some(SortField.mediaType);
     case 'LOCATION':
-      return Some(SortField.location);
+      return const Some(SortField.location);
   }
-  return None();
+  return const None();
 }
 
 String? encodeSortField(Option<SortField> field) {
@@ -117,11 +117,11 @@ String? encodeSortField(Option<SortField> field) {
 Option<SortOrder> decodeSortOrder(String? order) {
   switch (order) {
     case 'ASCENDING':
-      return Some(SortOrder.ascending);
+      return const Some(SortOrder.ascending);
     case 'DESCENDING':
-      return Some(SortOrder.descending);
+      return const Some(SortOrder.descending);
   }
-  return None();
+  return const None();
 }
 
 String? encodeSortOrder(Option<SortOrder> order) {

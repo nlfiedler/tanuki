@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html';
@@ -201,7 +201,7 @@ class _UploadFormState extends ConsumerState<UploadForm> {
         : theme.colorScheme.primary;
     // Instead of a hard-coded size for the drop zone, make it a factor of the
     // size of the headline text in the current theme.
-    final boxHeight = theme.textTheme.headline1?.fontSize;
+    final boxHeight = theme.textTheme.displayLarge?.fontSize;
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: DottedBorder(

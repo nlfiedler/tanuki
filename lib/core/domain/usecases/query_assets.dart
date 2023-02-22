@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
 import 'package:oxidized/oxidized.dart';
@@ -28,7 +28,7 @@ class Params extends Equatable {
   final int count;
   final int offset;
 
-  Params({
+  const Params({
     required this.params,
     required this.count,
     required this.offset,

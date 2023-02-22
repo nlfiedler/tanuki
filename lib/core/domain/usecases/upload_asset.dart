@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'dart:typed_data';
 import 'package:equatable/equatable.dart';
@@ -23,7 +23,7 @@ class Params extends Equatable {
   final String filename;
   final Uint8List contents;
 
-  Params({
+  const Params({
     required this.filename,
     required this.contents,
   });

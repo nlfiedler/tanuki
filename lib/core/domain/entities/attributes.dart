@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
 
@@ -10,7 +10,7 @@ class Location extends Equatable implements Comparable<Location> {
   // Count of assets with this attribute.
   final int count;
 
-  Location({
+  const Location({
     required this.label,
     required this.count,
   });
@@ -34,7 +34,7 @@ class Tag extends Equatable implements Comparable<Tag> {
   // Count of assets with this attribute.
   final int count;
 
-  Tag({
+  const Tag({
     required this.label,
     required this.count,
   });
