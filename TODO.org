@@ -1,5 +1,4 @@
 * Action Items
-** TODO update =mokuroku= dependency on =rust-rocksdb=
 ** TODO Update remaining dart/flutter dependencies
 ** TODO ~Year~ selection cannot be cleared, maybe need to add an ~Any~ option?
 ** TODO ~Season~ selection cannot be cleared

@@ -1,11 +1,11 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 use crate::domain::entities::Asset;
 use anyhow::Error;
 use lazy_static::lazy_static;
 use rocksdb::backup::{BackupEngine, BackupEngineOptions};
-use rocksdb::Options;
+use rocksdb::{Env, Options};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::str;
@@ -76,8 +76,9 @@ impl Database {
     ///
     #[allow(dead_code)]
     pub fn create_backup<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
-        let backup_opts = BackupEngineOptions::default();
-        let mut backup_engine = BackupEngine::open(&backup_opts, path.as_ref())?;
+        let backup_opts = BackupEngineOptions::new(path.as_ref())?;
+        let env = Env::new()?;
+        let mut backup_engine = BackupEngine::open(&backup_opts, &env)?;
         let db = self.db.lock().unwrap();
         backup_engine.create_new_backup(db.db())?;
         backup_engine.purge_old_backups(1)?;
@@ -89,8 +90,9 @@ impl Database {
     ///
     #[allow(dead_code)]
     pub fn restore_from_backup<P: AsRef<Path>>(backup_path: P, db_path: P) -> Result<(), Error> {
-        let backup_opts = BackupEngineOptions::default();
-        let mut backup_engine = BackupEngine::open(&backup_opts, &backup_path).unwrap();
+        let backup_opts = BackupEngineOptions::new(&backup_path)?;
+        let env = Env::new()?;
+        let mut backup_engine = BackupEngine::open(&backup_opts, &env)?;
         let mut restore_option = rocksdb::backup::RestoreOptions::default();
         restore_option.set_keep_log_files(true);
         backup_engine.restore_from_latest_backup(&db_path, &db_path, &restore_option)?;
