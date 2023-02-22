@@ -11,6 +11,9 @@ browsing and editing capabilities.
 
 * [Rust](https://www.rust-lang.org) stable (2021 edition)
 * [Flutter](https://flutter.dev) **stable** channel
+* [Clang](https://clang.llvm.org) (version 3.5 or higher)
+    - Or whatever version is dictated by [rust-bindgen](https://github.com/rust-lang/rust-bindgen)
+    - Windows: make sure to add LLVM to the path.
 
 ### Initial Setup
 
