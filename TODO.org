@@ -1,14 +1,4 @@
 * Action Items
-** TODO upload webui bug with parameter types
-*** drag and drop an image, press ~Upload~ button, see following in console
-#+begin_src
-Error: Expected a value of type 'List<Object>', but got one of type 'List<dynamic>'
-dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 266:49      throw_
-dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 99:3        castError
-dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 485:10  cast
-dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/classes.dart 638:14     as_C
-packages/tanuki/features/import/preso/bloc/upload_file_bloc.dart 109:64           <fn>
-#+end_src
 ** TODO doc: advanced GraphQL ops
 *** diagnosing issues
 #+begin_src shell
@@ -30,7 +20,9 @@ curl -g -X POST -H "Content-Type: application/json" \
 *** consider how it functions compared with tanuki
 ** TODO Import hangs after ~140 assets
 *** seems like Firefox is completely frozen at some point
-** TODO Selecting a season without a year should select the latest year
+** TODO Selecting a season when year is ~any~ should select the latest year
+*** if the year was never set, works, but if year was set to ~Any~ then it doesn't
+** TODO Enable rotating images
 ** Responsive interface
 *** Flutter Folio example app that works well for all screen sizes
 **** c.f. https://flutter.gskinner.com
@@ -586,6 +578,7 @@ include it in the database records.
 ** Architecture Review
 *** Flutter/Rust bridge, call Rust from Dart
 **** c.f. https://github.com/fzyzcjy/flutter_rust_bridge
+**** c.f. https://www.zaynetro.com/post/flutter-rust-bridge-2023/
 *** Rewrite application in Dart
 **** database: https://github.com/isar/isar
 ***** supports composite indices, filters, sorting

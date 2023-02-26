@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'dart:typed_data';
 import 'package:bloc/bloc.dart';
@@ -15,8 +15,8 @@ abstract class UploadFileEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class StartUploading<T> extends UploadFileEvent {
-  final List<T> files;
+class StartUploading extends UploadFileEvent {
+  final List files;
 
   StartUploading({required this.files});
 
@@ -48,9 +48,9 @@ abstract class UploadFileState extends Equatable {
 
 class Initial extends UploadFileState {}
 
-class Uploading<T extends Object> extends UploadFileState {
-  final List<T> pending;
-  final T current;
+class Uploading extends UploadFileState {
+  final List pending;
+  final dynamic current;
   final int uploaded;
 
   Uploading({
@@ -66,8 +66,8 @@ class Uploading<T extends Object> extends UploadFileState {
   int get active => pending.length + 1;
 }
 
-class Finished<T> extends UploadFileState {
-  final List<T> skipped;
+class Finished extends UploadFileState {
+  final List skipped;
 
   Finished({required skipped}) : skipped = List.unmodifiable(skipped);
 
@@ -88,15 +88,14 @@ class Error extends UploadFileState {
 // bloc
 //
 
-class UploadFileBloc<T extends Object>
-    extends Bloc<UploadFileEvent, UploadFileState> {
+class UploadFileBloc extends Bloc<UploadFileEvent, UploadFileState> {
   final UploadAsset usecase;
   // those file that were skipped along the way
-  final List<T> skipped = [];
+  final List skipped = [];
   // queue of files waiting to be uploaded
-  late List<T> pending;
+  late List pending;
   // current file being processed
-  late T current;
+  late dynamic current;
   late int uploaded;
 
   UploadFileBloc({required this.usecase}) : super(Initial()) {
@@ -106,8 +105,8 @@ class UploadFileBloc<T extends Object>
       skipped.clear();
       uploaded = 0;
       current = event.files.last;
-      pending = event.files.sublist(0, event.files.length - 1) as List<T>;
-      emit(Uploading<T>(pending: pending, current: current));
+      pending = event.files.sublist(0, event.files.length - 1);
+      emit(Uploading(pending: pending, current: current));
     });
     on<UploadFile>((event, emit) async {
       // Caller has loaded the current file and is ready to upload.
@@ -132,12 +131,11 @@ class UploadFileBloc<T extends Object>
     // Continue processing the remaining files, or signal that the end has been
     // reached if the pending queue is now empty.
     if (pending.isEmpty) {
-      return Finished<T>(skipped: skipped);
+      return Finished(skipped: skipped);
     } else {
       uploaded++;
       current = pending.removeLast();
-      return Uploading<T>(
-          pending: pending, current: current, uploaded: uploaded);
+      return Uploading(pending: pending, current: current, uploaded: uploaded);
     }
   }
 }

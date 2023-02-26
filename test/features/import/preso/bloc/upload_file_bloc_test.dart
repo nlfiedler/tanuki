@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'dart:typed_data';
 import 'package:bloc_test/bloc_test.dart';
@@ -41,42 +41,42 @@ void main() {
 
     blocTest(
       'emits [Uploading, Finished] when uploading/upload are added',
-      build: () => UploadFileBloc<String>(usecase: usecase),
+      build: () => UploadFileBloc(usecase: usecase),
       act: (UploadFileBloc bloc) {
-        bloc.add(StartUploading<String>(files: const ['foo']));
+        bloc.add(StartUploading(files: const ['foo']));
         bloc.add(UploadFile(filename: 'foo', contents: Uint8List(0)));
       },
       expect: () => [
-        Uploading<String>(pending: const [], current: 'foo'),
-        Finished<String>(skipped: const []),
+        Uploading(pending: const [], current: 'foo'),
+        Finished(skipped: const []),
       ],
     );
 
     blocTest(
       'emits [Uploading, Finished] when uploading/skip are added',
-      build: () => UploadFileBloc<String>(usecase: usecase),
+      build: () => UploadFileBloc(usecase: usecase),
       act: (UploadFileBloc bloc) {
-        bloc.add(StartUploading<String>(files: const ['foo']));
+        bloc.add(StartUploading(files: const ['foo']));
         bloc.add(SkipCurrent());
       },
       expect: () => [
-        Uploading<String>(pending: const [], current: 'foo'),
-        Finished<String>(skipped: const ['foo']),
+        Uploading(pending: const [], current: 'foo'),
+        Finished(skipped: const ['foo']),
       ],
     );
 
     blocTest(
       'emits [Uploading(x2), Finished] when multiple files are uploaded',
-      build: () => UploadFileBloc<String>(usecase: usecase),
+      build: () => UploadFileBloc(usecase: usecase),
       act: (UploadFileBloc bloc) {
-        bloc.add(StartUploading<String>(files: const ['foo', 'bar']));
+        bloc.add(StartUploading(files: const ['foo', 'bar']));
         bloc.add(SkipCurrent());
         bloc.add(UploadFile(filename: 'foo', contents: Uint8List(0)));
       },
       expect: () => [
-        Uploading<String>(pending: const ['foo'], current: 'bar'),
-        Uploading<String>(pending: const [], current: 'foo', uploaded: 1),
-        Finished<String>(skipped: const ['bar']),
+        Uploading(pending: const ['foo'], current: 'bar'),
+        Uploading(pending: const [], current: 'foo', uploaded: 1),
+        Finished(skipped: const ['bar']),
       ],
     );
   });
@@ -91,13 +91,13 @@ void main() {
 
     blocTest(
       'emits [Uploading, Error] when repository returns an error',
-      build: () => UploadFileBloc<String>(usecase: usecase),
+      build: () => UploadFileBloc(usecase: usecase),
       act: (UploadFileBloc bloc) {
-        bloc.add(StartUploading<String>(files: const ['foo']));
+        bloc.add(StartUploading(files: const ['foo']));
         bloc.add(UploadFile(filename: 'foo', contents: Uint8List(0)));
       },
       expect: () => [
-        Uploading<String>(pending: const [], current: 'foo'),
+        Uploading(pending: const [], current: 'foo'),
         Error(message: 'ServerFailure(oh no!)'),
       ],
     );
