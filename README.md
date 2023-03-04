@@ -84,10 +84,10 @@ the application in stages and produce a relatively small final image.
 On the build host:
 
 ```shell
-$ docker compose build --pull --build-arg BASE_URL=http://192.168.1.1:3000
-$ docker image rm 192.168.1.1:5000/tanuki
-$ docker image tag tanuki-app 192.168.1.1:5000/tanuki
-$ docker push 192.168.1.1:5000/tanuki
+$ docker compose build --pull --build-arg BASE_URL=http://192.168.1.3:3000
+$ docker image rm 192.168.1.3:5000/tanuki
+$ docker image tag tanuki-app 192.168.1.3:5000/tanuki
+$ docker push 192.168.1.3:5000/tanuki
 ```
 
 On the server, with a production version of the `docker-compose.yml` file:
