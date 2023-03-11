@@ -62,7 +62,7 @@ AssetInputId buildAssetInputId(String assetId, Map<String, dynamic> inputs) {
   // and undefined in the same manner down below with Option.from().
   final String caption = inputs['caption'] ?? '';
   final String location = inputs['location'] ?? '';
-  final DateTime? datetime = inputs['userdate'] as DateTime;
+  final DateTime? datetime = inputs['userdate'];
   return AssetInputId(
     id: assetId,
     input: AssetInput(
@@ -71,7 +71,7 @@ AssetInputId buildAssetInputId(String assetId, Map<String, dynamic> inputs) {
       location: Option.from(location.isEmpty ? null : location),
       datetime: Option.from(datetime).map((v) => v.toUtc()),
       mimetype: Some(inputs['mimetype']),
-      filename: None(),
+      filename: const None(),
     ),
   );
 }
