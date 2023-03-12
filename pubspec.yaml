@@ -19,13 +19,7 @@ dependencies:
   file_selector: ^0.9.2+2
   file_selector_macos: ^0.9.0+4
   file_selector_web: ^0.9.0+2
-  # waiting for 8.4.0 to be released
-  # --> form_builder_extra_fields: ^8.3.0
-  # meanwhile specify git url and tag
-  form_builder_extra_fields:
-    git:
-      url: https://github.com/flutter-form-builder-ecosystem/form_builder_extra_fields
-      ref: 8.4.0
+  form_builder_extra_fields: ^8.5.0
   form_builder_validators: ^8.4.0
   flutter_bloc: ^8.0.1
   flutter_dropzone: ^3.0.5
@@ -40,12 +34,6 @@ dependencies:
   responsive_framework: ^0.2.0
   url_launcher: ^6.1.9
   video_player: ^2.1.1
-
-# work-around for https://github.com/danvick/flutter_chips_input/issues/136
-# (flutter_chips_input is used by form_builder_extra_fields)
-dependency_overrides:
-  flutter_chips_input:
-     git: https://github.com/bradintheusa/flutter_chips_input
 
 dev_dependencies:
   flutter_test:

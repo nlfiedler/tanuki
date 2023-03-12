@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -35,7 +35,7 @@ class EditAssetScreen extends ConsumerWidget {
             BlocProvider.of<AssetBloc>(context).add(LoadAsset(id: assetId));
           }
           if (state is Error) {
-            return Text('Error: ' + state.message);
+            return Text('Error: ${state.message}');
           }
           if (state is Loaded) {
             return Scaffold(
@@ -104,6 +104,7 @@ class AssetEditForm extends StatefulWidget {
   }) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _AssetEditFormState createState() => _AssetEditFormState();
 }
 

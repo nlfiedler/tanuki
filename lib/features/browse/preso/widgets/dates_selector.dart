@@ -25,7 +25,7 @@ class DatesSelector extends StatelessWidget {
             BlocProvider.of<AllYearsBloc>(context).add(LoadAllYears());
           }
           if (state is Error) {
-            return Text('Error: ' + state.message);
+            return Text('Error: ${state.message}');
           }
           if (state is Loaded) {
             final List<Year> years = List.from(state.years);
@@ -50,6 +50,7 @@ class DateRangeSelectorForm extends StatefulWidget {
   }) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _DateRangeSelectorFormState createState() {
     return _DateRangeSelectorFormState();
   }

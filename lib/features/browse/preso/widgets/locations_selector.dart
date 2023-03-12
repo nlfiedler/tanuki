@@ -3,8 +3,8 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_chips_input/flutter_chips_input.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_extra_fields/form_builder_extra_fields.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_locations_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart'
@@ -26,7 +26,7 @@ class LocationsSelector extends StatelessWidget {
             BlocProvider.of<AllLocationsBloc>(context).add(LoadAllLocations());
           }
           if (state is Error) {
-            return Text('Error: ' + state.message);
+            return Text('Error: ${state.message}');
           }
           if (state is Loaded) {
             return LocationSelectorForm(locations: state.locations);
@@ -47,12 +47,13 @@ class LocationSelectorForm extends StatefulWidget {
   }) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _LocationSelectorFormState createState() => _LocationSelectorFormState();
 }
 
 class _LocationSelectorFormState extends State<LocationSelectorForm> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
-  final GlobalKey<ChipsInputState> _chipKey = GlobalKey();
+  final GlobalKey<FormBuilderChipsInputState> _chipKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -60,58 +61,29 @@ class _LocationSelectorFormState extends State<LocationSelectorForm> {
       value: BlocProvider.of<abb.AssetBrowserBloc>(context),
       child: BlocBuilder<abb.AssetBrowserBloc, abb.AssetBrowserState>(
         builder: (context, state) {
-          final List<String> selected =
-              state is abb.Loaded ? state.selectedLocations : [];
           return FormBuilder(
             key: _fbKey,
-            child: buildAttributeSelector(context, selected),
+            // chips input needs to be inside a scrollable
+            // c.f. https://github.com/flutter-form-builder-ecosystem/form_builder_extra_fields/issues/65
+            child: SingleChildScrollView(child: buildChipsInput(context)),
           );
         },
       ),
     );
   }
 
-  Widget buildAttributeSelector(BuildContext context, List<String> selected) {
-    return Stack(
-      children: [
-        buildChipsInput(context),
-        Align(
-          alignment: Alignment.centerRight,
-          child: DropdownButton(
-            onChanged: (value) {
-              // Toggle the item in the selected list.
-              final values = toggleSelection(
-                selected,
-                (value as Location).label,
-                value,
-              );
-              BlocProvider.of<abb.AssetBrowserBloc>(context)
-                  .add(abb.SelectLocations(locations: values));
-            },
-            items: [
-              for (final location in widget.locations)
-                DropdownMenuItem(
-                  value: location,
-                  child: Text(location.label),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  ChipsInput buildChipsInput(BuildContext context) {
-    return ChipsInput(
+  FormBuilderChipsInput buildChipsInput(BuildContext context) {
+    return FormBuilderChipsInput(
       key: _chipKey,
+      name: 'Location',
       decoration: const InputDecoration(labelText: 'Locations'),
       onChanged: (val) {
         // Need to explicitly convert the value, whatever it is, even a
         // list of strings, to a list of strings, so may as well use a
         // list of Locations throughout.
-        final List<String> locations = List.from(val.map((t) => t.label));
+        final List<String> vals = List.from(val?.map((t) => t.label) ?? []);
         BlocProvider.of<abb.AssetBrowserBloc>(context)
-            .add(abb.SelectLocations(locations: locations));
+            .add(abb.SelectLocations(locations: vals));
       },
       maxChips: 10,
       findSuggestions: (String query) {
@@ -147,22 +119,5 @@ class _LocationSelectorFormState extends State<LocationSelectorForm> {
         );
       },
     );
-  }
-
-  // Side-effect: adds/removes a chip from the chips input.
-  List<String> toggleSelection(
-    List<String> selected,
-    String label,
-    Location? value,
-  ) {
-    final List<String> values = List.from(selected);
-    if (values.contains(label)) {
-      values.remove(label);
-      _chipKey.currentState?.deleteChip(value);
-    } else {
-      values.add(label);
-      _chipKey.currentState?.selectSuggestion(value);
-    }
-    return values;
   }
 }

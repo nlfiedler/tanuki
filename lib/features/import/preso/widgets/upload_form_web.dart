@@ -24,6 +24,7 @@ class UploadForm extends ConsumerStatefulWidget {
   const UploadForm({Key? key}) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _UploadFormState createState() => _UploadFormState();
 }
 
@@ -42,7 +43,7 @@ class _UploadFormState extends ConsumerState<UploadForm> {
 
   Widget _buildUploadStatus(BuildContext context, UploadFileState state) {
     if (state is Error) {
-      return Text('Upload error: ' + state.message);
+      return Text('Upload error: ${state.message}');
     }
     if (state is Uploading) {
       var value = state.uploaded / (state.active + state.uploaded);
@@ -92,8 +93,9 @@ class _UploadFormState extends ConsumerState<UploadForm> {
   void _uploadFile(BuildContext context, dynamic uploading) async {
     // could be cross_file::XFile or dart::html::File
     if (uploading is XFile) {
+      final provider = BlocProvider.of<UploadFileBloc>(context);
       final contents = await uploading.readAsBytes();
-      BlocProvider.of<UploadFileBloc>(context).add(
+      provider.add(
         UploadFile(
           filename: uploading.name,
           contents: contents,

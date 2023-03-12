@@ -67,7 +67,7 @@ class IngestsForm extends ConsumerWidget {
       return const Center(child: CircularProgressIndicator());
     }
     if (state is Error) {
-      return Center(child: Text('Import error: ' + state.message));
+      return Center(child: Text('Import error: ${state.message}'));
     }
     if (state is Finished) {
       return Center(child: Text('Imported ${state.count} assets'));

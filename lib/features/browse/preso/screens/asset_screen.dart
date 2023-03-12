@@ -32,7 +32,7 @@ class AssetScreen extends ConsumerWidget {
             BlocProvider.of<AssetBloc>(context).add(LoadAsset(id: assetId));
           }
           if (state is Error) {
-            return Text('Error: ' + state.message);
+            return Text('Error: ${state.message}');
           }
           if (state is Loaded) {
             return Scaffold(
@@ -79,10 +79,11 @@ Future<void> downloadAsset(BuildContext context, Asset asset) async {
   // Use url_launcher_string since it is difficult to create a Uri that refers
   // to the host of the current web page; some day need to fix this properly.
   final url = '$baseUrl/api/asset/${asset.id}';
+  final messenger = ScaffoldMessenger.of(context);
   if (await launcher.canLaunchUrlString(url)) {
     await launcher.launchUrlString(url);
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       const SnackBar(content: Text('Could not launch URL')),
     );
   }
@@ -128,6 +129,7 @@ class AssetEditForm extends StatefulWidget {
   }) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _AssetEditFormState createState() => _AssetEditFormState();
 }
 

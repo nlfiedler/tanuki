@@ -1,19 +1,24 @@
 * Action Items
-** TODO evalutate: https://github.com/nextcloud/server
-*** c.f. https://hub.docker.com/_/nextcloud
-*** look at its interface for ideas on ui design
-*** consider how it functions compared with tanuki
-** TODO Import hangs after ~140 assets
+** consider replacing =flutter_chips_input=, it has many problems
+*** https://pub.dev/packages/flutter_chip_tags
+*** https://pub.dev/packages/simple_chips_input
+*** https://pub.dev/packages/flutter_input_chips
+** bug: import hangs after ~140 assets
 *** seems like Firefox is completely frozen at some point
-** TODO Selecting a season when year is ~any~ should select the latest year
-*** if the year was never set, works, but if year was set to ~Any~ then it doesn't
-** TODO Enable rotating images
-** Responsive interface
-*** Flutter Folio example app that works well for all screen sizes
-**** c.f. https://flutter.gskinner.com
-** Update flutter navigator
-*** Someday the Navigator 2.0 will be a part of stable
-*** It is page based and offers an improved API for page navigation
+** bug: selecting a season when year is ~any~ should select the latest year
+*** if the year was never set, works, but if year was set to ~Any~ then it doesn't?
+** Enable rotating and flipping images from the asset edit page
+*** =image= crate supports several filters (flip, rotate, etc)
+*** need to recognize that the asset is an image (cannot edit anything else)
+*** new graphql query to temporarily apply a set of transformations to an asset
+*** new graphql mutation to permanently apply a set of transformations to an asset
+*** repository functions for saving/fetching/clearing temporary assets
+*** temporary changes may be just the preview image size, cached in memory
+*** use case to receive a list of transforms, return url for temporary asset
+*** use case to receive a list of transforms, permanently save a new version of asset
+*** new version will get a new unique identifier and thereby URL
+*** use case will move previous identity into a new field to track old versions
+*** web server to serve temporary asset via url
 ** Better tagging of recent imports
 *** design objectives
 **** save time when applying similar tags to lots of assets
@@ -24,37 +29,24 @@
 **** description of perkeep behavior
 ***** user clicks on selection button overlay on asset thumbnail
 ***** sidebar appears (image gallery shrinks to accomodate)
-***** shows superset of all tags on all selected assets
-***** indicates those tags that are on _all_ selected assets
-***** clicking on a tag of a subset of selected assets will apply it to all selected assets
-***** tags can be removed via ~delete~ button attached to tag
-**** drawbacks of this approach
-***** this method is tedious with lots of assets needing tagging
-***** you need to keep track of which ones you've finished processing since there is no other indication
+***** text field for adding new (comma-separated) tags
+***** shows superset of all tags on all selected assets as chips
+***** indicates those tags that are on _all_ selected assets by filling in with color
+***** clicking on an unfilled tag will apply it to all selected assets
+***** tags can be removed via ~X~ button attached to tag
 *** design proposal
 **** input fields placed above image gallery, like search page
 **** input fields disabled until one or more assets are selected
-**** input fields are chip inputs with dropdown, like search page
-***** be sure to allow more than 10 chips for tags, sometimes have a bunch
-**** can type in new tags and locations (assuming w/o immediate commit)
-***** need to update list of tags and locations, rebuild dropdowns, chip inputs
-***** probably need to use =StatefulWidget= and change its state to cause a rebuild
-**** selecting tags and location will apply them to all selected assets
-**** allow only one (or zero) locations at a time
-**** deleting the tag/location chip will remove that information from selected assets
-*** TODO start by building a prototype
-**** look at the source for =ChipsInput= to see how text is being handled
-**** search =ChipsInput= issues for any hint of allowing chip creation
-**** =onChanged()= is called for each complete chip input, but not free-form text
-**** anything can be entered, but does not become a chip automatically
-**** seems like suggestions list does not appear without some help
-**** =ChipsInput.allowChipEditing= allows backspace on chip to edit the text again
+**** chip input field for applying existing tags
+***** be sure to allow more than 10 chips for tags, sometimes need many tags
+**** text field to enter new tags (comma-separated)
+**** text field for entering a location
+**** button to apply changes and rebuild list of ~recent~ assets
 *** implementation considerations
 **** BLoC for managing recents page
 ***** track selected assets
 ***** track newly added tags and locations prior to committing
-***** Q: how will bloc know which tags/locations are new?
-**** lazy apply of updates to avoid frequent update of indices
+**** bulk apply of updates to avoid frequent update of indices
 ***** that is, updating the assets with each tag addition/deletion would cause the indices to be rebuilt
 *** hover over an image to show a larger version
 *** hover over a video to start playing it
@@ -62,6 +54,8 @@
 *** the GraphQL operation supports sorting, should use it for something
 ** Gallery display modes
 *** different modes of display
+**** responsive grid; images are scaled to fit in a row, with wrapping
+***** previously was this way in the Electron-based application
 **** grid of just images, maybe 180x180 (a la Apple Photos)
 **** grid of images with caption info (300x300, shows title, location, date) (a la PhotoPrism)
 **** list of rows, tiny thumbnail (96x96), caption, location, date
@@ -74,6 +68,9 @@
 **** use whatever fields are not blank to make up a decent amount of text
 *** show chevron arrows on left and right to navigate among search results
 *** controls appear when mouse moves over asset display, then fade away
+** Responsive interface
+*** Flutter Folio example app that works well for all screen sizes
+**** c.f. https://flutter.gskinner.com
 ** Quick edit without leaving gallery page
 *** On-hover button to display modal to edit certain fields
 *** Clicking on asset (i.e. not the button) displays details page
@@ -90,7 +87,7 @@
 ***** Can only select a single year
 ***** Can only select a single season (i.e. ~Jan-Mar~, ~Apr-Jun~, ~Jul-Sep~, ~Oct-Dec~)
 ***** With only year, search within the entire calendar year
-***** With only season, do not apply any date range filter
+***** With only season, search that season of the most recent year
 ***** With year + season, search that year narrowed to the season
 **** Selections are shown below the row of selectors as raised buttons
 ***** Mousing over selection shows a ~delete~ icon
@@ -108,7 +105,7 @@
 ***** by leaving one dimension maxed out, the image aspect ratio will be maintained
 **** as long as client keeps asking for the same basic size, backend can cache them
 **** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** look at GMail for ideas on navigation, filtering, etc
+*** evaluate GMail for ideas on navigation, filtering, etc
 **** c.f. https://gallery.flutter.dev/#/reply a mail client demo
 **** filters (icons w/names) displayed on the left side
 **** sidebar on the right for extra features/extensions
@@ -159,7 +156,15 @@
 **** flutter allows for a custom error handler (i.e. override the ugly red screen)
 *** navigation rail for filtering gallery view
 **** c.f. https://pub.dev/packages/navigation_rail
-**** maybe selectors for "portrait", "selfie", "screen shots"
+**** Nextcloud has a side bar for photos with these options:
+***** Photos
+***** Videos
+***** Albums
+***** People
+***** Favorites
+***** On this day
+***** Tags
+***** Locations
 *** use =RichText= widget to style the captions (e.g. make tags bold)
 *** tags in caption could be "gesture sensitive" (i.e. clickable) to show assets with that tag
 *** can use =DataTable= to display labeled data (like asset details, metadata)
@@ -401,7 +406,7 @@ include it in the database records.
 ** Editing Images
 *** Keep track of the asset revisions
 *** Allow user to select the primary version (e.g. undo)
-*** rotate, flip, flop, crop
+*** rotate, flip, spin, crop
 *** apply common filters
 **** c.f. https://github.com/silvia-odwyer/photon
 *** open asset in external program in temporary file

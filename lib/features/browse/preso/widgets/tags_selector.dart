@@ -3,8 +3,8 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_chips_input/flutter_chips_input.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_extra_fields/form_builder_extra_fields.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart'
@@ -26,7 +26,7 @@ class TagsSelector extends StatelessWidget {
             BlocProvider.of<AllTagsBloc>(context).add(LoadAllTags());
           }
           if (state is Error) {
-            return Text('Error: ' + state.message);
+            return Text('Error: ${state.message}');
           }
           if (state is Loaded) {
             return TagSelectorForm(tags: state.tags);
@@ -47,12 +47,13 @@ class TagSelectorForm extends StatefulWidget {
   }) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _TagSelectorFormState createState() => _TagSelectorFormState();
 }
 
 class _TagSelectorFormState extends State<TagSelectorForm> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
-  final GlobalKey<ChipsInputState> _chipKey = GlobalKey();
+  final GlobalKey<FormBuilderChipsInputState> _chipKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -60,58 +61,29 @@ class _TagSelectorFormState extends State<TagSelectorForm> {
       value: BlocProvider.of<abb.AssetBrowserBloc>(context),
       child: BlocBuilder<abb.AssetBrowserBloc, abb.AssetBrowserState>(
         builder: (context, state) {
-          final List<String> selected =
-              state is abb.Loaded ? state.selectedTags : [];
           return FormBuilder(
             key: _fbKey,
-            child: buildAttributeSelector(context, selected),
+            // chips input needs to be inside a scrollable
+            // c.f. https://github.com/flutter-form-builder-ecosystem/form_builder_extra_fields/issues/65
+            child: SingleChildScrollView(child: buildChipsInput(context)),
           );
         },
       ),
     );
   }
 
-  Widget buildAttributeSelector(BuildContext context, List<String> selected) {
-    return Stack(
-      children: [
-        buildChipsInput(context),
-        Align(
-          alignment: Alignment.centerRight,
-          child: DropdownButton(
-            onChanged: (value) {
-              // Toggle the item in the selected list.
-              final values = toggleSelection(
-                selected,
-                (value as Tag).label,
-                value,
-              );
-              BlocProvider.of<abb.AssetBrowserBloc>(context)
-                  .add(abb.SelectTags(tags: values));
-            },
-            items: [
-              for (final tag in widget.tags)
-                DropdownMenuItem(
-                  value: tag,
-                  child: Text(tag.label),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  ChipsInput buildChipsInput(BuildContext context) {
-    return ChipsInput(
+  FormBuilderChipsInput buildChipsInput(BuildContext context) {
+    return FormBuilderChipsInput(
       key: _chipKey,
+      name: 'Tags',
       decoration: const InputDecoration(labelText: 'Tags'),
       onChanged: (val) {
         // Need to explicitly convert the value, whatever it is, even a
         // list of strings, to a list of strings, so may as well use a
         // list of Tags throughout.
-        final List<String> tags = List.from(val.map((t) => t.label));
+        final List<String> vals = List.from(val?.map((t) => t.label) ?? []);
         BlocProvider.of<abb.AssetBrowserBloc>(context)
-            .add(abb.SelectTags(tags: tags));
+            .add(abb.SelectTags(tags: vals));
       },
       maxChips: 10,
       findSuggestions: (String query) {
@@ -147,22 +119,5 @@ class _TagSelectorFormState extends State<TagSelectorForm> {
         );
       },
     );
-  }
-
-  // Side-effect: adds/removes a chip from the chips input.
-  List<String> toggleSelection(
-    List<String> selected,
-    String label,
-    Tag? value,
-  ) {
-    final List<String> values = List.from(selected);
-    if (values.contains(label)) {
-      values.remove(label);
-      _chipKey.currentState?.deleteChip(value);
-    } else {
-      values.add(label);
-      _chipKey.currentState?.selectSuggestion(value);
-    }
-    return values;
   }
 }

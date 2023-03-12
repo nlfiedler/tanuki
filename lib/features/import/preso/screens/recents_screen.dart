@@ -35,7 +35,7 @@ class RecentsScreen extends ConsumerWidget {
                 ],
               );
             } else if (state is Error) {
-              return Text('Query error: ' + state.message);
+              return Text('Query error: ${state.message}');
             }
             return const Center(child: CircularProgressIndicator());
           },

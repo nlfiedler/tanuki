@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'dart:async';
 import 'package:bloc/bloc.dart';
@@ -236,7 +236,7 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
       }
       return Option.some(DateTime.utc(year!));
     }
-    return Option.none();
+    return const Option.none();
   }
 
   Option<DateTime> getLastDate() {
@@ -255,7 +255,7 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
       }
       return Option.some(DateTime.utc(year! + 1));
     }
-    return Option.none();
+    return const Option.none();
   }
 
   Future<void> _loadAssets(Emitter<AssetBrowserState> emit) async {

@@ -13,6 +13,7 @@ import 'package:tanuki/features/import/preso/bloc/providers.dart';
 // ignore: use_key_in_widget_constructors
 class UploadForm extends ConsumerStatefulWidget {
   @override
+  // ignore: library_private_types_in_public_api
   _UploadFormState createState() => _UploadFormState();
 }
 
@@ -30,7 +31,7 @@ class _UploadFormState extends ConsumerState<UploadForm> {
 
   Widget _buildUploadStatus(BuildContext context, UploadFileState state) {
     if (state is Error) {
-      return Text('Upload error: ' + state.message);
+      return Text('Upload error: ${state.message}');
     }
     if (state is Uploading) {
       var value = state.uploaded / (state.active + state.uploaded);
@@ -79,9 +80,10 @@ class _UploadFormState extends ConsumerState<UploadForm> {
 
   void _uploadFile(BuildContext context, String uploading) async {
     try {
+      final provider = BlocProvider.of<UploadFileBloc>(context);
       final reader = File(uploading);
       final contents = await reader.readAsBytes();
-      BlocProvider.of<UploadFileBloc>(context).add(
+      provider.add(
         UploadFile(
           filename: uploading,
           contents: contents,

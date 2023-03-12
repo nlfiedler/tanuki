@@ -18,6 +18,7 @@ class BulkForm extends StatefulWidget {
   const BulkForm({Key? key}) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _BulkFormState createState() => _BulkFormState();
 }
 
