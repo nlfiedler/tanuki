@@ -1,8 +1,4 @@
 * Action Items
-** consider replacing =flutter_chips_input=, it has many problems
-*** https://pub.dev/packages/flutter_chip_tags
-*** https://pub.dev/packages/simple_chips_input
-*** https://pub.dev/packages/flutter_input_chips
 ** bug: import hangs after ~140 assets
 *** seems like Firefox is completely frozen at some point
 ** bug: selecting a season when year is ~any~ should select the latest year
@@ -19,33 +15,33 @@
 *** new version will get a new unique identifier and thereby URL
 *** use case will move previous identity into a new field to track old versions
 *** web server to serve temporary asset via url
+** Add light/dark theme switcher
+*** Use =ThemeData= to construct the default light or dark themes
 ** Better tagging of recent imports
 *** design objectives
 **** save time when applying similar tags to lots of assets
 **** show paginated gallery view of recent imports
 **** user selects multiple assets and applies tags and locations to them
-**** consider how controls should look and operate on a tablet
-*** perkeep-style multi-selection with editing
-**** description of perkeep behavior
-***** user clicks on selection button overlay on asset thumbnail
-***** sidebar appears (image gallery shrinks to accomodate)
-***** text field for adding new (comma-separated) tags
-***** shows superset of all tags on all selected assets as chips
-***** indicates those tags that are on _all_ selected assets by filling in with color
-***** clicking on an unfilled tag will apply it to all selected assets
-***** tags can be removed via ~X~ button attached to tag
+*** analysis of perkeep tagging
+**** user clicks on selection button overlay on asset thumbnail
+**** sidebar appears (image gallery shrinks to accomodate)
+**** text field for adding new (comma-separated) tags
+**** shows superset of all tags on all selected assets as chips
+**** indicates those tags that are on _all_ selected assets by filling in with color
+**** clicking on an unfilled tag will apply it to all selected assets
+**** tags can be removed via ~X~ button attached to tag
 *** design proposal
 **** input fields placed above image gallery, like search page
-**** input fields disabled until one or more assets are selected
-**** chip input field for applying existing tags
-***** be sure to allow more than 10 chips for tags, sometimes need many tags
-**** text field to enter new tags (comma-separated)
-**** text field for entering a location
+**** use =flutter_tagging_plus= for choosing existing tags and/or creating new tags
+**** use =flutter_tagging_plus= for entering an existing or new location
 **** button to apply changes and rebuild list of ~recent~ assets
+**** button disabled until one or more assets are selected and values are entered
+**** c.f. https://pub.dev/packages/flutter_tagging_plus
 *** implementation considerations
 **** BLoC for managing recents page
 ***** track selected assets
 ***** track newly added tags and locations prior to committing
+***** ~submittable~ predicate to enable/disable the ~save~ button
 **** bulk apply of updates to avoid frequent update of indices
 ***** that is, updating the assets with each tag addition/deletion would cause the indices to be rebuilt
 *** hover over an image to show a larger version
@@ -74,6 +70,13 @@
 ** Quick edit without leaving gallery page
 *** On-hover button to display modal to edit certain fields
 *** Clicking on asset (i.e. not the button) displays details page
+** People versus tags
+*** A ~people~ field on asset records might be useful
+*** Interface could then show ~Tags~, ~People~, and ~Locations~ for browsing
+*** Would require a ~people~ field on asset ingestion page
+*** Would need a GraphQL mutation to move a given tag from ~tags~ to ~people~
+*** Would need a new index on the ~people~ field
+*** Search page would need a new ~people~ field
 ** Better search controls
 *** Simplified controls with selected attributes shown separately
 **** See anilist.co search page (https://anilist.co/search/anime)

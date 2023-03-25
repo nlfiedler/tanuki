@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_extra_fields/form_builder_extra_fields.dart';
+import 'package:choose_input_chips/choose_input_chips.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_locations_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart'
@@ -53,7 +53,7 @@ class LocationSelectorForm extends StatefulWidget {
 
 class _LocationSelectorFormState extends State<LocationSelectorForm> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
-  final GlobalKey<FormBuilderChipsInputState> _chipKey = GlobalKey();
+  final GlobalKey<ChipsInputState> _chipKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -72,10 +72,9 @@ class _LocationSelectorFormState extends State<LocationSelectorForm> {
     );
   }
 
-  FormBuilderChipsInput buildChipsInput(BuildContext context) {
-    return FormBuilderChipsInput(
+  ChipsInput buildChipsInput(BuildContext context) {
+    return ChipsInput(
       key: _chipKey,
-      name: 'Location',
       decoration: const InputDecoration(labelText: 'Locations'),
       onChanged: (val) {
         // Need to explicitly convert the value, whatever it is, even a

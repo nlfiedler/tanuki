@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_extra_fields/form_builder_extra_fields.dart';
+import 'package:choose_input_chips/choose_input_chips.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart'
@@ -53,7 +53,7 @@ class TagSelectorForm extends StatefulWidget {
 
 class _TagSelectorFormState extends State<TagSelectorForm> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
-  final GlobalKey<FormBuilderChipsInputState> _chipKey = GlobalKey();
+  final GlobalKey<ChipsInputState> _chipKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -72,10 +72,9 @@ class _TagSelectorFormState extends State<TagSelectorForm> {
     );
   }
 
-  FormBuilderChipsInput buildChipsInput(BuildContext context) {
-    return FormBuilderChipsInput(
+  ChipsInput buildChipsInput(BuildContext context) {
+    return ChipsInput(
       key: _chipKey,
-      name: 'Tags',
       decoration: const InputDecoration(labelText: 'Tags'),
       onChanged: (val) {
         // Need to explicitly convert the value, whatever it is, even a
