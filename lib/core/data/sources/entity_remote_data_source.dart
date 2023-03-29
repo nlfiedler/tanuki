@@ -1,10 +1,7 @@
 //
 // Copyright (c) 2023 Nathan Fiedler
 //
-import 'package:graphql/client.dart' as gql;
-import 'package:gql/language.dart' as lang;
-import 'package:gql/ast.dart' as ast;
-import 'package:normalize/utils.dart';
+import 'package:graphql/client.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/asset_model.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
@@ -14,7 +11,7 @@ import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
-import 'package:tanuki/core/error/exceptions.dart';
+import 'package:tanuki/core/error/exceptions.dart' as err;
 
 abstract class EntityRemoteDataSource {
   Future<int> bulkUpdate(List<AssetInputId> assets);
@@ -36,25 +33,8 @@ abstract class EntityRemoteDataSource {
   Future<Asset?> updateAsset(AssetInputId asset);
 }
 
-// Work around bug in juniper in which it fails to implement __typename for the
-// root query, which is in violation of the GraphQL spec.
-//
-// c.f. https://github.com/graphql-rust/juniper/issues/372
-class AddNestedTypenameVisitor extends AddTypenameVisitor {
-  @override
-  ast.OperationDefinitionNode visitOperationDefinitionNode(
-    ast.OperationDefinitionNode node,
-  ) =>
-      node;
-}
-
-ast.DocumentNode gqlNoTypename(String document) => ast.transform(
-      lang.parseString(document),
-      [AddNestedTypenameVisitor()],
-    );
-
 class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
-  final gql.GraphQLClient client;
+  final GraphQLClient client;
 
   EntityRemoteDataSourceImpl({required this.client});
 
@@ -68,15 +48,15 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     final models = List.of(
       assets.map((e) => AssetInputIdModel.from(e).toJson()),
     );
-    final mutationOptions = gql.MutationOptions(
-      document: gqlNoTypename(query),
+    final mutationOptions = MutationOptions(
+      document: gql(query),
       variables: <String, dynamic>{
         'assets': models,
       },
     );
-    final gql.QueryResult result = await client.mutate(mutationOptions);
+    final QueryResult result = await client.mutate(mutationOptions);
     if (result.hasException) {
-      throw ServerException(result.exception.toString());
+      throw err.ServerException(result.exception.toString());
     }
     return (result.data?['bulkUpdate'] ?? 0) as int;
   }
@@ -91,13 +71,13 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
         }
       }
     ''';
-    final queryOptions = gql.QueryOptions(
-      document: gqlNoTypename(query),
-      fetchPolicy: gql.FetchPolicy.noCache,
+    final queryOptions = QueryOptions(
+      document: gql(query),
+      fetchPolicy: FetchPolicy.noCache,
     );
-    final gql.QueryResult result = await client.query(queryOptions);
+    final QueryResult result = await client.query(queryOptions);
     if (result.hasException) {
-      throw ServerException(result.exception.toString());
+      throw err.ServerException(result.exception.toString());
     }
     if (result.data?['locations'] == null) {
       return [];
@@ -121,13 +101,13 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
         }
       }
     ''';
-    final queryOptions = gql.QueryOptions(
-      document: gqlNoTypename(query),
-      fetchPolicy: gql.FetchPolicy.noCache,
+    final queryOptions = QueryOptions(
+      document: gql(query),
+      fetchPolicy: FetchPolicy.noCache,
     );
-    final gql.QueryResult result = await client.query(queryOptions);
+    final QueryResult result = await client.query(queryOptions);
     if (result.hasException) {
-      throw ServerException(result.exception.toString());
+      throw err.ServerException(result.exception.toString());
     }
     if (result.data?['tags'] == null) {
       return [];
@@ -151,13 +131,13 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
         }
       }
     ''';
-    final queryOptions = gql.QueryOptions(
-      document: gqlNoTypename(query),
-      fetchPolicy: gql.FetchPolicy.noCache,
+    final queryOptions = QueryOptions(
+      document: gql(query),
+      fetchPolicy: FetchPolicy.noCache,
     );
-    final gql.QueryResult result = await client.query(queryOptions);
+    final QueryResult result = await client.query(queryOptions);
     if (result.hasException) {
-      throw ServerException(result.exception.toString());
+      throw err.ServerException(result.exception.toString());
     }
     if (result.data?['years'] == null) {
       return [];
@@ -189,16 +169,16 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
         }
       }
     ''';
-    final queryOptions = gql.QueryOptions(
-      document: gqlNoTypename(query),
+    final queryOptions = QueryOptions(
+      document: gql(query),
       variables: <String, dynamic>{
         'identifier': id,
       },
-      fetchPolicy: gql.FetchPolicy.noCache,
+      fetchPolicy: FetchPolicy.noCache,
     );
-    final gql.QueryResult result = await client.query(queryOptions);
+    final QueryResult result = await client.query(queryOptions);
     if (result.hasException) {
-      throw ServerException(result.exception.toString());
+      throw err.ServerException(result.exception.toString());
     }
     if (result.data?['asset'] == null) {
       return null;
@@ -213,13 +193,13 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
         count
       }
     ''';
-    final queryOptions = gql.QueryOptions(
-      document: gqlNoTypename(query),
-      fetchPolicy: gql.FetchPolicy.noCache,
+    final queryOptions = QueryOptions(
+      document: gql(query),
+      fetchPolicy: FetchPolicy.noCache,
     );
-    final gql.QueryResult result = await client.query(queryOptions);
+    final QueryResult result = await client.query(queryOptions);
     if (result.hasException) {
-      throw ServerException(result.exception.toString());
+      throw err.ServerException(result.exception.toString());
     }
     return (result.data?['count'] ?? 0) as int;
   }
@@ -246,18 +226,18 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     ''';
     final paramsModel = SearchParamsModel.from(params);
     final encodedParams = paramsModel.toJson();
-    final queryOptions = gql.QueryOptions(
-      document: gqlNoTypename(query),
+    final queryOptions = QueryOptions(
+      document: gql(query),
       variables: <String, dynamic>{
         'params': encodedParams,
         'count': count,
         'offset': offset,
       },
-      fetchPolicy: gql.FetchPolicy.noCache,
+      fetchPolicy: FetchPolicy.noCache,
     );
-    final gql.QueryResult result = await client.query(queryOptions);
+    final QueryResult result = await client.query(queryOptions);
     if (result.hasException) {
-      throw ServerException(result.exception.toString());
+      throw err.ServerException(result.exception.toString());
     }
     if (result.data?['search'] == null) {
       return null;
@@ -275,7 +255,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
   ) async {
     final validDate = since.mapOr((v) => v.isUtc, true);
     if (!validDate) {
-      throw const ServerException('since must be a UTC date/time');
+      throw const err.ServerException('since must be a UTC date/time');
     }
     const query = r'''
       query Recent($since: DateTimeUtc, $count: Int, $offset: Int) {
@@ -291,18 +271,18 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
         }
       }
     ''';
-    final queryOptions = gql.QueryOptions(
-      document: gqlNoTypename(query),
+    final queryOptions = QueryOptions(
+      document: gql(query),
       variables: <String, dynamic>{
         'since': since.mapOr((v) => v.toIso8601String(), null),
         'count': count.toNullable(),
         'offset': offset.toNullable(),
       },
-      fetchPolicy: gql.FetchPolicy.noCache,
+      fetchPolicy: FetchPolicy.noCache,
     );
-    final gql.QueryResult result = await client.query(queryOptions);
+    final QueryResult result = await client.query(queryOptions);
     if (result.hasException) {
-      throw ServerException(result.exception.toString());
+      throw err.ServerException(result.exception.toString());
     }
     if (result.data?['recent'] == null) {
       return null;
@@ -331,16 +311,16 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
       }
     ''';
     final model = AssetInputModel.from(asset.input).toJson();
-    final mutationOptions = gql.MutationOptions(
-      document: gqlNoTypename(query),
+    final mutationOptions = MutationOptions(
+      document: gql(query),
       variables: <String, dynamic>{
         'identifier': asset.id,
         'input': model,
       },
     );
-    final gql.QueryResult result = await client.mutate(mutationOptions);
+    final QueryResult result = await client.mutate(mutationOptions);
     if (result.hasException) {
-      throw ServerException(result.exception.toString());
+      throw err.ServerException(result.exception.toString());
     }
     if (result.data?['update'] == null) {
       return null;

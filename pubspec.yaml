@@ -36,6 +36,7 @@ dependencies:
   video_player: ^2.1.1
   flutter_tagging_plus: ^4.0.1
   flutter_typeahead: ^4.3.7
+  http_parser: ^4.0.2
 
 dev_dependencies:
   flutter_test:

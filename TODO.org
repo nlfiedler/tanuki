@@ -6,7 +6,6 @@
 *** when no chips are present, have an invisible chip that holds that space to prevent movement
 *** after selecting a suggestion, focus the text field
 *** consider if =Taggable= can be removed, =choose_input_chips= does not have such a thing
-** TODO undo the work-arounds for the juniper __typename bug in Dart graphql client
 ** bug: import hangs after ~140 assets
 *** seems like Firefox is completely frozen at some point
 ** bug: selecting a season when year is ~any~ should select the latest year

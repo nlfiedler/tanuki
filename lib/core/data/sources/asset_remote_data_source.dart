@@ -3,15 +3,12 @@
 //
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:graphql/client.dart' as gql;
-import 'package:gql/language.dart' as lang;
-import 'package:gql/ast.dart' as ast;
+import 'package:graphql/client.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' as parser;
 import 'package:mime/mime.dart';
-import 'package:normalize/utils.dart';
 import 'package:path/path.dart' as p;
-import 'package:tanuki/core/error/exceptions.dart';
+import 'package:tanuki/core/error/exceptions.dart' as err;
 
 abstract class AssetRemoteDataSource {
   /// Import all of the assets in the 'uploads' directory.
@@ -24,26 +21,9 @@ abstract class AssetRemoteDataSource {
   Future<String> uploadAssetBytes(String filename, Uint8List contents);
 }
 
-// Work around bug in juniper in which it fails to implement __typename for the
-// root query, which is in violation of the GraphQL spec.
-//
-// c.f. https://github.com/graphql-rust/juniper/issues/372
-class AddNestedTypenameVisitor extends AddTypenameVisitor {
-  @override
-  ast.OperationDefinitionNode visitOperationDefinitionNode(
-    ast.OperationDefinitionNode node,
-  ) =>
-      node;
-}
-
-ast.DocumentNode gqlNoTypename(String document) => ast.transform(
-      lang.parseString(document),
-      [AddNestedTypenameVisitor()],
-    );
-
 class AssetRemoteDataSourceImpl extends AssetRemoteDataSource {
   final http.Client httpClient;
-  final gql.GraphQLClient gqlClient;
+  final GraphQLClient gqlClient;
   final String baseUrl;
 
   AssetRemoteDataSourceImpl({
@@ -59,12 +39,12 @@ class AssetRemoteDataSourceImpl extends AssetRemoteDataSource {
         ingest
       }
     ''';
-    final mutationOptions = gql.MutationOptions(
-      document: gqlNoTypename(getStore),
+    final mutationOptions = MutationOptions(
+      document: gql(getStore),
     );
-    final gql.QueryResult result = await gqlClient.mutate(mutationOptions);
+    final QueryResult result = await gqlClient.mutate(mutationOptions);
     if (result.hasException) {
-      throw ServerException(result.exception.toString());
+      throw err.ServerException(result.exception.toString());
     }
     return (result.data?['ingest'] ?? 0) as int;
   }
@@ -102,7 +82,7 @@ class AssetRemoteDataSourceImpl extends AssetRemoteDataSource {
     // send the request using our http client instance
     final resp = await httpClient.send(request);
     if (resp.statusCode != 200) {
-      throw ServerException('unexpected response: ${resp.statusCode}');
+      throw err.ServerException('unexpected response: ${resp.statusCode}');
     }
     // collect asset identifier(s) from the JSON response
     final assetIds = <String>[];
@@ -111,7 +91,7 @@ class AssetRemoteDataSourceImpl extends AssetRemoteDataSource {
       assetIds.addAll(data.map((e) => e.toString()));
     }
     if (assetIds.length != 1) {
-      throw ServerException(
+      throw err.ServerException(
           'received wrong number of identifiers: ${assetIds.length}');
     }
     return assetIds[0];
