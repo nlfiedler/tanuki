@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -24,6 +24,8 @@ void main() {
     // mocktail needs a fallback for any() that involves custom types
     const Option<DateTime> dummy = None();
     registerFallbackValue(dummy);
+    const Option<int> dummyInt = None();
+    registerFallbackValue(dummyInt);
   });
 
   test(
@@ -43,16 +45,18 @@ void main() {
         count: 1,
       );
       final Result<QueryResults, Failure> expected = Ok(expectedResults);
-      when(() => mockEntityRepository.queryRecents(any()))
+      when(() => mockEntityRepository.queryRecents(any(), any(), any()))
           .thenAnswer((_) async => Ok(expectedResults));
       // act
       final Option<DateTime> since = Some(DateTime.now());
-      final params = Params(since: since);
+      final params =
+          Params(since: since, count: const None(), offset: const None());
       final result = await usecase(params);
       // assert
       expect(result, expected);
       expect(result.unwrap().results, equals(expectedResults.results));
-      verify(() => mockEntityRepository.queryRecents(since));
+      verify(() =>
+          mockEntityRepository.queryRecents(since, const None(), const None()));
       verifyNoMoreInteractions(mockEntityRepository);
     },
   );

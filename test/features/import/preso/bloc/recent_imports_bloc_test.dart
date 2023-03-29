@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,7 +14,7 @@ import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
 class MockEntityRepository extends Mock implements EntityRepository {}
 
 void main() {
-  late MockEntityRepository mockAssetRepository;
+  late MockEntityRepository mockEntityRepository;
   late QueryRecents usecase;
 
   final tQueryResults = QueryResults(
@@ -23,7 +23,7 @@ void main() {
         id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
         filename: 'catmouse_1280p.jpg',
         mimetype: 'image/jpeg',
-        location: Some('outdoors'),
+        location: const Some('outdoors'),
         datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
       )
     ],
@@ -32,15 +32,19 @@ void main() {
 
   setUpAll(() {
     // mocktail needs a fallback for any() that involves custom types
+    const SearchParams dummySearchParams = SearchParams();
+    registerFallbackValue(dummySearchParams);
     const Option<DateTime> dummy = None();
     registerFallbackValue(dummy);
+    const Option<int> dummyInt = None();
+    registerFallbackValue(dummyInt);
   });
 
   group('normal cases', () {
     setUp(() {
-      mockAssetRepository = MockEntityRepository();
-      usecase = QueryRecents(mockAssetRepository);
-      when(() => mockAssetRepository.queryRecents(any()))
+      mockEntityRepository = MockEntityRepository();
+      usecase = QueryRecents(mockEntityRepository);
+      when(() => mockEntityRepository.queryRecents(any(), any(), any()))
           .thenAnswer((_) async => Ok(tQueryResults));
     });
 
@@ -60,6 +64,9 @@ void main() {
         Loaded(
           results: tQueryResults,
           range: RecentTimeRange.day,
+          pageSize: 18,
+          pageNumber: 1,
+          lastPage: 1,
         )
       ],
     );
@@ -73,17 +80,172 @@ void main() {
         Loaded(
           results: tQueryResults,
           range: RecentTimeRange.day,
+          pageSize: 18,
+          pageNumber: 1,
+          lastPage: 1,
         )
+      ],
+    );
+  });
+
+  group('pagination case: many', () {
+    final manyQueryResults = QueryResults(
+      results: [
+        SearchResult(
+          id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
+          filename: 'catmouse_1280p.jpg',
+          mimetype: 'image/jpeg',
+          location: const Some('outdoors'),
+          datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
+        )
+      ],
+      count: 85,
+    );
+
+    setUp(() {
+      mockEntityRepository = MockEntityRepository();
+      usecase = QueryRecents(mockEntityRepository);
+      when(() => mockEntityRepository.queryRecents(any(), any(), any()))
+          .thenAnswer((_) async => Ok(manyQueryResults));
+    });
+
+    blocTest(
+      'emits [Loading, Loaded, x2] when Initial + ShowPage is added',
+      build: () => RecentImportsBloc(usecase: usecase),
+      act: (RecentImportsBloc bloc) {
+        bloc.add(FindRecents(range: RecentTimeRange.day));
+        bloc.add(ShowPage(page: 10));
+        return;
+      },
+      expect: () => [
+        Loading(),
+        Loaded(
+          results: manyQueryResults,
+          range: RecentTimeRange.day,
+          pageSize: 18,
+          pageNumber: 1,
+          lastPage: 5,
+        ),
+        Loading(),
+        Loaded(
+          results: manyQueryResults,
+          range: RecentTimeRange.day,
+          pageSize: 18,
+          pageNumber: 10,
+          lastPage: 5,
+        ),
+      ],
+    );
+
+    blocTest(
+      'page number resets when refreshing results',
+      build: () => RecentImportsBloc(usecase: usecase),
+      act: (RecentImportsBloc bloc) {
+        bloc.add(FindRecents(range: RecentTimeRange.day));
+        bloc.add(ShowPage(page: 10));
+        bloc.add(RefreshResults());
+        return;
+      },
+      expect: () => [
+        Loading(),
+        Loaded(
+          results: manyQueryResults,
+          range: RecentTimeRange.day,
+          pageSize: 18,
+          pageNumber: 1,
+          lastPage: 5,
+        ),
+        Loading(),
+        Loaded(
+          results: manyQueryResults,
+          range: RecentTimeRange.day,
+          pageSize: 18,
+          pageNumber: 10,
+          lastPage: 5,
+        ),
+        Loading(),
+        Loaded(
+          results: manyQueryResults,
+          range: RecentTimeRange.day,
+          pageSize: 18,
+          pageNumber: 1,
+          lastPage: 5,
+        ),
+      ],
+    );
+
+    blocTest(
+      'page number resets when changing time range',
+      build: () => RecentImportsBloc(usecase: usecase),
+      act: (RecentImportsBloc bloc) {
+        bloc.add(FindRecents(range: RecentTimeRange.day));
+        bloc.add(ShowPage(page: 10));
+        bloc.add(FindRecents(range: RecentTimeRange.week));
+        return;
+      },
+      expect: () => [
+        Loading(),
+        Loaded(
+          results: manyQueryResults,
+          range: RecentTimeRange.day,
+          pageSize: 18,
+          pageNumber: 1,
+          lastPage: 5,
+        ),
+        Loading(),
+        Loaded(
+          results: manyQueryResults,
+          range: RecentTimeRange.day,
+          pageSize: 18,
+          pageNumber: 10,
+          lastPage: 5,
+        ),
+        Loading(),
+        Loaded(
+          results: manyQueryResults,
+          range: RecentTimeRange.week,
+          pageSize: 18,
+          pageNumber: 1,
+          lastPage: 5,
+        ),
+      ],
+    );
+  });
+
+  group('pagination case: zero', () {
+    const zeroQueryResults = QueryResults(results: [], count: 0);
+
+    setUp(() {
+      mockEntityRepository = MockEntityRepository();
+      usecase = QueryRecents(mockEntityRepository);
+      when(() => mockEntityRepository.queryRecents(any(), any(), any()))
+          .thenAnswer((_) async => const Ok(zeroQueryResults));
+    });
+
+    blocTest(
+      'emits [Loading, Loaded] when Initial is added',
+      build: () => RecentImportsBloc(usecase: usecase),
+      act: (RecentImportsBloc bloc) =>
+          bloc.add(FindRecents(range: RecentTimeRange.day)),
+      expect: () => [
+        Loading(),
+        Loaded(
+          results: zeroQueryResults,
+          range: RecentTimeRange.day,
+          pageSize: 18,
+          pageNumber: 0,
+          lastPage: 0,
+        ),
       ],
     );
   });
 
   group('error cases', () {
     setUp(() {
-      mockAssetRepository = MockEntityRepository();
-      usecase = QueryRecents(mockAssetRepository);
-      when(() => mockAssetRepository.queryRecents(any()))
-          .thenAnswer((_) async => Err(ServerFailure('oh no!')));
+      mockEntityRepository = MockEntityRepository();
+      usecase = QueryRecents(mockEntityRepository);
+      when(() => mockEntityRepository.queryRecents(any(), any(), any()))
+          .thenAnswer((_) async => const Err(ServerFailure('oh no!')));
     });
 
     blocTest(

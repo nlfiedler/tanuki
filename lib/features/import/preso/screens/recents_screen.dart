@@ -8,6 +8,7 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
 import 'package:tanuki/features/import/preso/bloc/providers.dart';
 import 'package:tanuki/features/import/preso/widgets/bulk_form.dart';
+import 'package:tanuki/features/import/preso/widgets/page_controls.dart';
 
 class RecentsScreen extends ConsumerWidget {
   const RecentsScreen({Key? key}) : super(key: key);
@@ -55,24 +56,18 @@ class RecentsSelector extends StatelessWidget {
       child: BlocBuilder<RecentImportsBloc, RecentImportsState>(
         builder: (context, state) {
           if (state is Loaded) {
-            final biggerStyle = DefaultTextStyle.of(context).style.apply(
-                  fontSizeFactor: 1.2,
-                );
             return Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ResponsiveVisibility(
-                    hiddenWhen: const [
+                  const ResponsiveVisibility(
+                    hiddenWhen: [
                       Condition.smallerThan(name: TABLET),
                     ],
                     child: Expanded(
                       child: Center(
-                        child: Text(
-                          'Pending assets: ${state.results.count}',
-                          style: biggerStyle,
-                        ),
+                        child: PageControls(),
                       ),
                     ),
                   ),

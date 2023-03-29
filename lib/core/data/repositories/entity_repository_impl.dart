@@ -104,11 +104,14 @@ class EntityRepositoryImpl extends EntityRepository {
 
   @override
   Future<Result<QueryResults, Failure>> queryRecents(
-      Option<DateTime> since) async {
+    Option<DateTime> since,
+    Option<int> count,
+    Option<int> offset,
+  ) async {
     try {
-      final results = await remoteDataSource.queryRecents(since);
+      final results = await remoteDataSource.queryRecents(since, count, offset);
       if (results == null) {
-        return Err(ServerFailure('got null result for query'));
+        return const Err(ServerFailure('got null result for query'));
       }
       return Ok(results);
     } on ServerException catch (e) {

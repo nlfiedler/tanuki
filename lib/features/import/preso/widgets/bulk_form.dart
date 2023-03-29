@@ -1,78 +1,38 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/preso/widgets/asset_display.dart';
+import 'package:tanuki/features/browse/preso/bloc/all_locations_bloc.dart'
+    as alb;
+import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart' as atb;
+import 'package:tanuki/features/import/preso/bloc/assign_attributes_bloc.dart';
+import 'package:tanuki/features/import/preso/bloc/providers.dart';
 import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
 
 import 'bulk_submit.dart';
+import 'location_selector.dart';
+import 'tag_selector.dart';
 
-class BulkForm extends StatefulWidget {
+class BulkForm extends ConsumerWidget {
   const BulkForm({Key? key}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
-  _BulkFormState createState() => _BulkFormState();
-}
-
-class _BulkFormState extends State<BulkForm> {
-  final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
-  // The inputValues map holds the input from the user, since the text field
-  // that does not have focus will toss its contents when scrolled out of view.
-  // And apparently the form builder state also loses the values?
-  final Map<String, dynamic> inputValues = {};
-
-  // Convert the input fields into a list of asset inputs.
-  //
-  // Nearly all of the fields will be left as None, with only the caption set to
-  // whatever the user provided. All empty rows will be excluded from the final
-  // result.
-  List<AssetInputId> _onSubmit(
-    BuildContext context,
-    List<SearchResult> results,
-  ) {
-    // We actually don't care about the form state, since it gets wrecked when
-    // the text field is discarded when it scrolls out of view, but to keep up
-    // appearances we will validate the form anyway.
-    if (_fbKey.currentState!.saveAndValidate()) {
-      final List<AssetInputId> inputs = List.generate(results.length, (idx) {
-        // Undefined values are treated as empty string, so we can treat empty
-        // and undefined in the same manner down below with Option.from().
-        final String caption = inputValues['caption-$idx'] ?? '';
-        return AssetInputId(
-          id: results[idx].id,
-          input: AssetInput(
-            tags: const [],
-            caption: Option.from(caption.isEmpty ? null : caption),
-            location: const None(),
-            datetime: const None(),
-            mimetype: const None(),
-            filename: const None(),
-          ),
-        );
-      });
-      inputs.retainWhere((e) => e.input.caption is Some);
-      return inputs;
-    }
-    return [];
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return BlocProvider.value(
       value: BlocProvider.of<RecentImportsBloc>(context),
       child: BlocBuilder<RecentImportsBloc, RecentImportsState>(
         builder: (context, state) {
           if (state is Loaded) {
             if (state.results.count > 0) {
-              return _buildForm(state.results);
+              return _buildForm(context, ref, state.results);
             } else {
               return const Center(
                 child: Text(
@@ -87,129 +47,131 @@ class _BulkFormState extends State<BulkForm> {
     );
   }
 
-  Widget _buildForm(QueryResults allResults) {
-    final end = allResults.count > 100 ? 100 : allResults.count;
-    final results = allResults.results.sublist(0, end);
-    return FormBuilder(
-      key: _fbKey,
-      child: Column(
-        children: [
-          BulkSubmit(
-            onSubmit: () => _onSubmit(context, results),
-            onComplete: () {
-              BlocProvider.of<RecentImportsBloc>(context).add(
-                RefreshResults(),
-              );
-            },
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemBuilder: (BuildContext context, int index) {
-                final String key = 'caption-$index';
-                return BulkFormRow(
-                  result: results[index],
-                  attribute: key,
-                  initial: inputValues[key] ?? '',
-                  onChanged: (val) {
-                    setState(() {
-                      inputValues[key] = val;
-                    });
-                  },
-                );
-              },
-              itemCount: results.length,
-            ),
-          ),
-        ],
+  Widget _buildForm(
+    BuildContext context,
+    WidgetRef ref,
+    QueryResults allResults,
+  ) {
+    final results = allResults.results;
+    return BlocProvider<AssignAttributesBloc>(
+      create: (_) => ref.read(assignAttributesBlocProvider),
+      child: BlocBuilder<AssignAttributesBloc, AssignAttributesState>(
+        builder: (context, state) {
+          return Column(
+            children: [
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Expanded(
+                      flex: 2,
+                      child: Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: TagSelector(),
+                      ),
+                    ),
+                    const Expanded(
+                      flex: 2,
+                      child: Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: LocationSelector(),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Center(
+                        child: BulkSubmit(
+                          enabled: state.submittable,
+                          onSubmit: () => List.of(state.assets.map((id) {
+                            return AssetInputId(
+                              id: id,
+                              input: AssetInput(
+                                tags: state.tags,
+                                location: Option.from(state.location),
+                                caption: const None(),
+                                datetime: const None(),
+                                filename: const None(),
+                                mimetype: const None(),
+                              ),
+                            );
+                          })),
+                          onComplete: () {
+                            BlocProvider.of<alb.AllLocationsBloc>(context)
+                                .add(alb.LoadAllLocations());
+                            BlocProvider.of<atb.AllTagsBloc>(context)
+                                .add(atb.LoadAllTags());
+                            BlocProvider.of<RecentImportsBloc>(context).add(
+                              RefreshResults(),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(child: buildThumbnails(context, results, state)),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-class BulkFormRow extends StatelessWidget {
-  final SearchResult result;
-  final String attribute;
-  final String initial;
-  final ValueChanged onChanged;
-
-  const BulkFormRow({
-    Key? key,
-    required this.result,
-    required this.attribute,
-    required this.initial,
-    required this.onChanged,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final smallerStyle = DefaultTextStyle.of(context).style.apply(
-          fontSizeFactor: 0.9,
-        );
-    return Row(
-      children: [
-        Expanded(flex: 1, child: BulkThumbnail(result: result)),
-        Expanded(
-          flex: 2,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(0, 0, 32, 0),
-            child: Column(
-              children: [
-                FormBuilderTextField(
-                  name: attribute,
-                  initialValue: initial,
-                  decoration: const InputDecoration(
-                    icon: Icon(Icons.format_quote),
-                    labelText: 'Caption',
+Widget buildThumbnails(
+  BuildContext context,
+  List<SearchResult> results,
+  AssignAttributesState state,
+) {
+  final datefmt = DateFormat.EEEE().add_yMMMMd();
+  final elements = List<Widget>.from(
+    results.map((e) {
+      final selected = state.assets.contains(e.id);
+      final dateString = datefmt.format(e.datetime.toLocal());
+      return TextButton(
+        onPressed: () {
+          BlocProvider.of<AssignAttributesBloc>(context).add(
+            ToggleAsset(assetId: e.id),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SizedBox(
+            width: 300.0,
+            // try keeping the text in a column, the text will automatically
+            // wrap to fix the available space
+            child: Column(children: [
+              Stack(
+                children: <Widget>[
+                  AssetDisplay(
+                    assetId: e.id,
+                    mimetype: e.mimetype,
+                    displayWidth: 300,
                   ),
-                  onChanged: onChanged,
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    'Enter a description, including #tags and @location'
-                    ' or @"some location"',
-                    style: smallerStyle,
+                  Positioned(
+                    top: 15,
+                    right: 15,
+                    child: Icon(selected
+                        ? Icons.check_circle
+                        : Icons.add_circle_outline),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+              Text(dateString),
+              ResponsiveVisibility(
+                hiddenWhen: const [
+                  Condition.smallerThan(name: TABLET),
+                ],
+                child: Text(e.filename),
+              ),
+            ]),
           ),
         ),
-      ],
-    );
-  }
-}
-
-class BulkThumbnail extends StatelessWidget {
-  final SearchResult result;
-
-  const BulkThumbnail({Key? key, required this.result}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final datefmt = DateFormat.EEEE().add_yMMMMd();
-    final dateString = datefmt.format(result.datetime);
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: SizedBox(
-        width: 300.0,
-        // try keeping the text in a column, the text will automatically
-        // wrap to fix the available space
-        child: Column(children: [
-          AssetDisplay(
-            assetId: result.id,
-            mimetype: result.mimetype,
-            displayWidth: 300,
-          ),
-          Text(dateString),
-          ResponsiveVisibility(
-            hiddenWhen: const [
-              Condition.smallerThan(name: TABLET),
-            ],
-            child: Text(result.filename),
-          ),
-        ]),
-      ),
-    );
-  }
+      );
+    }),
+  );
+  return SingleChildScrollView(
+    child: Wrap(children: elements),
+  );
 }

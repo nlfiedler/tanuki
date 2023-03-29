@@ -35,7 +35,11 @@ abstract class EntityRepository {
   );
 
   /// Query for the recent imports since the given date/time.
-  Future<Result<QueryResults, Failure>> queryRecents(Option<DateTime> since);
+  Future<Result<QueryResults, Failure>> queryRecents(
+    Option<DateTime> since,
+    Option<int> count,
+    Option<int> offset,
+  );
 
   /// Update a single asset record in the repository.
   ///

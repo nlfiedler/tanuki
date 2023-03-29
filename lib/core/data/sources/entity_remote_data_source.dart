@@ -28,7 +28,11 @@ abstract class EntityRemoteDataSource {
     int count,
     int offset,
   );
-  Future<QueryResults?> queryRecents(Option<DateTime> since);
+  Future<QueryResults?> queryRecents(
+    Option<DateTime> since,
+    Option<int> count,
+    Option<int> offset,
+  );
   Future<Asset?> updateAsset(AssetInputId asset);
 }
 
@@ -264,14 +268,18 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
   }
 
   @override
-  Future<QueryResults?> queryRecents(Option<DateTime> since) async {
+  Future<QueryResults?> queryRecents(
+    Option<DateTime> since,
+    Option<int> count,
+    Option<int> offset,
+  ) async {
     final validDate = since.mapOr((v) => v.isUtc, true);
     if (!validDate) {
       throw const ServerException('since must be a UTC date/time');
     }
     const query = r'''
-      query Recent($since: DateTimeUtc) {
-        recent(since: $since) {
+      query Recent($since: DateTimeUtc, $count: Int, $offset: Int) {
+        recent(since: $since, count: $count, offset: $offset) {
           results {
             id
             datetime
@@ -287,6 +295,8 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
       document: gqlNoTypename(query),
       variables: <String, dynamic>{
         'since': since.mapOr((v) => v.toIso8601String(), null),
+        'count': count.toNullable(),
+        'offset': offset.toNullable(),
       },
       fetchPolicy: gql.FetchPolicy.noCache,
     );

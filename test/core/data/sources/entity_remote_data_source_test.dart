@@ -693,7 +693,11 @@ void main() {
         setUpMockHttpClientGraphQLResponse();
         final Option<DateTime> since = Some(DateTime.now().toUtc());
         // act
-        final result = await dataSource.queryRecents(since);
+        final result = await dataSource.queryRecents(
+          since,
+          const None(),
+          const None(),
+        );
         // assert
         final expected = QueryResultsModel(
           results: [
@@ -719,7 +723,11 @@ void main() {
         setUpMockHttpClientGraphQLResponse();
         const Option<DateTime> since = None();
         // act
-        final result = await dataSource.queryRecents(since);
+        final result = await dataSource.queryRecents(
+          since,
+          const None(),
+          const None(),
+        );
         // assert
         final expected = QueryResultsModel(
           results: [
@@ -746,7 +754,11 @@ void main() {
         final Option<DateTime> since = Some(DateTime.now().toUtc());
         // act, assert
         try {
-          await dataSource.queryRecents(since);
+          await dataSource.queryRecents(
+            since,
+            const None(),
+            const None(),
+          );
           fail('should have raised an error');
         } catch (e) {
           expect(e, isA<ServerException>());
@@ -762,7 +774,11 @@ void main() {
         final Option<DateTime> since = Some(DateTime.now().toUtc());
         // act, assert
         try {
-          await dataSource.queryRecents(since);
+          await dataSource.queryRecents(
+            since,
+            const None(),
+            const None(),
+          );
           fail('should have raised an error');
         } catch (e) {
           expect(e, isA<ServerException>());
@@ -789,7 +805,11 @@ void main() {
         setUpMockGraphQLNullResponse();
         final Option<DateTime> since = Some(DateTime.now().toUtc());
         // act
-        final result = await dataSource.queryRecents(since);
+        final result = await dataSource.queryRecents(
+          since,
+          const None(),
+          const None(),
+        );
         // assert
         expect(result, isNull);
       },

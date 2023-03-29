@@ -11,11 +11,13 @@ import 'package:tanuki/features/import/preso/bloc/providers.dart';
 typedef BulkCallback = List<AssetInputId> Function();
 
 class BulkSubmit extends ConsumerWidget {
+  final bool enabled;
   final BulkCallback onSubmit;
   final VoidCallback onComplete;
 
   const BulkSubmit({
     Key? key,
+    required this.enabled,
     required this.onSubmit,
     required this.onComplete,
   }) : super(key: key);
@@ -38,28 +40,18 @@ class BulkSubmit extends ConsumerWidget {
           }
         },
         builder: (context, state) {
-          return Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Fill in some or all captions and then'),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8.0, 0, 8.0, 0),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final inputs = onSubmit();
-                      if (inputs.isNotEmpty) {
-                        BlocProvider.of<BulkUpdateBloc>(context).add(
-                          SubmitUpdates(inputs: inputs),
-                        );
-                      }
-                    },
-                    child: const Text('SAVE'),
-                  ),
-                ),
-              ],
-            ),
+          return ElevatedButton(
+            onPressed: enabled
+                ? () {
+                    final inputs = onSubmit();
+                    if (inputs.isNotEmpty) {
+                      BlocProvider.of<BulkUpdateBloc>(context).add(
+                        SubmitUpdates(inputs: inputs),
+                      );
+                    }
+                  }
+                : null,
+            child: const Text('SAVE'),
           );
         },
       ),

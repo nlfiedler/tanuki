@@ -31,8 +31,6 @@ class AssetsList extends StatelessWidget {
   }
 }
 
-const thumbnail300 = '/api/thumbnail/300/300/';
-
 Widget buildThumbnails(BuildContext context, List<SearchResult> results) {
   final datefmt = DateFormat.EEEE().add_yMMMMd();
   final elements = List<Widget>.from(
@@ -72,25 +70,5 @@ Widget buildThumbnails(BuildContext context, List<SearchResult> results) {
   );
   return SingleChildScrollView(
     child: Wrap(children: elements),
-  );
-}
-
-Widget imageErrorBuilder(
-  BuildContext context,
-  Object error,
-  StackTrace stackTrace,
-) {
-  return SizedBox(
-    width: 300,
-    height: 300,
-    child: Center(
-      child: Card(
-        child: ListTile(
-          leading: const Icon(Icons.error_outline),
-          title: const Text('Unable to load thumbnail'),
-          subtitle: Text(error.toString()),
-        ),
-      ),
-    ),
   );
 }

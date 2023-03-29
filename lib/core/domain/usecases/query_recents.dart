@@ -15,17 +15,25 @@ class QueryRecents implements UseCase<QueryResults, Params> {
 
   @override
   Future<Result<QueryResults, Failure>> call(Params params) async {
-    return await repository.queryRecents(params.since);
+    return await repository.queryRecents(
+      params.since,
+      params.count,
+      params.offset,
+    );
   }
 }
 
 class Params extends Equatable {
   final Option<DateTime> since;
+  final Option<int> count;
+  final Option<int> offset;
 
   const Params({
     required this.since,
+    required this.count,
+    required this.offset,
   });
 
   @override
-  List<Object> get props => [since];
+  List<Object> get props => [since, count, offset];
 }

@@ -1,4 +1,12 @@
 * Action Items
+** TODO fork =flutter_tagging_plus= and fix its problems
+*** remove =onChanged()= and add =onRemoved()=
+*** do not share the list with the caller
+*** add spacing between the text field and chips
+*** when no chips are present, have an invisible chip that holds that space to prevent movement
+*** after selecting a suggestion, focus the text field
+*** consider if =Taggable= can be removed, =choose_input_chips= does not have such a thing
+** TODO undo the work-arounds for the juniper __typename bug in Dart graphql client
 ** bug: import hangs after ~140 assets
 *** seems like Firefox is completely frozen at some point
 ** bug: selecting a season when year is ~any~ should select the latest year
@@ -17,35 +25,15 @@
 *** web server to serve temporary asset via url
 ** Add light/dark theme switcher
 *** Use =ThemeData= to construct the default light or dark themes
-** Better tagging of recent imports
-*** design objectives
-**** save time when applying similar tags to lots of assets
-**** show paginated gallery view of recent imports
-**** user selects multiple assets and applies tags and locations to them
-*** analysis of perkeep tagging
-**** user clicks on selection button overlay on asset thumbnail
-**** sidebar appears (image gallery shrinks to accomodate)
-**** text field for adding new (comma-separated) tags
-**** shows superset of all tags on all selected assets as chips
-**** indicates those tags that are on _all_ selected assets by filling in with color
-**** clicking on an unfilled tag will apply it to all selected assets
-**** tags can be removed via ~X~ button attached to tag
-*** design proposal
-**** input fields placed above image gallery, like search page
-**** use =flutter_tagging_plus= for choosing existing tags and/or creating new tags
-**** use =flutter_tagging_plus= for entering an existing or new location
-**** button to apply changes and rebuild list of ~recent~ assets
-**** button disabled until one or more assets are selected and values are entered
-**** c.f. https://pub.dev/packages/flutter_tagging_plus
-*** implementation considerations
-**** BLoC for managing recents page
-***** track selected assets
-***** track newly added tags and locations prior to committing
-***** ~submittable~ predicate to enable/disable the ~save~ button
-**** bulk apply of updates to avoid frequent update of indices
-***** that is, updating the assets with each tag addition/deletion would cause the indices to be rebuilt
-*** hover over an image to show a larger version
-*** hover over a video to start playing it
+** Fix all the stateful widgets to use the new convention
+#+begin_src dart
+class TagSelector extends StatefulWidget {
+  const TagSelector({Key? key}) : super(key: key);
+
+  @override
+  State<TagSelector> createState() => _TagSelectorState();
+}
+#+end_src
 ** Add date order button on gallery (ascending/descending)
 *** the GraphQL operation supports sorting, should use it for something
 ** Gallery display modes
@@ -146,7 +134,7 @@
 **** display select information from EXIF metadata (e.g. camera)
 *** quick editing on browse page
 **** use =ExpansionPanel= for thumbnail caption that allows editing common fields
-*** navigation between sceens
+*** navigation between screens
 **** do not want to have to build all of the screens at the same time, probably
 **** can add actions to the =Appbar= with an overflow popup menu button
 ***** the popup menu button would be the navigation selector
@@ -186,40 +174,10 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
  message: "IO error: While open a file for appending: tmp/rocksdb/000733.sst: Too many open files"
 }', src/main.rs:88:71
 #+END_SRC
-*** error: text input is not attached
-**** filed https://github.com/danvick/flutter_chips_input/issues/92
-**** cause 1: clearing all selected attributes
-1) select a tag
-2) select a location
-3) clear selected location
-4) clear selected tag
-5) seemingly nothing happens: error in console
-**** cause 2: date selector
-1) open then close the date range selector
-2) use dropdown to add a new tag
-3) seemingly nothing happens: error in console
-**** partial stack trace
-#+begin_src
-The following assertion was thrown while handling a gesture:
-Assertion failed:
-file:///Users/nfiedler/fvm/versions/stable/packages/flutter/lib/src/services/text_input.dart:981:12
-attached is not true
-
-When the exception was thrown, this was the stack:
-dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 236:49  throw_
-dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 29:3    assertFailed
-packages/flutter/src/services/text_input.dart 981:12                          setEditingState
-packages/flutter_chips_input/src/chips_input.dart 356:27                      [_updateTextInputState]
-packages/flutter_chips_input/src/chips_input.dart 269:7                       deleteChip
-packages/tanuki/features/browse/preso/widgets/tags_selector.dart 136:33       <fn>
-packages/flutter/src/material/chip.dart 1888:24                               <fn>
-...
-Handler: "onTap"
-Recognizer:
-  TapGestureRecognizer#17924
-#+end_src
-*** filter input chips cause exception in the console with ~Tab~ key
-**** c.f. https://github.com/danvick/flutter_form_builder/issues/703
+** Import screen improvements
+*** small button to go directly to asset details/edit page
+*** hover over an image to show a larger version
+*** hover over a video to start playing it
 ** Attribute management
 *** screen for showing all tags, locations, years, with count values
 **** selecting a tag or location offers a rename function
@@ -233,6 +191,14 @@ Recognizer:
 ***** where should the popup menu live?
 ****** could be in the appbar actions area
 ****** photoprism adds a FAB that shows the selected count
+**** detailed analysis of perkeep tagging
+***** user clicks on selection button overlay on asset thumbnail
+***** sidebar appears (image gallery shrinks to accomodate)
+***** text field for adding new (comma-separated) tags
+***** shows superset of all tags on all selected assets as chips
+***** indicates those tags that are on _all_ selected assets by filling in with color
+***** clicking on an unfilled tag will apply it to all selected assets
+***** tags can be removed via ~X~ button attached to tag
 *** More sophisticated edits, similar to JIRA
 **** start by browsing/searching for assets
 **** use the selection checkbox on each asset to select

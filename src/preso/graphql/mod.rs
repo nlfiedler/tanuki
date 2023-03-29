@@ -475,7 +475,17 @@ impl QueryRoot {
     ///
     /// Recently imported assets do not have any tags, location, or caption, and
     /// thus are waiting for the user to give them additional details.
-    fn recent(executor: &Executor, since: Option<DateTime<Utc>>) -> FieldResult<SearchMeta> {
+    ///
+    /// The count indicates how many results to return in a single query,
+    /// limited to a maximum of 250. Default value is `10`.
+    ///
+    /// The offset is useful for pagination. Default value is `0`.
+    fn recent(
+        executor: &Executor,
+        since: Option<DateTime<Utc>>,
+        count: Option<i32>,
+        offset: Option<i32>,
+    ) -> FieldResult<SearchMeta> {
         use crate::domain::usecases::recent::{Params, RecentImports};
         use crate::domain::usecases::UseCase;
         let ctx = executor.context().clone();
@@ -483,8 +493,9 @@ impl QueryRoot {
         let usecase = RecentImports::new(Box::new(repo));
         let mut params: Params = Default::default();
         params.after_date = since;
-        let results: Vec<SearchResult> = usecase.call(params)?;
+        let mut results: Vec<SearchResult> = usecase.call(params)?;
         let total_count = results.len() as i32;
+        let results = paginate_vector(&mut results, offset, count);
         Ok(SearchMeta {
             results,
             count: total_count,

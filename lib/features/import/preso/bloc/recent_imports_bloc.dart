@@ -1,8 +1,9 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 import 'dart:async';
 import 'package:bloc/bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
@@ -41,6 +42,22 @@ class FindRecents extends RecentImportsEvent {
   FindRecents({required this.range});
 }
 
+class ShowPage extends RecentImportsEvent {
+  final int page;
+
+  ShowPage({
+    required this.page,
+  });
+}
+
+class SetPageSize extends RecentImportsEvent {
+  final int size;
+
+  SetPageSize({
+    required this.size,
+  });
+}
+
 /// Submit the query again for the same time range as before.
 class RefreshResults extends RecentImportsEvent {}
 
@@ -60,11 +77,20 @@ class Loading extends RecentImportsState {}
 class Loaded extends RecentImportsState {
   final QueryResults results;
   final RecentTimeRange range;
+  final int pageSize;
+  final int pageNumber;
+  final int lastPage;
 
-  Loaded({required this.results, required this.range});
+  Loaded({
+    required this.results,
+    required this.range,
+    required this.pageSize,
+    required this.pageNumber,
+    required this.lastPage,
+  });
 
   @override
-  List<Object> get props => [range, results];
+  List<Object> get props => [range, results, pageNumber];
 }
 
 class Error extends RecentImportsState {
@@ -83,15 +109,40 @@ class Error extends RecentImportsState {
 class RecentImportsBloc extends Bloc<RecentImportsEvent, RecentImportsState> {
   final QueryRecents usecase;
   RecentTimeRange prevQueryRange = RecentTimeRange.day;
+  int pageSize = 18;
+  int pageNumber = 1;
 
   RecentImportsBloc({required this.usecase}) : super(Empty()) {
-    on<FindRecents>((event, emit) {
+    // enforce sequential ordering of event mapping due to the asynchronous
+    // nature of this bloc
+    on<RecentImportsEvent>(_onEvent, transformer: sequential());
+  }
+
+  FutureOr<void> _onEvent(
+    RecentImportsEvent event,
+    Emitter<RecentImportsState> emit,
+  ) async {
+    if (event is FindRecents) {
+      if (event.range != prevQueryRange) {
+        pageNumber = 1;
+      }
       prevQueryRange = event.range;
       return _runQuery(event.range, emit);
-    });
-    on<RefreshResults>((event, emit) {
+    } else if (event is RefreshResults) {
+      pageNumber = 1;
       return _runQuery(prevQueryRange, emit);
-    });
+    } else if (event is ShowPage) {
+      if (state is Loaded) {
+        pageNumber = event.page;
+        return _runQuery(prevQueryRange, emit);
+      }
+    } else if (event is SetPageSize) {
+      if (state is Loaded) {
+        pageSize = event.size;
+        pageNumber = 1;
+        return _runQuery(prevQueryRange, emit);
+      }
+    }
   }
 
   Future<void> _runQuery(
@@ -100,20 +151,24 @@ class RecentImportsBloc extends Bloc<RecentImportsEvent, RecentImportsState> {
   ) async {
     emit(Loading());
     final since = range.asDate.map((v) => v.toUtc());
-    final result = await usecase(Params(since: since));
+    final offset = pageSize * (pageNumber - 1);
+    final result = await usecase(Params(
+      since: since,
+      count: Some(pageSize),
+      offset: Some(offset),
+    ));
     emit(result.mapOrElse(
       (results) {
-        // Sort the results by filename for consistency, that way images taken
-        // around the same time will be near each other in the list, which is
-        // helpful when applying captions.
-        results.results.sort(compareRecents);
-        return Loaded(results: results, range: range);
+        final lastPage = (results.count / pageSize).ceil();
+        return Loaded(
+          results: results,
+          range: range,
+          pageSize: pageSize,
+          pageNumber: lastPage > 0 ? pageNumber : 0,
+          lastPage: lastPage,
+        );
       },
       (failure) => Error(message: failure.toString()),
     ));
   }
-}
-
-int compareRecents(SearchResult a, SearchResult b) {
-  return a.filename.compareTo(b.filename);
 }

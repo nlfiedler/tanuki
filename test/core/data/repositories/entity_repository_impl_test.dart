@@ -46,6 +46,8 @@ void main() {
     registerFallbackValue(dummyAssetInputId);
     const Option<DateTime> dummyDateTime = None();
     registerFallbackValue(dummyDateTime);
+    const Option<int> dummyInt = None();
+    registerFallbackValue(dummyInt);
   });
 
   group('getAllLocations', () {
@@ -321,13 +323,15 @@ void main() {
           ],
           count: 1,
         );
-        when(() => mockRemoteDataSource.queryRecents(any()))
+        when(() => mockRemoteDataSource.queryRecents(any(), any(), any()))
             .thenAnswer((_) async => expected);
         // act
         final Option<DateTime> since = Some(DateTime.now());
-        final result = await repository.queryRecents(since);
+        final result =
+            await repository.queryRecents(since, const None(), const None());
         // assert
-        verify(() => mockRemoteDataSource.queryRecents(since));
+        verify(() => mockRemoteDataSource.queryRecents(
+            since, const None(), const None()));
         expect(result.unwrap(), equals(expected));
       },
     );
@@ -336,13 +340,15 @@ void main() {
       'should return failure when remote data source returns null',
       () async {
         // arrange
-        when(() => mockRemoteDataSource.queryRecents(any()))
+        when(() => mockRemoteDataSource.queryRecents(any(), any(), any()))
             .thenAnswer((_) async => null);
         // act
         final Option<DateTime> since = Some(DateTime.now());
-        final result = await repository.queryRecents(since);
+        final result =
+            await repository.queryRecents(since, const None(), const None());
         // assert
-        verify(() => mockRemoteDataSource.queryRecents(since));
+        verify(() => mockRemoteDataSource.queryRecents(
+            since, const None(), const None()));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -351,13 +357,15 @@ void main() {
       'should return failure when remote data source is unsuccessful',
       () async {
         // arrange
-        when(() => mockRemoteDataSource.queryRecents(any()))
+        when(() => mockRemoteDataSource.queryRecents(any(), any(), any()))
             .thenThrow(const ServerException());
         // act
         final Option<DateTime> since = Some(DateTime.now());
-        final result = await repository.queryRecents(since);
+        final result =
+            await repository.queryRecents(since, const None(), const None());
         // assert
-        verify(() => mockRemoteDataSource.queryRecents(since));
+        verify(() => mockRemoteDataSource.queryRecents(
+            since, const None(), const None()));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
