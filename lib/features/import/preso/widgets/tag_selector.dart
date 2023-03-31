@@ -3,7 +3,8 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_tagging_plus/flutter_tagging_plus.dart';
+import 'package:multi_tag_picker/multi_tag_picker.dart';
+import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart';
 import 'package:tanuki/features/import/preso/bloc/assign_attributes_bloc.dart';
 
@@ -28,7 +29,7 @@ class TagSelector extends StatelessWidget {
           }
           if (state is Loaded) {
             final tags = List.of(state.tags.map(
-              (e) => AssetTag(label: e.label, count: e.count),
+              (e) => Tag(label: e.label, count: e.count),
             ));
             return TagSelectorStateful(tags: tags);
           }
@@ -40,7 +41,7 @@ class TagSelector extends StatelessWidget {
 }
 
 class TagSelectorStateful extends StatefulWidget {
-  final List<AssetTag> tags;
+  final List<Tag> tags;
 
   const TagSelectorStateful({
     Key? key,
@@ -52,30 +53,17 @@ class TagSelectorStateful extends StatefulWidget {
 }
 
 class _TagSelectorState extends State<TagSelectorStateful> {
-  late List<AssetTag> _selectedTags;
-
-  @override
-  void initState() {
-    _selectedTags = [];
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _selectedTags.clear();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return FlutterTagging<AssetTag>(
-      initialItems: _selectedTags,
+    return FlutterTagging<Tag>(
+      initialItems: const [],
       textFieldConfiguration: const TextFieldConfiguration(
         decoration: InputDecoration(
           border: UnderlineInputBorder(),
           labelText: 'Select Tags',
         ),
       ),
+      placeholderItem: const Tag(label: 'dummy', count: 0),
       findSuggestions: (String query) {
         if (query.isNotEmpty) {
           // Looks complicated but this code is sorting the results by
@@ -83,17 +71,17 @@ class _TagSelectorState extends State<TagSelectorStateful> {
           var lowercaseQuery = query.toLowerCase();
           return widget.tags.where((tag) {
             return tag.label.toLowerCase().contains(query.toLowerCase());
-          }).toList()
+          }).toList(growable: false)
             ..sort((a, b) => a.label
                 .toLowerCase()
                 .indexOf(lowercaseQuery)
                 .compareTo(b.label.toLowerCase().indexOf(lowercaseQuery)));
         } else {
-          return <AssetTag>[];
+          return <Tag>[];
         }
       },
       additionCallback: (value) {
-        return AssetTag(label: value, count: 0);
+        return Tag(label: value, count: 0);
       },
       configureSuggestion: (tag) {
         return SuggestionConfiguration(
@@ -108,25 +96,12 @@ class _TagSelectorState extends State<TagSelectorStateful> {
       configureChip: (tag) {
         return ChipConfiguration(label: Text(tag.label));
       },
-      onChanged: () {
-        final tags = List.of(_selectedTags.map((e) => e.label));
+      onChanged: (values) {
+        final tagLabels = List.of(values.map((e) => e.label));
         BlocProvider.of<AssignAttributesBloc>(context).add(
-          AssignTags(tags: tags),
+          AssignTags(tags: tagLabels),
         );
       },
     );
   }
-}
-
-class AssetTag extends Taggable {
-  final String label;
-  final int count;
-
-  const AssetTag({
-    required this.label,
-    required this.count,
-  });
-
-  @override
-  List<Object> get props => [label];
 }

@@ -1,11 +1,4 @@
 * Action Items
-** TODO fork =flutter_tagging_plus= and fix its problems
-*** remove =onChanged()= and add =onRemoved()=
-*** do not share the list with the caller
-*** add spacing between the text field and chips
-*** when no chips are present, have an invisible chip that holds that space to prevent movement
-*** after selecting a suggestion, focus the text field
-*** consider if =Taggable= can be removed, =choose_input_chips= does not have such a thing
 ** bug: import hangs after ~140 assets
 *** seems like Firefox is completely frozen at some point
 ** bug: selecting a season when year is ~any~ should select the latest year
