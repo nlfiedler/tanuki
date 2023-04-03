@@ -95,10 +95,17 @@ mod tests {
         // arrange
         let uploads_path = tempdir().unwrap();
         // set up an uploads directory with known contents
+        #[cfg(target_family = "unix")]
         let digests = vec![
             "sha256-4f86f7dd48474b8e6571beeabbd79111267f143c0786bcd45def0f6b33ae0423",
             "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09",
             "sha256-095964d07f3e821659d4eb27ed9e20cd5160c53385562df727e98eb815bb371f",
+        ];
+        #[cfg(target_family = "windows")]
+        let digests = vec![
+            "sha256-4f86f7dd48474b8e6571beeabbd79111267f143c0786bcd45def0f6b33ae0423",
+            "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09",
+            "sha256-1ed890fb1b875a5d7637d54856dc36195bed2e8e40fe6c155a2908b8dd00ebee",
         ];
         let original_filenames = vec!["100_1206.MOV", "fighting_kittens.jpg", "lorem-ipsum.txt"];
         for original_filename in original_filenames.iter() {
