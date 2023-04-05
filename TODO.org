@@ -4,6 +4,7 @@
 ** bug: selecting a season when year is ~any~ should select the latest year
 *** if the year was never set, works, but if year was set to ~Any~ then it doesn't?
 ** Enable rotating and flipping images from the asset edit page
+*** lot of the images from ~jarabacoa~ need rotating
 *** =image= crate supports several filters (flip, rotate, etc)
 *** need to recognize that the asset is an image (cannot edit anything else)
 *** new graphql query to temporarily apply a set of transformations to an asset
@@ -28,6 +29,16 @@ class TagSelector extends StatefulWidget {
 #+end_src
 ** Add date order button on gallery (ascending/descending)
 *** the GraphQL operation supports sorting, should use it for something
+** support HEIC/HEIF images
+*** c.f. https://aomediacodec.github.io/av1-avif/
+**** AV1 is the free alternative to encumbered HEVC
+**** there are some crates for avif
+*** HEIF is an image file format employing HEVC (h.265) image coding
+*** https://crates.io/crates/libheif-rs (MIT)
+*** https://crates.io/crates/libvips (MIT) reads/writes HEIF
+**** this library easily crashes with a segmentation fault
+*** https://github.com/oussama/libheif-rs (MIT)
+*** https://crates.io/crates/kamadak-exif (BSD) reads metadata
 ** Gallery display modes
 *** different modes of display
 **** responsive grid; images are scaled to fit in a row, with wrapping
@@ -257,16 +268,6 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 *** Read other metadata formats
 **** XMP
 **** IPTC
-*** TODO support HEIF images
-**** c.f. https://aomediacodec.github.io/av1-avif/
-***** AV1 is the free alternative to encumbered HEVC
-***** there are some crates for avif
-**** HEIF is an image file format employing HEVC (h.265) image coding
-**** https://crates.io/crates/libheif-rs (MIT)
-**** https://crates.io/crates/libvips (MIT) reads/writes HEIF
-***** this library easily crashes with a segmentation fault
-**** https://github.com/oussama/libheif-rs (MIT)
-**** https://crates.io/crates/kamadak-exif (BSD) reads metadata
 *** Support audio formats
 **** get audio playback working
 **** read =ID3= tags in audio files
