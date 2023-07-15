@@ -12,42 +12,34 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 ** verify responsiveness is looking good
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
-** update mp4: has an error with certain test fixture
-*** version 0.13 does not have the problem, but 0.14 does
-*** seems to not like something about the =100_1206.MOV= file
-#+begin_src
-actual: Err(mp4a box contains a box with a larger size than it)
-thread 'domain::usecases::tests::test_get_original_date' panicked at src/domain/usecases/mod.rs:339:9:
-assertion failed: actual.is_ok()
-#+end_src
-** locations: allow for comma-separated location values (e.g. ~tokyo, japan~)
-*** index will detect commas and split, creating multiple index entries
-*** list of available locations will retain the full string as-is
-**** for the sake of importing assets, need the original value (~tokyo, japan~, not ~tokyo~ and ~japan~)
-** bug: import hangs after ~140 assets
-*** seems like Firefox is completely frozen at some point
-** Add (un)select-all buttons on recents page
-** Location improvements
+** [#A] convert the few HEIC files into JPG
+*** manually convert the files, then fix the database records (ID and mimetype)
+** [#B] Location improvements
+*** allow for comma-separated location values (e.g. ~tokyo, japan~)
+**** index will detect commas and split, creating multiple index entries
+**** retain original location value so recents screen can use that for tagging assets
 *** location should be a record of properties
 | Name    | Description                    |
 |---------+--------------------------------|
 | label   | current string value           |
 | address | an address of some sort        |
 | geo     | geo location data of some sort |
-*** find out what data is store in images taken by iPhone
-*** Extract location information from images
+*** find out what data is stored in images
+*** extract location information from images
 **** write a data migration to process existing assets
 **** existing location values should be stored in a "label" field
 **** exact location information would be stored separate from label
 **** c.f. https://github.com/google/open-location-code/wiki/Evaluation-of-Location-Encoding-Systems
 **** c.f. https://www.osgeo.org for some information, resources
-*** Map display with locations of photos taken
+*** show tiny map of where photo was taken on details page
+*** provide map display with locations of photos taken
+*** available map services
 **** [[https://cloud.google.com/maps-platform/][Google Maps]]
 - customer uses their own API key, sets in preferences
 - for =testing= account: =AIzaSyAI73udKC3KVk6aIBqOjSqSv6PEQ0qd638=
 **** [[https://mariusandra.github.io/pigeon-maps/][Pigeon Maps]]
 - Uses data from OpenStreetMap, Wikimedia for the tiles
-** Enable rotating and flipping images from the asset edit page
+** [#C] Enable rotating and flipping images from the asset edit page
 *** lot of the images from ~jarabacoa~ need rotating
 *** =image= crate supports several filters (flip, rotate, etc)
 *** need to recognize that the asset is an image (cannot edit anything else)
@@ -60,20 +52,10 @@ assertion failed: actual.is_ok()
 *** new version will get a new unique identifier and thereby URL
 *** use case will move previous identity into a new field to track old versions
 *** web server to serve temporary asset via url
-** Add light/dark theme switcher
-*** Use =ThemeData= to construct the default light or dark themes
-** Add date order button on gallery (ascending/descending)
-*** the GraphQL operation supports sorting, should use it for something
-** support HEIC/HEIF images (see =avif= branch)
-*** DONE get original date (already works)
-*** TODO generate a thumbnail
-*** HEIF is an image file format employing HEVC (h.265) image coding
-*** [[https://aomediacodec.github.io/av1-avif/][AV1]] is the free alternative to encumbered HEVC
-*** https://crates.io/crates/libheif-rs (MIT)
-*** https://github.com/kornelski/cavif-rs (BSD3)
-*** c.f. https://github.com/image-rs/image/issues/1152 (AVIF decoding supported)
-** Gallery display modes
-*** different modes of display
+** Gallery improvements
+*** add date order button on gallery (ascending/descending)
+**** the GraphQL operation supports sorting, should use it for something
+*** enable different modes of display
 **** responsive grid; images are scaled to fit in a row, with wrapping
 ***** previously was this way in the Electron-based application
 **** grid of just images, maybe 180x180 (a la Apple Photos)
@@ -125,6 +107,8 @@ assertion failed: actual.is_ok()
 **** However, running in dev mode the url in the browser has a weird port
 ** Interface improvements
 *** reference: https://flutter.github.io/samples/
+*** Add light/dark theme switcher
+**** Use =ThemeData= to construct the default light or dark themes
 *** Thumbnail Serving Strategy
 **** the frontend can use the image dimensions to compute the aspect ratio
 **** with the aspect ratio, frontend can request images of the desired size
@@ -201,9 +185,21 @@ assertion failed: actual.is_ok()
 *** c.f. https://pub.dev/packages/flutter_timeline
 *** PhotoPrism has a ~calendar~ view that shows months of years in random order with a (random?) thumbnail
 ** Known Issues
+*** import hangs after ~140 assets
+**** seems like Firefox is completely frozen at some point
+**** probably something is filling a queue (i.e. no back pressure) until it dies
+**** look for mistakes in the async logic that processes uploads
 *** clicking on portrait avi(?) shows widened image and page does not scroll to show details
 *** preview of small images makes them large; should serve original size for smaller images
 *** graphql errors are handled poorly everywhere
+*** latest =mp4= crate has an error with certain test fixture
+**** version 0.13 does not have the problem, but 0.14 does
+**** seems to not like something about the =100_1206.MOV= file
+#+begin_src
+actual: Err(mp4a box contains a box with a larger size than it)
+thread 'domain::usecases::tests::test_get_original_date' panicked at src/domain/usecases/mod.rs:339:9:
+assertion failed: actual.is_ok()
+#+end_src
 *** RocksDB fails with ~too many open files~ when uploading numerous files
 #+BEGIN_SRC
 thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Error {
@@ -211,7 +207,8 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 }', src/main.rs:88:71
 #+END_SRC
 ** Import screen improvements
-*** small button to go directly to asset details/edit page
+*** add (un)select-all buttons
+*** small button to go directly to asset details page
 *** hover over an image to show a larger version
 *** hover over a video to start playing it
 ** Attribute management
@@ -326,6 +323,11 @@ include it in the database records.
 *** Display anything textual in a scrollable text area
 *** Thumbnails for non-images
 **** PhotoPrism generates suitable thumbnails for other kinds of files, saves them to disk
+*** HEIC/HEIF images
+**** HEIF is an image file format employing HEVC (h.265) image coding
+**** [[https://aomediacodec.github.io/av1-avif/][AV1]] is the free alternative to encumbered HEVC
+**** image crate supports AVIF but cannot read HEIC files because they lack AVIF "branding"
+***** unclear where the error is coming from, but ultimately cannot read HEIC files at all
 *** Reference
 **** EXIF: https://www.media.mit.edu/pia/Research/deepview/exif.html
 ** Machine learning

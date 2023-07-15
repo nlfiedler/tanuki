@@ -1,12 +1,12 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, SearchResult};
 use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
 use anyhow::{anyhow, Error};
-use base64::{Engine as _, engine::general_purpose};
+use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
 use lazy_static::lazy_static;
 use std::num::NonZeroUsize;
@@ -203,10 +203,9 @@ fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8
         }
     }
     let mut cursor = std::io::Cursor::new(Vec::new());
-    // The image crate does not recognize .jpe extension as jpeg, so load the
-    // image into memory to force it to interpret the raw bytes.
-    let raw_bytes = std::fs::read(filepath)?;
-    let mut img = image::load_from_memory(&raw_bytes)?;
+    // The image crate does not recognize .jpe extension as jpeg, so use the
+    // format guessing code based on the first few bytes.
+    let mut img = image::io::Reader::open(filepath)?.with_guessed_format()?.decode()?;
     if let Ok(orientation) = get_image_orientation(filepath) {
         // c.f. https://magnushoff.com/articles/jpeg-orientation/
         if orientation > 4 {
