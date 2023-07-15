@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 use anyhow::{anyhow, Error};
 use chrono::prelude::*;
@@ -113,7 +113,7 @@ fn get_avi_date(filepath: &Path) -> Result<DateTime<Utc>, Error> {
     if chunk.id() == riff::RIFF_ID {
         let chunk_type = chunk.read_type(&mut file)?;
         if chunk_type.as_str() == "AVI " {
-            if let Some(contents) = read_chunk(&chunk, &mut file) {
+            if let Some(contents) = read_chunk(&chunk, &mut file)? {
                 if let Some(idit) = find_data("IDIT", &contents) {
                     if let Some(date) = parse_idit_date(&idit) {
                         return Ok(date);
@@ -153,7 +153,7 @@ fn get_avi_date(filepath: &Path) -> Result<DateTime<Utc>, Error> {
 //   children -> id: 'LIST', typ: 'movi', len: 2738
 //   data -> id: 'idx1', len: 32
 
-fn read_chunk<T>(chunk: &riff::Chunk, file: &mut T) -> Option<riff::ChunkContents>
+fn read_chunk<T>(chunk: &riff::Chunk, file: &mut T) -> Result<Option<riff::ChunkContents>, Error>
 where
     T: std::io::Seek + std::io::Read,
 {
@@ -163,31 +163,34 @@ where
         let children = read_items(&mut chunk.iter(file));
         let mut children_contents: Vec<riff::ChunkContents> = Vec::new();
         for child in children {
-            if let Some(contents) = read_chunk(&child, file) {
+            if let Some(contents) = read_chunk(&child?, file)? {
                 children_contents.push(contents);
             }
         }
-        Some(riff::ChunkContents::Children(
+        Ok(Some(riff::ChunkContents::Children(
             id,
             chunk_type,
             children_contents,
-        ))
+        )))
     } else if id == riff::SEQT_ID {
         let children = read_items(&mut chunk.iter_no_type(file));
         let mut children_contents: Vec<riff::ChunkContents> = Vec::new();
         for child in children {
-            if let Some(contents) = read_chunk(&child, file) {
+            if let Some(contents) = read_chunk(&child?, file)? {
                 children_contents.push(contents);
             }
         }
-        Some(riff::ChunkContents::ChildrenNoType(id, children_contents))
+        Ok(Some(riff::ChunkContents::ChildrenNoType(
+            id,
+            children_contents,
+        )))
     } else if chunk.len() <= 256 {
         // only interested in the smaller data fields
         let contents = chunk.read_contents(file).unwrap();
-        Some(riff::ChunkContents::Data(id, contents))
+        Ok(Some(riff::ChunkContents::Data(id, contents)))
     } else {
         // ignore everything else, do not allocate memory
-        None
+        Ok(None)
     }
 }
 
