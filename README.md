@@ -254,3 +254,7 @@ Replaced backend Node.js code with [Rust](https://www.rust-lang.org).
 ### September 2020
 
 Replaced frontend ReasonML code with [Flutter](https://flutter.dev).
+
+### April 2023
+
+Finally have an easy-to-use method for assigning tags and locations to new assets.
