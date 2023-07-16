@@ -80,10 +80,7 @@ class _LocationSelectorStatefulState extends State<LocationSelectorStateful> {
                 .toLowerCase()
                 .indexOf(lowercaseQuery)
                 .compareTo(b.label.toLowerCase().indexOf(lowercaseQuery)));
-          if (results.isEmpty) {
-            return <Location>[Location(label: query, count: 0)];
-          }
-          return results;
+          return groomLocations(results, query.toLowerCase());
         } else {
           return const <Location>[];
         }
@@ -102,4 +99,18 @@ class _LocationSelectorStatefulState extends State<LocationSelectorStateful> {
       },
     );
   }
+}
+
+List<Location> groomLocations(List<Location> locations, String query) {
+  // Need to convert from the model type to the entity type otherwise
+  // when we optionally add the query itself to the list, an error occurs.
+  final results = List.of(
+    locations.map((e) => Location(label: e.label, count: e.count)),
+  );
+  // Optionally add the query itself if it does not appear in the list.
+  final queryExists = locations.any((e) => e.label.toLowerCase() == query);
+  if (!queryExists) {
+    results.insert(0, Location(label: query, count: 0));
+  }
+  return results;
 }

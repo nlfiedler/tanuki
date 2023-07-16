@@ -1,6 +1,6 @@
 * Action Items
-** bug: cannot create new location that is a prefix of existing (~hakone~ and ~hakone gardens~)
 ** bug: tags chip chooser should not offer to add a tag for one that already exists
+*** need to change multi_tag_picker to allow nullable return value for =configureSuggestion=
 ** bug: import hangs after ~140 assets
 *** seems like Firefox is completely frozen at some point
 ** bug: selecting a season when year is ~any~ should select the latest year
