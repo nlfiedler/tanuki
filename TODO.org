@@ -1,6 +1,10 @@
 * Action Items
 ** bug: tags chip chooser should not offer to add a tag for one that already exists
 *** need to change multi_tag_picker to allow nullable return value for =configureSuggestion=
+** locations: allow for comma-separated location values (e.g. ~tokyo, japan~)
+*** index will detect commas and split, creating multiple index entries
+*** list of available locations will retain the full string as-is
+**** for the sake of importing assets, need the original value (~tokyo, japan~, not ~tokyo~ and ~japan~)
 ** bug: import hangs after ~140 assets
 *** seems like Firefox is completely frozen at some point
 ** bug: selecting a season when year is ~any~ should select the latest year
@@ -32,7 +36,7 @@ class TagSelector extends StatefulWidget {
 #+end_src
 ** Add date order button on gallery (ascending/descending)
 *** the GraphQL operation supports sorting, should use it for something
-** support HEIC/HEIF images
+** support HEIC/HEIF images (see =avif= branch)
 *** HEIF is an image file format employing HEVC (h.265) image coding
 *** [[https://aomediacodec.github.io/av1-avif/][AV1]] is the free alternative to encumbered HEVC
 *** https://crates.io/crates/libheif-rs (MIT)
