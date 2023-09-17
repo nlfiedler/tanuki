@@ -44,15 +44,15 @@ impl BigInt {
     }
 }
 
-impl Into<u32> for BigInt {
-    fn into(self) -> u32 {
-        self.0 as u32
+impl From<BigInt> for u32 {
+    fn from(val: BigInt) -> Self {
+        val.0 as u32
     }
 }
 
-impl Into<u64> for BigInt {
-    fn into(self) -> u64 {
-        self.0 as u64
+impl From<BigInt> for u64 {
+    fn from(val: BigInt) -> Self {
+        val.0 as u64
     }
 }
 
@@ -74,8 +74,8 @@ where
     fn from_input_value(v: &InputValue) -> Option<BigInt> {
         v.as_scalar_value()
             .and_then(|v| v.as_str())
-            .and_then(|s| i64::from_str_radix(s, 10).ok())
-            .map(|i| BigInt(i))
+            .and_then(|s| s.parse::<i64>().ok())
+            .map(BigInt)
     }
 
     fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
@@ -110,11 +110,11 @@ impl Asset {
     /// The date/time that best represents the asset.
     fn datetime(&self) -> DateTime<Utc> {
         if let Some(ud) = self.user_date.as_ref() {
-            ud.clone()
+            *ud
         } else if let Some(od) = self.original_date.as_ref() {
-            od.clone()
+            *od
         } else {
-            self.import_date.clone()
+            self.import_date
         }
     }
 
@@ -130,7 +130,7 @@ impl Asset {
 
     /// The date provided by the user.
     fn userdate(&self) -> Option<DateTime<Utc>> {
-        self.user_date.clone()
+        self.user_date
     }
 
     /// A caption attributed to the asset.
@@ -168,9 +168,9 @@ pub enum SortField {
     Location,
 }
 
-impl Into<crate::domain::usecases::search::SortField> for SortField {
-    fn into(self) -> crate::domain::usecases::search::SortField {
-        match self {
+impl From<SortField> for crate::domain::usecases::search::SortField {
+    fn from(val: SortField) -> Self {
+        match val {
             SortField::Date => crate::domain::usecases::search::SortField::Date,
             SortField::Identifier => crate::domain::usecases::search::SortField::Identifier,
             SortField::Filename => crate::domain::usecases::search::SortField::Filename,
@@ -186,9 +186,9 @@ pub enum SortOrder {
     Descending,
 }
 
-impl Into<crate::domain::usecases::search::SortOrder> for SortOrder {
-    fn into(self) -> crate::domain::usecases::search::SortOrder {
-        match self {
+impl From<SortOrder> for crate::domain::usecases::search::SortOrder {
+    fn from(val: SortOrder) -> Self {
+        match val {
             SortOrder::Ascending => crate::domain::usecases::search::SortOrder::Ascending,
             SortOrder::Descending => crate::domain::usecases::search::SortOrder::Descending,
         }
@@ -218,22 +218,22 @@ pub struct SearchParams {
     pub sort_order: Option<SortOrder>,
 }
 
-impl Into<crate::domain::usecases::search::Params> for SearchParams {
-    fn into(self) -> crate::domain::usecases::search::Params {
+impl From<SearchParams> for crate::domain::usecases::search::Params {
+    fn from(val: SearchParams) -> Self {
         crate::domain::usecases::search::Params {
-            tags: self.tags.unwrap_or(vec![]),
-            locations: self.locations.unwrap_or(vec![]),
-            filename: self.filename,
-            mimetype: self.mimetype,
-            before_date: self.before,
-            after_date: self.after,
+            tags: val.tags.unwrap_or(vec![]),
+            locations: val.locations.unwrap_or(vec![]),
+            filename: val.filename,
+            mimetype: val.mimetype,
+            before_date: val.before,
+            after_date: val.after,
             sort_field: Some(
-                self.sort_field
+                val.sort_field
                     .map_or(crate::domain::usecases::search::SortField::Date, |v| {
                         v.into()
                     }),
             ),
-            sort_order: Some(self.sort_order.map_or(
+            sort_order: Some(val.sort_order.map_or(
                 crate::domain::usecases::search::SortOrder::Descending,
                 |v| v.into(),
             )),
@@ -267,7 +267,7 @@ impl SearchResult {
 
     /// The date/time for the matching asset.
     fn datetime(&self) -> DateTime<Utc> {
-        self.datetime.clone()
+        self.datetime
     }
 }
 
@@ -365,19 +365,19 @@ pub struct AssetInput {
     filename: Option<String>,
 }
 
-impl Into<crate::domain::usecases::update::AssetInput> for AssetInput {
-    fn into(self) -> crate::domain::usecases::update::AssetInput {
-        let mut tags = self.tags.unwrap_or(vec![]);
+impl From<AssetInput> for crate::domain::usecases::update::AssetInput {
+    fn from(val: AssetInput) -> Self {
+        let mut tags = val.tags.unwrap_or(vec![]);
         // Filter out empty tags, as the front-end may send those because it is
         // too lazy to filter them itself.
-        tags = tags.iter().filter(|t| t.len() > 0).cloned().collect();
+        tags.retain(|t| !t.is_empty());
         crate::domain::usecases::update::AssetInput {
             tags,
-            caption: self.caption,
-            location: self.location,
-            media_type: self.mimetype,
-            datetime: self.datetime,
-            filename: self.filename,
+            caption: val.caption,
+            location: val.location,
+            media_type: val.mimetype,
+            datetime: val.datetime,
+            filename: val.filename,
         }
     }
 }
@@ -491,8 +491,7 @@ impl QueryRoot {
         let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = RecentImports::new(Box::new(repo));
-        let mut params: Params = Default::default();
-        params.after_date = since;
+        let params = Params { after_date: since };
         let mut results: Vec<SearchResult> = usecase.call(params)?;
         let total_count = results.len() as i32;
         let results = paginate_vector(&mut results, offset, count);

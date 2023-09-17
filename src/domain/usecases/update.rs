@@ -1,10 +1,10 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 use crate::domain::entities::Asset;
 use crate::domain::repositories::RecordRepository;
-use chrono::prelude::*;
 use anyhow::Error;
+use chrono::prelude::*;
 use std::cmp;
 use std::fmt;
 
@@ -109,7 +109,7 @@ fn merge_asset_input(asset: &mut Asset, input: AssetInput) {
         asset.tags = tags;
     }
     if let Some(filename) = input.filename {
-        if filename.len() > 0 {
+        if !filename.is_empty() {
             asset.filename = filename;
         }
     }
@@ -136,7 +136,7 @@ fn merge_asset_input(asset: &mut Asset, input: AssetInput) {
     asset.user_date = input.datetime;
     // do not overwrite media_type with null/blank values
     if let Some(mt) = input.media_type {
-        if mt.len() > 0 {
+        if !mt.is_empty() {
             asset.media_type = mt.to_lowercase();
         }
     }
@@ -199,10 +199,7 @@ mod caption {
             if self.peeked.is_none() {
                 self.peeked = self.iter.next();
             }
-            match self.peeked {
-                Some((_, ch)) => Some(ch),
-                None => None,
-            }
+            self.peeked.map(|(_, ch)| ch)
         }
     }
 
@@ -277,10 +274,7 @@ mod caption {
 
     /// `is_delimiter` returns true if `ch` is a delimiter character.
     fn is_delimiter(ch: char) -> bool {
-        match ch {
-            ' ' | '.' | ',' | ';' | '(' | ')' | '"' => true,
-            _ => false,
-        }
+        matches!(ch, ' ' | '.' | ',' | ';' | '(' | ')' | '"')
     }
 
     #[cfg(test)]

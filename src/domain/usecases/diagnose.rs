@@ -1,11 +1,11 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
 use crate::domain::usecases::{checksum_file, get_original_date, infer_media_type};
 use anyhow::Error;
-use base64::{Engine as _, engine::general_purpose};
+use base64::{engine::general_purpose, Engine as _};
 use log::{info, warn};
 use std::cmp;
 use std::ffi::OsStr;
@@ -27,66 +27,66 @@ impl Diagnose {
     fn check_asset(&self, asset_id: &str, params: &Params) -> Result<Vec<Diagnosis>, Error> {
         info!("checking asset {}", asset_id);
         let mut diagnoses: Vec<Diagnosis> = vec![];
-        if let Ok(blob_path) = self.blobs.blob_path(&asset_id) {
+        if let Ok(blob_path) = self.blobs.blob_path(asset_id) {
             if blob_path.exists() {
                 // raise any database errors immediately
-                let asset = self.records.get_asset(&asset_id)?;
+                let asset = self.records.get_asset(asset_id)?;
                 // check the file size
                 if let Ok(metadata) = fs::metadata(&blob_path) {
                     if metadata.len() != asset.byte_length {
-                        diagnoses.push(Diagnosis::new(&asset_id, ErrorCode::Size));
+                        diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Size));
                     }
                 } else {
-                    diagnoses.push(Diagnosis::new(&asset_id, ErrorCode::Access));
+                    diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Access));
                 }
                 // optionally compare checksum
                 if params.checksum {
                     if let Ok(digest) = checksum_file(&blob_path) {
                         if digest != asset.checksum {
-                            diagnoses.push(Diagnosis::new(&asset_id, ErrorCode::Digest));
+                            diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Digest));
                         }
                     } else {
-                        diagnoses.push(Diagnosis::new(&asset_id, ErrorCode::Access));
+                        diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Access));
                     }
                 }
                 if asset.filename.is_empty() {
-                    diagnoses.push(Diagnosis::new(&asset_id, ErrorCode::Filename));
+                    diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Filename));
                 }
                 // check media_type and original_date
                 if let Ok(mime_type) = asset.media_type.parse::<mime::Mime>() {
                     if let Ok(original) = get_original_date(&mime_type, &blob_path) {
                         if let Some(record) = asset.original_date {
                             if original != record {
-                                diagnoses.push(Diagnosis::new(&asset_id, ErrorCode::OriginalDate));
+                                diagnoses.push(Diagnosis::new(asset_id, ErrorCode::OriginalDate));
                             }
                         } else {
-                            diagnoses.push(Diagnosis::new(&asset_id, ErrorCode::OriginalDate));
+                            diagnoses.push(Diagnosis::new(asset_id, ErrorCode::OriginalDate));
                         }
                     }
                     // check if identifier is missing an extension appropriate for the media type
-                    if let Some(extension) = blob_path.extension().map(OsStr::to_str).flatten() {
+                    if let Some(extension) = blob_path.extension().and_then(OsStr::to_str) {
                         if let Some(endings) = mime_guess::get_mime_extensions(&mime_type) {
                             let match_found = endings.iter().any(|e| e == &extension);
                             if !match_found {
-                                diagnoses.push(Diagnosis::new(&asset_id, ErrorCode::Extension));
+                                diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Extension));
                             }
                         }
                     } else {
-                        diagnoses.push(Diagnosis::new(&asset_id, ErrorCode::Extension));
+                        diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Extension));
                     }
                 } else {
-                    diagnoses.push(Diagnosis::new(&asset_id, ErrorCode::MediaType));
+                    diagnoses.push(Diagnosis::new(asset_id, ErrorCode::MediaType));
                 }
             } else {
-                diagnoses.push(Diagnosis::new(&asset_id, ErrorCode::Missing));
+                diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Missing));
             }
         } else {
             // failed to get asset path, either the identifier is not valid
             // base64 or the encoded value is not valid UTF-8
-            let diagnosis = if general_purpose::STANDARD.decode(&asset_id).is_err() {
-                Diagnosis::new(&asset_id, ErrorCode::Base64)
+            let diagnosis = if general_purpose::STANDARD.decode(asset_id).is_err() {
+                Diagnosis::new(asset_id, ErrorCode::Base64)
             } else {
-                Diagnosis::new(&asset_id, ErrorCode::Utf8)
+                Diagnosis::new(asset_id, ErrorCode::Utf8)
             };
             diagnoses.push(diagnosis);
         }
@@ -95,8 +95,8 @@ impl Diagnose {
 
     // Replace the incorrect digest value in the asset record.
     fn fix_checksum(&self, asset_id: &str) {
-        if let Ok(blob_path) = self.blobs.blob_path(&asset_id) {
-            if let Ok(mut asset) = self.records.get_asset(&asset_id) {
+        if let Ok(blob_path) = self.blobs.blob_path(asset_id) {
+            if let Ok(mut asset) = self.records.get_asset(asset_id) {
                 if let Ok(digest) = checksum_file(&blob_path) {
                     asset.checksum = digest;
                     let _ = self.records.put_asset(&asset);
@@ -113,8 +113,8 @@ impl Diagnose {
 
     // Replace the incorrect file size value in the asset record.
     fn fix_byte_length(&self, asset_id: &str) {
-        if let Ok(blob_path) = self.blobs.blob_path(&asset_id) {
-            if let Ok(mut asset) = self.records.get_asset(&asset_id) {
+        if let Ok(blob_path) = self.blobs.blob_path(asset_id) {
+            if let Ok(mut asset) = self.records.get_asset(asset_id) {
                 if let Ok(metadata) = fs::metadata(&blob_path) {
                     asset.byte_length = metadata.len();
                     let _ = self.records.put_asset(&asset);
@@ -131,7 +131,7 @@ impl Diagnose {
 
     // Replace the incorrect media type value in the asset record.
     fn fix_filename(&self, asset_id: &str) {
-        if let Ok(mut asset) = self.records.get_asset(&asset_id) {
+        if let Ok(mut asset) = self.records.get_asset(asset_id) {
             let mut fixed = false;
             if let Ok(vector) = general_purpose::STANDARD.decode(asset_id) {
                 if let Ok(string) = str::from_utf8(&vector) {
@@ -153,11 +153,11 @@ impl Diagnose {
 
     // Replace the incorrect media type value in the asset record.
     fn fix_media_type(&self, asset_id: &str) {
-        if let Ok(mut asset) = self.records.get_asset(&asset_id) {
+        if let Ok(mut asset) = self.records.get_asset(asset_id) {
             // the asset filename property is whatever was originally provided,
             // so should be safe to use that to get the extession
             let filename = Path::new(&asset.filename);
-            let extension = filename.extension().map(OsStr::to_str).flatten();
+            let extension = filename.extension().and_then(OsStr::to_str);
             if let Some(ext) = extension {
                 let guessed_mime = infer_media_type(ext);
                 asset.media_type = guessed_mime.essence_str().to_owned();
@@ -172,8 +172,8 @@ impl Diagnose {
 
     // Replace the incorrect original date value in the asset record.
     fn fix_original_date(&self, asset_id: &str) {
-        if let Ok(blob_path) = self.blobs.blob_path(&asset_id) {
-            if let Ok(mut asset) = self.records.get_asset(&asset_id) {
+        if let Ok(blob_path) = self.blobs.blob_path(asset_id) {
+            if let Ok(mut asset) = self.records.get_asset(asset_id) {
                 if let Ok(mime_type) = asset.media_type.parse::<mime::Mime>() {
                     if let Ok(original) = get_original_date(&mime_type, &blob_path) {
                         asset.original_date = Some(original);
@@ -198,7 +198,7 @@ impl Diagnose {
     fn fix_extension(&self, old_asset_id: &str) {
         if let Ok(old_decoded) = general_purpose::STANDARD.decode(old_asset_id) {
             if let Ok(old_path) = str::from_utf8(&old_decoded) {
-                if let Ok(old_asset) = self.records.get_asset(&old_asset_id) {
+                if let Ok(old_asset) = self.records.get_asset(old_asset_id) {
                     if let Ok(mime_type) = old_asset.media_type.parse::<mime::Mime>() {
                         let maybe_mime_extension =
                             mime_guess::get_mime_extensions(&mime_type).map(|l| l[0]);
@@ -271,9 +271,8 @@ impl super::UseCase<Vec<Diagnosis>, Params> for Diagnose {
             }
             // now find and fix the asset identifier extension issue
             for issue in diagnoses.iter() {
-                match issue.error_code {
-                    ErrorCode::Extension => self.fix_extension(&issue.asset_id),
-                    _ => (),
+                if issue.error_code == ErrorCode::Extension {
+                    self.fix_extension(&issue.asset_id)
                 }
             }
             // run diagnosis again and return the results

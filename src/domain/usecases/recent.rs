@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 use crate::domain::entities::SearchResult;
 use crate::domain::repositories::RecordRepository;
@@ -25,7 +25,7 @@ impl super::UseCase<Vec<SearchResult>, Params> for RecentImports {
             let date = chrono::DateTime::<Utc>::MIN_UTC;
             Utc.with_ymd_and_hms(date.year(), date.month(), date.day(), 0, 0, 0)
                 .earliest()
-                .unwrap_or_else(|| Utc::now())
+                .unwrap_or_else(Utc::now)
         });
         let results = self.repo.query_newborn(after)?;
         Ok(results)

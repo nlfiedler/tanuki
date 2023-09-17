@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 use crate::domain::entities::SearchResult;
 use crate::domain::repositories::RecordRepository;
@@ -156,7 +156,7 @@ fn filter_by_mimetype(results: Vec<SearchResult>, params: &Params) -> Vec<Search
 // If a sort was requested, sort the results in-place using an unstable sort
 // since it conserves space and the original ordering is not at all important
 // (or known for that matter).
-fn sort_results(results: &mut Vec<SearchResult>, params: &Params) {
+fn sort_results(results: &mut [SearchResult], params: &Params) {
     if let Some(field) = params.sort_field {
         let order = params.sort_order.unwrap_or(SortOrder::Ascending);
         let compare = match field {

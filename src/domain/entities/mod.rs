@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 use chrono::prelude::*;
 use std::cmp;
@@ -74,9 +74,7 @@ impl cmp::Eq for Asset {}
 impl Asset {
     /// Construct a new Asset with mostly default fields.
     pub fn new(key: String) -> Self {
-        let mut asset: Asset = Default::default();
-        asset.key = key;
-        asset
+        Asset { key, ..Default::default() }
     }
 
     /// Set the checksum field of the asset.

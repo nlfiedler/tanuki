@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 use anyhow::Error;
 use chrono::prelude::*;
@@ -33,28 +33,28 @@ struct ImportDoc {
     original_date: Option<u64>,
 }
 
-impl Into<tanuki::domain::entities::Asset> for ImportAsset {
-    fn into(self) -> tanuki::domain::entities::Asset {
+impl From<ImportAsset> for tanuki::domain::entities::Asset {
+    fn from(val: ImportAsset) -> Self {
         tanuki::domain::entities::Asset {
-            key: self.key,
-            checksum: self.doc.checksum,
-            filename: self.doc.filename,
-            byte_length: self.doc.filesize,
-            media_type: self.doc.mimetype,
-            tags: self.doc.tags,
+            key: val.key,
+            checksum: val.doc.checksum,
+            filename: val.doc.filename,
+            byte_length: val.doc.filesize,
+            media_type: val.doc.mimetype,
+            tags: val.doc.tags,
             import_date: Utc
-                .timestamp_opt((self.doc.import_date / 1000) as i64, 0)
+                .timestamp_opt((val.doc.import_date / 1000) as i64, 0)
                 .unwrap(),
-            caption: self.doc.caption,
-            location: self
+            caption: val.doc.caption,
+            location: val
                 .doc
                 .location
                 .and_then(|v| if v.is_empty() { None } else { Some(v) }),
-            user_date: self
+            user_date: val
                 .doc
                 .user_date
                 .map(|d| Utc.timestamp_opt((d / 1000) as i64, 0).unwrap()),
-            original_date: self
+            original_date: val
                 .doc
                 .original_date
                 .map(|d| Utc.timestamp_opt((d / 1000) as i64, 0).unwrap()),

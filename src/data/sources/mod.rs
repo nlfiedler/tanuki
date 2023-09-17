@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 use crate::data::models::AssetModel;
 use crate::domain::entities::{Asset, LabeledCount, SearchResult};
@@ -137,7 +137,7 @@ impl EntityDataSource for EntityDataSourceImpl {
 
     fn delete_asset(&self, asset_id: &str) -> Result<(), Error> {
         let key = format!("asset/{}", asset_id);
-        self.database.delete_document(&key.as_bytes())?;
+        self.database.delete_document(key.as_bytes())?;
         Ok(())
     }
 
@@ -353,12 +353,14 @@ impl Document for Asset {
                 encode_datetime(&self.import_date)
             };
             emitter.emit(&best_date, Some(&idv))?;
-        } else if view == "newborn" {
-            if self.tags.is_empty() && self.caption.is_none() && self.location.is_none() {
-                // use the import date for newborn, not the "best" date
-                let import_date = encode_datetime(&self.import_date);
-                emitter.emit(&import_date, Some(&idv))?;
-            }
+        } else if view == "newborn"
+            && self.tags.is_empty()
+            && self.caption.is_none()
+            && self.location.is_none()
+        {
+            // use the import date for newborn, not the "best" date
+            let import_date = encode_datetime(&self.import_date);
+            emitter.emit(&import_date, Some(&idv))?;
         }
         Ok(())
     }

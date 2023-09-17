@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
@@ -35,12 +35,12 @@ impl super::UseCase<usize, Params> for IngestAssets {
         let mut count: usize = 0;
         for file_path in entries {
             if file_path.is_file() {
-                if let Some(name) = file_path.file_name().map(OsStr::to_str).flatten() {
-                    if name.starts_with(".") {
+                if let Some(name) = file_path.file_name().and_then(OsStr::to_str) {
+                    if name.starts_with('.') {
                         continue;
                     }
                 }
-                let extension = file_path.extension().map(OsStr::to_str).flatten();
+                let extension = file_path.extension().and_then(OsStr::to_str);
                 let content_type = if let Some(ext) = extension {
                     infer_media_type(ext)
                 } else {

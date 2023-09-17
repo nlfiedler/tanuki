@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 use actix_cors::Cors;
 use actix_files::{Files, NamedFile};
@@ -74,7 +74,7 @@ async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
             .to_owned();
         let filename = disposition
             .get_filename()
-            .ok_or_else(|| actix_web::error::ContentTypeError::ParseError)?;
+            .ok_or(actix_web::error::ContentTypeError::ParseError)?;
         let mut filepath = UPLOAD_PATH.clone();
         std::fs::create_dir_all(&filepath)?;
         filepath.push(filename);

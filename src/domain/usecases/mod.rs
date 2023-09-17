@@ -101,7 +101,7 @@ fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTim
         return Ok(Utc
             .timestamp_opt(creation_time as i64, 0)
             .single()
-            .unwrap_or_else(|| Utc::now()));
+            .unwrap_or_else(Utc::now));
     }
     Err(anyhow!("could not read any date"))
 }
@@ -217,7 +217,7 @@ fn find_data(label: &str, contents: &riff::ChunkContents) -> Option<Vec<u8>> {
         }
         riff::ChunkContents::Children(_id, _typ, more) => {
             for content in more.iter() {
-                let data = find_data(label, &content);
+                let data = find_data(label, content);
                 if data.is_some() {
                     return data;
                 }
@@ -225,7 +225,7 @@ fn find_data(label: &str, contents: &riff::ChunkContents) -> Option<Vec<u8>> {
         }
         riff::ChunkContents::ChildrenNoType(_id, more) => {
             for content in more.iter() {
-                let data = find_data(label, &content);
+                let data = find_data(label, content);
                 if data.is_some() {
                     return data;
                 }

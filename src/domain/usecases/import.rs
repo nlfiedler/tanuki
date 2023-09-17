@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2023 Nathan Fiedler
 //
 use crate::domain::entities::{Asset, Dimensions};
 use crate::domain::repositories::BlobRepository;
@@ -131,7 +131,7 @@ fn new_asset_id(datetime: DateTime<Utc>, filepath: &Path, media_type: &mime::Mim
     let minutes = (datetime.minute() / 15) * 15;
     let round_date = datetime.with_minute(minutes).unwrap();
     let mut leading_path = round_date.format("%Y/%m/%d/%H%M/").to_string();
-    let extension = filepath.extension().map(OsStr::to_str).flatten();
+    let extension = filepath.extension().and_then(OsStr::to_str);
     let mut name = generate_ulid_string();
     let append_suffix = if let Some(ext) = extension {
         name.push('.');
@@ -154,7 +154,7 @@ fn new_asset_id(datetime: DateTime<Utc>, filepath: &Path, media_type: &mime::Mim
     }
     leading_path.push_str(&name);
     let rel_path = leading_path.to_lowercase();
-    general_purpose::STANDARD.encode(&rel_path)
+    general_purpose::STANDARD.encode(rel_path)
 }
 
 ///
