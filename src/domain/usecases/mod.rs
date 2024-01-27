@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 use anyhow::{anyhow, Error};
 use chrono::prelude::*;
@@ -76,8 +76,8 @@ fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTim
             .ok_or_else(|| anyhow!("no date/time field"))?;
         if let exif::Value::Ascii(data) = &field.value {
             let value = str::from_utf8(&data[0])?;
-            return Utc
-                .datetime_from_str(value, "%Y:%m:%d %H:%M:%S")
+            return NaiveDateTime::parse_from_str(value, "%Y:%m:%d %H:%M:%S")
+                .and_then(|e| Ok(e.and_utc()))
                 .map_err(|_| anyhow!("could not parse data"));
         }
     } else if media_type.type_() == mime::VIDEO {
@@ -243,16 +243,16 @@ fn parse_idit_date(bytes: &[u8]) -> Option<DateTime<Utc>> {
         // the date parsing is sensitive to any kind of whitespace
         let value = string.trim();
         // example from a Canon camera: SAT DEC 19 05:46:12 2009
-        if let Ok(date) = Utc.datetime_from_str(value, "%a %b %d %H:%M:%S %Y") {
-            return Some(date);
+        if let Ok(date) = NaiveDateTime::parse_from_str(value, "%a %b %d %H:%M:%S %Y") {
+            return Some(date.and_utc());
         }
         // example from a Samsung camera: 2005:08:17 11:42:43
-        if let Ok(date) = Utc.datetime_from_str(value, "%Y:%m:%d %H:%M:%S") {
-            return Some(date);
+        if let Ok(date) = NaiveDateTime::parse_from_str(value, "%Y:%m:%d %H:%M:%S") {
+            return Some(date.and_utc());
         }
         // example from a Fujifilm camera: Mon Mar  3 09:44:56 2008
-        if let Ok(date) = Utc.datetime_from_str(value, "%a %b %e %H:%M:%S %Y") {
-            return Some(date);
+        if let Ok(date) = NaiveDateTime::parse_from_str(value, "%a %b %e %H:%M:%S %Y") {
+            return Some(date.and_utc());
         }
     }
     None
@@ -334,6 +334,8 @@ mod tests {
         let mt: mime::Mime = "video/mp4".parse().unwrap();
         let filepath = Path::new(filename);
         let actual = get_original_date(&mt, filepath);
+        // note that get_original_date() is sensitive to the mp4 crate's ability
+        // to parse the file successfully, resulting in misleading errors
         assert!(actual.is_ok());
         let date = actual.unwrap();
         assert_eq!(date.year(), 2007);
