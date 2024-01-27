@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -43,7 +43,7 @@ class EditAssetScreen extends ConsumerWidget {
                 title: ResponsiveValue(
                   context,
                   defaultValue: Text('Editing ${state.asset.filename}'),
-                  valueWhen: [
+                  conditionalValues: [
                     Condition.smallerThan(
                       name: TABLET,
                       value: Text(state.asset.filename),

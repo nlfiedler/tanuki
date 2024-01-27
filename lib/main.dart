@@ -45,17 +45,19 @@ class MyApp extends ConsumerWidget {
         ),
       ],
       child: MaterialApp(
-        builder: (context, child) => ResponsiveWrapper.builder(
-          BouncingScrollWrapper.builder(context, child!),
-          defaultScale: true,
+        builder: (context, child) => ResponsiveBreakpoints.builder(
+          child: child!,
           breakpoints: [
-            const ResponsiveBreakpoint.resize(450, name: MOBILE),
-            const ResponsiveBreakpoint.autoScale(800, name: TABLET),
-            const ResponsiveBreakpoint.autoScale(1000, name: TABLET),
-            const ResponsiveBreakpoint.resize(1200, name: DESKTOP),
-            const ResponsiveBreakpoint.autoScale(2460, name: "4K"),
+            // const ResponsiveBreakpoint.resize(450, name: MOBILE),
+            // const ResponsiveBreakpoint.autoScale(800, name: TABLET),
+            // const ResponsiveBreakpoint.autoScale(1000, name: TABLET),
+            // const ResponsiveBreakpoint.resize(1200, name: DESKTOP),
+            // const ResponsiveBreakpoint.autoScale(2460, name: "4K"),
+            const Breakpoint(start: 0, end: 450, name: MOBILE),
+            const Breakpoint(start: 451, end: 800, name: TABLET),
+            const Breakpoint(start: 801, end: 1920, name: DESKTOP),
+            const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
           ],
-          background: Container(color: const Color(0xFFF5F5F5)),
         ),
         title: 'Tanuki',
         initialRoute: '/',

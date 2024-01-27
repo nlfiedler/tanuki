@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
@@ -21,7 +21,7 @@ class PageControls extends StatelessWidget {
         },
         builder: (context, state) {
           if (state is Error) {
-            return Text('Error: ' + state.message);
+            return Text('Error: ${state.message}');
           }
           if (state is Loaded) {
             final prevPageButton = ElevatedButton(
@@ -92,8 +92,8 @@ class PageControls extends StatelessWidget {
                   width: 48.0,
                 ),
                 ResponsiveVisibility(
-                  hiddenWhen: const [
-                    Condition.smallerThan(name: TABLET),
+                  hiddenConditions: [
+                    Condition.smallerThan(name: TABLET, value: false),
                   ],
                   child: Expanded(
                     flex: 2,
@@ -133,7 +133,7 @@ class PageInputForm extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _PageInputFormState createState() => _PageInputFormState();
+  State<PageInputForm> createState() => _PageInputFormState();
 }
 
 class _PageInputFormState extends State<PageInputForm> {

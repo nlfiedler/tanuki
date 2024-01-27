@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,14 +17,14 @@ class HomeScreen extends StatelessWidget {
         title: ResponsiveValue(
           context,
           defaultValue: const Text('we have your assets'),
-          valueWhen: const [
+          conditionalValues: [
             Condition.smallerThan(
               name: MOBILE,
-              value: Text('your assets'),
+              value: const Text('your assets'),
             ),
             Condition.largerThan(
               name: TABLET,
-              value: Text('all your assets are belong to us'),
+              value: const Text('all your assets are belong to us'),
             )
           ],
         ).value,

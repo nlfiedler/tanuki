@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,11 +29,8 @@ class RecentsScreen extends ConsumerWidget {
                 FindRecents(range: RecentTimeRange.day),
               );
             } else if (state is Loaded) {
-              return Column(
-                children: const [
-                  RecentsSelector(),
-                  Expanded(child: BulkForm())
-                ],
+              return const Column(
+                children: [RecentsSelector(), Expanded(child: BulkForm())],
               );
             } else if (state is Error) {
               return Text('Query error: ${state.message}');
@@ -61,11 +58,11 @@ class RecentsSelector extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const ResponsiveVisibility(
-                    hiddenWhen: [
-                      Condition.smallerThan(name: TABLET),
+                  ResponsiveVisibility(
+                    hiddenConditions: [
+                      Condition.smallerThan(name: TABLET, value: false),
                     ],
-                    child: Expanded(
+                    child: const Expanded(
                       child: Center(
                         child: PageControls(),
                       ),

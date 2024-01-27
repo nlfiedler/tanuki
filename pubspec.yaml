@@ -34,7 +34,7 @@ dependencies:
   multi_tag_picker: ^1.0.0
   oxidized: ^6.1.0
   path: ^1.8.0
-  responsive_framework: ^0.2.0
+  responsive_framework: ^1.1.1
   url_launcher: ^6.1.9
   video_player: ^2.1.1
 
@@ -45,7 +45,7 @@ dev_dependencies:
   bloc_test: ^9.0.3
   environment_config: ^3.0.0
   flutter_lints: ^2.0.1
-  mocktail: ^0.3.0
+  mocktail: ^1.0.3
 
 flutter:
   uses-material-design: true

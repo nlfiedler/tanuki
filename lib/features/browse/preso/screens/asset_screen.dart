@@ -40,7 +40,7 @@ class AssetScreen extends ConsumerWidget {
                 title: ResponsiveValue(
                   context,
                   defaultValue: Text('Details for ${state.asset.filename}'),
-                  valueWhen: [
+                  conditionalValues: [
                     Condition.smallerThan(
                       name: TABLET,
                       value: Text(state.asset.filename),

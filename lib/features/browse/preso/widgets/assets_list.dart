@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -56,8 +56,8 @@ Widget buildThumbnails(BuildContext context, List<SearchResult> results) {
                 ),
                 Text(dateString),
                 ResponsiveVisibility(
-                  hiddenWhen: const [
-                    Condition.smallerThan(name: TABLET),
+                  hiddenConditions: [
+                    Condition.smallerThan(name: TABLET, value: false),
                   ],
                   child: Text(e.filename),
                 ),

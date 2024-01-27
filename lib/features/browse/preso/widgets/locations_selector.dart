@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -80,7 +80,7 @@ class _LocationSelectorFormState extends State<LocationSelectorForm> {
         // Need to explicitly convert the value, whatever it is, even a
         // list of strings, to a list of strings, so may as well use a
         // list of Locations throughout.
-        final List<String> vals = List.from(val?.map((t) => t.label) ?? []);
+        final List<String> vals = List.from(val.map((t) => t.label));
         BlocProvider.of<abb.AssetBrowserBloc>(context)
             .add(abb.SelectLocations(locations: vals));
       },

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html';
@@ -149,7 +149,7 @@ class _UploadFormState extends ConsumerState<UploadForm> {
                 rowPadding: const EdgeInsets.all(16.0),
                 rowCrossAxisAlignment: CrossAxisAlignment.start,
                 rowMainAxisAlignment: MainAxisAlignment.spaceAround,
-                layout: ResponsiveWrapper.of(context).isSmallerThan(TABLET)
+                layout: ResponsiveBreakpoints.of(context).smallerThan(TABLET)
                     ? ResponsiveRowColumnType.COLUMN
                     : ResponsiveRowColumnType.ROW,
                 children: [
@@ -183,8 +183,8 @@ class _UploadFormState extends ConsumerState<UploadForm> {
                 ],
               ),
               ResponsiveVisibility(
-                hiddenWhen: const [
-                  Condition.smallerThan(name: TABLET),
+                hiddenConditions: [
+                  Condition.smallerThan(name: TABLET, value: false),
                 ],
                 child: _buildDropZone(context),
               ),

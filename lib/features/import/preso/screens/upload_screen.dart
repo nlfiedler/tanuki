@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -18,10 +18,10 @@ class UploadScreen extends StatelessWidget {
         title: ResponsiveValue(
           context,
           defaultValue: const Text('all your assets will belong to us'),
-          valueWhen: [
-            const Condition.smallerThan(
+          conditionalValues: [
+            Condition.smallerThan(
               name: TABLET,
-              value: Text('your assets will be ours'),
+              value: const Text('your assets will be ours'),
             )
           ],
         ).value,
@@ -38,8 +38,8 @@ class UploadScreen extends StatelessWidget {
       body: Column(
         children: [
           ResponsiveVisibility(
-            hiddenWhen: const [
-              Condition.smallerThan(name: TABLET),
+            hiddenConditions: [
+              Condition.smallerThan(name: TABLET, value: false),
             ],
             child: Padding(
               padding: const EdgeInsets.all(16.0),
