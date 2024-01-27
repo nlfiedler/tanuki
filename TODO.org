@@ -1,6 +1,21 @@
 * Action Items
+** TODO diagnose is hanging?
+*** stops at asset MjAxNC8xMi8yMS8wMDE1LzAxY2UxcWQ3cWVwMndiMWY4OWduNW1kNHpqLmF2aS5tb3Y=
+*** use =/zeniba/shared/tanuki/assets/blobstore/2014/12/21/0015/01ce1qd7qep2wb1f89gn5md4zj.avi.mov= in test suite
+** ~lookup~ query should return file path (decoded id)
 ** bug: tags chip chooser should not offer to add a tag for one that already exists
 *** need to change multi_tag_picker to allow nullable return value for =configureSuggestion=
+** verify responsiveness is looking good
+*** try resizing the browser window for each page
+*** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
+** update mp4: has an error with certain test fixture
+*** using version 0.13 which does not have the problem, but 0.14 does
+*** seems to not like something about the =100_1206.MOV= file
+#+begin_src
+actual: Err(mp4a box contains a box with a larger size than it)
+thread 'domain::usecases::tests::test_get_original_date' panicked at src/domain/usecases/mod.rs:339:9:
+assertion failed: actual.is_ok()
+#+end_src
 ** locations: allow for comma-separated location values (e.g. ~tokyo, japan~)
 *** index will detect commas and split, creating multiple index entries
 *** list of available locations will retain the full string as-is

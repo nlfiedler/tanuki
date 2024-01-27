@@ -22,20 +22,24 @@ to be installed and used by the application. This is the most reliable method
 and produces consistent results when building the application.
 
 ```shell
-$ brew install dart
-$ pub global activate fvm
-$ fvm install stable
-$ fvm flutter config --enable-macos-desktop
-$ fvm flutter config --enable-web
+brew install dart
+pub global activate fvm
+fvm install stable
+fvm flutter config --enable-macos-desktop
+fvm flutter config --enable-web
 ```
+
+#### Windows
+
+Download the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) and select the `MSVC ... build tools` (latest version with appropriate architecture) and `Windows 10 SDK` (or 11 if using Windows 11) at a minimum.
 
 ### Building, Testing, Starting the Backend
 
 ```shell
-$ cargo update
-$ cargo build
-$ cargo test
-$ RUST_LOG=info cargo run --release
+cargo update
+cargo build
+cargo test
+RUST_LOG=info cargo run --release
 ```
 
 For more verbose debugging output, use `RUST_LOG=debug` in the command above.
@@ -45,10 +49,10 @@ volumes of output.
 ### Building, Testing, Starting the Frontend
 
 ```shell
-$ fvm flutter pub get
-$ fvm flutter pub run environment_config:generate
-$ fvm flutter test
-$ fvm flutter run -d chrome
+fvm flutter pub get
+fvm flutter pub run environment_config:generate
+fvm flutter test
+fvm flutter run -d chrome
 ```
 
 #### macOS
@@ -57,12 +61,12 @@ Building the macOS desktop application on Apple Silicon (M1) requires a
 temporary work-around to an issue with installing the Ruby `ffi` library.
 
 ```shell
-$ arch -x86_64 sudo gem install ffi
+arch -x86_64 sudo gem install ffi
 ```
 
 ```shell
-$ fvm flutter build macos
-$ fvm flutter run -d macos
+fvm flutter build macos
+fvm flutter run -d macos
 ```
 
 ### environment_config
@@ -84,17 +88,17 @@ the application in stages and produce a relatively small final image.
 On the build host:
 
 ```shell
-$ docker compose build --pull --build-arg BASE_URL=http://192.168.1.3:3000
-$ docker image rm 192.168.1.3:5000/tanuki
-$ docker image tag tanuki-app 192.168.1.3:5000/tanuki
-$ docker push 192.168.1.3:5000/tanuki
+docker compose build --pull --build-arg BASE_URL=http://192.168.1.2:3000
+docker image rm 192.168.1.2:5000/tanuki
+docker image tag tanuki-app 192.168.1.2:5000/tanuki
+docker push 192.168.1.2:5000/tanuki
 ```
 
 On the server, with a production version of the `docker-compose.yml` file:
 
 ```shell
-$ docker compose down
-$ docker compose up --build -d
+docker compose down
+docker compose up --build -d
 ```
 
 ## Tools
@@ -108,7 +112,7 @@ Use https://github.com/kbknapp/cargo-outdated and run `cargo outdated -R`
 Use the https://github.com/Nemo157/cargo-lichking `cargo` utility. To install:
 
 ```shell
-$ OPENSSL_ROOT_DIR=`brew --prefix openssl` \
+OPENSSL_ROOT_DIR=`brew --prefix openssl` \
   OPENSSL_LIB_DIR=`brew --prefix openssl`/lib \
   OPENSSL_INCLUDE_DIR=`brew --prefix openssl`/include \
   cargo install cargo-lichking
@@ -117,8 +121,8 @@ $ OPENSSL_ROOT_DIR=`brew --prefix openssl` \
 To get the list of licenses, and check for incompatibility:
 
 ```shell
-$ cargo lichking list
-$ cargo lichking check
+cargo lichking list
+cargo lichking check
 ```
 
 However, need to look for "gpl" manually in the `list` output, as most licenses
