@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:tanuki/environment_config.dart';
@@ -65,16 +65,17 @@ class _AssetVideo extends StatefulWidget {
 }
 
 class _AssetVideoState extends State<_AssetVideo> {
-  final VideoPlayerController _controller;
+  final String _uri;
+  late VideoPlayerController _controller;
 
-  _AssetVideoState({required String uri})
-      : _controller = VideoPlayerController.network(uri);
+  _AssetVideoState({required String uri}) : _uri = uri;
 
   @override
   void initState() {
     // known to work (web): .mov .mp4 .ogg .webm
     // does not work (web): .avi .wmv
     super.initState();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(_uri));
     _controller.addListener(() {
       setState(() {});
     });

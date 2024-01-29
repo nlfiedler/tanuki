@@ -47,8 +47,7 @@ class TagSelectorForm extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
-  _TagSelectorFormState createState() => _TagSelectorFormState();
+  State<TagSelectorForm> createState() => _TagSelectorFormState();
 }
 
 class _TagSelectorFormState extends State<TagSelectorForm> {

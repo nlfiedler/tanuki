@@ -1,5 +1,4 @@
 * Action Items
-** ~lookup~ query should return file path (decoded id)
 ** bug: tags chip chooser should not offer to add a tag for one that already exists
 *** need to change multi_tag_picker to allow nullable return value for =configureSuggestion=
 ** database integrity
@@ -43,18 +42,11 @@ assertion failed: actual.is_ok()
 *** web server to serve temporary asset via url
 ** Add light/dark theme switcher
 *** Use =ThemeData= to construct the default light or dark themes
-** Fix all the stateful widgets to use the new convention
-#+begin_src dart
-class TagSelector extends StatefulWidget {
-  const TagSelector({Key? key}) : super(key: key);
-
-  @override
-  State<TagSelector> createState() => _TagSelectorState();
-}
-#+end_src
 ** Add date order button on gallery (ascending/descending)
 *** the GraphQL operation supports sorting, should use it for something
 ** support HEIC/HEIF images (see =avif= branch)
+*** DONE get original date (already works)
+*** TODO generate a thumbnail
 *** HEIF is an image file format employing HEVC (h.265) image coding
 *** [[https://aomediacodec.github.io/av1-avif/][AV1]] is the free alternative to encumbered HEVC
 *** https://crates.io/crates/libheif-rs (MIT)

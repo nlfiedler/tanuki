@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'dart:io';
 
@@ -13,8 +13,7 @@ import 'package:tanuki/features/import/preso/bloc/providers.dart';
 // ignore: use_key_in_widget_constructors
 class UploadForm extends ConsumerStatefulWidget {
   @override
-  // ignore: library_private_types_in_public_api
-  _UploadFormState createState() => _UploadFormState();
+  ConsumerState<UploadForm> createState() => _UploadFormState();
 }
 
 class _UploadFormState extends ConsumerState<UploadForm> {

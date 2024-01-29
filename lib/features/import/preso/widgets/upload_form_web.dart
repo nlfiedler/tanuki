@@ -24,8 +24,7 @@ class UploadForm extends ConsumerStatefulWidget {
   const UploadForm({Key? key}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
-  _UploadFormState createState() => _UploadFormState();
+  ConsumerState<UploadForm> createState() => _UploadFormState();
 }
 
 class _UploadFormState extends ConsumerState<UploadForm> {

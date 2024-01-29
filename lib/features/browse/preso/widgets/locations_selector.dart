@@ -47,8 +47,7 @@ class LocationSelectorForm extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
-  _LocationSelectorFormState createState() => _LocationSelectorFormState();
+  State<LocationSelectorForm> createState() => _LocationSelectorFormState();
 }
 
 class _LocationSelectorFormState extends State<LocationSelectorForm> {

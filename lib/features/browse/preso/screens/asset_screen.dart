@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -129,8 +129,7 @@ class AssetEditForm extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
-  _AssetEditFormState createState() => _AssetEditFormState();
+  State<AssetEditForm> createState() => _AssetEditFormState();
 }
 
 class _AssetEditFormState extends State<AssetEditForm> {
