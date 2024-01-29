@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::{Asset, Dimensions};
 use crate::domain::repositories::BlobRepository;
@@ -136,8 +136,8 @@ fn new_asset_id(datetime: DateTime<Utc>, filepath: &Path, media_type: &mime::Mim
     let append_suffix = if let Some(ext) = extension {
         name.push('.');
         name.push_str(ext);
-        let guessed_mime = infer_media_type(ext);
-        &guessed_mime != media_type
+        let guessed_type = infer_media_type(ext);
+        &guessed_type != media_type
     } else {
         true
     };
@@ -146,10 +146,9 @@ fn new_asset_id(datetime: DateTime<Utc>, filepath: &Path, media_type: &mime::Mim
         // media type provided in the parameters, then append the preferred
         // suffix to the name. This provides a means for the blob repository to
         // correctly guess the media type from just the asset identifier.
-        let maybe_mime_extension = mime_guess::get_mime_extensions(media_type).map(|l| l[0]);
-        if let Some(mime_ext) = maybe_mime_extension {
+        if let Some(mime_ext) = super::select_best_extension(media_type) {
             name.push('.');
-            name.push_str(mime_ext);
+            name.push_str(&mime_ext);
         }
     }
     leading_path.push_str(&name);
@@ -211,16 +210,14 @@ mod tests {
         let actual = new_asset_id(import_date, Path::new(filename), &mt);
         let decoded = general_purpose::STANDARD.decode(&actual).unwrap();
         let as_string = std::str::from_utf8(&decoded).unwrap();
-        // jpe because it's first in the list of [jpe, jpeg, jpg]
-        assert!(as_string.ends_with(".foo.jpe"));
+        assert!(as_string.ends_with(".foo.jpeg"));
 
         // test with an image/jpeg asset with _no_ extension
         let filename = "fighting_kittens";
         let actual = new_asset_id(import_date, Path::new(filename), &mt);
         let decoded = general_purpose::STANDARD.decode(&actual).unwrap();
         let as_string = std::str::from_utf8(&decoded).unwrap();
-        // jpe because it's first in the list of [jpe, jpeg, jpg]
-        assert!(as_string.ends_with(".jpe"));
+        assert!(as_string.ends_with(".jpeg"));
     }
 
     #[test]

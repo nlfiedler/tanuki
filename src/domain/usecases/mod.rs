@@ -266,7 +266,63 @@ fn infer_media_type(extension: &str) -> mime::Mime {
     // media type (e.g. https://github.com/flier/rust-mime-sniffer), perhaps as
     // a fallback when the extension-based guess yields "octet-stream".
     let guess = mime_guess::from_ext(extension);
-    guess.first_or_octet_stream()
+    // Temporary work-around until the library supports these extensions.
+    guess.first_or_else(|| {
+        let lowered = extension.to_lowercase();
+        if lowered == "heic" {
+            "image/heic".parse().unwrap()
+        } else if lowered == "aae" {
+            "text/xml".parse().unwrap()
+        } else {
+            mime::APPLICATION_OCTET_STREAM
+        }
+    })
+}
+
+//
+// Return all registered extensions for the given media type.
+//
+fn get_all_extensions(media_type: &mime::Mime) -> Option<Vec<String>> {
+    let extensions = mime_guess::get_mime_extensions(media_type);
+    // Temporary work-around until the library supports certain media types.
+    extensions
+        .or_else(|| {
+            let image_heic: mime::Mime = "image/heic".parse().unwrap();
+            if media_type == &image_heic {
+                Some(&["heic"])
+            } else {
+                None
+            }
+        })
+        .map(|s| s.iter().map(|&e| e.into()).collect())
+}
+
+//
+// Return the most sensible extension for the given media type.
+//
+fn select_best_extension(media_type: &mime::Mime) -> Option<String> {
+    let maybe_mime_extension = mime_guess::get_mime_extensions(media_type).map(|l| l[0]);
+    // The media type and extension mapping is sorted alphabetically which often
+    // results in very uncommon extensions for very common formats.
+    maybe_mime_extension
+        .map(|e| {
+            if e == "m1v" {
+                "mpeg"
+            } else if e == "jpe" {
+                "jpeg"
+            } else {
+                e
+            }
+        })
+        .or_else(|| {
+            let image_heic: mime::Mime = "image/heic".parse().unwrap();
+            if media_type == &image_heic {
+                Some("heic")
+            } else {
+                None
+            }
+        })
+        .map(str::to_owned)
 }
 
 #[cfg(test)]
@@ -422,14 +478,93 @@ mod tests {
     #[test]
     fn test_infer_media_type() {
         assert_eq!(infer_media_type("jpg"), mime::IMAGE_JPEG);
+
         let video_quick: mime::Mime = "video/quicktime".parse().unwrap();
         assert_eq!(infer_media_type("mov"), video_quick);
+
         let video_mpeg: mime::Mime = "video/mpeg".parse().unwrap();
         assert_eq!(infer_media_type("mpg"), video_mpeg);
-        assert_eq!(
-            // does not yet guess the apple image type
-            infer_media_type("heic"),
-            mime::APPLICATION_OCTET_STREAM
-        );
+
+        let audio_m4a: mime::Mime = "audio/m4a".parse().unwrap();
+        assert_eq!(infer_media_type("m4a"), audio_m4a);
+
+        let video_mp4: mime::Mime = "video/mp4".parse().unwrap();
+        assert_eq!(infer_media_type("mp4"), video_mp4);
+
+        let msvideo: mime::Mime = "video/x-msvideo".parse().unwrap();
+        assert_eq!(infer_media_type("avi"), msvideo);
+
+        let image_heic: mime::Mime = "image/heic".parse().unwrap();
+        assert_eq!(infer_media_type("heic"), image_heic);
+        assert_eq!(infer_media_type("HEIC"), image_heic);
+
+        let text_xml: mime::Mime = "text/xml".parse().unwrap();
+        assert_eq!(infer_media_type("aae"), text_xml);
+    }
+
+    #[test]
+    fn test_get_all_extensions() {
+        let video_quick: mime::Mime = "video/quicktime".parse().unwrap();
+        let result = get_all_extensions(&video_quick).unwrap();
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0], "mov");
+        assert_eq!(result[1], "mqv");
+        assert_eq!(result[2], "qt");
+
+        let video_mpeg: mime::Mime = "video/mpeg".parse().unwrap();
+        let result = get_all_extensions(&video_mpeg).unwrap();
+        assert_eq!(result.len(), 11);
+        assert_eq!(result[7], "mpeg");
+        assert_eq!(result[8], "mpg");
+
+        let audio_m4a: mime::Mime = "audio/m4a".parse().unwrap();
+        let result = get_all_extensions(&audio_m4a).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], "m4a");
+
+        let video_mp4: mime::Mime = "video/mp4".parse().unwrap();
+        let result = get_all_extensions(&video_mp4).unwrap();
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0], "mp4");
+
+        let msvideo: mime::Mime = "video/x-msvideo".parse().unwrap();
+        let result = get_all_extensions(&msvideo).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], "avi");
+
+        let image_heic: mime::Mime = "image/heic".parse().unwrap();
+        let result = get_all_extensions(&image_heic).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], "heic");
+    }
+
+    #[test]
+    fn test_select_best_extension() {
+        let result = select_best_extension(&mime::IMAGE_JPEG).unwrap();
+        assert_eq!(result, "jpeg");
+
+        let video_quick: mime::Mime = "video/quicktime".parse().unwrap();
+        let result = select_best_extension(&video_quick).unwrap();
+        assert_eq!(result, "mov");
+
+        let video_mpeg: mime::Mime = "video/mpeg".parse().unwrap();
+        let result = select_best_extension(&video_mpeg).unwrap();
+        assert_eq!(result, "mpeg");
+
+        let audio_m4a: mime::Mime = "audio/m4a".parse().unwrap();
+        let result = select_best_extension(&audio_m4a).unwrap();
+        assert_eq!(result, "m4a");
+
+        let video_mp4: mime::Mime = "video/mp4".parse().unwrap();
+        let result = select_best_extension(&video_mp4).unwrap();
+        assert_eq!(result, "mp4");
+
+        let msvideo: mime::Mime = "video/x-msvideo".parse().unwrap();
+        let result = select_best_extension(&msvideo).unwrap();
+        assert_eq!(result, "avi");
+
+        let image_heic: mime::Mime = "image/heic".parse().unwrap();
+        let result = select_best_extension(&image_heic).unwrap();
+        assert_eq!(result, "heic");
     }
 }
