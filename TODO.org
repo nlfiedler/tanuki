@@ -1,6 +1,4 @@
 * Action Items
-** bug: tags chip chooser should not offer to add a tag for one that already exists
-*** need to change multi_tag_picker to allow nullable return value for =configureSuggestion=
 ** database integrity
 *** add mutation to remove records based on asset identifier
 **** remove ~MjAxNC8xMi8yMS8wMDE1LzAxY2UxcWQ3cWVwMndiMWY4OWduNW1kNHpqLmF2aS5tb3Y=~ (corrupt avi)

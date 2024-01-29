@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -81,7 +81,9 @@ class _TagSelectorState extends State<TagSelectorStateful> {
         }
       },
       additionCallback: (value) {
-        return Tag(label: value, count: 0);
+        return widget.tags.firstWhere(
+            (e) => e.label.toLowerCase() == value.toLowerCase(),
+            orElse: () => Tag(label: value, count: 0));
       },
       configureSuggestion: (tag) {
         return SuggestionConfiguration(
