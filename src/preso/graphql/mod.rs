@@ -1,10 +1,11 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 use crate::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl};
 use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, SearchResult};
 use crate::domain::usecases::diagnose::Diagnosis;
+use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
 use juniper::{
     graphql_scalar, EmptySubscription, FieldResult, GraphQLEnum, GraphQLInputObject,
@@ -105,6 +106,19 @@ impl Asset {
     /// The size in bytes of the asset.
     fn filesize(&self) -> BigInt {
         BigInt(self.byte_length as i64)
+    }
+
+    /// Relative path of the asset within the asset store.
+    fn filepath(&self) -> String {
+        if let Ok(decoded) = general_purpose::STANDARD.decode(&self.key) {
+            if let Ok(as_string) = std::str::from_utf8(&decoded) {
+                as_string.to_owned()
+            } else {
+                "invalid UTF-8".into()
+            }
+        } else {
+            "invalid base64".into()
+        }
     }
 
     /// The date/time that best represents the asset.
