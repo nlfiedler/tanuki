@@ -1,10 +1,14 @@
 * Action Items
-** database integrity
+** clean up stale records
 *** add mutation to remove records based on asset identifier
-**** remove ~MjAxNC8xMi8yMS8wMDE1LzAxY2UxcWQ3cWVwMndiMWY4OWduNW1kNHpqLmF2aS5tb3Y=~ (corrupt avi)
-*** diagnose will not remove records automatically, so must be done manually
-*** seems like there are no =*.aae= files in assets store, yet there are records for them
-*** however, the asset count and record count match
+*** records to remove (bad avi, aae files)
+#+begin_src
+MjAxNC8xMi8yMS8wMDE1LzAxY2UxcWQ3cWVwMndiMWY4OWduNW1kNHpqLmF2aS5tb3Y=
+MjAxOC8xMS8xOC8wNDAwLzAxY3dqZnR5emFxMDFocHl5MDQwc3ExaG43LmFhZS5hYWY=
+MjAxNi8wMS8wMi8wMzE1LzAxY2UxcWQ4Nnc3NjJ2ZWhkYXcycDA1YTRjLmFhZS5hYWY=
+MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ4ZGpqc3E2MzlmOTIwNm5mejdwLmFhZS5hYWY=
+MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
+#+end_src
 ** verify responsiveness is looking good
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
@@ -22,9 +26,27 @@ assertion failed: actual.is_ok()
 **** for the sake of importing assets, need the original value (~tokyo, japan~, not ~tokyo~ and ~japan~)
 ** bug: import hangs after ~140 assets
 *** seems like Firefox is completely frozen at some point
-** bug: selecting a season when year is ~any~ should select the latest year
-*** if the year was never set, works, but if year was set to ~Any~ then it doesn't?
 ** Add (un)select-all buttons on recents page
+** Location improvements
+*** location should be a record of properties
+| Name    | Description                    |
+|---------+--------------------------------|
+| label   | current string value           |
+| address | an address of some sort        |
+| geo     | geo location data of some sort |
+*** find out what data is store in images taken by iPhone
+*** Extract location information from images
+**** write a data migration to process existing assets
+**** existing location values should be stored in a "label" field
+**** exact location information would be stored separate from label
+**** c.f. https://github.com/google/open-location-code/wiki/Evaluation-of-Location-Encoding-Systems
+**** c.f. https://www.osgeo.org for some information, resources
+*** Map display with locations of photos taken
+**** [[https://cloud.google.com/maps-platform/][Google Maps]]
+- customer uses their own API key, sets in preferences
+- for =testing= account: =AIzaSyAI73udKC3KVk6aIBqOjSqSv6PEQ0qd638=
+**** [[https://mariusandra.github.io/pigeon-maps/][Pigeon Maps]]
+- Uses data from OpenStreetMap, Wikimedia for the tiles
 ** Enable rotating and flipping images from the asset edit page
 *** lot of the images from ~jarabacoa~ need rotating
 *** =image= crate supports several filters (flip, rotate, etc)
@@ -198,6 +220,8 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 **** selecting multiple tags/locations offers option to remove from all assets
 ** Bulk edit
 *** need to set the custom date on many assets at once
+*** able to set an ~address~ for assets whose location ~label~ matches a query
+**** e.g. set address to 5011 Rahlves Drive if label equals ~rahlves~ or whatever
 *** Short term solution akin to perkeep/photoprism web interface
 **** hover over thumbnail, shows checkbox in the corner
 **** click on the checkbox to select the asset
@@ -304,19 +328,6 @@ include it in the database records.
 **** PhotoPrism generates suitable thumbnails for other kinds of files, saves them to disk
 *** Reference
 **** EXIF: https://www.media.mit.edu/pia/Research/deepview/exif.html
-** Geolocation
-*** Extract location information from images
-**** write a data migration to process existing assets
-**** existing location values should be stored in a "label" field
-**** exact location information would be stored separate from label
-**** c.f. https://github.com/google/open-location-code/wiki/Evaluation-of-Location-Encoding-Systems
-**** c.f. https://www.osgeo.org for some information, resources
-*** Map display with locations of photos taken
-**** [[https://cloud.google.com/maps-platform/][Google Maps]]
-- customer uses their own API key, sets in preferences
-- for =testing= account: =AIzaSyAI73udKC3KVk6aIBqOjSqSv6PEQ0qd638=
-**** [[https://mariusandra.github.io/pigeon-maps/][Pigeon Maps]]
-- Uses data from OpenStreetMap, Wikimedia for the tiles
 ** Machine learning
 *** TensorFlow Hub: https://tfhub.dev
 *** https://developers.google.com/machine-learning/crash-course/

@@ -32,6 +32,12 @@ class DatesSelector extends StatelessWidget {
             // sort in reverse chronological order for selection convenience
             // (most recent years near the top of the dropdown menu)
             years.sort((a, b) => b.value.compareTo(a.value));
+            // inject the current year if not already present so that the season
+            // selection has something to select when year is unset
+            final currentYear = DateTime.now().year;
+            if (years[0].value != currentYear) {
+              years.insert(0, Year(label: currentYear.toString(), count: 0));
+            }
             return DateRangeSelectorForm(years: years);
           }
           return const Center(child: CircularProgressIndicator());
