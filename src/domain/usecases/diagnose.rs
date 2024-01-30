@@ -106,6 +106,7 @@ impl Diagnose {
                 if let Ok(digest) = checksum_file(&blob_path) {
                     asset.checksum = digest;
                     let _ = self.records.put_asset(&asset);
+                    info!("fixed checksum for asset {}", asset_id);
                 } else {
                     warn!("error reading file {:?}", blob_path);
                 }
@@ -124,6 +125,7 @@ impl Diagnose {
                 if let Ok(metadata) = fs::metadata(&blob_path) {
                     asset.byte_length = metadata.len();
                     let _ = self.records.put_asset(&asset);
+                    info!("fixed byte length for asset {}", asset_id);
                 } else {
                     warn!("file not accessible {:?}", blob_path);
                 }
@@ -146,6 +148,7 @@ impl Diagnose {
                         asset.filename = filename.to_string_lossy().into();
                         let _ = self.records.put_asset(&asset);
                         fixed = true;
+                        info!("fixed filename for asset {}", asset_id);
                     }
                 }
             }
@@ -168,6 +171,7 @@ impl Diagnose {
                 let guessed_mime = infer_media_type(ext);
                 asset.media_type = guessed_mime.essence_str().to_owned();
                 let _ = self.records.put_asset(&asset);
+                info!("fixed media type for asset {}", asset_id);
             } else {
                 warn!("could not infer media type: {}", asset_id);
             }
@@ -184,6 +188,7 @@ impl Diagnose {
                     if let Ok(original) = get_original_date(&mime_type, &blob_path) {
                         asset.original_date = Some(original);
                         let _ = self.records.put_asset(&asset);
+                        info!("fixed original date for asset {}", asset_id);
                     } else {
                         warn!("error reading original date: {:?}", blob_path);
                     }
@@ -214,6 +219,7 @@ impl Diagnose {
                             if self.records.put_asset(&new_asset).is_ok() {
                                 if self.blobs.rename_blob(old_asset_id, &new_id).is_ok() {
                                     let _ = self.records.delete_asset(old_asset_id);
+                                    info!("fixed extension for asset {}", old_asset_id);
                                 } else {
                                     let _ = self.records.delete_asset(&new_id);
                                 }
