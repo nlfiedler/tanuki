@@ -325,6 +325,8 @@ pub enum ErrorCode {
     Filename,
     /// Asset identifier/filename extension missing or incorrect.
     Extension,
+    /// Asset file appears to have a different extension than expected.
+    Renamed,
 }
 
 impl From<crate::domain::usecases::diagnose::ErrorCode> for ErrorCode {
@@ -340,6 +342,7 @@ impl From<crate::domain::usecases::diagnose::ErrorCode> for ErrorCode {
             crate::domain::usecases::diagnose::ErrorCode::OriginalDate => ErrorCode::OriginalDate,
             crate::domain::usecases::diagnose::ErrorCode::Filename => ErrorCode::Filename,
             crate::domain::usecases::diagnose::ErrorCode::Extension => ErrorCode::Extension,
+            crate::domain::usecases::diagnose::ErrorCode::Renamed => ErrorCode::Renamed,
         }
     }
 }

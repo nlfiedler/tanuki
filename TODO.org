@@ -12,9 +12,7 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 ** verify responsiveness is looking good
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
-** [#A] convert the few HEIC files into JPG
-*** manually convert the files, then fix the database records (ID and mimetype)
-** [#B] Location improvements
+** [#A] Location improvements
 *** allow for comma-separated location values (e.g. ~tokyo, japan~)
 **** index will detect commas and split, creating multiple index entries
 **** retain original location value so recents screen can use that for tagging assets
@@ -39,7 +37,7 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 - for =testing= account: =AIzaSyAI73udKC3KVk6aIBqOjSqSv6PEQ0qd638=
 **** [[https://mariusandra.github.io/pigeon-maps/][Pigeon Maps]]
 - Uses data from OpenStreetMap, Wikimedia for the tiles
-** [#C] Enable rotating and flipping images from the asset edit page
+** [#B] Enable rotating and flipping images from the asset edit page
 *** lot of the images from ~jarabacoa~ need rotating
 *** =image= crate supports several filters (flip, rotate, etc)
 *** need to recognize that the asset is an image (cannot edit anything else)
