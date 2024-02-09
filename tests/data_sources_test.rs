@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 mod common;
 
@@ -104,7 +104,7 @@ fn test_all_locations() {
     // multiple locations and occurrences
     let mut asset = common::build_basic_asset();
     asset.key = "single999".to_owned();
-    asset.location = Some("paris".to_owned());
+    asset.location = Some("paris, france".to_owned());
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wonder101".to_owned();
@@ -115,10 +115,48 @@ fn test_all_locations() {
     asset.location = Some("london".to_owned());
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_locations().unwrap();
-    assert_eq!(actual.len(), 3);
+    assert_eq!(actual.len(), 4);
     assert!(actual.iter().any(|l| l.label == "hawaii" && l.count == 1));
     assert!(actual.iter().any(|l| l.label == "london" && l.count == 2));
     assert!(actual.iter().any(|l| l.label == "paris" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "france" && l.count == 1));
+}
+
+#[test]
+fn test_raw_locations() {
+    let db_path = DBPath::new("_test_raw_locations");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    // zero locations
+    let actual = datasource.raw_locations().unwrap();
+    assert_eq!(actual.len(), 0);
+
+    // one location(s)
+    let asset = common::build_basic_asset();
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.raw_locations().unwrap();
+    assert_eq!(actual.len(), 1);
+    assert_eq!(actual[0].label, "hawaii");
+    assert_eq!(actual[0].count, 1);
+
+    // multiple locations and occurrences
+    let mut asset = common::build_basic_asset();
+    asset.key = "single999".to_owned();
+    asset.location = Some("paris, france".to_owned());
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "wonder101".to_owned();
+    asset.location = Some("london".to_owned());
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "tuesday42".to_owned();
+    asset.location = Some("london".to_owned());
+    datasource.put_asset(&asset).unwrap();
+    let actual = datasource.raw_locations().unwrap();
+    assert_eq!(actual.len(), 3);
+    assert!(actual.iter().any(|l| l.label == "hawaii" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "london" && l.count == 2));
+    assert!(actual.iter().any(|l| l.label == "paris, france" && l.count == 1));
 }
 
 fn make_date_time(
@@ -465,7 +503,12 @@ fn test_query_by_locations() {
     let mut asset = common::build_basic_asset();
     asset.key = "monday6".to_owned();
     asset.filename = "img_2345.jpg".to_owned();
-    asset.location = Some("paris".to_owned());
+    asset.location = Some("Paris, France".to_owned());
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "monday8".to_owned();
+    asset.filename = "img_6543.jpg".to_owned();
+    asset.location = Some("Nice, France".to_owned());
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "tuesday7".to_owned();
@@ -503,6 +546,13 @@ fn test_query_by_locations() {
     assert!(actual.iter().any(|l| l.filename == "img_2345.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_6789.jpg"));
+
+    // searching location term split from commas
+    let locations = vec!["france".to_owned()];
+    let actual = datasource.query_by_locations(locations).unwrap();
+    assert_eq!(actual.len(), 2);
+    assert!(actual.iter().any(|l| l.filename == "img_6543.jpg"));
+    assert!(actual.iter().any(|l| l.filename == "img_2345.jpg"));
 }
 
 #[test]

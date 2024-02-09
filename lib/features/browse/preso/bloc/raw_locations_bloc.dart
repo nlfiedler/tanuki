@@ -10,27 +10,27 @@ import 'package:tanuki/core/domain/usecases/get_all_locations.dart';
 // events
 //
 
-abstract class AllLocationsEvent extends Equatable {
+abstract class RawLocationsEvent extends Equatable {
   @override
   List<Object> get props => [];
 }
 
-class LoadAllLocations extends AllLocationsEvent {}
+class LoadRawLocations extends RawLocationsEvent {}
 
 //
 // states
 //
 
-abstract class AllLocationsState extends Equatable {
+abstract class RawLocationsState extends Equatable {
   @override
   List<Object> get props => [];
 }
 
-class Empty extends AllLocationsState {}
+class Empty extends RawLocationsState {}
 
-class Loading extends AllLocationsState {}
+class Loading extends RawLocationsState {}
 
-class Loaded extends AllLocationsState {
+class Loaded extends RawLocationsState {
   final List<Location> locations;
 
   Loaded({required this.locations});
@@ -39,7 +39,7 @@ class Loaded extends AllLocationsState {
   List<Object> get props => [locations];
 }
 
-class Error extends AllLocationsState {
+class Error extends RawLocationsState {
   final String message;
 
   Error({required this.message});
@@ -52,13 +52,13 @@ class Error extends AllLocationsState {
 // bloc
 //
 
-class AllLocationsBloc extends Bloc<AllLocationsEvent, AllLocationsState> {
+class RawLocationsBloc extends Bloc<RawLocationsEvent, RawLocationsState> {
   final GetAllLocations usecase;
 
-  AllLocationsBloc({required this.usecase}) : super(Empty()) {
-    on<LoadAllLocations>((event, emit) async {
+  RawLocationsBloc({required this.usecase}) : super(Empty()) {
+    on<LoadRawLocations>((event, emit) async {
       emit(Loading());
-      final result = await usecase(const Params(raw: false));
+      final result = await usecase(const Params(raw: true));
       emit(result.mapOrElse(
         (locations) => Loaded(locations: locations),
         (failure) => Error(message: failure.toString()),

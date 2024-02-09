@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
@@ -96,7 +96,7 @@ void main() {
         // arrange
         setUpMockHttpClientGraphQLResponse();
         // act
-        final result = await dataSource.getAllLocations();
+        final result = await dataSource.getAllLocations(false);
         // assert
         expect(result, isA<List>());
         expect(result.length, equals(3));
@@ -120,7 +120,7 @@ void main() {
         setUpMockHttpClientFailure403();
         // act, assert
         try {
-          await dataSource.getAllLocations();
+          await dataSource.getAllLocations(false);
           fail('should have raised an error');
         } catch (e) {
           expect(e, isA<ServerException>());
@@ -135,7 +135,7 @@ void main() {
         setUpMockHttpClientGraphQLError();
         // act, assert
         try {
-          await dataSource.getAllLocations();
+          await dataSource.getAllLocations(false);
           fail('should have raised an error');
         } catch (e) {
           expect(e, isA<ServerException>());
@@ -161,7 +161,7 @@ void main() {
         // arrange
         setUpMockGraphQLNullResponse();
         // act
-        final result = await dataSource.getAllLocations();
+        final result = await dataSource.getAllLocations(false);
         // assert
         expect(result, isA<List>());
         expect(result.length, equals(0));
@@ -408,8 +408,8 @@ void main() {
           mimetype: 'image/jpeg',
           tags: const ['clowns', 'snakes'],
           userdate: const None(),
-          caption: Some('#snakes and #clowns are in my @batcave'),
-          location: Some('batcave'),
+          caption: const Some('#snakes and #clowns are in my @batcave'),
+          location: const Some('batcave'),
         );
         expect(result, equals(expected));
       },
@@ -581,7 +581,7 @@ void main() {
       () async {
         // arrange
         setUpMockHttpClientGraphQLResponse();
-        final params = SearchParams(tags: const ['mouse']);
+        const params = SearchParams(tags: ['mouse']);
         // act
         final result = await dataSource.queryAssets(params, 10, 0);
         // assert
@@ -591,7 +591,7 @@ void main() {
               id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
               filename: 'catmouse_1280p.jpg',
               mimetype: 'image/jpeg',
-              location: Some('outdoors'),
+              location: const Some('outdoors'),
               datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
             )
           ],
@@ -607,7 +607,7 @@ void main() {
       () async {
         // arrange
         setUpMockHttpClientFailure403();
-        final params = SearchParams(tags: const ['mouse']);
+        const params = SearchParams(tags: ['mouse']);
         // act, assert
         try {
           await dataSource.queryAssets(params, 10, 0);
@@ -623,7 +623,7 @@ void main() {
       () async {
         // arrange
         setUpMockHttpClientGraphQLError();
-        final params = SearchParams(tags: const ['mouse']);
+        const params = SearchParams(tags: ['mouse']);
         // act, assert
         try {
           await dataSource.queryAssets(params, 10, 0);
@@ -651,7 +651,7 @@ void main() {
       () async {
         // arrange
         setUpMockGraphQLNullResponse();
-        final params = SearchParams(tags: const ['mouse']);
+        const params = SearchParams(tags: ['mouse']);
         // act
         final result = await dataSource.queryAssets(params, 10, 0);
         // assert
@@ -705,7 +705,7 @@ void main() {
               id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
               filename: 'catmouse_1280p.jpg',
               mimetype: 'image/jpeg',
-              location: Some('outdoors'),
+              location: const Some('outdoors'),
               datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
             )
           ],
@@ -735,7 +735,7 @@ void main() {
               id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
               filename: 'catmouse_1280p.jpg',
               mimetype: 'image/jpeg',
-              location: Some('outdoors'),
+              location: const Some('outdoors'),
               datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
             )
           ],
@@ -836,11 +836,11 @@ void main() {
       id: 'asset123',
       input: AssetInputModel(
         tags: const ['clowns', 'snakes'],
-        caption: Some('#snakes and #clowns are in my @batcave'),
-        location: Some('batcave'),
+        caption: const Some('#snakes and #clowns are in my @batcave'),
+        location: const Some('batcave'),
         datetime: Some(DateTime.utc(2003, 8, 30)),
-        mimetype: Some('image/jpeg'),
-        filename: Some('img_1234.jpg'),
+        mimetype: const Some('image/jpeg'),
+        filename: const Some('img_1234.jpg'),
       ),
     );
 
@@ -946,11 +946,11 @@ void main() {
       id: 'asset123',
       input: AssetInputModel(
         tags: const ['clowns', 'snakes'],
-        caption: Some('#snakes and #clowns are in my @batcave'),
-        location: Some('batcave'),
+        caption: const Some('#snakes and #clowns are in my @batcave'),
+        location: const Some('batcave'),
         datetime: Some(DateTime.utc(2003, 8, 30)),
-        mimetype: Some('image/jpeg'),
-        filename: Some('img_1234.jpg'),
+        mimetype: const Some('image/jpeg'),
+        filename: const Some('img_1234.jpg'),
       ),
     );
 
@@ -971,8 +971,8 @@ void main() {
           mimetype: 'image/jpeg',
           tags: const ['clowns', 'snakes'],
           userdate: const None(),
-          caption: Some('#snakes and #clowns are in my @batcave'),
-          location: Some('batcave'),
+          caption: const Some('#snakes and #clowns are in my @batcave'),
+          location: const Some('batcave'),
         );
         expect(result, equals(expected));
       },

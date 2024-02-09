@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/core/domain/usecases/providers.dart';
@@ -9,6 +9,7 @@ import 'all_years_bloc.dart';
 import 'asset_bloc.dart';
 import 'asset_browser_bloc.dart';
 import 'asset_count_bloc.dart';
+import 'raw_locations_bloc.dart';
 
 final allLocationsBlocProvider = Provider.autoDispose<AllLocationsBloc>(
   (ref) => AllLocationsBloc(
@@ -43,5 +44,11 @@ final assetBrowserBlocProvider = Provider.autoDispose<AssetBrowserBloc>(
 final assetCountBlocProvider = Provider.autoDispose<AssetCountBloc>(
   (ref) => AssetCountBloc(
     usecase: ref.read(getAssetCountUsecaseProvider),
+  ),
+);
+
+final rawLocationsBlocProvider = Provider.autoDispose<RawLocationsBloc>(
+  (ref) => RawLocationsBloc(
+    usecase: ref.read(getAllLocationsUsecaseProvider),
   ),
 );

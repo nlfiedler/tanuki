@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 use crate::data::models::AssetModel;
 use crate::domain::entities::{Asset, LabeledCount, SearchResult};
@@ -66,8 +66,12 @@ pub trait EntityDataSource: Send + Sync {
     fn count_assets(&self) -> Result<u64, Error>;
 
     /// Return all of the known locations and the number of assets associated
-    /// with each location.
+    /// with each location. Results include those processed by splitting on commas.
     fn all_locations(&self) -> Result<Vec<LabeledCount>, Error>;
+
+    /// Return all of the locations as originally entered and the number of
+    /// assets associated with each location.
+    fn raw_locations(&self) -> Result<Vec<LabeledCount>, Error>;
 
     /// Return all of the known years and the number of assets associated with
     /// each year.
@@ -98,10 +102,13 @@ impl EntityDataSourceImpl {
             "by_checksum",
             "by_date",
             "by_filename",
+            // by_location is location label split on commas
             "by_location",
             "by_media_type",
             "by_tags",
             "by_year",
+            // raw_locations is location label as entered
+            "raw_locations",
             "newborn",
         ];
         std::fs::create_dir_all(&db_path)?;
@@ -247,7 +254,12 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn all_locations(&self) -> Result<Vec<LabeledCount>, Error> {
+        // unfortunate naming due to existing index names
         self.count_all_keys("by_location")
+    }
+
+    fn raw_locations(&self) -> Result<Vec<LabeledCount>, Error> {
+        self.count_all_keys("raw_locations")
     }
 
     fn all_years(&self) -> Result<Vec<LabeledCount>, Error> {
@@ -328,6 +340,16 @@ impl Document for Asset {
             let lower = self.media_type.to_lowercase();
             emitter.emit(lower.as_bytes(), Some(&idv))?;
         } else if view == "by_location" {
+            // split the location on commas, enter each value separately
+            if let Some(loc) = self.location.as_ref() {
+                // secondary index keys are lowercase
+                let lower = loc.to_lowercase();
+                for entry in lower.split(',').map(|e| e.trim()).filter(|e| !e.is_empty()) {
+                    emitter.emit(entry.as_bytes(), Some(&idv))?;
+                }
+            }
+        } else if view == "raw_locations" {
+            // location label as entered by the user
             if let Some(loc) = self.location.as_ref() {
                 // secondary index keys are lowercase
                 let lower = loc.to_lowercase();

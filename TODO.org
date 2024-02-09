@@ -13,7 +13,7 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
 ** [#A] Location improvements
-*** allow for comma-separated location values (e.g. ~tokyo, japan~)
+*** DONE allow for comma-separated location values (e.g. ~tokyo, japan~)
 **** index will detect commas and split, creating multiple index entries
 **** retain original location value so recents screen can use that for tagging assets
 *** location should be a record of properties
@@ -395,6 +395,7 @@ include it in the database records.
 *** open asset in external program in temporary file
 **** easy-to-use app: https://github.com/robaho/seashore
 ** Data Integrity
+*** Add a GraphQL mutation that will delete and rebuild all indices
 *** Guard against concurrent modifications
 **** consider how to manage multiple users making changes
 **** e.g. two people trying to update the same set of recent imports

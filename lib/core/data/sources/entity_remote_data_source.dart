@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:graphql/client.dart';
 import 'package:oxidized/oxidized.dart';
@@ -15,7 +15,7 @@ import 'package:tanuki/core/error/exceptions.dart' as err;
 
 abstract class EntityRemoteDataSource {
   Future<int> bulkUpdate(List<AssetInputId> assets);
-  Future<List<Location>> getAllLocations();
+  Future<List<Location>> getAllLocations(bool raw);
   Future<List<Tag>> getAllTags();
   Future<List<Year>> getAllYears();
   Future<Asset?> getAsset(String id);
@@ -62,10 +62,10 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
   }
 
   @override
-  Future<List<Location>> getAllLocations() async {
+  Future<List<Location>> getAllLocations(bool raw) async {
     const query = r'''
-      query {
-        locations {
+      query Locations($raw: Boolean) {
+        locations(raw: $raw) {
           label
           count
         }
@@ -73,6 +73,9 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     ''';
     final queryOptions = QueryOptions(
       document: gql(query),
+      variables: <String, dynamic>{
+        'raw': raw,
+      },
       fetchPolicy: FetchPolicy.noCache,
     );
     final QueryResult result = await client.query(queryOptions);

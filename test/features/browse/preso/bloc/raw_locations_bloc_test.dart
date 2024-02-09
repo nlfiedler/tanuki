@@ -9,7 +9,7 @@ import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/get_all_locations.dart';
 import 'package:tanuki/core/error/failures.dart';
-import 'package:tanuki/features/browse/preso/bloc/all_locations_bloc.dart';
+import 'package:tanuki/features/browse/preso/bloc/raw_locations_bloc.dart';
 
 class MockEntityRepository extends Mock implements EntityRepository {}
 
@@ -32,20 +32,20 @@ void main() {
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = GetAllLocations(mockEntityRepository);
-      when(() => mockEntityRepository.getAllLocations(false))
+      when(() => mockEntityRepository.getAllLocations(true))
           .thenAnswer((_) async => Ok(List.from(incoming)));
     });
 
     blocTest(
       'emits [] when nothing is added',
-      build: () => AllLocationsBloc(usecase: usecase),
+      build: () => RawLocationsBloc(usecase: usecase),
       expect: () => [],
     );
 
     blocTest(
-      'emits [Loading, Loaded] when LoadAllLocations is added',
-      build: () => AllLocationsBloc(usecase: usecase),
-      act: (AllLocationsBloc bloc) => bloc.add(LoadAllLocations()),
+      'emits [Loading, Loaded] when LoadRawLocations is added',
+      build: () => RawLocationsBloc(usecase: usecase),
+      act: (RawLocationsBloc bloc) => bloc.add(LoadRawLocations()),
       expect: () => [Loading(), Loaded(locations: expected)],
     );
   });
@@ -54,14 +54,14 @@ void main() {
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = GetAllLocations(mockEntityRepository);
-      when(() => mockEntityRepository.getAllLocations(false))
+      when(() => mockEntityRepository.getAllLocations(true))
           .thenAnswer((_) async => const Err(ServerFailure('oh no!')));
     });
 
     blocTest(
       'emits [Loading, Error] when LoadAllLocations is added',
-      build: () => AllLocationsBloc(usecase: usecase),
-      act: (AllLocationsBloc bloc) => bloc.add(LoadAllLocations()),
+      build: () => RawLocationsBloc(usecase: usecase),
+      act: (RawLocationsBloc bloc) => bloc.add(LoadRawLocations()),
       expect: () => [Loading(), Error(message: 'ServerFailure(oh no!)')],
     );
   });

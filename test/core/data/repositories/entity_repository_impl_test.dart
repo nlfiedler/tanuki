@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -30,17 +30,17 @@ void main() {
 
   setUpAll(() {
     // mocktail needs a fallback for any() that involves custom types
-    final SearchParams dummySearchParams = SearchParams();
+    const SearchParams dummySearchParams = SearchParams();
     registerFallbackValue(dummySearchParams);
     final dummyAssetInputId = AssetInputId(
       id: 'asset123',
       input: AssetInput(
         tags: const ['clowns', 'snakes'],
-        caption: Some('#snakes and #clowns are in my @batcave'),
-        location: Some('batcave'),
+        caption: const Some('#snakes and #clowns are in my @batcave'),
+        location: const Some('batcave'),
         datetime: Some(DateTime.utc(2003, 8, 30)),
-        mimetype: Some('image/jpeg'),
-        filename: Some('img_1234.jpg'),
+        mimetype: const Some('image/jpeg'),
+        filename: const Some('img_1234.jpg'),
       ),
     );
     registerFallbackValue(dummyAssetInputId);
@@ -60,12 +60,12 @@ void main() {
           LocationModel(label: 'paris', count: 269),
           LocationModel(label: 'london', count: 23),
         ];
-        when(() => mockRemoteDataSource.getAllLocations())
+        when(() => mockRemoteDataSource.getAllLocations(false))
             .thenAnswer((_) async => locations);
         // act
-        final result = await repository.getAllLocations();
+        final result = await repository.getAllLocations(false);
         // assert
-        verify(() => mockRemoteDataSource.getAllLocations());
+        verify(() => mockRemoteDataSource.getAllLocations(false));
         expect(result.unwrap(), isA<List>());
         expect(result.unwrap().length, equals(3));
         expect(result.unwrap(), containsAll(locations));
@@ -76,12 +76,12 @@ void main() {
       'should return failure when remote data source is unsuccessful',
       () async {
         // arrange
-        when(() => mockRemoteDataSource.getAllLocations())
+        when(() => mockRemoteDataSource.getAllLocations(false))
             .thenThrow(const ServerException());
         // act
-        final result = await repository.getAllLocations();
+        final result = await repository.getAllLocations(false);
         // assert
-        verify(() => mockRemoteDataSource.getAllLocations());
+        verify(() => mockRemoteDataSource.getAllLocations(false));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -175,8 +175,8 @@ void main() {
           mimetype: 'image/jpeg',
           tags: const ['cat', 'mouse'],
           userdate: const None(),
-          caption: Some('#cat @outdoors #mouse'),
-          location: Some('outdoors'),
+          caption: const Some('#cat @outdoors #mouse'),
+          location: const Some('outdoors'),
         );
         when(() => mockRemoteDataSource.getAsset(any()))
             .thenAnswer((_) async => expected);
@@ -258,7 +258,7 @@ void main() {
               id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
               filename: 'catmouse_1280p.jpg',
               mimetype: 'image/jpeg',
-              location: Some('outdoors'),
+              location: const Some('outdoors'),
               datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
             )
           ],
@@ -267,7 +267,7 @@ void main() {
         when(() => mockRemoteDataSource.queryAssets(any(), any(), any()))
             .thenAnswer((_) async => expected);
         // act
-        final params = SearchParams(tags: const ['mouse']);
+        const params = SearchParams(tags: ['mouse']);
         final result = await repository.queryAssets(params, 10, 0);
         // assert
         verify(() => mockRemoteDataSource.queryAssets(params, 10, 0));
@@ -282,7 +282,7 @@ void main() {
         when(() => mockRemoteDataSource.queryAssets(any(), any(), any()))
             .thenAnswer((_) async => null);
         // act
-        final params = SearchParams(tags: const ['mouse']);
+        const params = SearchParams(tags: ['mouse']);
         final result = await repository.queryAssets(params, 10, 0);
         // assert
         verify(() => mockRemoteDataSource.queryAssets(params, 10, 0));
@@ -297,7 +297,7 @@ void main() {
         when(() => mockRemoteDataSource.queryAssets(any(), any(), any()))
             .thenThrow(const ServerException());
         // act
-        final params = SearchParams(tags: const ['mouse']);
+        const params = SearchParams(tags: ['mouse']);
         final result = await repository.queryAssets(params, 10, 0);
         // assert
         verify(() => mockRemoteDataSource.queryAssets(params, 10, 0));
@@ -317,7 +317,7 @@ void main() {
               id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
               filename: 'catmouse_1280p.jpg',
               mimetype: 'image/jpeg',
-              location: Some('outdoors'),
+              location: const Some('outdoors'),
               datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
             )
           ],
@@ -376,11 +376,11 @@ void main() {
       id: 'asset123',
       input: AssetInput(
         tags: const ['clowns', 'snakes'],
-        caption: Some('#snakes and #clowns are in my @batcave'),
-        location: Some('batcave'),
+        caption: const Some('#snakes and #clowns are in my @batcave'),
+        location: const Some('batcave'),
         datetime: Some(DateTime.utc(2003, 8, 30)),
-        mimetype: Some('image/jpeg'),
-        filename: Some('img_1234.jpg'),
+        mimetype: const Some('image/jpeg'),
+        filename: const Some('img_1234.jpg'),
       ),
     );
 
@@ -418,11 +418,11 @@ void main() {
       id: 'asset123',
       input: AssetInput(
         tags: const ['clowns', 'snakes'],
-        caption: Some('#snakes and #clowns are in my @batcave'),
-        location: Some('batcave'),
+        caption: const Some('#snakes and #clowns are in my @batcave'),
+        location: const Some('batcave'),
         datetime: Some(DateTime.utc(2003, 8, 30)),
-        mimetype: Some('image/jpeg'),
-        filename: Some('img_1234.jpg'),
+        mimetype: const Some('image/jpeg'),
+        filename: const Some('img_1234.jpg'),
       ),
     );
 
@@ -439,8 +439,8 @@ void main() {
           mimetype: 'image/jpeg',
           tags: const ['cat', 'mouse'],
           userdate: const None(),
-          caption: Some('#cat @outdoors #mouse'),
-          location: Some('outdoors'),
+          caption: const Some('#cat @outdoors #mouse'),
+          location: const Some('outdoors'),
         );
         when(() => mockRemoteDataSource.updateAsset(any()))
             .thenAnswer((_) async => expected);

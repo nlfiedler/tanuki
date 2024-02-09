@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,6 +11,7 @@ import 'package:tanuki/features/browse/preso/bloc/all_years_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_browser_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_count_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/providers.dart';
+import 'package:tanuki/features/browse/preso/bloc/raw_locations_bloc.dart';
 import 'package:tanuki/features/browse/preso/screens/asset_screen.dart';
 import 'package:tanuki/features/browse/preso/screens/home_screen.dart';
 import 'package:tanuki/features/import/preso/screens/recents_screen.dart';
@@ -42,6 +43,9 @@ class MyApp extends ConsumerWidget {
         ),
         BlocProvider<AllYearsBloc>(
           create: (_) => ref.read(allYearsBlocProvider),
+        ),
+        BlocProvider<RawLocationsBloc>(
+          create: (_) => ref.read(rawLocationsBlocProvider),
         ),
       ],
       child: MaterialApp(
@@ -93,6 +97,7 @@ class _AttributeRefresher extends NavigatorObserver {
       BlocProvider.of<AllLocationsBloc>(context).add(LoadAllLocations());
       BlocProvider.of<AllTagsBloc>(context).add(LoadAllTags());
       BlocProvider.of<AllYearsBloc>(context).add(LoadAllYears());
+      BlocProvider.of<RawLocationsBloc>(context).add(LoadRawLocations());
     }
   }
 }

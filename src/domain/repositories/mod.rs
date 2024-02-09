@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::{Asset, LabeledCount, SearchResult};
 use chrono::prelude::*;
@@ -29,8 +29,12 @@ pub trait RecordRepository: Send {
     fn count_assets(&self) -> Result<u64, Error>;
 
     /// Return all of the known locations and the number of assets associated
-    /// with each location.
+    /// with each location. Results include those processed by splitting on commas.
     fn all_locations(&self) -> Result<Vec<LabeledCount>, Error>;
+
+    /// Return all of the locations as originally entered and the number of
+    /// assets associated with each location.
+    fn raw_locations(&self) -> Result<Vec<LabeledCount>, Error>;
 
     /// Return all of the known years and the number of assets associated with
     /// each year.

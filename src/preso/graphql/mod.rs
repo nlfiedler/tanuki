@@ -453,13 +453,16 @@ impl QueryRoot {
     }
 
     /// Retrieve the list of locations and their associated asset count.
-    fn locations(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
-        use crate::domain::usecases::location::AllLocations;
-        use crate::domain::usecases::{NoParams, UseCase};
+    fn locations(executor: &Executor, raw: Option<bool>) -> FieldResult<Vec<LabeledCount>> {
+        use crate::domain::usecases::location::{AllLocations, Params};
+        use crate::domain::usecases::UseCase;
         let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = AllLocations::new(Box::new(repo));
-        let params = NoParams {};
+        let mut params: Params = Default::default();
+        if let Some(raww) = raw {
+            params.raw = raww;
+        }
         let locations: Vec<LabeledCount> = usecase.call(params)?;
         Ok(locations)
     }

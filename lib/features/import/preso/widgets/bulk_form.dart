@@ -10,11 +10,11 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/preso/widgets/asset_display.dart';
-import 'package:tanuki/features/browse/preso/bloc/all_locations_bloc.dart'
-    as alb;
 import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart' as atb;
 import 'package:tanuki/features/import/preso/bloc/assign_attributes_bloc.dart';
 import 'package:tanuki/features/import/preso/bloc/providers.dart';
+import 'package:tanuki/features/browse/preso/bloc/raw_locations_bloc.dart'
+    as rlb;
 import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
 
 import 'bulk_submit.dart';
@@ -96,8 +96,8 @@ class BulkForm extends ConsumerWidget {
                             );
                           })),
                           onComplete: () {
-                            BlocProvider.of<alb.AllLocationsBloc>(context)
-                                .add(alb.LoadAllLocations());
+                            BlocProvider.of<rlb.RawLocationsBloc>(context)
+                                .add(rlb.LoadRawLocations());
                             BlocProvider.of<atb.AllTagsBloc>(context)
                                 .add(atb.LoadAllTags());
                             BlocProvider.of<RecentImportsBloc>(context).add(

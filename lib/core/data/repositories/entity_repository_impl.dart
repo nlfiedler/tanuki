@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
@@ -29,9 +29,9 @@ class EntityRepositoryImpl extends EntityRepository {
   }
 
   @override
-  Future<Result<List<Location>, Failure>> getAllLocations() async {
+  Future<Result<List<Location>, Failure>> getAllLocations(bool raw) async {
     try {
-      final locations = await remoteDataSource.getAllLocations();
+      final locations = await remoteDataSource.getAllLocations(raw);
       return Ok(locations);
     } on ServerException catch (e) {
       return Err(ServerFailure(e.toString()));
@@ -63,7 +63,7 @@ class EntityRepositoryImpl extends EntityRepository {
     try {
       final results = await remoteDataSource.getAsset(id);
       if (results == null) {
-        return Err(ServerFailure('got null result for query'));
+        return const Err(ServerFailure('got null result for query'));
       }
       return Ok(results);
     } on ServerException catch (e) {
@@ -94,7 +94,7 @@ class EntityRepositoryImpl extends EntityRepository {
         offset,
       );
       if (results == null) {
-        return Err(ServerFailure('got null result for query'));
+        return const Err(ServerFailure('got null result for query'));
       }
       return Ok(results);
     } on ServerException catch (e) {
@@ -124,7 +124,7 @@ class EntityRepositoryImpl extends EntityRepository {
     try {
       final results = await remoteDataSource.updateAsset(asset);
       if (results == null) {
-        return Err(ServerFailure('got null result for query'));
+        return const Err(ServerFailure('got null result for query'));
       }
       return Ok(results);
     } on ServerException catch (e) {

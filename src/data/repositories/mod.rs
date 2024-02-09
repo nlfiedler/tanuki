@@ -67,6 +67,10 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.all_locations()
     }
 
+    fn raw_locations(&self) -> Result<Vec<LabeledCount>, Error> {
+        self.datasource.raw_locations()
+    }
+
     fn all_years(&self) -> Result<Vec<LabeledCount>, Error> {
         self.datasource.all_years()
     }

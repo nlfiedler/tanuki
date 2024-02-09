@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
@@ -13,7 +13,7 @@ abstract class EntityRepository {
   Future<Result<int, Failure>> bulkUpdate(List<AssetInputId> assets);
 
   /// Retrieve all of the locations and their counts.
-  Future<Result<List<Location>, Failure>> getAllLocations();
+  Future<Result<List<Location>, Failure>> getAllLocations(bool raw);
 
   /// Retrieve all of the tags and their counts.
   Future<Result<List<Tag>, Failure>> getAllTags();
