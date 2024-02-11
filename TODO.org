@@ -13,24 +13,45 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
 ** [#A] Location improvements
-*** DONE allow for comma-separated location values (e.g. ~tokyo, japan~)
-**** index will detect commas and split, creating multiple index entries
-**** retain original location value so recents screen can use that for tagging assets
-*** location should be a record of properties
-| Name    | Description                    |
-|---------+--------------------------------|
-| label   | current string value           |
-| address | an address of some sort        |
-| geo     | geo location data of some sort |
-*** find out what data is stored in images
-*** extract location information from images
-**** write a data migration to process existing assets
-**** existing location values should be stored in a "label" field
-**** exact location information would be stored separate from label
-**** c.f. https://github.com/google/open-location-code/wiki/Evaluation-of-Location-Encoding-Systems
-**** c.f. https://www.osgeo.org for some information, resources
-*** show tiny map of where photo was taken on details page
-*** provide map display with locations of photos taken
+*** location data is stored in images using Exif
+**** Exif tags with =GPS= prefix
+- GPSLatitudeRef (N or S)
+- GPSLatitude (degrees, minutes, seconds)
+- GPSLongitudeRef (E or W)
+- GPSLongitude (degrees, minutes, seconds)
+*** TODO change ~location~ property to a struct
+**** new structure of the ~location~ property
+| Name   | Description              |
+|--------+--------------------------|
+| label  | current string value     |
+| city   | name of city             |
+| region | state, province, country |
+**** region should be two-letter state code, if available, to save space
+**** region may be the country if it has no states or provinces (e.g. Israel, Norway, many others)
+**** no need for country, state/province is already clear, saves space, usually same value for many assets
+**** deserialize: convert plain ~location~ string into the new structure
+**** serialize: if structure only has ~label~ then only write a string for ~location~
+**** c.f. serde string/struct example https://serde.rs/string-or-struct.html
+*** TODO GraphQL: extract GPS location from Exif of images
+**** add a new ~gps~ field to ~Asset~ that is populated only on demand (for efficiency)
+**** use the =kamadak-exif= crate to read the =GPS= fields
+*** TODO utilize a service or database to convert GPS to ~city~ and ~region~
+*** TODO add GraphQL mutation to scan all assets and update city/region if possible
+*** TODO update =all_locations= index to emit keys for ~city~ and ~region~
+*** TODO show tiny map of where photo was taken on details page
+*** DONE add GraphQL query to scan all assets to report available information
+*** TODO find out if videos have location data (=mp4= crate might help)
+**** Preview.app will display location information for videos
+*** existing asset analysis results
+| property            | count |
+|---------------------+-------|
+| totalAssets         | 11132 |
+| missingFiles        |     5 |
+| isImage             | 10637 |
+| hasExifData         | 10451 |
+| hasGpsCoords        |  2204 |
+| hasOriginalDatetime | 10127 |
+| hasOriginalTimezone |   876 |
 *** available map services
 **** [[https://cloud.google.com/maps-platform/][Google Maps]]
 - customer uses their own API key, sets in preferences
@@ -50,6 +71,13 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** new version will get a new unique identifier and thereby URL
 *** use case will move previous identity into a new field to track old versions
 *** web server to serve temporary asset via url
+** [#C] Read timezone info from Exif tags when displaying asset details
+*** everything is assuming that the date/time is UTC, which is almost always wrong
+*** Exif field is named =OffsetTimeOriginal= in ~primary~
+*** expose as ~timezone~ field of ~Asset~ only on demand (for efficiency)
+*** if the original timezone is available, then surely the original datatime was also available
+*** otherwise, the ~datetime~ of the asset is something else and not ~original~ so timezone should be =null=
+*** frontend should use ~timezone~ value (if available) to show correct time in asset details
 ** Gallery improvements
 *** add date order button on gallery (ascending/descending)
 **** the GraphQL operation supports sorting, should use it for something
@@ -147,6 +175,7 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 ***** the "dropped" pages would be changed to consist of placeholders to free memory
 **** using carousel style navigation arrows?
 *** asset detail page
+**** format byte size using locale-specific number formatting
 **** display the date and caption prominently
 **** display the other details using a smaller font
 **** display select information from EXIF metadata (e.g. camera)
@@ -215,8 +244,8 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 **** selecting multiple tags/locations offers option to remove from all assets
 ** Bulk edit
 *** need to set the custom date on many assets at once
-*** able to set an ~address~ for assets whose location ~label~ matches a query
-**** e.g. set address to 5011 Rahlves Drive if label equals ~rahlves~ or whatever
+*** able to set ~city~ and ~region~ for assets whose location ~label~ matches a query
+**** only modify the record if city/region is not already defined
 *** Short term solution akin to perkeep/photoprism web interface
 **** hover over thumbnail, shows checkbox in the corner
 **** click on the checkbox to select the asset
@@ -327,7 +356,7 @@ include it in the database records.
 **** image crate supports AVIF but cannot read HEIC files because they lack AVIF "branding"
 ***** unclear where the error is coming from, but ultimately cannot read HEIC files at all
 *** Reference
-**** EXIF: https://www.media.mit.edu/pia/Research/deepview/exif.html
+**** EXIF: https://www.media.mit.edu/pia/Research/deepview/exif.html (20 years out of date)
 ** Machine learning
 *** TensorFlow Hub: https://tfhub.dev
 *** https://developers.google.com/machine-learning/crash-course/
@@ -947,5 +976,12 @@ include it in the database records.
 - Search is always case insensitive
 ** Date/Time values
 - Everything is treated as UTC
-- EXIF data does not contain timezone information after all
+- EXIF data may contain timezone data depending on version
 - [[http://www.unicode.org/reports/tr35/tr35-43/tr35-dates.html#Date_Format_Patterns][Date_Format_Patterns]]
+* Resources
+** File formats
+*** Exif
+**** c.f. https://www.cipa.jp/
+** Location
+*** c.f. https://github.com/google/open-location-code/wiki/Evaluation-of-Location-Encoding-Systems
+*** c.f. https://www.osgeo.org for some information, resources

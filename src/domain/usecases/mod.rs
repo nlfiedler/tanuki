@@ -10,6 +10,7 @@ use std::io;
 use std::path::Path;
 use std::str;
 
+pub mod analyze;
 pub mod checksum;
 pub mod count;
 pub mod diagnose;
@@ -474,6 +475,34 @@ mod tests {
         assert_eq!(actual.month(), 8);
         assert_eq!(actual.day(), 17);
     }
+
+    // #[test]
+    // fn test_get_gps_coords() {
+    //     for path in &["tests/fixtures/IMG_0385.JPG"] {
+    //         let file = std::fs::File::open(path).unwrap();
+    //         let mut bufreader = std::io::BufReader::new(&file);
+    //         let exifreader = exif::Reader::new();
+    //         let exif = exifreader.read_from_container(&mut bufreader).unwrap();
+    //         for f in exif.fields() {
+    //             println!(
+    //                 "{} :: {} :: {}",
+    //                 f.tag,
+    //                 f.ifd_num,
+    //                 f.display_value() // f.display_value().with_unit(&exif)
+    //             );
+    //         }
+    //     }
+    //     //
+    //     // DateTimeOriginal :: primary :: 2024-02-09 14:11:16
+    //     // OffsetTimeOriginal :: primary :: "-08:00"
+    //     //
+    //     // (no GPSVersionID on this image)
+    //     // GPSLatitudeRef :: primary :: N
+    //     // GPSLatitude :: primary :: 37 deg 42 min 31.93 sec
+    //     // GPSLongitudeRef :: primary :: W
+    //     // GPSLongitude :: primary :: 122 deg 3 min 47.72 sec
+    //     //
+    // }
 
     #[test]
     fn test_infer_media_type() {

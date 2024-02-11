@@ -4,6 +4,7 @@
 use crate::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl};
 use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, SearchResult};
+use crate::domain::usecases::analyze::Counts;
 use crate::domain::usecases::diagnose::Diagnosis;
 use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
@@ -360,6 +361,49 @@ impl Diagnosis {
     }
 }
 
+#[juniper::graphql_object(description = "`Counts` is returned from the `analyze` query.")]
+impl Counts {
+    /// Total number of assets in the database.
+    fn total_assets(&self) -> i32 {
+        self.total_assets.try_into().unwrap_or(-1)
+    }
+
+    /// Number of assets for which the file is missing.
+    fn missing_files(&self) -> i32 {
+        self.missing_files.try_into().unwrap_or(-1)
+    }
+
+    /// Number of assets that represent an image.
+    fn is_image(&self) -> i32 {
+        self.is_image.try_into().unwrap_or(-1)
+    }
+
+    /// Number of assets that represent a video.
+    fn is_video(&self) -> i32 {
+        self.is_video.try_into().unwrap_or(-1)
+    }
+
+    /// Number of images that have Exif data.
+    fn has_exif_data(&self) -> i32 {
+        self.has_exif_data.try_into().unwrap_or(-1)
+    }
+
+    /// Number images that have GPS coordinates.
+    fn has_gps_coords(&self) -> i32 {
+        self.has_gps_coords.try_into().unwrap_or(-1)
+    }
+
+    /// Number images that have an original date/time.
+    fn has_original_datetime(&self) -> i32 {
+        self.has_original_datetime.try_into().unwrap_or(-1)
+    }
+
+    /// Number images that have an original time zone.
+    fn has_original_timezone(&self) -> i32 {
+        self.has_original_timezone.try_into().unwrap_or(-1)
+    }
+}
+
 /// `AssetInput` is used to update the details of an asset.
 #[derive(Clone, GraphQLInputObject)]
 pub struct AssetInput {
@@ -412,6 +456,18 @@ pub struct QueryRoot;
 
 #[juniper::graphql_object(Context = Arc<GraphContext>)]
 impl QueryRoot {
+    /// Perform an analysis of the assets and the data they contain.
+    fn analyze(executor: &Executor) -> FieldResult<Counts> {
+        use crate::domain::usecases::analyze::Analyze;
+        use crate::domain::usecases::{NoParams, UseCase};
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
+        let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
+        let usecase = Analyze::new(Box::new(repo), Box::new(blobs));
+        let counts: Counts = usecase.call(NoParams {})?;
+        Ok(counts)
+    }
+
     /// Retrieve an asset by its unique identifier.
     fn asset(executor: &Executor, id: String) -> FieldResult<Asset> {
         use crate::domain::usecases::fetch::{FetchAsset, Params};
