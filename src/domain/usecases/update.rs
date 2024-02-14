@@ -1,7 +1,7 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::entities::Asset;
+use crate::domain::entities::{Asset, Location};
 use crate::domain::repositories::RecordRepository;
 use anyhow::Error;
 use chrono::prelude::*;
@@ -117,7 +117,7 @@ fn merge_asset_input(asset: &mut Asset, input: AssetInput) {
         // permit clearing the location value
         asset.location = input
             .location
-            .and_then(|v| if v.is_empty() { None } else { Some(v) });
+            .and_then(|v| if v.is_empty() { None } else { Some(Location::new(&v)) });
     }
     // parse the caption to glean location and additional tags
     if let Some(caption) = input.caption {
@@ -129,7 +129,7 @@ fn merge_asset_input(asset: &mut Asset, input: AssetInput) {
         asset.tags.dedup();
         if asset.location.is_none() {
             // do not overwrite current location if it is already set
-            asset.location = result.location;
+            asset.location = result.location.map(|v| Location::new(&v));
         }
     }
     // permit user to update/remove the custom date/time
@@ -349,6 +349,7 @@ mod caption {
 mod tests {
     use super::super::UseCase;
     use super::*;
+    use crate::domain::entities::Location;
     use crate::domain::repositories::MockRecordRepository;
     use anyhow::anyhow;
     use mockall::predicate::*;
@@ -377,7 +378,7 @@ mod tests {
             tags: vec!["kittens".to_owned()],
             import_date: Utc::now(),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -394,7 +395,7 @@ mod tests {
         assert_eq!(asset.tags.len(), 1);
         assert_eq!(asset.tags[0], "kittens");
         assert!(asset.caption.is_none());
-        assert_eq!(asset.location.unwrap(), "hawaii");
+        assert_eq!(asset.location.unwrap().label.unwrap(), "hawaii");
         assert!(asset.user_date.is_none());
         assert_eq!(asset.media_type, "image/jpeg");
     }
@@ -443,7 +444,7 @@ mod tests {
             tags: vec!["cute".to_owned()],
             import_date: Utc::now(),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -465,7 +466,7 @@ mod tests {
         assert!(asset.tags.iter().any(|l| l == "kittens"));
         assert!(asset.tags.iter().any(|l| l == "puppies"));
         assert_eq!(asset.caption.unwrap(), "#kittens and #puppies @paris");
-        assert_eq!(asset.location.unwrap(), "hawaii");
+        assert_eq!(asset.location.unwrap().label.unwrap(), "hawaii");
         assert!(asset.user_date.is_none());
         assert_eq!(asset.media_type, "image/jpeg");
         assert_eq!(asset.filename, "fighting_kittens.jpg");
@@ -482,7 +483,7 @@ mod tests {
             tags: vec!["cute".to_owned()],
             import_date: Utc::now(),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -502,7 +503,7 @@ mod tests {
         assert!(asset.tags.iter().any(|l| l == "kittens"));
         assert!(asset.tags.iter().any(|l| l == "puppies"));
         assert_eq!(asset.caption.unwrap(), "#kittens and #puppies @paris");
-        assert_eq!(asset.location.unwrap(), "hawaii");
+        assert_eq!(asset.location.unwrap().label.unwrap(), "hawaii");
         assert!(asset.user_date.is_none());
         assert_eq!(asset.media_type, "image/jpeg");
         assert_eq!(asset.filename, "fighting_kittens.jpg");
@@ -519,7 +520,7 @@ mod tests {
             tags: vec!["kittens".to_owned(), "puppies".to_owned()],
             import_date: Utc::now(),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -541,7 +542,7 @@ mod tests {
         assert_eq!(asset.tags.len(), 1);
         assert_eq!(asset.tags[0], "kittens");
         assert!(asset.caption.is_none());
-        assert_eq!(asset.location.unwrap(), "hawaii");
+        assert_eq!(asset.location.unwrap().label.unwrap(), "hawaii");
         assert!(asset.user_date.is_none());
         assert_eq!(asset.media_type, "image/jpeg");
     }
@@ -557,7 +558,7 @@ mod tests {
             tags: vec!["cute".to_owned()],
             import_date: Utc::now(),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -577,7 +578,7 @@ mod tests {
         assert!(asset.tags.iter().any(|l| l == "kittens"));
         assert!(asset.tags.iter().any(|l| l == "puppies"));
         assert_eq!(asset.caption.unwrap(), "#kittens fighting #kittens");
-        assert_eq!(asset.location.unwrap(), "hawaii");
+        assert_eq!(asset.location.unwrap().label.unwrap(), "hawaii");
         assert!(asset.user_date.is_none());
         assert_eq!(asset.media_type, "image/jpeg");
     }
@@ -593,7 +594,7 @@ mod tests {
             tags: vec!["kittens".to_owned()],
             import_date: Utc::now(),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -611,7 +612,7 @@ mod tests {
         assert_eq!(asset.tags.len(), 1);
         assert_eq!(asset.tags[0], "kittens");
         assert!(asset.caption.is_none());
-        assert_eq!(asset.location.unwrap(), "hawaii");
+        assert_eq!(asset.location.unwrap().label.unwrap(), "hawaii");
         assert_eq!(asset.user_date.unwrap(), user_date);
         assert_eq!(asset.media_type, "image/jpeg");
     }
@@ -627,7 +628,7 @@ mod tests {
             tags: vec!["kittens".to_owned()],
             import_date: Utc::now(),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: Some(make_date_time(2018, 5, 31, 21, 10, 11)),
             original_date: None,
             dimensions: None,
@@ -644,7 +645,7 @@ mod tests {
         assert_eq!(asset.tags.len(), 1);
         assert_eq!(asset.tags[0], "kittens");
         assert!(asset.caption.is_none());
-        assert_eq!(asset.location.unwrap(), "hawaii");
+        assert_eq!(asset.location.unwrap().label.unwrap(), "hawaii");
         assert!(asset.user_date.is_none());
         assert_eq!(asset.media_type, "image/jpeg");
     }
@@ -660,7 +661,7 @@ mod tests {
             tags: vec!["kittens".to_owned()],
             import_date: Utc::now(),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -690,7 +691,7 @@ mod tests {
             tags: vec!["cute".to_owned()],
             import_date: Utc::now(),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: Some(user_date),
             original_date: None,
             dimensions: None,
@@ -716,7 +717,7 @@ mod tests {
         // assert
         assert!(result.is_ok());
         let asset = result.unwrap();
-        assert_eq!(asset.location.unwrap(), "hawaii");
+        assert_eq!(asset.location.unwrap().label.unwrap(), "hawaii");
         assert_eq!(asset.filename, "kittens_fighting.jpg");
         assert_eq!(asset.tags.len(), 2);
         assert!(asset.tags.iter().any(|l| l == "kittens"));

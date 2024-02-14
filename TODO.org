@@ -13,53 +13,38 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
 ** [#A] Location improvements
-*** location data is stored in images using Exif
-**** Exif tags with =GPS= prefix
-- GPSLatitudeRef (N or S)
-- GPSLatitude (degrees, minutes, seconds)
-- GPSLongitudeRef (E or W)
-- GPSLongitude (degrees, minutes, seconds)
-*** TODO change ~location~ property to a struct
-**** new structure of the ~location~ property
-| Name   | Description              |
-|--------+--------------------------|
-| label  | current string value     |
-| city   | name of city             |
-| region | state, province, country |
-**** region should be two-letter state code, if available, to save space
-**** region may be the country if it has no states or provinces (e.g. Israel, Norway, many others)
-**** no need for country, state/province is already clear, saves space, usually same value for many assets
-**** deserialize: convert plain ~location~ string into the new structure
-**** serialize: if structure only has ~label~ then only write a string for ~location~
-**** c.f. serde string/struct example https://serde.rs/string-or-struct.html
-*** TODO GraphQL: extract GPS location from Exif of images
-**** add a new ~gps~ field to ~Asset~ that is populated only on demand (for efficiency)
-**** use the =kamadak-exif= crate to read the =GPS= fields
-*** TODO utilize a service or database to convert GPS to ~city~ and ~region~
-*** TODO add GraphQL mutation to scan all assets and update city/region if possible
-*** TODO update =all_locations= index to emit keys for ~city~ and ~region~
+*** TODO add mutation to scan all assets and update city/region if possible
+*** TODO add mutation that sets =city= and =region= based on matching location =label=
+**** allow clearing the ~label~ in favor of just ~city~ and ~region~
+*** TODO doc: setting up mapping services
+**** Google Maps
+- create a google cloud account and enable the ~Geocoding API~
+- create a new API key that is restricted to the ~Geocoding API~
+- not any API key will do, it must be enabled for the specific API
+** [#B] Quick rotation fix for certain images
+*** add a simple GraphQL mutation that sets the =Orientation= Exif field
+*** check the =kamadak-exif= project for bugs related to writing Exif data
+*** test modifying Exif data with recent images to check for data loss
+*** frontend will send either a ~rotate CW~ or ~rotate CCW~ request to backend
+*** backend must invalidate the image preview cache for that image
+*** lot of the images from ~jarabacoa~ need rotating
+** More location improvements
+*** TODO GraphQL: change =Asset= definition to have =Location= struct for =location= property
+*** TODO GraphQL: add =gps= field to =Asset= definition for assets with GPS data
+**** populate the ~gps~ field only on demand (for efficiency)
 *** TODO show tiny map of where photo was taken on details page
-*** DONE add GraphQL query to scan all assets to report available information
-*** TODO find out if videos have location data (=mp4= crate might help)
-**** Preview.app will display location information for videos
-*** existing asset analysis results
-| property            | count |
-|---------------------+-------|
-| totalAssets         | 11132 |
-| missingFiles        |     5 |
-| isImage             | 10637 |
-| hasExifData         | 10451 |
-| hasGpsCoords        |  2204 |
-| hasOriginalDatetime | 10127 |
-| hasOriginalTimezone |   876 |
-*** available map services
 **** [[https://cloud.google.com/maps-platform/][Google Maps]]
 - customer uses their own API key, sets in preferences
 - for =testing= account: =AIzaSyAI73udKC3KVk6aIBqOjSqSv6PEQ0qd638=
 **** [[https://mariusandra.github.io/pigeon-maps/][Pigeon Maps]]
 - Uses data from OpenStreetMap, Wikimedia for the tiles
-** [#B] Enable rotating and flipping images from the asset edit page
-*** lot of the images from ~jarabacoa~ need rotating
+*** TODO change query to find intersection of selected locations
+**** currently is finding the union of such locations
+**** need to be able to distinquish between ~Paris, TX~ and ~Paris, France~
+*** TODO modify search page to allow multiple locations
+*** TODO find out if =mp4= crate can read GPS coords from videos
+**** Preview.app will display location information for videos
+** Image rotating and flipping
 *** =image= crate supports several filters (flip, rotate, etc)
 *** need to recognize that the asset is an image (cannot edit anything else)
 *** new graphql query to temporarily apply a set of transformations to an asset
@@ -985,3 +970,18 @@ include it in the database records.
 ** Location
 *** c.f. https://github.com/google/open-location-code/wiki/Evaluation-of-Location-Encoding-Systems
 *** c.f. https://www.osgeo.org for some information, resources
+*** reverse geocoding services
+**** Google requires using their maps and giving attribution
+**** Google and Azure can be quite expensive
+**** many services have very low requests per second (~5)
+**** HERE seems to be pretty good as of Feb 2024
+**** list of providers found so far
+- https://radar.com
+- https://www.here.com/get-started/pricing
+- https://developers.google.com/maps/documentation/geocoding/overview
+- https://www.geoapify.com/reverse-geocoding-api
+- https://docs.mapbox.com/api/search/geocoding/
+- https://developer.apple.com/documentation/applemapsserverapi/reverse_geocode_a_location
+- https://www.maptiler.com/cloud/geocoding/
+- https://docs.aws.amazon.com/location/latest/developerguide/search-place-index-reverse-geocode.html
+- https://learn.microsoft.com/en-us/rest/api/maps/search/get-search-address-reverse

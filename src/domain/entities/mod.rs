@@ -1,9 +1,11 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
+use anyhow::{anyhow, Error};
 use chrono::prelude::*;
 use std::cmp;
 use std::fmt;
+use std::str::FromStr;
 
 /// Width and height in pixels of an image or video asset.
 #[derive(Clone, Debug, PartialEq)]
@@ -28,8 +30,8 @@ pub struct Asset {
     pub import_date: DateTime<Utc>,
     /// Caption provided by the user.
     pub caption: Option<String>,
-    /// User-defined location of the asset.
-    pub location: Option<String>,
+    /// Location information for the asset.
+    pub location: Option<Location>,
     /// User-specified date of the asset.
     pub user_date: Option<DateTime<Utc>>,
     /// Date of the asset as extracted from metadata.
@@ -74,7 +76,10 @@ impl cmp::Eq for Asset {}
 impl Asset {
     /// Construct a new Asset with mostly default fields.
     pub fn new(key: String) -> Self {
-        Asset { key, ..Default::default() }
+        Asset {
+            key,
+            ..Default::default()
+        }
     }
 
     /// Set the checksum field of the asset.
@@ -119,9 +124,9 @@ impl Asset {
         self
     }
 
-    /// Set the location field of the asset.
+    /// Set the label field of the location property of the asset.
     pub fn location(&mut self, location: String) -> &mut Self {
-        self.location = Some(location);
+        self.location = Some(Location::new(&location));
         self
     }
 
@@ -141,6 +146,147 @@ impl Asset {
     pub fn dimensions(&mut self, dimensions: Dimensions) -> &mut Self {
         self.dimensions = Some(dimensions);
         self
+    }
+}
+
+/// Location information regarding an asset.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Location {
+    /// User-defined label describing the location.
+    pub label: Option<String>,
+    /// Name of the city associated with this location.
+    pub city: Option<String>,
+    /// Name of the region (state, province) associated with this location.
+    pub region: Option<String>,
+}
+
+impl Location {
+    /// Construct a Location with the given label.
+    pub fn new(label: &str) -> Self {
+        Self {
+            label: Some(label.to_owned()),
+            city: None,
+            region: None,
+        }
+    }
+
+    /// Construct a Location using all of the parts given.
+    pub fn with_parts(label: &str, city: &str, region: &str) -> Self {
+        Self {
+            label: Some(label.to_owned()),
+            city: Some(city.to_owned()),
+            region: Some(region.to_owned()),
+        }
+    }
+
+    /// Return the list of terms from this location that are appropriate for
+    /// indexing. All values will be lowercased and redundant values elided.
+    pub fn indexable_values(&self) -> Vec<String> {
+        let mut values: Vec<String> = Vec::new();
+        if let Some(label) = self.label.as_ref() {
+            let lower = label.to_lowercase();
+            // split the location label on commas
+            for entry in lower.split(',').map(|e| e.trim()).filter(|e| !e.is_empty()) {
+                values.push(entry.to_owned());
+            }
+        }
+        if let Some(city) = self.city.as_ref() {
+            let city_lower = city.to_lowercase();
+            values.push(city_lower.to_owned());
+            if let Some(region) = self.region.as_ref() {
+                let region_lower = region.to_lowercase();
+                // only emit the region value if it is distinct from the city,
+                // as some locations do not have a meaningful region name
+                if city_lower != region_lower
+                    && !region_lower.starts_with(&city_lower)
+                    && !region_lower.ends_with(&city_lower)
+                {
+                    values.push(region_lower.to_owned());
+                }
+            }
+        }
+        values
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum NorthSouth {
+    North,
+    South,
+}
+
+impl FromStr for NorthSouth {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s == "N" {
+            Ok(NorthSouth::North)
+        } else if s == "S" {
+            Ok(NorthSouth::South)
+        } else {
+            Err(anyhow!("must be N or S"))
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum EastWest {
+    East,
+    West,
+}
+
+impl FromStr for EastWest {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s == "E" {
+            Ok(EastWest::East)
+        } else if s == "W" {
+            Ok(EastWest::West)
+        } else {
+            Err(anyhow!("must be E or W"))
+        }
+    }
+}
+
+/// Angle as measured from a point of reference in degrees, minutes, and seconds.
+#[derive(Clone, Debug)]
+pub struct GeodeticAngle {
+    pub degrees: f64,
+    pub minutes: f64,
+    pub seconds: f64,
+}
+
+/// GlobalPosition represents GPS coordinates as found in images that contain
+/// location information according to the Exif standard.
+#[derive(Clone, Debug)]
+pub struct GlobalPosition {
+    pub latitude_ref: NorthSouth,
+    pub latitude: GeodeticAngle,
+    pub longitude_ref: EastWest,
+    pub longitude: GeodeticAngle,
+}
+
+impl GlobalPosition {
+    /// Convert this global position to a pair of decimal degree values.
+    pub fn as_decimals(&self) -> (f64, f64) {
+        let lat_sign = match self.latitude_ref {
+            NorthSouth::North => 1.0,
+            NorthSouth::South => -1.0,
+        };
+        let lat = lat_sign
+            * (self.latitude.degrees
+                + self.latitude.minutes / 60.0
+                + self.latitude.seconds / 3600.0);
+        let long_sign = match self.longitude_ref {
+            EastWest::East => 1.0,
+            EastWest::West => -1.0,
+        };
+        let long = long_sign
+            * (self.longitude.degrees
+                + self.longitude.minutes / 60.0
+                + self.longitude.seconds / 3600.0);
+        (lat, long)
     }
 }
 
@@ -181,11 +327,16 @@ impl SearchResult {
         } else {
             asset.import_date
         };
+        let location = if let Some(lowkayshun) = asset.location.as_ref() {
+            lowkayshun.label.to_owned()
+        } else {
+            None
+        };
         Self {
             asset_id: asset.key.clone(),
             filename: asset.filename.clone(),
             media_type: asset.media_type.clone(),
-            location: asset.location.clone(),
+            location,
             datetime: date,
         }
     }
@@ -233,7 +384,7 @@ mod tests {
         assert_eq!(asset.tags[1], "dog");
         assert_eq!(asset.import_date.year(), 2018);
         assert_eq!(asset.caption.as_ref().unwrap(), "this is a caption");
-        assert_eq!(asset.location.as_ref().unwrap(), "hawaii");
+        assert_eq!(asset.location.unwrap().label.as_ref().unwrap(), "hawaii");
         assert_eq!(asset.user_date.as_ref().unwrap().year(), 2017);
         assert_eq!(asset.original_date.as_ref().unwrap().year(), 2016);
         assert_eq!(asset.dimensions.as_ref().unwrap().0, 640);
@@ -308,6 +459,99 @@ mod tests {
         };
         let actual = asset1.to_string();
         assert_eq!(actual, "Asset(abc123, img_1234.jpg)");
+    }
+
+    #[test]
+    fn test_eastwest_enum() {
+        let result: Result<EastWest, Error> = FromStr::from_str("E");
+        assert!(result.is_ok());
+        let actual = result.unwrap();
+        assert_eq!(actual, EastWest::East);
+        let result: Result<EastWest, Error> = FromStr::from_str("W");
+        assert!(result.is_ok());
+        let actual = result.unwrap();
+        assert_eq!(actual, EastWest::West);
+        let result: Result<EastWest, Error> = FromStr::from_str("F");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_northsouth_enum() {
+        let result: Result<NorthSouth, Error> = FromStr::from_str("N");
+        assert!(result.is_ok());
+        let actual = result.unwrap();
+        assert_eq!(actual, NorthSouth::North);
+        let result: Result<NorthSouth, Error> = FromStr::from_str("S");
+        assert!(result.is_ok());
+        let actual = result.unwrap();
+        assert_eq!(actual, NorthSouth::South);
+        let result: Result<NorthSouth, Error> = FromStr::from_str("F");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_globalposition_as_decimals() {
+        let gp = GlobalPosition {
+            latitude_ref: NorthSouth::North,
+            latitude: GeodeticAngle {
+                degrees: 34.0,
+                minutes: 37.0,
+                seconds: 17.0,
+            },
+            longitude_ref: EastWest::West,
+            longitude: GeodeticAngle {
+                degrees: 135.0,
+                minutes: 35.0,
+                seconds: 21.0,
+            },
+        };
+        let result = gp.as_decimals();
+        assert_eq!(result.0, 34.62138888888889);
+        assert_eq!(result.1, -135.58916666666667);
+        let gp = GlobalPosition {
+            latitude_ref: NorthSouth::South,
+            latitude: GeodeticAngle {
+                degrees: 34.0,
+                minutes: 37.0,
+                seconds: 17.0,
+            },
+            longitude_ref: EastWest::East,
+            longitude: GeodeticAngle {
+                degrees: 135.0,
+                minutes: 35.0,
+                seconds: 21.0,
+            },
+        };
+        let result = gp.as_decimals();
+        assert_eq!(result.0, -34.62138888888889);
+        assert_eq!(result.1, 135.58916666666667);
+    }
+
+    #[test]
+    fn test_location_indexable_values() {
+        let loc = Location::with_parts("foo, bar", "São Paulo", "State of São Paulo");
+        let parts = loc.indexable_values();
+        assert_eq!(parts.len(), 3);
+        assert_eq!(parts[0], "foo");
+        assert_eq!(parts[1], "bar");
+        assert_eq!(parts[2], "são paulo");
+
+        let loc = Location::with_parts("fubar", "Jerusalem", "Jerusalem District");
+        let parts = loc.indexable_values();
+        assert_eq!(parts.len(), 2);
+        assert_eq!(parts[0], "fubar");
+        assert_eq!(parts[1], "jerusalem");
+
+        let loc = Location {
+            label: Some(",foo,  quux  ,bar,".into()),
+            city: None,
+            region: None,
+        };
+        let parts = loc.indexable_values();
+        assert_eq!(parts.len(), 3);
+        assert_eq!(parts[0], "foo");
+        assert_eq!(parts[1], "quux");
+        assert_eq!(parts[2], "bar");
     }
 
     #[test]

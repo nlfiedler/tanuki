@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 use actix_cors::Cors;
 use actix_files::{Files, NamedFile};
@@ -17,6 +17,7 @@ use std::env;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tanuki::data::repositories::geo::find_location_repository;
 use tanuki::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl};
 use tanuki::data::sources::{EntityDataSource, EntityDataSourceImpl};
 use tanuki::domain::repositories::{BlobRepository, RecordRepository};
@@ -64,6 +65,13 @@ lazy_static! {
 }
 
 async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
+    // prepare resources for the import usecase
+    let source = EntityDataSourceImpl::new(DB_PATH.as_path())
+        .map_err(|e| InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR))?;
+    let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
+    let records = Arc::new(RecordRepositoryImpl::new(ctx));
+    let blobs = Arc::new(BlobRepositoryImpl::new(ASSETS_PATH.as_path()));
+    let geocoder = find_location_repository();
     // iterate over multipart stream
     let mut asset_ids: Vec<String> = Vec::new();
     while let Ok(Some(mut field)) = payload.try_next().await {
@@ -87,12 +95,11 @@ async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
             // filesystem operations are blocking, we have to use threadpool
             f = web::block(move || f.write_all(&data).map(|_| f)).await??;
         }
+        let records_1 = records.clone();
+        let blobs_1 = blobs.clone();
+        let geocoder_1 = geocoder.clone();
         let asset = web::block(move || {
-            let source = EntityDataSourceImpl::new(DB_PATH.as_path())?;
-            let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
-            let records = RecordRepositoryImpl::new(ctx);
-            let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
-            let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs));
+            let usecase = ImportAsset::new(records_1, blobs_1, geocoder_1);
             let params = Params::new(filepath_clone, content_type);
             usecase.call(params)
         })
@@ -258,6 +265,7 @@ async fn main() -> std::io::Result<()> {
 mod tests {
     use super::*;
     use actix_web::{http, test, web, App};
+    use tanuki::data::repositories::geo::DummyLocationRepository;
 
     #[actix_web::test]
     async fn test_index_get() {
@@ -316,7 +324,8 @@ mod tests {
         let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
         let records = RecordRepositoryImpl::new(ctx);
         let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
-        let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs));
+        let geocoder = DummyLocationRepository::new();
+        let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs), Arc::new(geocoder));
         let params = Params::new(filepath, mime::IMAGE_JPEG);
         let asset = usecase.call(params).unwrap();
         let mut app = test::init_service(

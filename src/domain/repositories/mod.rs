@@ -1,9 +1,9 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::entities::{Asset, LabeledCount, SearchResult};
-use chrono::prelude::*;
+use crate::domain::entities::{Asset, GlobalPosition, LabeledCount, Location, SearchResult};
 use anyhow::Error;
+use chrono::prelude::*;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
 use std::path::{Path, PathBuf};
@@ -100,4 +100,13 @@ pub trait BlobRepository {
 
     /// Produce a thumbnail of the desired size for the asset.
     fn thumbnail(&self, width: u32, height: u32, asset_id: &str) -> Result<Vec<u8>, Error>;
+}
+
+///
+/// Repository for finding a location given a set of GPS coordinates.
+///
+#[cfg_attr(test, automock)]
+pub trait LocationRepository: Send + Sync {
+    /// Move the given file into the blob store.
+    fn find_location(&self, coords: &GlobalPosition) -> Result<Location, Error>;
 }

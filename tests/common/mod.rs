@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 use chrono::prelude::*;
 use lazy_static::lazy_static;
@@ -8,7 +8,7 @@ use rusty_ulid::generate_ulid_string;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use tanuki::domain::entities::Asset;
+use tanuki::domain::entities::{Asset, Location};
 
 lazy_static! {
     // Track number of open database instances accessing a particular path. Once
@@ -101,7 +101,7 @@ pub fn build_basic_asset() -> Asset {
         tags: vec!["cat".to_owned(), "dog".to_owned()],
         import_date,
         caption: Some("#cat and #dog @hawaii".to_owned()),
-        location: Some("hawaii".to_owned()),
+        location: Some(Location::new("hawaii")),
         user_date: None,
         original_date: None,
         dimensions: None,
@@ -121,7 +121,7 @@ pub fn build_recent_asset(key: &str) -> Asset {
         tags: vec!["kitten".to_owned(), "puppy".to_owned()],
         import_date,
         caption: Some("#kitten and #puppy @london".to_owned()),
-        location: Some("london".to_owned()),
+        location: Some(Location::new("london")),
         user_date: None,
         original_date: None,
         dimensions: None,
@@ -139,7 +139,7 @@ pub fn build_newborn_asset(key: &str, import_date: DateTime<Utc>) -> Asset {
         tags: vec![],
         import_date,
         caption: None,
-        location: None,
+        location: Default::default(),
         user_date: None,
         original_date: None,
         dimensions: None,

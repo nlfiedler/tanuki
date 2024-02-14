@@ -1,6 +1,7 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
+use super::entities::{EastWest, GeodeticAngle, GlobalPosition, NorthSouth};
 use anyhow::{anyhow, Error};
 use chrono::prelude::*;
 use std::cmp;
@@ -105,6 +106,72 @@ fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTim
             .unwrap_or_else(Utc::now));
     }
     Err(anyhow!("could not read any date"))
+}
+
+/// Read the GPS coordinates from the file, if available.
+fn get_gps_coordinates(media_type: &mime::Mime, filepath: &Path) -> Result<GlobalPosition, Error> {
+    if media_type.type_() == mime::IMAGE {
+        let file = std::fs::File::open(filepath)?;
+        let mut bufreader = std::io::BufReader::new(&file);
+        let exifreader = exif::Reader::new();
+        let exif = exifreader.read_from_container(&mut bufreader)?;
+        let latitude_ref = get_gps_latitude_ref(&exif)?;
+        let latitude = get_gps_angle(&exif, exif::Tag::GPSLatitude)?;
+        let longitude_ref = get_gps_longitude_ref(&exif)?;
+        let longitude = get_gps_angle(&exif, exif::Tag::GPSLongitude)?;
+        return Ok(GlobalPosition {
+            latitude_ref,
+            latitude,
+            longitude_ref,
+            longitude,
+        });
+    }
+    Err(anyhow!("unsupported file type"))
+}
+
+/// Read the GPSLatitudeRef from Exif and return as NorthSouth result.
+fn get_gps_latitude_ref(exif: &exif::Exif) -> Result<NorthSouth, Error> {
+    let field = exif
+        .get_field(exif::Tag::GPSLatitudeRef, exif::In::PRIMARY)
+        .ok_or_else(|| anyhow!("no GPSLatitudeRef field"))?;
+    if let exif::Value::Ascii(data) = &field.value {
+        let value = str::from_utf8(&data[0])?;
+        str::FromStr::from_str(value)
+    } else {
+        Err(anyhow!("invalid GPSLatitudeRef field"))
+    }
+}
+
+/// Read the GPSLongitudeRef from Exif and return as EastWest result.
+fn get_gps_longitude_ref(exif: &exif::Exif) -> Result<EastWest, Error> {
+    let field = exif
+        .get_field(exif::Tag::GPSLongitudeRef, exif::In::PRIMARY)
+        .ok_or_else(|| anyhow!("no GPSLongitudeRef field"))?;
+    if let exif::Value::Ascii(data) = &field.value {
+        let value = str::from_utf8(&data[0])?;
+        str::FromStr::from_str(value)
+    } else {
+        Err(anyhow!("invalid GPSLongitudeRef field"))
+    }
+}
+
+/// Read the given geodetic angle from the given tag.
+fn get_gps_angle(exif: &exif::Exif, tag: exif::Tag) -> Result<GeodeticAngle, Error> {
+    let field = exif
+        .get_field(tag, exif::In::PRIMARY)
+        .ok_or_else(|| anyhow!("requested tag {} not found", tag))?;
+    if let exif::Value::Rational(data) = &field.value {
+        match data.get(..3) {
+            Some(s) => Ok(GeodeticAngle {
+                degrees: s[0].to_f64(),
+                minutes: s[1].to_f64(),
+                seconds: s[2].to_f64(),
+            }),
+            _ => Err(anyhow!("insufficient data in field")),
+        }
+    } else {
+        Err(anyhow!("invalid GPSLongitudeRef field"))
+    }
 }
 
 // Try reading the date from a RIFF-encoded AVI file.
@@ -476,33 +543,20 @@ mod tests {
         assert_eq!(actual.day(), 17);
     }
 
-    // #[test]
-    // fn test_get_gps_coords() {
-    //     for path in &["tests/fixtures/IMG_0385.JPG"] {
-    //         let file = std::fs::File::open(path).unwrap();
-    //         let mut bufreader = std::io::BufReader::new(&file);
-    //         let exifreader = exif::Reader::new();
-    //         let exif = exifreader.read_from_container(&mut bufreader).unwrap();
-    //         for f in exif.fields() {
-    //             println!(
-    //                 "{} :: {} :: {}",
-    //                 f.tag,
-    //                 f.ifd_num,
-    //                 f.display_value() // f.display_value().with_unit(&exif)
-    //             );
-    //         }
-    //     }
-    //     //
-    //     // DateTimeOriginal :: primary :: 2024-02-09 14:11:16
-    //     // OffsetTimeOriginal :: primary :: "-08:00"
-    //     //
-    //     // (no GPSVersionID on this image)
-    //     // GPSLatitudeRef :: primary :: N
-    //     // GPSLatitude :: primary :: 37 deg 42 min 31.93 sec
-    //     // GPSLongitudeRef :: primary :: W
-    //     // GPSLongitude :: primary :: 122 deg 3 min 47.72 sec
-    //     //
-    // }
+    #[test]
+    fn test_get_gps_coords() {
+        let filename = "tests/fixtures/IMG_0385.JPG";
+        let filepath = Path::new(filename);
+        let coords = get_gps_coordinates(&mime::IMAGE_JPEG, filepath).unwrap();
+        assert_eq!(coords.latitude_ref, NorthSouth::North);
+        assert_eq!(coords.latitude.degrees, 37.0);
+        assert_eq!(coords.latitude.minutes, 42.0);
+        assert_eq!(coords.latitude.seconds, 31.93);
+        assert_eq!(coords.longitude_ref, EastWest::West);
+        assert_eq!(coords.longitude.degrees, 122.0);
+        assert_eq!(coords.longitude.minutes, 3.0);
+        assert_eq!(coords.longitude.seconds, 47.72);
+    }
 
     #[test]
     fn test_infer_media_type() {

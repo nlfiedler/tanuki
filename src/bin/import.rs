@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 use anyhow::Error;
 use chrono::prelude::*;
@@ -10,7 +10,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tanuki::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl};
 use tanuki::data::sources::{EntityDataSource, EntityDataSourceImpl};
-use tanuki::domain::entities::{Asset, Dimensions};
+use tanuki::domain::entities::{Asset, Dimensions, Location};
 use tanuki::domain::repositories::{BlobRepository, RecordRepository};
 
 #[derive(Serialize, Deserialize)]
@@ -49,7 +49,7 @@ impl From<ImportAsset> for tanuki::domain::entities::Asset {
             location: val
                 .doc
                 .location
-                .and_then(|v| if v.is_empty() { None } else { Some(v) }),
+                .and_then(|v| if v.is_empty() { None } else { Some(Location::new(&v)) }),
             user_date: val
                 .doc
                 .user_date

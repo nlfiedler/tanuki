@@ -340,20 +340,20 @@ impl Document for Asset {
             let lower = self.media_type.to_lowercase();
             emitter.emit(lower.as_bytes(), Some(&idv))?;
         } else if view == "by_location" {
-            // split the location on commas, enter each value separately
             if let Some(loc) = self.location.as_ref() {
-                // secondary index keys are lowercase
-                let lower = loc.to_lowercase();
-                for entry in lower.split(',').map(|e| e.trim()).filter(|e| !e.is_empty()) {
-                    emitter.emit(entry.as_bytes(), Some(&idv))?;
+                let values = loc.indexable_values();
+                for value in values {
+                    emitter.emit(value.as_bytes(), Some(&idv))?;
                 }
             }
         } else if view == "raw_locations" {
             // location label as entered by the user
             if let Some(loc) = self.location.as_ref() {
-                // secondary index keys are lowercase
-                let lower = loc.to_lowercase();
-                emitter.emit(lower.as_bytes(), Some(&idv))?;
+                if let Some(label) = loc.label.as_ref() {
+                    // secondary index keys are lowercase
+                    let lower = label.to_lowercase();
+                    emitter.emit(lower.as_bytes(), Some(&idv))?;
+                }
             }
         } else if view == "by_year" {
             let year = if let Some(ud) = self.user_date.as_ref() {
@@ -375,11 +375,7 @@ impl Document for Asset {
                 encode_datetime(&self.import_date)
             };
             emitter.emit(&best_date, Some(&idv))?;
-        } else if view == "newborn"
-            && self.tags.is_empty()
-            && self.caption.is_none()
-            && self.location.is_none()
-        {
+        } else if view == "newborn" && self.tags.is_empty() && self.caption.is_none() {
             // use the import date for newborn, not the "best" date
             let import_date = encode_datetime(&self.import_date);
             emitter.emit(&import_date, Some(&idv))?;

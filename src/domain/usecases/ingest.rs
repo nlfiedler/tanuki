@@ -1,8 +1,7 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::repositories::BlobRepository;
-use crate::domain::repositories::RecordRepository;
+use crate::domain::repositories::{BlobRepository, LocationRepository, RecordRepository};
 use crate::domain::usecases::import;
 use crate::domain::usecases::infer_media_type;
 use anyhow::Error;
@@ -17,18 +16,31 @@ use std::sync::Arc;
 pub struct IngestAssets {
     records: Arc<dyn RecordRepository>,
     blobs: Arc<dyn BlobRepository>,
+    geocoder: Arc<dyn LocationRepository>,
 }
 
 impl IngestAssets {
-    pub fn new(records: Arc<dyn RecordRepository>, blobs: Arc<dyn BlobRepository>) -> Self {
-        Self { records, blobs }
+    pub fn new(
+        records: Arc<dyn RecordRepository>,
+        blobs: Arc<dyn BlobRepository>,
+        geocoder: Arc<dyn LocationRepository>,
+    ) -> Self {
+        Self {
+            records,
+            blobs,
+            geocoder,
+        }
     }
 }
 
 impl super::UseCase<usize, Params> for IngestAssets {
     fn call(&self, params: Params) -> Result<usize, Error> {
         // process all of the files in the uploads directory
-        let usecase = import::ImportAsset::new(self.records.clone(), self.blobs.clone());
+        let usecase = import::ImportAsset::new(
+            self.records.clone(),
+            self.blobs.clone(),
+            self.geocoder.clone(),
+        );
         let entries = fs::read_dir(params.uploads_path)?
             .map(|res| res.map(|e| e.path()))
             .collect::<Result<Vec<_>, io::Error>>()?;
@@ -85,6 +97,7 @@ mod tests {
     use super::super::UseCase;
     use super::*;
     use crate::domain::repositories::MockBlobRepository;
+    use crate::domain::repositories::MockLocationRepository;
     use crate::domain::repositories::MockRecordRepository;
     use mockall::predicate::*;
     use std::path::Path;
@@ -134,8 +147,12 @@ mod tests {
                 always(),
             )
             .returning(|_, _| Ok(()));
+        let mut geocoder = MockLocationRepository::new();
+        geocoder
+            .expect_find_location()
+            .returning(|_| Ok(Default::default()));
         // act
-        let usecase = IngestAssets::new(Arc::new(records), Arc::new(blobs));
+        let usecase = IngestAssets::new(Arc::new(records), Arc::new(blobs), Arc::new(geocoder));
         let params = Params::new(uploads_path.path().to_owned());
         let result = usecase.call(params);
         // assert

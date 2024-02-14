@@ -1,6 +1,7 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
+use crate::data::repositories::geo::find_location_repository;
 use crate::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl};
 use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, SearchResult};
@@ -155,7 +156,11 @@ impl Asset {
 
     /// Location information for the asset.
     fn location(&self) -> Option<String> {
-        self.location.clone()
+        if let Some(loc) = self.location.as_ref() {
+            loc.label.clone()
+        } else {
+            None
+        }
     }
 }
 
@@ -664,7 +669,8 @@ impl MutationRoot {
         let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
-        let usecase = IngestAssets::new(Arc::new(repo), Arc::new(blobs));
+        let geocoder = find_location_repository();
+        let usecase = IngestAssets::new(Arc::new(repo), Arc::new(blobs), geocoder);
         let path = std::env::var("UPLOAD_PATH").unwrap_or_else(|_| "tmp/uploads".to_owned());
         let uploads_path = PathBuf::from(path);
         let params = Params::new(uploads_path);
@@ -729,6 +735,7 @@ pub fn create_schema() -> Schema {
 mod tests {
     use super::*;
     use crate::data::sources::MockEntityDataSource;
+    use crate::domain::entities::Location;
     use anyhow::anyhow;
     use juniper::{InputValue, ToInputValue, Variables};
     use mockall::predicate::*;
@@ -799,7 +806,7 @@ mod tests {
             tags: vec!["cat".to_owned(), "dog".to_owned()],
             import_date: make_date_time(2018, 5, 31, 21, 10, 11),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -1096,7 +1103,7 @@ mod tests {
             tags: vec!["cat".to_owned(), "dog".to_owned()],
             import_date: make_date_time(2018, 5, 31, 21, 10, 11),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -1935,7 +1942,7 @@ mod tests {
             tags: vec!["cat".to_owned(), "dog".to_owned()],
             import_date: make_date_time(2018, 5, 31, 21, 10, 11),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -2045,7 +2052,7 @@ mod tests {
             tags: vec!["cat".to_owned(), "dog".to_owned()],
             import_date: make_date_time(2018, 5, 31, 21, 10, 11),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -2103,7 +2110,7 @@ mod tests {
             tags: vec!["cat".to_owned(), "dog".to_owned()],
             import_date: make_date_time(2018, 5, 31, 21, 10, 11),
             caption: None,
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             user_date: None,
             original_date: None,
             dimensions: None,
@@ -2117,7 +2124,7 @@ mod tests {
             tags: vec!["cat".to_owned(), "dog".to_owned()],
             import_date: make_date_time(2018, 6, 9, 14, 0, 11),
             caption: None,
-            location: Some("oakland".to_owned()),
+            location: Some(Location::new("oakland")),
             user_date: None,
             original_date: None,
             dimensions: None,

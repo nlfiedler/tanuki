@@ -7,6 +7,7 @@ use chrono::prelude::*;
 use common::DBPath;
 use tanuki::data::sources::EntityDataSource;
 use tanuki::data::sources::EntityDataSourceImpl;
+use tanuki::domain::entities::Location;
 
 #[test]
 fn test_get_put_delete_asset() {
@@ -104,15 +105,15 @@ fn test_all_locations() {
     // multiple locations and occurrences
     let mut asset = common::build_basic_asset();
     asset.key = "single999".to_owned();
-    asset.location = Some("paris, france".to_owned());
+    asset.location = Some(Location::new("paris, france"));
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wonder101".to_owned();
-    asset.location = Some("london".to_owned());
+    asset.location = Some(Location::new("london"));
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "tuesday42".to_owned();
-    asset.location = Some("london".to_owned());
+    asset.location = Some(Location::new("london"));
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_locations().unwrap();
     assert_eq!(actual.len(), 4);
@@ -142,21 +143,23 @@ fn test_raw_locations() {
     // multiple locations and occurrences
     let mut asset = common::build_basic_asset();
     asset.key = "single999".to_owned();
-    asset.location = Some("paris, france".to_owned());
+    asset.location = Some(Location::new("paris, france"));
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wonder101".to_owned();
-    asset.location = Some("london".to_owned());
+    asset.location = Some(Location::new("london"));
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "tuesday42".to_owned();
-    asset.location = Some("london".to_owned());
+    asset.location = Some(Location::new("london"));
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.raw_locations().unwrap();
     assert_eq!(actual.len(), 3);
     assert!(actual.iter().any(|l| l.label == "hawaii" && l.count == 1));
     assert!(actual.iter().any(|l| l.label == "london" && l.count == 2));
-    assert!(actual.iter().any(|l| l.label == "paris, france" && l.count == 1));
+    assert!(actual
+        .iter()
+        .any(|l| l.label == "paris, france" && l.count == 1));
 }
 
 fn make_date_time(
@@ -503,32 +506,37 @@ fn test_query_by_locations() {
     let mut asset = common::build_basic_asset();
     asset.key = "monday6".to_owned();
     asset.filename = "img_2345.jpg".to_owned();
-    asset.location = Some("Paris, France".to_owned());
+    asset.location = Some(Location::new("Paris, France"));
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "monday8".to_owned();
     asset.filename = "img_6543.jpg".to_owned();
-    asset.location = Some("Nice, France".to_owned());
+    asset.location = Some(Location::new("Nice, France"));
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "tuesday7".to_owned();
     asset.filename = "img_3456.jpg".to_owned();
-    asset.location = Some("london".to_owned());
+    asset.location = Some(Location::new("london"));
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wednesday8".to_owned();
     asset.filename = "img_4567.jpg".to_owned();
-    asset.location = Some("seoul".to_owned());
+    asset.location = Some(Location::new("seoul"));
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "thursday9".to_owned();
     asset.filename = "img_5678.jpg".to_owned();
-    asset.location = Some("hawaii".to_owned());
+    asset.location = Some(Location::new("hawaii"));
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "friday10".to_owned();
     asset.filename = "img_6789.jpg".to_owned();
-    asset.location = Some("paris".to_owned());
+    asset.location = Some(Location::new("paris"));
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
+    asset.key = "friday11".to_owned();
+    asset.filename = "img_6879.jpg".to_owned();
+    asset.location = Some(Location::with_parts("city center", "portland", "OR"));
     datasource.put_asset(&asset).unwrap();
 
     // searching with one location
@@ -553,6 +561,12 @@ fn test_query_by_locations() {
     assert_eq!(actual.len(), 2);
     assert!(actual.iter().any(|l| l.filename == "img_6543.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_2345.jpg"));
+
+    // searching location term from region field
+    let locations = vec!["or".to_owned()];
+    let actual = datasource.query_by_locations(locations).unwrap();
+    assert_eq!(actual.len(), 1);
+    assert!(actual.iter().any(|l| l.filename == "img_6879.jpg"));
 }
 
 #[test]

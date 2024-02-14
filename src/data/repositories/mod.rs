@@ -14,6 +14,8 @@ use std::path::{Path, PathBuf};
 use std::str;
 use std::sync::{Arc, Mutex};
 
+pub mod geo;
+
 lazy_static! {
     // Cache of String keys to Vec<u8> image data for caching thumbnails.
     //

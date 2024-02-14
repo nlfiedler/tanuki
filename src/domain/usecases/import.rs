@@ -2,12 +2,14 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::{Asset, Dimensions};
-use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
-use crate::domain::usecases::{checksum_file, get_original_date, infer_media_type};
-use chrono::prelude::*;
+use crate::domain::repositories::{BlobRepository, LocationRepository};
+use crate::domain::usecases::{
+    checksum_file, get_gps_coordinates, get_original_date, infer_media_type,
+};
 use anyhow::{anyhow, Error};
-use base64::{Engine as _, engine::general_purpose};
+use base64::{engine::general_purpose, Engine as _};
+use chrono::prelude::*;
 use rusty_ulid::generate_ulid_string;
 use std::cmp;
 use std::ffi::OsStr;
@@ -18,11 +20,20 @@ use std::sync::Arc;
 pub struct ImportAsset {
     records: Arc<dyn RecordRepository>,
     blobs: Arc<dyn BlobRepository>,
+    geocoder: Arc<dyn LocationRepository>,
 }
 
 impl ImportAsset {
-    pub fn new(records: Arc<dyn RecordRepository>, blobs: Arc<dyn BlobRepository>) -> Self {
-        Self { records, blobs }
+    pub fn new(
+        records: Arc<dyn RecordRepository>,
+        blobs: Arc<dyn BlobRepository>,
+        geocoder: Arc<dyn LocationRepository>,
+    ) -> Self {
+        Self {
+            records,
+            blobs,
+            geocoder,
+        }
     }
 
     // Create an asset entity based on available information.
@@ -32,6 +43,13 @@ impl ImportAsset {
         let filename = get_file_name(&params.filepath);
         let metadata = std::fs::metadata(&params.filepath)?;
         let byte_length = metadata.len();
+        let location =
+            if let Some(coords) = get_gps_coordinates(&params.media_type, &params.filepath).ok() {
+                self.geocoder.find_location(&coords).ok()
+            } else {
+                None
+            };
+        // let location = get_location(&params.media_type, &params.filepath).ok();
         let original_date = get_original_date(&params.media_type, &params.filepath).ok();
         let dimensions = get_dimensions(&params.media_type, &params.filepath).ok();
         let asset = Asset {
@@ -43,7 +61,7 @@ impl ImportAsset {
             tags: vec![],
             import_date: now,
             caption: None,
-            location: None,
+            location,
             user_date: None,
             original_date,
             dimensions,
@@ -173,7 +191,9 @@ fn get_dimensions(media_type: &mime::Mime, filepath: &Path) -> Result<Dimensions
 mod tests {
     use super::super::UseCase;
     use super::*;
+    use crate::domain::entities::Location;
     use crate::domain::repositories::MockBlobRepository;
+    use crate::domain::repositories::MockLocationRepository;
     use crate::domain::repositories::MockRecordRepository;
     use mockall::predicate::*;
 
@@ -230,8 +250,10 @@ mod tests {
     #[test]
     fn test_import_asset_new() {
         // arrange
-        let digest = "sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07";
-        let infile = PathBuf::from("./tests/fixtures/dcp_1069.jpg");
+        let digest = "sha256-d020066fd41970c2eebc51b1e712a500de4966cef0daf4890dc238d80cbaebb2";
+        // use an asset that has GPS coordinates in the Exif data to trigger the
+        // geocoder and result in a meaningful location value
+        let infile = PathBuf::from("./tests/fixtures/IMG_0385.JPG");
         let infile_copy = infile.clone();
         let mut records = MockRecordRepository::new();
         records
@@ -244,8 +266,16 @@ mod tests {
             .expect_store_blob()
             .with(function(move |p| p == infile_copy.as_path()), always())
             .returning(|_, _| Ok(()));
+        let mut geocoder = MockLocationRepository::new();
+        geocoder.expect_find_location().returning(|_| {
+            Ok(Location {
+                label: None,
+                city: Some("Yao".into()),
+                region: Some("Osaka".into()),
+            })
+        });
         // act
-        let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs));
+        let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs), Arc::new(geocoder));
         let media_type = mime::IMAGE_JPEG;
         let params = Params::new(infile, media_type);
         let result = usecase.call(params);
@@ -253,15 +283,19 @@ mod tests {
         assert!(result.is_ok());
         let asset = result.unwrap();
         assert_eq!(asset.checksum, digest);
-        assert_eq!(asset.filename, "dcp_1069.jpg");
-        assert_eq!(asset.byte_length, 80977);
+        assert_eq!(asset.filename, "IMG_0385.JPG");
+        assert_eq!(asset.byte_length, 59908);
         assert_eq!(asset.media_type, "image/jpeg");
         assert!(asset.tags.is_empty());
+        assert!(asset.location.is_some());
+        let location = asset.location.unwrap();
+        assert_eq!(location.city.as_ref().unwrap(), "Yao");
+        assert_eq!(location.region.as_ref().unwrap(), "Osaka");
         assert!(asset.original_date.is_some(), "expected an original date");
-        assert_eq!(asset.original_date.unwrap().year(), 2003);
+        assert_eq!(asset.original_date.unwrap().year(), 2024);
         assert!(asset.dimensions.is_some(), "expected image dimensions");
-        assert_eq!(asset.dimensions.as_ref().unwrap().0, 440);
-        assert_eq!(asset.dimensions.as_ref().unwrap().1, 292);
+        assert_eq!(asset.dimensions.as_ref().unwrap().0, 302);
+        assert_eq!(asset.dimensions.as_ref().unwrap().1, 403);
     }
 
     #[test]
@@ -294,8 +328,12 @@ mod tests {
             .expect_store_blob()
             .with(function(move |p| p == infile_copy.as_path()), always())
             .returning(|_, _| Ok(()));
+        let mut geocoder = MockLocationRepository::new();
+        geocoder
+            .expect_find_location()
+            .returning(|_| Ok(Default::default()));
         // act
-        let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs));
+        let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs), Arc::new(geocoder));
         let media_type = mime::IMAGE_JPEG;
         let params = Params::new(infile, media_type);
         let result = usecase.call(params);
