@@ -722,6 +722,19 @@ impl MutationRoot {
         }
         Ok(assets.len() as i32)
     }
+
+    /// Attempt to fill in the city and region for assets that have GPS coordinates.
+    fn geocode(executor: &Executor) -> FieldResult<i32> {
+        use crate::domain::usecases::geocode::Geocoder;
+        use crate::domain::usecases::{NoParams, UseCase};
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
+        let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
+        let geocoder = find_location_repository();
+        let usecase = Geocoder::new(Box::new(repo), Box::new(blobs), geocoder);
+        let results: u64 = usecase.call(NoParams {})?;
+        Ok(results as i32)
+    }
 }
 
 pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<Arc<GraphContext>>>;

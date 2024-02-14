@@ -13,7 +13,6 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
 ** [#A] Location improvements
-*** TODO add mutation to scan all assets and update city/region if possible
 *** TODO add mutation that sets =city= and =region= based on matching location =label=
 **** allow clearing the ~label~ in favor of just ~city~ and ~region~
 *** TODO doc: setting up mapping services

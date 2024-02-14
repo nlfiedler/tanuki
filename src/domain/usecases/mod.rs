@@ -16,6 +16,7 @@ pub mod checksum;
 pub mod count;
 pub mod diagnose;
 pub mod fetch;
+pub mod geocode;
 pub mod import;
 pub mod ingest;
 pub mod location;
