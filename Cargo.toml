@@ -30,11 +30,11 @@ log = "0.4.8"
 lru = "0.12.1"
 mime = "0.3.17"
 mime_guess = "2.0.3"
-mokuroku = { version = "3.3.0", features = ["anyhow", "serde_cbor"] }
+mokuroku = { version = "3.5.0", features = ["anyhow", "serde_cbor"] }
 mp4 = "0.13.0"
 reqwest = "0.11.24"
 riff = "2.0.0"
-rocksdb = "0.21.0"
+rocksdb = "0.22.0"
 rusty_ulid = "2.0.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_cbor = "0.11.1"
