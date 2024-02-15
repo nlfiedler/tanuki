@@ -735,6 +735,24 @@ impl MutationRoot {
         let results: u64 = usecase.call(NoParams {})?;
         Ok(results as i32)
     }
+
+    /// Fill in city and region for locations whose label matches a query.
+    fn relocate(
+        executor: &Executor,
+        query: String,
+        city: String,
+        region: String,
+        clear_label: Option<bool>,
+    ) -> FieldResult<i32> {
+        use crate::domain::usecases::relocate::{Params, Relocate};
+        use crate::domain::usecases::UseCase;
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
+        let usecase = Relocate::new(Box::new(repo));
+        let params = Params::new(query, city, region, clear_label.unwrap_or(false));
+        let results: u64 = usecase.call(params)?;
+        Ok(results as i32)
+    }
 }
 
 pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<Arc<GraphContext>>>;

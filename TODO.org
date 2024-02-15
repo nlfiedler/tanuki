@@ -13,8 +13,6 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
 ** [#A] Location improvements
-*** TODO add mutation that sets =city= and =region= based on matching location =label=
-**** allow clearing the ~label~ in favor of just ~city~ and ~region~
 *** TODO doc: setting up mapping services
 **** Google Maps
 - create a google cloud account and enable the ~Geocoding API~
@@ -28,7 +26,10 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** backend must invalidate the image preview cache for that image
 *** lot of the images from ~jarabacoa~ need rotating
 ** More location improvements
+*** TODO unable to type a space in ~Locations~ field in webui (e.g. ~la vega province~)
 *** TODO GraphQL: change =Asset= definition to have =Location= struct for =location= property
+*** TODO webui: show location city/region and label
+*** TODO webui: asset edit page to include label, city, and region fields
 *** TODO GraphQL: add =gps= field to =Asset= definition for assets with GPS data
 **** populate the ~gps~ field only on demand (for efficiency)
 *** TODO show tiny map of where photo was taken on details page

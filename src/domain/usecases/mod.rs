@@ -21,6 +21,7 @@ pub mod import;
 pub mod ingest;
 pub mod location;
 pub mod recent;
+pub mod relocate;
 pub mod search;
 pub mod tags;
 pub mod types;
