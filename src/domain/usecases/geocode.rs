@@ -56,24 +56,25 @@ impl super::UseCase<u64, NoParams> for Geocoder {
                 if let Ok(blob_path) = self.blobs.blob_path(&asset_id) {
                     if let Some(coords) = get_gps_coordinates(&media_type, &blob_path).ok() {
                         if let Some(found_loc) = self.geocoder.find_location(&coords).ok() {
-                            if let Some(old_loc) = asset.location.as_ref() {
-                                // if the asset's existing location is lacking
-                                // both city and region, then produce a new
-                                // location that combines everything
-                                if old_loc.city.is_none() && old_loc.region.is_none() {
-                                    asset.location = Some(Location {
-                                        label: old_loc.label.clone(),
-                                        city: found_loc.city,
-                                        region: found_loc.region,
-                                    });
+                            // ensure the geocoder returned a meaningful result
+                            if found_loc.city.is_some() || found_loc.region.is_some() {
+                                if let Some(old_loc) = asset.location.as_ref() {
+                                    // fill in city/region as appropriate
+                                    if old_loc.city.is_none() && old_loc.region.is_none() {
+                                        asset.location = Some(Location {
+                                            label: old_loc.label.clone(),
+                                            city: found_loc.city,
+                                            region: found_loc.region,
+                                        });
+                                        self.records.put_asset(&asset)?;
+                                        fixed_count += 1;
+                                    }
+                                } else {
+                                    // the asset has no location at all, fix it
+                                    asset.location = Some(found_loc);
                                     self.records.put_asset(&asset)?;
                                     fixed_count += 1;
                                 }
-                            } else {
-                                // the asset has no location at all, fix it
-                                asset.location = Some(found_loc);
-                                self.records.put_asset(&asset)?;
-                                fixed_count += 1;
                             }
                         }
                     }
@@ -100,6 +101,57 @@ mod tests {
     use chrono::prelude::*;
     use mockall::predicate::*;
     use std::path::PathBuf;
+
+    #[test]
+    fn test_geocode_asset_location_unavailable() {
+        // arrange
+        let asset1_id = "dGVzdHMvZml4dHVyZXMvSU1HXzAzODUuSlBH";
+        let digest1 = "sha256-d020066fd41970c2eebc51b1e712a500de4966cef0daf4890dc238d80cbaebb2";
+        let mut records = MockRecordRepository::new();
+        records
+            .expect_all_assets()
+            .returning(move || Ok(vec![asset1_id.to_owned()]));
+        records
+            .expect_get_asset()
+            .with(eq(asset1_id))
+            .returning(move |_| {
+                Ok(Asset {
+                    key: asset1_id.to_owned(),
+                    checksum: digest1.to_owned(),
+                    filename: "IMG_0385.JPG".to_owned(),
+                    byte_length: 59908,
+                    media_type: "image/jpeg".to_owned(),
+                    tags: vec!["coaster".to_owned()],
+                    import_date: Utc::now(),
+                    caption: None,
+                    location: None,
+                    user_date: None,
+                    original_date: None,
+                    dimensions: None,
+                })
+            });
+        let mut blobs = MockBlobRepository::new();
+        blobs
+            .expect_blob_path()
+            .with(eq(asset1_id))
+            .returning(|_| Ok(PathBuf::from("tests/fixtures/IMG_0385.JPG")));
+        let mut geocoder = MockLocationRepository::new();
+        geocoder.expect_find_location().returning(|_| {
+            Ok(Location {
+                label: None,
+                city: None,
+                region: None,
+            })
+        });
+        // act
+        let usecase = Geocoder::new(Box::new(records), Box::new(blobs), Arc::new(geocoder));
+        let params = NoParams {};
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let count = result.unwrap();
+        assert_eq!(count, 0);
+    }
 
     #[test]
     fn test_geocode_asset_without_location() {
