@@ -3,6 +3,7 @@
 //
 use anyhow::{anyhow, Error};
 use chrono::prelude::*;
+use std::collections::HashSet;
 use std::cmp;
 use std::fmt;
 use std::str::FromStr;
@@ -181,18 +182,18 @@ impl Location {
 
     /// Return the list of terms from this location that are appropriate for
     /// indexing. All values will be lowercased and redundant values elided.
-    pub fn indexable_values(&self) -> Vec<String> {
-        let mut values: Vec<String> = Vec::new();
+    pub fn indexable_values(&self) -> HashSet<String> {
+        let mut values: HashSet<String> = HashSet::new();
         if let Some(label) = self.label.as_ref() {
             let lower = label.to_lowercase();
             // split the location label on commas
             for entry in lower.split(',').map(|e| e.trim()).filter(|e| !e.is_empty()) {
-                values.push(entry.to_owned());
+                values.insert(entry.to_owned());
             }
         }
         if let Some(city) = self.city.as_ref() {
             let city_lower = city.to_lowercase();
-            values.push(city_lower.to_owned());
+            values.insert(city_lower.to_owned());
             if let Some(region) = self.region.as_ref() {
                 let region_lower = region.to_lowercase();
                 // only emit the region value if it is distinct from the city,
@@ -201,7 +202,7 @@ impl Location {
                     && !region_lower.starts_with(&city_lower)
                     && !region_lower.ends_with(&city_lower)
                 {
-                    values.push(region_lower.to_owned());
+                    values.insert(region_lower.to_owned());
                 }
             }
         }
@@ -532,15 +533,21 @@ mod tests {
         let loc = Location::with_parts("foo, bar", "São Paulo", "State of São Paulo");
         let parts = loc.indexable_values();
         assert_eq!(parts.len(), 3);
-        assert_eq!(parts[0], "foo");
-        assert_eq!(parts[1], "bar");
-        assert_eq!(parts[2], "são paulo");
+        assert!(parts.contains("foo"));
+        assert!(parts.contains("bar"));
+        assert!(parts.contains("são paulo"));
 
         let loc = Location::with_parts("fubar", "Jerusalem", "Jerusalem District");
         let parts = loc.indexable_values();
         assert_eq!(parts.len(), 2);
-        assert_eq!(parts[0], "fubar");
-        assert_eq!(parts[1], "jerusalem");
+        assert!(parts.contains("fubar"));
+        assert!(parts.contains("jerusalem"));
+
+        let loc = Location::with_parts("bodega bay", "Bodega Bay", "California");
+        let parts = loc.indexable_values();
+        assert_eq!(parts.len(), 2);
+        assert!(parts.contains("bodega bay"));
+        assert!(parts.contains("california"));
 
         let loc = Location {
             label: Some(",foo,  quux  ,bar,".into()),
@@ -549,9 +556,9 @@ mod tests {
         };
         let parts = loc.indexable_values();
         assert_eq!(parts.len(), 3);
-        assert_eq!(parts[0], "foo");
-        assert_eq!(parts[1], "quux");
-        assert_eq!(parts[2], "bar");
+        assert!(parts.contains("foo"));
+        assert!(parts.contains("quux"));
+        assert!(parts.contains("bar"));
     }
 
     #[test]
