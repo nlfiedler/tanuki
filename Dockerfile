@@ -45,7 +45,11 @@ RUN fvm flutter build web
 #
 # build the final image
 #
+# ensure SSL and CA certificates are available for HTTPS client
+#
 FROM debian:latest
+RUN apt-get -q update && \
+    apt-get -q -y install ca-certificates
 WORKDIR /tanuki
 COPY --from=builder /build/target/release/tanuki .
 COPY --from=healthy /health/target/release/healthcheck .
