@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -27,11 +27,11 @@ void main() {
       id: 'asset123',
       input: AssetInput(
         tags: const ['clowns', 'snakes'],
-        caption: Some('#snakes and #clowns are in my @batcave'),
-        location: Some('batcave'),
+        caption: const Some('#snakes and #clowns are in my @batcave'),
+        location: Some(AssetLocation.from('batcave')),
         datetime: Some(DateTime.utc(2003, 8, 30)),
-        mimetype: Some('image/jpeg'),
-        filename: Some('img_1234.jpg'),
+        mimetype: const Some('image/jpeg'),
+        filename: const Some('img_1234.jpg'),
       ),
     );
     registerFallbackValue(dummy);
@@ -50,8 +50,12 @@ void main() {
         mimetype: 'image/jpeg',
         tags: const ['cat', 'mouse'],
         userdate: const None(),
-        caption: Some('#cat @outdoors #mouse'),
-        location: Some('outdoors'),
+        caption: const Some('#cat @outdoors #mouse'),
+        location: const Some(AssetLocation(
+          label: Some('outdoors'),
+          city: None(),
+          region: None(),
+        )),
       );
       final Result<Asset, Failure> expected = Ok(expectedAsset);
       when(() => mockEntityRepository.updateAsset(any()))
@@ -61,11 +65,11 @@ void main() {
         id: 'asset123',
         input: AssetInput(
           tags: const ['clowns', 'snakes'],
-          caption: Some('#snakes and #clowns are in my @batcave'),
-          location: Some('batcave'),
+          caption: const Some('#snakes and #clowns are in my @batcave'),
+          location: Some(AssetLocation.from('batcave')),
           datetime: Some(DateTime.utc(2003, 8, 30)),
-          mimetype: Some('image/jpeg'),
-          filename: Some('img_1234.jpg'),
+          mimetype: const Some('image/jpeg'),
+          filename: const Some('img_1234.jpg'),
         ),
       );
       final params = Params(asset: inputId);

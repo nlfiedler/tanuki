@@ -1,6 +1,7 @@
 * Action Items
 ** clean up stale records
 *** add mutation to remove records based on asset identifier
+*** there is a =.psd= file in the newborn set
 *** records to remove (bad avi, aae files)
 #+begin_src
 MjAxNC8xMi8yMS8wMDE1LzAxY2UxcWQ3cWVwMndiMWY4OWduNW1kNHpqLmF2aS5tb3Y=
@@ -12,24 +13,19 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 ** verify responsiveness is looking good
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
-** [#A] Location improvements
-*** TODO doc: setting up mapping services
-**** Google Maps
-- create a google cloud account and enable the ~Geocoding API~
-- create a new API key that is restricted to the ~Geocoding API~
-- not any API key will do, it must be enabled for the specific API
-** [#B] Quick rotation fix for certain images
+** [#B] why do the search results include a ~location~ value?
+*** filename and date/time are displayed in the ui
+*** media type might be used for something?
+*** but what is location used for?
+** [#C] Quick rotation fix for certain images
 *** add a simple GraphQL mutation that sets the =Orientation= Exif field
 *** check the =kamadak-exif= project for bugs related to writing Exif data
 *** test modifying Exif data with recent images to check for data loss
-*** frontend will send either a ~rotate CW~ or ~rotate CCW~ request to backend
+*** webui: offer widget to choose which of the 4 orientations to use ^ < > v
 *** backend must invalidate the image preview cache for that image
-*** lot of the images from ~jarabacoa~ need rotating
+*** lot of the images from ~jarabacoa~, wedding, hong kong, need rotating
 ** More location improvements
 *** TODO unable to type a space in ~Locations~ field in webui (e.g. ~la vega province~)
-*** TODO GraphQL: change =Asset= definition to have =Location= struct for =location= property
-*** TODO webui: show location city/region and label
-*** TODO webui: asset edit page to include label, city, and region fields
 *** TODO GraphQL: add =gps= field to =Asset= definition for assets with GPS data
 **** populate the ~gps~ field only on demand (for efficiency)
 *** TODO show tiny map of where photo was taken on details page
@@ -44,19 +40,12 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** TODO modify search page to allow multiple locations
 *** TODO find out if =mp4= crate can read GPS coords from videos
 **** Preview.app will display location information for videos
-** Image rotating and flipping
-*** =image= crate supports several filters (flip, rotate, etc)
-*** need to recognize that the asset is an image (cannot edit anything else)
-*** new graphql query to temporarily apply a set of transformations to an asset
-*** new graphql mutation to permanently apply a set of transformations to an asset
-*** repository functions for saving/fetching/clearing temporary assets
-*** temporary changes may be just the preview image size, cached in memory
-*** use case to receive a list of transforms, return url for temporary asset
-*** use case to receive a list of transforms, permanently save a new version of asset
-*** new version will get a new unique identifier and thereby URL
-*** use case will move previous identity into a new field to track old versions
-*** web server to serve temporary asset via url
-** [#C] Read timezone info from Exif tags when displaying asset details
+** [#A] Dump and load
+*** Add GraphQL mutations for dumping and loading the database
+**** provides another mechanism for backup, resetting the database disk usage
+**** use JSON format, one asset per line, makes it easy to sed/awk the result
+**** power users could perform large bulk edits of data
+** Read timezone info from Exif tags when displaying asset details
 *** everything is assuming that the date/time is UTC, which is almost always wrong
 *** Exif field is named =OffsetTimeOriginal= in ~primary~
 *** expose as ~timezone~ field of ~Asset~ only on demand (for efficiency)
@@ -81,12 +70,21 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 **** use whatever fields are not blank to make up a decent amount of text
 *** show chevron arrows on left and right to navigate among search results
 *** controls appear when mouse moves over asset display, then fade away
-** Responsive interface
-*** Flutter Folio example app that works well for all screen sizes
-**** c.f. https://flutter.gskinner.com
 ** Quick edit without leaving gallery page
 *** On-hover button to display modal to edit certain fields
 *** Clicking on asset (i.e. not the button) displays details page
+*** use =ExpansionPanel= for thumbnail caption that allows editing common fields
+** Edit improvements
+*** like PhotoPrism, edit screen has back/forward buttons to visit other images in gallery
+** Rapid editing of several assets
+*** like PhotoPrism, quickly move through several assets without going back and forth
+*** select multiple assets from the gallery
+*** FAB appears
+*** FAB contains several options (download, share, edit, etc)
+*** edit action will open editor window
+*** edit windows shows smaller preview of image
+*** back/forward buttons to move between selected assets
+*** save/discard buttons to save or discard changes per asset
 ** People versus tags
 *** A ~people~ field on asset records might be useful
 *** Interface could then show ~Tags~, ~People~, and ~Locations~ for browsing
@@ -118,6 +116,8 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 **** However, running in dev mode the url in the browser has a weird port
 ** Interface improvements
 *** reference: https://flutter.github.io/samples/
+*** Flutter Folio example app that works well for all screen sizes
+**** c.f. https://flutter.gskinner.com
 *** Add light/dark theme switcher
 **** Use =ThemeData= to construct the default light or dark themes
 *** Thumbnail Serving Strategy
@@ -164,8 +164,6 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 **** display the date and caption prominently
 **** display the other details using a smaller font
 **** display select information from EXIF metadata (e.g. camera)
-*** quick editing on browse page
-**** use =ExpansionPanel= for thumbnail caption that allows editing common fields
 *** navigation between screens
 **** do not want to have to build all of the screens at the same time, probably
 **** can add actions to the =Appbar= with an overflow popup menu button
@@ -219,6 +217,8 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 }', src/main.rs:88:71
 #+END_SRC
 ** Import screen improvements
+*** allow choosing a ~location~ that includes the city and region
+**** e.g. ~portland~ should present ~Portland, Oregon~ as option along with ~portland~ as a label
 *** add (un)select-all buttons
 *** small button to go directly to asset details page
 *** hover over an image to show a larger version
@@ -268,12 +268,19 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 **** Use =debounceTime= operator in RxDart with BLoC state for this
 *** TODO Compute Levenshtein distance when comparing strings
 **** that is, try to adjust for misspells and minor variations
-*** TODO Support advanced queries using Google-style operators
-**** c.f. https://support.google.com/websearch/answer/2466433?hl=en
-**** move perkeep style query support from mujina to tanuki
+*** TODO Advanced queries using Google-style operators
+**** copy perkeep style query support from mujina to tanuki
 **** webui needs an "advanced" tab/link selector on the search page
 **** =is:image= and similar to filter by media type
+**** =format:jpeg= to search by media type
+**** =filename:img_1234.*= to search by filename
+**** =tag:cats= to search by tag
+**** =loc:home= to search by location
+**** =before:2017-05= to search before a date
+**** =after:2015= to search after a date
+**** =locrect:48.63,-123.37,46.59,-121.28= to search within geographic coords
 **** =with:<name>= to filter by people (need to know the people though)
+**** =NOT= to exclude assets with a certain tag (~joseph NOT christina~)
 **** =AND= and =OR= operators and grouping with parentheses
 *** TODO Support searching for assets that have no tags
 *** TODO Support searching for assets that have no location
@@ -406,6 +413,17 @@ include it in the database records.
 *** rotate, flip, spin, crop
 *** apply common filters
 **** c.f. https://github.com/silvia-odwyer/photon
+*** implementation details
+**** =image= crate supports several filters (flip, rotate, etc)
+**** new graphql query to temporarily apply a set of transformations to an asset
+**** new graphql mutation to permanently apply a set of transformations to an asset
+**** repository functions for saving/fetching/clearing temporary assets
+**** temporary changes may be just the preview image size, cached in memory
+**** use case to receive a list of transforms, return url for temporary asset
+**** use case to receive a list of transforms, permanently save a new version of asset
+**** new version will get a new unique identifier and thereby URL
+**** use case will move previous identity into a new field to track old versions
+**** web server to serve temporary asset via url
 *** open asset in external program in temporary file
 **** easy-to-use app: https://github.com/robaho/seashore
 ** Data Integrity
@@ -429,9 +447,6 @@ include it in the database records.
 **** find files for which there are no documents
 *** Should have automated backups of the database
 **** every M operations or T minutes/hours/days
-*** Add controls for dumping and loading the database
-**** provides another mechanism for backup
-**** power users could perform large bulk edits of data
 ** Bulk Export
 *** Easy selection and export of multiple images
 **** Selection process

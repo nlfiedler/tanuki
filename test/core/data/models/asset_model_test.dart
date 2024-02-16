@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'dart:convert';
 import 'package:oxidized/oxidized.dart';
@@ -16,10 +16,14 @@ void main() {
       filesize: 1048576,
       datetime: DateTime.utc(2003, 8, 30),
       mimetype: 'image/jpeg',
-      tags: ['clowns', 'snakes'],
-      userdate: None(),
-      caption: Some('#snakes and #clowns are in my @batcave'),
-      location: Some('batcave'),
+      tags: const ['clowns', 'snakes'],
+      userdate: const None(),
+      caption: const Some('#snakes and #clowns are in my @batcave'),
+      location: const Some(AssetLocationModel(
+        label: Some('batcave'),
+        city: None(),
+        region: None(),
+      )),
     );
 
     test(
@@ -46,7 +50,7 @@ void main() {
               "tags": ["clowns", "snakes"],
               "userdate": null,
               "caption": "#snakes and #clowns are in my @batcave",
-              "location": "batcave"
+              "location": { "label": "batcave", "city": null, "region": null }
             }
           ''');
           // act
@@ -74,7 +78,7 @@ void main() {
             'tags': ['clowns', 'snakes'],
             'userdate': null,
             'caption': '#snakes and #clowns are in my @batcave',
-            'location': 'batcave',
+            'location': {'label': "batcave", 'city': null, 'region': null},
           };
           expect(result, expectedMap);
         },

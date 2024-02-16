@@ -37,7 +37,7 @@ void main() {
       input: AssetInput(
         tags: const ['clowns', 'snakes'],
         caption: const Some('#snakes and #clowns are in my @batcave'),
-        location: const Some('batcave'),
+        location: Some(AssetLocation.from('batcave')),
         datetime: Some(DateTime.utc(2003, 8, 30)),
         mimetype: const Some('image/jpeg'),
         filename: const Some('img_1234.jpg'),
@@ -176,7 +176,11 @@ void main() {
           tags: const ['cat', 'mouse'],
           userdate: const None(),
           caption: const Some('#cat @outdoors #mouse'),
-          location: const Some('outdoors'),
+          location: const Some(AssetLocation(
+            label: Some('outdoors'),
+            city: None(),
+            region: None(),
+          )),
         );
         when(() => mockRemoteDataSource.getAsset(any()))
             .thenAnswer((_) async => expected);
@@ -377,7 +381,7 @@ void main() {
       input: AssetInput(
         tags: const ['clowns', 'snakes'],
         caption: const Some('#snakes and #clowns are in my @batcave'),
-        location: const Some('batcave'),
+        location: Some(AssetLocation.from('batcave')),
         datetime: Some(DateTime.utc(2003, 8, 30)),
         mimetype: const Some('image/jpeg'),
         filename: const Some('img_1234.jpg'),
@@ -419,7 +423,7 @@ void main() {
       input: AssetInput(
         tags: const ['clowns', 'snakes'],
         caption: const Some('#snakes and #clowns are in my @batcave'),
-        location: const Some('batcave'),
+        location: Some(AssetLocation.from('batcave')),
         datetime: Some(DateTime.utc(2003, 8, 30)),
         mimetype: const Some('image/jpeg'),
         filename: const Some('img_1234.jpg'),
@@ -440,7 +444,11 @@ void main() {
           tags: const ['cat', 'mouse'],
           userdate: const None(),
           caption: const Some('#cat @outdoors #mouse'),
-          location: const Some('outdoors'),
+          location: const Some(AssetLocation(
+            label: Some('outdoors'),
+            city: None(),
+            region: None(),
+          )),
         );
         when(() => mockRemoteDataSource.updateAsset(any()))
             .thenAnswer((_) async => expected);

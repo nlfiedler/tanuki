@@ -1,21 +1,22 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'dart:convert';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/input_model.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AssetInputModel', () {
     final tAssetModel = AssetInputModel(
-      tags: ['clowns', 'snakes'],
-      caption: Some('#snakes and #clowns are in my @batcave'),
-      location: Some('batcave'),
+      tags: const ['clowns', 'snakes'],
+      caption: const Some('#snakes and #clowns are in my @batcave'),
+      location: Some(AssetLocation.from('batcave')),
       datetime: Some(DateTime.utc(2003, 8, 30)),
-      mimetype: Some('image/jpeg'),
-      filename: Some('img_1234.jpg'),
+      mimetype: const Some('image/jpeg'),
+      filename: const Some('img_1234.jpg'),
     );
 
     test(
@@ -38,7 +39,7 @@ void main() {
               "mimetype": "image/jpeg",
               "tags": ["clowns", "snakes"],
               "caption": "#snakes and #clowns are in my @batcave",
-              "location": "batcave"
+              "location": {"label": "batcave", "city": null, "region": null}
             }
           ''');
           // act
@@ -62,7 +63,7 @@ void main() {
             'mimetype': 'image/jpeg',
             'tags': ['clowns', 'snakes'],
             'caption': '#snakes and #clowns are in my @batcave',
-            'location': 'batcave',
+            'location': {'label': 'batcave', 'city': null, 'region': null},
           };
           expect(result, expectedMap);
         },
@@ -74,12 +75,12 @@ void main() {
     final tAssetModel = AssetInputIdModel(
       id: 'asset123',
       input: AssetInputModel(
-        tags: ['clowns', 'snakes'],
-        caption: Some('#snakes and #clowns are in my @batcave'),
-        location: Some('batcave'),
+        tags: const ['clowns', 'snakes'],
+        caption: const Some('#snakes and #clowns are in my @batcave'),
+        location: Some(AssetLocation.from('batcave')),
         datetime: Some(DateTime.utc(2003, 8, 30)),
-        mimetype: Some('image/jpeg'),
-        filename: Some('img_1234.jpg'),
+        mimetype: const Some('image/jpeg'),
+        filename: const Some('img_1234.jpg'),
       ),
     );
 
@@ -105,7 +106,7 @@ void main() {
                 "mimetype": "image/jpeg",
                 "tags": ["clowns", "snakes"],
                 "caption": "#snakes and #clowns are in my @batcave",
-                "location": "batcave"
+                "location": {"label": "batcave", "city": null, "region": null}
               }
             }
           ''');
@@ -132,7 +133,7 @@ void main() {
               'mimetype': 'image/jpeg',
               'tags': ['clowns', 'snakes'],
               'caption': '#snakes and #clowns are in my @batcave',
-              'location': 'batcave',
+              'location': {'label': 'batcave', 'city': null, 'region': null},
             }
           };
           expect(result, expectedMap);

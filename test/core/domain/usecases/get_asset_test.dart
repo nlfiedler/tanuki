@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -33,14 +33,18 @@ void main() {
         mimetype: 'image/jpeg',
         tags: const ['cat', 'mouse'],
         userdate: const None(),
-        caption: Some('#cat @outdoors #mouse'),
-        location: Some('outdoors'),
+        caption: const Some('#cat @outdoors #mouse'),
+        location: const Some(AssetLocation(
+          label: Some('outdoors'),
+          city: None(),
+          region: None(),
+        )),
       );
       final Result<Asset, Failure> expected = Ok(expectedAsset);
       when(() => mockEntityRepository.getAsset(any()))
           .thenAnswer((_) async => Ok(expectedAsset));
       // act
-      final params = Params(
+      const params = Params(
         assetId: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
       );
       final result = await usecase(params);

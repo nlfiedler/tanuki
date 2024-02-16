@@ -1,14 +1,16 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:oxidized/oxidized.dart';
+import 'package:tanuki/core/data/models/asset_model.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 
 class AssetInputModel extends AssetInput {
-  AssetInputModel({
+  const AssetInputModel({
     required List<String> tags,
     required Option<String> caption,
-    required Option<String> location,
+    required Option<AssetLocation> location,
     required Option<DateTime> datetime,
     required Option<String> mimetype,
     required Option<String> filename,
@@ -35,7 +37,8 @@ class AssetInputModel extends AssetInput {
   factory AssetInputModel.fromJson(Map<String, dynamic> json) {
     final List<String> tags = List.from(json['tags'].map((t) => t.toString()));
     final Option<String> caption = Option.from(json['caption']);
-    final Option<String> location = Option.from(json['location']);
+    final Option<AssetLocation> location = Option.from(json['location'])
+        .map((v) => AssetLocationModel.fromJson(v as Map<String, dynamic>));
     final Option<String> filename = Option.from(json['filename']);
     final Option<String> mimetype = Option.from(json['mimetype']);
     final datetime = Option.from(json['datetime']).map(
@@ -55,7 +58,10 @@ class AssetInputModel extends AssetInput {
     return {
       'tags': tags,
       'caption': caption.toNullable(),
-      'location': location.toNullable(),
+      'location': location.mapOr(
+        (v) => AssetLocationModel.from(v).toJson(),
+        null,
+      ),
       'datetime': datetime.mapOr((v) => v.toIso8601String(), null),
       'mimetype': mimetype.toNullable(),
       'filename': filename.toNullable(),
@@ -64,7 +70,7 @@ class AssetInputModel extends AssetInput {
 }
 
 class AssetInputIdModel extends AssetInputId {
-  AssetInputIdModel({
+  const AssetInputIdModel({
     required String id,
     required AssetInput input,
   }) : super(id: id, input: input);

@@ -1,11 +1,12 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/features/modify/preso/bloc/update_asset_bloc.dart';
 import 'package:tanuki/features/modify/preso/bloc/providers.dart';
@@ -58,18 +59,22 @@ class UpdateSubmit extends ConsumerWidget {
 }
 
 AssetInputId buildAssetInputId(String assetId, Map<String, dynamic> inputs) {
-  // Undefined values are treated as empty string, so we can treat empty
-  // and undefined in the same manner down below with Option.from().
-  final String caption = inputs['caption'] ?? '';
-  final String location = inputs['location'] ?? '';
-  final DateTime? datetime = inputs['userdate'];
+  final Option<String> caption = Option.from(inputs['caption']);
+  final Option<String> label = Option.from(inputs['location']);
+  final Option<String> city = Option.from(inputs['city']);
+  final Option<String> region = Option.from(inputs['region']);
+  final Option<AssetLocation> location =
+      label.isNone() && city.isNone() && region.isNone()
+          ? const None()
+          : Some(AssetLocation(label: label, city: city, region: region));
+  final Option<DateTime> datetime = Option.from(inputs['userdate']?.toUtc());
   return AssetInputId(
     id: assetId,
     input: AssetInput(
       tags: inputs['tags'] as List<String>,
-      caption: Option.from(caption.isEmpty ? null : caption),
-      location: Option.from(location.isEmpty ? null : location),
-      datetime: Option.from(datetime).map((v) => v.toUtc()),
+      caption: caption,
+      location: location,
+      datetime: datetime,
       mimetype: Some(inputs['mimetype']),
       filename: const None(),
     ),

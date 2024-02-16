@@ -1,8 +1,38 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
 import 'package:oxidized/oxidized.dart';
+
+/// The location for an asset.
+class AssetLocation extends Equatable {
+  // User-provided label for the location.
+  final Option<String> label;
+  // City associated with the asset.
+  final Option<String> city;
+  // State or province associated with the asset.
+  final Option<String> region;
+
+  const AssetLocation({
+    required this.label,
+    required this.city,
+    required this.region,
+  });
+
+  factory AssetLocation.from(String? label) {
+    return AssetLocation(
+      label: Option.from(label),
+      city: const None(),
+      region: const None(),
+    );
+  }
+
+  @override
+  List<Object> get props => [label, city, region];
+
+  @override
+  bool get stringify => true;
+}
 
 /// An `Asset` holds information about a single asset.
 class Asset extends Equatable {
@@ -25,7 +55,7 @@ class Asset extends Equatable {
   // A caption attributed to the asset.
   final Option<String> caption;
   // Location information for the asset.
-  final Option<String> location;
+  final Option<AssetLocation> location;
 
   const Asset({
     required this.id,

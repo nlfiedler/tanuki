@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/preso/widgets/asset_display.dart';
@@ -87,7 +88,9 @@ class BulkForm extends ConsumerWidget {
                               id: id,
                               input: AssetInput(
                                 tags: state.tags,
-                                location: Option.from(state.location),
+                                location: state.location == null
+                                    ? Some(AssetLocation.from(state.location))
+                                    : const None(),
                                 caption: const None(),
                                 datetime: const None(),
                                 filename: const None(),

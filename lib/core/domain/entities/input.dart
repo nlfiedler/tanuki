@@ -1,8 +1,9 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
 import 'package:oxidized/oxidized.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 
 /// An `AssetInput` is ued to update an asset.
 class AssetInput extends Equatable {
@@ -11,7 +12,7 @@ class AssetInput extends Equatable {
   // A caption attributed to the asset.
   final Option<String> caption;
   // Location information for the asset.
-  final Option<String> location;
+  final Option<AssetLocation> location;
   // The date/time that best represents the asset.
   final Option<DateTime> datetime;
   // The media type (nee MIME type) of the asset.

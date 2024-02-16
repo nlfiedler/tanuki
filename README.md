@@ -101,6 +101,18 @@ docker compose down
 docker compose up --build -d
 ```
 
+### Geocoding Services
+
+#### Google Maps API
+
+Google Cloud offers a [reverse geocoding](https://developers.google.com/maps/documentation/geocoding/requests-reverse-geocoding) service that is related to their Maps functionality. To get the necessary API key, follow these steps:
+
+1. Create a Google Cloud account
+1. Enable the *Geocoding API*
+1. Create a new API key that is restricted to the *Geocoding API*
+
+Note that the API key must be associated with the geocoding API, an existing key may work but it must be assigned to that API. A key restricted to exclusively that service is more secure against abuse.
+
 ## Tools
 
 ### Finding Outdated Crates

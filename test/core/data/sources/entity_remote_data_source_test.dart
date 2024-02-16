@@ -12,6 +12,7 @@ import 'package:tanuki/core/data/models/attributes_model.dart';
 import 'package:tanuki/core/data/models/input_model.dart';
 import 'package:tanuki/core/data/models/search_model.dart';
 import 'package:tanuki/core/data/sources/entity_remote_data_source.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/error/exceptions.dart';
 
@@ -379,7 +380,7 @@ void main() {
             'tags': ['clowns', 'snakes'],
             'userdate': null,
             'caption': '#snakes and #clowns are in my @batcave',
-            'location': 'batcave'
+            'location': {'label': 'batcave', 'city': null, 'region': null}
           }
         }
       };
@@ -409,7 +410,11 @@ void main() {
           tags: const ['clowns', 'snakes'],
           userdate: const None(),
           caption: const Some('#snakes and #clowns are in my @batcave'),
-          location: const Some('batcave'),
+          location: const Some(AssetLocationModel(
+            label: Some('batcave'),
+            city: None(),
+            region: None(),
+          )),
         );
         expect(result, equals(expected));
       },
@@ -837,7 +842,7 @@ void main() {
       input: AssetInputModel(
         tags: const ['clowns', 'snakes'],
         caption: const Some('#snakes and #clowns are in my @batcave'),
-        location: const Some('batcave'),
+        location: Some(AssetLocation.from('batcave')),
         datetime: Some(DateTime.utc(2003, 8, 30)),
         mimetype: const Some('image/jpeg'),
         filename: const Some('img_1234.jpg'),
@@ -930,7 +935,12 @@ void main() {
             'tags': ['clowns', 'snakes'],
             'userdate': null,
             'caption': '#snakes and #clowns are in my @batcave',
-            'location': 'batcave'
+            'location': {
+              '__typename': 'Location',
+              'label': 'batcave',
+              'city': null,
+              'region': null
+            }
           },
         }
       };
@@ -947,7 +957,7 @@ void main() {
       input: AssetInputModel(
         tags: const ['clowns', 'snakes'],
         caption: const Some('#snakes and #clowns are in my @batcave'),
-        location: const Some('batcave'),
+        location: Some(AssetLocation.from('batcave')),
         datetime: Some(DateTime.utc(2003, 8, 30)),
         mimetype: const Some('image/jpeg'),
         filename: const Some('img_1234.jpg'),
@@ -972,7 +982,11 @@ void main() {
           tags: const ['clowns', 'snakes'],
           userdate: const None(),
           caption: const Some('#snakes and #clowns are in my @batcave'),
-          location: const Some('batcave'),
+          location: const Some(AssetLocationModel(
+            label: Some('batcave'),
+            city: None(),
+            region: None(),
+          )),
         );
         expect(result, equals(expected));
       },

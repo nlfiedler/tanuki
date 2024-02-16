@@ -120,7 +120,10 @@ class _AssetEditFormState extends State<AssetEditForm> {
         'mimetype': widget.asset.mimetype,
         'tags': widget.asset.tags.join(', '),
         'caption': widget.asset.caption.unwrapOr(''),
-        'location': widget.asset.location.unwrapOr(''),
+        'location':
+            widget.asset.location.mapOr((v) => v.label.unwrapOr(''), ''),
+        'city': widget.asset.location.mapOr((v) => v.city.unwrapOr(''), ''),
+        'region': widget.asset.location.mapOr((v) => v.region.unwrapOr(''), ''),
       },
       child: Column(
         children: [
@@ -160,12 +163,37 @@ class _AssetEditFormState extends State<AssetEditForm> {
               );
             },
           ),
-          FormBuilderTextField(
-            name: 'location',
-            decoration: const InputDecoration(
-              icon: Icon(Icons.location_on),
-              labelText: 'Location',
-            ),
+          Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: FormBuilderTextField(
+                  name: 'location',
+                  decoration: const InputDecoration(
+                    icon: Icon(Icons.location_on),
+                    labelText: 'Location',
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: FormBuilderTextField(
+                  name: 'city',
+                  decoration: const InputDecoration(
+                    labelText: 'City',
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: FormBuilderTextField(
+                  name: 'region',
+                  decoration: const InputDecoration(
+                    labelText: 'Region',
+                  ),
+                ),
+              )
+            ],
           ),
           FormBuilderTextField(
             name: 'mimetype',

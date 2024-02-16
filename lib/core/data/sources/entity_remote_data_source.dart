@@ -168,7 +168,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
           tags
           userdate
           caption
-          location
+          location { label city region }
         }
       }
     ''';
@@ -309,7 +309,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
           tags
           userdate
           caption
-          location
+          location { label city region }
         }
       }
     ''';

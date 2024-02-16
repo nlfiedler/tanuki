@@ -49,7 +49,7 @@ pub struct AssetInput {
     pub caption: Option<String>,
     /// Any `Some` value here overwrites the location in the asset. This field
     /// takes precedence over any @location value in the caption.
-    pub location: Option<String>,
+    pub location: Option<Location>,
     /// This value overwrites the asset user_date unconditionally. To avoid
     /// removing the user date, copy the asset user date to this field before
     /// invoking the use case.
@@ -113,11 +113,19 @@ fn merge_asset_input(asset: &mut Asset, input: AssetInput) {
             asset.filename = filename;
         }
     }
-    if input.location.is_some() {
-        // permit clearing the location value
-        asset.location = input
-            .location
-            .and_then(|v| if v.is_empty() { None } else { Some(Location::new(&v)) });
+    // merge the existing and new location, if any, and save if changed
+    let location = merge_locations(asset.location.clone(), input.location.clone());
+    if location.is_some() {
+        if let Some(ref loc) = location {
+            // largely a symbolic gesture as the serializer will turn the empty
+            // location structure into a single null anyway, but for clarity we
+            // wipe out the location if the input is completey blank
+            if loc.label.is_none() && loc.city.is_none() && loc.region.is_none() {
+                asset.location = None
+            } else {
+                asset.location = location;
+            }
+        }
     }
     // parse the caption to glean location and additional tags
     if let Some(caption) = input.caption {
@@ -140,6 +148,29 @@ fn merge_asset_input(asset: &mut Asset, input: AssetInput) {
             asset.media_type = mt.to_lowercase();
         }
     }
+}
+
+// Returns None if no changes are needed.
+fn merge_locations(asset: Option<Location>, input: Option<Location>) -> Option<Location> {
+    if let Some(mut existing) = asset {
+        if let Some(incoming) = input {
+            if let Some(label) = incoming.label {
+                if label.is_empty() {
+                    existing.label = None;
+                } else {
+                    existing.label = Some(label);
+                }
+            }
+            if incoming.city.is_some() {
+                existing.city = incoming.city;
+            }
+            if incoming.region.is_some() {
+                existing.region = incoming.region;
+            }
+            return Some(existing);
+        }
+    }
+    input
 }
 
 mod caption {
@@ -365,6 +396,95 @@ mod tests {
         Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
             .single()
             .unwrap()
+    }
+
+    #[test]
+    fn test_merge_locations() {
+        // both are none, result is none
+        let asset: Option<Location> = None;
+        let input: Option<Location> = None;
+        let result = merge_locations(asset, input);
+        assert!(result.is_none());
+
+        // input is none, result is none
+        let asset = Some(Location::new("foobar".into()));
+        let input: Option<Location> = None;
+        let result = merge_locations(asset, input);
+        assert!(result.is_none());
+
+        // asset is none, input is returned
+        let asset: Option<Location> = None;
+        let input = Some(Location {
+            label: None,
+            city: Some("Seattle".into()),
+            region: Some("WA".into()),
+        });
+        let result = merge_locations(asset, input);
+        assert!(result.is_some());
+        let actual = result.unwrap();
+        assert!(actual.label.is_none());
+        assert_eq!(actual.city.unwrap(), "Seattle");
+        assert_eq!(actual.region.unwrap(), "WA");
+
+        // merge input city/region with asset label
+        let asset = Some(Location::new("Chihuly".into()));
+        let input = Some(Location {
+            label: None,
+            city: Some("Seattle".into()),
+            region: Some("WA".into()),
+        });
+        let result = merge_locations(asset, input);
+        assert!(result.is_some());
+        let actual = result.unwrap();
+        assert_eq!(actual.label.unwrap(), "Chihuly");
+        assert_eq!(actual.city.unwrap(), "Seattle");
+        assert_eq!(actual.region.unwrap(), "WA");
+
+        // merge input label with asset city/region
+        let asset = Some(Location {
+            label: None,
+            city: Some("Seattle".into()),
+            region: Some("WA".into()),
+        });
+        let input = Some(Location::new("Chihuly".into()));
+        let result = merge_locations(asset, input);
+        assert!(result.is_some());
+        let actual = result.unwrap();
+        assert_eq!(actual.label.unwrap(), "Chihuly");
+        assert_eq!(actual.city.unwrap(), "Seattle");
+        assert_eq!(actual.region.unwrap(), "WA");
+
+        // clear asset label if input label is empty string
+        let asset = Some(Location::new("Chihuly".into()));
+        let input = Some(Location {
+            label: Some("".into()),
+            city: Some("Seattle".into()),
+            region: Some("WA".into()),
+        });
+        let result = merge_locations(asset, input);
+        assert!(result.is_some());
+        let actual = result.unwrap();
+        assert!(actual.label.is_none());
+        assert_eq!(actual.city.unwrap(), "Seattle");
+        assert_eq!(actual.region.unwrap(), "WA");
+
+        // input with everything replaces everything in asset
+        let asset = Some(Location {
+            label: Some("Chihuly".into()),
+            city: Some("Seattle".into()),
+            region: Some("WA".into()),
+        });
+        let input = Some(Location {
+            label: Some("Classical Garden".into()),
+            city: Some("Portland".into()),
+            region: Some("Oregon".into()),
+        });
+        let result = merge_locations(asset, input);
+        assert!(result.is_some());
+        let actual = result.unwrap();
+        assert_eq!(actual.label.unwrap(), "Classical Garden");
+        assert_eq!(actual.city.unwrap(), "Portland");
+        assert_eq!(actual.region.unwrap(), "Oregon");
     }
 
     #[test]
@@ -669,7 +789,7 @@ mod tests {
         let input = AssetInput {
             tags: vec![],
             caption: None,
-            location: Some(String::new()),
+            location: Some(Location::new("".into())),
             datetime: None,
             media_type: None,
             filename: None,

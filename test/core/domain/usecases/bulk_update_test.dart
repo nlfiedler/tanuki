@@ -1,9 +1,10 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/bulk_update.dart';
@@ -30,19 +31,19 @@ void main() {
     'should update assets in the repository',
     () async {
       // arrange
-      final Result<int, Failure> expected = Ok(32);
+      const Result<int, Failure> expected = Ok(32);
       when(() => mockEntityRepository.bulkUpdate(any()))
-          .thenAnswer((_) async => Ok(32));
+          .thenAnswer((_) async => const Ok(32));
       // act
       final inputId = AssetInputId(
         id: 'asset123',
         input: AssetInput(
           tags: const ['clowns', 'snakes'],
-          caption: Some('#snakes and #clowns are in my @batcave'),
-          location: Some('batcave'),
+          caption: const Some('#snakes and #clowns are in my @batcave'),
+          location: Some(AssetLocation.from('batcave')),
           datetime: Some(DateTime.utc(2003, 8, 30)),
-          mimetype: Some('image/jpeg'),
-          filename: Some('img_1234.jpg'),
+          mimetype: const Some('image/jpeg'),
+          filename: const Some('img_1234.jpg'),
         ),
       );
       final params = Params(assets: [inputId]);

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,8 +26,12 @@ void main() {
     mimetype: 'image/jpeg',
     tags: const ['cat', 'mouse'],
     userdate: const None(),
-    caption: Some('#cat @outdoors #mouse'),
-    location: Some('outdoors'),
+    caption: const Some('#cat @outdoors #mouse'),
+    location: const Some(AssetLocation(
+      label: Some('outdoors'),
+      city: None(),
+      region: None(),
+    )),
   );
 
   group('normal cases', () {
@@ -57,7 +61,7 @@ void main() {
       mockEntityRepository = MockEntityRepository();
       usecase = GetAsset(mockEntityRepository);
       when(() => mockEntityRepository.getAsset(any()))
-          .thenAnswer((_) async => Err(ServerFailure('oh no!')));
+          .thenAnswer((_) async => const Err(ServerFailure('oh no!')));
     });
 
     blocTest(

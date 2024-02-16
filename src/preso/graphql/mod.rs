@@ -4,7 +4,7 @@
 use crate::data::repositories::geo::find_location_repository;
 use crate::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl};
 use crate::data::sources::EntityDataSource;
-use crate::domain::entities::{Asset, LabeledCount, SearchResult};
+use crate::domain::entities::{Asset, LabeledCount, Location, SearchResult};
 use crate::domain::usecases::analyze::Counts;
 use crate::domain::usecases::diagnose::Diagnosis;
 use base64::{engine::general_purpose, Engine as _};
@@ -86,6 +86,24 @@ where
     }
 }
 
+#[juniper::graphql_object(description = "Information regarding a location for an asset.")]
+impl Location {
+    /// Label for the location provided by the user.
+    fn label(&self) -> Option<String> {
+        self.label.clone()
+    }
+
+    /// Name of the city of which the asset is associated.
+    fn city(&self) -> Option<String> {
+        self.city.clone()
+    }
+
+    /// Name of the state or province of which the asset is associated.
+    fn region(&self) -> Option<String> {
+        self.region.clone()
+    }
+}
+
 #[juniper::graphql_object(
     description = "An `Asset` defines a single entity in the storage system."
 )]
@@ -155,12 +173,8 @@ impl Asset {
     }
 
     /// Location information for the asset.
-    fn location(&self) -> Option<String> {
-        if let Some(loc) = self.location.as_ref() {
-            loc.label.clone()
-        } else {
-            None
-        }
+    fn location(&self) -> Option<Location> {
+        self.location.clone()
     }
 }
 
@@ -214,6 +228,15 @@ impl From<SortOrder> for crate::domain::usecases::search::SortOrder {
         }
     }
 }
+
+//
+// Note on using juniper and defining input objects: If a runtime error occurs
+// that says "Can't unify non-input concrete type" then try naming the input
+// type with a unique name. For instance, trying to define a `Location` input
+// object when also implementing the output object for that same-named type from
+// the entities module results in this error. It may have something to do with
+// the reliance on macros to generate code for interfacing with juniper.
+//
 
 /// `SearchParams` defines the various parameters by which to search for assets.
 #[derive(GraphQLInputObject)]
@@ -409,6 +432,27 @@ impl Counts {
     }
 }
 
+/// `Location` is used to update the location field of an asset.
+#[derive(Clone, GraphQLInputObject)]
+pub struct LocationInput {
+    /// New value for the label of the location.
+    label: Option<String>,
+    /// New value for the city.
+    city: Option<String>,
+    /// New value for the region.
+    region: Option<String>,
+}
+
+impl From<LocationInput> for Location {
+    fn from(val: LocationInput) -> Self {
+        Location {
+            label: val.label,
+            city: val.city,
+            region: val.region,
+        }
+    }
+}
+
 /// `AssetInput` is used to update the details of an asset.
 #[derive(Clone, GraphQLInputObject)]
 pub struct AssetInput {
@@ -419,7 +463,7 @@ pub struct AssetInput {
     /// an @location that sets the location, if it has not yet defined.
     caption: Option<String>,
     /// New location to replace any existing value.
-    location: Option<String>,
+    location: Option<LocationInput>,
     /// A date/time that overrides intrinsic values; a `null` clears the custom
     /// field and reverts back to the intrinsic value.
     datetime: Option<DateTime<Utc>>,
@@ -437,10 +481,11 @@ impl From<AssetInput> for crate::domain::usecases::update::AssetInput {
         // Filter out empty tags, as the front-end may send those because it is
         // too lazy to filter them itself.
         tags.retain(|t| !t.is_empty());
+        let location: Option<Location> = val.location.map(|v| v.into());
         crate::domain::usecases::update::AssetInput {
             tags,
             caption: val.caption,
-            location: val.location,
+            location,
             media_type: val.mimetype,
             datetime: val.datetime,
             filename: val.filename,
@@ -766,7 +811,6 @@ pub fn create_schema() -> Schema {
 mod tests {
     use super::*;
     use crate::data::sources::MockEntityDataSource;
-    use crate::domain::entities::Location;
     use anyhow::anyhow;
     use juniper::{InputValue, ToInputValue, Variables};
     use mockall::predicate::*;
@@ -854,7 +898,7 @@ mod tests {
         let query = r#"query Fetch($id: String!) {
             asset(id: $id) {
                 id filename filesize datetime mimetype
-                tags userdate caption location
+                tags userdate caption location { label }
             }
         }"#;
         let mut vars = Variables::new();
@@ -901,6 +945,8 @@ mod tests {
         assert!(res.is_null());
 
         let res = object.get_field_value("location").unwrap();
+        let object = res.as_object_value().unwrap();
+        let res = object.get_field_value("label").unwrap();
         let actual = res.as_scalar_value::<String>().unwrap();
         assert_eq!(actual, "hawaii");
     }
@@ -920,7 +966,7 @@ mod tests {
         let query = r#"query Fetch($id: String!) {
             asset(id: $id) {
                 id filename filesize datetime mimetype
-                tags userdate caption location
+                tags userdate caption location { label }
             }
         }"#;
         let mut vars = Variables::new();
@@ -1992,7 +2038,11 @@ mod tests {
         let input = AssetInput {
             tags: Some(vec!["kitten".to_owned()]),
             caption: Some("saw a #cat playing".to_owned()),
-            location: Some("london".to_owned()),
+            location: Some(LocationInput {
+                label: Some("london".to_owned()),
+                city: None,
+                region: None,
+            }),
             datetime: None,
             mimetype: None,
             filename: None,
@@ -2001,7 +2051,7 @@ mod tests {
         let (res, errors) = juniper::execute_sync(
             r#"mutation Update($input: AssetInput!) {
                 update(id: "abc123", asset: $input) {
-                    id tags location caption
+                    id tags location { label } caption
                 }
             }"#,
             None,
@@ -2019,6 +2069,8 @@ mod tests {
         let value = field.as_scalar_value::<String>().unwrap();
         assert_eq!(value, "abc123");
         let field = object.get_field_value("location").unwrap();
+        let lobject = field.as_object_value().unwrap();
+        let field = lobject.get_field_value("label").unwrap();
         let value = field.as_scalar_value::<String>().unwrap();
         assert_eq!(value, "london");
         let field = object.get_field_value("caption").unwrap();
@@ -2102,7 +2154,11 @@ mod tests {
         let input = AssetInput {
             tags: Some(vec!["kitten".to_owned()]),
             caption: Some("saw a #cat playing".to_owned()),
-            location: Some("".to_owned()),
+            location: Some(LocationInput {
+                label: Some("".to_owned()),
+                city: None,
+                region: None,
+            }),
             datetime: None,
             mimetype: None,
             filename: None,
@@ -2111,7 +2167,7 @@ mod tests {
         let (res, errors) = juniper::execute_sync(
             r#"mutation Update($input: AssetInput!) {
                 update(id: "abc123", asset: $input) {
-                    id tags location caption
+                    id tags location { label } caption
                 }
             }"#,
             None,
@@ -2180,7 +2236,11 @@ mod tests {
                 input: AssetInput {
                     tags: Some(vec!["kitten".to_owned()]),
                     caption: Some("saw a #cat playing with a #dog".to_owned()),
-                    location: Some("hawaii".to_owned()),
+                    location: Some(LocationInput {
+                        label: Some("hawaii".to_owned()),
+                        city: None,
+                        region: None,
+                    }),
                     datetime: None,
                     mimetype: None,
                     filename: None,
@@ -2191,7 +2251,11 @@ mod tests {
                 input: AssetInput {
                     tags: Some(vec!["kitten".to_owned()]),
                     caption: Some("saw a #cat playing".to_owned()),
-                    location: Some("london".to_owned()),
+                    location: Some(LocationInput {
+                        label: Some("london".to_owned()),
+                        city: None,
+                        region: None,
+                    }),
                     datetime: None,
                     mimetype: None,
                     filename: None,
