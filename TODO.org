@@ -13,11 +13,20 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 ** verify responsiveness is looking good
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
-** [#B] why do the search results include a ~location~ value?
-*** filename and date/time are displayed in the ui
-*** media type might be used for something?
-*** but what is location used for?
-** [#C] Quick rotation fix for certain images
+** [#A] remove the ~location~ property from =SearchResult=, it is unused
+** [#B] change the ~newborn~ index to have ~city~ and ~region~ instead of ~mimetype~ and ~location~
+*** need a different struct for the index value of ~newborn~ (not =SearchResult=)
+** [#C] Migrate the production database
+1) dump to a file
+2) stop the container
+3) rename the database directory
+4) create an empty database directory
+5) start the container
+6) confirm it is empty
+7) load the dump file
+8) confirm search is working
+9) confirm recents are still recent
+** Quick rotation fix for certain images
 *** add a simple GraphQL mutation that sets the =Orientation= Exif field
 *** check the =kamadak-exif= project for bugs related to writing Exif data
 *** test modifying Exif data with recent images to check for data loss
@@ -40,11 +49,6 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** TODO modify search page to allow multiple locations
 *** TODO find out if =mp4= crate can read GPS coords from videos
 **** Preview.app will display location information for videos
-** [#A] Dump and load
-*** Add GraphQL mutations for dumping and loading the database
-**** provides another mechanism for backup, resetting the database disk usage
-**** use JSON format, one asset per line, makes it easy to sed/awk the result
-**** power users could perform large bulk edits of data
 ** Read timezone info from Exif tags when displaying asset details
 *** everything is assuming that the date/time is UTC, which is almost always wrong
 *** Exif field is named =OffsetTimeOriginal= in ~primary~

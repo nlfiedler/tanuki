@@ -227,6 +227,25 @@ pub struct AssetModel {
     pub dimensions: Option<Dimensions>,
 }
 
+/// AssetDumpModel is used in the dump and load feature where we need to
+/// preserve the key, and may as well keep the full property names as well.
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "Asset")]
+pub struct AssetDumpModel {
+    pub key: String,
+    pub checksum: String,
+    pub filename: String,
+    pub byte_length: u64,
+    pub media_type: String,
+    pub tags: Vec<String>,
+    pub import_date: DateTime<Utc>,
+    pub caption: Option<String>,
+    pub location: Option<Location>,
+    pub user_date: Option<DateTime<Utc>>,
+    pub original_date: Option<DateTime<Utc>>,
+    pub dimensions: Option<Dimensions>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

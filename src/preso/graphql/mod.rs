@@ -798,6 +798,30 @@ impl MutationRoot {
         let results: u64 = usecase.call(params)?;
         Ok(results as i32)
     }
+
+    /// Dump all asset records from the database to the given file path in JSON format.
+    fn dump(executor: &Executor, filepath: String) -> FieldResult<i32> {
+        use crate::domain::usecases::dump::{Dump, Params};
+        use crate::domain::usecases::UseCase;
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
+        let usecase = Dump::new(Box::new(repo));
+        let params = Params::new(filepath.into());
+        let results: u64 = usecase.call(params)?;
+        Ok(results as i32)
+    }
+
+    /// Load the JSON formatted asset records into the database from the given file path.
+    fn load(executor: &Executor, filepath: String) -> FieldResult<i32> {
+        use crate::domain::usecases::load::{Load, Params};
+        use crate::domain::usecases::UseCase;
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
+        let usecase = Load::new(Box::new(repo));
+        let params = Params::new(filepath.into());
+        let results: u64 = usecase.call(params)?;
+        Ok(results as i32)
+    }
 }
 
 pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<Arc<GraphContext>>>;

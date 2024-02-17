@@ -3,8 +3,8 @@
 //
 use anyhow::{anyhow, Error};
 use chrono::prelude::*;
-use std::collections::HashSet;
 use std::cmp;
+use std::collections::HashSet;
 use std::fmt;
 use std::str::FromStr;
 
@@ -328,16 +328,11 @@ impl SearchResult {
         } else {
             asset.import_date
         };
-        let location = if let Some(lowkayshun) = asset.location.as_ref() {
-            lowkayshun.label.to_owned()
-        } else {
-            None
-        };
         Self {
             asset_id: asset.key.clone(),
             filename: asset.filename.clone(),
             media_type: asset.media_type.clone(),
-            location,
+            location: asset.location.as_ref().and_then(|f| f.label.clone()),
             datetime: date,
         }
     }

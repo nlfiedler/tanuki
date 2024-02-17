@@ -1,6 +1,7 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
+use crate::data::models::AssetDumpModel;
 use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, SearchResult};
 use crate::domain::repositories::BlobRepository;
@@ -124,6 +125,44 @@ impl RecordRepository for RecordRepositoryImpl {
     fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
         self.datasource.query_newborn(after)
     }
+
+    fn dump(&self, filepath: &Path) -> Result<u64, Error> {
+        use std::io::Write;
+        let file = std::fs::File::create(filepath)?;
+        let mut writer = std::io::BufWriter::new(file);
+        let mut count: u64 = 0;
+        for asset_id in self.datasource.all_assets()? {
+            let asset = self.datasource.get_asset(&asset_id)?;
+            // construct a vector and write each asset one by one in order to
+            // inject a newline after each row
+            let mut buffer: Vec<u8> = Vec::new();
+            let mut ser = serde_json::Serializer::new(&mut buffer);
+            AssetDumpModel::serialize(&asset, &mut ser)?;
+            buffer.push(0x0a);
+            writer.write(&buffer[..])?;
+            count += 1;
+        }
+        Ok(count)
+    }
+
+    fn load(&self, filepath: &Path) -> Result<u64, Error> {
+        use std::io::BufRead;
+        let file = std::fs::File::open(filepath)?;
+        let mut reader = std::io::BufReader::new(file);
+        let mut count: u64 = 0;
+        loop {
+            let mut line = String::new();
+            let len = reader.read_line(&mut line)?;
+            if len == 0 {
+                break;
+            }
+            let mut de = serde_json::Deserializer::from_str(&line);
+            let model = AssetDumpModel::deserialize(&mut de)?;
+            self.datasource.put_asset(&model)?;
+            count += 1;
+        }
+        Ok(count)
+    }
 }
 
 pub struct BlobRepositoryImpl {
@@ -211,7 +250,9 @@ fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8
     let mut cursor = std::io::Cursor::new(Vec::new());
     // The image crate does not recognize .jpe extension as jpeg, so use the
     // format guessing code based on the first few bytes.
-    let mut img = image::io::Reader::open(filepath)?.with_guessed_format()?.decode()?;
+    let mut img = image::io::Reader::open(filepath)?
+        .with_guessed_format()?
+        .decode()?;
     if let Ok(orientation) = get_image_orientation(filepath) {
         // c.f. https://magnushoff.com/articles/jpeg-orientation/
         if orientation > 4 {
@@ -273,6 +314,7 @@ fn correct_orientation(orientation: u16, img: image::DynamicImage) -> image::Dyn
 mod tests {
     use super::*;
     use crate::data::sources::MockEntityDataSource;
+    use crate::domain::entities::{Dimensions, Location};
     use anyhow::anyhow;
     use mockall::predicate::*;
     use tempfile::tempdir;
@@ -1038,6 +1080,125 @@ mod tests {
         let result = repo.query_by_media_type("image/jpeg");
         // assert
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_repo_dump_ok() {
+        // arrange
+        let key1 = "dGVzdHMvZml4dHVyZXMvZjF0LmpwZw==";
+        let key2 = "dGVzdHMvZml4dHVyZXMvZGNwXzEwNjkuanBn";
+        let key3 = "dGVzdHMvZml4dHVyZXMvc2hpcnRfc21hbGwuaGVpYw==";
+        let digest1 = "sha256-5514da7cbe82ef4a0c8dd7c025fba78d8ad085b47ae8cee74fb87705b3d0a630";
+        let digest2 = "sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07";
+        let digest3 = "sha256-2955581c357f7b4b3cd29af11d9bebd32a4ad1746e36c6792dc9fa41a1d967ae";
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_all_assets()
+            .returning(move || Ok(vec![key1.to_owned(), key2.to_owned(), key3.to_owned()]));
+        mock.expect_get_asset().with(eq(key1)).returning(move |_| {
+            Ok(Asset {
+                key: key1.to_owned(),
+                checksum: digest1.to_owned(),
+                filename: "f1t.jpg".to_owned(),
+                byte_length: 841,
+                media_type: "image/jpeg".to_owned(),
+                tags: vec!["cat".to_owned(), "dog".to_owned()],
+                import_date: Utc::now(),
+                caption: Some("cute cat and dog playing".into()),
+                location: None,
+                user_date: None,
+                original_date: None,
+                dimensions: Some(Dimensions(48, 80)),
+            })
+        });
+        mock.expect_get_asset().with(eq(key2)).returning(move |_| {
+            Ok(Asset {
+                key: key2.to_owned(),
+                checksum: digest2.to_owned(),
+                filename: "dcp_1069.jpg".to_owned(),
+                byte_length: 80977,
+                media_type: "image/jpeg".to_owned(),
+                tags: vec!["mariachi".to_owned()],
+                import_date: Utc::now(),
+                caption: Some("mariachi band playing".into()),
+                location: Some(Location::new("cabo san lucas".into())),
+                user_date: None,
+                original_date: None,
+                dimensions: Some(Dimensions(440, 292)),
+            })
+        });
+        mock.expect_get_asset().with(eq(key3)).returning(move |_| {
+            Ok(Asset {
+                key: key3.to_owned(),
+                checksum: digest3.to_owned(),
+                filename: "shirt_small.heic".to_owned(),
+                byte_length: 4995,
+                media_type: "image/jpeg".to_owned(),
+                tags: vec!["coffee".to_owned()],
+                import_date: Utc::now(),
+                caption: None,
+                location: Some(Location {
+                    label: Some("peet's".into()),
+                    city: Some("Berkeley".into()),
+                    region: Some("CA".into()),
+                }),
+                user_date: None,
+                original_date: None,
+                dimensions: Some(Dimensions(324, 304)),
+            })
+        });
+        // act
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
+        let tmpdir = tempdir().unwrap();
+        let filepath = tmpdir.path().join("dump.json");
+        let result = repo.dump(filepath.as_path());
+        // assert
+        assert!(result.is_ok());
+        let count = result.unwrap();
+        assert_eq!(count, 3);
+    }
+
+    #[test]
+    fn test_repo_load_ok() {
+        // arrange
+        let mut mock = MockEntityDataSource::new();
+        mock.expect_put_asset()
+            .withf(move |asset| asset.key == "dGVzdHMvZml4dHVyZXMvZjF0LmpwZw==")
+            .returning(|asset| {
+                assert_eq!(asset.filename, "f1t.jpg");
+                assert_eq!(asset.byte_length, 841);
+                assert_eq!(asset.location, None);
+                Ok(())
+            });
+        mock.expect_put_asset()
+            .withf(move |asset| asset.key == "dGVzdHMvZml4dHVyZXMvZGNwXzEwNjkuanBn")
+            .returning(|asset| {
+                assert_eq!(asset.filename, "dcp_1069.jpg");
+                assert_eq!(asset.byte_length, 80977);
+                assert_eq!(asset.location, Some(Location::new("cabo san lucas".into())));
+                Ok(())
+            });
+        mock.expect_put_asset()
+            .withf(move |asset| asset.key == "dGVzdHMvZml4dHVyZXMvc2hpcnRfc21hbGwuaGVpYw==")
+            .returning(|asset| {
+                assert_eq!(asset.filename, "shirt_small.heic");
+                assert_eq!(asset.byte_length, 4995);
+                assert_eq!(
+                    asset.location,
+                    Some(Location {
+                        label: Some("peet's".into()),
+                        city: Some("Berkeley".into()),
+                        region: Some("CA".into())
+                    })
+                );
+                Ok(())
+            });
+        // act
+        let repo = RecordRepositoryImpl::new(Arc::new(mock));
+        let result = repo.load(Path::new("tests/fixtures/dump.json"));
+        // assert
+        assert!(result.is_ok());
+        let count = result.unwrap();
+        assert_eq!(count, 3);
     }
 
     #[test]

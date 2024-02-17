@@ -80,6 +80,12 @@ pub trait RecordRepository: Send {
 
     /// Query for assets that lack any tags, caption, and location.
     fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
+
+    /// Export all of the asset records as JSON to the named file.
+    fn dump(&self, filepath: &Path) -> Result<u64, Error>;
+
+    /// Import all of the assets found in the named JSON file.
+    fn load(&self, filepath: &Path) -> Result<u64, Error>;
 }
 
 ///
