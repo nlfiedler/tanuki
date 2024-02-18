@@ -558,18 +558,28 @@ impl QueryRoot {
         Ok(results)
     }
 
-    /// Retrieve the list of locations and their associated asset count.
-    fn locations(executor: &Executor, raw: Option<bool>) -> FieldResult<Vec<LabeledCount>> {
-        use crate::domain::usecases::location::{AllLocations, Params};
-        use crate::domain::usecases::UseCase;
+    /// Retrieve the list of location parts and their associated asset count.
+    ///
+    /// Parts include the location label split on commas, and the city and
+    /// region, if available.
+    fn locations(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
+        use crate::domain::usecases::location::PartedLocations;
+        use crate::domain::usecases::{NoParams, UseCase};
         let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
-        let usecase = AllLocations::new(Box::new(repo));
-        let mut params: Params = Default::default();
-        if let Some(raww) = raw {
-            params.raw = raww;
-        }
-        let locations: Vec<LabeledCount> = usecase.call(params)?;
+        let usecase = PartedLocations::new(Box::new(repo));
+        let locations: Vec<LabeledCount> = usecase.call(NoParams {})?;
+        Ok(locations)
+    }
+
+    /// Retrieve the list of unique locations with their full structure.
+    fn all_locations(executor: &Executor) -> FieldResult<Vec<Location>> {
+        use crate::domain::usecases::location::CompleteLocations;
+        use crate::domain::usecases::{NoParams, UseCase};
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
+        let usecase = CompleteLocations::new(Box::new(repo));
+        let locations: Vec<Location> = usecase.call(NoParams {})?;
         Ok(locations)
     }
 

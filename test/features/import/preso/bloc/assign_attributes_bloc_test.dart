@@ -4,6 +4,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/features/import/preso/bloc/assign_attributes_bloc.dart';
 
@@ -35,9 +36,9 @@ void main() {
       'emits [AssignAttributesState] when AssignLocation is added',
       build: () => AssignAttributesBloc(),
       act: (AssignAttributesBloc bloc) =>
-          bloc.add(AssignLocation(location: 'hawaii')),
+          bloc.add(AssignLocation(location: AssetLocation.from('hawaii'))),
       expect: () => [
-        AssignAttributesState(location: 'hawaii'),
+        AssignAttributesState(location: AssetLocation.from('hawaii')),
       ],
     );
 
@@ -59,15 +60,16 @@ void main() {
       build: () => AssignAttributesBloc(),
       act: (AssignAttributesBloc bloc) {
         bloc.add(AssignTags(tags: const ['cat']));
-        bloc.add(AssignLocation(location: 'hawaii'));
+        bloc.add(AssignLocation(location: AssetLocation.from('hawaii')));
         bloc.add(ToggleAsset(assetId: 'abc123'));
       },
       expect: () => [
         AssignAttributesState(tags: const ['cat']),
-        AssignAttributesState(tags: const ['cat'], location: 'hawaii'),
+        AssignAttributesState(
+            tags: const ['cat'], location: AssetLocation.from('hawaii')),
         AssignAttributesState(
           tags: const ['cat'],
-          location: 'hawaii',
+          location: AssetLocation.from('hawaii'),
           assets: const {'abc123'},
         ),
       ],
@@ -76,15 +78,19 @@ void main() {
     test('submittable indicates completeness of AssignAttributesState', () {
       expect(AssignAttributesState().submittable, false);
       expect(AssignAttributesState(tags: const ['cat']).submittable, false);
-      expect(AssignAttributesState(location: 'hawaii').submittable, false);
       expect(
-          AssignAttributesState(tags: const ['cat'], location: 'hawaii')
+          AssignAttributesState(location: AssetLocation.from('hawaii'))
+              .submittable,
+          false);
+      expect(
+          AssignAttributesState(
+                  tags: const ['cat'], location: AssetLocation.from('hawaii'))
               .submittable,
           false);
       expect(
           AssignAttributesState(
               tags: const ['cat'],
-              location: 'hawaii',
+              location: AssetLocation.from('hawaii'),
               assets: const {'abc123'}).submittable,
           true);
       expect(

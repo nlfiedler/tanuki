@@ -137,29 +137,48 @@ fn test_raw_locations() {
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.raw_locations().unwrap();
     assert_eq!(actual.len(), 1);
-    assert_eq!(actual[0].label, "hawaii");
-    assert_eq!(actual[0].count, 1);
+    assert_eq!(actual[0].label, Some("hawaii".into()));
 
     // multiple locations and occurrences
     let mut asset = common::build_basic_asset();
-    asset.key = "single999".to_owned();
-    asset.location = Some(Location::new("paris, france"));
+    asset.key = "monday1".to_owned();
+    asset.location = Some(Location {
+        label: None,
+        city: Some("Paris".into()),
+        region: Some("France".into()),
+    });
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
-    asset.key = "wonder101".to_owned();
-    asset.location = Some(Location::new("london"));
+    asset.key = "tuesday2".to_owned();
+    asset.location = Some(Location {
+        label: Some("beach".into()),
+        city: Some("Waikiki".into()),
+        region: Some("Hawaii".into()),
+    });
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
-    asset.key = "tuesday42".to_owned();
-    asset.location = Some(Location::new("london"));
+    asset.key = "wednesday3".to_owned();
+    asset.location = Some(Location {
+        label: Some("beach".into()),
+        city: Some("Waikiki".into()),
+        region: Some("Hawaii".into()),
+    });
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.raw_locations().unwrap();
     assert_eq!(actual.len(), 3);
-    assert!(actual.iter().any(|l| l.label == "hawaii" && l.count == 1));
-    assert!(actual.iter().any(|l| l.label == "london" && l.count == 2));
-    assert!(actual
-        .iter()
-        .any(|l| l.label == "paris, france" && l.count == 1));
+    assert!(actual.iter().any(|l| l == &Location::new("hawaii".into())));
+    assert!(actual.iter().any(|l| l
+        == &Location {
+            label: None,
+            city: Some("Paris".into()),
+            region: Some("France".into()),
+        }));
+    assert!(actual.iter().any(|l| l
+        == &Location {
+            label: Some("beach".into()),
+            city: Some("Waikiki".into()),
+            region: Some("Hawaii".into()),
+        }));
 }
 
 fn make_date_time(
@@ -671,7 +690,12 @@ fn test_query_newborn() {
     datasource.put_asset(&asset).unwrap();
     let asset = common::build_newborn_asset("wednesday8", date3);
     datasource.put_asset(&asset).unwrap();
-    let asset = common::build_newborn_asset("thursday9", date4);
+    let mut asset = common::build_newborn_asset("thursday9", date4);
+    asset.location = Some(Location {
+        label: None,
+        city: Some("Portland".into()),
+        region: Some("Maine".into()),
+    });
     datasource.put_asset(&asset).unwrap();
     let asset = common::build_newborn_asset("friday10", date5);
     datasource.put_asset(&asset).unwrap();
@@ -683,7 +707,10 @@ fn test_query_newborn() {
     assert_eq!(actual.len(), 4);
     assert!(!actual[0].asset_id.starts_with("asset/"));
     assert!(actual.iter().any(|l| l.asset_id == "wednesday8"));
-    assert!(actual.iter().any(|l| l.asset_id == "thursday9"));
+    assert!(actual.iter().any(|l| l.asset_id == "thursday9"
+        && l.location
+            .as_ref()
+            .map_or(false, |v| v == "Portland, Maine")));
     assert!(actual.iter().any(|l| l.asset_id == "friday10"));
     assert!(actual.iter().any(|l| l.asset_id == "abc123"));
 }

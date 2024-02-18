@@ -7,14 +7,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:responsive_framework/responsive_framework.dart';
-import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/input.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/preso/widgets/asset_display.dart';
 import 'package:tanuki/features/browse/preso/bloc/all_tags_bloc.dart' as atb;
 import 'package:tanuki/features/import/preso/bloc/assign_attributes_bloc.dart';
 import 'package:tanuki/features/import/preso/bloc/providers.dart';
-import 'package:tanuki/features/browse/preso/bloc/raw_locations_bloc.dart'
+import 'package:tanuki/features/import/preso/bloc/raw_locations_bloc.dart'
     as rlb;
 import 'package:tanuki/features/import/preso/bloc/recent_imports_bloc.dart';
 
@@ -88,9 +87,7 @@ class BulkForm extends ConsumerWidget {
                               id: id,
                               input: AssetInput(
                                 tags: state.tags,
-                                location: state.location == null
-                                    ? Some(AssetLocation.from(state.location))
-                                    : const None(),
+                                location: Option.from(state.location),
                                 caption: const None(),
                                 datetime: const None(),
                                 filename: const None(),
@@ -166,7 +163,7 @@ Widget buildThumbnails(
                 hiddenConditions: [
                   Condition.smallerThan(name: TABLET, value: false),
                 ],
-                child: Text(e.filename),
+                child: Text(e.location.unwrapOr(e.filename)),
               ),
             ]),
           ),

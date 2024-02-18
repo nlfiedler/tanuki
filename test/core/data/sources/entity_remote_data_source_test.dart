@@ -97,7 +97,7 @@ void main() {
         // arrange
         setUpMockHttpClientGraphQLResponse();
         // act
-        final result = await dataSource.getAllLocations(false);
+        final result = await dataSource.getAllLocations();
         // assert
         expect(result, isA<List>());
         expect(result.length, equals(3));
@@ -121,7 +121,7 @@ void main() {
         setUpMockHttpClientFailure403();
         // act, assert
         try {
-          await dataSource.getAllLocations(false);
+          await dataSource.getAllLocations();
           fail('should have raised an error');
         } catch (e) {
           expect(e, isA<ServerException>());
@@ -136,7 +136,7 @@ void main() {
         setUpMockHttpClientGraphQLError();
         // act, assert
         try {
-          await dataSource.getAllLocations(false);
+          await dataSource.getAllLocations();
           fail('should have raised an error');
         } catch (e) {
           expect(e, isA<ServerException>());
@@ -162,7 +162,7 @@ void main() {
         // arrange
         setUpMockGraphQLNullResponse();
         // act
-        final result = await dataSource.getAllLocations(false);
+        final result = await dataSource.getAllLocations();
         // assert
         expect(result, isA<List>());
         expect(result.length, equals(0));
@@ -359,6 +359,116 @@ void main() {
         setUpMockGraphQLNullResponse();
         // act
         final result = await dataSource.getAllYears();
+        // assert
+        expect(result, isA<List>());
+        expect(result.length, equals(0));
+      },
+    );
+  });
+
+  group('getAssetLocations', () {
+    void setUpMockHttpClientGraphQLResponse() {
+      final response = {
+        'data': {
+          'allLocations': [
+            {'label': 'tokyo', 'city': null, 'region': null},
+            {'label': 'paris', 'city': null, 'region': null},
+            {'label': 'london', 'city': null, 'region': null},
+          ]
+        }
+      };
+      // graphql client uses the 'send' method
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return all of the locations',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLResponse();
+        // act
+        final result = await dataSource.getAssetLocations();
+        // assert
+        expect(result, isA<List>());
+        expect(result.length, equals(3));
+        expect(
+          result,
+          containsAll(
+            [
+              const AssetLocationModel(
+                label: Some('tokyo'),
+                city: None(),
+                region: None(),
+              ),
+              const AssetLocationModel(
+                label: Some('paris'),
+                city: None(),
+                region: None(),
+              ),
+              const AssetLocationModel(
+                label: Some('london'),
+                city: None(),
+                region: None(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    test(
+      'should report failure when response unsuccessful',
+      () async {
+        // arrange
+        setUpMockHttpClientFailure403();
+        // act, assert
+        try {
+          await dataSource.getAssetLocations();
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    test(
+      'should raise error when GraphQL server returns an error',
+      () async {
+        // arrange
+        setUpMockHttpClientGraphQLError();
+        // act, assert
+        try {
+          await dataSource.getAssetLocations();
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    void setUpMockGraphQLNullResponse() {
+      final response = {
+        'data': {'locations': null}
+      };
+      // graphql client uses the 'send' method
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return [] when response is null',
+      () async {
+        // arrange
+        setUpMockGraphQLNullResponse();
+        // act
+        final result = await dataSource.getAssetLocations();
         // assert
         expect(result, isA<List>());
         expect(result.length, equals(0));

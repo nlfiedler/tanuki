@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
@@ -10,8 +10,8 @@ void main() {
       'should implement Comparable',
       () {
         // arrange
-        final first = Location(label: 'aaa', count: 10);
-        final second = Location(label: 'bbb', count: 5);
+        const first = Location(label: 'aaa', count: 10);
+        const second = Location(label: 'bbb', count: 5);
         // act
         // assert
         expect(first.compareTo(second), -1);
@@ -26,8 +26,8 @@ void main() {
       'should implement Comparable',
       () {
         // arrange
-        final first = Tag(label: 'aaa', count: 10);
-        final second = Tag(label: 'bbb', count: 5);
+        const first = Tag(label: 'aaa', count: 10);
+        const second = Tag(label: 'bbb', count: 5);
         // act
         // assert
         expect(first.compareTo(second), -1);

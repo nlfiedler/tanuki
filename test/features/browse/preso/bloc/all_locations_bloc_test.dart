@@ -32,7 +32,7 @@ void main() {
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = GetAllLocations(mockEntityRepository);
-      when(() => mockEntityRepository.getAllLocations(false))
+      when(() => mockEntityRepository.getAllLocations())
           .thenAnswer((_) async => Ok(List.from(incoming)));
     });
 
@@ -54,7 +54,7 @@ void main() {
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = GetAllLocations(mockEntityRepository);
-      when(() => mockEntityRepository.getAllLocations(false))
+      when(() => mockEntityRepository.getAllLocations())
           .thenAnswer((_) async => const Err(ServerFailure('oh no!')));
     });
 

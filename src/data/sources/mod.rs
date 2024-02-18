@@ -2,7 +2,7 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::data::models::AssetModel;
-use crate::domain::entities::{Asset, LabeledCount, SearchResult};
+use crate::domain::entities::{Asset, LabeledCount, Location, SearchResult};
 use anyhow::{anyhow, Error};
 use chrono::prelude::*;
 #[cfg(test)]
@@ -69,9 +69,8 @@ pub trait EntityDataSource: Send + Sync {
     /// with each location. Results include those processed by splitting on commas.
     fn all_locations(&self) -> Result<Vec<LabeledCount>, Error>;
 
-    /// Return all of the locations as originally entered and the number of
-    /// assets associated with each location.
-    fn raw_locations(&self) -> Result<Vec<LabeledCount>, Error>;
+    /// Return all of the unique locations with all available field values.
+    fn raw_locations(&self) -> Result<Vec<Location>, Error>;
 
     /// Return all of the known years and the number of assets associated with
     /// each year.
@@ -114,6 +113,18 @@ impl EntityDataSourceImpl {
         std::fs::create_dir_all(&db_path)?;
         let database = database::Database::new(db_path, views, Box::new(mapper))?;
         Ok(Self { database })
+    }
+
+    fn fetch_all_locations(&self, view: &str) -> Result<Vec<Location>, Error> {
+        let map = self.database.count_all_keys(view)?;
+        let results: Vec<Location> = map
+            .iter()
+            .map(|t| {
+                let raw = String::from_utf8((*t.0).to_vec()).unwrap();
+                Location::deserialize(&raw)
+            })
+            .collect();
+        Ok(results)
     }
 
     fn count_all_keys(&self, view: &str) -> Result<Vec<LabeledCount>, Error> {
@@ -258,8 +269,8 @@ impl EntityDataSource for EntityDataSourceImpl {
         self.count_all_keys("by_location")
     }
 
-    fn raw_locations(&self) -> Result<Vec<LabeledCount>, Error> {
-        self.count_all_keys("raw_locations")
+    fn raw_locations(&self) -> Result<Vec<Location>, Error> {
+        self.fetch_all_locations("raw_locations")
     }
 
     fn all_years(&self) -> Result<Vec<LabeledCount>, Error> {
@@ -319,7 +330,10 @@ impl Document for Asset {
 
     fn map(&self, view: &str, emitter: &Emitter) -> Result<(), mokuroku::Error> {
         // make the index value assuming we will emit something
-        let value = SearchResult::new(self);
+        let mut value = SearchResult::new(self);
+        if view == "newborn" {
+            value.descriptive_location(self);
+        }
         let idv: Vec<u8> = value.to_bytes()?;
         if view == "by_tags" {
             for tag in &self.tags {
@@ -340,6 +354,9 @@ impl Document for Asset {
             let lower = self.media_type.to_lowercase();
             emitter.emit(lower.as_bytes(), Some(&idv))?;
         } else if view == "by_location" {
+            // location values split into parts and lowercased with each one
+            // emitted separately: label and its comma-separated parts, the city
+            // and region, if any; intended for searching and filtering
             if let Some(loc) = self.location.as_ref() {
                 let values = loc.indexable_values();
                 for value in values {
@@ -347,13 +364,11 @@ impl Document for Asset {
                 }
             }
         } else if view == "raw_locations" {
-            // location label as entered by the user
+            // full location values separated by tabs and emitted as a single
+            // index key with no value, intended for providing input completion
             if let Some(loc) = self.location.as_ref() {
-                if let Some(label) = loc.label.as_ref() {
-                    // secondary index keys are lowercase
-                    let lower = label.to_lowercase();
-                    emitter.emit(lower.as_bytes(), Some(&idv))?;
-                }
+                let encoded = loc.serialize();
+                emitter.emit(encoded.as_bytes(), None)?;
             }
         } else if view == "by_year" {
             let year = if let Some(ud) = self.user_date.as_ref() {

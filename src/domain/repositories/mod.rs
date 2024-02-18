@@ -32,9 +32,8 @@ pub trait RecordRepository: Send {
     /// with each location. Results include those processed by splitting on commas.
     fn all_locations(&self) -> Result<Vec<LabeledCount>, Error>;
 
-    /// Return all of the locations as originally entered and the number of
-    /// assets associated with each location.
-    fn raw_locations(&self) -> Result<Vec<LabeledCount>, Error>;
+    /// Return all of the unique locations with all available field values.
+    fn raw_locations(&self) -> Result<Vec<Location>, Error>;
 
     /// Return all of the known years and the number of assets associated with
     /// each year.

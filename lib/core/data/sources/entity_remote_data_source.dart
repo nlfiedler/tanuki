@@ -15,9 +15,10 @@ import 'package:tanuki/core/error/exceptions.dart' as err;
 
 abstract class EntityRemoteDataSource {
   Future<int> bulkUpdate(List<AssetInputId> assets);
-  Future<List<Location>> getAllLocations(bool raw);
+  Future<List<Location>> getAllLocations();
   Future<List<Tag>> getAllTags();
   Future<List<Year>> getAllYears();
+  Future<List<AssetLocation>> getAssetLocations();
   Future<Asset?> getAsset(String id);
   Future<int> getAssetCount();
   Future<QueryResults?> queryAssets(
@@ -62,10 +63,10 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
   }
 
   @override
-  Future<List<Location>> getAllLocations(bool raw) async {
+  Future<List<Location>> getAllLocations() async {
     const query = r'''
-      query Locations($raw: Boolean) {
-        locations(raw: $raw) {
+      query {
+        locations() {
           label
           count
         }
@@ -73,9 +74,6 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     ''';
     final queryOptions = QueryOptions(
       document: gql(query),
-      variables: <String, dynamic>{
-        'raw': raw,
-      },
       fetchPolicy: FetchPolicy.noCache,
     );
     final QueryResult result = await client.query(queryOptions);
@@ -149,6 +147,38 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
     final List<YearModel> results = List.from(
       years.map<YearModel>((e) {
         return YearModel.fromJson(e);
+      }),
+    );
+    return results;
+  }
+
+  @override
+  Future<List<AssetLocation>> getAssetLocations() async {
+    const query = r'''
+      query {
+        allLocations() {
+          label
+          city
+          region
+        }
+      }
+    ''';
+    final queryOptions = QueryOptions(
+      document: gql(query),
+      fetchPolicy: FetchPolicy.noCache,
+    );
+    final QueryResult result = await client.query(queryOptions);
+    if (result.hasException) {
+      throw err.ServerException(result.exception.toString());
+    }
+    if (result.data?['allLocations'] == null) {
+      return [];
+    }
+    final List<dynamic> locations =
+        result.data?['allLocations'] as List<dynamic>;
+    final List<AssetLocationModel> results = List.from(
+      locations.map<AssetLocationModel>((e) {
+        return AssetLocationModel.fromJson(e);
       }),
     );
     return results;

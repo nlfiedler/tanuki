@@ -13,13 +13,16 @@ abstract class EntityRepository {
   Future<Result<int, Failure>> bulkUpdate(List<AssetInputId> assets);
 
   /// Retrieve all of the locations and their counts.
-  Future<Result<List<Location>, Failure>> getAllLocations(bool raw);
+  Future<Result<List<Location>, Failure>> getAllLocations();
 
   /// Retrieve all of the tags and their counts.
   Future<Result<List<Tag>, Failure>> getAllTags();
 
   /// Retrieve all of the years and their counts.
   Future<Result<List<Year>, Failure>> getAllYears();
+
+  /// Retrieve the list of unique locations with their full structure.
+  Future<Result<List<AssetLocation>, Failure>> getAssetLocations();
 
   /// Retrieve the asset with the given unique identifier.
   Future<Result<Asset, Failure>> getAsset(String id);

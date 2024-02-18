@@ -1,8 +1,9 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 
 //
 // events
@@ -20,7 +21,7 @@ class AssignTags extends AssignAttributesEvent {
 }
 
 class AssignLocation extends AssignAttributesEvent {
-  final String? location;
+  final AssetLocation? location;
 
   AssignLocation({required this.location});
 }
@@ -39,7 +40,7 @@ class AssignAttributesState extends Equatable {
   // list of tags to be applied to the selected assets
   final List<String> tags;
   // location to be applied to the selected assets
-  final String? location;
+  final AssetLocation? location;
   // list of identifiers of the selected assets
   final Set<String> assets;
 
@@ -62,7 +63,7 @@ class AssignAttributesState extends Equatable {
 class AssignAttributesBloc
     extends Bloc<AssignAttributesEvent, AssignAttributesState> {
   List<String>? tags;
-  String? location;
+  AssetLocation? location;
   final Set<String> assets = {};
 
   AssignAttributesBloc() : super(AssignAttributesState()) {

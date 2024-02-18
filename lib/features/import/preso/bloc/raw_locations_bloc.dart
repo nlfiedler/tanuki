@@ -3,8 +3,9 @@
 //
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:tanuki/core/domain/entities/attributes.dart';
-import 'package:tanuki/core/domain/usecases/get_all_locations.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
+import 'package:tanuki/core/domain/usecases/get_asset_locations.dart';
+import 'package:tanuki/core/domain/usecases/usecase.dart';
 
 //
 // events
@@ -31,7 +32,7 @@ class Empty extends RawLocationsState {}
 class Loading extends RawLocationsState {}
 
 class Loaded extends RawLocationsState {
-  final List<Location> locations;
+  final List<AssetLocation> locations;
 
   Loaded({required this.locations});
 
@@ -53,12 +54,12 @@ class Error extends RawLocationsState {
 //
 
 class RawLocationsBloc extends Bloc<RawLocationsEvent, RawLocationsState> {
-  final GetAllLocations usecase;
+  final GetAssetLocations usecase;
 
   RawLocationsBloc({required this.usecase}) : super(Empty()) {
     on<LoadRawLocations>((event, emit) async {
       emit(Loading());
-      final result = await usecase(const Params(raw: true));
+      final result = await usecase(NoParams());
       emit(result.mapOrElse(
         (locations) => Loaded(locations: locations),
         (failure) => Error(message: failure.toString()),

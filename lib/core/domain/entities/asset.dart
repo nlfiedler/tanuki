@@ -27,6 +27,25 @@ class AssetLocation extends Equatable {
     );
   }
 
+  /// Return a user-visible description for this location.
+  String description() {
+    final hasLabel = label.isSome();
+    final hasCity = city.isSome();
+    final hasRegion = region.isSome();
+    if (hasLabel && hasCity && hasRegion) {
+      return "${label.unwrap()} - ${city.unwrap()}, ${region.unwrap()}";
+    } else if (hasCity && hasRegion) {
+      return "${city.unwrap()}, ${region.unwrap()}";
+    } else if (hasLabel) {
+      return label.unwrap();
+    } else if (hasCity) {
+      return city.unwrap();
+    } else if (hasRegion) {
+      return region.unwrap();
+    }
+    return "";
+  }
+
   @override
   List<Object> get props => [label, city, region];
 

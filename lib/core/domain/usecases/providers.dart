@@ -1,8 +1,9 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/container.dart';
+import 'package:tanuki/core/domain/usecases/get_asset_locations.dart';
 import 'bulk_update.dart';
 import 'get_all_locations.dart';
 import 'get_all_tags.dart';
@@ -23,6 +24,12 @@ final bulkUpdateUsecaseProvider = Provider<BulkUpdate>(
 
 final getAllLocationsUsecaseProvider = Provider<GetAllLocations>(
   (ref) => GetAllLocations(
+    ref.read(entityRepositoryProvider),
+  ),
+);
+
+final getAssetLocationsUsecaseProvider = Provider<GetAssetLocations>(
+  (ref) => GetAssetLocations(
     ref.read(entityRepositoryProvider),
   ),
 );

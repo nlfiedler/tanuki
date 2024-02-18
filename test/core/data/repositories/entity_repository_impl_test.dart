@@ -4,6 +4,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
+import 'package:tanuki/core/data/models/asset_model.dart';
 import 'package:tanuki/core/data/models/attributes_model.dart';
 import 'package:tanuki/core/data/models/search_model.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
@@ -60,12 +61,12 @@ void main() {
           LocationModel(label: 'paris', count: 269),
           LocationModel(label: 'london', count: 23),
         ];
-        when(() => mockRemoteDataSource.getAllLocations(false))
+        when(() => mockRemoteDataSource.getAllLocations())
             .thenAnswer((_) async => locations);
         // act
-        final result = await repository.getAllLocations(false);
+        final result = await repository.getAllLocations();
         // assert
-        verify(() => mockRemoteDataSource.getAllLocations(false));
+        verify(() => mockRemoteDataSource.getAllLocations());
         expect(result.unwrap(), isA<List>());
         expect(result.unwrap().length, equals(3));
         expect(result.unwrap(), containsAll(locations));
@@ -76,12 +77,12 @@ void main() {
       'should return failure when remote data source is unsuccessful',
       () async {
         // arrange
-        when(() => mockRemoteDataSource.getAllLocations(false))
+        when(() => mockRemoteDataSource.getAllLocations())
             .thenThrow(const ServerException());
         // act
-        final result = await repository.getAllLocations(false);
+        final result = await repository.getAllLocations();
         // assert
-        verify(() => mockRemoteDataSource.getAllLocations(false));
+        verify(() => mockRemoteDataSource.getAllLocations());
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );
@@ -156,6 +157,55 @@ void main() {
         final result = await repository.getAllYears();
         // assert
         verify(() => mockRemoteDataSource.getAllYears());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+  });
+
+  group('getAssetLocations', () {
+    test(
+      'should return remote data when remote data source returns data',
+      () async {
+        // arrange
+        final locations = [
+          const AssetLocationModel(
+            label: Some('tokyo'),
+            city: None(),
+            region: None(),
+          ),
+          const AssetLocationModel(
+            label: Some('paris'),
+            city: None(),
+            region: None(),
+          ),
+          const AssetLocationModel(
+            label: Some('london'),
+            city: None(),
+            region: None(),
+          ),
+        ];
+        when(() => mockRemoteDataSource.getAssetLocations())
+            .thenAnswer((_) async => locations);
+        // act
+        final result = await repository.getAssetLocations();
+        // assert
+        verify(() => mockRemoteDataSource.getAssetLocations());
+        expect(result.unwrap(), isA<List>());
+        expect(result.unwrap().length, equals(3));
+        expect(result.unwrap(), containsAll(locations));
+      },
+    );
+
+    test(
+      'should return failure when remote data source is unsuccessful',
+      () async {
+        // arrange
+        when(() => mockRemoteDataSource.getAssetLocations())
+            .thenThrow(const ServerException());
+        // act
+        final result = await repository.getAssetLocations();
+        // assert
+        verify(() => mockRemoteDataSource.getAssetLocations());
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );

@@ -5,6 +5,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:tanuki/core/domain/entities/attributes.dart';
 import 'package:tanuki/core/domain/usecases/get_all_locations.dart';
+import 'package:tanuki/core/domain/usecases/usecase.dart';
 
 //
 // events
@@ -58,7 +59,7 @@ class AllLocationsBloc extends Bloc<AllLocationsEvent, AllLocationsState> {
   AllLocationsBloc({required this.usecase}) : super(Empty()) {
     on<LoadAllLocations>((event, emit) async {
       emit(Loading());
-      final result = await usecase(const Params(raw: false));
+      final result = await usecase(NoParams());
       emit(result.mapOrElse(
         (locations) => Loaded(locations: locations),
         (failure) => Error(message: failure.toString()),

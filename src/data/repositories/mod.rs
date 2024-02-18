@@ -3,7 +3,7 @@
 //
 use crate::data::models::AssetDumpModel;
 use crate::data::sources::EntityDataSource;
-use crate::domain::entities::{Asset, LabeledCount, SearchResult};
+use crate::domain::entities::{Asset, LabeledCount, Location, SearchResult};
 use crate::domain::repositories::BlobRepository;
 use crate::domain::repositories::RecordRepository;
 use anyhow::{anyhow, Error};
@@ -70,7 +70,7 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.all_locations()
     }
 
-    fn raw_locations(&self) -> Result<Vec<LabeledCount>, Error> {
+    fn raw_locations(&self) -> Result<Vec<Location>, Error> {
         self.datasource.raw_locations()
     }
 

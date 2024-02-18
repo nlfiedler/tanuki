@@ -9,7 +9,6 @@ import 'all_years_bloc.dart';
 import 'asset_bloc.dart';
 import 'asset_browser_bloc.dart';
 import 'asset_count_bloc.dart';
-import 'raw_locations_bloc.dart';
 
 final allLocationsBlocProvider = Provider.autoDispose<AllLocationsBloc>(
   (ref) => AllLocationsBloc(
@@ -44,11 +43,5 @@ final assetBrowserBlocProvider = Provider.autoDispose<AssetBrowserBloc>(
 final assetCountBlocProvider = Provider.autoDispose<AssetCountBloc>(
   (ref) => AssetCountBloc(
     usecase: ref.read(getAssetCountUsecaseProvider),
-  ),
-);
-
-final rawLocationsBlocProvider = Provider.autoDispose<RawLocationsBloc>(
-  (ref) => RawLocationsBloc(
-    usecase: ref.read(getAllLocationsUsecaseProvider),
   ),
 );

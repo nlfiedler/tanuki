@@ -29,9 +29,9 @@ class EntityRepositoryImpl extends EntityRepository {
   }
 
   @override
-  Future<Result<List<Location>, Failure>> getAllLocations(bool raw) async {
+  Future<Result<List<Location>, Failure>> getAllLocations() async {
     try {
-      final locations = await remoteDataSource.getAllLocations(raw);
+      final locations = await remoteDataSource.getAllLocations();
       return Ok(locations);
     } on ServerException catch (e) {
       return Err(ServerFailure(e.toString()));
@@ -53,6 +53,16 @@ class EntityRepositoryImpl extends EntityRepository {
     try {
       final years = await remoteDataSource.getAllYears();
       return Ok(years);
+    } on ServerException catch (e) {
+      return Err(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<List<AssetLocation>, Failure>> getAssetLocations() async {
+    try {
+      final locations = await remoteDataSource.getAssetLocations();
+      return Ok(locations);
     } on ServerException catch (e) {
       return Err(ServerFailure(e.toString()));
     }

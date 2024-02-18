@@ -139,7 +139,7 @@ pub fn build_newborn_asset(key: &str, import_date: DateTime<Utc>) -> Asset {
         tags: vec![],
         import_date,
         caption: None,
-        location: Default::default(),
+        location: None,
         user_date: None,
         original_date: None,
         dimensions: None,
