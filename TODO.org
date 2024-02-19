@@ -22,8 +22,8 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 - [ ] build and deploy new version of app
 - [ ] confirm it is empty
 - [ ] load the dump file
-- [ ] confirm search is working
-- [ ] confirm recents are still recent
+- [ ] confirm search is working (~anniversary~ and ~sausalito~)
+- [ ] confirm recents are still recent (~300)
 ** [#B] Quick rotation fix for certain images
 *** add a simple GraphQL mutation that sets the =Orientation= Exif field
 *** check the =kamadak-exif= project for bugs related to writing Exif data

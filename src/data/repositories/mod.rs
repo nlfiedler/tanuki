@@ -775,7 +775,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let mut mock = MockEntityDataSource::new();
@@ -813,7 +813,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let before = make_date_time(2018, 5, 31, 21, 10, 11);
@@ -853,7 +853,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let after = make_date_time(2018, 5, 31, 21, 10, 11);
@@ -893,7 +893,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let after = make_date_time(2018, 5, 31, 21, 10, 11);
@@ -975,7 +975,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let mut mock = MockEntityDataSource::new();
@@ -1013,7 +1013,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let mut mock = MockEntityDataSource::new();
@@ -1051,7 +1051,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let mut mock = MockEntityDataSource::new();

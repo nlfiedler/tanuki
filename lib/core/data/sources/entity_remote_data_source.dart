@@ -250,7 +250,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
             id
             datetime
             filename
-            location
+            location { label city region }
             mimetype
           }
           count
@@ -297,7 +297,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
             id
             datetime
             filename
-            location
+            location { label city region }
             mimetype
           }
           count

@@ -1,10 +1,11 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:equatable/equatable.dart';
 import 'package:oxidized/oxidized.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 
-enum SortField { date, identifier, filename, mediaType, location }
+enum SortField { date, identifier, filename, mediaType }
 
 enum SortOrder { ascending, descending }
 
@@ -73,7 +74,7 @@ class SearchResult extends Equatable {
   final String mimetype;
 
   /// Location for the asset, if available.
-  final Option<String> location;
+  final Option<AssetLocation> location;
 
   /// The date/time for the matching asset.
   final DateTime datetime;

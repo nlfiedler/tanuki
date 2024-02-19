@@ -1,11 +1,13 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:oxidized/oxidized.dart';
+import 'package:tanuki/core/data/models/asset_model.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 
 class SearchParamsModel extends SearchParams {
-  SearchParamsModel({
+  const SearchParamsModel({
     List<String> tags = const [],
     List<String> locations = const [],
     Option<DateTime> after = const None(),
@@ -91,8 +93,6 @@ Option<SortField> decodeSortField(String? field) {
       return const Some(SortField.filename);
     case 'MEDIA_TYPE':
       return const Some(SortField.mediaType);
-    case 'LOCATION':
-      return const Some(SortField.location);
   }
   return const None();
 }
@@ -108,8 +108,6 @@ String? encodeSortField(Option<SortField> field) {
         return 'FILENAME';
       case SortField.mediaType:
         return 'MEDIA_TYPE';
-      case SortField.location:
-        return 'LOCATION';
     }
   }, null);
 }
@@ -136,11 +134,11 @@ String? encodeSortOrder(Option<SortOrder> order) {
 }
 
 class SearchResultModel extends SearchResult {
-  SearchResultModel({
+  const SearchResultModel({
     required String id,
     required String filename,
     required String mimetype,
-    required Option<String> location,
+    required Option<AssetLocation> location,
     required DateTime datetime,
   }) : super(
           id: id,
@@ -161,11 +159,13 @@ class SearchResultModel extends SearchResult {
   }
 
   factory SearchResultModel.fromJson(Map<String, dynamic> json) {
+    final Option<AssetLocation> location = Option.from(json['location'])
+        .map((v) => AssetLocationModel.fromJson(v as Map<String, dynamic>));
     return SearchResultModel(
       id: json['id'],
       filename: json['filename'],
       mimetype: json['mimetype'],
-      location: Option.from(json['location']),
+      location: location,
       datetime: DateTime.parse(json['datetime']),
     );
   }
@@ -175,14 +175,17 @@ class SearchResultModel extends SearchResult {
       'id': id,
       'filename': filename,
       'mimetype': mimetype,
-      'location': location.toNullable(),
+      'location': location.mapOr(
+        (v) => AssetLocationModel.from(v).toJson(),
+        null,
+      ),
       'datetime': datetime.toIso8601String(),
     };
   }
 }
 
 class QueryResultsModel extends QueryResults {
-  QueryResultsModel({
+  const QueryResultsModel({
     required List<SearchResult> results,
     required int count,
   }) : super(results: results, count: count);

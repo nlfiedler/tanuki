@@ -312,7 +312,7 @@ void main() {
               id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
               filename: 'catmouse_1280p.jpg',
               mimetype: 'image/jpeg',
-              location: const Some('outdoors'),
+              location: Some(AssetLocation.from('outdoors')),
               datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
             )
           ],
@@ -371,7 +371,7 @@ void main() {
               id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
               filename: 'catmouse_1280p.jpg',
               mimetype: 'image/jpeg',
-              location: const Some('outdoors'),
+              location: Some(AssetLocation.from('outdoors')),
               datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
             )
           ],

@@ -199,7 +199,6 @@ pub enum SortField {
     Identifier,
     Filename,
     MediaType,
-    Location,
 }
 
 impl From<SortField> for crate::domain::usecases::search::SortField {
@@ -209,7 +208,6 @@ impl From<SortField> for crate::domain::usecases::search::SortField {
             SortField::Identifier => crate::domain::usecases::search::SortField::Identifier,
             SortField::Filename => crate::domain::usecases::search::SortField::Filename,
             SortField::MediaType => crate::domain::usecases::search::SortField::MediaType,
-            SortField::Location => crate::domain::usecases::search::SortField::Location,
         }
     }
 }
@@ -304,7 +302,7 @@ impl SearchResult {
     }
 
     /// The location for the matching asset, if available.
-    fn location(&self) -> Option<String> {
+    fn location(&self) -> Option<Location> {
         self.location.clone()
     }
 
@@ -1303,49 +1301,49 @@ mod tests {
                 asset_id: "cafebabe".to_owned(),
                 filename: "img_1234.png".to_owned(),
                 media_type: "image/png".to_owned(),
-                location: Some("hawaii".to_owned()),
+                location: Some(Location::new("hawaii")),
                 datetime: make_date_time(2012, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "babecafe".to_owned(),
                 filename: "img_2345.gif".to_owned(),
                 media_type: "image/gif".to_owned(),
-                location: Some("london".to_owned()),
+                location: Some(Location::new("london")),
                 datetime: make_date_time(2013, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "cafed00d".to_owned(),
                 filename: "img_3456.mov".to_owned(),
                 media_type: "video/quicktime".to_owned(),
-                location: Some("paris".to_owned()),
+                location: Some(Location::new("paris")),
                 datetime: make_date_time(2014, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "d00dcafe".to_owned(),
                 filename: "img_4567.jpg".to_owned(),
                 media_type: "image/jpeg".to_owned(),
-                location: Some("hawaii".to_owned()),
+                location: Some(Location::new("hawaii")),
                 datetime: make_date_time(2015, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "deadbeef".to_owned(),
                 filename: "img_5678.mov".to_owned(),
                 media_type: "video/quicktime".to_owned(),
-                location: Some("london".to_owned()),
+                location: Some(Location::new("london")),
                 datetime: make_date_time(2016, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "cafebeef".to_owned(),
                 filename: "img_6789.jpg".to_owned(),
                 media_type: "image/jpeg".to_owned(),
-                location: Some("paris".to_owned()),
+                location: Some(Location::new("paris")),
                 datetime: make_date_time(2017, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "deadcafe".to_owned(),
                 filename: "img_7890.jpg".to_owned(),
                 media_type: "image/jpeg".to_owned(),
-                location: Some("yosemite".to_owned()),
+                location: Some(Location::new("yosemite")),
                 datetime: make_date_time(2018, 5, 31, 21, 10, 11),
             },
         ]
@@ -1379,7 +1377,7 @@ mod tests {
         let (res, errors) = juniper::execute_sync(
             r#"query Search($params: SearchParams!) {
                 search(params: $params) {
-                    results { id filename mimetype location datetime }
+                    results { id filename mimetype location { label } datetime }
                     count
                 }
             }"#,
@@ -1412,6 +1410,8 @@ mod tests {
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
         assert_eq!(entry_value, "image/gif");
         let entry_field = entry_object.get_field_value("location").unwrap();
+        let object_value = entry_field.as_object_value().unwrap();
+        let entry_field = object_value.get_field_value("label").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
         assert_eq!(entry_value, "london");
         let entry_field = entry_object.get_field_value("datetime").unwrap();
@@ -1430,6 +1430,8 @@ mod tests {
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
         assert_eq!(entry_value, "image/jpeg");
         let entry_field = entry_object.get_field_value("location").unwrap();
+        let object_value = entry_field.as_object_value().unwrap();
+        let entry_field = object_value.get_field_value("label").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
         assert_eq!(entry_value, "yosemite");
         let entry_field = entry_object.get_field_value("datetime").unwrap();
@@ -1452,7 +1454,7 @@ mod tests {
                 asset_id,
                 filename,
                 media_type: "image/jpeg".to_owned(),
-                location: Some(locations[location_index].to_owned()),
+                location: Some(Location::new(locations[location_index])),
                 datetime,
             });
         }
@@ -1827,7 +1829,7 @@ mod tests {
         let (res, errors) = juniper::execute_sync(
             r#"query Search($params: SearchParams!) {
                 search(params: $params) {
-                    results { id filename mimetype location datetime }
+                    results { id filename mimetype location { label } datetime }
                     count
                 }
             }"#,

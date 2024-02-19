@@ -690,12 +690,16 @@ fn test_query_newborn() {
     datasource.put_asset(&asset).unwrap();
     let asset = common::build_newborn_asset("wednesday8", date3);
     datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_newborn_asset("sunday0", date3);
+    asset.location = Some(Location::new("museum"));
+    datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_newborn_asset("thursday9", date4);
-    asset.location = Some(Location {
+    let portland_maine = Location {
         label: None,
         city: Some("Portland".into()),
         region: Some("Maine".into()),
-    });
+    };
+    asset.location = Some(portland_maine.clone());
     datasource.put_asset(&asset).unwrap();
     let asset = common::build_newborn_asset("friday10", date5);
     datasource.put_asset(&asset).unwrap();
@@ -710,7 +714,7 @@ fn test_query_newborn() {
     assert!(actual.iter().any(|l| l.asset_id == "thursday9"
         && l.location
             .as_ref()
-            .map_or(false, |v| v == "Portland, Maine")));
+            .map_or(false, |v| v == &portland_maine)));
     assert!(actual.iter().any(|l| l.asset_id == "friday10"));
     assert!(actual.iter().any(|l| l.asset_id == "abc123"));
 }

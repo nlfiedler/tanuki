@@ -1,23 +1,24 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'dart:convert';
 import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/data/models/search_model.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('SearchParamsModel', () {
     final tSearchParamsModel = SearchParamsModel(
-      tags: ['clowns', 'snakes'],
-      locations: ['batcave'],
-      mimetype: Some('image/jpeg'),
-      after: None(),
+      tags: const ['clowns', 'snakes'],
+      locations: const ['batcave'],
+      mimetype: const Some('image/jpeg'),
+      after: const None(),
       before: Some(DateTime.utc(2020, 5, 24)),
     );
 
-    final jsonInput = r'''
+    const jsonInput = r'''
       {
         "tags": ["clowns", "snakes"],
         "locations": ["batcave"],
@@ -75,14 +76,14 @@ void main() {
       test('should convert with all non-null options', () {
         // arrange
         final model = SearchParamsModel(
-          tags: ['clowns', 'snakes'],
-          locations: ['batcave'],
-          mimetype: Some('image/jpeg'),
-          filename: Some('catmouse.jpg'),
+          tags: const ['clowns', 'snakes'],
+          locations: const ['batcave'],
+          mimetype: const Some('image/jpeg'),
+          filename: const Some('catmouse.jpg'),
           after: Some(DateTime.utc(2000, 10, 12)),
           before: Some(DateTime.utc(2020, 5, 24)),
-          sortField: Some(SortField.date),
-          sortOrder: Some(SortOrder.ascending),
+          sortField: const Some(SortField.date),
+          sortOrder: const Some(SortOrder.ascending),
         );
         // act
         final result = SearchParamsModel.fromJson(model.toJson());
@@ -92,7 +93,7 @@ void main() {
 
       test('should convert with all null options', () {
         // arrange
-        final model = SearchParamsModel();
+        const model = SearchParamsModel();
         // act
         final result = SearchParamsModel.fromJson(model.toJson());
         // assert
@@ -102,21 +103,21 @@ void main() {
   });
 
   group('SearchResultModel', () {
-    final uniqueId = 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==';
+    const uniqueId = 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==';
     final tSearchResultModel = SearchResultModel(
       id: uniqueId,
       filename: 'catmouse_1280p.jpg',
       mimetype: 'image/jpeg',
-      location: Some('outdoors'),
+      location: Some(AssetLocation.from('outdoors')),
       datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
     );
 
-    final jsonInput = r'''
+    const jsonInput = r'''
       {
         "id": "MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==",
         "filename": "catmouse_1280p.jpg",
         "mimetype": "image/jpeg",
-        "location": "outdoors",
+        "location": {"label": "outdoors", "city": null, "region": null},
         "datetime": "2020-05-24T18:02:15.829336+00:00"
       }
     ''';
@@ -154,7 +155,7 @@ void main() {
             'id': uniqueId,
             'filename': 'catmouse_1280p.jpg',
             'mimetype': 'image/jpeg',
-            'location': 'outdoors',
+            'location': {'label': 'outdoors', 'city': null, 'region': null},
             'datetime': '2020-05-24T18:02:15.000Z',
           };
           expect(result, expectedMap);
@@ -169,7 +170,7 @@ void main() {
           id: 'MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6d25keajZuLmpwZw==',
           filename: 'mousecat_1280p.jpg',
           mimetype: 'image/jpeg',
-          location: None(),
+          location: const None(),
           datetime: DateTime.utc(2010, 10, 12, 9, 20, 51),
         );
         // act
@@ -181,28 +182,28 @@ void main() {
   });
 
   group('QueryResultsModel', () {
-    final uniqueId = 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==';
+    const uniqueId = 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==';
     final tQueryResultsModel = QueryResultsModel(
       results: [
         SearchResultModel(
           id: uniqueId,
           filename: 'catmouse_1280p.jpg',
           mimetype: 'image/jpeg',
-          location: Some('outdoors'),
+          location: Some(AssetLocation.from('outdoors')),
           datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
         )
       ],
       count: 101,
     );
 
-    final jsonInput = r'''
+    const jsonInput = r'''
       {
         "results": [
           {
             "id": "MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==",
             "filename": "catmouse_1280p.jpg",
             "mimetype": "image/jpeg",
-            "location": "outdoors",
+            "location": {"label": "outdoors", "city": null, "region": null},
             "datetime": "2020-05-24T18:02:15.829336+00:00"
           }
         ],
@@ -245,7 +246,7 @@ void main() {
                 'id': uniqueId,
                 'filename': 'catmouse_1280p.jpg',
                 'mimetype': 'image/jpeg',
-                'location': 'outdoors',
+                'location': {'label': 'outdoors', 'city': null, 'region': null},
                 'datetime': '2020-05-24T18:02:15.000Z',
               }
             ],
@@ -265,7 +266,7 @@ void main() {
               id: 'MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6d25keajZuLmpwZw==',
               filename: 'mousecat_1280p.jpg',
               mimetype: 'image/jpeg',
-              location: None(),
+              location: const None(),
               datetime: DateTime.utc(2010, 10, 12, 9, 20, 51),
             )
           ],

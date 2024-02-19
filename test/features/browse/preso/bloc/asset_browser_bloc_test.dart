@@ -1,10 +1,11 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:oxidized/oxidized.dart';
+import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/domain/entities/search.dart';
 import 'package:tanuki/core/domain/repositories/entity_repository.dart';
 import 'package:tanuki/core/domain/usecases/query_assets.dart';
@@ -24,7 +25,7 @@ void main() {
         id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
         filename: 'catmouse_1280p.jpg',
         mimetype: 'image/jpeg',
-        location: Some('outdoors'),
+        location: Some(AssetLocation.from('outdoors')),
         datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
       )
     ],
@@ -33,7 +34,7 @@ void main() {
 
   setUpAll(() {
     // mocktail needs a fallback for any() that involves custom types
-    final SearchParams dummy = SearchParams();
+    const SearchParams dummy = SearchParams();
     registerFallbackValue(dummy);
   });
 
@@ -276,7 +277,7 @@ void main() {
           id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
           filename: 'catmouse_1280p.jpg',
           mimetype: 'image/jpeg',
-          location: Some('outdoors'),
+          location: Some(AssetLocation.from('outdoors')),
           datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
         )
       ],
@@ -372,13 +373,13 @@ void main() {
   });
 
   group('pagination case: zero', () {
-    final zeroQueryResults = QueryResults(results: const [], count: 0);
+    const zeroQueryResults = QueryResults(results: [], count: 0);
 
     setUp(() {
       mockEntityRepository = MockEntityRepository();
       usecase = QueryAssets(mockEntityRepository);
       when(() => mockEntityRepository.queryAssets(any(), any(), any()))
-          .thenAnswer((_) async => Ok(zeroQueryResults));
+          .thenAnswer((_) async => const Ok(zeroQueryResults));
     });
 
     blocTest(
@@ -406,7 +407,7 @@ void main() {
       mockEntityRepository = MockEntityRepository();
       usecase = QueryAssets(mockEntityRepository);
       when(() => mockEntityRepository.queryAssets(any(), any(), any()))
-          .thenAnswer((_) async => Err(ServerFailure('oh no!')));
+          .thenAnswer((_) async => const Err(ServerFailure('oh no!')));
     });
 
     blocTest(

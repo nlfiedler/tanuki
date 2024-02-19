@@ -180,35 +180,6 @@ impl Location {
         }
     }
 
-    /// Return the most descriptive value for this location as possible.
-    pub fn description(&self) -> String {
-        let has_label = self.label.is_some();
-        let has_city = self.city.is_some();
-        let has_region = self.region.is_some();
-        if has_label && has_city && has_region {
-            format!(
-                "{} - {}, {}",
-                self.label.as_ref().unwrap(),
-                self.city.as_ref().unwrap(),
-                self.region.as_ref().unwrap()
-            )
-        } else if has_city && has_region {
-            format!(
-                "{}, {}",
-                self.city.as_ref().unwrap(),
-                self.region.as_ref().unwrap()
-            )
-        } else if has_label {
-            format!("{}", self.label.as_ref().unwrap())
-        } else if has_city {
-            format!("{}", self.city.as_ref().unwrap())
-        } else if has_region {
-            format!("{}", self.region.as_ref().unwrap())
-        } else {
-            "".into()
-        }
-    }
-
     /// Return the list of terms from this location that are appropriate for
     /// indexing. All values will be lowercased and redundant values elided.
     pub fn indexable_values(&self) -> HashSet<String> {
@@ -234,8 +205,41 @@ impl Location {
                     values.insert(region_lower.to_owned());
                 }
             }
+        } else if let Some(region) = self.region.as_ref() {
+            let region_lower = region.to_lowercase();
+            values.insert(region_lower.to_owned());
         }
         values
+    }
+
+    /// Test if any part of this location matches the query. The parts of the
+    /// location will be lowercased and compared to the query as-is.
+    pub fn partial_match(&self, query: &str) -> bool {
+        if let Some(label) = self.label.as_ref() {
+            let lower = label.to_lowercase();
+            if lower == query {
+                return true;
+            }
+            if lower.contains(',') {
+                // split the location label on commas
+                for entry in lower.split(',').map(|e| e.trim()).filter(|e| !e.is_empty()) {
+                    if entry == query {
+                        return true;
+                    }
+                }
+            }
+        }
+        if let Some(city) = self.city.as_ref() {
+            let city_lower = city.to_lowercase();
+            if city_lower == query {
+                return true;
+            }
+        }
+        if let Some(region) = self.region.as_ref() {
+            let region_lower = region.to_lowercase();
+            return region_lower == query;
+        }
+        false
     }
 
     /// Construct a string suitable for serialization, using tabs to separate
@@ -393,8 +397,8 @@ pub struct SearchResult {
     pub filename: String,
     /// Media type (formerly MIME type) of the asset.
     pub media_type: String,
-    /// User-defined location of the asset.
-    pub location: Option<String>,
+    /// Location of the asset.
+    pub location: Option<Location>,
     /// Best date/time for the indexed asset.
     pub datetime: DateTime<Utc>,
 }
@@ -413,15 +417,9 @@ impl SearchResult {
             asset_id: asset.key.clone(),
             filename: asset.filename.clone(),
             media_type: asset.media_type.clone(),
-            location: asset.location.as_ref().and_then(|f| f.label.clone()),
+            location: asset.location.clone(),
             datetime: date,
         }
-    }
-
-    /// Set the location to a fuller description rather than just the label.
-    pub fn descriptive_location(&mut self, asset: &Asset) -> &mut Self {
-        self.location = asset.location.as_ref().and_then(|f| Some(f.description()));
-        self
     }
 }
 
@@ -632,6 +630,15 @@ mod tests {
         assert!(parts.contains("california"));
 
         let loc = Location {
+            label: None,
+            city: None,
+            region: Some("Oregon".into()),
+        };
+        let parts = loc.indexable_values();
+        assert_eq!(parts.len(), 1);
+        assert!(parts.contains("oregon"));
+
+        let loc = Location {
             label: Some(",foo,  quux  ,bar,".into()),
             city: None,
             region: None,
@@ -641,6 +648,28 @@ mod tests {
         assert!(parts.contains("foo"));
         assert!(parts.contains("quux"));
         assert!(parts.contains("bar"));
+    }
+
+    #[test]
+    fn test_location_partial_match() {
+        let loc = Location::with_parts("foo, bar", "São Paulo", "State of São Paulo");
+        assert!(loc.partial_match("foo"));
+        assert!(loc.partial_match("bar"));
+        assert!(loc.partial_match("foo, bar"));
+        assert!(loc.partial_match("são paulo"));
+        assert!(!loc.partial_match("berkeley"));
+
+        let loc = Location::with_parts("fubar", "Jerusalem", "Jerusalem District");
+        assert!(loc.partial_match("jerusalem"));
+        assert!(!loc.partial_match("berkeley"));
+
+        let loc = Location {
+            label: None,
+            city: None,
+            region: Some("Oregon".into()),
+        };
+        assert!(loc.partial_match("oregon"));
+        assert!(!loc.partial_match("OREGON"));
     }
 
     #[test]
@@ -673,53 +702,6 @@ mod tests {
 
         let actual = Location::with_parts("museum", "Portland", "Oregon");
         assert_eq!(expected, actual);
-    }
-
-    #[test]
-    fn test_location_description() {
-        let loc = Location::with_parts("plaza", "São Paulo", "State of São Paulo");
-        let actual = loc.description();
-        assert_eq!(actual, "plaza - São Paulo, State of São Paulo");
-
-        let loc = Location {
-            label: None,
-            city: Some("São Paulo".into()),
-            region: Some("State of São Paulo".into()),
-        };
-        let actual = loc.description();
-        assert_eq!(actual, "São Paulo, State of São Paulo");
-
-        let loc = Location {
-            label: Some("plaza".into()),
-            city: None,
-            region: None,
-        };
-        let actual = loc.description();
-        assert_eq!(actual, "plaza");
-
-        let loc = Location {
-            label: None,
-            city: Some("São Paulo".into()),
-            region: None,
-        };
-        let actual = loc.description();
-        assert_eq!(actual, "São Paulo");
-
-        let loc = Location {
-            label: None,
-            city: None,
-            region: Some("State of São Paulo".into()),
-        };
-        let actual = loc.description();
-        assert_eq!(actual, "State of São Paulo");
-
-        let loc = Location {
-            label: None,
-            city: None,
-            region: None,
-        };
-        let actual = loc.description();
-        assert_eq!(actual, "");
     }
 
     #[test]
@@ -842,56 +824,5 @@ mod tests {
         let result = SearchResult::new(&asset);
         // assert
         assert_eq!(result.datetime.year(), 2017);
-    }
-
-    #[test]
-    fn test_search_result_descriptive_location() {
-        // arrange
-        let asset = Asset {
-            key: "abc123".to_owned(),
-            checksum: "cafebabe".to_owned(),
-            filename: "img_1234.jpg".to_owned(),
-            byte_length: 1024,
-            media_type: "image/jpeg".to_owned(),
-            tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: make_date_time(2017, 4, 28, 11, 12, 59),
-            caption: None,
-            location: None,
-            user_date: None,
-            original_date: None,
-            dimensions: None,
-        };
-        // act
-        let mut result = SearchResult::new(&asset);
-        assert!(result.location.is_none());
-        result.descriptive_location(&asset);
-        // assert
-        assert!(result.location.is_none());
-
-        // arrange
-        let asset = Asset {
-            key: "abc123".to_owned(),
-            checksum: "cafebabe".to_owned(),
-            filename: "img_1234.jpg".to_owned(),
-            byte_length: 1024,
-            media_type: "image/jpeg".to_owned(),
-            tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: make_date_time(2017, 4, 28, 11, 12, 59),
-            caption: None,
-            location: Some(Location {
-                label: Some("plaza".into()),
-                city: Some("Milan".into()),
-                region: Some("Italy".into()),
-            }),
-            user_date: None,
-            original_date: None,
-            dimensions: None,
-        };
-        // act
-        let mut result = SearchResult::new(&asset);
-        assert_eq!(result.location.as_ref().unwrap(), "plaza");
-        result.descriptive_location(&asset);
-        // assert
-        assert_eq!(result.location.unwrap(), "plaza - Milan, Italy");
     }
 }

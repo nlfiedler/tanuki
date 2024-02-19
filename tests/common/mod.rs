@@ -109,6 +109,7 @@ pub fn build_basic_asset() -> Asset {
 }
 
 // Construct a simple asset whose import date/time is now.
+#[allow(dead_code)]
 pub fn build_recent_asset(key: &str) -> Asset {
     // use a predictable date for the date-related tests
     let import_date = Utc::now();
@@ -129,6 +130,7 @@ pub fn build_recent_asset(key: &str) -> Asset {
 }
 
 /// Construct a "newborn" asset instance with the given key and date.
+#[allow(dead_code)]
 pub fn build_newborn_asset(key: &str, import_date: DateTime<Utc>) -> Asset {
     Asset {
         key: key.to_owned(),
@@ -148,6 +150,7 @@ pub fn build_newborn_asset(key: &str, import_date: DateTime<Utc>) -> Asset {
 
 /// Compare the two assets, including the key. This is useful for ensuring the
 /// serde is performed correctly, including maintaining the asset key.
+#[allow(dead_code)]
 pub fn compare_assets(a: &Asset, b: &Asset) {
     assert_eq!(a.key, b.key);
     assert_eq!(a.checksum, b.checksum);

@@ -163,7 +163,9 @@ Widget buildThumbnails(
                 hiddenConditions: [
                   Condition.smallerThan(name: TABLET, value: false),
                 ],
-                child: Text(e.location.unwrapOr(e.filename)),
+                child: Text(
+                  e.location.map((e) => e.description()).unwrapOr(e.filename),
+                ),
               ),
             ]),
           ),

@@ -329,43 +329,34 @@ impl Document for Asset {
     }
 
     fn map(&self, view: &str, emitter: &Emitter) -> Result<(), mokuroku::Error> {
-        // make the index value assuming we will emit something
-        let mut value = SearchResult::new(self);
-        if view == "newborn" {
-            value.descriptive_location(self);
-        }
+        let value = SearchResult::new(self);
         let idv: Vec<u8> = value.to_bytes()?;
         if view == "by_tags" {
             for tag in &self.tags {
-                // secondary index keys are lowercase
                 let lower = tag.to_lowercase();
                 emitter.emit(lower.as_bytes(), Some(&idv))?;
             }
         } else if view == "by_checksum" {
-            // secondary index keys are lowercase
             let lower = self.checksum.to_lowercase();
             emitter.emit(lower.as_bytes(), None)?;
         } else if view == "by_filename" {
-            // secondary index keys are lowercase
             let lower = self.filename.to_lowercase();
             emitter.emit(lower.as_bytes(), Some(&idv))?;
         } else if view == "by_media_type" {
-            // secondary index keys are lowercase
             let lower = self.media_type.to_lowercase();
             emitter.emit(lower.as_bytes(), Some(&idv))?;
         } else if view == "by_location" {
-            // location values split into parts and lowercased with each one
-            // emitted separately: label and its comma-separated parts, the city
-            // and region, if any; intended for searching and filtering
             if let Some(loc) = self.location.as_ref() {
-                let values = loc.indexable_values();
-                for value in values {
-                    emitter.emit(value.as_bytes(), Some(&idv))?;
+                for indexable in loc.indexable_values() {
+                    emitter.emit(indexable.as_bytes(), Some(&idv))?;
                 }
             }
         } else if view == "raw_locations" {
             // full location values separated by tabs and emitted as a single
             // index key with no value, intended for providing input completion
+            //
+            // this is an abuse of the indexing library in order to maintain the
+            // index in the event of documents being updated or removed
             if let Some(loc) = self.location.as_ref() {
                 let encoded = loc.serialize();
                 emitter.emit(encoded.as_bytes(), None)?;
@@ -390,7 +381,18 @@ impl Document for Asset {
                 encode_datetime(&self.import_date)
             };
             emitter.emit(&best_date, Some(&idv))?;
-        } else if view == "newborn" && self.tags.is_empty() && self.caption.is_none() {
+        } else if view == "newborn"
+            && self.tags.is_empty()
+            && self.caption.is_none()
+            && self
+                .location
+                .as_ref()
+                .and_then(|l| l.label.as_ref())
+                .is_none()
+        {
+            // newborn assets have no caption, tags, or location label (city and
+            // region are okay as those are filled in during import)
+            //
             // use the import date for newborn, not the "best" date
             let import_date = encode_datetime(&self.import_date);
             emitter.emit(&import_date, Some(&idv))?;
@@ -424,9 +426,9 @@ struct IndexValue {
     /// Detected media type of the file.
     #[serde(rename = "m")]
     pub media_type: String,
-    /// User-defined location of the asset.
+    /// Location of the asset.
     #[serde(rename = "l")]
-    pub location: Option<String>,
+    pub location: Option<Location>,
     /// Best date/time for the indexed asset.
     #[serde(rename = "d")]
     pub datetime: DateTime<Utc>,

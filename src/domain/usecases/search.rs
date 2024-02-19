@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::SearchResult;
 use crate::domain::repositories::RecordRepository;
@@ -106,9 +106,8 @@ fn filter_by_locations(results: Vec<SearchResult>, params: &Params) -> Vec<Searc
         results
             .into_iter()
             .filter(|r| {
-                if let Some(row_location) = r.location.as_ref() {
-                    let location = row_location.to_lowercase();
-                    locations.iter().any(|l| l == &location)
+                if let Some(location) = r.location.as_ref() {
+                    locations.iter().any(|l| location.partial_match(l))
                 } else {
                     false
                 }
@@ -188,13 +187,6 @@ fn sort_results(results: &mut [SearchResult], params: &Params) {
                     sort_by_mimetype_descending
                 }
             }
-            SortField::Location => {
-                if order == SortOrder::Ascending {
-                    sort_by_location_ascending
-                } else {
-                    sort_by_location_descending
-                }
-            }
         };
         results.sort_unstable_by(compare)
     }
@@ -232,14 +224,6 @@ fn sort_by_mimetype_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::
     b.media_type.cmp(&a.media_type)
 }
 
-fn sort_by_location_ascending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
-    a.location.cmp(&b.location)
-}
-
-fn sort_by_location_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
-    b.location.cmp(&a.location)
-}
-
 /// Field of the search results on which to sort.
 #[derive(Clone, Copy)]
 pub enum SortField {
@@ -247,7 +231,6 @@ pub enum SortField {
     Identifier,
     Filename,
     MediaType,
-    Location,
 }
 
 /// Order by which to sort the search results.
@@ -289,6 +272,7 @@ impl cmp::Eq for Params {}
 mod tests {
     use super::super::UseCase;
     use super::*;
+    use crate::domain::entities::Location;
     use crate::domain::repositories::MockRecordRepository;
     use anyhow::anyhow;
     use mockall::predicate::*;
@@ -313,7 +297,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let mut mock = MockRecordRepository::new();
@@ -353,7 +337,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let after = make_date_time(2018, 5, 31, 21, 10, 11);
@@ -380,7 +364,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let before = make_date_time(2018, 5, 31, 21, 10, 11);
@@ -407,7 +391,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let after = make_date_time(2018, 1, 31, 21, 10, 11);
@@ -436,7 +420,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("Hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let mut mock = MockRecordRepository::new();
@@ -461,7 +445,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "IMG_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let mut mock = MockRecordRepository::new();
@@ -487,7 +471,7 @@ mod tests {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/JPEG".to_owned(),
-            location: Some("hawaii".to_owned()),
+            location: Some(Location::new("hawaii")),
             datetime: Utc::now(),
         }];
         let mut mock = MockRecordRepository::new();
@@ -513,49 +497,49 @@ mod tests {
                 asset_id: "cafebabe".to_owned(),
                 filename: "IMG_2431.PNG".to_owned(),
                 media_type: "IMAGE/PNG".to_owned(),
-                location: Some("HAWAII".to_owned()),
+                location: Some(Location::new("hawaii")),
                 datetime: make_date_time(2012, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "babecafe".to_owned(),
                 filename: "IMG_2345.GIF".to_owned(),
                 media_type: "IMAGE/GIF".to_owned(),
-                location: Some("LONDON".to_owned()),
+                location: Some(Location::new("london")),
                 datetime: make_date_time(2013, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "cafed00d".to_owned(),
                 filename: "IMG_6431.MOV".to_owned(),
                 media_type: "VIDEO/QUICKTIME".to_owned(),
-                location: Some("PARIS".to_owned()),
+                location: Some(Location::new("paris")),
                 datetime: make_date_time(2014, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "d00dcafe".to_owned(),
                 filename: "IMG_4567.JPG".to_owned(),
                 media_type: "IMAGE/JPEG".to_owned(),
-                location: Some("HAWAII".to_owned()),
+                location: Some(Location::new("hawaii")),
                 datetime: make_date_time(2015, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "deadbeef".to_owned(),
                 filename: "IMG_5678.MOV".to_owned(),
                 media_type: "VIDEO/QUICKTIME".to_owned(),
-                location: Some("LONDON".to_owned()),
+                location: Some(Location::new("london")),
                 datetime: make_date_time(2016, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "cafebeef".to_owned(),
                 filename: "IMG_6789.JPG".to_owned(),
                 media_type: "IMAGE/JPEG".to_owned(),
-                location: Some("PARIS".to_owned()),
+                location: Some(Location::new("paris")),
                 datetime: make_date_time(2017, 5, 31, 21, 10, 11),
             },
             SearchResult {
                 asset_id: "deadcafe".to_owned(),
                 filename: "IMG_3142.JPG".to_owned(),
                 media_type: "IMAGE/JPEG".to_owned(),
-                location: Some("YOSEMITE".to_owned()),
+                location: Some(Location::new("yosemite")),
                 datetime: make_date_time(2018, 5, 31, 21, 10, 11),
             },
         ]
@@ -799,60 +783,6 @@ mod tests {
         assert_eq!(results[4].filename, "IMG_3142.JPG");
         assert_eq!(results[5].filename, "IMG_2431.PNG");
         assert_eq!(results[6].filename, "IMG_2345.GIF");
-    }
-
-    #[test]
-    fn test_order_results_ascending_location() {
-        // arrange
-        let results = make_search_results();
-        let mut mock = MockRecordRepository::new();
-        mock.expect_query_by_tags()
-            .returning(move |_| Ok(results.clone()));
-        // act
-        let usecase = SearchAssets::new(Box::new(mock));
-        let mut params: Params = Default::default();
-        params.tags = vec!["kitten".to_owned()];
-        params.sort_field = Some(SortField::Location);
-        params.sort_order = Some(SortOrder::Ascending);
-        let result = usecase.call(params);
-        // assert
-        assert!(result.is_ok());
-        let results = result.unwrap();
-        assert_eq!(results.len(), 7);
-        assert_eq!(results[0].location.as_ref().unwrap(), "HAWAII");
-        assert_eq!(results[1].location.as_ref().unwrap(), "HAWAII");
-        assert_eq!(results[2].location.as_ref().unwrap(), "LONDON");
-        assert_eq!(results[3].location.as_ref().unwrap(), "LONDON");
-        assert_eq!(results[4].location.as_ref().unwrap(), "PARIS");
-        assert_eq!(results[5].location.as_ref().unwrap(), "PARIS");
-        assert_eq!(results[6].location.as_ref().unwrap(), "YOSEMITE");
-    }
-
-    #[test]
-    fn test_order_results_descending_location() {
-        // arrange
-        let results = make_search_results();
-        let mut mock = MockRecordRepository::new();
-        mock.expect_query_by_tags()
-            .returning(move |_| Ok(results.clone()));
-        // act
-        let usecase = SearchAssets::new(Box::new(mock));
-        let mut params: Params = Default::default();
-        params.tags = vec!["kitten".to_owned()];
-        params.sort_field = Some(SortField::Location);
-        params.sort_order = Some(SortOrder::Descending);
-        let result = usecase.call(params);
-        // assert
-        assert!(result.is_ok());
-        let results = result.unwrap();
-        assert_eq!(results.len(), 7);
-        assert_eq!(results[0].location.as_ref().unwrap(), "YOSEMITE");
-        assert_eq!(results[1].location.as_ref().unwrap(), "PARIS");
-        assert_eq!(results[2].location.as_ref().unwrap(), "PARIS");
-        assert_eq!(results[3].location.as_ref().unwrap(), "LONDON");
-        assert_eq!(results[4].location.as_ref().unwrap(), "LONDON");
-        assert_eq!(results[5].location.as_ref().unwrap(), "HAWAII");
-        assert_eq!(results[6].location.as_ref().unwrap(), "HAWAII");
     }
 
     #[test]
