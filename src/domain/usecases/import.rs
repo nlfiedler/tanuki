@@ -45,7 +45,7 @@ impl ImportAsset {
         let byte_length = metadata.len();
         let location =
             if let Some(coords) = get_gps_coordinates(&params.media_type, &params.filepath).ok() {
-                self.geocoder.find_location(&coords).ok()
+                super::convert_location(self.geocoder.find_location(&coords).ok())
             } else {
                 None
             };
@@ -191,7 +191,7 @@ fn get_dimensions(media_type: &mime::Mime, filepath: &Path) -> Result<Dimensions
 mod tests {
     use super::super::UseCase;
     use super::*;
-    use crate::domain::entities::Location;
+    use crate::domain::entities::GeocodedLocation;
     use crate::domain::repositories::MockBlobRepository;
     use crate::domain::repositories::MockLocationRepository;
     use crate::domain::repositories::MockRecordRepository;
@@ -268,10 +268,10 @@ mod tests {
             .returning(|_, _| Ok(()));
         let mut geocoder = MockLocationRepository::new();
         geocoder.expect_find_location().returning(|_| {
-            Ok(Location {
-                label: None,
+            Ok(GeocodedLocation {
                 city: Some("Yao".into()),
                 region: Some("Osaka".into()),
+                country: Some("Japan".into())
             })
         });
         // act

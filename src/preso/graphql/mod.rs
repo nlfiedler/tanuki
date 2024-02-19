@@ -776,16 +776,20 @@ impl MutationRoot {
         Ok(assets.len() as i32)
     }
 
-    /// Attempt to fill in the city and region for assets that have GPS coordinates.
-    fn geocode(executor: &Executor) -> FieldResult<i32> {
-        use crate::domain::usecases::geocode::Geocoder;
-        use crate::domain::usecases::{NoParams, UseCase};
+    /// Attempt to fill in the city and region for assets that have GPS
+    /// coordinates available in the file metadata.
+    ///
+    /// If overwrite is true, will replace whatever city and region may already
+    /// be present.
+    fn geocode(executor: &Executor, overwrite: bool) -> FieldResult<i32> {
+        use crate::domain::usecases::geocode::{Geocoder, Params};
+        use crate::domain::usecases::UseCase;
         let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
         let geocoder = find_location_repository();
         let usecase = Geocoder::new(Box::new(repo), Box::new(blobs), geocoder);
-        let results: u64 = usecase.call(NoParams {})?;
+        let results: u64 = usecase.call(Params::new(overwrite))?;
         Ok(results as i32)
     }
 

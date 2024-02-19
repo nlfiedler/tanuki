@@ -13,17 +13,10 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 ** verify responsiveness is looking good
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
-** [#A] Migrate the production database
-*** do _not_ build and deploy the app with schema changes yet
-*** steps [1/8]
-- [X] dump to a file
-- [ ] stop the container
-- [ ] rename the database directory
-- [ ] build and deploy new version of app
-- [ ] confirm it is empty
-- [ ] load the dump file
-- [ ] confirm search is working (~anniversary~ and ~sausalito~)
-- [ ] confirm recents are still recent (~300)
+** TODO run ~geocode~ with =overwrite: true= on production
+** TODO fix more locations in the production data set (see ~/Documents/tanuki/locations.org)
+** TODO webui: allow creating new location by typing ~label - city, region~ into input field
+*** convert to an =AssetLocation= and propercase the city and region
 ** [#B] Quick rotation fix for certain images
 *** add a simple GraphQL mutation that sets the =Orientation= Exif field
 *** check the =kamadak-exif= project for bugs related to writing Exif data
@@ -47,6 +40,8 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** TODO modify search page to allow multiple locations
 *** TODO find out if =mp4= crate can read GPS coords from videos
 **** Preview.app will display location information for videos
+** create graphql mutation to delete assets with certain tag
+*** remove all of the ~deleteme~ assets
 ** Read timezone info from Exif tags when displaying asset details
 *** everything is assuming that the date/time is UTC, which is almost always wrong
 *** Exif field is named =OffsetTimeOriginal= in ~primary~

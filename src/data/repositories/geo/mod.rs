@@ -1,11 +1,11 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::entities::{GlobalPosition, Location};
+use crate::domain::entities::{GeocodedLocation, GlobalPosition};
 use crate::domain::repositories::LocationRepository;
 use anyhow::Error;
-use std::sync::Arc;
 use std::env;
+use std::sync::Arc;
 
 use self::google::GoogleLocationRepository;
 
@@ -20,7 +20,7 @@ impl DummyLocationRepository {
 }
 
 impl LocationRepository for DummyLocationRepository {
-    fn find_location(&self, _coords: &GlobalPosition) -> Result<Location, Error> {
+    fn find_location(&self, _coords: &GlobalPosition) -> Result<GeocodedLocation, Error> {
         Ok(Default::default())
     }
 }

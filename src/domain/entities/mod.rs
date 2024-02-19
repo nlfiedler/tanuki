@@ -376,6 +376,17 @@ impl GlobalPosition {
     }
 }
 
+/// Values determined by reverse geocoding a GPS location.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GeocodedLocation {
+    /// Value for the 'locality' or similar property.
+    pub city: Option<String>,
+    /// Value for the 'administrative_area_level_1' or similar property.
+    pub region: Option<String>,
+    /// Value for the 'country' or similar property.
+    pub country: Option<String>,
+}
+
 /// A label and its associated count.
 ///
 /// `LabeledCount` represents an attribute value and the number of occurrences

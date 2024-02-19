@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::entities::{GlobalPosition, Location};
+use crate::domain::entities::{GeocodedLocation, GlobalPosition};
 use crate::domain::repositories::LocationRepository;
 use anyhow::{anyhow, Error};
 use reqwest::Url;
@@ -21,10 +21,10 @@ impl GoogleLocationRepository {
 }
 
 impl LocationRepository for GoogleLocationRepository {
-    fn find_location(&self, coords: &GlobalPosition) -> Result<Location, Error> {
+    fn find_location(&self, coords: &GlobalPosition) -> Result<GeocodedLocation, Error> {
         // Bridge the sync/async chasm by spawning a thread to spawn a runtime
         // that will manage the future for us.
-        let (tx, rx) = std::sync::mpsc::channel::<Result<Location, Error>>();
+        let (tx, rx) = std::sync::mpsc::channel::<Result<GeocodedLocation, Error>>();
         let api_key = self.api_key.to_owned();
         let coords = coords.to_owned();
         std::thread::spawn(move || {
@@ -34,11 +34,11 @@ impl LocationRepository for GoogleLocationRepository {
     }
 }
 
-fn get_location_sync(api_key: &str, coords: GlobalPosition) -> Result<Location, Error> {
+fn get_location_sync(api_key: &str, coords: GlobalPosition) -> Result<GeocodedLocation, Error> {
     block_on(get_location(api_key, coords)).and_then(std::convert::identity)
 }
 
-async fn get_location(api_key: &str, coords: GlobalPosition) -> Result<Location, Error> {
+async fn get_location(api_key: &str, coords: GlobalPosition) -> Result<GeocodedLocation, Error> {
     // Creating a client every time may seem wasteful, but we also just spawned
     // a thread and created a tokio runtime just to bridge the sync/async chasm.
     let client = reqwest::Client::new();
@@ -91,7 +91,7 @@ fn decode_status(raw_value: &serde_json::Value) -> Result<String, Error> {
     Ok(status_str.to_owned())
 }
 
-fn parse_results(raw_value: &serde_json::Value) -> Result<Location, Error> {
+fn parse_results(raw_value: &serde_json::Value) -> Result<GeocodedLocation, Error> {
     let resp_obj = raw_value
         .as_object()
         .ok_or_else(|| anyhow!("invalid JSON response"))?;
@@ -119,7 +119,7 @@ fn parse_results(raw_value: &serde_json::Value) -> Result<Location, Error> {
         .ok_or_else(|| anyhow!("missing address_components"))?
         .as_array()
         .ok_or_else(|| anyhow!("invalid address_components"))?;
-    let mut location: Location = Default::default();
+    let mut location: GeocodedLocation = Default::default();
     for addr_comp_val in addr_comps_arr {
         let addr_comp_obj = addr_comp_val
             .as_object()
@@ -142,6 +142,8 @@ fn parse_results(raw_value: &serde_json::Value) -> Result<Location, Error> {
             location.city = Some(long_name.to_owned());
         } else if type_ == "administrative_area_level_1" {
             location.region = Some(long_name.to_owned())
+        } else if type_ == "country" {
+            location.country = Some(long_name.to_owned())
         }
     }
     Ok(location)
@@ -383,6 +385,7 @@ mod tests {
         let location = result.unwrap();
         assert_eq!(location.city.unwrap(), "Yao");
         assert_eq!(location.region.unwrap(), "Osaka");
+        assert_eq!(location.country.unwrap(), "Japan");
 
         // Mountain View, CA
         let coords = GlobalPosition {
@@ -404,6 +407,7 @@ mod tests {
         let location = result.unwrap();
         assert_eq!(location.city.unwrap(), "Mountain View");
         assert_eq!(location.region.unwrap(), "California");
+        assert_eq!(location.country.unwrap(), "United States");
 
         Ok(())
     }

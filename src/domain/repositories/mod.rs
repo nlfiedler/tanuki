@@ -1,7 +1,9 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::entities::{Asset, GlobalPosition, LabeledCount, Location, SearchResult};
+use crate::domain::entities::{
+    Asset, GeocodedLocation, GlobalPosition, LabeledCount, Location, SearchResult,
+};
 use anyhow::Error;
 use chrono::prelude::*;
 #[cfg(test)]
@@ -112,6 +114,6 @@ pub trait BlobRepository {
 ///
 #[cfg_attr(test, automock)]
 pub trait LocationRepository: Send + Sync {
-    /// Move the given file into the blob store.
-    fn find_location(&self, coords: &GlobalPosition) -> Result<Location, Error>;
+    /// Find a descriptive location for the given global coordinates.
+    fn find_location(&self, coords: &GlobalPosition) -> Result<GeocodedLocation, Error>;
 }

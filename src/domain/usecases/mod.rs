@@ -1,7 +1,9 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use super::entities::{EastWest, GeodeticAngle, GlobalPosition, NorthSouth};
+use super::entities::{
+    EastWest, GeocodedLocation, GeodeticAngle, GlobalPosition, Location, NorthSouth,
+};
 use anyhow::{anyhow, Error};
 use chrono::prelude::*;
 use std::cmp;
@@ -175,6 +177,33 @@ fn get_gps_angle(exif: &exif::Exif, tag: exif::Tag) -> Result<GeodeticAngle, Err
         }
     } else {
         Err(anyhow!("invalid GPSLongitudeRef field"))
+    }
+}
+
+// Convert the geocoded location to the domain version.
+fn convert_location(geocoded: Option<GeocodedLocation>) -> Option<Location> {
+    if let Some(geo) = geocoded {
+        let mut loc: Location = Default::default();
+        loc.city = geo.city.clone();
+        if let Some(city) = geo.city.as_ref() {
+            let city_lower = city.to_lowercase();
+            if let Some(region) = geo.region.as_ref() {
+                let region_lower = region.to_lowercase();
+                // replace region with country if region value is largely
+                // redundant to the city
+                if city_lower == region_lower
+                    || region_lower.starts_with(&city_lower)
+                    || region_lower.ends_with(&city_lower)
+                {
+                    loc.region = geo.country.clone();
+                } else {
+                    loc.region = geo.region.clone();
+                }
+            }
+        }
+        Some(loc)
+    } else {
+        None
     }
 }
 
@@ -560,6 +589,96 @@ mod tests {
         assert_eq!(coords.longitude.degrees, 122.0);
         assert_eq!(coords.longitude.minutes, 3.0);
         assert_eq!(coords.longitude.seconds, 47.72);
+    }
+
+    #[test]
+    fn test_convert_location() {
+        // nothing at all
+        assert!(convert_location(None).is_none());
+
+        // country is not needed
+        let geocoded = Some(GeocodedLocation {
+            city: Some("Portland".into()),
+            region: Some("Oregon".into()),
+            country: Some("United States".into()),
+        });
+        let expected = Some(Location {
+            label: None,
+            city: Some("Portland".into()),
+            region: Some("Oregon".into()),
+        });
+        let actual = convert_location(geocoded);
+        assert_eq!(expected, actual);
+
+        // city equals region
+        let geocoded = Some(GeocodedLocation {
+            city: Some("Nara".into()),
+            region: Some("Nara".into()),
+            country: Some("Japan".into()),
+        });
+        let expected = Some(Location {
+            label: None,
+            city: Some("Nara".into()),
+            region: Some("Japan".into()),
+        });
+        let actual = convert_location(geocoded);
+        assert_eq!(expected, actual);
+
+        // region has city as prefix
+        let geocoded = Some(GeocodedLocation {
+            city: Some("Jerusalem".into()),
+            region: Some("Jerusalem District".into()),
+            country: Some("Israel".into()),
+        });
+        let expected = Some(Location {
+            label: None,
+            city: Some("Jerusalem".into()),
+            region: Some("Israel".into()),
+        });
+        let actual = convert_location(geocoded);
+        assert_eq!(expected, actual);
+
+        // region has city as suffix
+        let geocoded = Some(GeocodedLocation {
+            city: Some("São Paulo".into()),
+            region: Some("State of São Paulo".into()),
+            country: Some("Brazil".into()),
+        });
+        let expected = Some(Location {
+            label: None,
+            city: Some("São Paulo".into()),
+            region: Some("Brazil".into()),
+        });
+        let actual = convert_location(geocoded);
+        assert_eq!(expected, actual);
+
+        // all blank fields
+        let geocoded = Some(GeocodedLocation {
+            city: None,
+            region: None,
+            country: None,
+        });
+        let expected = Some(Location {
+            label: None,
+            city: None,
+            region: None,
+        });
+        let actual = convert_location(geocoded);
+        assert_eq!(expected, actual);
+
+        // no city or region
+        let geocoded = Some(GeocodedLocation {
+            city: Some("Portland".into()),
+            region: None,
+            country: None,
+        });
+        let expected = Some(Location {
+            label: None,
+            city: Some("Portland".into()),
+            region: None,
+        });
+        let actual = convert_location(geocoded);
+        assert_eq!(expected, actual);
     }
 
     #[test]

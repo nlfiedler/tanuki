@@ -3,9 +3,11 @@
 //
 use crate::domain::entities::Location;
 use crate::domain::repositories::{BlobRepository, LocationRepository, RecordRepository};
-use crate::domain::usecases::{get_gps_coordinates, NoParams};
+use crate::domain::usecases::get_gps_coordinates;
 use anyhow::Error;
 use log::{info, warn};
+use std::cmp;
+use std::fmt;
 use std::sync::Arc;
 
 ///
@@ -36,8 +38,8 @@ impl Geocoder {
     }
 }
 
-impl super::UseCase<u64, NoParams> for Geocoder {
-    fn call(&self, _params: NoParams) -> Result<u64, Error> {
+impl super::UseCase<u64, Params> for Geocoder {
+    fn call(&self, params: Params) -> Result<u64, Error> {
         let mut fixed_count: u64 = 0;
         // raise any database errors immediately
         let all_assets = self.records.all_assets()?;
@@ -55,12 +57,16 @@ impl super::UseCase<u64, NoParams> for Geocoder {
             if let Ok(media_type) = asset.media_type.parse::<mime::Mime>() {
                 if let Ok(blob_path) = self.blobs.blob_path(&asset_id) {
                     if let Some(coords) = get_gps_coordinates(&media_type, &blob_path).ok() {
-                        if let Some(found_loc) = self.geocoder.find_location(&coords).ok() {
+                        if let Some(found_loc) =
+                            super::convert_location(self.geocoder.find_location(&coords).ok())
+                        {
                             // ensure the geocoder returned a meaningful result
                             if found_loc.city.is_some() || found_loc.region.is_some() {
                                 if let Some(old_loc) = asset.location.as_ref() {
                                     // fill in city/region as appropriate
-                                    if old_loc.city.is_none() && old_loc.region.is_none() {
+                                    if params.overwrite
+                                        || old_loc.city.is_none() && old_loc.region.is_none()
+                                    {
                                         asset.location = Some(Location {
                                             label: old_loc.label.clone(),
                                             city: found_loc.city,
@@ -90,11 +96,36 @@ impl super::UseCase<u64, NoParams> for Geocoder {
     }
 }
 
+pub struct Params {
+    /// If true, replace whatever city and region may be present.
+    overwrite: bool,
+}
+
+impl Params {
+    pub fn new(overwrite: bool) -> Self {
+        Self { overwrite }
+    }
+}
+
+impl fmt::Display for Params {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Params({})", self.overwrite)
+    }
+}
+
+impl cmp::PartialEq for Params {
+    fn eq(&self, other: &Self) -> bool {
+        self.overwrite == other.overwrite
+    }
+}
+
+impl cmp::Eq for Params {}
+
 #[cfg(test)]
 mod tests {
     use super::super::UseCase;
     use super::*;
-    use crate::domain::entities::Asset;
+    use crate::domain::entities::{Asset, GeocodedLocation};
     use crate::domain::repositories::MockBlobRepository;
     use crate::domain::repositories::MockLocationRepository;
     use crate::domain::repositories::MockRecordRepository;
@@ -137,15 +168,15 @@ mod tests {
             .returning(|_| Ok(PathBuf::from("tests/fixtures/IMG_0385.JPG")));
         let mut geocoder = MockLocationRepository::new();
         geocoder.expect_find_location().returning(|_| {
-            Ok(Location {
-                label: None,
+            Ok(GeocodedLocation {
                 city: None,
                 region: None,
+                country: None,
             })
         });
         // act
         let usecase = Geocoder::new(Box::new(records), Box::new(blobs), Arc::new(geocoder));
-        let params = NoParams {};
+        let params = Params::new(false);
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -197,15 +228,15 @@ mod tests {
             .returning(|_| Ok(PathBuf::from("tests/fixtures/IMG_0385.JPG")));
         let mut geocoder = MockLocationRepository::new();
         geocoder.expect_find_location().returning(|_| {
-            Ok(Location {
-                label: None,
+            Ok(GeocodedLocation {
                 city: Some("Yao".into()),
                 region: Some("Osaka".into()),
+                country: Some("Japan".into()),
             })
         });
         // act
         let usecase = Geocoder::new(Box::new(records), Box::new(blobs), Arc::new(geocoder));
-        let params = NoParams {};
+        let params = Params::new(false);
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -261,15 +292,15 @@ mod tests {
             .returning(|_| Ok(PathBuf::from("tests/fixtures/IMG_0385.JPG")));
         let mut geocoder = MockLocationRepository::new();
         geocoder.expect_find_location().returning(|_| {
-            Ok(Location {
-                label: None,
+            Ok(GeocodedLocation {
                 city: Some("Yao".into()),
                 region: Some("Osaka".into()),
+                country: Some("Japan".into()),
             })
         });
         // act
         let usecase = Geocoder::new(Box::new(records), Box::new(blobs), Arc::new(geocoder));
-        let params = NoParams {};
+        let params = Params::new(false);
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -316,19 +347,83 @@ mod tests {
             .returning(|_| Ok(PathBuf::from("tests/fixtures/IMG_0385.JPG")));
         let mut geocoder = MockLocationRepository::new();
         geocoder.expect_find_location().returning(|_| {
-            Ok(Location {
-                label: None,
+            Ok(GeocodedLocation {
                 city: Some("Yao".into()),
                 region: Some("Osaka".into()),
+                country: Some("Japan".into()),
             })
         });
         // act
         let usecase = Geocoder::new(Box::new(records), Box::new(blobs), Arc::new(geocoder));
-        let params = NoParams {};
+        let params = Params::new(false);
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
         let count = result.unwrap();
         assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn test_geocode_asset_overwrite_location() {
+        // arrange
+        let asset1_id = "dGVzdHMvZml4dHVyZXMvSU1HXzAzODUuSlBH";
+        let digest1 = "sha256-d020066fd41970c2eebc51b1e712a500de4966cef0daf4890dc238d80cbaebb2";
+        let mut records = MockRecordRepository::new();
+        records
+            .expect_all_assets()
+            .returning(move || Ok(vec![asset1_id.to_owned()]));
+        records
+            .expect_get_asset()
+            .with(eq(asset1_id))
+            .returning(move |_| {
+                Ok(Asset {
+                    key: asset1_id.to_owned(),
+                    checksum: digest1.to_owned(),
+                    filename: "IMG_0385.JPG".to_owned(),
+                    byte_length: 59908,
+                    media_type: "image/jpeg".to_owned(),
+                    tags: vec!["coaster".to_owned()],
+                    import_date: Utc::now(),
+                    caption: None,
+                    location: Some(Location {
+                        label: Some("my desk".into()),
+                        city: Some("Oakland".into()),
+                        region: Some("CA".into()),
+                    }),
+                    user_date: None,
+                    original_date: None,
+                    dimensions: None,
+                })
+            });
+        let expected_loc = Some(Location {
+            label: Some("my desk".into()),
+            city: Some("Yao".into()),
+            region: Some("Osaka".into()),
+        });
+        records
+            .expect_put_asset()
+            .withf(move |asset| asset.key == asset1_id && asset.location == expected_loc)
+            .returning(|_| Ok(()));
+        let mut blobs = MockBlobRepository::new();
+        blobs
+            .expect_blob_path()
+            .with(eq(asset1_id))
+            .returning(|_| Ok(PathBuf::from("tests/fixtures/IMG_0385.JPG")));
+        let mut geocoder = MockLocationRepository::new();
+        geocoder.expect_find_location().returning(|_| {
+            Ok(GeocodedLocation {
+                city: Some("Yao".into()),
+                region: Some("Osaka".into()),
+                country: Some("Japan".into()),
+            })
+        });
+        // act
+        let usecase = Geocoder::new(Box::new(records), Box::new(blobs), Arc::new(geocoder));
+        let params = Params::new(true);
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let count = result.unwrap();
+        assert_eq!(count, 1);
     }
 }
