@@ -19,11 +19,44 @@ class AssetLocation extends Equatable {
     required this.region,
   });
 
+  /// Parse the string into a location. If the input contains a comma (,) then
+  /// it is split and the first part becomes the city and the second part
+  /// becomes the region. If the input contains a dash (-) then the leading
+  /// value becomes the label and the remainder is treated as described
+  /// regarding the optional comma.
   factory AssetLocation.from(String? label) {
-    return AssetLocation(
-      label: Option.from(label),
-      city: const None(),
-      region: const None(),
+    if (label != null) {
+      if (label.contains(',')) {
+        final cityRegion = label.split(',');
+        if (cityRegion.length == 2) {
+          if (cityRegion[0].contains('-')) {
+            final labelCity = cityRegion[0].split('-');
+            if (labelCity.length == 2) {
+              return AssetLocation(
+                label: Some(labelCity[0].trim()),
+                city: Option.from(properCase(labelCity[1].trim())),
+                region: Option.from(properCase(cityRegion[1].trim())),
+              );
+            }
+          } else {
+            return AssetLocation(
+              label: const None(),
+              city: Option.from(properCase(cityRegion[0].trim())),
+              region: Option.from(properCase(cityRegion[1].trim())),
+            );
+          }
+        }
+      }
+      return AssetLocation(
+        label: Option.from(label),
+        city: const None(),
+        region: const None(),
+      );
+    }
+    return const AssetLocation(
+      label: None(),
+      city: None(),
+      region: None(),
     );
   }
 
@@ -95,3 +128,14 @@ class Asset extends Equatable {
   @override
   bool get stringify => true;
 }
+
+String? capitalize(String? source) {
+  if (source == null || source.isEmpty) {
+    return source;
+  } else {
+    return source[0].toUpperCase() + source.substring(1);
+  }
+}
+
+String? properCase(String? source) =>
+    source?.split(" ").map(capitalize).join(" ");

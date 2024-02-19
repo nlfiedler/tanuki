@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:oxidized/oxidized.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/features/import/preso/bloc/assign_attributes_bloc.dart';
 import 'package:tanuki/features/import/preso/bloc/raw_locations_bloc.dart';
@@ -122,13 +121,7 @@ List<AssetLocation> groomLocations(
   // Optionally add the query itself if it does not appear in the list.
   final queryExists = locations.any((e) => e.$1 == query);
   if (!queryExists) {
-    results.insert(
-        0,
-        AssetLocation(
-          label: Some(query),
-          city: const None(),
-          region: const None(),
-        ));
+    results.insert(0, AssetLocation.from(query));
   }
   return results;
 }

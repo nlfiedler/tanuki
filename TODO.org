@@ -14,9 +14,16 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
 ** TODO run ~geocode~ with =overwrite: true= on production
+*** perform dump, deploy, load [/]
+- [ ] dump current database
+- [ ] stop container
+- [ ] rename database
+- [ ] build and deploy
+- [ ] load from file
+- [ ] test search (anniversary + sausalito)
+- [ ] test recents (301)
+*** run ~geocode~ to fix all of the asset locations
 ** TODO fix more locations in the production data set (see ~/Documents/tanuki/locations.org)
-** TODO webui: allow creating new location by typing ~label - city, region~ into input field
-*** convert to an =AssetLocation= and propercase the city and region
 ** [#B] Quick rotation fix for certain images
 *** add a simple GraphQL mutation that sets the =Orientation= Exif field
 *** check the =kamadak-exif= project for bugs related to writing Exif data
@@ -41,6 +48,8 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** TODO find out if =mp4= crate can read GPS coords from videos
 **** Preview.app will display location information for videos
 ** create graphql mutation to delete assets with certain tag
+*** boolean argument actually perform the delete
+*** if argument is false, only reports what would be deleted
 *** remove all of the ~deleteme~ assets
 ** Read timezone info from Exif tags when displaying asset details
 *** everything is assuming that the date/time is UTC, which is almost always wrong
