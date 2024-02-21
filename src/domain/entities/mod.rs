@@ -246,31 +246,13 @@ impl Location {
     /// the fields, regardless of their value. The values are not lowercased. If
     /// all three fields are none, then two tabs are returned.
     pub fn serialize(&self) -> String {
-        let has_label = self.label.is_some();
-        let has_city = self.city.is_some();
-        let has_region = self.region.is_some();
-        if has_label && has_city && has_region {
-            format!(
-                "{}\t{}\t{}",
-                self.label.as_ref().unwrap(),
-                self.city.as_ref().unwrap(),
-                self.region.as_ref().unwrap()
-            )
-        } else if has_city && has_region {
-            format!(
-                "\t{}\t{}",
-                self.city.as_ref().unwrap(),
-                self.region.as_ref().unwrap()
-            )
-        } else if has_label {
-            format!("{}\t\t", self.label.as_ref().unwrap())
-        } else if has_city {
-            format!("\t{}\t", self.city.as_ref().unwrap())
-        } else if has_region {
-            format!("\t\t{}", self.region.as_ref().unwrap())
-        } else {
-            "\t\t".into()
-        }
+        let empty = String::from("");
+        format!(
+            "{}\t{}\t{}",
+            self.label.as_ref().unwrap_or(&empty),
+            self.city.as_ref().unwrap_or(&empty),
+            self.region.as_ref().unwrap_or(&empty)
+        )
     }
 
     /// Split the input on tabs and create a Location from the parts.
@@ -735,6 +717,15 @@ mod tests {
             label: Some("plaza".into()),
             city: None,
             region: None,
+        };
+        let cooked = loc.serialize();
+        let actual = Location::deserialize(&cooked);
+        assert_eq!(actual, loc);
+
+        let loc = Location {
+            label: Some("tickle pink inn".into()),
+            city: None,
+            region: Some("California".into()),
         };
         let cooked = loc.serialize();
         let actual = Location::deserialize(&cooked);
