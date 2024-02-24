@@ -15,7 +15,7 @@ void main() {
       caption: const Some('#snakes and #clowns are in my @batcave'),
       location: Some(AssetLocation.from('batcave')),
       datetime: Some(DateTime.utc(2003, 8, 30)),
-      mimetype: const Some('image/jpeg'),
+      mediaType: const Some('image/jpeg'),
       filename: const Some('img_1234.jpg'),
     );
 
@@ -36,7 +36,7 @@ void main() {
             {
               "filename": "img_1234.jpg",
               "datetime": "2003-08-30T00:00:00.0Z",
-              "mimetype": "image/jpeg",
+              "mediaType": "image/jpeg",
               "tags": ["clowns", "snakes"],
               "caption": "#snakes and #clowns are in my @batcave",
               "location": {"label": "batcave", "city": null, "region": null}
@@ -60,7 +60,7 @@ void main() {
           final expectedMap = {
             'filename': 'img_1234.jpg',
             'datetime': '2003-08-30T00:00:00.000Z',
-            'mimetype': 'image/jpeg',
+            'mediaType': 'image/jpeg',
             'tags': ['clowns', 'snakes'],
             'caption': '#snakes and #clowns are in my @batcave',
             'location': {'label': 'batcave', 'city': null, 'region': null},
@@ -79,7 +79,7 @@ void main() {
         caption: const Some('#snakes and #clowns are in my @batcave'),
         location: Some(AssetLocation.from('batcave')),
         datetime: Some(DateTime.utc(2003, 8, 30)),
-        mimetype: const Some('image/jpeg'),
+        mediaType: const Some('image/jpeg'),
         filename: const Some('img_1234.jpg'),
       ),
     );
@@ -103,7 +103,7 @@ void main() {
               "input": {
                 "filename": "img_1234.jpg",
                 "datetime": "2003-08-30T00:00:00.0Z",
-                "mimetype": "image/jpeg",
+                "mediaType": "image/jpeg",
                 "tags": ["clowns", "snakes"],
                 "caption": "#snakes and #clowns are in my @batcave",
                 "location": {"label": "batcave", "city": null, "region": null}
@@ -130,7 +130,7 @@ void main() {
             'input': {
               'filename': 'img_1234.jpg',
               'datetime': '2003-08-30T00:00:00.000Z',
-              'mimetype': 'image/jpeg',
+              'mediaType': 'image/jpeg',
               'tags': ['clowns', 'snakes'],
               'caption': '#snakes and #clowns are in my @batcave',
               'location': {'label': 'batcave', 'city': null, 'region': null},

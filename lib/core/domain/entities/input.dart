@@ -16,7 +16,7 @@ class AssetInput extends Equatable {
   // The date/time that best represents the asset.
   final Option<DateTime> datetime;
   // The media type (nee MIME type) of the asset.
-  final Option<String> mimetype;
+  final Option<String> mediaType;
   // The original filename of the asset when it was imported.
   final Option<String> filename;
 
@@ -25,7 +25,7 @@ class AssetInput extends Equatable {
     required this.caption,
     required this.location,
     required this.datetime,
-    required this.mimetype,
+    required this.mediaType,
     required this.filename,
   });
 

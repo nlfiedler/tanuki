@@ -12,14 +12,14 @@ class AssetInputModel extends AssetInput {
     required Option<String> caption,
     required Option<AssetLocation> location,
     required Option<DateTime> datetime,
-    required Option<String> mimetype,
+    required Option<String> mediaType,
     required Option<String> filename,
   }) : super(
           tags: tags,
           caption: caption,
           location: location,
           datetime: datetime,
-          mimetype: mimetype,
+          mediaType: mediaType,
           filename: filename,
         );
 
@@ -29,7 +29,7 @@ class AssetInputModel extends AssetInput {
       caption: asset.caption,
       location: asset.location,
       datetime: asset.datetime,
-      mimetype: asset.mimetype,
+      mediaType: asset.mediaType,
       filename: asset.filename,
     );
   }
@@ -40,7 +40,7 @@ class AssetInputModel extends AssetInput {
     final Option<AssetLocation> location = Option.from(json['location'])
         .map((v) => AssetLocationModel.fromJson(v as Map<String, dynamic>));
     final Option<String> filename = Option.from(json['filename']);
-    final Option<String> mimetype = Option.from(json['mimetype']);
+    final Option<String> mediaType = Option.from(json['mediaType']);
     final datetime = Option.from(json['datetime']).map(
       (v) => DateTime.parse(v as String),
     );
@@ -49,7 +49,7 @@ class AssetInputModel extends AssetInput {
       caption: caption,
       location: location,
       datetime: datetime,
-      mimetype: mimetype,
+      mediaType: mediaType,
       filename: filename,
     );
   }
@@ -63,7 +63,7 @@ class AssetInputModel extends AssetInput {
         null,
       ),
       'datetime': datetime.mapOr((v) => v.toIso8601String(), null),
-      'mimetype': mimetype.toNullable(),
+      'mediaType': mediaType.toNullable(),
       'filename': filename.toNullable(),
     };
   }

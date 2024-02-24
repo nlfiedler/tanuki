@@ -98,8 +98,8 @@ class Asset extends Equatable {
   final int filesize;
   // The date/time that best represents the asset.
   final DateTime datetime;
-  // The media type (nee MIME type) of the asset.
-  final String mimetype;
+  // The media type of the asset.
+  final String mediaType;
   // The list of tags associated with this asset.
   final List<String> tags;
   // The date provided by the user.
@@ -115,7 +115,7 @@ class Asset extends Equatable {
     required this.filename,
     required this.filesize,
     required this.datetime,
-    required this.mimetype,
+    required this.mediaType,
     required this.tags,
     required this.userdate,
     required this.caption,

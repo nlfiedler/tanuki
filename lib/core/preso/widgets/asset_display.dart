@@ -7,20 +7,20 @@ import 'package:video_player/video_player.dart';
 
 class AssetDisplay extends StatelessWidget {
   final String assetId;
-  final String mimetype;
+  final String mediaType;
   final int displayWidth;
 
   const AssetDisplay({
     Key? key,
     required this.assetId,
-    required this.mimetype,
+    required this.mediaType,
     required this.displayWidth,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     const baseUrl = EnvironmentConfig.base_url;
-    if (mimetype.startsWith('video/')) {
+    if (mediaType.startsWith('video/')) {
       final uri = '$baseUrl/api/asset/$assetId';
       return _AssetVideo(uri: uri);
     } else {

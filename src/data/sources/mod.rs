@@ -42,7 +42,7 @@ pub trait EntityDataSource: Send + Sync {
     fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for assets whose media type matches the one given.
-    fn query_by_media_type(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_media_type(&self, media_type: &str) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for asssets whose best date is before the one given.
     fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
@@ -200,10 +200,10 @@ impl EntityDataSource for EntityDataSourceImpl {
         Ok(search_results)
     }
 
-    fn query_by_media_type(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_media_type(&self, media_type: &str) -> Result<Vec<SearchResult>, Error> {
         // secondary index keys are lowercase
-        let mimetype = mimetype.to_lowercase();
-        let query_results = self.database.query_by_key("by_media_type", mimetype)?;
+        let media_type = media_type.to_lowercase();
+        let query_results = self.database.query_by_key("by_media_type", media_type)?;
         let search_results = convert_results(query_results);
         Ok(search_results)
     }

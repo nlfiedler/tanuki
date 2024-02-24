@@ -13,7 +13,7 @@ class SearchParamsModel extends SearchParams {
     Option<DateTime> after = const None(),
     Option<DateTime> before = const None(),
     Option<String> filename = const None(),
-    Option<String> mimetype = const None(),
+    Option<String> mediaType = const None(),
     Option<SortField> sortField = const None(),
     Option<SortOrder> sortOrder = const None(),
   }) : super(
@@ -22,7 +22,7 @@ class SearchParamsModel extends SearchParams {
           after: after,
           before: before,
           filename: filename,
-          mimetype: mimetype,
+          mediaType: mediaType,
           sortField: sortField,
           sortOrder: sortOrder,
         );
@@ -34,7 +34,7 @@ class SearchParamsModel extends SearchParams {
       after: params.after,
       before: params.before,
       filename: params.filename,
-      mimetype: params.mimetype,
+      mediaType: params.mediaType,
       sortField: params.sortField,
       sortOrder: params.sortOrder,
     );
@@ -54,7 +54,7 @@ class SearchParamsModel extends SearchParams {
       (v) => DateTime.parse(v as String),
     );
     final Option<String> filename = Option.from(json['filename']);
-    final Option<String> mimetype = Option.from(json['mimetype']);
+    final Option<String> mediaType = Option.from(json['mediaType']);
     final sortField = decodeSortField(json['sortField']);
     final sortOrder = decodeSortOrder(json['sortOrder']);
     return SearchParamsModel(
@@ -63,7 +63,7 @@ class SearchParamsModel extends SearchParams {
       after: after,
       before: before,
       filename: filename,
-      mimetype: mimetype,
+      mediaType: mediaType,
       sortField: sortField,
       sortOrder: sortOrder,
     );
@@ -76,7 +76,7 @@ class SearchParamsModel extends SearchParams {
       'after': after.mapOr((v) => v.toIso8601String(), null),
       'before': before.mapOr((v) => v.toIso8601String(), null),
       'filename': filename.toNullable(),
-      'mimetype': mimetype.toNullable(),
+      'mediaType': mediaType.toNullable(),
       'sortField': encodeSortField(sortField),
       'sortOrder': encodeSortOrder(sortOrder),
     };
@@ -137,13 +137,13 @@ class SearchResultModel extends SearchResult {
   const SearchResultModel({
     required String id,
     required String filename,
-    required String mimetype,
+    required String mediaType,
     required Option<AssetLocation> location,
     required DateTime datetime,
   }) : super(
           id: id,
           filename: filename,
-          mimetype: mimetype,
+          mediaType: mediaType,
           location: location,
           datetime: datetime,
         );
@@ -152,7 +152,7 @@ class SearchResultModel extends SearchResult {
     return SearchResultModel(
       id: result.id,
       filename: result.filename,
-      mimetype: result.mimetype,
+      mediaType: result.mediaType,
       location: result.location,
       datetime: result.datetime,
     );
@@ -164,7 +164,7 @@ class SearchResultModel extends SearchResult {
     return SearchResultModel(
       id: json['id'],
       filename: json['filename'],
-      mimetype: json['mimetype'],
+      mediaType: json['mediaType'],
       location: location,
       datetime: DateTime.parse(json['datetime']),
     );
@@ -174,7 +174,7 @@ class SearchResultModel extends SearchResult {
     return {
       'id': id,
       'filename': filename,
-      'mimetype': mimetype,
+      'mediaType': mediaType,
       'location': location.mapOr(
         (v) => AssetLocationModel.from(v).toJson(),
         null,

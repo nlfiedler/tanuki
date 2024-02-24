@@ -28,8 +28,8 @@ class SearchParams extends Equatable {
   /// Find assets whose filename (e.g. img_3011.jpg) matches the one given.
   final Option<String> filename;
 
-  /// Find assets whose mimetype (e.g. image/jpeg) matches the one given.
-  final Option<String> mimetype;
+  /// Find assets whose media type (e.g. image/jpeg) matches the one given.
+  final Option<String> mediaType;
 
   /// Field by which to sort the results.
   final Option<SortField> sortField;
@@ -43,7 +43,7 @@ class SearchParams extends Equatable {
     this.after = const None(),
     this.before = const None(),
     this.filename = const None(),
-    this.mimetype = const None(),
+    this.mediaType = const None(),
     this.sortField = const None(),
     this.sortOrder = const None(),
   });
@@ -55,7 +55,7 @@ class SearchParams extends Equatable {
         after,
         before,
         filename,
-        mimetype,
+        mediaType,
       ];
 
   @override
@@ -71,7 +71,7 @@ class SearchResult extends Equatable {
   final String filename;
 
   /// Media type (formerly MIME type) of the asset.
-  final String mimetype;
+  final String mediaType;
 
   /// Location for the asset, if available.
   final Option<AssetLocation> location;
@@ -82,7 +82,7 @@ class SearchResult extends Equatable {
   const SearchResult({
     required this.id,
     required this.filename,
-    required this.mimetype,
+    required this.mediaType,
     required this.location,
     required this.datetime,
   });

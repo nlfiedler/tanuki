@@ -62,7 +62,7 @@ pub trait RecordRepository: Send {
     fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for assets whose media type matches the one given.
-    fn query_by_media_type(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_media_type(&self, media_type: &str) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for asssets whose best date is before the one given.
     fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;

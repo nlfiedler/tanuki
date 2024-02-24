@@ -51,7 +51,7 @@ Widget buildThumbnails(BuildContext context, List<SearchResult> results) {
               child: Column(children: [
                 AssetDisplay(
                   assetId: e.id,
-                  mimetype: e.mimetype,
+                  mediaType: e.mediaType,
                   displayWidth: 300,
                 ),
                 Text(dateString),

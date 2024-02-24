@@ -486,7 +486,7 @@ void main() {
             'filename': 'img_1234.jpg',
             'filesize': '1048576',
             'datetime': '2003-08-30T00:00:00.0+00:00',
-            'mimetype': 'image/jpeg',
+            'mediaType': 'image/jpeg',
             'tags': ['clowns', 'snakes'],
             'userdate': null,
             'caption': '#snakes and #clowns are in my @batcave',
@@ -516,7 +516,7 @@ void main() {
           filename: 'img_1234.jpg',
           filesize: 1048576,
           datetime: DateTime.utc(2003, 8, 30),
-          mimetype: 'image/jpeg',
+          mediaType: 'image/jpeg',
           tags: const ['clowns', 'snakes'],
           userdate: const None(),
           caption: const Some('#snakes and #clowns are in my @batcave'),
@@ -674,7 +674,7 @@ void main() {
               {
                 'id': 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
                 'filename': 'catmouse_1280p.jpg',
-                'mimetype': 'image/jpeg',
+                'mediaType': 'image/jpeg',
                 'location': {'label': 'outdoors', 'city': null, 'region': null},
                 'datetime': '2020-05-24T18:02:15.0+00:00'
               }
@@ -705,7 +705,7 @@ void main() {
             SearchResultModel(
               id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
               filename: 'catmouse_1280p.jpg',
-              mimetype: 'image/jpeg',
+              mediaType: 'image/jpeg',
               location: Some(AssetLocation.from('outdoors')),
               datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
             )
@@ -784,7 +784,7 @@ void main() {
               {
                 'id': 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
                 'filename': 'catmouse_1280p.jpg',
-                'mimetype': 'image/jpeg',
+                'mediaType': 'image/jpeg',
                 'location': {'label': 'outdoors', 'city': null, 'region': null},
                 'datetime': '2020-05-24T18:02:15.0+00:00'
               }
@@ -819,7 +819,7 @@ void main() {
             SearchResultModel(
               id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
               filename: 'catmouse_1280p.jpg',
-              mimetype: 'image/jpeg',
+              mediaType: 'image/jpeg',
               location: Some(AssetLocation.from('outdoors')),
               datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
             )
@@ -849,7 +849,7 @@ void main() {
             SearchResultModel(
               id: 'MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==',
               filename: 'catmouse_1280p.jpg',
-              mimetype: 'image/jpeg',
+              mediaType: 'image/jpeg',
               location: Some(AssetLocation.from('outdoors')),
               datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
             )
@@ -954,7 +954,7 @@ void main() {
         caption: const Some('#snakes and #clowns are in my @batcave'),
         location: Some(AssetLocation.from('batcave')),
         datetime: Some(DateTime.utc(2003, 8, 30)),
-        mimetype: const Some('image/jpeg'),
+        mediaType: const Some('image/jpeg'),
         filename: const Some('img_1234.jpg'),
       ),
     );
@@ -1041,7 +1041,7 @@ void main() {
             'filename': 'img_1234.jpg',
             'filesize': '1048576',
             'datetime': '2003-08-30T00:00:00.0+00:00',
-            'mimetype': 'image/jpeg',
+            'mediaType': 'image/jpeg',
             'tags': ['clowns', 'snakes'],
             'userdate': null,
             'caption': '#snakes and #clowns are in my @batcave',
@@ -1069,7 +1069,7 @@ void main() {
         caption: const Some('#snakes and #clowns are in my @batcave'),
         location: Some(AssetLocation.from('batcave')),
         datetime: Some(DateTime.utc(2003, 8, 30)),
-        mimetype: const Some('image/jpeg'),
+        mediaType: const Some('image/jpeg'),
         filename: const Some('img_1234.jpg'),
       ),
     );
@@ -1088,7 +1088,7 @@ void main() {
           filename: 'img_1234.jpg',
           filesize: 1048576,
           datetime: DateTime.utc(2003, 8, 30),
-          mimetype: 'image/jpeg',
+          mediaType: 'image/jpeg',
           tags: const ['clowns', 'snakes'],
           userdate: const None(),
           caption: const Some('#snakes and #clowns are in my @batcave'),

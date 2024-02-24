@@ -545,7 +545,7 @@ mod tests {
     }
 
     #[test]
-    fn test_diagnose_filename_mimetype() {
+    fn test_diagnose_filename_media_type() {
         // arrange
         let asset1_id = "dGVzdHMvZml4dHVyZXMvZmlnaHRpbmdfa2l0dGVucy5qcGc=";
         let digest1 = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
@@ -644,7 +644,7 @@ mod tests {
     }
 
     #[test]
-    fn test_diagnose_octet_mimetype() {
+    fn test_diagnose_octet_media_type() {
         // arrange
         let asset1_id = "dGVzdHMvZml4dHVyZXMvc2hpcnRfc21hbGwuaGVpYw==";
         let digest1 = "sha256-2955581c357f7b4b3cd29af11d9bebd32a4ad1746e36c6792dc9fa41a1d967ae";

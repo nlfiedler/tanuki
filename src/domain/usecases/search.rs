@@ -45,8 +45,8 @@ impl SearchAssets {
             self.repo.query_by_locations(locations)
         } else if let Some(filename) = params.filename.take() {
             self.repo.query_by_filename(&filename)
-        } else if let Some(mimetype) = params.mimetype.take() {
-            self.repo.query_by_media_type(&mimetype)
+        } else if let Some(media_type) = params.media_type.take() {
+            self.repo.query_by_media_type(&media_type)
         } else {
             // did not recognize the query, return nothing
             Ok(vec![])
@@ -66,7 +66,7 @@ impl super::UseCase<Vec<SearchResult>, Params> for SearchAssets {
         results = filter_by_date_range(results, &params);
         results = filter_by_locations(results, &params);
         results = filter_by_filename(results, &params);
-        results = filter_by_mimetype(results, &params);
+        results = filter_by_media_type(results, &params);
         // Finally, sort the results if so desired.
         sort_results(&mut results, &params);
         Ok(results)
@@ -135,16 +135,16 @@ fn filter_by_filename(results: Vec<SearchResult>, params: &Params) -> Vec<Search
 }
 
 // Filter the search results by media type, if specified.
-fn filter_by_mimetype(results: Vec<SearchResult>, params: &Params) -> Vec<SearchResult> {
-    if let Some(p_mimetype) = params.mimetype.as_ref() {
+fn filter_by_media_type(results: Vec<SearchResult>, params: &Params) -> Vec<SearchResult> {
+    if let Some(p_media_type) = params.media_type.as_ref() {
         // All filtering comparisons are case-insensitive for now, so both the
         // input and the index values are lowercased.
-        let mimetype = p_mimetype.to_lowercase();
+        let media_type = p_media_type.to_lowercase();
         results
             .into_iter()
             .filter(|r| {
                 let lowercase = r.media_type.to_lowercase();
-                mimetype == lowercase
+                media_type == lowercase
             })
             .collect()
     } else {
@@ -182,9 +182,9 @@ fn sort_results(results: &mut [SearchResult], params: &Params) {
             }
             SortField::MediaType => {
                 if order == SortOrder::Ascending {
-                    sort_by_mimetype_ascending
+                    sort_by_media_type_ascending
                 } else {
-                    sort_by_mimetype_descending
+                    sort_by_media_type_descending
                 }
             }
         };
@@ -216,11 +216,11 @@ fn sort_by_filename_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::
     b.filename.cmp(&a.filename)
 }
 
-fn sort_by_mimetype_ascending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+fn sort_by_media_type_ascending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
     a.media_type.cmp(&b.media_type)
 }
 
-fn sort_by_mimetype_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+fn sort_by_media_type_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
     b.media_type.cmp(&a.media_type)
 }
 
@@ -247,7 +247,7 @@ pub struct Params {
     pub tags: Vec<String>,
     pub locations: Vec<String>,
     pub filename: Option<String>,
-    pub mimetype: Option<String>,
+    pub media_type: Option<String>,
     pub before_date: Option<DateTime<Utc>>,
     pub after_date: Option<DateTime<Utc>>,
     pub sort_field: Option<SortField>,
@@ -465,7 +465,7 @@ mod tests {
     }
 
     #[test]
-    fn test_search_assets_mimetype_ok() {
+    fn test_search_assets_media_type_ok() {
         // arrange
         let results = vec![SearchResult {
             asset_id: "cafebabe".to_owned(),
@@ -481,7 +481,7 @@ mod tests {
         // act
         let usecase = SearchAssets::new(Box::new(mock));
         let mut params: Params = Default::default();
-        params.mimetype = Some("imaGE/jpeg".to_owned());
+        params.media_type = Some("imaGE/jpeg".to_owned());
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -589,7 +589,7 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_results_mimetype() {
+    fn test_filter_results_media_type() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
@@ -599,7 +599,7 @@ mod tests {
         let usecase = SearchAssets::new(Box::new(mock));
         let mut params: Params = Default::default();
         params.tags = vec!["kitten".to_owned()];
-        params.mimetype = Some("video/quicktime".to_owned());
+        params.media_type = Some("video/quicktime".to_owned());
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -840,7 +840,7 @@ mod tests {
     }
 
     #[test]
-    fn test_order_results_ascending_mimetype() {
+    fn test_order_results_ascending_media_type() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
@@ -867,7 +867,7 @@ mod tests {
     }
 
     #[test]
-    fn test_order_results_descending_mimetype() {
+    fn test_order_results_descending_media_type() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();

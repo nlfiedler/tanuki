@@ -107,7 +107,7 @@ class AssetPreview extends StatelessWidget {
             padding: const EdgeInsets.all(8.0),
             child: AssetDisplay(
               assetId: asset.id,
-              mimetype: asset.mimetype,
+              mediaType: asset.mediaType,
               displayWidth: 640,
             ),
           ),
@@ -153,7 +153,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
         'datetime': datefmt.format(widget.asset.datetime.toLocal()),
         'filename': widget.asset.filename,
         'filesize': widget.asset.filesize.toString(),
-        'mimetype': widget.asset.mimetype,
+        'mediaType': widget.asset.mediaType,
         'tags': widget.asset.tags.join(', '),
         'caption': widget.asset.caption.unwrapOr(''),
         'location': location,
@@ -209,7 +209,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
             readOnly: true,
           ),
           FormBuilderTextField(
-            name: 'mimetype',
+            name: 'mediaType',
             decoration: const InputDecoration(
               icon: Icon(Icons.code),
               labelText: 'Media type',

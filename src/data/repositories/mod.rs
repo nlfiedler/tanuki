@@ -102,8 +102,8 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.query_by_filename(filename)
     }
 
-    fn query_by_media_type(&self, mimetype: &str) -> Result<Vec<SearchResult>, Error> {
-        self.datasource.query_by_media_type(mimetype)
+    fn query_by_media_type(&self, media_type: &str) -> Result<Vec<SearchResult>, Error> {
+        self.datasource.query_by_media_type(media_type)
     }
 
     fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {

@@ -23,7 +23,7 @@ void main() {
     filename: 'catmouse_1280p.jpg',
     filesize: 160852,
     datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
-    mimetype: 'image/jpeg',
+    mediaType: 'image/jpeg',
     tags: const ['cat', 'mouse'],
     userdate: const None(),
     caption: const Some('#cat @outdoors #mouse'),

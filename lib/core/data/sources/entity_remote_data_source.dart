@@ -194,7 +194,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
           filename
           filesize
           datetime
-          mimetype
+          mediaType
           tags
           userdate
           caption
@@ -251,7 +251,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
             datetime
             filename
             location { label city region }
-            mimetype
+            mediaType
           }
           count
         }
@@ -298,7 +298,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
             datetime
             filename
             location { label city region }
-            mimetype
+            mediaType
           }
           count
         }
@@ -335,7 +335,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
           filename
           filesize
           datetime
-          mimetype
+          mediaType
           tags
           userdate
           caption

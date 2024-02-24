@@ -75,7 +75,7 @@ AssetInputId buildAssetInputId(String assetId, Map<String, dynamic> inputs) {
       caption: caption,
       location: location,
       datetime: datetime,
-      mimetype: Some(inputs['mimetype']),
+      mediaType: Some(inputs['mediaType']),
       filename: const None(),
     ),
   );

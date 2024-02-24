@@ -14,8 +14,6 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
 ** TODO change gallery display to favor location over filename
 ** TODO asset details page should show all location fields, even if city or region is not set
-** TODO fix GraphQL field names ~mediaType~ to be ~mimetype~ consistently
-** TODO perform database migration again
 ** TODO do something with the assets that have ~fix_the_date~ tag
 ** Quick rotation fix for certain images
 *** add a simple GraphQL mutation that sets the =Orientation= Exif field

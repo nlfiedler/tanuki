@@ -91,7 +91,7 @@ class BulkForm extends ConsumerWidget {
                                 caption: const None(),
                                 datetime: const None(),
                                 filename: const None(),
-                                mimetype: const None(),
+                                mediaType: const None(),
                               ),
                             );
                           })),
@@ -146,7 +146,7 @@ Widget buildThumbnails(
                 children: <Widget>[
                   AssetDisplay(
                     assetId: e.id,
-                    mimetype: e.mimetype,
+                    mediaType: e.mediaType,
                     displayWidth: 300,
                   ),
                   Positioned(

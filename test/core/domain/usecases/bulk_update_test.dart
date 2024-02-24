@@ -42,7 +42,7 @@ void main() {
           caption: const Some('#snakes and #clowns are in my @batcave'),
           location: Some(AssetLocation.from('batcave')),
           datetime: Some(DateTime.utc(2003, 8, 30)),
-          mimetype: const Some('image/jpeg'),
+          mediaType: const Some('image/jpeg'),
           filename: const Some('img_1234.jpg'),
         ),
       );

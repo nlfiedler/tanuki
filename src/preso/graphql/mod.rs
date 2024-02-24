@@ -152,8 +152,8 @@ impl Asset {
         }
     }
 
-    /// The media type (nee MIME type) of the asset.
-    fn mimetype(&self) -> String {
+    /// The media type of the asset, such as "image/jpeg" or "video/mp4".
+    fn media_type(&self) -> String {
         self.media_type.clone()
     }
 
@@ -251,8 +251,8 @@ pub struct SearchParams {
     pub before: Option<DateTime<Utc>>,
     /// Find assets whose filename (e.g. `img_3011.jpg`) matches the one given.
     pub filename: Option<String>,
-    /// Find assets whose mimetype (e.g. `image/jpeg`) matches the one given.
-    pub mimetype: Option<String>,
+    /// Find assets whose media type (e.g. `image/jpeg`) matches the one given.
+    pub media_type: Option<String>,
     /// Field by which to sort the results.
     pub sort_field: Option<SortField>,
     /// Order by which to sort the results.
@@ -265,7 +265,7 @@ impl From<SearchParams> for crate::domain::usecases::search::Params {
             tags: val.tags.unwrap_or(vec![]),
             locations: val.locations.unwrap_or(vec![]),
             filename: val.filename,
-            mimetype: val.mimetype,
+            media_type: val.media_type,
             before_date: val.before,
             after_date: val.after,
             sort_field: Some(
@@ -296,8 +296,8 @@ impl SearchResult {
         self.filename.clone()
     }
 
-    /// Media type (formerly MIME type) of the asset.
-    fn mimetype(&self) -> String {
+    /// Media type of the asset.
+    fn media_type(&self) -> String {
         self.media_type.clone()
     }
 
@@ -630,7 +630,7 @@ pub struct AssetInput {
     /// New media type, useful for fixing assets where the automatic detection
     /// guessed wrong. Beware that setting a wrong value means the asset will
     /// likely not display correctly.
-    mimetype: Option<String>,
+    media_type: Option<String>,
     /// New filename to replace any existing value.
     filename: Option<String>,
 }
@@ -646,7 +646,7 @@ impl From<AssetInput> for crate::domain::usecases::update::AssetInput {
             tags,
             caption: val.caption,
             location,
-            media_type: val.mimetype,
+            media_type: val.media_type,
             datetime: val.datetime,
             filename: val.filename,
         }
@@ -1107,7 +1107,7 @@ mod tests {
         let schema = create_schema();
         let query = r#"query Fetch($id: String!) {
             asset(id: $id) {
-                id filename filesize datetime mimetype
+                id filename filesize datetime mediaType
                 tags userdate caption location { label }
             }
         }"#;
@@ -1137,7 +1137,7 @@ mod tests {
         let actual = res.as_scalar_value::<String>().unwrap();
         assert_eq!(&actual[..19], "2018-05-31T21:10:11");
 
-        let res = object.get_field_value("mimetype").unwrap();
+        let res = object.get_field_value("mediaType").unwrap();
         let actual = res.as_scalar_value::<String>().unwrap();
         assert_eq!(actual, "image/jpeg");
 
@@ -1175,7 +1175,7 @@ mod tests {
         let schema = create_schema();
         let query = r#"query Fetch($id: String!) {
             asset(id: $id) {
-                id filename filesize datetime mimetype
+                id filename filesize datetime mediaType
                 tags userdate caption location { label }
             }
         }"#;
@@ -1547,7 +1547,7 @@ mod tests {
             after: None,
             before: None,
             filename: None,
-            mimetype: None,
+            media_type: None,
             sort_field: Some(SortField::Identifier),
             sort_order: Some(SortOrder::Ascending),
         };
@@ -1555,7 +1555,7 @@ mod tests {
         let (res, errors) = juniper::execute_sync(
             r#"query Search($params: SearchParams!) {
                 search(params: $params) {
-                    results { id filename mimetype location { label } datetime }
+                    results { id filename mediaType location { label } datetime }
                     count
                 }
             }"#,
@@ -1584,7 +1584,7 @@ mod tests {
         let entry_field = entry_object.get_field_value("filename").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
         assert_eq!(entry_value, "img_2345.gif");
-        let entry_field = entry_object.get_field_value("mimetype").unwrap();
+        let entry_field = entry_object.get_field_value("mediaType").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
         assert_eq!(entry_value, "image/gif");
         let entry_field = entry_object.get_field_value("location").unwrap();
@@ -1604,7 +1604,7 @@ mod tests {
         let entry_field = entry_object.get_field_value("filename").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
         assert_eq!(entry_value, "img_7890.jpg");
-        let entry_field = entry_object.get_field_value("mimetype").unwrap();
+        let entry_field = entry_object.get_field_value("mediaType").unwrap();
         let entry_value = entry_field.as_scalar_value::<String>().unwrap();
         assert_eq!(entry_value, "image/jpeg");
         let entry_field = entry_object.get_field_value("location").unwrap();
@@ -1747,7 +1747,7 @@ mod tests {
             after: None,
             before: None,
             filename: None,
-            mimetype: None,
+            media_type: None,
             sort_field: Some(SortField::Identifier),
             sort_order: Some(SortOrder::Ascending),
         };
@@ -1810,7 +1810,7 @@ mod tests {
             after: None,
             before: None,
             filename: None,
-            mimetype: None,
+            media_type: None,
             sort_field: Some(SortField::Identifier),
             sort_order: Some(SortOrder::Ascending),
         };
@@ -1873,7 +1873,7 @@ mod tests {
             after: None,
             before: None,
             filename: None,
-            mimetype: None,
+            media_type: None,
             sort_field: Some(SortField::Identifier),
             sort_order: Some(SortOrder::Ascending),
         };
@@ -1937,7 +1937,7 @@ mod tests {
             after: None,
             before: None,
             filename: None,
-            mimetype: None,
+            media_type: None,
             sort_field: Some(SortField::Identifier),
             sort_order: Some(SortOrder::Ascending),
         };
@@ -1999,7 +1999,7 @@ mod tests {
             after: None,
             before: None,
             filename: None,
-            mimetype: None,
+            media_type: None,
             sort_field: Some(SortField::Identifier),
             sort_order: Some(SortOrder::Ascending),
         };
@@ -2007,7 +2007,7 @@ mod tests {
         let (res, errors) = juniper::execute_sync(
             r#"query Search($params: SearchParams!) {
                 search(params: $params) {
-                    results { id filename mimetype location { label } datetime }
+                    results { id filename mediaType location { label } datetime }
                     count
                 }
             }"#,
@@ -2049,7 +2049,7 @@ mod tests {
             after: None,
             before: None,
             filename: None,
-            mimetype: None,
+            media_type: None,
             sort_field: Some(SortField::Identifier),
             sort_order: Some(SortOrder::Ascending),
         };
@@ -2258,7 +2258,7 @@ mod tests {
                 region: None,
             }),
             datetime: None,
-            mimetype: None,
+            media_type: None,
             filename: None,
         };
         vars.insert("input".to_owned(), input.to_input_value());
@@ -2317,7 +2317,7 @@ mod tests {
             caption: None,
             location: None,
             datetime: None,
-            mimetype: None,
+            media_type: None,
             filename: None,
         };
         vars.insert("input".to_owned(), input.to_input_value());
@@ -2374,7 +2374,7 @@ mod tests {
                 region: None,
             }),
             datetime: None,
-            mimetype: None,
+            media_type: None,
             filename: None,
         };
         vars.insert("input".to_owned(), input.to_input_value());
@@ -2456,7 +2456,7 @@ mod tests {
                         region: None,
                     }),
                     datetime: None,
-                    mimetype: None,
+                    media_type: None,
                     filename: None,
                 },
             },
@@ -2471,7 +2471,7 @@ mod tests {
                         region: None,
                     }),
                     datetime: None,
-                    mimetype: None,
+                    media_type: None,
                     filename: None,
                 },
             },

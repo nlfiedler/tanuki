@@ -521,7 +521,7 @@ mod tests {
     }
 
     #[test]
-    fn test_merge_asset_input_mimetype() {
+    fn test_merge_asset_input_media_type() {
         let mut asset = Asset {
             key: "abc123".to_owned(),
             checksum: "cafebabe".to_owned(),

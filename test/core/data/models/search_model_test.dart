@@ -13,7 +13,7 @@ void main() {
     final tSearchParamsModel = SearchParamsModel(
       tags: const ['clowns', 'snakes'],
       locations: const ['batcave'],
-      mimetype: const Some('image/jpeg'),
+      mediaType: const Some('image/jpeg'),
       after: const None(),
       before: Some(DateTime.utc(2020, 5, 24)),
     );
@@ -22,7 +22,7 @@ void main() {
       {
         "tags": ["clowns", "snakes"],
         "locations": ["batcave"],
-        "mimetype": "image/jpeg",
+        "mediaType": "image/jpeg",
         "after": null,
         "before": "2020-05-24T00:00:00.0Z"
       }
@@ -63,7 +63,7 @@ void main() {
             'after': null,
             'before': '2020-05-24T00:00:00.000Z',
             'filename': null,
-            'mimetype': 'image/jpeg',
+            'mediaType': 'image/jpeg',
             'sortField': null,
             'sortOrder': null,
           };
@@ -78,7 +78,7 @@ void main() {
         final model = SearchParamsModel(
           tags: const ['clowns', 'snakes'],
           locations: const ['batcave'],
-          mimetype: const Some('image/jpeg'),
+          mediaType: const Some('image/jpeg'),
           filename: const Some('catmouse.jpg'),
           after: Some(DateTime.utc(2000, 10, 12)),
           before: Some(DateTime.utc(2020, 5, 24)),
@@ -107,7 +107,7 @@ void main() {
     final tSearchResultModel = SearchResultModel(
       id: uniqueId,
       filename: 'catmouse_1280p.jpg',
-      mimetype: 'image/jpeg',
+      mediaType: 'image/jpeg',
       location: Some(AssetLocation.from('outdoors')),
       datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
     );
@@ -116,7 +116,7 @@ void main() {
       {
         "id": "MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==",
         "filename": "catmouse_1280p.jpg",
-        "mimetype": "image/jpeg",
+        "mediaType": "image/jpeg",
         "location": {"label": "outdoors", "city": null, "region": null},
         "datetime": "2020-05-24T18:02:15.829336+00:00"
       }
@@ -154,7 +154,7 @@ void main() {
           final expectedMap = {
             'id': uniqueId,
             'filename': 'catmouse_1280p.jpg',
-            'mimetype': 'image/jpeg',
+            'mediaType': 'image/jpeg',
             'location': {'label': 'outdoors', 'city': null, 'region': null},
             'datetime': '2020-05-24T18:02:15.000Z',
           };
@@ -169,7 +169,7 @@ void main() {
         final model = SearchResultModel(
           id: 'MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6d25keajZuLmpwZw==',
           filename: 'mousecat_1280p.jpg',
-          mimetype: 'image/jpeg',
+          mediaType: 'image/jpeg',
           location: const None(),
           datetime: DateTime.utc(2010, 10, 12, 9, 20, 51),
         );
@@ -188,7 +188,7 @@ void main() {
         SearchResultModel(
           id: uniqueId,
           filename: 'catmouse_1280p.jpg',
-          mimetype: 'image/jpeg',
+          mediaType: 'image/jpeg',
           location: Some(AssetLocation.from('outdoors')),
           datetime: DateTime.utc(2020, 5, 24, 18, 02, 15),
         )
@@ -202,7 +202,7 @@ void main() {
           {
             "id": "MjAyMC8wNS8yNC8x-mini-N5emVhamE4ajZuLmpwZw==",
             "filename": "catmouse_1280p.jpg",
-            "mimetype": "image/jpeg",
+            "mediaType": "image/jpeg",
             "location": {"label": "outdoors", "city": null, "region": null},
             "datetime": "2020-05-24T18:02:15.829336+00:00"
           }
@@ -245,7 +245,7 @@ void main() {
               {
                 'id': uniqueId,
                 'filename': 'catmouse_1280p.jpg',
-                'mimetype': 'image/jpeg',
+                'mediaType': 'image/jpeg',
                 'location': {'label': 'outdoors', 'city': null, 'region': null},
                 'datetime': '2020-05-24T18:02:15.000Z',
               }
@@ -265,7 +265,7 @@ void main() {
             SearchResultModel(
               id: 'MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6d25keajZuLmpwZw==',
               filename: 'mousecat_1280p.jpg',
-              mimetype: 'image/jpeg',
+              mediaType: 'image/jpeg',
               location: const None(),
               datetime: DateTime.utc(2010, 10, 12, 9, 20, 51),
             )
