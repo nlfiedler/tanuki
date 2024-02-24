@@ -1,7 +1,6 @@
 * Action Items
 ** clean up stale records
 *** add mutation to remove records based on asset identifier
-*** there is a =.psd= file in the newborn set
 *** records to remove (bad avi, aae files)
 #+begin_src
 MjAxNC8xMi8yMS8wMDE1LzAxY2UxcWQ3cWVwMndiMWY4OWduNW1kNHpqLmF2aS5tb3Y=
@@ -13,18 +12,12 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 ** verify responsiveness is looking good
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
-** TODO run ~geocode~ with =overwrite: true= on production
-*** perform dump, deploy, load [/]
-- [ ] dump current database
-- [ ] stop container
-- [ ] rename database
-- [ ] build and deploy
-- [ ] load from file
-- [ ] test search (anniversary + sausalito)
-- [ ] test recents (301)
-*** run ~geocode~ to fix all of the asset locations
-** TODO fix more locations in the production data set (see ~/Documents/tanuki/locations.org)
-** [#B] Quick rotation fix for certain images
+** TODO change gallery display to favor location over filename
+** TODO asset details page should show all location fields, even if city or region is not set
+** TODO fix GraphQL field names ~mediaType~ to be ~mimetype~ consistently
+** TODO perform database migration again
+** TODO do something with the assets that have ~fix_the_date~ tag
+** Quick rotation fix for certain images
 *** add a simple GraphQL mutation that sets the =Orientation= Exif field
 *** check the =kamadak-exif= project for bugs related to writing Exif data
 *** test modifying Exif data with recent images to check for data loss
@@ -47,9 +40,13 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** TODO modify search page to allow multiple locations
 *** TODO find out if =mp4= crate can read GPS coords from videos
 **** Preview.app will display location information for videos
+** import screen improvements
+*** selection should be made by clicking specifically on the corner "button"
+*** clicking on the asset will navigate to edit screen, save directly from there
+*** from the edit screen, < and > buttons will move between recent assets
 ** create graphql mutation to delete assets with certain tag
-*** boolean argument actually perform the delete
-*** if argument is false, only reports what would be deleted
+*** boolean argument ~yes~ to actually perform the delete
+*** if ~yes~ argument is false, reports what would be deleted
 *** remove all of the ~deleteme~ assets
 ** Read timezone info from Exif tags when displaying asset details
 *** everything is assuming that the date/time is UTC, which is almost always wrong
@@ -233,7 +230,7 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 *** screen for showing all tags, locations, years, with count values
 **** selecting a tag or location offers a rename function
 **** selecting multiple tags/locations offers option to remove from all assets
-** Bulk edit
+** Bulk edit (two forms)
 *** need to set the custom date on many assets at once
 *** able to set ~city~ and ~region~ for assets whose location ~label~ matches a query
 **** only modify the record if city/region is not already defined
@@ -616,6 +613,17 @@ include it in the database records.
 *** Scripting support
 *** portable mode for thumb-drive based usage
 *** demo bundle that includes some preloaded assets
+* Deployments
+** production
+*** database migration procedure [0/8]
+- [ ] dump current database
+- [ ] stop container
+- [ ] rename database directory
+- [ ] build and deploy
+- [ ] verify empty
+- [ ] load database dump
+- [ ] verify search works (~anniversary~ + ~sausalito~)
+- [ ] verify recent assets
 * Product
 ** Productization
 *** Windows support

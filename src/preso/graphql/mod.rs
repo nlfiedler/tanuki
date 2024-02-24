@@ -430,6 +430,168 @@ impl Counts {
     }
 }
 
+/// `EditFilter` is used to select assets when performing a bulk edit.
+#[derive(Clone, GraphQLInputObject)]
+pub struct EditFilter {
+    /// Asset must have all of these tags.
+    pub tags: Vec<String>,
+    /// Asset location must match defined fields of location. If any field is an
+    /// empty string, then the corresponding asset field must be undefined.
+    pub location: Option<LocationInput>,
+    /// Asset "best" date must be before this date.
+    pub before: Option<DateTime<Utc>>,
+    /// Asset "best" date must be after this date.
+    pub after: Option<DateTime<Utc>>,
+    /// Asset media type must match this value.
+    pub media_type: Option<String>,
+}
+
+impl From<EditFilter> for crate::domain::usecases::edit::Filter {
+    fn from(val: EditFilter) -> Self {
+        crate::domain::usecases::edit::Filter {
+            tags: val.tags,
+            location: val.location.map(|l| l.into()),
+            before_date: val.before,
+            after_date: val.after,
+            media_type: val.media_type,
+        }
+    }
+}
+
+#[derive(Clone, GraphQLEnum)]
+pub enum TagAction {
+    Add,
+    Remove,
+}
+
+/// `EditTag` is the operation to perform on the asset tags.
+#[derive(Clone, GraphQLInputObject)]
+pub struct EditTag {
+    /// Action to take on the tags list.
+    action: TagAction,
+    /// Name of the tag to be added or removed.
+    value: String,
+}
+
+impl From<EditTag> for crate::domain::usecases::edit::TagOperation {
+    fn from(val: EditTag) -> Self {
+        match val.action {
+            TagAction::Add => crate::domain::usecases::edit::TagOperation::Add(val.value),
+            TagAction::Remove => crate::domain::usecases::edit::TagOperation::Remove(val.value),
+        }
+    }
+}
+
+#[derive(Clone, GraphQLEnum)]
+pub enum LocationAction {
+    Set,
+    Clear,
+}
+
+#[derive(Clone, GraphQLEnum)]
+pub enum LocationField {
+    Label,
+    City,
+    Region,
+}
+
+impl From<LocationField> for crate::domain::usecases::edit::LocationField {
+    fn from(val: LocationField) -> Self {
+        match val {
+            LocationField::Label => crate::domain::usecases::edit::LocationField::Label,
+            LocationField::City => crate::domain::usecases::edit::LocationField::City,
+            LocationField::Region => crate::domain::usecases::edit::LocationField::Region,
+        }
+    }
+}
+
+/// `EditLocation` indicates what action to take on the location.
+#[derive(Clone, GraphQLInputObject)]
+pub struct EditLocation {
+    /// Field of the location record to be modified.
+    field: LocationField,
+    /// Action to take on the location field.
+    action: LocationAction,
+    /// Value for setting the corresponding location field.
+    value: Option<String>,
+}
+
+impl From<EditLocation> for crate::domain::usecases::edit::LocationOperation {
+    fn from(val: EditLocation) -> Self {
+        let field: crate::domain::usecases::edit::LocationField = val.field.into();
+        let empty = String::from("oops");
+        match val.action {
+            LocationAction::Set => crate::domain::usecases::edit::LocationOperation::Set(
+                field,
+                val.value.unwrap_or(empty),
+            ),
+            LocationAction::Clear => crate::domain::usecases::edit::LocationOperation::Clear(field),
+        }
+    }
+}
+
+#[derive(Clone, GraphQLEnum)]
+pub enum DatetimeAction {
+    /// Set the "user" date to the value given.
+    Set,
+    /// Add the given number of days to the best date, save as "user" date.
+    Add,
+    /// Subtract the given number of days from the best date, save as "user" date.
+    Subtract,
+    /// Clear the "user" date field.
+    Clear,
+}
+
+/// `EditDatetime` indicates what action to take on the asset date/time.
+#[derive(Clone, GraphQLInputObject)]
+pub struct EditDatetime {
+    /// Action to take regarding the asset date/time.
+    action: DatetimeAction,
+    /// New date/time to apply to the asset.
+    value: Option<DateTime<Utc>>,
+    /// Number of days to add or remove from the "best" asset date/time.
+    delta: Option<i32>,
+}
+
+impl From<EditDatetime> for crate::domain::usecases::edit::DatetimeOperation {
+    fn from(val: EditDatetime) -> Self {
+        let value = val.value.unwrap_or(Utc::now());
+        let delta = val.delta.unwrap_or(0) as u16;
+        match val.action {
+            DatetimeAction::Set => crate::domain::usecases::edit::DatetimeOperation::Set(value),
+            DatetimeAction::Add => crate::domain::usecases::edit::DatetimeOperation::Add(delta),
+            DatetimeAction::Subtract => {
+                crate::domain::usecases::edit::DatetimeOperation::Subtract(delta)
+            }
+            DatetimeAction::Clear => crate::domain::usecases::edit::DatetimeOperation::Clear,
+        }
+    }
+}
+
+/// `EditParams` specify a filter to select assets and actions to perform on those assets.
+#[derive(Clone, GraphQLInputObject)]
+pub struct EditParams {
+    /// Criteria for finding assets to be modified.
+    pub filter: EditFilter,
+    /// Operations to perform on the tags.
+    pub tags: Vec<EditTag>,
+    /// Operations to perform on the location fields.
+    pub location: Vec<EditLocation>,
+    /// Optional date/time operation to perform.
+    pub datetime: Option<EditDatetime>,
+}
+
+impl From<EditParams> for crate::domain::usecases::edit::Params {
+    fn from(val: EditParams) -> Self {
+        crate::domain::usecases::edit::Params {
+            filter: val.filter.into(),
+            tag_ops: val.tags.into_iter().map(|v| v.into()).collect(),
+            location_ops: val.location.into_iter().map(|v| v.into()).collect(),
+            datetime_op: val.datetime.map(|v| v.into()),
+        }
+    }
+}
+
 /// `Location` is used to update the location field of an asset.
 #[derive(Clone, GraphQLInputObject)]
 pub struct LocationInput {
@@ -790,6 +952,18 @@ impl MutationRoot {
         let geocoder = find_location_repository();
         let usecase = Geocoder::new(Box::new(repo), Box::new(blobs), geocoder);
         let results: u64 = usecase.call(Params::new(overwrite))?;
+        Ok(results as i32)
+    }
+
+    /// Perform a search and replace of all of the assets.
+    fn edit(executor: &Executor, params: EditParams) -> FieldResult<i32> {
+        use crate::domain::usecases::edit::{EditAssets, Params};
+        use crate::domain::usecases::UseCase;
+        let ctx = executor.context().clone();
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
+        let usecase = EditAssets::new(Box::new(repo));
+        let parms: Params = params.into();
+        let results: u64 = usecase.call(parms)?;
         Ok(results as i32)
     }
 

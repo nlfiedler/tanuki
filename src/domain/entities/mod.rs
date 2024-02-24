@@ -83,6 +83,19 @@ impl Asset {
         }
     }
 
+    /// Returns the most accurate date for the asset, starting with the
+    /// user-defined date, then the date read directly from the asset itself,
+    /// and finally the time of import.
+    pub fn best_date(&self) -> DateTime<Utc> {
+        if let Some(ud) = &self.user_date {
+            ud.to_owned()
+        } else if let Some(od) = &self.original_date {
+            od.to_owned()
+        } else {
+            self.import_date.to_owned()
+        }
+    }
+
     /// Set the checksum field of the asset.
     pub fn checksum(&mut self, checksum: String) -> &mut Self {
         self.checksum = checksum;
@@ -399,19 +412,12 @@ pub struct SearchResult {
 impl SearchResult {
     /// Build a search result from the given asset.
     pub fn new(asset: &Asset) -> Self {
-        let date = if let Some(ud) = asset.user_date.as_ref() {
-            ud.to_owned()
-        } else if let Some(od) = asset.original_date.as_ref() {
-            od.to_owned()
-        } else {
-            asset.import_date
-        };
         Self {
             asset_id: asset.key.clone(),
             filename: asset.filename.clone(),
             media_type: asset.media_type.clone(),
             location: asset.location.clone(),
-            datetime: date,
+            datetime: asset.best_date(),
         }
     }
 }
