@@ -40,6 +40,8 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 ** import screen improvements
 *** selection should be made by clicking specifically on the corner "button"
 *** clicking on the asset will navigate to edit screen, save directly from there
+*** edits must result in refreshing the gallery
+*** learn more about flutter navigation, need a listener when we return to the gallery
 ** create graphql mutation to delete assets with certain tag
 *** boolean argument ~yes~ to actually perform the delete
 *** if ~yes~ argument is false, reports what would be deleted

@@ -129,46 +129,51 @@ Widget buildThumbnails(
     results.map((e) {
       final selected = state.assets.contains(e.id);
       final dateString = datefmt.format(e.datetime.toLocal());
-      return TextButton(
-        onPressed: () {
-          BlocProvider.of<AssignAttributesBloc>(context).add(
-            ToggleAsset(assetId: e.id),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SizedBox(
-            width: 300.0,
-            // try keeping the text in a column, the text will automatically
-            // wrap to fix the available space
-            child: Column(children: [
-              Stack(
-                children: <Widget>[
-                  AssetDisplay(
+      return Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: SizedBox(
+          width: 300.0,
+          // try keeping the text in a column, the text will automatically
+          // wrap to fit the available space
+          child: Column(children: [
+            Stack(
+              children: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/edit', arguments: e.id);
+                  },
+                  child: AssetDisplay(
                     assetId: e.id,
                     mediaType: e.mediaType,
                     displayWidth: 300,
                   ),
-                  Positioned(
-                    top: 15,
-                    right: 15,
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: TextButton(
+                    onPressed: () {
+                      BlocProvider.of<AssignAttributesBloc>(context).add(
+                        ToggleAsset(assetId: e.id),
+                      );
+                    },
                     child: Icon(selected
                         ? Icons.check_circle
                         : Icons.add_circle_outline),
                   ),
-                ],
-              ),
-              Text(dateString),
-              ResponsiveVisibility(
-                hiddenConditions: [
-                  Condition.smallerThan(name: TABLET, value: false),
-                ],
-                child: Text(
-                  e.location.map((e) => e.description()).unwrapOr(e.filename),
                 ),
+              ],
+            ),
+            Text(dateString),
+            ResponsiveVisibility(
+              hiddenConditions: [
+                Condition.smallerThan(name: TABLET, value: false),
+              ],
+              child: Text(
+                e.location.map((e) => e.description()).unwrapOr(e.filename),
               ),
-            ]),
-          ),
+            ),
+          ]),
         ),
       );
     }),
