@@ -60,6 +60,8 @@ class UpdateSubmit extends ConsumerWidget {
 
 AssetInputId buildAssetInputId(String assetId, Map<String, dynamic> inputs) {
   final Option<String> caption = Option.from(inputs['caption']);
+  // empty fields will be sent to the backend as empty strings which should
+  // instruct the backend to clear that field rather than ignoring it
   final Option<String> label = Option.from(inputs['location']);
   final Option<String> city = Option.from(inputs['city']);
   final Option<String> region = Option.from(inputs['region']);

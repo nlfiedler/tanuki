@@ -59,7 +59,9 @@ Widget buildThumbnails(BuildContext context, List<SearchResult> results) {
                   hiddenConditions: [
                     Condition.smallerThan(name: TABLET, value: false),
                   ],
-                  child: Text(e.filename),
+                  child: Text(
+                    e.location.map((e) => e.description()).unwrapOr(e.filename),
+                  ),
                 ),
               ]),
             ),

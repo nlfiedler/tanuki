@@ -12,8 +12,6 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 ** verify responsiveness is looking good
 *** try resizing the browser window for each page
 *** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
-** TODO change gallery display to favor location over filename
-** TODO asset details page should show all location fields, even if city or region is not set
 ** TODO do something with the assets that have ~fix_the_date~ tag
 ** Quick rotation fix for certain images
 *** add a simple GraphQL mutation that sets the =Orientation= Exif field
@@ -54,6 +52,8 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** otherwise, the ~datetime~ of the asset is something else and not ~original~ so timezone should be =null=
 *** frontend should use ~timezone~ value (if available) to show correct time in asset details
 ** Gallery improvements
+*** asset display should update after edits (e.g. location or date changes)
+**** date and location are shown below thumbnail, needs to be updated after editing
 *** add date order button on gallery (ascending/descending)
 **** the GraphQL operation supports sorting, should use it for something
 *** enable different modes of display

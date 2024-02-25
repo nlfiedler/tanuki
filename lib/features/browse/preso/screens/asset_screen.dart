@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:oxidized/oxidized.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
 import 'package:tanuki/core/preso/widgets/asset_display.dart';
@@ -139,7 +138,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
   @override
   Widget build(BuildContext context) {
     final datefmt = DateFormat.yMd().add_jm();
-    final location = formatLocation(widget.asset.location);
+    final location = widget.asset.location.mapOr((e) => e.description(), '');
     //
     // Other asset properties not shown here:
     //
@@ -220,15 +219,4 @@ class _AssetEditFormState extends State<AssetEditForm> {
       ),
     );
   }
-}
-
-String formatLocation(Option<AssetLocation> location) {
-  return location.mapOr((v) {
-    if (v.label.isSome() && v.city.isSome() && v.region.isSome()) {
-      return '${v.label.unwrap()} -- ${v.city.unwrap()}, ${v.region.unwrap()}';
-    } else if (v.city.isSome() && v.region.isSome()) {
-      return '${v.city.unwrap()}, ${v.region.unwrap()}';
-    }
-    return v.label.unwrapOr('');
-  }, '');
 }

@@ -69,6 +69,10 @@ class AssetLocation extends Equatable {
       return "${label.unwrap()} - ${city.unwrap()}, ${region.unwrap()}";
     } else if (hasCity && hasRegion) {
       return "${city.unwrap()}, ${region.unwrap()}";
+    } else if (hasLabel && hasCity) {
+      return "${label.unwrap()} - ${city.unwrap()}}";
+    } else if (hasLabel && hasRegion) {
+      return "${label.unwrap()} - ${region.unwrap()}";
     } else if (hasLabel) {
       return label.unwrap();
     } else if (hasCity) {
