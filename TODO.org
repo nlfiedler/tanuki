@@ -1,7 +1,11 @@
 * Action Items
-** clean up stale records
-*** add mutation to remove records based on asset identifier
-*** records to remove (bad avi, aae files)
+** production instance tasks
+*** process all of the incoming
+*** process all of wifey photos in Photos.app
+*** do something with the assets that have ~fix_the_date~ tag
+*** clean up stale records
+**** add mutation to remove records based on asset identifier
+**** records to remove (bad avi, aae files)
 #+begin_src
 MjAxNC8xMi8yMS8wMDE1LzAxY2UxcWQ3cWVwMndiMWY4OWduNW1kNHpqLmF2aS5tb3Y=
 MjAxOC8xMS8xOC8wNDAwLzAxY3dqZnR5emFxMDFocHl5MDQwc3ExaG43LmFhZS5hYWY=
@@ -9,10 +13,6 @@ MjAxNi8wMS8wMi8wMzE1LzAxY2UxcWQ4Nnc3NjJ2ZWhkYXcycDA1YTRjLmFhZS5hYWY=
 MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ4ZGpqc3E2MzlmOTIwNm5mejdwLmFhZS5hYWY=
 MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 #+end_src
-** verify responsiveness is looking good
-*** try resizing the browser window for each page
-*** evalute whether we need to use =ResponsiveScaledBox= to get resize vs autoScale behavior
-** TODO do something with the assets that have ~fix_the_date~ tag
 ** Quick rotation fix for certain images
 *** add a simple GraphQL mutation that sets the =Orientation= Exif field
 *** check the =kamadak-exif= project for bugs related to writing Exif data
@@ -20,6 +20,7 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** webui: offer widget to choose which of the 4 orientations to use ^ < > v
 *** backend must invalidate the image preview cache for that image
 *** lot of the images from ~jarabacoa~, wedding, hong kong, need rotating
+*** anything on or before 2016 probably
 ** [#C] More location improvements
 *** TODO unable to type a space in ~Locations~ field in webui (e.g. ~la vega province~)
 *** TODO GraphQL: add =gps= field to =Asset= definition for assets with GPS data
@@ -39,7 +40,6 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 ** import screen improvements
 *** selection should be made by clicking specifically on the corner "button"
 *** clicking on the asset will navigate to edit screen, save directly from there
-*** from the edit screen, < and > buttons will move between recent assets
 ** create graphql mutation to delete assets with certain tag
 *** boolean argument ~yes~ to actually perform the delete
 *** if ~yes~ argument is false, reports what would be deleted
@@ -58,8 +58,9 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 **** the GraphQL operation supports sorting, should use it for something
 *** enable different modes of display
 **** responsive grid; images are scaled to fit in a row, with wrapping
-***** previously was this way in the Electron-based application
+***** previously did this in the Electron-based application
 **** grid of just images, maybe 180x180 (a la Apple Photos)
+***** force the thumbnails into the square by cropping
 **** grid of images with caption info (300x300, shows title, location, date) (a la PhotoPrism)
 **** list of rows, tiny thumbnail (96x96), caption, location, date
 **** material has several ~view~ icons that may be appropriate
@@ -71,10 +72,6 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 **** use whatever fields are not blank to make up a decent amount of text
 *** show chevron arrows on left and right to navigate among search results
 *** controls appear when mouse moves over asset display, then fade away
-** Quick edit without leaving gallery page
-*** On-hover button to display modal to edit certain fields
-*** Clicking on asset (i.e. not the button) displays details page
-*** use =ExpansionPanel= for thumbnail caption that allows editing common fields
 ** Edit improvements
 *** like PhotoPrism, edit screen has back/forward buttons to visit other images in gallery
 ** Rapid editing of several assets
@@ -191,10 +188,9 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** tags in caption could be "gesture sensitive" (i.e. clickable) to show assets with that tag
 *** can use =DataTable= to display labeled data (like asset details, metadata)
 *** use pointer enter/exit events to start playing a video in place
-** Timeline style display for all assets
-*** without any selectors, just show most recent going back in time
-*** c.f. https://pub.dev/packages/flutter_timeline
-*** PhotoPrism has a ~calendar~ view that shows months of years in random order with a (random?) thumbnail
+** Calendar view for browsing by months
+*** PhotoPrism has a ~calendar~ view that shows months of years in descending order with a random thumbnail
+*** clicking on the month opens an "album" of everything in that month
 ** Known Issues
 *** import hangs after ~140 assets
 **** seems like Firefox is completely frozen at some point
@@ -803,7 +799,7 @@ include it in the database records.
 - Static content generator, like https://hexo.io maybe?
 **** Domain
 - Probably use https://www.namecheap.com/ domain registrar
- - Provide email address that is not part of web domain in case the domain registrar messes up
+- Provide email address that is not part of web domain in case the domain registrar messes up
 **** Content
 - Animations showing various features (like SublimeText web site)
 ** Business

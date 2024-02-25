@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'dart:async';
 import 'package:bloc/bloc.dart';
@@ -258,14 +258,32 @@ class AssetBrowserBloc extends Bloc<AssetBrowserEvent, AssetBrowserState> {
     return const Option.none();
   }
 
+  SearchParams buildSearchParams() {
+    // if all of the search fields are empty, then show all assets going back in
+    // time from the current time
+    final after = getFirstDate();
+    final before = getLastDate();
+    if (tags.isEmpty &&
+        locations.isEmpty &&
+        after.isNone() &&
+        before.isNone()) {
+      return SearchParams(
+        before: Some(DateTime.now().toUtc()),
+        sortOrder: const Some(SortOrder.descending),
+      );
+    } else {
+      return SearchParams(
+        tags: tags,
+        locations: locations,
+        after: getFirstDate(),
+        before: getLastDate(),
+      );
+    }
+  }
+
   Future<void> _loadAssets(Emitter<AssetBrowserState> emit) async {
     emit(Loading());
-    final params = SearchParams(
-      tags: tags,
-      locations: locations,
-      after: getFirstDate(),
-      before: getLastDate(),
-    );
+    final params = buildSearchParams();
     final offset = pageSize * (pageNumber - 1);
     final result = await usecase(Params(
       params: params,
