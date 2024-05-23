@@ -1,16 +1,15 @@
 [package]
 name = "healthcheck"
-version = "0.1.0"
-authors = ["Tobi Fuhrimann <tobias.fuhrimann@gmail.com>"]
-edition = "2018"
+version = "1.0.0"
+authors = ["Lena Fuhrimann"]
+edition = "2021"
 description = "Make an HTTP request and exit non-zero if an error occurs."
-homepage = "https://github.com/mastertinner/healthcheck"
+homepage = "https://github.com/cloudlena/healthcheck"
 license = "Apache-2.0"
 
 [dependencies]
-hyper = { version = "0.14.23", features = ["full"] }
-# tokio release must match dependency in hyper to avoid error
-tokio = { version = "1.24.2", features = ["full"] }
+reqwest = "0.12.4"
+tokio = { version = "1.37.0", features = ["full"] }
 
 [profile.release]
 opt-level = "z"
