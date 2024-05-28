@@ -35,12 +35,12 @@ mp4 = "0.13.0"
 reqwest = "0.11.24"
 riff = "2.0.0"
 rocksdb = "0.22.0"
-rusty_ulid = "2.0.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_cbor = "0.11.1"
 serde_json = "1.0"
 sha2 = "0.10.1"
 tokio = { version = "1.36.0", features = ["full"] }
+ulid = "1.1.2"
 
 [dev-dependencies]
 mockall = "0.12.1"

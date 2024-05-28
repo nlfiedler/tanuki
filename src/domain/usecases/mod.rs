@@ -7,7 +7,6 @@ use super::entities::{
 use anyhow::{anyhow, Error};
 use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
-use rusty_ulid::generate_ulid_string;
 use std::cmp;
 use std::fmt;
 use std::ffi::OsStr;
@@ -90,7 +89,7 @@ fn new_asset_id(datetime: DateTime<Utc>, filepath: &Path, media_type: &mime::Mim
     let round_date = datetime.with_minute(minutes).unwrap();
     let mut leading_path = round_date.format("%Y/%m/%d/%H%M/").to_string();
     let extension = filepath.extension().and_then(OsStr::to_str);
-    let mut name = generate_ulid_string();
+    let mut name = ulid::Ulid::new().to_string();
     let append_suffix = if let Some(ext) = extension {
         name.push('.');
         name.push_str(ext);

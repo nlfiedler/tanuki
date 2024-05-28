@@ -4,7 +4,6 @@
 use chrono::prelude::*;
 use lazy_static::lazy_static;
 use rocksdb::{Options, DB};
-use rusty_ulid::generate_ulid_string;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -35,7 +34,7 @@ impl DBPath {
     /// The suffix prevents re-use of database files from a previous failed run
     /// in which the directory was not deleted.
     pub fn new(suffix: &str) -> DBPath {
-        let mut path = generate_ulid_string();
+        let mut path = ulid::Ulid::new().to_string();
         path.push_str(suffix);
         let db_path = PathBuf::from(path.to_lowercase());
         // keep track of the number of times this path has been opened

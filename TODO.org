@@ -1,5 +1,4 @@
 * Action Items
-** TODO switch from =rusty_ulid= to =ulid=
 ** TODO upgrade =juniper= dependency, involves significant API changes
 ** TODO make graphql and usecases =async= throughout, remove the =block_on()= function
 *** seemingly juniper graphql operations can be either async or sync
