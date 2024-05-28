@@ -207,6 +207,14 @@ impl BlobRepository for BlobRepositoryImpl {
         Ok(())
     }
 
+    fn replace_blob(&self, filepath: &Path, asset: &Asset) -> Result<(), Error> {
+        let dest_path = self.blob_path(&asset.key)?;
+        if dest_path.exists() {
+            std::fs::remove_file(dest_path)?;
+        }
+        self.store_blob(filepath, asset)
+    }
+
     fn blob_path(&self, asset_id: &str) -> Result<PathBuf, Error> {
         let decoded = general_purpose::STANDARD.decode(asset_id)?;
         let as_string = str::from_utf8(&decoded)?;
@@ -218,8 +226,16 @@ impl BlobRepository for BlobRepositoryImpl {
 
     fn rename_blob(&self, old_id: &str, new_id: &str) -> Result<(), Error> {
         let old_path = self.blob_path(old_id)?;
-        let new_path = self.blob_path(new_id)?;
-        std::fs::rename(old_path, new_path)?;
+        // if the old asset is missing, that is fine, it will likely be replaced
+        // very soon anyway
+        if old_path.exists() {
+            let new_path = self.blob_path(new_id)?;
+            let parent = new_path
+                .parent()
+                .ok_or_else(|| anyhow!(format!("no parent for {:?}", new_path)))?;
+            std::fs::create_dir_all(parent)?;
+            std::fs::rename(old_path, new_path)?;
+        }
         Ok(())
     }
 
@@ -227,6 +243,31 @@ impl BlobRepository for BlobRepositoryImpl {
         let filepath = self.blob_path(asset_id)?;
         create_thumbnail(&filepath, width, height)
     }
+
+    fn clear_cache(&self, asset_id: &str) -> Result<(), Error> {
+        let filepath = self.blob_path(asset_id)?;
+        let file_name = filepath.file_name().unwrap().to_string_lossy();
+        clear_thumbnail(&file_name)?;
+        Ok(())
+    }
+}
+
+// Clear the cache entries that correspond to the given file.
+fn clear_thumbnail(file_name: &str) -> Result<(), Error> {
+    let suffix = format!("/{}", file_name);
+    let mut cache = LRU_CACHE.lock().unwrap();
+    // find cache keys that have the suffix defined by create_thumbnail()
+    let mut keys: Vec<String> = vec![];
+    for (key, _) in cache.iter() {
+        if key.ends_with(&suffix) {
+            keys.push(key.to_owned());
+        }
+    }
+    // remove the matching key/value pairs from the cache
+    for key in keys.iter() {
+        cache.pop(key.as_str());
+    }
+    Ok(())
 }
 
 // Produce a thumbnail for the given asset (assumed to be an image) that fits
@@ -1290,6 +1331,126 @@ mod tests {
     }
 
     #[test]
+    fn test_rename_blob_ok() {
+        // arrange
+        let import_date = make_date_time(2018, 5, 31, 21, 10, 11);
+        let id_path = "2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg";
+        let original_id = general_purpose::STANDARD.encode(id_path);
+        let digest = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
+        let asset1 = Asset {
+            key: original_id,
+            checksum: digest.to_owned(),
+            filename: "fighting_kittens.jpg".to_owned(),
+            byte_length: 39932,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["kittens".to_owned()],
+            caption: None,
+            import_date,
+            location: None,
+            user_date: None,
+            original_date: None,
+            dimensions: None,
+        };
+        let tmpdir = tempdir().unwrap();
+        let basepath = tmpdir.path().join("blobs");
+        // copy test file to temporary path as it will be (re)moved
+        let original = PathBuf::from("./tests/fixtures/fighting_kittens.jpg");
+        let copy = tmpdir.path().join("fighting_kittens.jpg");
+        std::fs::copy(original, &copy).unwrap();
+        let repo = BlobRepositoryImpl::new(basepath.as_path());
+        let result = repo.store_blob(copy.as_path(), &asset1);
+        assert!(result.is_ok());
+        let mut dest_path = basepath.clone();
+        dest_path.push(id_path);
+        assert!(dest_path.exists());
+
+        // act
+        let new_id_path = "2024/05/27/1845/01hyvs1ant775aqzs1tan22g20.jpg";
+        let original_id = general_purpose::STANDARD.encode(id_path);
+        let updated_id = general_purpose::STANDARD.encode(new_id_path);
+        let repo = BlobRepositoryImpl::new(basepath.as_path());
+        let result = repo.rename_blob(&original_id, &updated_id);
+        // assert
+        assert!(result.is_ok());
+        let mut dest_path = basepath.clone();
+        dest_path.push(new_id_path);
+        assert!(dest_path.exists());
+
+        std::fs::remove_dir_all(basepath).unwrap();
+    }
+
+    #[test]
+    fn test_rename_blob_missing() {
+        // arrange
+        let id_path = "2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg";
+        let original_id = general_purpose::STANDARD.encode(id_path);
+        let tmpdir = tempdir().unwrap();
+        let basepath = tmpdir.path().join("blobs");
+        // do _not_ create the asset blob in order to test the case in which it
+        // is missing; the rename is expected to quietly do nothing
+
+        // act
+        let new_id_path = "2024/05/27/1845/01hyvs1ant775aqzs1tan22g20.jpg";
+        let updated_id = general_purpose::STANDARD.encode(new_id_path);
+        let repo = BlobRepositoryImpl::new(basepath.as_path());
+        let result = repo.rename_blob(&original_id, &updated_id);
+        // assert
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_replace_blob_ok() {
+        // arrange
+        let import_date = make_date_time(2018, 5, 31, 21, 10, 11);
+        let id_path = "2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg";
+        let id = general_purpose::STANDARD.encode(id_path);
+        let digest = "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
+        let asset1 = Asset {
+            key: id,
+            checksum: digest.to_owned(),
+            filename: "fighting_kittens.jpg".to_owned(),
+            byte_length: 39932,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["kittens".to_owned()],
+            caption: None,
+            import_date,
+            location: None,
+            user_date: None,
+            original_date: None,
+            dimensions: None,
+        };
+        let tmpdir = tempdir().unwrap();
+        let basepath = tmpdir.path().join("blobs");
+        // copy test file to temporary path as it will be (re)moved
+        let original = PathBuf::from("./tests/fixtures/fighting_kittens.jpg");
+        let copy = tmpdir.path().join("fighting_kittens.jpg");
+        std::fs::copy(original, &copy).unwrap();
+        // act
+        let repo = BlobRepositoryImpl::new(basepath.as_path());
+        let result = repo.store_blob(copy.as_path(), &asset1);
+        // assert
+        assert!(result.is_ok());
+        let mut dest_path = basepath.clone();
+        dest_path.push(id_path);
+        assert!(dest_path.exists());
+
+        // now prepare to replace that blob with another (techinically same file)
+        let original = PathBuf::from("./tests/fixtures/fighting_kittens.jpg");
+        let copy = tmpdir.path().join("fighting_kittens.jpg");
+        std::fs::copy(original, &copy).unwrap();
+        // act
+        let repo = BlobRepositoryImpl::new(basepath.as_path());
+        let result = repo.replace_blob(copy.as_path(), &asset1);
+        // assert
+        assert!(result.is_ok());
+        let mut dest_path = basepath.clone();
+        dest_path.push(id_path);
+        assert!(dest_path.exists());
+
+        std::fs::remove_dir_all(basepath).unwrap();
+    }
+
+    #[test]
     fn test_blob_path_ok() {
         // arrange
         let import_date = make_date_time(2018, 5, 31, 21, 10, 11);
@@ -1391,5 +1552,16 @@ mod tests {
         let (width, height) = img.dimensions();
         assert_eq!(width, 300);
         assert_eq!(height, 225);
+
+        // test removing a single entry from the cache
+        {
+            let cache = LRU_CACHE.lock().unwrap();
+            assert_eq!(cache.len(), 3);
+        }
+        clear_thumbnail("dcp_1069.jpg").unwrap();
+        {
+            let cache = LRU_CACHE.lock().unwrap();
+            assert_eq!(cache.len(), 2);
+        }
     }
 }

@@ -8,94 +8,81 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
-import 'package:tanuki/core/preso/widgets/asset_display.dart';
-import 'package:tanuki/environment_config.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/providers.dart';
-import 'package:url_launcher/url_launcher_string.dart' as launcher;
+import 'package:tanuki/features/browse/preso/widgets/asset_preview_visual.dart';
 
 class AssetScreen extends ConsumerWidget {
   const AssetScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final String assetId = ModalRoute.of(context)?.settings.arguments as String;
-    return BlocProvider<AssetBloc>(
-      create: (_) => ref.read(assetBlocProvider),
-      child: BlocBuilder<AssetBloc, AssetState>(
-        buildWhen: (previous, current) {
-          return !(previous is Loaded && current is Loading);
-        },
-        builder: (context, state) {
-          if (state is Empty) {
-            // kick off the initial remote request
-            BlocProvider.of<AssetBloc>(context).add(LoadAsset(id: assetId));
-          }
-          if (state is Error) {
-            return Text('Error: ${state.message}');
-          }
-          if (state is Loaded) {
-            return Scaffold(
-              appBar: AppBar(
-                title: ResponsiveValue(
-                  context,
-                  defaultValue: Text('Details for ${state.asset.filename}'),
-                  conditionalValues: [
-                    Condition.smallerThan(
-                      name: TABLET,
-                      value: Text(state.asset.filename),
-                    )
+    final assetId = ModalRoute.of(context)?.settings.arguments;
+    if (assetId == null) {
+      // hot restart seems to blow away the arguments, so show a button to
+      // navigate back to the home screen
+      return Center(
+        child: ElevatedButton(
+          child: const Text('GO BACK'),
+          onPressed: () => Navigator.pop(context),
+        ),
+      );
+    } else {
+      return BlocProvider<AssetBloc>(
+        create: (_) => ref.read(assetBlocProvider),
+        child: BlocBuilder<AssetBloc, AssetState>(
+          buildWhen: (previous, current) {
+            return !(previous is Loaded && current is Loading);
+          },
+          builder: (context, state) {
+            if (state is Empty) {
+              // kick off the initial remote request
+              BlocProvider.of<AssetBloc>(context)
+                  .add(LoadAsset(id: assetId as String));
+            }
+            if (state is Error) {
+              return Text('Error: ${state.message}');
+            }
+            if (state is Loaded) {
+              return Scaffold(
+                appBar: AppBar(
+                  title: ResponsiveValue(
+                    context,
+                    defaultValue: Text('Details for ${state.asset.filename}'),
+                    conditionalValues: [
+                      Condition.smallerThan(
+                        name: TABLET,
+                        value: Text(state.asset.filename),
+                      )
+                    ],
+                  ).value,
+                  actions: [
+                    IconButton(
+                      onPressed: () {
+                        // replace the route for viewing the asset
+                        Navigator.pushReplacementNamed(context, '/edit',
+                            arguments: state.asset.id);
+                      },
+                      icon: const Icon(Icons.edit),
+                      tooltip: 'Edit details',
+                    ),
                   ],
-                ).value,
-                actions: [
-                  TextButton(
-                    onPressed: () async {
-                      await downloadAsset(context, state.asset);
-                    },
-                    child: const Icon(Icons.file_download),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // replace the route for viewing the asset
-                      Navigator.pushReplacementNamed(context, '/edit',
-                          arguments: state.asset.id);
-                    },
-                    child: const Icon(Icons.edit),
-                  ),
-                ],
-              ),
-              body: AssetPreview(asset: state.asset),
-            );
-          }
-          return const Center(child: CircularProgressIndicator());
-        },
-      ),
-    );
-  }
-}
-
-Future<void> downloadAsset(BuildContext context, Asset asset) async {
-  const baseUrl = EnvironmentConfig.base_url;
-  // Use url_launcher_string since it is difficult to create a Uri that refers
-  // to the host of the current web page; some day need to fix this properly.
-  final url = '$baseUrl/api/asset/${asset.id}';
-  final messenger = ScaffoldMessenger.of(context);
-  if (await launcher.canLaunchUrlString(url)) {
-    await launcher.launchUrlString(url);
-  } else {
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Could not launch URL')),
-    );
+                ),
+                body: AssetPreview(asset: state.asset),
+              );
+            }
+            return const Center(child: CircularProgressIndicator());
+          },
+        ),
+      );
+    }
   }
 }
 
 class AssetPreview extends StatelessWidget {
   final Asset asset;
 
-  const AssetPreview({
-    Key? key,
-    required this.asset,
-  }) : super(key: key);
+  const AssetPreview({super.key, required this.asset});
 
   @override
   Widget build(BuildContext context) {
@@ -104,15 +91,11 @@ class AssetPreview extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: AssetDisplay(
-              assetId: asset.id,
-              mediaType: asset.mediaType,
-              displayWidth: 640,
-            ),
+            child: AssetPreviewVisual(asset: asset),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 32.0),
-            child: AssetEditForm(asset: asset),
+            child: AssetPreviewForm(asset: asset),
           ),
         ],
       ),
@@ -120,24 +103,25 @@ class AssetPreview extends StatelessWidget {
   }
 }
 
-class AssetEditForm extends StatefulWidget {
+class AssetPreviewForm extends StatefulWidget {
   final Asset asset;
 
-  const AssetEditForm({
+  const AssetPreviewForm({
     Key? key,
     required this.asset,
   }) : super(key: key);
 
   @override
-  State<AssetEditForm> createState() => _AssetEditFormState();
+  State<AssetPreviewForm> createState() => _AssetPreviewFormState();
 }
 
-class _AssetEditFormState extends State<AssetEditForm> {
+class _AssetPreviewFormState extends State<AssetPreviewForm> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
+  final datefmt = DateFormat.yMd().add_jm();
+  final sizefmt = NumberFormat();
 
   @override
   Widget build(BuildContext context) {
-    final datefmt = DateFormat.yMd().add_jm();
     final location = widget.asset.location.mapOr((e) => e.description(), '');
     //
     // Other asset properties not shown here:
@@ -151,7 +135,7 @@ class _AssetEditFormState extends State<AssetEditForm> {
       initialValue: {
         'datetime': datefmt.format(widget.asset.datetime.toLocal()),
         'filename': widget.asset.filename,
-        'filesize': widget.asset.filesize.toString(),
+        'filesize': sizefmt.format(widget.asset.filesize),
         'mediaType': widget.asset.mediaType,
         'tags': widget.asset.tags.join(', '),
         'caption': widget.asset.caption.unwrapOr(''),

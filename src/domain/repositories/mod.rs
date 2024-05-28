@@ -99,6 +99,10 @@ pub trait BlobRepository {
     /// Existing blobs will not be overwritten.
     fn store_blob(&self, filepath: &Path, asset: &Asset) -> Result<(), Error>;
 
+    /// Move the given file into the blob store, replacing whatever is already
+    /// there. Used when an asset is to be replaced by a different version.
+    fn replace_blob(&self, filepath: &Path, asset: &Asset) -> Result<(), Error>;
+
     /// Return the full path to the asset in blob storage.
     fn blob_path(&self, asset_id: &str) -> Result<PathBuf, Error>;
 
@@ -107,6 +111,9 @@ pub trait BlobRepository {
 
     /// Produce a thumbnail of the desired size for the asset.
     fn thumbnail(&self, width: u32, height: u32, asset_id: &str) -> Result<Vec<u8>, Error>;
+
+    /// Clear the thumbnail cache of any entries for the given asset.
+    fn clear_cache(&self, asset_id: &str) -> Result<(), Error>;
 }
 
 ///

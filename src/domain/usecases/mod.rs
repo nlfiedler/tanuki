@@ -2,12 +2,15 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use super::entities::{
-    EastWest, GeocodedLocation, GeodeticAngle, GlobalPosition, Location, NorthSouth,
+    Dimensions, EastWest, GeocodedLocation, GeodeticAngle, GlobalPosition, Location, NorthSouth,
 };
 use anyhow::{anyhow, Error};
+use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
+use rusty_ulid::generate_ulid_string;
 use std::cmp;
 use std::fmt;
+use std::ffi::OsStr;
 use std::fs::File;
 use std::io;
 use std::path::Path;
@@ -27,6 +30,7 @@ pub mod load;
 pub mod location;
 pub mod recent;
 pub mod relocate;
+pub mod replace;
 pub mod search;
 pub mod tags;
 pub mod types;
@@ -58,13 +62,56 @@ impl cmp::Eq for NoParams {}
 ///
 /// Compute the SHA256 hash digest of the given file.
 ///
-fn checksum_file(infile: &Path) -> io::Result<String> {
+pub fn checksum_file(infile: &Path) -> io::Result<String> {
     use sha2::{Digest, Sha256};
     let mut file = File::open(infile)?;
     let mut hasher = Sha256::new();
     io::copy(&mut file, &mut hasher)?;
     let digest = hasher.finalize();
     Ok(format!("sha256-{:x}", digest))
+}
+
+///
+/// Use the datetime and filename to produce a relative path, and return as a
+/// base64 encoded value, suitable as an identifier.
+///
+/// The decoded identifier is suitable to be used as a file path within blob
+/// storage. The filename will be universally unique and the path will ensure
+/// assets are distributed across directories to avoid congestion.
+///
+/// This is _not_ a pure function, since it involves a random number. It does,
+/// however, avoid any possibility of name collisions.
+///
+fn new_asset_id(datetime: DateTime<Utc>, filepath: &Path, media_type: &mime::Mime) -> String {
+    // Round the date/time down to the nearest quarter hour (e.g. 21:50 becomes
+    // 21:45, 08:10 becomes 08:00) to avoid creating many directories with only
+    // a few assets in them.
+    let minutes = (datetime.minute() / 15) * 15;
+    let round_date = datetime.with_minute(minutes).unwrap();
+    let mut leading_path = round_date.format("%Y/%m/%d/%H%M/").to_string();
+    let extension = filepath.extension().and_then(OsStr::to_str);
+    let mut name = generate_ulid_string();
+    let append_suffix = if let Some(ext) = extension {
+        name.push('.');
+        name.push_str(ext);
+        let guessed_type = infer_media_type(ext);
+        &guessed_type != media_type
+    } else {
+        true
+    };
+    if append_suffix {
+        // If the media type guessed from the file extension differs from the
+        // media type provided in the parameters, then append the preferred
+        // suffix to the name. This provides a means for the blob repository to
+        // correctly guess the media type from just the asset identifier.
+        if let Some(mime_ext) = select_best_extension(media_type) {
+            name.push('.');
+            name.push_str(&mime_ext);
+        }
+    }
+    leading_path.push_str(&name);
+    let rel_path = leading_path.to_lowercase();
+    general_purpose::STANDARD.encode(rel_path)
 }
 
 ///
@@ -206,6 +253,64 @@ fn convert_location(geocoded: Option<GeocodedLocation>) -> Option<Location> {
     } else {
         None
     }
+}
+
+// Returns None if no changes are needed.
+fn merge_locations(asset: Option<Location>, input: Option<Location>) -> Option<Location> {
+    if let Some(mut existing) = asset {
+        if let Some(incoming) = input {
+            // set or clear the label field
+            if let Some(label) = incoming.label {
+                if label.is_empty() {
+                    existing.label = None;
+                } else {
+                    existing.label = Some(label);
+                }
+            }
+            // set or clear the city field
+            if let Some(city) = incoming.city {
+                if city.is_empty() {
+                    existing.city = None;
+                } else {
+                    existing.city = Some(city);
+                }
+            }
+            // set or clear the region field
+            if let Some(region) = incoming.region {
+                if region.is_empty() {
+                    existing.region = None;
+                } else {
+                    existing.region = Some(region);
+                }
+            }
+            return Some(existing);
+        }
+    }
+    input
+}
+
+/// Return the last part of the path, converting to a String.
+fn get_file_name(path: &Path) -> String {
+    // ignore any paths that end in '..'
+    if let Some(p) = path.file_name() {
+        // ignore any paths that failed UTF-8 translation
+        if let Some(pp) = p.to_str() {
+            return pp.to_owned();
+        }
+    }
+    // normal conversion failed, return whatever garbage is there
+    path.to_string_lossy().into_owned()
+}
+
+/// Gather the pixel dimensions of the image asset.
+///
+/// Returns an error if unsuccessful.
+fn get_dimensions(media_type: &mime::Mime, filepath: &Path) -> Result<Dimensions, Error> {
+    if media_type.type_() == mime::IMAGE {
+        let dim = image::image_dimensions(filepath)?;
+        return Ok(Dimensions(dim.0, dim.1));
+    }
+    Err(anyhow!("not an image"))
 }
 
 // Try reading the date from a RIFF-encoded AVI file.
@@ -683,6 +788,138 @@ mod tests {
     }
 
     #[test]
+    fn test_merge_locations() {
+        // both are none, result is none
+        let asset: Option<Location> = None;
+        let input: Option<Location> = None;
+        let result = merge_locations(asset, input);
+        assert!(result.is_none());
+
+        // input is none, result is none
+        let asset = Some(Location::new("foobar".into()));
+        let input: Option<Location> = None;
+        let result = merge_locations(asset, input);
+        assert!(result.is_none());
+
+        // asset is none, input is returned
+        let asset: Option<Location> = None;
+        let input = Some(Location {
+            label: None,
+            city: Some("Seattle".into()),
+            region: Some("WA".into()),
+        });
+        let result = merge_locations(asset, input);
+        assert!(result.is_some());
+        let actual = result.unwrap();
+        assert!(actual.label.is_none());
+        assert_eq!(actual.city.unwrap(), "Seattle");
+        assert_eq!(actual.region.unwrap(), "WA");
+
+        // merge input city/region with asset label
+        let asset = Some(Location::new("Chihuly".into()));
+        let input = Some(Location {
+            label: None,
+            city: Some("Seattle".into()),
+            region: Some("WA".into()),
+        });
+        let result = merge_locations(asset, input);
+        assert!(result.is_some());
+        let actual = result.unwrap();
+        assert_eq!(actual.label.unwrap(), "Chihuly");
+        assert_eq!(actual.city.unwrap(), "Seattle");
+        assert_eq!(actual.region.unwrap(), "WA");
+
+        // merge input label with asset city/region
+        let asset = Some(Location {
+            label: None,
+            city: Some("Seattle".into()),
+            region: Some("WA".into()),
+        });
+        let input = Some(Location::new("Chihuly".into()));
+        let result = merge_locations(asset, input);
+        assert!(result.is_some());
+        let actual = result.unwrap();
+        assert_eq!(actual.label.unwrap(), "Chihuly");
+        assert_eq!(actual.city.unwrap(), "Seattle");
+        assert_eq!(actual.region.unwrap(), "WA");
+
+        // clear asset label if input label is empty string
+        let asset = Some(Location::new("Chihuly".into()));
+        let input = Some(Location {
+            label: Some("".into()),
+            city: Some("Seattle".into()),
+            region: Some("WA".into()),
+        });
+        let result = merge_locations(asset, input);
+        assert!(result.is_some());
+        let actual = result.unwrap();
+        assert!(actual.label.is_none());
+        assert_eq!(actual.city.unwrap(), "Seattle");
+        assert_eq!(actual.region.unwrap(), "WA");
+
+        // clear asset city if input city is empty string
+        let asset = Some(Location {
+            label: Some("museum".into()),
+            city: Some("Seattle".into()),
+            region: Some("WA".into()),
+        });
+        let input = Some(Location {
+            label: None,
+            city: Some("".into()),
+            region: None,
+        });
+        let result = merge_locations(asset, input);
+        assert!(result.is_some());
+        let actual = result.unwrap();
+        assert_eq!(actual.label.unwrap(), "museum");
+        assert!(actual.city.is_none());
+        assert_eq!(actual.region.unwrap(), "WA");
+
+        // clear asset region if input region is empty string
+        let asset = Some(Location {
+            label: Some("museum".into()),
+            city: Some("Seattle".into()),
+            region: Some("WA".into()),
+        });
+        let input = Some(Location {
+            label: None,
+            city: None,
+            region: Some("".into()),
+        });
+        let result = merge_locations(asset, input);
+        assert!(result.is_some());
+        let actual = result.unwrap();
+        assert_eq!(actual.label.unwrap(), "museum");
+        assert_eq!(actual.city.unwrap(), "Seattle");
+        assert!(actual.region.is_none());
+
+        // input with everything replaces everything in asset
+        let asset = Some(Location {
+            label: Some("Chihuly".into()),
+            city: Some("Seattle".into()),
+            region: Some("WA".into()),
+        });
+        let input = Some(Location {
+            label: Some("Classical Garden".into()),
+            city: Some("Portland".into()),
+            region: Some("Oregon".into()),
+        });
+        let result = merge_locations(asset, input);
+        assert!(result.is_some());
+        let actual = result.unwrap();
+        assert_eq!(actual.label.unwrap(), "Classical Garden");
+        assert_eq!(actual.city.unwrap(), "Portland");
+        assert_eq!(actual.region.unwrap(), "Oregon");
+    }
+
+    #[test]
+    fn test_get_file_name() {
+        let filepath = Path::new("./tests/fixtures/fighting_kittens.jpg");
+        let actual = get_file_name(&filepath);
+        assert_eq!(actual, "fighting_kittens.jpg");
+    }
+
+    #[test]
     fn test_infer_media_type() {
         assert_eq!(infer_media_type("jpg"), mime::IMAGE_JPEG);
 
@@ -773,5 +1010,40 @@ mod tests {
         let image_heic: mime::Mime = "image/heic".parse().unwrap();
         let result = select_best_extension(&image_heic).unwrap();
         assert_eq!(result, "heic");
+    }
+
+    #[test]
+    fn test_get_dimensions() {
+        let filename = "./tests/fixtures/dcp_1069.jpg";
+        let mt = mime::IMAGE_JPEG;
+        let filepath = Path::new(filename);
+        let actual = get_dimensions(&mt, filepath);
+        assert!(actual.is_ok());
+        let dim = actual.unwrap();
+        assert_eq!(dim.0, 440);
+        assert_eq!(dim.1, 292);
+
+        // rotated sideways (dimensions are flipped)
+        let filename = "./tests/fixtures/fighting_kittens.jpg";
+        let filepath = Path::new(filename);
+        let actual = get_dimensions(&mt, filepath);
+        assert!(actual.is_ok());
+        let dim = actual.unwrap();
+        assert_eq!(dim.0, 384);
+        assert_eq!(dim.1, 512);
+
+        let filename = "./tests/fixtures/animal-cat-cute-126407.jpg";
+        let filepath = Path::new(filename);
+        let actual = get_dimensions(&mt, filepath);
+        assert!(actual.is_ok());
+        let dim = actual.unwrap();
+        assert_eq!(dim.0, 2067);
+        assert_eq!(dim.1, 1163);
+
+        // not an image
+        let filename = "./tests/fixtures/lorem-ipsum.txt";
+        let filepath = Path::new(filename);
+        let actual = get_dimensions(&mt, filepath);
+        assert!(actual.is_err());
     }
 }

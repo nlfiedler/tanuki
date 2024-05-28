@@ -1,8 +1,15 @@
 * Action Items
+** TODO switch from =rusty_ulid= to =ulid=
+** TODO upgrade =juniper= dependency, involves significant API changes
+** TODO make graphql and usecases =async= throughout, remove the =block_on()= function
+*** seemingly juniper graphql operations can be either async or sync
 ** production instance tasks
 *** process all of the incoming
 *** process all of wifey photos in Photos.app
 *** do something with the assets that have ~fix_the_date~ tag
+*** fix orientation on many images
+**** lot of the images from ~jarabacoa~, wedding, hong kong, need rotating
+**** anything on or before 2016 probably
 *** clean up stale records
 **** add mutation to remove records based on asset identifier
 **** records to remove (bad avi, aae files)
@@ -13,15 +20,18 @@ MjAxNi8wMS8wMi8wMzE1LzAxY2UxcWQ4Nnc3NjJ2ZWhkYXcycDA1YTRjLmFhZS5hYWY=
 MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ4ZGpqc3E2MzlmOTIwNm5mejdwLmFhZS5hYWY=
 MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 #+end_src
-** Quick rotation fix for certain images
-*** add a simple GraphQL mutation that sets the =Orientation= Exif field
-*** check the =kamadak-exif= project for bugs related to writing Exif data
-*** test modifying Exif data with recent images to check for data loss
-*** webui: offer widget to choose which of the 4 orientations to use ^ < > v
-*** backend must invalidate the image preview cache for that image
-*** lot of the images from ~jarabacoa~, wedding, hong kong, need rotating
-*** anything on or before 2016 probably
-** [#C] More location improvements
+** open source
+*** TODO delete =CHANGELOG.md=
+*** TODO delete =COPYRIGHT=
+*** TODO copy =LICENSE= from zorigami
+*** TODO delete ~Product~ section from =TODO.org=
+*** TODO move ~Deployments~ section in =TODO.org= to wiki
+*** TODO change =license= to =MIT= in =Cargo.toml=
+** idea for rotating images
+*** test using =magick_rust= to see if it preserves metadata
+*** create a simple EXIF parser that scan for =Orientation= and changes the value if it exists
+*** if not found, insert the =Orientation= at the end of the EXIF header
+** More location improvements
 *** TODO unable to type a space in ~Locations~ field in webui (e.g. ~la vega province~)
 *** TODO GraphQL: add =gps= field to =Asset= definition for assets with GPS data
 **** populate the ~gps~ field only on demand (for efficiency)
@@ -38,10 +48,11 @@ MjAxNS8wOS8xMy8xNjE1LzAxY2UxcWQ5bjFxZXN3bXg1d25wOWFkbThuLmFhZS5hYWY=
 *** TODO find out if =mp4= crate can read GPS coords from videos
 **** Preview.app will display location information for videos
 ** import screen improvements
-*** selection should be made by clicking specifically on the corner "button"
-*** clicking on the asset will navigate to edit screen, save directly from there
+*** make the selection button more obvious (color theme variation?)
 *** edits must result in refreshing the gallery
 *** learn more about flutter navigation, need a listener when we return to the gallery
+** edit screen improvements
+*** completion for tags and location fields
 ** create graphql mutation to delete assets with certain tag
 *** boolean argument ~yes~ to actually perform the delete
 *** if ~yes~ argument is false, reports what would be deleted
@@ -292,6 +303,7 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 *** TODO search for images similar to a selected image (a la geeqie)
 *** TODO search for images taken with certain cameras
 ** Schema Growth
+*** Eventually replace ~sha256~ with ~BLAKE3~ for checksums
 *** ML will introduce new fields, like ~labels~ and ~keywords~
 *** Geolocation will introduce new data, like GPS coordinates
 *** Plan ahead for hierarchical location data (e.g. USA -> California -> Castro Valley -> our home)
@@ -349,6 +361,10 @@ include it in the database records.
 *** Reference
 **** EXIF: https://www.media.mit.edu/pia/Research/deepview/exif.html (20 years out of date)
 ** Machine learning
+*** facial recognition
+**** evaluate how other tools make this easier
+***** do they simply show the faces and have the user enter names?
+*** https://cetra3.github.io/blog/face-detection-with-tensorflow-rust/
 *** TensorFlow Hub: https://tfhub.dev
 *** https://developers.google.com/machine-learning/crash-course/
 *** PhotoPrism applies a bunch of keywords to assets, but only one "label"
@@ -356,8 +372,7 @@ include it in the database records.
 *** ML to identify objects, people, etc in photos
 **** ML recognizes the subject (dog, cat, person, etc)
 **** PhotoPrism supports "automated tagging based on Google TensorFlow"
-**** OpenCV for face recognition
-***** consider licensing commercial library for this
+**** could use OpenCV for face recognition
 *** ML to rank photos on various qualities
 **** c.f. https://simonwillison.net/2020/May/21/dogsheep-photos/
 **** ML assigns scores on aesthetics, interest, etc
@@ -414,6 +429,7 @@ include it in the database records.
 **** c.f. https://github.com/silvia-odwyer/photon
 *** implementation details
 **** =image= crate supports several filters (flip, rotate, etc)
+**** =image= crate currently discards metadata (https://github.com/image-rs/image/issues/1901)
 **** new graphql query to temporarily apply a set of transformations to an asset
 **** new graphql mutation to permanently apply a set of transformations to an asset
 **** repository functions for saving/fetching/clearing temporary assets
@@ -446,6 +462,8 @@ include it in the database records.
 **** find files for which there are no documents
 *** Should have automated backups of the database
 **** every M operations or T minutes/hours/days
+**** retain N copies of the backup
+**** use EXAF similar to how zorigami does its database backup
 ** Bulk Export
 *** Easy selection and export of multiple images
 **** Selection process
@@ -621,6 +639,8 @@ include it in the database records.
 - [ ] verify search works (~anniversary~ + ~sausalito~)
 - [ ] verify recent assets
 * Product
+** Project Management
+*** consider a tool like https://github.com/plankanban/planka
 ** Productization
 *** Windows support
 **** look into getting some sort of certification to bypass SmartScreen

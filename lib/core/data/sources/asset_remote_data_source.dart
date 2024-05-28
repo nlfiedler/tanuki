@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'dart:convert';
 import 'dart:typed_data';
@@ -13,6 +13,10 @@ import 'package:tanuki/core/error/exceptions.dart' as err;
 abstract class AssetRemoteDataSource {
   /// Import all of the assets in the 'uploads' directory.
   Future<int> ingestAssets();
+
+  /// Upload a file to replace the content of an existing asset.
+  Future<String> replaceAssetBytes(
+      String assetId, String filename, Uint8List contents);
 
   /// Upload the given asset to the asset store.
   Future<String> uploadAsset(String filepath);
@@ -47,6 +51,21 @@ class AssetRemoteDataSourceImpl extends AssetRemoteDataSource {
       throw err.ServerException(result.exception.toString());
     }
     return (result.data?['ingest'] ?? 0) as int;
+  }
+
+  @override
+  Future<String> replaceAssetBytes(
+      String assetId, String filename, Uint8List contents) async {
+    // build up a multipart request based on the given information
+    final uri = Uri.parse('$baseUrl/api/replace/$assetId');
+    final request = http.MultipartRequest('POST', uri);
+    final mimeType = lookupMimeType(filename) ?? 'application/octet-stream';
+    final mimeParts = mimeType.split('/');
+    final mediaType = parser.MediaType(mimeParts[0], mimeParts[1]);
+    final multiFile = http.MultipartFile.fromBytes('asset', contents,
+        filename: filename, contentType: mediaType);
+    request.files.add(multiFile);
+    return _performUpload(request);
   }
 
   @override

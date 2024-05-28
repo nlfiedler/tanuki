@@ -1,20 +1,17 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::entities::{Asset, Dimensions};
+use crate::domain::entities::Asset;
 use crate::domain::repositories::RecordRepository;
 use crate::domain::repositories::{BlobRepository, LocationRepository};
 use crate::domain::usecases::{
-    checksum_file, get_gps_coordinates, get_original_date, infer_media_type,
+    checksum_file, get_gps_coordinates, get_original_date,
 };
-use anyhow::{anyhow, Error};
-use base64::{engine::general_purpose, Engine as _};
+use anyhow::Error;
 use chrono::prelude::*;
-use rusty_ulid::generate_ulid_string;
 use std::cmp;
-use std::ffi::OsStr;
 use std::fmt;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 pub struct ImportAsset {
@@ -39,8 +36,8 @@ impl ImportAsset {
     // Create an asset entity based on available information.
     fn create_asset(&self, digest: String, params: Params) -> Result<Asset, Error> {
         let now = Utc::now();
-        let asset_id = new_asset_id(now, &params.filepath, &params.media_type);
-        let filename = get_file_name(&params.filepath);
+        let asset_id = super::new_asset_id(now, &params.filepath, &params.media_type);
+        let filename = super::get_file_name(&params.filepath);
         let metadata = std::fs::metadata(&params.filepath)?;
         let byte_length = metadata.len();
         let location =
@@ -51,7 +48,7 @@ impl ImportAsset {
             };
         // let location = get_location(&params.media_type, &params.filepath).ok();
         let original_date = get_original_date(&params.media_type, &params.filepath).ok();
-        let dimensions = get_dimensions(&params.media_type, &params.filepath).ok();
+        let dimensions = super::get_dimensions(&params.media_type, &params.filepath).ok();
         let asset = Asset {
             key: asset_id,
             checksum: digest,
@@ -116,86 +113,17 @@ impl cmp::PartialEq for Params {
 
 impl cmp::Eq for Params {}
 
-///
-/// Return the last part of the path, converting to a String.
-///
-fn get_file_name(path: &Path) -> String {
-    // ignore any paths that end in '..'
-    if let Some(p) = path.file_name() {
-        // ignore any paths that failed UTF-8 translation
-        if let Some(pp) = p.to_str() {
-            return pp.to_owned();
-        }
-    }
-    // normal conversion failed, return whatever garbage is there
-    path.to_string_lossy().into_owned()
-}
-
-///
-/// Use the datetime and filename to produce a relative path, and return as a
-/// base64 encoded value, suitable as an identifier.
-///
-/// The decoded identifier is suitable to be used as a file path within blob
-/// storage. The filename will be universally unique and the path will ensure
-/// assets are distributed across directories to avoid congestion.
-///
-/// This is _not_ a pure function, since it involves a random number. It does,
-/// however, avoid any possibility of name collisions.
-///
-fn new_asset_id(datetime: DateTime<Utc>, filepath: &Path, media_type: &mime::Mime) -> String {
-    // Round the date/time down to the nearest quarter hour (e.g. 21:50 becomes
-    // 21:45, 08:10 becomes 08:00) to avoid creating many directories with only
-    // a few assets in them.
-    let minutes = (datetime.minute() / 15) * 15;
-    let round_date = datetime.with_minute(minutes).unwrap();
-    let mut leading_path = round_date.format("%Y/%m/%d/%H%M/").to_string();
-    let extension = filepath.extension().and_then(OsStr::to_str);
-    let mut name = generate_ulid_string();
-    let append_suffix = if let Some(ext) = extension {
-        name.push('.');
-        name.push_str(ext);
-        let guessed_type = infer_media_type(ext);
-        &guessed_type != media_type
-    } else {
-        true
-    };
-    if append_suffix {
-        // If the media type guessed from the file extension differs from the
-        // media type provided in the parameters, then append the preferred
-        // suffix to the name. This provides a means for the blob repository to
-        // correctly guess the media type from just the asset identifier.
-        if let Some(mime_ext) = super::select_best_extension(media_type) {
-            name.push('.');
-            name.push_str(&mime_ext);
-        }
-    }
-    leading_path.push_str(&name);
-    let rel_path = leading_path.to_lowercase();
-    general_purpose::STANDARD.encode(rel_path)
-}
-
-///
-/// Gather the pixel dimensions of the image asset.
-///
-/// Returns an error if unsuccessful.
-///
-fn get_dimensions(media_type: &mime::Mime, filepath: &Path) -> Result<Dimensions, Error> {
-    if media_type.type_() == mime::IMAGE {
-        let dim = image::image_dimensions(filepath)?;
-        return Ok(Dimensions(dim.0, dim.1));
-    }
-    Err(anyhow!("not an image"))
-}
-
 #[cfg(test)]
 mod tests {
-    use super::super::UseCase;
+    use super::super::{new_asset_id, UseCase};
     use super::*;
     use crate::domain::entities::GeocodedLocation;
     use crate::domain::repositories::MockBlobRepository;
     use crate::domain::repositories::MockLocationRepository;
     use crate::domain::repositories::MockRecordRepository;
+    use base64::{engine::general_purpose, Engine as _};
     use mockall::predicate::*;
+    use std::path::Path;
 
     fn make_date_time(
         year: i32,
@@ -241,13 +169,6 @@ mod tests {
     }
 
     #[test]
-    fn test_get_file_name() {
-        let filepath = Path::new("./tests/fixtures/fighting_kittens.jpg");
-        let actual = get_file_name(&filepath);
-        assert_eq!(actual, "fighting_kittens.jpg");
-    }
-
-    #[test]
     fn test_import_asset_new() {
         // arrange
         let digest = "sha256-d020066fd41970c2eebc51b1e712a500de4966cef0daf4890dc238d80cbaebb2";
@@ -271,7 +192,7 @@ mod tests {
             Ok(GeocodedLocation {
                 city: Some("Yao".into()),
                 region: Some("Osaka".into()),
-                country: Some("Japan".into())
+                country: Some("Japan".into()),
             })
         });
         // act
@@ -342,40 +263,5 @@ mod tests {
         let asset = result.unwrap();
         assert_eq!(asset.checksum, digest);
         assert_eq!(asset.filename, "dcp_1069.jpg");
-    }
-
-    #[test]
-    fn test_get_dimensions() {
-        let filename = "./tests/fixtures/dcp_1069.jpg";
-        let mt = mime::IMAGE_JPEG;
-        let filepath = Path::new(filename);
-        let actual = get_dimensions(&mt, filepath);
-        assert!(actual.is_ok());
-        let dim = actual.unwrap();
-        assert_eq!(dim.0, 440);
-        assert_eq!(dim.1, 292);
-
-        // rotated sideways (dimensions are flipped)
-        let filename = "./tests/fixtures/fighting_kittens.jpg";
-        let filepath = Path::new(filename);
-        let actual = get_dimensions(&mt, filepath);
-        assert!(actual.is_ok());
-        let dim = actual.unwrap();
-        assert_eq!(dim.0, 384);
-        assert_eq!(dim.1, 512);
-
-        let filename = "./tests/fixtures/animal-cat-cute-126407.jpg";
-        let filepath = Path::new(filename);
-        let actual = get_dimensions(&mt, filepath);
-        assert!(actual.is_ok());
-        let dim = actual.unwrap();
-        assert_eq!(dim.0, 2067);
-        assert_eq!(dim.1, 1163);
-
-        // not an image
-        let filename = "./tests/fixtures/lorem-ipsum.txt";
-        let filepath = Path::new(filename);
-        let actual = get_dimensions(&mt, filepath);
-        assert!(actual.is_err());
     }
 }

@@ -167,6 +167,72 @@ void main() {
     );
   });
 
+  group('replaceAssetBytes', () {
+    void setUpMockHttpClientJsonResponse() {
+      final response = ['MjAyMC8wOC8yOS8wMzMw-mini-ZzAzczZiLmpwZw=='];
+      when(() => mockHttpClient.send(any())).thenAnswer((_) async {
+        final bytes = utf8.encode(json.encode(response));
+        final stream = http.ByteStream.fromBytes(bytes);
+        return http.StreamedResponse(stream, 200);
+      });
+    }
+
+    test(
+      'should return new asset identifier on success',
+      () async {
+        // arrange
+        setUpMockHttpClientJsonResponse();
+        // act
+        final result = await dataSource.replaceAssetBytes(
+          'asset123',
+          'filename.ext',
+          Uint8List(0),
+        );
+        // assert
+        expect(result, isA<String>());
+        expect(result, equals('MjAyMC8wOC8yOS8wMzMw-mini-ZzAzczZiLmpwZw=='));
+      },
+    );
+
+    test(
+      'should raise error when server returns an error',
+      () async {
+        // arrange
+        setUpMockHttpClientFailure403();
+        // act, assert
+        try {
+          await dataSource.replaceAssetBytes(
+            'asset123',
+            'filename.ext',
+            Uint8List(0),
+          );
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+
+    test(
+      'should report failure when response malformed',
+      () async {
+        // arrange
+        setUpMockHttpClientJsonError();
+        // act, assert
+        try {
+          await dataSource.replaceAssetBytes(
+            'asset123',
+            'filename.ext',
+            Uint8List(0),
+          );
+          fail('should have raised an error');
+        } catch (e) {
+          expect(e, isA<ServerException>());
+        }
+      },
+    );
+  });
+
   group('uploadAsset', () {
     void setUpMockHttpClientJsonResponse() {
       final response = ['MjAyMC8wOC8yOS8wMzMw-mini-ZzAzczZiLmpwZw=='];

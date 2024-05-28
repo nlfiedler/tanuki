@@ -29,26 +29,27 @@ class AssetDisplay extends StatelessWidget {
       return Image.network(
         uri,
         fit: BoxFit.contain,
-        errorBuilder: _imageErrorBuilder,
+        errorBuilder: (
+          BuildContext context,
+          Object error,
+          StackTrace? stackTrace,
+        ) {
+          return Center(
+            child: Card(
+              child: SizedBox(
+                width: displayWidth as double,
+                child: ListTile(
+                  leading: const Icon(Icons.error_outline),
+                  title: const Text('Unable to display asset'),
+                  subtitle: Text(error.toString()),
+                ),
+              ),
+            ),
+          );
+        },
       );
     }
   }
-}
-
-Widget _imageErrorBuilder(
-  BuildContext context,
-  Object error,
-  StackTrace? stackTrace,
-) {
-  return Center(
-    child: Card(
-      child: ListTile(
-        leading: const Icon(Icons.error_outline),
-        title: const Text('Unable to display asset'),
-        subtitle: Text(error.toString()),
-      ),
-    ),
-  );
 }
 
 class _AssetVideo extends StatefulWidget {

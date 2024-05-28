@@ -8,9 +8,9 @@ import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:tanuki/core/domain/entities/asset.dart';
-import 'package:tanuki/core/preso/widgets/asset_display.dart';
 import 'package:tanuki/features/browse/preso/bloc/asset_bloc.dart';
 import 'package:tanuki/features/browse/preso/bloc/providers.dart';
+import 'package:tanuki/features/browse/preso/widgets/asset_preview_visual.dart';
 import 'package:tanuki/features/modify/preso/validators/media_type.dart';
 import 'package:tanuki/features/modify/preso/widgets/update_submit.dart';
 
@@ -22,45 +22,65 @@ class EditAssetScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // fetch the asset again just in case of concurrent edits
-    final String assetId = ModalRoute.of(context)?.settings.arguments as String;
-    return BlocProvider<AssetBloc>(
-      create: (_) => ref.read(assetBlocProvider),
-      child: BlocBuilder<AssetBloc, AssetState>(
-        buildWhen: (previous, current) {
-          return !(previous is Loaded && current is Loading);
-        },
-        builder: (context, state) {
-          if (state is Empty) {
-            // kick off the initial remote request
-            BlocProvider.of<AssetBloc>(context).add(LoadAsset(id: assetId));
-          }
-          if (state is Error) {
-            return Text('Error: ${state.message}');
-          }
-          if (state is Loaded) {
-            return Scaffold(
-              appBar: AppBar(
-                title: ResponsiveValue(
-                  context,
-                  defaultValue: Text('Editing ${state.asset.filename}'),
-                  conditionalValues: [
-                    Condition.smallerThan(
-                      name: TABLET,
-                      value: Text(state.asset.filename),
-                    )
+    final assetId = ModalRoute.of(context)?.settings.arguments;
+    if (assetId == null) {
+      // hot restart seems to blow away the arguments, so show a button to
+      // navigate back to the home screen
+      return Center(
+        child: ElevatedButton(
+          child: const Text('GO BACK'),
+          onPressed: () => Navigator.pop(context),
+        ),
+      );
+    } else {
+      return BlocProvider<AssetBloc>(
+        create: (_) => ref.read(assetBlocProvider),
+        child: BlocBuilder<AssetBloc, AssetState>(
+          buildWhen: (previous, current) {
+            return !(previous is Loaded && current is Loading);
+          },
+          builder: (context, state) {
+            if (state is Empty) {
+              // kick off the initial remote request
+              BlocProvider.of<AssetBloc>(context)
+                  .add(LoadAsset(id: assetId as String));
+            }
+            if (state is Error) {
+              return Text('Error: ${state.message}');
+            }
+            if (state is Loaded) {
+              return Scaffold(
+                appBar: AppBar(
+                  title: ResponsiveValue(
+                    context,
+                    defaultValue: Text('Editing ${state.asset.filename}'),
+                    conditionalValues: [
+                      Condition.smallerThan(
+                        name: TABLET,
+                        value: Text(state.asset.filename),
+                      )
+                    ],
+                  ).value,
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        // go to the asset viewer
+                        Navigator.pushReplacementNamed(context, '/asset',
+                            arguments: state.asset.id);
+                      },
+                      child: const Text('Cancel'),
+                    ),
+                    UpdateSubmit(assetId: assetId as String, formKey: _fbKey),
                   ],
-                ).value,
-                actions: [
-                  UpdateSubmit(assetId: assetId, formKey: _fbKey),
-                ],
-              ),
-              body: AssetEditor(asset: state.asset),
-            );
-          }
-          return const Center(child: CircularProgressIndicator());
-        },
-      ),
-    );
+                ),
+                body: AssetEditor(asset: state.asset),
+              );
+            }
+            return const Center(child: CircularProgressIndicator());
+          },
+        ),
+      );
+    }
   }
 }
 
@@ -79,11 +99,7 @@ class AssetEditor extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: AssetDisplay(
-              assetId: asset.id,
-              mediaType: asset.mediaType,
-              displayWidth: 640,
-            ),
+            child: AssetPreviewVisual(asset: asset),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 32.0),

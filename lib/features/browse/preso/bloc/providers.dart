@@ -3,6 +3,7 @@
 //
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/core/domain/usecases/providers.dart';
+import 'package:tanuki/features/browse/preso/bloc/replace_file_bloc.dart';
 import 'all_locations_bloc.dart';
 import 'all_tags_bloc.dart';
 import 'all_years_bloc.dart';
@@ -43,5 +44,11 @@ final assetBrowserBlocProvider = Provider.autoDispose<AssetBrowserBloc>(
 final assetCountBlocProvider = Provider.autoDispose<AssetCountBloc>(
   (ref) => AssetCountBloc(
     usecase: ref.read(getAssetCountUsecaseProvider),
+  ),
+);
+
+final replaceFileBlocProvider = Provider.autoDispose<ReplaceFileBloc>(
+  (ref) => ReplaceFileBloc(
+    usecase: ref.read(replaceAssetUsecaseProvider),
   ),
 );

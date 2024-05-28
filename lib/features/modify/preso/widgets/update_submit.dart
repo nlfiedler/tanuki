@@ -31,6 +31,8 @@ class UpdateSubmit extends ConsumerWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Updated asset')),
             );
+            Navigator.pushReplacementNamed(context, '/asset',
+                arguments: state.asset.id);
           } else if (state is Error) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Error: ${state.message}')),

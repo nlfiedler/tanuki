@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'dart:typed_data';
 import 'package:oxidized/oxidized.dart';
@@ -19,6 +19,23 @@ class AssetRepositoryImpl extends AssetRepository {
   Future<Result<int, Failure>> ingestAssets() async {
     try {
       return Ok(await remoteDataSource.ingestAssets());
+    } on ServerException catch (e) {
+      return Err(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<String, Failure>> replaceAssetBytes(
+    String assetId,
+    String filename,
+    Uint8List contents,
+  ) async {
+    try {
+      return Ok(await remoteDataSource.replaceAssetBytes(
+        assetId,
+        filename,
+        contents,
+      ));
     } on ServerException catch (e) {
       return Err(ServerFailure(e.toString()));
     }

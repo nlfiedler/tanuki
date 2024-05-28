@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
@@ -54,6 +54,43 @@ void main() {
         final result = await repository.ingestAssets();
         // assert
         verify(() => mockRemoteDataSource.ingestAssets());
+        expect(result.err().unwrap(), isA<ServerFailure>());
+      },
+    );
+  });
+
+  group('replaceAssetBytes', () {
+    test(
+      'should return remote data when remote data source returns data',
+      () async {
+        // arrange
+        when(() => mockRemoteDataSource.replaceAssetBytes(any(), any(), any()))
+            .thenAnswer((_) async => 'asset123');
+        // act
+        final bytes = Uint8List(0);
+        final result =
+            await repository.replaceAssetBytes('abc123', 'happy.jpg', bytes);
+        // assert
+        verify(() => mockRemoteDataSource.replaceAssetBytes(
+            'abc123', 'happy.jpg', bytes));
+        expect(result.unwrap(), isA<String>());
+        expect(result.unwrap(), equals('asset123'));
+      },
+    );
+
+    test(
+      'should return failure when remote data source is unsuccessful',
+      () async {
+        // arrange
+        when(() => mockRemoteDataSource.replaceAssetBytes(any(), any(), any()))
+            .thenThrow(const ServerException());
+        // act
+        final bytes = Uint8List(0);
+        final result =
+            await repository.replaceAssetBytes('abc123', 'happy.jpg', bytes);
+        // assert
+        verify(() => mockRemoteDataSource.replaceAssetBytes(
+            'abc123', 'happy.jpg', bytes));
         expect(result.err().unwrap(), isA<ServerFailure>());
       },
     );

@@ -4,6 +4,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tanuki/container.dart';
 import 'package:tanuki/core/domain/usecases/get_asset_locations.dart';
+import 'package:tanuki/core/domain/usecases/replace_asset.dart';
 import 'bulk_update.dart';
 import 'get_all_locations.dart';
 import 'get_all_tags.dart';
@@ -73,6 +74,12 @@ final queryAssetsUsecaseProvider = Provider<QueryAssets>(
 final queryRecentsUsecaseProvider = Provider<QueryRecents>(
   (ref) => QueryRecents(
     ref.read(entityRepositoryProvider),
+  ),
+);
+
+final replaceAssetUsecaseProvider = Provider<ReplaceAsset>(
+  (ref) => ReplaceAsset(
+    ref.read(assetRepositoryProvider),
   ),
 );
 
