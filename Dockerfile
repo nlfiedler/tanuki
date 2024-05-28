@@ -22,12 +22,17 @@ RUN cargo build --release
 #
 # build the flutter app
 #
-FROM google/dart AS flutter
+# For consistency, use the Dart image as a base, add a version of Flutter that
+# is known to work via the fvm tool, and then enable the web platform as a build
+# target.
+#
+#
+FROM dart:stable AS flutter
 ARG BASE_URL=http://localhost:3000
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get -q update && \
     apt-get -q -y install unzip
-RUN pub global activate fvm
+RUN dart pub global activate fvm
 RUN fvm install stable
 WORKDIR /flutter
 COPY fonts fonts/
@@ -35,7 +40,7 @@ COPY lib lib/
 COPY pubspec.yaml .
 COPY public public/
 COPY web web/
-RUN fvm use stable
+RUN fvm use --force stable
 RUN fvm flutter config --enable-web
 RUN fvm flutter pub get
 ENV BASE_URL ${BASE_URL}
