@@ -7,7 +7,7 @@ description = "Personal digital asset management system."
 repository = "https://github.com/nlfiedler/tanuki"
 readme = "README.md"
 keywords = ["assets", "photos", "videos"]
-license = "UNLICENSED"
+license = "MIT"
 default-run = "tanuki"
 
 [dependencies]
