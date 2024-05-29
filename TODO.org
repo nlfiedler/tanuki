@@ -1,5 +1,4 @@
 * Action Items
-** TODO upgrade =juniper= dependency, involves significant API changes
 ** TODO make graphql and usecases =async= throughout, remove the =block_on()= function
 *** seemingly juniper graphql operations can be either async or sync
 ** idea for rotating images
@@ -26,8 +25,6 @@
 *** make the selection button more obvious (color theme variation?)
 *** edits must result in refreshing the gallery
 *** learn more about flutter navigation, need a listener when we return to the gallery
-** edit screen improvements
-*** completion for tags and location fields
 ** create graphql mutation to delete assets with certain tag
 *** boolean argument ~yes~ to actually perform the delete
 *** if ~yes~ argument is false, reports what would be deleted
@@ -60,6 +57,7 @@
 *** show chevron arrows on left and right to navigate among search results
 *** controls appear when mouse moves over asset display, then fade away
 ** Edit improvements
+*** completion for tags and location fields
 *** like PhotoPrism, edit screen has back/forward buttons to visit other images in gallery
 ** Rapid editing of several assets
 *** like PhotoPrism, quickly move through several assets without going back and forth

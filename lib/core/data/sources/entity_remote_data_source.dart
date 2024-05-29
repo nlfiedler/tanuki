@@ -291,7 +291,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
       throw const err.ServerException('since must be a UTC date/time');
     }
     const query = r'''
-      query Recent($since: DateTimeUtc, $count: Int, $offset: Int) {
+      query Recent($since: DateTime, $count: Int, $offset: Int) {
         recent(since: $since, count: $count, offset: $offset) {
           results {
             id

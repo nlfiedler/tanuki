@@ -10,8 +10,8 @@ use crate::domain::usecases::diagnose::Diagnosis;
 use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
 use juniper::{
-    graphql_scalar, EmptySubscription, FieldResult, GraphQLEnum, GraphQLInputObject,
-    ParseScalarResult, ParseScalarValue, RootNode, Value,
+    EmptySubscription, FieldResult, GraphQLEnum, GraphQLInputObject, GraphQLScalar, InputValue,
+    ParseScalarResult, ParseScalarValue, RootNode, ScalarToken, ScalarValue, Value,
 };
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -34,16 +34,31 @@ impl GraphContext {
 // Mark the data source as a valid context type for Juniper.
 impl juniper::Context for GraphContext {}
 
-// Define a larger integer type so we can represent those larger values, such as
-// file sizes. Some of the core types define fields that are larger than i32, so
-// this type is used to represent those values in GraphQL.
-#[derive(Copy, Clone)]
+/// An integer type larger than the standard signed 32-bit.
+#[derive(Copy, Clone, Debug, Eq, GraphQLScalar, PartialEq)]
+#[graphql(with = Self)]
 pub struct BigInt(i64);
 
 impl BigInt {
     /// Construct a BigInt for the given value.
     pub fn new(value: i64) -> Self {
         BigInt(value)
+    }
+
+    fn to_output<S: ScalarValue>(&self) -> Value<S> {
+        Value::scalar(format!("{}", self.0))
+    }
+
+    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
+        v.as_scalar_value()
+            .and_then(|v| v.as_str())
+            .and_then(|s| s.parse::<i64>().ok())
+            .map(BigInt)
+            .ok_or_else(|| format!("Expected `BigInt`, found: {v}"))
+    }
+
+    fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
+        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 
@@ -62,27 +77,6 @@ impl From<BigInt> for u64 {
 impl From<u32> for BigInt {
     fn from(t: u32) -> Self {
         BigInt(i64::from(t))
-    }
-}
-
-#[graphql_scalar(description = "An integer type larger than the standard signed 32-bit.")]
-impl<S> GraphQLScalar for BigInt
-where
-    S: ScalarValue,
-{
-    fn resolve(&self) -> Value {
-        Value::scalar(format!("{}", self.0))
-    }
-
-    fn from_input_value(v: &InputValue) -> Option<BigInt> {
-        v.as_scalar_value()
-            .and_then(|v| v.as_str())
-            .and_then(|s| s.parse::<i64>().ok())
-            .map(BigInt)
-    }
-
-    fn from_str<'a>(value: ScalarToken<'a>) -> ParseScalarResult<'a, S> {
-        <String as ParseScalarValue<S>>::from_str(value)
     }
 }
 
@@ -105,7 +99,7 @@ impl Location {
 }
 
 #[juniper::graphql_object(
-    description = "An `Asset` defines a single entity in the storage system."
+    description = "An `Asset` defines a single entity in the storage system.",
 )]
 impl Asset {
     /// The unique asset identifier.
@@ -114,12 +108,14 @@ impl Asset {
     }
 
     /// Hash digest of the contents of the asset.
-    fn checksum(&self) -> String {
+    #[graphql(name = "checksum")]
+    fn checksum_gql(&self) -> String {
         self.checksum.clone()
     }
 
     /// The original filename of the asset when it was imported.
-    fn filename(&self) -> String {
+    #[graphql(name = "filename")]
+    fn filename_gql(&self) -> String {
         self.filename.clone()
     }
 
@@ -153,12 +149,14 @@ impl Asset {
     }
 
     /// The media type of the asset, such as "image/jpeg" or "video/mp4".
-    fn media_type(&self) -> String {
+    #[graphql(name = "mediaType")]
+    fn media_type_gql(&self) -> String {
         self.media_type.clone()
     }
 
     /// The list of tags associated with this asset.
-    fn tags(&self) -> Vec<String> {
+    #[graphql(name = "tags")]
+    fn tags_gql(&self) -> Vec<String> {
         self.tags.clone()
     }
 
@@ -168,12 +166,14 @@ impl Asset {
     }
 
     /// A caption attributed to the asset.
-    fn caption(&self) -> Option<String> {
+    #[graphql(name = "caption")]
+    fn caption_gql(&self) -> Option<String> {
         self.caption.clone()
     }
 
     /// Location information for the asset.
-    fn location(&self) -> Option<Location> {
+    #[graphql(name = "location")]
+    fn location_gql(&self) -> Option<Location> {
         self.location.clone()
     }
 }
@@ -664,13 +664,12 @@ pub struct AssetInputId {
 
 pub struct QueryRoot;
 
-#[juniper::graphql_object(Context = Arc<GraphContext>)]
+#[juniper::graphql_object(Context = GraphContext)]
 impl QueryRoot {
     /// Perform an analysis of the assets and the data they contain.
-    fn analyze(executor: &Executor) -> FieldResult<Counts> {
+    fn analyze(#[graphql(ctx)] ctx: &GraphContext) -> FieldResult<Counts> {
         use crate::domain::usecases::analyze::Analyze;
         use crate::domain::usecases::{NoParams, UseCase};
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
         let usecase = Analyze::new(Box::new(repo), Box::new(blobs));
@@ -679,10 +678,9 @@ impl QueryRoot {
     }
 
     /// Retrieve an asset by its unique identifier.
-    fn asset(executor: &Executor, id: String) -> FieldResult<Asset> {
+    fn asset(#[graphql(ctx)] ctx: &GraphContext, id: String) -> FieldResult<Asset> {
         use crate::domain::usecases::fetch::{FetchAsset, Params};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = FetchAsset::new(Box::new(repo));
         let params = Params::new(id);
@@ -691,10 +689,9 @@ impl QueryRoot {
     }
 
     /// Return the total number of assets in the system.
-    fn count(executor: &Executor) -> FieldResult<i32> {
+    fn count(#[graphql(ctx)] ctx: &GraphContext) -> FieldResult<i32> {
         use crate::domain::usecases::count::CountAssets;
         use crate::domain::usecases::{NoParams, UseCase};
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = CountAssets::new(Box::new(repo));
         let params = NoParams {};
@@ -703,10 +700,9 @@ impl QueryRoot {
     }
 
     /// Perform a diagnosis of the database and blob store.
-    fn diagnose(executor: &Executor, checksum: Option<bool>) -> FieldResult<Vec<Diagnosis>> {
+    fn diagnose(#[graphql(ctx)] ctx: &GraphContext, checksum: Option<bool>) -> FieldResult<Vec<Diagnosis>> {
         use crate::domain::usecases::diagnose::{Diagnose, Params};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
         let usecase = Diagnose::new(Box::new(repo), Box::new(blobs));
@@ -722,10 +718,9 @@ impl QueryRoot {
     ///
     /// Parts include the location label split on commas, and the city and
     /// region, if available.
-    fn locations(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
+    fn locations(#[graphql(ctx)] ctx: &GraphContext) -> FieldResult<Vec<LabeledCount>> {
         use crate::domain::usecases::location::PartedLocations;
         use crate::domain::usecases::{NoParams, UseCase};
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = PartedLocations::new(Box::new(repo));
         let locations: Vec<LabeledCount> = usecase.call(NoParams {})?;
@@ -733,10 +728,9 @@ impl QueryRoot {
     }
 
     /// Retrieve the list of unique locations with their full structure.
-    fn all_locations(executor: &Executor) -> FieldResult<Vec<Location>> {
+    fn all_locations(#[graphql(ctx)] ctx: &GraphContext) -> FieldResult<Vec<Location>> {
         use crate::domain::usecases::location::CompleteLocations;
         use crate::domain::usecases::{NoParams, UseCase};
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = CompleteLocations::new(Box::new(repo));
         let locations: Vec<Location> = usecase.call(NoParams {})?;
@@ -744,10 +738,9 @@ impl QueryRoot {
     }
 
     /// Look for an asset by the hash digest (SHA256).
-    fn lookup(executor: &Executor, checksum: String) -> FieldResult<Option<Asset>> {
+    fn lookup(#[graphql(ctx)] ctx: &GraphContext, checksum: String) -> FieldResult<Option<Asset>> {
         use crate::domain::usecases::checksum::{AssetByChecksum, Params};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = AssetByChecksum::new(Box::new(repo));
         let params = Params::new(checksum);
@@ -756,10 +749,9 @@ impl QueryRoot {
     }
 
     /// Retrieve the list of media types and their associated asset count.
-    fn media_types(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
+    fn media_types(#[graphql(ctx)] ctx: &GraphContext) -> FieldResult<Vec<LabeledCount>> {
         use crate::domain::usecases::types::AllMediaTypes;
         use crate::domain::usecases::{NoParams, UseCase};
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = AllMediaTypes::new(Box::new(repo));
         let params = NoParams {};
@@ -777,14 +769,13 @@ impl QueryRoot {
     ///
     /// The offset is useful for pagination. Default value is `0`.
     fn recent(
-        executor: &Executor,
+        #[graphql(ctx)] ctx: &GraphContext,
         since: Option<DateTime<Utc>>,
         count: Option<i32>,
         offset: Option<i32>,
     ) -> FieldResult<SearchMeta> {
         use crate::domain::usecases::recent::{Params, RecentImports};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = RecentImports::new(Box::new(repo));
         let params = Params { after_date: since };
@@ -804,14 +795,13 @@ impl QueryRoot {
     ///
     /// The offset is useful for pagination. Default value is `0`.
     fn search(
-        executor: &Executor,
+        #[graphql(ctx)] ctx: &GraphContext,
         params: SearchParams,
         count: Option<i32>,
         offset: Option<i32>,
     ) -> FieldResult<SearchMeta> {
         use crate::domain::usecases::search::{Params, SearchAssets};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = SearchAssets::new(Box::new(repo));
         let params: Params = params.into();
@@ -825,10 +815,9 @@ impl QueryRoot {
     }
 
     /// Retrieve the list of tags and their associated asset count.
-    fn tags(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
+    fn tags(#[graphql(ctx)] ctx: &GraphContext) -> FieldResult<Vec<LabeledCount>> {
         use crate::domain::usecases::tags::AllTags;
         use crate::domain::usecases::{NoParams, UseCase};
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = AllTags::new(Box::new(repo));
         let params = NoParams {};
@@ -837,10 +826,9 @@ impl QueryRoot {
     }
 
     /// Retrieve the list of years and their associated asset count.
-    fn years(executor: &Executor) -> FieldResult<Vec<LabeledCount>> {
+    fn years(#[graphql(ctx)] ctx: &GraphContext) -> FieldResult<Vec<LabeledCount>> {
         use crate::domain::usecases::year::AllYears;
         use crate::domain::usecases::{NoParams, UseCase};
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = AllYears::new(Box::new(repo));
         let params = NoParams {};
@@ -875,13 +863,12 @@ fn paginate_vector<T>(input: &mut Vec<T>, offset: Option<i32>, count: Option<i32
 
 pub struct MutationRoot;
 
-#[juniper::graphql_object(Context = Arc<GraphContext>)]
+#[juniper::graphql_object(Context = GraphContext)]
 impl MutationRoot {
     /// Perform an import on all files in the uploads directory.
-    fn ingest(executor: &Executor) -> FieldResult<i32> {
+    fn ingest(#[graphql(ctx)] ctx: &GraphContext) -> FieldResult<i32> {
         use crate::domain::usecases::ingest::{IngestAssets, Params};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
         let geocoder = find_location_repository();
@@ -894,10 +881,9 @@ impl MutationRoot {
     }
 
     /// Diagnosis and repair issues in the database and blob store.
-    fn repair(executor: &Executor, checksum: Option<bool>) -> FieldResult<Vec<Diagnosis>> {
+    fn repair(#[graphql(ctx)] ctx: &GraphContext, checksum: Option<bool>) -> FieldResult<Vec<Diagnosis>> {
         use crate::domain::usecases::diagnose::{Diagnose, Params};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
         let usecase = Diagnose::new(Box::new(repo), Box::new(blobs));
@@ -911,10 +897,9 @@ impl MutationRoot {
     }
 
     /// Update the asset with the given values.
-    fn update(executor: &Executor, id: String, asset: AssetInput) -> FieldResult<Asset> {
+    fn update(#[graphql(ctx)] ctx: &GraphContext, id: String, asset: AssetInput) -> FieldResult<Asset> {
         use crate::domain::usecases::update::{Params, UpdateAsset};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = UpdateAsset::new(Box::new(repo));
         let params: Params = Params::new(id, asset.into());
@@ -925,10 +910,9 @@ impl MutationRoot {
     /// Update multiple assets with the given values.
     ///
     /// Returns the number of updated assets.
-    fn bulk_update(executor: &Executor, assets: Vec<AssetInputId>) -> FieldResult<i32> {
+    fn bulk_update(#[graphql(ctx)] ctx: &GraphContext, assets: Vec<AssetInputId>) -> FieldResult<i32> {
         use crate::domain::usecases::update::{Params, UpdateAsset};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = UpdateAsset::new(Box::new(repo));
         for asset in assets.iter() {
@@ -943,10 +927,9 @@ impl MutationRoot {
     ///
     /// If overwrite is true, will replace whatever city and region may already
     /// be present.
-    fn geocode(executor: &Executor, overwrite: bool) -> FieldResult<i32> {
+    fn geocode(#[graphql(ctx)] ctx: &GraphContext, overwrite: bool) -> FieldResult<i32> {
         use crate::domain::usecases::geocode::{Geocoder, Params};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
         let geocoder = find_location_repository();
@@ -956,10 +939,9 @@ impl MutationRoot {
     }
 
     /// Perform a search and replace of all of the assets.
-    fn edit(executor: &Executor, params: EditParams) -> FieldResult<i32> {
+    fn edit(#[graphql(ctx)] ctx: &GraphContext, params: EditParams) -> FieldResult<i32> {
         use crate::domain::usecases::edit::{EditAssets, Params};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = EditAssets::new(Box::new(repo));
         let parms: Params = params.into();
@@ -969,7 +951,7 @@ impl MutationRoot {
 
     /// Fill in city and region for locations whose label matches a query.
     fn relocate(
-        executor: &Executor,
+        #[graphql(ctx)] ctx: &GraphContext,
         query: String,
         city: String,
         region: String,
@@ -977,7 +959,6 @@ impl MutationRoot {
     ) -> FieldResult<i32> {
         use crate::domain::usecases::relocate::{Params, Relocate};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = Relocate::new(Box::new(repo));
         let params = Params::new(query, city, region, clear_label.unwrap_or(false));
@@ -986,10 +967,9 @@ impl MutationRoot {
     }
 
     /// Dump all asset records from the database to the given file path in JSON format.
-    fn dump(executor: &Executor, filepath: String) -> FieldResult<i32> {
+    fn dump(#[graphql(ctx)] ctx: &GraphContext, filepath: String) -> FieldResult<i32> {
         use crate::domain::usecases::dump::{Dump, Params};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = Dump::new(Box::new(repo));
         let params = Params::new(filepath.into());
@@ -998,10 +978,9 @@ impl MutationRoot {
     }
 
     /// Load the JSON formatted asset records into the database from the given file path.
-    fn load(executor: &Executor, filepath: String) -> FieldResult<i32> {
+    fn load(#[graphql(ctx)] ctx: &GraphContext, filepath: String) -> FieldResult<i32> {
         use crate::domain::usecases::load::{Load, Params};
         use crate::domain::usecases::UseCase;
-        let ctx = executor.context().clone();
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
         let usecase = Load::new(Box::new(repo));
         let params = Params::new(filepath.into());
@@ -1010,7 +989,7 @@ impl MutationRoot {
     }
 }
 
-pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<Arc<GraphContext>>>;
+pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<GraphContext>>;
 
 /// Create the GraphQL schema.
 pub fn create_schema() -> Schema {
@@ -1662,7 +1641,7 @@ mod tests {
         let since = Some(Utc::now());
         vars.insert("since".to_owned(), since.to_input_value());
         let (res, errors) = juniper::execute_sync(
-            r#"query Recent($since: DateTimeUtc) {
+            r#"query Recent($since: DateTime) {
                 recent(since: $since) {
                     results { id }
                     count
@@ -1709,7 +1688,7 @@ mod tests {
         let since = Some(Utc::now());
         vars.insert("since".to_owned(), since.to_input_value());
         let (res, errors) = juniper::execute_sync(
-            r#"query Recent($since: DateTimeUtc) {
+            r#"query Recent($since: DateTime) {
                 recent(since: $since) {
                     results { id }
                     count
