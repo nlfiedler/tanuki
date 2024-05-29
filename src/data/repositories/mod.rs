@@ -306,12 +306,9 @@ fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8
     } else {
         img = img.thumbnail(nwidth, nheight);
     }
-    // Use a less-than-perfect image quality for the thumbnail, as it will save
-    // a tremendous amount in the size of the image. At 100% the resulting image
-    // might be 50kb, while at 75% it is 10kb, and at 50% it is 9kb. However, at
-    // low quality levels the image looks rather poor. The libvips library uses
-    // a default quality factor of 0.75, so use that here as well.
-    img.write_to(&mut cursor, image::ImageOutputFormat::Jpeg(75))?;
+    // The image crate's JpegEncoder will use a quality factor of 75 by default,
+    // which yields very good results (e.g. libvips uses the same default).
+    img.write_to(&mut cursor, image::ImageFormat::Jpeg)?;
     let mut cache = LRU_CACHE.lock().unwrap();
     let buffer: Vec<u8> = cursor.into_inner();
     cache.put(cache_key, buffer.clone());
