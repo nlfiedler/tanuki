@@ -1,9 +1,6 @@
 # Tanuki
 
-A system for importing, storing, categorizing, browsing, displaying, and
-searching assets, primarily images and videos. Attributes regarding the assets
-are stored in a key-value store. Provides a simple web interface with basic
-browsing and editing capabilities.
+A system for organizing, browsing, and searching assets, primarily images and videos. Written in [Rust](https://www.rust-lang.org) and [Flutter](https://flutter.dev) with a [GraphQL](https://graphql.org) wire protocol. Metadata is stored in [RocksDB](https://rocksdb.org) and file content is stored unmodified within a date/time formatted directory structure.
 
 ## Building and Testing
 

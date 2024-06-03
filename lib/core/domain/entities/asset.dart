@@ -98,6 +98,8 @@ class Asset extends Equatable {
   final String checksum;
   // The original filename of the asset when it was imported.
   final String filename;
+  // Relative path of the file within the blob store.
+  final String filepath;
   // The size in bytes of the asset.
   final int filesize;
   // The date/time that best represents the asset.
@@ -117,6 +119,7 @@ class Asset extends Equatable {
     required this.id,
     required this.checksum,
     required this.filename,
+    required this.filepath,
     required this.filesize,
     required this.datetime,
     required this.mediaType,
@@ -127,7 +130,7 @@ class Asset extends Equatable {
   });
 
   @override
-  List<Object> get props => [id, checksum, filename];
+  List<Object> get props => [id];
 
   @override
   bool get stringify => true;

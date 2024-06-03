@@ -135,6 +135,7 @@ class _AssetPreviewFormState extends State<AssetPreviewForm> {
       initialValue: {
         'datetime': datefmt.format(widget.asset.datetime.toLocal()),
         'filename': widget.asset.filename,
+        'filepath': widget.asset.filepath,
         'filesize': sizefmt.format(widget.asset.filesize),
         'mediaType': widget.asset.mediaType,
         'tags': widget.asset.tags.join(', '),
@@ -179,7 +180,7 @@ class _AssetPreviewFormState extends State<AssetPreviewForm> {
             name: 'filename',
             decoration: const InputDecoration(
               icon: Icon(Icons.folder_outlined),
-              labelText: 'File name',
+              labelText: 'Filename',
             ),
             readOnly: true,
           ),
@@ -187,7 +188,7 @@ class _AssetPreviewFormState extends State<AssetPreviewForm> {
             name: 'filesize',
             decoration: const InputDecoration(
               icon: Icon(Icons.info_outline),
-              labelText: 'File size',
+              labelText: 'File Size',
             ),
             readOnly: true,
           ),
@@ -195,7 +196,15 @@ class _AssetPreviewFormState extends State<AssetPreviewForm> {
             name: 'mediaType',
             decoration: const InputDecoration(
               icon: Icon(Icons.code),
-              labelText: 'Media type',
+              labelText: 'Media Type',
+            ),
+            readOnly: true,
+          ),
+          FormBuilderTextField(
+            name: 'filepath',
+            decoration: const InputDecoration(
+              icon: Icon(Icons.photo_library),
+              labelText: 'Asset Path',
             ),
             readOnly: true,
           ),

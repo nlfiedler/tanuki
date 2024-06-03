@@ -134,6 +134,8 @@ class _AssetEditFormState extends State<AssetEditForm> {
         'datetime': datefmt.format(widget.asset.datetime.toLocal()),
         'userdate': widget.asset.userdate.toNullable(),
         'mediaType': widget.asset.mediaType,
+        'filename': widget.asset.filename,
+        'filepath': widget.asset.filepath,
         'tags': widget.asset.tags.join(', '),
         'caption': widget.asset.caption.unwrapOr(''),
         'location':
@@ -215,12 +217,28 @@ class _AssetEditFormState extends State<AssetEditForm> {
             name: 'mediaType',
             decoration: const InputDecoration(
               icon: Icon(Icons.code),
-              labelText: 'Media type',
+              labelText: 'Media Type',
             ),
             autovalidateMode: AutovalidateMode.always,
             validator: (val) {
               return validateMediaType(val.toString());
             },
+          ),
+          FormBuilderTextField(
+            name: 'filename',
+            decoration: const InputDecoration(
+              icon: Icon(Icons.folder_outlined),
+              labelText: 'Filename',
+            ),
+            readOnly: true,
+          ),
+          FormBuilderTextField(
+            name: 'filepath',
+            decoration: const InputDecoration(
+              icon: Icon(Icons.photo_library),
+              labelText: 'Asset Path',
+            ),
+            readOnly: true,
           ),
         ],
       ),

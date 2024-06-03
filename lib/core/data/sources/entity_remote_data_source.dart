@@ -192,6 +192,7 @@ class EntityRemoteDataSourceImpl extends EntityRemoteDataSource {
           id
           checksum
           filename
+          filepath
           filesize
           datetime
           mediaType

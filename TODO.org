@@ -1,10 +1,6 @@
 * Action Items
-** TODO make graphql and usecases =async= throughout, remove the =block_on()= function
-*** seemingly juniper graphql operations can be either async or sync
-** idea for rotating images
-*** test using =magick_rust= to see if it preserves metadata
-*** create a simple EXIF parser that scan for =Orientation= and changes the value if it exists
-*** if not found, insert the =Orientation= at the end of the EXIF header
+** Asset edits must invalidate recents search results
+*** after uploading a new version of an asset, the recents results are wrong
 ** More location improvements
 *** TODO unable to type a space in ~Locations~ field in webui (e.g. ~la vega province~)
 *** TODO GraphQL: add =gps= field to =Asset= definition for assets with GPS data
@@ -499,6 +495,10 @@ include it in the database records.
 **** database functions iterate the results, applying the filter
 **** the remaining results are then collecting into a vector
 ** Architecture Review
+*** Use async throughout, avoid the =block_on()= function
+The =juniper= API can invoke async operations, thereby all of the usecases
+can also by async, and the calls to the repositories can also be async. This
+will require having async trait support in Rust.
 *** Flutter/Rust bridge, call Rust from Dart
 **** c.f. https://github.com/fzyzcjy/flutter_rust_bridge
 **** c.f. https://www.zaynetro.com/post/flutter-rust-bridge-2023/
@@ -509,9 +509,6 @@ include it in the database records.
 *** Alternative to running HTTP server
 **** Use a socket file
 **** Link Dart code to Rust using FFI
-*** Asynchronous
-**** Will need to start using =async/await= as more libraries return =Future=
-**** Use of actix means that tokio runtime is already in place
 *** Large file upload
 **** split file into chunks, upload one-by-one, showing progress
 ***** default to 8MB chunks, most images will be smaller than that
