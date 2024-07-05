@@ -1,6 +1,23 @@
 * Action Items
 ** Asset edits must invalidate recents search results
 *** after uploading a new version of an asset, the recents results are wrong
+** [#A] Manage revisions of assets
+*** when uploading a replacement file for an asset, keep the old file
+*** add the old identifier to a new property in the asset record
+*** =Asset= will have a new optional =Vec<String>= of the old identifiers
+*** graphql: query for asset gives previous identifiers
+*** graphql: mutation to swap an old identifier with the current one
+*** graphql: mutation to remove all old identifiers and files
+*** flutter: buttons for viewing other revisions, setting current, purging old ones
+** [#B] Display and alter orientation of images
+*** usecase: add, set, or remove the orientation EXIF property of an image
+**** create a new revision of the asset before changing
+**** translate the =jpeg-data= code in =exif= into Rust
+**** use =libexif= and Rust version of =jpeg-data= to make change
+*** graphql: query for asset gives orientation value
+*** graphql: mutation to change the orientation for an image via usecase
+*** flutter: icon to show orientation of image, if it is an image
+**** need an icon for ~unset~ orientation for those really old images
 ** More location improvements
 *** TODO unable to type a space in ~Locations~ field in webui (e.g. ~la vega province~)
 *** TODO GraphQL: add =gps= field to =Asset= definition for assets with GPS data
@@ -66,6 +83,7 @@
 *** save/discard buttons to save or discard changes per asset
 ** People versus tags
 *** A ~people~ field on asset records might be useful
+*** People records could have first and last names to distinquish people with same first/last name
 *** Interface could then show ~Tags~, ~People~, and ~Locations~ for browsing
 *** Would require a ~people~ field on asset ingestion page
 *** Would need a GraphQL mutation to move a given tag from ~tags~ to ~people~
@@ -360,26 +378,6 @@ include it in the database records.
 ** Mobile web support
 *** Progressive Web App support in Flutter is coming as of 2020/04
 *** Use PWA to get app-like behavior on mobile devices
-** Editing Images
-*** Keep track of the asset revisions
-*** Allow user to select the primary version (e.g. undo)
-*** rotate, flip, spin, crop
-*** apply common filters
-**** c.f. https://github.com/silvia-odwyer/photon
-*** implementation details
-**** =image= crate supports several filters (flip, rotate, etc)
-**** =image= crate currently discards metadata (https://github.com/image-rs/image/issues/1901)
-**** new graphql query to temporarily apply a set of transformations to an asset
-**** new graphql mutation to permanently apply a set of transformations to an asset
-**** repository functions for saving/fetching/clearing temporary assets
-**** temporary changes may be just the preview image size, cached in memory
-**** use case to receive a list of transforms, return url for temporary asset
-**** use case to receive a list of transforms, permanently save a new version of asset
-**** new version will get a new unique identifier and thereby URL
-**** use case will move previous identity into a new field to track old versions
-**** web server to serve temporary asset via url
-*** open asset in external program in temporary file
-**** easy-to-use app: https://github.com/robaho/seashore
 ** Data Integrity
 *** Add a GraphQL mutation that will delete and rebuild all indices
 *** Guard against concurrent modifications
