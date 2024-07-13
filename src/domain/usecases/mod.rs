@@ -514,7 +514,7 @@ fn select_best_extension(media_type: &mime::Mime) -> Option<String> {
         .map(|e| {
             if e == "m1v" {
                 "mpeg"
-            } else if e == "jpe" {
+            } else if e == "jpe" || e == "jfif" {
                 "jpeg"
             } else {
                 e
