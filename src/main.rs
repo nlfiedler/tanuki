@@ -85,8 +85,9 @@ async fn replace_asset(mut payload: Multipart, req: HttpRequest) -> Result<HttpR
             .unwrap_or(&mime::APPLICATION_OCTET_STREAM)
             .to_owned();
         let filename = disposition
+            .ok_or(actix_web::error::ContentTypeError::ParseError)?
             .get_filename()
-            .ok_or(actix_web::error::ContentTypeError::ParseError)?;
+            .ok_or(actix_web::error::PayloadError::EncodingCorrupted)?;
         let mut filepath = UPLOAD_PATH.clone();
         filepath.push(filename);
         let filepath_clone = filepath.clone();
@@ -138,8 +139,9 @@ async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
             .unwrap_or(&mime::APPLICATION_OCTET_STREAM)
             .to_owned();
         let filename = disposition
+            .ok_or(actix_web::error::ContentTypeError::ParseError)?
             .get_filename()
-            .ok_or(actix_web::error::ContentTypeError::ParseError)?;
+            .ok_or(actix_web::error::PayloadError::EncodingCorrupted)?;
         let mut filepath = UPLOAD_PATH.clone();
         filepath.push(filename);
         let filepath_clone = filepath.clone();
