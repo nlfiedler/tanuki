@@ -5,7 +5,7 @@ use crate::domain::entities::Location;
 use crate::domain::repositories::{BlobRepository, LocationRepository, RecordRepository};
 use crate::domain::usecases::get_gps_coordinates;
 use anyhow::Error;
-use log::{info, warn};
+use log::{info, trace, warn};
 use std::cmp;
 use std::fmt;
 use std::sync::Arc;
@@ -57,9 +57,11 @@ impl super::UseCase<u64, Params> for Geocoder {
             if let Ok(media_type) = asset.media_type.parse::<mime::Mime>() {
                 if let Ok(blob_path) = self.blobs.blob_path(&asset_id) {
                     if let Some(coords) = get_gps_coordinates(&media_type, &blob_path).ok() {
+                        trace!("asset has GPS coordinates");
                         if let Some(found_loc) =
                             super::convert_location(self.geocoder.find_location(&coords).ok())
                         {
+                            trace!("successfully converted to domain location");
                             // ensure the geocoder returned a meaningful result
                             if found_loc.city.is_some() || found_loc.region.is_some() {
                                 if let Some(old_loc) = asset.location.as_ref() {
@@ -74,12 +76,14 @@ impl super::UseCase<u64, Params> for Geocoder {
                                         });
                                         self.records.put_asset(&asset)?;
                                         fixed_count += 1;
+                                        trace!("overwrote existing location values");
                                     }
                                 } else {
                                     // the asset has no location at all, fix it
                                     asset.location = Some(found_loc);
                                     self.records.put_asset(&asset)?;
                                     fixed_count += 1;
+                                    trace!("assigned new location values");
                                 }
                             }
                         }
@@ -91,7 +95,7 @@ impl super::UseCase<u64, Params> for Geocoder {
                 warn!("could not parse media type for asset {}", asset_id);
             }
         }
-        info!("analysis complete");
+        info!("analysis complete, fixed {} assets", fixed_count);
         Ok(fixed_count)
     }
 }

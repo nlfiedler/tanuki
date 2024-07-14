@@ -13,6 +13,7 @@ use juniper::{
     EmptySubscription, FieldResult, GraphQLEnum, GraphQLInputObject, GraphQLScalar, InputValue,
     ParseScalarResult, ParseScalarValue, RootNode, ScalarToken, ScalarValue, Value,
 };
+use log::error;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -99,7 +100,7 @@ impl Location {
 }
 
 #[juniper::graphql_object(
-    description = "An `Asset` defines a single entity in the storage system.",
+    description = "An `Asset` defines a single entity in the storage system."
 )]
 impl Asset {
     /// The unique asset identifier.
@@ -700,7 +701,10 @@ impl QueryRoot {
     }
 
     /// Perform a diagnosis of the database and blob store.
-    fn diagnose(#[graphql(ctx)] ctx: &GraphContext, checksum: Option<bool>) -> FieldResult<Vec<Diagnosis>> {
+    fn diagnose(
+        #[graphql(ctx)] ctx: &GraphContext,
+        checksum: Option<bool>,
+    ) -> FieldResult<Vec<Diagnosis>> {
         use crate::domain::usecases::diagnose::{Diagnose, Params};
         use crate::domain::usecases::UseCase;
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
@@ -881,7 +885,10 @@ impl MutationRoot {
     }
 
     /// Diagnosis and repair issues in the database and blob store.
-    fn repair(#[graphql(ctx)] ctx: &GraphContext, checksum: Option<bool>) -> FieldResult<Vec<Diagnosis>> {
+    fn repair(
+        #[graphql(ctx)] ctx: &GraphContext,
+        checksum: Option<bool>,
+    ) -> FieldResult<Vec<Diagnosis>> {
         use crate::domain::usecases::diagnose::{Diagnose, Params};
         use crate::domain::usecases::UseCase;
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
@@ -897,7 +904,11 @@ impl MutationRoot {
     }
 
     /// Update the asset with the given values.
-    fn update(#[graphql(ctx)] ctx: &GraphContext, id: String, asset: AssetInput) -> FieldResult<Asset> {
+    fn update(
+        #[graphql(ctx)] ctx: &GraphContext,
+        id: String,
+        asset: AssetInput,
+    ) -> FieldResult<Asset> {
         use crate::domain::usecases::update::{Params, UpdateAsset};
         use crate::domain::usecases::UseCase;
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
@@ -910,7 +921,10 @@ impl MutationRoot {
     /// Update multiple assets with the given values.
     ///
     /// Returns the number of updated assets.
-    fn bulk_update(#[graphql(ctx)] ctx: &GraphContext, assets: Vec<AssetInputId>) -> FieldResult<i32> {
+    fn bulk_update(
+        #[graphql(ctx)] ctx: &GraphContext,
+        assets: Vec<AssetInputId>,
+    ) -> FieldResult<i32> {
         use crate::domain::usecases::update::{Params, UpdateAsset};
         use crate::domain::usecases::UseCase;
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
@@ -934,8 +948,12 @@ impl MutationRoot {
         let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
         let geocoder = find_location_repository();
         let usecase = Geocoder::new(Box::new(repo), Box::new(blobs), geocoder);
-        let results: u64 = usecase.call(Params::new(overwrite))?;
-        Ok(results as i32)
+        let result = usecase.call(Params::new(overwrite));
+        if let Ok(count) = result {
+            return Ok(count as i32)
+        }
+        error!("geocode error: {:?}", result);
+        Ok(-1)
     }
 
     /// Perform a search and replace of all of the assets.
