@@ -8,8 +8,8 @@ use anyhow::{anyhow, Error};
 use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
 use std::cmp;
-use std::fmt;
 use std::ffi::OsStr;
+use std::fmt;
 use std::fs::File;
 use std::io;
 use std::path::Path;
@@ -247,6 +247,11 @@ fn convert_location(geocoded: Option<GeocodedLocation>) -> Option<Location> {
                     loc.region = geo.region.clone();
                 }
             }
+        } else if geo.region.is_some() {
+            // no city but has region and possibly country? promote the values
+            // since the domain entity does not have a country
+            loc.city = geo.region.clone();
+            loc.region = geo.country.clone();
         }
         Some(loc)
     } else {
@@ -700,6 +705,20 @@ mod tests {
     fn test_convert_location() {
         // nothing at all
         assert!(convert_location(None).is_none());
+
+        // city is none but region and country are defined
+        let geocoded = Some(GeocodedLocation {
+            city: None,
+            region: Some("New Territories".into()),
+            country: Some("Hong Kong".into()),
+        });
+        let expected = Some(Location {
+            label: None,
+            city: Some("New Territories".into()),
+            region: Some("Hong Kong".into()),
+        });
+        let actual = convert_location(geocoded);
+        assert_eq!(expected, actual);
 
         // country is not needed
         let geocoded = Some(GeocodedLocation {

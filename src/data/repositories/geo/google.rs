@@ -409,6 +409,29 @@ mod tests {
         assert_eq!(location.region.unwrap(), "California");
         assert_eq!(location.country.unwrap(), "United States");
 
+        // Hong Kong
+        let coords = GlobalPosition {
+            latitude_ref: NorthSouth::North,
+            latitude: GeodeticAngle {
+                degrees: 22.0,
+                minutes: 18.0,
+                seconds: 37.72,
+            },
+            longitude_ref: EastWest::East,
+            longitude: GeodeticAngle {
+                degrees: 114.0,
+                minutes: 2.0,
+                seconds: 22.52,
+            },
+        };
+        let result = repo.find_location(&coords);
+        assert!(result.is_ok());
+        let location = result.unwrap();
+        println!("location: {:?}", location);
+        assert!(location.city.is_none());
+        assert_eq!(location.region.unwrap(), "New Territories");
+        assert_eq!(location.country.unwrap(), "Hong Kong");
+
         Ok(())
     }
 }
