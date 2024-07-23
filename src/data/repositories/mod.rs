@@ -291,7 +291,7 @@ fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8
     let mut cursor = std::io::Cursor::new(Vec::new());
     // The image crate does not recognize .jpe extension as jpeg, so use the
     // format guessing code based on the first few bytes.
-    let mut img = image::io::Reader::open(filepath)?
+    let mut img = image::ImageReader::open(filepath)?
         .with_guessed_format()?
         .decode()?;
     if let Ok(orientation) = get_image_orientation(filepath) {
