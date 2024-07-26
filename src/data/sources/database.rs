@@ -1,30 +1,27 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::Asset;
 use anyhow::Error;
-use lazy_static::lazy_static;
 use rocksdb::backup::{BackupEngine, BackupEngineOptions};
 use rocksdb::{Env, Options};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::str;
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::{Arc, LazyLock, Mutex, Weak};
 
-lazy_static! {
-    // Keep a map of weakly held references to shared DB instances. RocksDB
-    // itself is thread-safe for get/put/write, and the DB type implements Send
-    // and Sync. We just need to make sure the instance is eventually closed
-    // when the last reference is dropped.
-    //
-    // The key is the path to the database files.
-    //
-    // Need a mutex on the database to allow mutation (mokuroku requires this
-    // for managing the column families). If the Mutex proves to be problematic,
-    // switch to ReentrantMutex in the parking_lot crate, which allows recursive
-    // locking.
-    static ref DBASE_REFS: Mutex<HashMap<PathBuf, Weak<Mutex<mokuroku::Database>>>> = Mutex::new(HashMap::new());
-}
+// Keep a map of weakly held references to shared DB instances. RocksDB itself
+// is thread-safe for get/put/write, and the DB type implements Send and Sync.
+// We just need to make sure the instance is eventually closed when the last
+// reference is dropped.
+//
+// The key is the path to the database files.
+//
+// Need a mutex on the database to allow mutation (mokuroku requires this for
+// managing the column families). If the Mutex proves to be problematic, switch
+// to ReentrantMutex in the parking_lot crate, which allows recursive locking.
+static DBASE_REFS: LazyLock<Mutex<HashMap<PathBuf, Weak<Mutex<mokuroku::Database>>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 ///
 /// An instance of the database for reading and writing records to disk.

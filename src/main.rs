@@ -11,12 +11,11 @@ use actix_web::{
 use futures::{StreamExt, TryStreamExt};
 use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
-use lazy_static::lazy_static;
 use log::{error, info};
 use std::env;
 use std::io::Write;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 use tanuki::data::repositories::geo::find_location_repository;
 use tanuki::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl};
 use tanuki::data::sources::{EntityDataSource, EntityDataSourceImpl};
@@ -34,34 +33,36 @@ static DEFAULT_ASSETS_PATH: &str = "tmp/test/blobs";
 #[cfg(not(test))]
 static DEFAULT_ASSETS_PATH: &str = "tmp/blobs";
 
-lazy_static! {
-    // Path to the database files.
-    static ref DB_PATH: PathBuf = {
-        dotenv::dotenv().ok();
-        let path = env::var("DB_PATH").unwrap_or_else(|_| DEFAULT_DB_PATH.to_owned());
-        PathBuf::from(path)
-    };
-    // Path for uploaded files.
-    static ref UPLOAD_PATH: PathBuf = {
-        let path = env::var("UPLOAD_PATH").unwrap_or_else(|_| "tmp/uploads".to_owned());
-        PathBuf::from(path)
-    };
-    static ref ASSETS_PATH: PathBuf = {
-        let path = env::var("ASSETS_PATH").unwrap_or_else(|_| DEFAULT_ASSETS_PATH.to_owned());
-        PathBuf::from(path)
-    };
-    // Path to the static web files.
-    static ref STATIC_PATH: PathBuf = {
-        let path = env::var("STATIC_FILES").unwrap_or_else(|_| "./web/".to_owned());
-        PathBuf::from(path)
-    };
-    // Path of the fallback page for web requests.
-    static ref DEFAULT_INDEX: PathBuf = {
-        let mut path = STATIC_PATH.clone();
-        path.push("index.html");
-        path
-    };
-}
+// Path to the database files.
+static DB_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
+    dotenv::dotenv().ok();
+    let path = env::var("DB_PATH").unwrap_or_else(|_| DEFAULT_DB_PATH.to_owned());
+    PathBuf::from(path)
+});
+
+// Path for uploaded files.
+static UPLOAD_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
+    let path = env::var("UPLOAD_PATH").unwrap_or_else(|_| "tmp/uploads".to_owned());
+    PathBuf::from(path)
+});
+
+static ASSETS_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
+    let path = env::var("ASSETS_PATH").unwrap_or_else(|_| DEFAULT_ASSETS_PATH.to_owned());
+    PathBuf::from(path)
+});
+
+// Path to the static web files.
+static STATIC_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
+    let path = env::var("STATIC_FILES").unwrap_or_else(|_| "./web/".to_owned());
+    PathBuf::from(path)
+});
+
+// Path of the fallback page for web requests.
+static DEFAULT_INDEX: LazyLock<PathBuf> = LazyLock::new(|| {
+    let mut path = STATIC_PATH.clone();
+    path.push("index.html");
+    path
+});
 
 // The request body _could_ contain more than one asset, but this endpoint will
 // only process a single entity. Returns the newly assigned identifier for the

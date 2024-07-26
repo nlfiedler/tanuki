@@ -2,18 +2,16 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use chrono::prelude::*;
-use lazy_static::lazy_static;
 use rocksdb::{Options, DB};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{LazyLock, Mutex};
 use tanuki::domain::entities::{Asset, Location};
 
-lazy_static! {
-    // Track number of open database instances accessing a particular path. Once
-    // the last reference is gone, we can safely delete the database.
-    static ref PATH_COUNTS: Mutex<HashMap<PathBuf, usize>> = Mutex::new(HashMap::new());
-}
+// Track number of open database instances accessing a particular path. Once
+// the last reference is gone, we can safely delete the database.
+static PATH_COUNTS: LazyLock<Mutex<HashMap<PathBuf, usize>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// Invokes `DB::Destroy()` when `DBPath` itself is dropped.
 ///

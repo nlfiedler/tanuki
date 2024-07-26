@@ -9,23 +9,21 @@ use crate::domain::repositories::RecordRepository;
 use anyhow::{anyhow, Error};
 use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
-use lazy_static::lazy_static;
 use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 use std::str;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 
 pub mod geo;
 
-lazy_static! {
-    // Cache of String keys to Vec<u8> image data for caching thumbnails.
-    //
-    // Cache capacity of 100 for 15kb thumbnails is around 1 megabyte.
-    //
-    // If the Mutex proves to be problematic, switch to ReentrantMutex in the
-    // parking_lot crate, which allows recursive locking.
-    static ref LRU_CACHE: Mutex<lru::LruCache<String, Vec<u8>>> = Mutex::new(lru::LruCache::new(NonZeroUsize::new(100).unwrap()));
-}
+// Cache of String keys to Vec<u8> image data for caching thumbnails.
+//
+// Cache capacity of 100 for 15kb thumbnails is around 1 megabyte.
+//
+// If the Mutex proves to be problematic, switch to ReentrantMutex in the
+// parking_lot crate, which allows recursive locking.
+static LRU_CACHE: LazyLock<Mutex<lru::LruCache<String, Vec<u8>>>> =
+    LazyLock::new(|| Mutex::new(lru::LruCache::new(NonZeroUsize::new(100).unwrap())));
 
 // Use an `Arc` to hold the data source to make cloning easy for the caller. If
 // using a `Box` instead, cloning it would involve adding fake clone operations
