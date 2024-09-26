@@ -35,7 +35,6 @@ static DEFAULT_ASSETS_PATH: &str = "tmp/blobs";
 
 // Path to the database files.
 static DB_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
-    dotenv::dotenv().ok();
     let path = env::var("DB_PATH").unwrap_or_else(|_| DEFAULT_DB_PATH.to_owned());
     PathBuf::from(path)
 });
@@ -287,6 +286,7 @@ async fn default_index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv::dotenv().ok();
     env_logger::init();
     let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_owned());
     let port = env::var("PORT").unwrap_or_else(|_| "3000".to_owned());
