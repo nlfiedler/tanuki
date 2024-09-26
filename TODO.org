@@ -1,4 +1,9 @@
 * Action Items
+** TODO Update =multi_tag_picker= dependency on =flutter_typeahead=
+*** examine its appearance before making any changes
+*** probably need to rewrite from the ground up
+** TODO Update flutter dependencies
+** TODO details/edit screen for videos: preview too big, form is hidden
 ** Asset edits must invalidate recents search results
 *** after uploading a new version of an asset, the recents results are wrong
 ** [#A] Manage revisions of assets
@@ -13,6 +18,8 @@
 *** usecase: add, set, or remove the orientation EXIF property of an image
 **** create a new revision of the asset before changing
 **** translate the =jpeg-data= code in =exif= into Rust
+***** c.f. https://www.memorysafety.org/blog/porting-c-to-rust-for-av1/
+***** c.f. https://c2rust.com
 **** use =libexif= and Rust version of =jpeg-data= to make change
 *** graphql: query for asset gives orientation value
 *** graphql: mutation to change the orientation for an image via usecase
