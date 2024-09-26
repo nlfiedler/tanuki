@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -66,34 +66,34 @@ class _DashRectPainter extends CustomPainter {
     double x = size.width;
     double y = size.height;
 
-    Path _topPath = getDashedPath(
+    Path topPath = getDashedPath(
       a: const math.Point(0, 0),
       b: math.Point(x, 0),
       gap: gap,
     );
 
-    Path _rightPath = getDashedPath(
+    Path rightPath = getDashedPath(
       a: math.Point(x, 0),
       b: math.Point(x, y),
       gap: gap,
     );
 
-    Path _bottomPath = getDashedPath(
+    Path bottomPath = getDashedPath(
       a: math.Point(0, y),
       b: math.Point(x, y),
       gap: gap,
     );
 
-    Path _leftPath = getDashedPath(
+    Path leftPath = getDashedPath(
       a: const math.Point(0, 0),
       b: math.Point(0.001, y),
       gap: gap,
     );
 
-    canvas.drawPath(_topPath, dashedPaint);
-    canvas.drawPath(_rightPath, dashedPaint);
-    canvas.drawPath(_bottomPath, dashedPaint);
-    canvas.drawPath(_leftPath, dashedPaint);
+    canvas.drawPath(topPath, dashedPaint);
+    canvas.drawPath(rightPath, dashedPaint);
+    canvas.drawPath(bottomPath, dashedPaint);
+    canvas.drawPath(leftPath, dashedPaint);
   }
 
   Path getDashedPath({

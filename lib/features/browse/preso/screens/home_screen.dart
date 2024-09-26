@@ -18,13 +18,13 @@ class HomeScreen extends StatelessWidget {
           context,
           defaultValue: const Text('we have your assets'),
           conditionalValues: [
-            Condition.smallerThan(
+            const Condition.smallerThan(
               name: MOBILE,
-              value: const Text('your assets'),
+              value: Text('your assets'),
             ),
-            Condition.largerThan(
+            const Condition.largerThan(
               name: TABLET,
-              value: const Text('all your assets are belong to us'),
+              value: Text('all your assets are belong to us'),
             )
           ],
         ).value,

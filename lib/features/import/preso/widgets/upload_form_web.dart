@@ -182,7 +182,7 @@ class _UploadFormState extends ConsumerState<UploadForm> {
                 ],
               ),
               ResponsiveVisibility(
-                hiddenConditions: [
+                hiddenConditions: const [
                   Condition.smallerThan(name: TABLET, value: false),
                 ],
                 child: _buildDropZone(context),

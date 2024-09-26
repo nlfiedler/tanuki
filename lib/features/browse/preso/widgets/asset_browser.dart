@@ -52,7 +52,7 @@ class AssetBrowser extends StatelessWidget {
                       ),
                     ),
                     ResponsiveVisibility(
-                      hiddenConditions: [
+                      hiddenConditions: const [
                         Condition.smallerThan(name: TABLET, value: false),
                       ],
                       child: Expanded(

@@ -18,10 +18,10 @@ class UploadScreen extends StatelessWidget {
         title: ResponsiveValue(
           context,
           defaultValue: const Text('all your assets will belong to us'),
-          conditionalValues: [
+          conditionalValues: const [
             Condition.smallerThan(
               name: TABLET,
-              value: const Text('your assets will be ours'),
+              value: Text('your assets will be ours'),
             )
           ],
         ).value,
@@ -38,7 +38,7 @@ class UploadScreen extends StatelessWidget {
       body: Column(
         children: [
           ResponsiveVisibility(
-            hiddenConditions: [
+            hiddenConditions: const [
               Condition.smallerThan(name: TABLET, value: false),
             ],
             child: Padding(

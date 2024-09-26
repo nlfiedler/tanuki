@@ -56,7 +56,7 @@ Widget buildThumbnails(BuildContext context, List<SearchResult> results) {
                 ),
                 Text(dateString),
                 ResponsiveVisibility(
-                  hiddenConditions: [
+                  hiddenConditions: const [
                     Condition.smallerThan(name: TABLET, value: false),
                   ],
                   child: Text(

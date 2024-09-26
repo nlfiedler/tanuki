@@ -166,7 +166,7 @@ Widget buildThumbnails(
             ),
             Text(dateString),
             ResponsiveVisibility(
-              hiddenConditions: [
+              hiddenConditions: const [
                 Condition.smallerThan(name: TABLET, value: false),
               ],
               child: Text(

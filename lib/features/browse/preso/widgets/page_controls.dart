@@ -92,7 +92,7 @@ class PageControls extends StatelessWidget {
                   width: 48.0,
                 ),
                 ResponsiveVisibility(
-                  hiddenConditions: [
+                  hiddenConditions: const [
                     Condition.smallerThan(name: TABLET, value: false),
                   ],
                   child: Expanded(

@@ -58,11 +58,11 @@ class RecentsSelector extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ResponsiveVisibility(
+                  const ResponsiveVisibility(
                     hiddenConditions: [
                       Condition.smallerThan(name: TABLET, value: false),
                     ],
-                    child: const Expanded(
+                    child: Expanded(
                       child: Center(
                         child: PageControls(),
                       ),

@@ -1,10 +1,10 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:tanuki/core/domain/entities/attributes.dart';
 
 class LocationModel extends Location {
-  LocationModel({
+  const LocationModel({
     required String label,
     required int count,
   }) : super(
@@ -35,7 +35,7 @@ class LocationModel extends Location {
 }
 
 class TagModel extends Tag {
-  TagModel({
+  const TagModel({
     required String label,
     required int count,
   }) : super(
