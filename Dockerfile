@@ -35,7 +35,6 @@ RUN apt-get -q update && \
 RUN dart pub global activate fvm
 RUN fvm install stable
 WORKDIR /flutter
-COPY fonts fonts/
 COPY lib lib/
 COPY pubspec.yaml .
 COPY public public/
