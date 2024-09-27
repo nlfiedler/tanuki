@@ -37,6 +37,8 @@ input validation for asset edit page.
 [Node.js](https://nodejs.org/) rewrite of the Elixir/Phoenix backend, using
 [PouchDB](https://pouchdb.com) instead of CouchDB; Elm frontend still in place.
 
+In parallel, an [Electron](https://www.electronjs.org)-based desktop application, named [mujina](https://github.com/nlfiedler/mujina), was crafted to use the REST API, then later the GraphQL API. This effort was abandoned in 2020.
+
 ## March 2018
 
 Replaced REST-like interface with [GraphQL](https://graphql.org).
