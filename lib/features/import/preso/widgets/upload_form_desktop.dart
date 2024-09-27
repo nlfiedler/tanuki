@@ -89,10 +89,12 @@ class _UploadFormState extends ConsumerState<UploadForm> {
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error reading file $uploading: $e')),
-      );
-      BlocProvider.of<UploadFileBloc>(context).add(SkipCurrent());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error reading file $uploading: $e')),
+        );
+        BlocProvider.of<UploadFileBloc>(context).add(SkipCurrent());
+      }
     }
   }
 

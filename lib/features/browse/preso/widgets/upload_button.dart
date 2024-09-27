@@ -97,23 +97,27 @@ void _uploadFile(
     // from the widgets.
     FileReader reader = FileReader();
     reader.onLoadEnd.listen((_) {
-      final Uint8List contents = reader.result as Uint8List;
-      BlocProvider.of<ReplaceFileBloc>(context).add(
-        ReplaceFile(
-          assetId: assetId,
-          filename: uploading.name,
-          contents: contents,
-        ),
-      );
+      if (context.mounted) {
+        final Uint8List contents = reader.result as Uint8List;
+        BlocProvider.of<ReplaceFileBloc>(context).add(
+          ReplaceFile(
+            assetId: assetId,
+            filename: uploading.name,
+            contents: contents,
+          ),
+        );
+      }
     });
     reader.onError.listen((_) {
-      final String errorMsg = reader.error?.message ?? '(none)';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error reading file ${uploading.name}: $errorMsg'),
-        ),
-      );
-      BlocProvider.of<ReplaceFileBloc>(context).add(SkipCurrent());
+      if (context.mounted) {
+        final String errorMsg = reader.error?.message ?? '(none)';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error reading file ${uploading.name}: $errorMsg'),
+          ),
+        );
+        BlocProvider.of<ReplaceFileBloc>(context).add(SkipCurrent());
+      }
     });
     reader.readAsArrayBuffer(uploading);
   }
