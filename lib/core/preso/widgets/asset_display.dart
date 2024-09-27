@@ -22,7 +22,10 @@ class AssetDisplay extends StatelessWidget {
     const baseUrl = EnvironmentConfig.base_url;
     if (mediaType.startsWith('video/')) {
       final uri = '$baseUrl/api/asset/$assetId';
-      return _AssetVideo(uri: uri);
+      return SizedBox(
+        width: displayWidth as double,
+        child: _AssetVideo(uri: uri),
+      );
     } else {
       final tail = '$displayWidth/$displayWidth/$assetId';
       final uri = '$baseUrl/api/thumbnail/$tail';

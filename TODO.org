@@ -1,13 +1,40 @@
 * Action Items
-** TODO Fix the use of =context= across async boundaries [0/3]
-- [ ] upload_button.dart
-- [ ] upload_form_desktop.dart
-- [ ] upload_form_web.dart
+** TODO try replacing Flutter with Leptos
+*** reading Leptos book at chapter 9.3
+*** using SSR would likely streamline the wire protocol vs using GraphQL
+*** GraphQL offers an easy interface for operations not exposed via the web interface
+*** considerations
+- web component framework (https://github.com/material-components/material-web)
+- state management (replacement for BLoC)
+- scrolling nested components vs scrolling entire page (classic web scrolling problem)
+- drag and drop zone for importing assets
+- playing videos (use HTML =video= tag)
+- replacing the input chips and multi-tag picker components (combine text input with chips)
+- text completion for tag and location fields (there are many examples using HTML, CSS, and JS)
+- icons (font-awesome, material)
+- form input validation
+*** TODO develop a prototype [/]
+- [ ] hook into actix-web and show a simple page from a new route
+- [ ] set up routes for the different pages with placeholders
+- [ ] fetch list of tags and display top 10
+- [ ] incorporate Material Design Web Components, style a button or something
+- [ ] develop component for tags (text input, completion, chips w/delete)
+- [ ] fetch a page of assets and show thumbnails
+- [ ] make the browse page header sticky (scrolling assets does not scroll page header)
+- [ ] add an upload page and form with drag and drop support
+- [ ] show videos using the =video= tag
+*** TODO use material icons
+**** https://fonts.google.com/icons (find download page)
+**** https://developers.google.com/fonts/docs/material_symbols
+*** TODO compare Leptos output with Flutter
+**** Flutter =main.dart.js= is 2,882,953 bytes in production
+*** TODO delete all of the Flutter stuff (dart, flutter, fvm, assets, etc)
+*** TODO write decision record regarding Leptos vs Flutter
+*** TODO write decision record regarding Material vs Bulma, Bootstrap, etc
 ** TODO Update =multi_tag_picker= dependency on =flutter_typeahead=
 *** examine its appearance before making any changes
 *** probably need to rewrite from the ground up
 ** TODO Update flutter dependencies
-** TODO details/edit screen for videos: preview too big, form is hidden
 ** Asset edits must invalidate recents search results
 *** after uploading a new version of an asset, the recents results are wrong
 ** [#A] Manage revisions of assets
@@ -508,16 +535,6 @@ include it in the database records.
 The =juniper= API can invoke async operations, thereby all of the usecases
 can also by async, and the calls to the repositories can also be async. This
 will require having async trait support in Rust.
-*** Flutter/Rust bridge, call Rust from Dart
-**** c.f. https://github.com/fzyzcjy/flutter_rust_bridge
-**** c.f. https://www.zaynetro.com/post/flutter-rust-bridge-2023/
-*** Rewrite application in Dart
-**** database: https://github.com/isar/isar
-***** supports composite indices, filters, sorting
-*** Alternative to actix might be axum (https://crates.io/crates/axum)
-*** Alternative to running HTTP server
-**** Use a socket file
-**** Link Dart code to Rust using FFI
 *** Large file upload
 **** split file into chunks, upload one-by-one, showing progress
 ***** default to 8MB chunks, most images will be smaller than that
