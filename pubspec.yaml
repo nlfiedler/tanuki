@@ -51,10 +51,6 @@ flutter:
   uses-material-design: true
   assets:
     - public/images/tanuki.png
-  fonts:
-    - family: RobotoMono
-      fonts:
-        - asset: fonts/RobotoMono-Regular.ttf
 
 environment_config:
   const: true

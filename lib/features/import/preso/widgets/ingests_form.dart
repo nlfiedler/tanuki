@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Nathan Fiedler
+// Copyright (c) 2024 Nathan Fiedler
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -39,9 +39,8 @@ class IngestsForm extends ConsumerWidget {
             style: DefaultTextStyle.of(context).style,
             children: const <TextSpan>[
               TextSpan(
-                text: 'uploads',
+                text: '"uploads"',
                 style: TextStyle(
-                  fontFamily: 'RobotoMono',
                   fontStyle: FontStyle.italic,
                 ),
               ),
