@@ -1,181 +1,24 @@
 * Action Items
-** TODO try replacing Flutter with Leptos
-*** reading Leptos book at chapter 9.3
-*** using SSR would likely streamline the wire protocol vs using GraphQL
-*** GraphQL offers an easy interface for operations not exposed via the web interface
-*** considerations
-- web component framework (https://github.com/material-components/material-web)
-- state management (replacement for BLoC)
-- scrolling nested components vs scrolling entire page (classic web scrolling problem)
-- drag and drop zone for importing assets
-- playing videos (use HTML =video= tag)
-- replacing the input chips and multi-tag picker components (combine text input with chips)
-- text completion for tag and location fields (there are many examples using HTML, CSS, and JS)
-- icons (font-awesome, material)
-- form input validation
-*** TODO develop a prototype [/]
-- [ ] hook into actix-web and show a simple page from a new route
-- [ ] set up routes for the different pages with placeholders
-- [ ] fetch list of tags and display top 10
-- [ ] incorporate Material Design Web Components, style a button or something
-- [ ] develop component for tags (text input, completion, chips w/delete)
-- [ ] fetch a page of assets and show thumbnails
-- [ ] make the browse page header sticky (scrolling assets does not scroll page header)
-- [ ] add an upload page and form with drag and drop support
-- [ ] show videos using the =video= tag
-*** TODO use material icons
-**** https://fonts.google.com/icons (find download page)
-**** https://developers.google.com/fonts/docs/material_symbols
-*** TODO compare Leptos output with Flutter
-**** Flutter =main.dart.js= is 2,882,953 bytes in production
-*** TODO delete all of the Flutter stuff (dart, flutter, fvm, assets, etc)
-*** TODO write decision record regarding Leptos vs Flutter
-*** TODO write decision record regarding Material vs Bulma, Bootstrap, etc
-** TODO Update =multi_tag_picker= dependency on =flutter_typeahead=
-*** examine its appearance before making any changes
-*** probably need to rewrite from the ground up
-** TODO Update flutter dependencies
-** Asset edits must invalidate recents search results
-*** after uploading a new version of an asset, the recents results are wrong
-** [#A] Manage revisions of assets
-*** when uploading a replacement file for an asset, keep the old file
-*** add the old identifier to a new property in the asset record
-*** =Asset= will have a new optional =Vec<String>= of the old identifiers
-*** graphql: query for asset gives previous identifiers
-*** graphql: mutation to swap an old identifier with the current one
-*** graphql: mutation to remove all old identifiers and files
-*** flutter: buttons for viewing other revisions, setting current, purging old ones
-** [#B] Display and alter orientation of images
-*** usecase: add, set, or remove the orientation EXIF property of an image
-**** create a new revision of the asset before changing
-**** translate the =jpeg-data= code in =exif= into Rust
-***** c.f. https://www.memorysafety.org/blog/porting-c-to-rust-for-av1/
-***** c.f. https://c2rust.com
-**** use =libexif= and Rust version of =jpeg-data= to make change
-*** graphql: query for asset gives orientation value
-*** graphql: mutation to change the orientation for an image via usecase
-*** flutter: icon to show orientation of image, if it is an image
-**** need an icon for ~unset~ orientation for those really old images
-** More location improvements
-*** TODO unable to type a space in ~Locations~ field in webui (e.g. ~la vega province~)
-*** TODO GraphQL: add =gps= field to =Asset= definition for assets with GPS data
-**** populate the ~gps~ field only on demand (for efficiency)
-*** TODO show tiny map of where photo was taken on details page
-**** [[https://cloud.google.com/maps-platform/][Google Maps]]
-- customer uses their own API key, sets in preferences
-- for =testing= account: =AIzaSyAI73udKC3KVk6aIBqOjSqSv6PEQ0qd638=
-**** [[https://mariusandra.github.io/pigeon-maps/][Pigeon Maps]]
-- Uses data from OpenStreetMap, Wikimedia for the tiles
-*** TODO change query to find intersection of selected locations
+** Pending
+*** display options: have an option that makes the images really big (single column, huge images)
+*** add (un)select-all buttons
+*** make =fa-angle-down= icon in =card-header= actually do something
+*** add item to ~dropdown~ menu to show the asset in full size in a modal
+*** add item to ~dropdown~ menu to navigate to asset view
+** Browse
+*** retain search parameters and page number when navigating back and forth
+*** when multiple attributes are selected, add a ~clear all~ button/tag
+*** change query to find intersection of selected locations
 **** currently is finding the union of such locations
 **** need to be able to distinquish between ~Paris, TX~ and ~Paris, France~
-*** TODO modify search page to allow multiple locations
-*** TODO find out if =mp4= crate can read GPS coords from videos
-**** Preview.app will display location information for videos
-** import screen improvements
-*** make the selection button more obvious (color theme variation?)
-*** edits must result in refreshing the gallery
-*** learn more about flutter navigation, need a listener when we return to the gallery
-** create graphql mutation to delete assets with certain tag
-*** boolean argument ~yes~ to actually perform the delete
-*** if ~yes~ argument is false, reports what would be deleted
-** Read timezone info from Exif tags when displaying asset details
-*** everything is assuming that the date/time is UTC, which is almost always wrong
-*** Exif field is named =OffsetTimeOriginal= in ~primary~
-*** expose as ~timezone~ field of ~Asset~ only on demand (for efficiency)
-*** if the original timezone is available, then surely the original datatime was also available
-*** otherwise, the ~datetime~ of the asset is something else and not ~original~ so timezone should be =null=
-*** frontend should use ~timezone~ value (if available) to show correct time in asset details
-** Gallery improvements
-*** asset display should update after edits (e.g. location or date changes)
-**** date and location are shown below thumbnail, needs to be updated after editing
+*** hovering over asset should fetch and display details in a large tooltip
 *** add date order button on gallery (ascending/descending)
-**** the GraphQL operation supports sorting, should use it for something
 *** enable different modes of display
-**** responsive grid; images are scaled to fit in a row, with wrapping
-***** previously did this in the Electron-based application
-**** grid of just images, maybe 180x180 (a la Apple Photos)
-***** force the thumbnails into the square by cropping
-**** grid of images with caption info (300x300, shows title, location, date) (a la PhotoPrism)
+**** grid of 300x300 images with caption info (date, location/filename) (a la PhotoPrism)
+**** wide blocks with thumbnails on left, more details on right (c.f. anilist.co)
+**** responsive grid; images only, scaled to fit in a row and fill horizontally (i.e. ~mujina~)
+**** grid of just images, maybe 180x180; images cropped to the square (a la Apple Photos)
 **** list of rows, tiny thumbnail (96x96), caption, location, date
-**** material has several ~view~ icons that may be appropriate
-*** show additional details on mouse hover
-** Lightbox style asset browsing
-*** Q: would this be a separate screen from the asset details?
-*** show large image (scaled to fit?) with date and caption and/or location
-**** select from date, filename, tags, location, caption to make up a "description"
-**** use whatever fields are not blank to make up a decent amount of text
-*** show chevron arrows on left and right to navigate among search results
-*** controls appear when mouse moves over asset display, then fade away
-** Edit improvements
-*** completion for tags and location fields
-*** like PhotoPrism, edit screen has back/forward buttons to visit other images in gallery
-** Rapid editing of several assets
-*** like PhotoPrism, quickly move through several assets without going back and forth
-*** select multiple assets from the gallery
-*** FAB appears
-*** FAB contains several options (download, share, edit, etc)
-*** edit action will open editor window
-*** edit windows shows smaller preview of image
-*** back/forward buttons to move between selected assets
-*** save/discard buttons to save or discard changes per asset
-** People versus tags
-*** A ~people~ field on asset records might be useful
-*** People records could have first and last names to distinquish people with same first/last name
-*** Interface could then show ~Tags~, ~People~, and ~Locations~ for browsing
-*** Would require a ~people~ field on asset ingestion page
-*** Would need a GraphQL mutation to move a given tag from ~tags~ to ~people~
-*** Would need a new index on the ~people~ field
-*** Search page would need a new ~people~ field
-** Better search controls
-*** Simplified controls with selected attributes shown separately
-**** See anilist.co search page (https://anilist.co/search/anime)
-***** search text input field
-***** selectors for genre, year, season, format
-***** selections are shown below the row of selectors (prefixed by ~tag~ icon)
-***** far right has view option buttons (list, grid, etc)
-***** settings-like icon on far right displays dialog with advanced options
-**** Text input field with completion of tags and locations
-**** Dropdowns to select tag, location, year, season
-***** Can only select a single year
-***** Can only select a single season (i.e. ~Jan-Mar~, ~Apr-Jun~, ~Jul-Sep~, ~Oct-Dec~)
-***** With only year, search within the entire calendar year
-***** With only season, search that season of the most recent year
-***** With year + season, search that year narrowed to the season
-**** Selections are shown below the row of selectors as raised buttons
-***** Mousing over selection shows a ~delete~ icon
-***** Mousing over the row shows a "Clear All" button
-** Deployment issues
-*** Consider using =dart:html= to get the current URL vs setting at build time
-**** GraphQL client needs the full address of the server
-**** However, running in dev mode the url in the browser has a weird port
-** Interface improvements
-*** reference: https://flutter.github.io/samples/
-*** Flutter Folio example app that works well for all screen sizes
-**** c.f. https://flutter.gskinner.com
-*** Add light/dark theme switcher
-**** Use =ThemeData= to construct the default light or dark themes
-*** Thumbnail Serving Strategy
-**** the frontend can use the image dimensions to compute the aspect ratio
-**** with the aspect ratio, frontend can request images of the desired size
-**** frontend can ask for images that are N pixels high or M pixels wide, or whatever
-***** by leaving one dimension maxed out, the image aspect ratio will be maintained
-**** as long as client keeps asking for the same basic size, backend can cache them
-**** when generating thumbnail, always use jpeg format so content type is =image/jpeg=
-*** evaluate GMail for ideas on navigation, filtering, etc
-**** c.f. https://gallery.flutter.dev/#/reply a mail client demo
-**** filters (icons w/names) displayed on the left side
-**** sidebar on the right for extra features/extensions
-**** hamburger icon in upper left toggles filter names vs just icons
-**** search bar along the very top
-**** waffle icon to navigate to other applications
-**** help and settings icons next to waffle
-*** browse and search
-**** unified search bar (text input field)
-***** completion on tags, locations, etc
-***** completion list should indicate if entry is a tag, location, etc
-***** accepted items shown with ~#~ and ~@~ prefix to indicate tag or location
-**** consider where to display file name and media type search fields
 *** image gallery paging
 **** spring-loaded next-page navigation
 ***** scroll to the bottom and keep trying to scroll
@@ -194,24 +37,7 @@
 ***** when fetching a new page, the page widget would show a progress indicator
 ***** the "dropped" pages would be changed to consist of placeholders to free memory
 **** using carousel style navigation arrows?
-*** asset detail page
-**** format byte size using locale-specific number formatting
-**** display the date and caption prominently
-**** display the other details using a smaller font
-**** display select information from EXIF metadata (e.g. camera)
-*** navigation between screens
-**** do not want to have to build all of the screens at the same time, probably
-**** can add actions to the =Appbar= with an overflow popup menu button
-***** the popup menu button would be the navigation selector
-***** the other actions would be appropriate to the current screen
-**** maybe use =TabBar=
-**** maybe use =BottomNavigationBar=
-*** error handling
-**** many screens/widgets just display a message without any means of recovery
-**** see any of the widgets using bloc providers and how they become useless upon error
-**** flutter allows for a custom error handler (i.e. override the ugly red screen)
-*** navigation rail for filtering gallery view
-**** c.f. https://pub.dev/packages/navigation_rail
+*** navigation rail for filtering assets
 **** Nextcloud has a side bar for photos with these options:
 ***** Photos
 ***** Videos
@@ -221,88 +47,72 @@
 ***** On this day
 ***** Tags
 ***** Locations
-*** use =RichText= widget to style the captions (e.g. make tags bold)
-*** tags in caption could be "gesture sensitive" (i.e. clickable) to show assets with that tag
-*** can use =DataTable= to display labeled data (like asset details, metadata)
-*** use pointer enter/exit events to start playing a video in place
-** Calendar view for browsing by months
-*** PhotoPrism has a ~calendar~ view that shows months of years in descending order with a random thumbnail
-*** clicking on the month opens an "album" of everything in that month
-** Known Issues
-*** import hangs after ~140 assets
-**** seems like Firefox is completely frozen at some point
-**** probably something is filling a queue (i.e. no back pressure) until it dies
-**** look for mistakes in the async logic that processes uploads
-*** clicking on portrait avi(?) shows widened image and page does not scroll to show details
+*** calendar view for browsing by months
+**** PhotoPrism has a ~calendar~ view that shows months of years in descending order with a random thumbnail
+**** clicking on the month opens an "album" of everything in that month
+** Details
+*** input validation of some sort, probably
+*** completion for tags (like home screen search)
+*** somehow offer completion of location even though its in 3 separate fields
 *** preview of small images makes them large; should serve original size for smaller images
-*** graphql errors are handled poorly everywhere
+*** add ~copy~ button next to asset path
+*** Read timezone info from Exif tags when displaying asset details
+**** everything is assuming that the date/time is UTC, which is almost always wrong
+**** Exif field is named =OffsetTimeOriginal= in ~primary~
+**** frontend should use ~timezone~ value (if available) to show correct time in asset details
+*** Lightbox style asset browsing
+**** show full-size image at 100% width of browser window
+**** show chevron arrows on left and right to navigate among search results
+**** controls appear when mouse moves over asset display, then fade away
+*** details formatting and presentation
+**** format byte size using locale-specific number formatting
+**** display the date and caption prominently
+**** display the other details using a smaller font
+**** display select information from EXIF metadata (e.g. camera)
+*** show tiny map of where photo was taken on details page
+**** [[https://cloud.google.com/maps-platform/][Google Maps]]
+- customer uses their own API key, sets in preferences
+- for =testing= account: =AIzaSyAI73udKC3KVk6aIBqOjSqSv6PEQ0qd638=
+**** [[https://mariusandra.github.io/pigeon-maps/][Pigeon Maps]]
+- Uses data from OpenStreetMap, Wikimedia for the tiles
+*** find out if =mp4= crate can read GPS coords from videos
+**** Preview.app will display location information for videos
+*** Show addition file metadata (TIFF, EXIF, JFIF, IPTC)
+** Uploads
+*** theoretically could show the thumbnail of images before uploading
+**** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
+** Dependencies
 *** latest =mp4= crate has an error with certain test fixture
-**** version 0.13 does not have the problem, but 0.14 does
+**** version =0.13= does not have the problem, but =0.14= does
 **** seems to not like something about the =100_1206.MOV= file
 #+begin_src
 actual: Err(mp4a box contains a box with a larger size than it)
 thread 'domain::usecases::tests::test_get_original_date' panicked at src/domain/usecases/mod.rs:339:9:
 assertion failed: actual.is_ok()
 #+end_src
-*** RocksDB fails with ~too many open files~ when uploading numerous files
-#+BEGIN_SRC
-thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Error {
- message: "IO error: While open a file for appending: tmp/rocksdb/000733.sst: Too many open files"
-}', src/main.rs:88:71
-#+END_SRC
-** Import screen improvements
-*** allow choosing a ~location~ that includes the city and region
-**** e.g. ~portland~ should present ~Portland, Oregon~ as option along with ~portland~ as a label
-*** add (un)select-all buttons
-*** small button to go directly to asset details page
-*** hover over an image to show a larger version
-*** hover over a video to start playing it
 ** Attribute management
 *** screen for showing all tags, locations, years, with count values
 **** selecting a tag or location offers a rename function
 **** selecting multiple tags/locations offers option to remove from all assets
-** Bulk edit (two forms)
-*** need to set the custom date on many assets at once
-*** able to set ~city~ and ~region~ for assets whose location ~label~ matches a query
-**** only modify the record if city/region is not already defined
-*** Short term solution akin to perkeep/photoprism web interface
-**** hover over thumbnail, shows checkbox in the corner
-**** click on the checkbox to select the asset
-**** once selected, the action popup menu becomes enabled
-***** where should the popup menu live?
-****** could be in the appbar actions area
-****** photoprism adds a FAB that shows the selected count
-**** detailed analysis of perkeep tagging
-***** user clicks on selection button overlay on asset thumbnail
-***** sidebar appears (image gallery shrinks to accomodate)
-***** text field for adding new (comma-separated) tags
-***** shows superset of all tags on all selected assets as chips
-***** indicates those tags that are on _all_ selected assets by filling in with color
-***** clicking on an unfilled tag will apply it to all selected assets
-***** tags can be removed via ~X~ button attached to tag
-*** More sophisticated edits, similar to JIRA
-**** start by browsing/searching for assets
-**** use the selection checkbox on each asset to select
-**** offer a "select all" operation
-**** access the operation popup menu to edit selected items
-**** menu contains item to perform a bulk edit
-**** navigates to screen with form for changing multiple properties
-***** set a custom date
-***** add a location
-***** remove a location
-***** rename a location
-***** add a tag
-***** remove a tag
-***** rename a tag
-***** set caption
-***** change media type
+** Bulk edit
+*** start by browsing/searching for assets
+*** use the selection checkbox on each asset to select
+*** provide (un)select all buttons to toggle selections
+*** access the operation popup menu (FAB) to edit selected items
+*** menu contains item to perform a bulk edit
+*** navigates to screen with form for changing multiple properties
+**** set a custom date
+**** add a location
+**** remove a location
+**** rename a location
+**** add a tag
+**** remove a tag
+**** rename a tag
+**** set caption
+**** change media type
 ** Advanced Search
-*** TODO Add support for searching by mimetype
-*** TODO Begin search when user pauses typing
-**** Use =debounceTime= operator in RxDart with BLoC state for this
-*** TODO Compute Levenshtein distance when comparing strings
-**** that is, try to adjust for misspells and minor variations
-*** TODO Advanced queries using Google-style operators
+*** Add support for searching by mimetype
+*** Advanced queries using Google-style operators
 **** copy perkeep style query support from mujina to tanuki
 **** webui needs an "advanced" tab/link selector on the search page
 **** =is:image= and similar to filter by media type
@@ -316,46 +126,52 @@ thread 'actix-web' panicked at 'called `Result::unwrap()` on an `Err` value: Err
 **** =with:<name>= to filter by people (need to know the people though)
 **** =NOT= to exclude assets with a certain tag (~joseph NOT christina~)
 **** =AND= and =OR= operators and grouping with parentheses
-*** TODO Support searching for assets that have no tags
-*** TODO Support searching for assets that have no location
-*** TODO Support searching for assets that have no caption
-*** TODO Support searching the caption text
-**** likely would involve a full table scan
-*** TODO searching for images by dimensions (~pano~, ~landscape~, ~portrait~)
-*** TODO searching for images based on type (~selfie~, ~screen shot~)
-*** TODO searching assets by metadata values (=meta:exif:field=value=)
-*** TODO search for images similar to a selected image (a la geeqie)
-*** TODO search for images taken with certain cameras
+*** Support searching for assets that have no tags
+*** Support searching for assets that have no location
+*** Support searching for assets that have no caption
+*** Support searching the caption text
+*** searching for images by dimensions (~pano~, ~landscape~, ~portrait~)
+*** searching for images based on type (~selfie~, ~screen shot~)
+*** searching assets by metadata values (=meta:exif:field=value=)
+*** search for images similar to a selected image (a la geeqie)
+*** search for images taken with certain cameras
+** Display and alter orientation of images
+*** add ~rotate left~ and ~rotate right~ to the dropdown menu on assets in the ~Pending~ screen
+*** usecase: add, set, or remove the orientation EXIF property of an image
+**** create a new revision of the asset before changing
+**** translate the =jpeg-data= code in =exif= into Rust
+***** c.f. https://www.memorysafety.org/blog/porting-c-to-rust-for-av1/
+***** c.f. https://c2rust.com
+**** use =libexif= and Rust version of =jpeg-data= to make change
+*** graphql: query for asset gives orientation value
+*** graphql: mutation to change the orientation for an image via usecase
+*** webui: icon to show orientation of image, if it is an image
+**** need an icon for ~unset~ orientation for those really old images
+** Light/Dark theme switch
+*** dark mode is enabled in Bulma using the =attr:data-theme= on the =Html= tag in =mod.rs=
+*** c.f. https://github.com/leptos-rs/example-darkmode (very elaborate example)
+*** use =bulma-switch= from https://bulma.io/extensions/ for the HTML element
+*** use =gloo_storage= crate to store theme selection in =LocalStorage=
+** Manage revisions of assets
+*** when uploading a replacement file for an asset, keep the old file
+*** add the old identifier to a new property in the asset record
+*** =Asset= will have a new optional =Vec<String>= of the old identifiers
+*** graphql: query for asset gives previous identifiers
+*** graphql: mutation to swap an old identifier with the current one
+*** graphql: mutation to remove all old identifiers and files
+*** webui: buttons for viewing other revisions, setting current, purging old ones
+** Deleting assets
+*** create graphql mutation to delete assets with certain tag
+**** boolean argument ~yes~ to actually perform the delete
+**** if ~yes~ argument is false, reports what would be deleted
 ** Schema Growth
-*** Eventually replace ~sha256~ with ~BLAKE3~ for checksums
-*** ML will introduce new fields, like ~labels~ and ~keywords~
-*** Geolocation will introduce new data, like GPS coordinates
-*** Plan ahead for hierarchical location data (e.g. USA -> California -> Castro Valley -> our home)
-*** Plan ahead for hierarchical categories: People -> Friends -> School
-*** Custom user-provided metadata will need a place to live
-*** Perhaps use records with different key prefixes
+*** Add new database records with different key prefixes
 **** =metadata/= for user-provided name/value pairs
-**** =location/= for location details
-**** =decoration/= for ML added values
-*** Design solution to database migrations
-**** start planning on how to handle data(base) migrations
-**** may be a good idea to introduce "metadata" records for assets
-***** use a =metadata/= prefix with the id of the asset
-***** can hold all sorts of additional information without cluttering the asset
-***** should be some form of dictionary to keep things flexible
-**** maintain an uber record for tracking database version
-**** also the serde library is quite flexible with adding/removing fields
+**** =location/= for location details (GPS, etc)
+**** =decoration/= for ML added values (labels, keywords)
 ** Data Format Support
-*** Read and display descriptions from asset metadata (IPTC ~Description~)
-*** Auto-populate missing fields on load
-**** when loading an asset, detect missing data (e.g. no original time)
-**** try reading the data from the asset and save to the asset record
-**** in the future, as more data formats are supported, can fill in the blanks
-*** Read other metadata formats
-**** XMP
-**** IPTC
 *** Support audio formats
-**** get audio playback working
+**** add audio playback support using the =audio= tag
 **** read =ID3= tags in audio files
 *** Detect time zone offset in EXIF data
 According to Wikipedia the 2.31 version of EXIF will support time-zone
@@ -367,12 +183,11 @@ include it in the database records.
 : been introduced recently by Exif version 2.31 (July 2016). Related tags are:
 : "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
 
-*** Display thumbnails for PDF files
-*** Read metadata from PDF files
-**** probably has a creation date of some sort
-*** Detect if an image is a "portrait" using metadata
-*** Display asset metadata when showing asset details
-**** e.g. TIFF, EXIF, JFIF, IPTC
+*** Support more video formats
+**** OGG (=.ogg=), find out what it is and how to play it
+*** Support PDF files
+**** Display thumbnail of first page
+**** Display available metadata
 *** Render Markdown as HTML in a scrollable view
 *** Display anything textual in a scrollable text area
 *** Thumbnails for non-images
@@ -382,8 +197,6 @@ include it in the database records.
 **** [[https://aomediacodec.github.io/av1-avif/][AV1]] is the free alternative to encumbered HEVC
 **** image crate supports AVIF but cannot read HEIC files because they lack AVIF "branding"
 ***** unclear where the error is coming from, but ultimately cannot read HEIC files at all
-*** Reference
-**** EXIF: https://www.media.mit.edu/pia/Research/deepview/exif.html (20 years out of date)
 ** Machine learning
 *** facial recognition
 **** evaluate how other tools make this easier
@@ -410,12 +223,11 @@ include it in the database records.
 **** Apple Photos has ~smart~ albums
 ***** assets taken around the same time, place
 **** save search results as a new album
-*** Personal collections
-**** that is, sets of assets normally visible to just one person
+*** Groups and subgroups of assets
+**** Turkey > Gallipoli Peninsula > Gali Winery
+**** Winery > vinification > fermentation tanks
+**** Architecture > Buildings > underground cellar
 *** Multiple libraries (like Apple Photos)
-** Mobile web support
-*** Progressive Web App support in Flutter is coming as of 2020/04
-*** Use PWA to get app-like behavior on mobile devices
 ** Data Integrity
 *** Add a GraphQL mutation that will delete and rebuild all indices
 *** Guard against concurrent modifications
@@ -452,84 +264,6 @@ include it in the database records.
 ***** Save assets using their unique filename
 **** Web support is lacking
 ***** JS has a =showSaveFilePicker()= but seems like =dart:html= does not expose this API
-** Performance
-*** measure and improve the thumbnail serving
-**** thoughts on image crate vs magick-rust vs node.js
-***** no idea why image crate appears to be faster than magick-rust
-***** priming the cache helps actix a great deal because of its concurrency
-***** because actix handles many requests concurrently, it creates the same thumbnail many times over
-***** node.js seems fast because it creates thumbnail on first request; it processes requests serially
-***** however, node.js is 10 times slower than actix in raw performance
-***** actix is probably handling 10 times as many requests concurrently
-**** consider caching in memory or on disk
-***** unbound caching on disk will consume space forever
-***** should have an on-disk LRU cache with a set capacity
-**** test images for measurements
-| byte size | original filename               | identifier                                                       |
-|-----------+---------------------------------+------------------------------------------------------------------|
-|  12640634 | animal-blur-close-up-678448.jpg | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6ODQ0Y252OHZzMzkzNmtkNHExLmpwZw== |
-|   3285366 | pexels-photo.jpg                | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGswOTNicjBkYTdqc2J2ejFwczRlLmpwZw== |
-|   1613837 | adorable-animal-blur-326875.jpg | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp5aHl4NjlqN3ptY2V2MnRucjV0LmpwZw== |
-|    788961 | japan-cat-snow.jpg              | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGswNjdzMG0xdDkwcmd4ZnhrM3owLmpwZw== |
-|    326088 | animal-cat-cute-74177.jpg       | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6YTl5NmtkdmNqdnFuNDlzZ3Z5LmpwZw== |
-|    160852 | catmouse_1280p.jpg              | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6d25keWI5cmN5emVhamE4ajZuLmpwZw== |
-|     24402 | cat-in-cat-donut.jpg            | MjAyMC8wNS8yNC8xODAwLzAxZTkzeGp6dnZqZDV4NGdnc3d0NWtheGNmLmpwZw== |
-**** image crate, in-memory caching, =hey= default options
-***** priming the cache with =hey -n 1 -c 1= to avoid congestion
-| file size | response size | average seconds |
-|-----------+---------------+-----------------|
-|  12640634 |         19508 |          0.0032 |
-|   3285366 |         11124 |          0.0035 |
-|   1613837 |         12932 |          0.0033 |
-|    788961 |         12099 |          0.0034 |
-|    326088 |         15397 |          0.0033 |
-|    160852 |         11231 |          0.0033 |
-|     24402 |         13655 |          0.0035 |
-**** Magick-rust with auto_orient/fit using =hey= with default options
-***** this is without any in-memory caching
-***** none of the images are rotated, so this is as good as it gets
-| file size | response size |     average seconds |
-|-----------+---------------+---------------------|
-|  12640634 |               | too many open files |
-|   3285366 |         55477 |              4.0196 |
-|   1613837 |         12874 |              7.0632 |
-|    788961 |         70088 |              0.5709 |
-|    326088 |         15128 |              1.0801 |
-|    160852 |         15307 |              0.5394 |
-|     24402 |         16750 |              0.2645 |
-**** baseline measurements using =hey= with default options
-***** this is without any in-memory caching
-| file size | response size |   average seconds |
-|-----------+---------------+-------------------|
-|  12640634 |         19508 | 199/200 timed out |
-|   3285366 |         11124 |            2.2119 |
-|   1613837 |         12932 |            2.8025 |
-|    788961 |         12099 |            0.3350 |
-|    326088 |         15397 |            0.5299 |
-|    160852 |         11231 |            0.2818 |
-|     24402 |         13655 |            0.0544 |
-**** measurements of Node.js using =hey= with default options
-***** n.b. it is generating a 240x240 pixel thumbnail
-| file size | response size | average seconds |
-|-----------+---------------+-----------------|
-|  12640634 |         11124 |          0.0293 |
-|   3285366 |          7608 |          0.0276 |
-|   1613837 |          7894 |          0.0278 |
-|    788961 |          7213 |          0.0329 |
-|    326088 |          9833 |          0.0300 |
-|    160852 |          6799 |          0.0287 |
-|     24402 |          9713 |          0.0314 |
-*** consider if caching search results will improve responsiveness
-**** could return a query code to the caller in search meta
-**** caller returns that code in the next query to access the cache
-**** in this way, the results for a particular query can be cached reliably
-**** eventually cached search results need to be pruned
-**** RocksDB by default has a block cache of 8mb in 16 shards of 512kb
-**** also consider that any caching should live in the data source
-*** consider if filtering can be done "in the database" somehow
-**** database queries should probably take a filter closure
-**** database functions iterate the results, applying the filter
-**** the remaining results are then collecting into a vector
 ** Architecture Review
 *** Use async throughout, avoid the =block_on()= function
 The =juniper= API can invoke async operations, thereby all of the usecases
@@ -542,48 +276,32 @@ will require having async trait support in Rust.
 **** consider https://github.com/async-graphql/async-graphql as alternative to juniper
 ***** handles multipart requests (file uploads)
 ***** provides actix-web integration
-** Display modes
-*** Slide show mode for assets matching search
-**** look for NCS BGM to play during the slide show
-*** Image zoom
-*** Display 2 or 4 images at once for side-by-side comparison
-** Unsorted Features
-*** Easy publishing to sharing sites (e.g. Google Photos)
-**** option to auto-orient
-**** option to resize image
-**** option to change format
-**** option to strip metadata
-**** option to apply watermarks
-**** option to save in ePub format for iOS
-**** button to open asset in file browser
-*** Easy import from external sites (e.g. google, instagram)
-*** Multi-user support
-**** login page
-***** desktop app could use keychain to get access
-**** password reset (via email?)
-**** access restrictions
-**** private sets
-**** comments
-**** favorites
-**** likes
-**** rating levels (e.g. mature)
-*** Import directly from the camera
-*** Custom metadata
-*** Groups and subgroups of assets
-**** Turkey > Gallipoli Peninsula > Gali Winery
-**** Winery > vinification > fermentation tanks
-**** Architecture > Buildings > underground cellar
-*** Converting videos to animated GIFs
-*** Extracting a frame from a video
-*** Creating a calendar
-*** OCR of images, PDFs
-*** Task automation
-**** e.g. editing image metadata
-**** e.g. resize, rotate, format conversion
-**** e.g. watermarks
-**** e.g. strip location data
-****  store changes in "alternates"
-*** Scripting support
+** Scripting support
+*** Enable task automation, like =imagemagick= (rotate, resize, etc)
+*** potential scripting languages
+**** Passerine (https://github.com/vrtbl/passerine) seems dead
+**** vonuvoli-scheme (https://github.com/volution/vonuvoli-scheme)
+**** mlua (https://github.com/mlua-rs/mlua) wraps Lua in Rust, supports all versions
+**** hlua (https://github.com/tomaka/hlua) wraps Lua in Rust
+** Easy publishing to sharing sites (e.g. Google Photos)
+*** option to auto-orient
+*** option to resize image
+*** option to change format
+*** option to strip metadata
+*** option to apply watermarks
+*** option to save in ePub format for iOS
+*** button to open asset in file browser
+** Easy import from external sites (e.g. google, instagram)
+** Multi-user support
+*** login page
+**** desktop app could use keychain to get access
+*** password reset (via email?)
+*** access restrictions
+*** private sets
+*** comments
+*** favorites
+*** likes
+*** rating levels (e.g. mature)
 * Documentation
 ** Uploads directory
 *** asset importer ignores hidden files and directories
@@ -603,7 +321,7 @@ will require having async trait support in Rust.
 *** c.f. https://github.com/google/open-location-code/wiki/Evaluation-of-Location-Encoding-Systems
 *** c.f. https://www.osgeo.org for some information, resources
 *** reverse geocoding services
-**** Google requires using their maps and giving attribution
+**** Google requires using their maps and giving attribution(?)
 **** Google and Azure can be quite expensive
 **** many services have very low requests per second (~5)
 **** HERE seems to be pretty good as of Feb 2024

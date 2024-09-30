@@ -157,9 +157,9 @@ impl<'de> Deserialize<'de> for Location {
             where
                 V: MapAccess<'de>,
             {
-                let mut label = None;
-                let mut city = None;
-                let mut region = None;
+                let mut label: Option<Option<String>> = None;
+                let mut city: Option<Option<String>> = None;
+                let mut region: Option<Option<String>> = None;
                 while let Some(key) = map.next_key()? {
                     match key {
                         Field::Label => {
@@ -182,9 +182,10 @@ impl<'de> Deserialize<'de> for Location {
                         }
                     }
                 }
-                let label = label.ok_or_else(|| de::Error::missing_field("label"))?;
-                let city = city.ok_or_else(|| de::Error::missing_field("city"))?;
-                let region = region.ok_or_else(|| de::Error::missing_field("region"))?;
+                // missing Option fields are treated as None
+                let label = label.unwrap_or(None);
+                let city = city.unwrap_or(None);
+                let region = region.unwrap_or(None);
                 Ok(Location {
                     label,
                     city,
@@ -198,6 +199,9 @@ impl<'de> Deserialize<'de> for Location {
     }
 }
 
+/// AssetModel is for serializing the asset entities to the database, which does
+/// not need the key to be a part of the record, and we can shorten the field
+/// names to save space.
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "Asset")]
 pub struct AssetModel {
@@ -250,6 +254,138 @@ pub struct AssetDumpModel {
 mod tests {
     use super::*;
     use anyhow::Error;
+
+    #[test]
+    fn test_location_serde_json() -> Result<(), Error> {
+        // this does not seem to work, outputs null which causes the
+        // deserializer to fail with `expecting string or Location struct`
+        //
+        // let location = Location {
+        //     label: None,
+        //     city: None,
+        //     region: None,
+        // };
+        // let mut buffer: Vec<u8> = Vec::new();
+        // let mut ser = serde_json::Serializer::new(&mut buffer);
+        // Location::serialize(&location, &mut ser)?;
+        // let actual = String::from_utf8(buffer)?;
+        // println!("json actual: {}", actual);
+        // let mut de = serde_json::Deserializer::from_str(&actual);
+        // let model = Location::deserialize(&mut de)?;
+        // assert_eq!(model, location);
+
+        // all fields
+        println!("all fields");
+        let location = Location {
+            label: Some("waikiki".into()),
+            city: Some("Honolulu".into()),
+            region: Some("Hawaii".into()),
+        };
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut ser = serde_json::Serializer::new(&mut buffer);
+        Location::serialize(&location, &mut ser)?;
+        let actual = String::from_utf8(buffer)?;
+        let mut de = serde_json::Deserializer::from_str(&actual);
+        let model = Location::deserialize(&mut de)?;
+        assert_eq!(model, location);
+
+        // only label
+        println!("only label");
+        let location = Location {
+            label: Some("waikiki".into()),
+            city: None,
+            region: None,
+        };
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut ser = serde_json::Serializer::new(&mut buffer);
+        Location::serialize(&location, &mut ser)?;
+        let actual = String::from_utf8(buffer)?;
+        let mut de = serde_json::Deserializer::from_str(&actual);
+        let model = Location::deserialize(&mut de)?;
+        assert_eq!(model, location);
+
+        // city, region
+        println!("city, region");
+        let location = Location {
+            label: None,
+            city: Some("Honolulu".into()),
+            region: Some("Hawaii".into()),
+        };
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut ser = serde_json::Serializer::new(&mut buffer);
+        Location::serialize(&location, &mut ser)?;
+        let actual = String::from_utf8(buffer)?;
+        println!("actual: {}", actual);
+        let mut de = serde_json::Deserializer::from_str(&actual);
+        let model = Location::deserialize(&mut de)?;
+        assert_eq!(model, location);
+
+        println!("test complete");
+        Ok(())
+    }
+
+    #[test]
+    fn test_location_serde_cbor() -> Result<(), Error> {
+        // this does not seem to work, outputs null which causes the
+        // deserializer to fail with `expecting string or Location struct`
+        //
+        // let location = Location {
+        //     label: None,
+        //     city: None,
+        //     region: None,
+        // };
+        // let mut buffer: Vec<u8> = Vec::new();
+        // let mut ser = serde_cbor::Serializer::new(&mut buffer);
+        // Location::serialize(&location, &mut ser)?;
+        // let mut de = serde_cbor::Deserializer::from_slice(&buffer);
+        // let model = Location::deserialize(&mut de)?;
+        // assert_eq!(model, location);
+
+        // all fields
+        println!("all fields");
+        let location = Location {
+            label: Some("waikiki".into()),
+            city: Some("Honolulu".into()),
+            region: Some("Hawaii".into()),
+        };
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut ser = serde_cbor::Serializer::new(&mut buffer);
+        Location::serialize(&location, &mut ser)?;
+        let mut de = serde_cbor::Deserializer::from_slice(&buffer);
+        let model = Location::deserialize(&mut de)?;
+        assert_eq!(model, location);
+
+        // only label
+        println!("only label");
+        let location = Location {
+            label: Some("waikiki".into()),
+            city: None,
+            region: None,
+        };
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut ser = serde_cbor::Serializer::new(&mut buffer);
+        Location::serialize(&location, &mut ser)?;
+        let mut de = serde_cbor::Deserializer::from_slice(&buffer);
+        let model = Location::deserialize(&mut de)?;
+        assert_eq!(model, location);
+
+        // city, region
+        println!("city, region");
+        let location = Location {
+            label: None,
+            city: Some("Honolulu".into()),
+            region: Some("Hawaii".into()),
+        };
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut ser = serde_cbor::Serializer::new(&mut buffer);
+        Location::serialize(&location, &mut ser)?;
+        let mut de = serde_cbor::Deserializer::from_slice(&buffer);
+        let model = Location::deserialize(&mut de)?;
+        assert_eq!(model, location);
+
+        println!("test complete");
+        Ok(())
+    }
 
     #[test]
     fn test_asset_serde_min() -> Result<(), Error> {
@@ -420,6 +556,89 @@ mod tests {
     }
 
     #[test]
+    fn test_asset_serde_location_all_none_json() -> Result<(), Error> {
+        // arrange
+        let asset1 = Asset {
+            key: "abc123".to_owned(),
+            checksum: "cafebabe".to_owned(),
+            filename: "img_1234.jpg".to_owned(),
+            byte_length: 1024,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["kittens".to_owned()],
+            import_date: Utc::now(),
+            caption: Some("#cat and #dog @hawaii".to_owned()),
+            location: Some(Location {
+                label: None,
+                city: None,
+                region: None,
+            }),
+            user_date: Some(Utc::now()),
+            original_date: Some(Utc::now()),
+            dimensions: Some(Dimensions(640, 480)),
+        };
+        // act
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut ser = serde_json::Serializer::new(&mut buffer);
+        AssetModel::serialize(&asset1, &mut ser)?;
+        let actual = String::from_utf8(buffer)?;
+        let mut de = serde_json::Deserializer::from_str(&actual);
+        let model = AssetModel::deserialize(&mut de)?;
+        // assert
+        assert_eq!(model.checksum, "cafebabe");
+        assert_eq!(model.filename, "img_1234.jpg");
+        assert_eq!(model.byte_length, 1024);
+        assert_eq!(model.media_type, "image/jpeg");
+        assert_eq!(model.tags.len(), 1);
+        assert_eq!(model.tags[0], "kittens");
+        assert!(model.location.is_none());
+        Ok(())
+    }
+
+    #[test]
+    fn test_asset_serde_location_partial_struct_json() -> Result<(), Error> {
+        // arrange
+        let asset1 = Asset {
+            key: "abc123".to_owned(),
+            checksum: "cafebabe".to_owned(),
+            filename: "img_1234.jpg".to_owned(),
+            byte_length: 1024,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["kittens".to_owned()],
+            import_date: Utc::now(),
+            caption: Some("#cat and #dog @hawaii".to_owned()),
+            location: Some(Location {
+                label: None,
+                city: Some("honolulu".into()),
+                region: Some("HI".into()),
+            }),
+            user_date: Some(Utc::now()),
+            original_date: Some(Utc::now()),
+            dimensions: Some(Dimensions(640, 480)),
+        };
+        // act
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut ser = serde_json::Serializer::new(&mut buffer);
+        AssetModel::serialize(&asset1, &mut ser)?;
+        let actual = String::from_utf8(buffer)?;
+        let mut de = serde_json::Deserializer::from_str(&actual);
+        let model = AssetModel::deserialize(&mut de)?;
+        // assert
+        assert_eq!(model.checksum, "cafebabe");
+        assert_eq!(model.filename, "img_1234.jpg");
+        assert_eq!(model.byte_length, 1024);
+        assert_eq!(model.media_type, "image/jpeg");
+        assert_eq!(model.tags.len(), 1);
+        assert_eq!(model.tags[0], "kittens");
+        let expected = Some(Location {
+            label: None,
+            city: Some("honolulu".into()),
+            region: Some("HI".into()),
+        });
+        assert_eq!(model.location, expected);
+        Ok(())
+    }
+
+    #[test]
     fn test_asset_serde_location_struct_json() -> Result<(), Error> {
         // arrange
         let asset1 = Asset {
@@ -533,6 +752,87 @@ mod tests {
             region: None,
         });
         assert_eq!(model.location, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_asset_serde_location_partial_struct_cbor() -> Result<(), Error> {
+        // arrange
+        let asset1 = Asset {
+            key: "abc123".to_owned(),
+            checksum: "cafebabe".to_owned(),
+            filename: "img_1234.jpg".to_owned(),
+            byte_length: 1024,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["kittens".to_owned()],
+            import_date: Utc::now(),
+            caption: Some("#cat and #dog @hawaii".to_owned()),
+            location: Some(Location {
+                label: None,
+                city: Some("honolulu".into()),
+                region: Some("HI".into()),
+            }),
+            user_date: Some(Utc::now()),
+            original_date: Some(Utc::now()),
+            dimensions: Some(Dimensions(640, 480)),
+        };
+        // act
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut ser = serde_cbor::Serializer::new(&mut buffer);
+        AssetModel::serialize(&asset1, &mut ser)?;
+        let mut de = serde_cbor::Deserializer::from_slice(&buffer);
+        let model = AssetModel::deserialize(&mut de)?;
+        // assert
+        assert_eq!(model.checksum, "cafebabe");
+        assert_eq!(model.filename, "img_1234.jpg");
+        assert_eq!(model.byte_length, 1024);
+        assert_eq!(model.media_type, "image/jpeg");
+        assert_eq!(model.tags.len(), 1);
+        assert_eq!(model.tags[0], "kittens");
+        let expected = Some(Location {
+            label: None,
+            city: Some("honolulu".into()),
+            region: Some("HI".into()),
+        });
+        assert_eq!(model.location, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_asset_serde_location_all_none_cbor() -> Result<(), Error> {
+        // arrange
+        let asset1 = Asset {
+            key: "abc123".to_owned(),
+            checksum: "cafebabe".to_owned(),
+            filename: "img_1234.jpg".to_owned(),
+            byte_length: 1024,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["kittens".to_owned()],
+            import_date: Utc::now(),
+            caption: Some("#cat and #dog @hawaii".to_owned()),
+            location: Some(Location {
+                label: None,
+                city: None,
+                region: None,
+            }),
+            user_date: Some(Utc::now()),
+            original_date: Some(Utc::now()),
+            dimensions: Some(Dimensions(640, 480)),
+        };
+        // act
+        let mut buffer: Vec<u8> = Vec::new();
+        let mut ser = serde_cbor::Serializer::new(&mut buffer);
+        AssetModel::serialize(&asset1, &mut ser)?;
+        let mut de = serde_cbor::Deserializer::from_slice(&buffer);
+        let model = AssetModel::deserialize(&mut de)?;
+        // assert
+        assert_eq!(model.checksum, "cafebabe");
+        assert_eq!(model.filename, "img_1234.jpg");
+        assert_eq!(model.byte_length, 1024);
+        assert_eq!(model.media_type, "image/jpeg");
+        assert_eq!(model.tags.len(), 1);
+        assert_eq!(model.tags[0], "kittens");
+        assert!(model.location.is_none());
         Ok(())
     }
 

@@ -1,6 +1,6 @@
 # Architecture and Design
 
-Assets stored unmodified within a date/time formatted directory structure, metadata stored in a key-value store, an HTTP server backend, and a single-page application for a frontend. Backend written in [Rust](https://www.rust-lang.org), front-end written in [Flutter](https://flutter.dev), data store is [RocksDB](https://rocksdb.org), wire protocol is [GraphQL](https://graphql.org) and basic HTTP API.
+Assets stored unmodified within a date/time formatted directory structure, metadata stored in a key-value store, an HTTP server backend, and a browser-based frontend. Application is written in [Rust](https://www.rust-lang.org) with [Actix](https://actix.rs) on the backend and [Leptos](https://leptos.dev) on the front-end, data store is [RocksDB](https://rocksdb.org), wire protocol is a combination of REST and [GraphQL](https://graphql.org).
 
 ## Clean Architecture
 

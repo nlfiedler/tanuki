@@ -2,8 +2,10 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use actix_cors::Cors;
+#[cfg(feature = "ssr")]
 use actix_files::{Files, NamedFile};
 use actix_multipart::Multipart;
+#[cfg(feature = "ssr")]
 use actix_web::{
     error::InternalError, http::header, http::StatusCode, middleware, web, App, Either, Error,
     HttpMessage, HttpRequest, HttpResponse, HttpServer,
@@ -11,7 +13,8 @@ use actix_web::{
 use futures::{StreamExt, TryStreamExt};
 use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
-use log::{error, info};
+use log::error;
+use std::collections::HashMap;
 use std::env;
 use std::io::Write;
 use std::path::PathBuf;
@@ -50,22 +53,10 @@ static ASSETS_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
     PathBuf::from(path)
 });
 
-// Path to the static web files.
-static STATIC_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
-    let path = env::var("STATIC_FILES").unwrap_or_else(|_| "./web/".to_owned());
-    PathBuf::from(path)
-});
-
-// Path of the fallback page for web requests.
-static DEFAULT_INDEX: LazyLock<PathBuf> = LazyLock::new(|| {
-    let mut path = STATIC_PATH.clone();
-    path.push("index.html");
-    path
-});
-
 // The request body _could_ contain more than one asset, but this endpoint will
 // only process a single entity. Returns the newly assigned identifier for the
 // updated asset.
+#[cfg(feature = "ssr")]
 async fn replace_asset(mut payload: Multipart, req: HttpRequest) -> Result<HttpResponse, Error> {
     use tanuki::domain::usecases::replace::{Params, ReplaceAsset};
     let asset_id: String = req.match_info().get("id").unwrap().to_owned();
@@ -117,10 +108,13 @@ async fn replace_asset(mut payload: Multipart, req: HttpRequest) -> Result<HttpR
             }
         }
     }
-    let body = serde_json::to_string(&asset_ids)?;
+    let mut output: HashMap<String, Vec<String>> = HashMap::new();
+    output.insert("ids".into(), asset_ids);
+    let body = serde_json::to_string(&output)?;
     Ok(HttpResponse::Ok().body(body))
 }
 
+#[cfg(feature = "ssr")]
 async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
     use tanuki::domain::usecases::import::{ImportAsset, Params};
     // prepare resources for the import usecase
@@ -174,10 +168,13 @@ async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
             }
         }
     }
-    let body = serde_json::to_string(&asset_ids)?;
+    let mut output: HashMap<String, Vec<String>> = HashMap::new();
+    output.insert("ids".into(), asset_ids);
+    let body = serde_json::to_string(&output)?;
     Ok(HttpResponse::Ok().body(body))
 }
 
+#[cfg(feature = "ssr")]
 async fn graphiql() -> actix_web::Result<HttpResponse> {
     let html = graphiql_source("/graphql", None);
     Ok(HttpResponse::Ok()
@@ -185,8 +182,9 @@ async fn graphiql() -> actix_web::Result<HttpResponse> {
         .body(html))
 }
 
+#[cfg(feature = "ssr")]
 async fn graphql(
-    st: web::Data<Arc<graphql::Schema>>,
+    st: web::Data<(Arc<graphql::Schema>, leptos::LeptosOptions)>,
     data: web::Json<GraphQLRequest>,
 ) -> actix_web::Result<HttpResponse> {
     let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
@@ -195,7 +193,7 @@ async fn graphql(
         datasource,
         Box::new(ASSETS_PATH.clone()),
     ));
-    let res = data.execute(&st, &ctx).await;
+    let res = data.execute(&st.0, &ctx).await;
     let body = serde_json::to_string(&res)?;
     Ok(HttpResponse::Ok()
         .content_type("application/json")
@@ -203,8 +201,9 @@ async fn graphql(
 }
 
 // Produce a thumbnail for the asset of the requested size.
+#[cfg(feature = "ssr")]
 async fn get_thumbnail(req: HttpRequest) -> HttpResponse {
-    // => /api/thumbnail/{w}/{h}/{id}
+    // => /rest/thumbnail/{w}/{h}/{id}
     let width: u32 = req.match_info().get("w").unwrap().parse().unwrap();
     let height: u32 = req.match_info().get("h").unwrap().parse().unwrap();
     let identifier: String = req.match_info().get("id").unwrap().to_owned();
@@ -235,6 +234,7 @@ async fn get_thumbnail(req: HttpRequest) -> HttpResponse {
 }
 
 // Returns true if `req` does not have an `If-None-Match` header matching `etag`.
+#[cfg(feature = "ssr")]
 fn none_match(etag: &header::EntityTag, req: &HttpRequest) -> bool {
     match req.get_header::<header::IfNoneMatch>() {
         Some(header::IfNoneMatch::Any) => false,
@@ -251,9 +251,11 @@ fn none_match(etag: &header::EntityTag, req: &HttpRequest) -> bool {
 }
 
 // Fetching an asset will either return the file or return a 404.
+#[cfg(feature = "ssr")]
 type AssetResponse = Either<NamedFile, HttpResponse>;
 
 // Return the full asset data and its media type.
+#[cfg(feature = "ssr")]
 async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> {
     let result = web::block(move || {
         let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
@@ -276,26 +278,25 @@ async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> 
     }
 }
 
-// All requests that fail to match anything else will be directed to the index
-// page, where the client-side code will handle the routing and "page not found"
-// error condition.
-async fn default_index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
-    let file = NamedFile::open(DEFAULT_INDEX.as_path())?;
-    Ok(file.use_etag(true).use_last_modified(true))
-}
-
+#[cfg(feature = "ssr")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    use leptos::*;
+    use leptos_actix::{generate_route_list, LeptosRoutes};
+    use tanuki::preso::leptos::client::*;
+
+    let conf = get_configuration(None).await.unwrap();
+    let addr = conf.leptos_options.site_addr;
+    let routes = generate_route_list(App);
+
     dotenv::dotenv().ok();
     env_logger::init();
-    let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_owned());
-    let port = env::var("PORT").unwrap_or_else(|_| "3000".to_owned());
-    let addr = format!("{}:{}", host, port);
-    info!("listening on http://{}/...", addr);
-    HttpServer::new(|| {
-        let schema = web::Data::new(Arc::new(graphql::create_schema()));
+    HttpServer::new(move || {
+        let leptos_options = &conf.leptos_options;
+        let site_root = &leptos_options.site_root;
+        let schema = Arc::new(graphql::create_schema());
         App::new()
-            .app_data(schema)
+            .app_data(web::Data::new((schema, leptos_options.to_owned())))
             .wrap(middleware::Logger::default())
             .wrap(
                 // Respond to OPTIONS requests for CORS support, which is common
@@ -307,26 +308,64 @@ async fn main() -> std::io::Result<()> {
                     .allowed_header(header::CONTENT_TYPE)
                     .max_age(3600),
             )
+            // serve up the compiled static assets
+            .service(
+                Files::new("/pkg", format!("{site_root}/pkg"))
+                    .use_etag(true)
+                    .use_last_modified(true),
+            )
+            // serve up the raw static assets
+            .service(
+                Files::new("/assets", site_root)
+                    .use_etag(true)
+                    .use_last_modified(true),
+            )
             .service(web::resource("/graphql").route(web::post().to(graphql)))
             .service(web::resource("/graphiql").route(web::get().to(graphiql)))
-            .route("/api/thumbnail/{w}/{h}/{id}", web::get().to(get_thumbnail))
-            .route("/api/asset/{id}", web::get().to(raw_asset))
-            .route("/api/asset/{id}", web::head().to(raw_asset))
-            .route("/api/import", web::post().to(import_assets))
-            .route("/api/replace/{id}", web::post().to(replace_asset))
-            .service(
-                Files::new("/", STATIC_PATH.clone())
-                    .use_etag(true)
-                    .use_last_modified(true)
-                    .index_file("index.html"),
-            )
-            .default_service(web::get().to(default_index))
+            .service(favicon)
+            // use a different path than /api which Leptos uses by default
+            .route("/rest/thumbnail/{w}/{h}/{id}", web::get().to(get_thumbnail))
+            .route("/rest/asset/{id}", web::get().to(raw_asset))
+            .route("/rest/asset/{id}", web::head().to(raw_asset))
+            .route("/rest/import", web::post().to(import_assets))
+            .route("/rest/replace/{id}", web::post().to(replace_asset))
+            .leptos_routes(leptos_options.to_owned(), routes.to_owned(), App)
     })
     .bind(addr)?
     .run()
     .await
 }
 
+#[cfg(not(any(feature = "ssr", feature = "csr")))]
+pub fn main() {
+    // no client-side main function
+    // unless we want this to work with e.g., Trunk for pure client-side testing
+    // see lib.rs for hydration function instead
+    // see optional feature `csr` instead
+}
+
+#[cfg(all(not(feature = "ssr"), feature = "csr"))]
+pub fn main() {
+    // a client-side main function is required for using `trunk serve`
+    // prefer using `cargo leptos serve` instead
+    // to run: `trunk serve --open --features csr`
+    use crate::preso::leptos::*;
+    console_error_panic_hook::set_once();
+    leptos::mount_to_body(App);
+}
+
+#[cfg(feature = "ssr")]
+#[actix_web::get("favicon.ico")]
+async fn favicon(
+    st: web::Data<(Arc<graphql::Schema>, leptos::LeptosOptions)>,
+) -> actix_web::Result<actix_files::NamedFile> {
+    let site_root = &st.1.site_root;
+    Ok(actix_files::NamedFile::open(format!(
+        "{site_root}/favicon.ico"
+    ))?)
+}
+
+#[cfg(feature = "ssr")]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -334,18 +373,6 @@ mod tests {
     use base64::{engine::general_purpose, Engine as _};
     use tanuki::data::repositories::geo::DummyLocationRepository;
     use tanuki::domain::usecases::checksum_file;
-
-    #[actix_web::test]
-    async fn test_index_get() {
-        // arrange
-        let mut app =
-            test::init_service(App::new().default_service(web::get().to(default_index))).await;
-        // act
-        let req = test::TestRequest::default().to_request();
-        let resp = test::call_service(&mut app, req).await;
-        // assert
-        assert!(resp.status().is_success());
-    }
 
     #[actix_web::test]
     async fn test_import_assets_ok() {
@@ -375,12 +402,13 @@ mod tests {
             .append_header((header::CONTENT_LENGTH, payload.len()))
             .set_payload(payload)
             .to_request();
-        let resp: Vec<String> = test::call_and_read_body_json(&mut app, req).await;
+        let mut resp: HashMap<String, Vec<String>> = test::call_and_read_body_json(&mut app, req).await;
         // assert
-        assert_eq!(resp.len(), 1);
+        let ids: Vec<String> = resp.remove("ids").unwrap();
+        assert_eq!(ids.len(), 1);
         // should be one identifier that is base64 encoded and the path and filename
         // will change over time so can only really check the extension
-        let decoded = general_purpose::STANDARD.decode(&resp[0]).unwrap();
+        let decoded = general_purpose::STANDARD.decode(&ids[0]).unwrap();
         assert!(decoded.ends_with(b".jpg"));
     }
 
@@ -441,14 +469,15 @@ mod tests {
             .append_header((header::CONTENT_LENGTH, payload.len()))
             .set_payload(payload)
             .to_request();
-        let resp: Vec<String> = test::call_and_read_body_json(&mut app, req).await;
+        let mut resp: HashMap<String, Vec<String>> = test::call_and_read_body_json(&mut app, req).await;
         // assert
-        assert_eq!(resp.len(), 1);
+        let ids: Vec<String> = resp.remove("ids").unwrap();
+        assert_eq!(ids.len(), 1);
         // should be one identifier that is base64 encoded and the path and filename
         // will change over time so can only really check the extension
-        let decoded = general_purpose::STANDARD.decode(&resp[0]).unwrap();
+        let decoded = general_purpose::STANDARD.decode(&ids[0]).unwrap();
         assert!(decoded.ends_with(b".jpg"));
-        let blob_path = blobs.blob_path(&resp[0]).unwrap();
+        let blob_path = blobs.blob_path(&ids[0]).unwrap();
         let digest = checksum_file(&blob_path).unwrap();
         assert_eq!(
             digest,

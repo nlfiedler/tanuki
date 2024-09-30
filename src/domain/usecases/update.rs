@@ -1,10 +1,9 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::entities::{Asset, Location};
+use crate::domain::entities::{Asset, AssetInput, Location};
 use crate::domain::repositories::RecordRepository;
 use anyhow::Error;
-use chrono::prelude::*;
 use std::cmp;
 use std::fmt;
 
@@ -25,7 +24,7 @@ impl UpdateAsset {
 impl super::UseCase<Asset, Params> for UpdateAsset {
     fn call(&self, params: Params) -> Result<Asset, Error> {
         // fetch existing record to merge with incoming values
-        let mut asset = self.records.get_asset(&params.key)?;
+        let mut asset = self.records.get_asset(&params.asset.key)?;
         // merge the incoming values with the existing record
         merge_asset_input(&mut asset, params.asset);
         // store the updated record in the repository
@@ -34,79 +33,41 @@ impl super::UseCase<Asset, Params> for UpdateAsset {
     }
 }
 
-/// `AssetInput` describes the new values that are to be merged with the asset
-/// being updated. The update policies are described for each field.
-#[derive(Clone, Debug)]
-pub struct AssetInput {
-    /// If not empty, the values here will replace the existing values, and are
-    /// sorted and de-duplicated.
-    pub tags: Vec<String>,
-    /// Any `Some` value here overwrites the caption in the asset. If the
-    /// caption contains any #tags they will be merged with the tags in the
-    /// asset (or in the input, if given). If the caption contains an @location
-    /// or @"location" then it will replace the asset location, if it has not
-    /// been set. That is, the caption only enhances, never clobbers.
-    pub caption: Option<String>,
-    /// Any `Some` value here overwrites the location in the asset. This field
-    /// takes precedence over any @location value in the caption.
-    pub location: Option<Location>,
-    /// This value overwrites the asset user_date unconditionally. To avoid
-    /// removing the user date, copy the asset user date to this field before
-    /// invoking the use case.
-    pub datetime: Option<DateTime<Utc>>,
-    /// Any `Some` value here overwrites the media_type in the asset.
-    pub media_type: Option<String>,
-    /// Replace the filename property in the asset.
-    pub filename: Option<String>,
-}
-
-impl fmt::Display for AssetInput {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "AssetInput()")
-    }
-}
-
-impl cmp::PartialEq for AssetInput {
-    fn eq(&self, other: &Self) -> bool {
-        self.caption == other.caption
-    }
-}
-
-impl cmp::Eq for AssetInput {}
-
 #[derive(Clone)]
 pub struct Params {
-    key: String,
     asset: AssetInput,
 }
 
 impl Params {
-    pub fn new(key: String, asset: AssetInput) -> Self {
-        Self { key, asset }
+    pub fn new(asset: AssetInput) -> Self {
+        Self { asset }
     }
 }
 
 impl fmt::Display for Params {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Params({:?})", self.key)
+        write!(f, "Params({:?})", self.asset.key)
     }
 }
 
 impl cmp::PartialEq for Params {
     fn eq(&self, other: &Self) -> bool {
-        self.key == other.key
+        self.asset.key == other.asset.key
     }
 }
 
 impl cmp::Eq for Params {}
 
 fn merge_asset_input(asset: &mut Asset, input: AssetInput) {
-    if !input.tags.is_empty() {
+    if let Some(tags) = input.tags {
         // incoming tags replace existing tags
-        let mut tags = input.tags.clone();
-        tags.sort();
-        tags.dedup();
-        asset.tags = tags;
+        let mut groomed = tags.clone();
+        // Filter out empty tags, as the front-end may send those because it is
+        // too lazy to filter them itself.
+        groomed.retain(|t| !t.is_empty());
+        groomed.sort();
+        groomed.dedup();
+        asset.tags = groomed;
     }
     if let Some(filename) = input.filename {
         if !filename.is_empty() {
@@ -360,6 +321,7 @@ mod tests {
     use crate::domain::entities::Location;
     use crate::domain::repositories::MockRecordRepository;
     use anyhow::anyhow;
+    use chrono::prelude::*;
     use mockall::predicate::*;
 
     fn make_date_time(
@@ -392,7 +354,8 @@ mod tests {
             dimensions: None,
         };
         let input = AssetInput {
-            tags: vec![],
+            key: "abc123".to_owned(),
+            tags: None,
             caption: None,
             location: None,
             datetime: None,
@@ -425,7 +388,8 @@ mod tests {
             dimensions: None,
         };
         let input = AssetInput {
-            tags: vec![],
+            key: "abc123".to_owned(),
+            tags: None,
             caption: None,
             location: None,
             datetime: None,
@@ -458,7 +422,8 @@ mod tests {
             dimensions: None,
         };
         let input = AssetInput {
-            tags: vec![],
+            key: "abc123".to_owned(),
+            tags: None,
             caption: Some("#kittens and #puppies @paris".to_owned()),
             location: None,
             datetime: None,
@@ -497,7 +462,8 @@ mod tests {
             dimensions: None,
         };
         let input = AssetInput {
-            tags: vec![],
+            key: "abc123".to_owned(),
+            tags: None,
             caption: Some("#kittens and #puppies @paris".to_owned()),
             location: None,
             datetime: None,
@@ -534,11 +500,12 @@ mod tests {
             dimensions: None,
         };
         let input = AssetInput {
-            tags: vec![
+            key: "abc123".to_owned(),
+            tags: Some(vec![
                 "kittens".to_owned(),
                 "kittens".to_owned(),
                 "kittens".to_owned(),
-            ],
+            ]),
             caption: None,
             location: None,
             datetime: None,
@@ -572,7 +539,8 @@ mod tests {
             dimensions: None,
         };
         let input = AssetInput {
-            tags: vec!["puppies".to_owned()],
+            key: "abc123".to_owned(),
+            tags: Some(vec!["puppies".to_owned()]),
             caption: Some("#kittens fighting #kittens".to_owned()),
             location: None,
             datetime: None,
@@ -609,7 +577,8 @@ mod tests {
         };
         let user_date = make_date_time(2018, 5, 31, 21, 10, 11);
         let input = AssetInput {
-            tags: vec![],
+            key: "abc123".to_owned(),
+            tags: None,
             caption: None,
             location: None,
             datetime: Some(user_date),
@@ -642,7 +611,8 @@ mod tests {
             dimensions: None,
         };
         let input = AssetInput {
-            tags: vec![],
+            key: "abc123".to_owned(),
+            tags: None,
             caption: None,
             location: None,
             datetime: None,
@@ -675,7 +645,8 @@ mod tests {
             dimensions: None,
         };
         let input = AssetInput {
-            tags: vec![],
+            key: "abc123".to_owned(),
+            tags: None,
             caption: None,
             location: Some(Location::new("".into())),
             datetime: None,
@@ -705,7 +676,8 @@ mod tests {
             dimensions: None,
         };
         let input = AssetInput {
-            tags: vec!["puppies".to_owned()],
+            key: "abc123".to_owned(),
+            tags: Some(vec!["puppies".to_owned()]),
             caption: Some("#kittens fighting #kittens".to_owned()),
             location: None,
             datetime: Some(user_date),
@@ -720,7 +692,7 @@ mod tests {
         records.expect_put_asset().returning(move |_| Ok(()));
         // act
         let usecase = UpdateAsset::new(Box::new(records));
-        let params = Params::new("abc123".to_owned(), input);
+        let params = Params::new(input);
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -745,14 +717,15 @@ mod tests {
         // act
         let usecase = UpdateAsset::new(Box::new(mock));
         let input = AssetInput {
-            tags: vec![],
+            key: "abc123".to_owned(),
+            tags: None,
             caption: None,
             location: None,
             datetime: None,
             media_type: None,
             filename: None,
         };
-        let params = Params::new("abc123".to_owned(), input);
+        let params = Params::new(input);
         let result = usecase.call(params);
         // assert
         assert!(result.is_err());

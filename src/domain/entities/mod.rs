@@ -2,7 +2,9 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use anyhow::{anyhow, Error};
+use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::HashSet;
 use std::fmt;
@@ -13,7 +15,7 @@ use std::str::FromStr;
 pub struct Dimensions(pub u32, pub u32);
 
 /// Digital asset entity.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Asset {
     /// The unique identifier of the asset.
     pub key: String,
@@ -96,6 +98,20 @@ impl Asset {
         }
     }
 
+    /// Relative path of the asset within the asset store. Errors are converted
+    /// to a string as they are almost certainly not gonig to happen anyway.
+    pub fn filepath(&self) -> String {
+        if let Ok(decoded) = general_purpose::STANDARD.decode(&self.key) {
+            if let Ok(as_string) = std::str::from_utf8(&decoded) {
+                as_string.to_owned()
+            } else {
+                "invalid UTF-8".into()
+            }
+        } else {
+            "invalid base64".into()
+        }
+    }
+
     /// Set the checksum field of the asset.
     pub fn checksum(&mut self, checksum: String) -> &mut Self {
         self.checksum = checksum;
@@ -163,6 +179,72 @@ impl Asset {
     }
 }
 
+/// `AssetInput` describes the new values that are to be merged with the asset
+/// being updated. The update policies are described for each field.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct AssetInput {
+    /// Identifier for the asset to be updated.
+    pub key: String,
+    /// Any values here will replace the existing values, and are sorted and
+    /// de-duplicated.
+    pub tags: Option<Vec<String>>,
+    /// Any `Some` value here overwrites the caption in the asset. If the
+    /// caption contains any #tags they will be merged with the tags in the
+    /// asset (or in the input, if given). If the caption contains an @location
+    /// or @"location" then it will replace the asset location, if it has not
+    /// been set. That is, the caption only enhances, never clobbers.
+    pub caption: Option<String>,
+    /// Any `Some` value here overwrites the location in the asset. This field
+    /// takes precedence over any @location value in the caption.
+    pub location: Option<Location>,
+    /// This value overwrites the asset user_date unconditionally. To avoid
+    /// removing the user date, copy the asset user date to this field before
+    /// invoking the use case.
+    pub datetime: Option<DateTime<Utc>>,
+    /// Any `Some` value here overwrites the media_type in the asset.
+    pub media_type: Option<String>,
+    /// Replace the filename property in the asset.
+    pub filename: Option<String>,
+}
+
+impl AssetInput {
+    pub fn new<S: Into<String>>(key: S) -> Self {
+        Self {
+            key: key.into(),
+            tags: None,
+            caption: None,
+            location: None,
+            datetime: None,
+            media_type: None,
+            filename: None,
+        }
+    }
+
+    /// Return `true` if any of the fields have a value.
+    pub fn has_values(&self) -> bool {
+        self.tags.is_some()
+            || self.caption.is_some()
+            || self.location.is_some()
+            || self.datetime.is_some()
+            || self.media_type.is_some()
+            || self.filename.is_some()
+    }
+}
+
+impl fmt::Display for AssetInput {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "AssetInput()")
+    }
+}
+
+impl cmp::PartialEq for AssetInput {
+    fn eq(&self, other: &Self) -> bool {
+        self.caption == other.caption
+    }
+}
+
+impl cmp::Eq for AssetInput {}
+
 /// Location information regarding an asset.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Location {
@@ -184,13 +266,31 @@ impl Location {
         }
     }
 
-    /// Construct a Location using all of the parts given.
+    /// Construct a Location using all of the parts given. If any parts are
+    /// empty, then the corresponding field will be `None`.
     pub fn with_parts(label: &str, city: &str, region: &str) -> Self {
         Self {
-            label: Some(label.to_owned()),
-            city: Some(city.to_owned()),
-            region: Some(region.to_owned()),
+            label: if label.is_empty() {
+                None
+            } else {
+                Some(label.to_owned())
+            },
+            city: if city.is_empty() {
+                None
+            } else {
+                Some(city.to_owned())
+            },
+            region: if region.is_empty() {
+                None
+            } else {
+                Some(region.to_owned())
+            },
         }
+    }
+
+    /// Return `true` if any of the fields have a value.
+    pub fn has_values(&self) -> bool {
+        self.label.is_some() || self.city.is_some() || self.region.is_some()
     }
 
     /// Return the list of terms from this location that are appropriate for
@@ -258,7 +358,7 @@ impl Location {
     /// Construct a string suitable for serialization, using tabs to separate
     /// the fields, regardless of their value. The values are not lowercased. If
     /// all three fields are none, then two tabs are returned.
-    pub fn serialize(&self) -> String {
+    pub fn str_serialize(&self) -> String {
         let empty = String::from("");
         format!(
             "{}\t{}\t{}",
@@ -269,7 +369,7 @@ impl Location {
     }
 
     /// Split the input on tabs and create a Location from the parts.
-    pub fn deserialize(input: &str) -> Location {
+    pub fn str_deserialize(input: &str) -> Location {
         let parts: Vec<&str> = input.split("\t").collect();
         let maker = |part: &str| {
             if part.is_empty() {
@@ -287,6 +387,88 @@ impl Location {
         } else {
             Default::default()
         }
+    }
+}
+
+impl fmt::Display for Location {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let has_label = self.label.is_some();
+        let has_city = self.city.is_some();
+        let has_region = self.region.is_some();
+        if has_label && has_city && has_region {
+            write!(
+                f,
+                "{} - {}, {}",
+                self.label.as_ref().unwrap(),
+                self.city.as_ref().unwrap(),
+                self.region.as_ref().unwrap()
+            )
+        } else if has_city && has_region {
+            write!(
+                f,
+                "{}, {}",
+                self.city.as_ref().unwrap(),
+                self.region.as_ref().unwrap()
+            )
+        } else if has_label && has_city {
+            write!(
+                f,
+                "{} - {}",
+                self.label.as_ref().unwrap(),
+                self.city.as_ref().unwrap()
+            )
+        } else if has_label && has_region {
+            write!(
+                f,
+                "{} - {}",
+                self.label.as_ref().unwrap(),
+                self.region.as_ref().unwrap()
+            )
+        } else if has_label {
+            write!(f, "{}", self.label.as_ref().unwrap())
+        } else if has_city {
+            write!(f, "{}", self.city.as_ref().unwrap())
+        } else if has_region {
+            write!(f, "{}", self.region.as_ref().unwrap())
+        } else {
+            write!(f, "")
+        }
+    }
+}
+
+impl FromStr for Location {
+    type Err = Error;
+
+    /// Parse the string into a location. If the input contains a comma (,) then
+    /// it is split and the first part becomes the city and the second part
+    /// becomes the region. If the input contains a dash (-) then the leading
+    /// value becomes the label and the remainder is treated as described
+    /// regarding the optional comma.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.is_empty() {
+            return Ok(Default::default());
+        } else if s.contains(",") {
+            let city_region: Vec<&str> = s.split(",").collect();
+            if city_region.len() == 2 {
+                if city_region[0].contains("-") {
+                    let label_city: Vec<&str> = city_region[0].split('-').collect();
+                    if label_city.len() == 2 {
+                        return Ok(Location::with_parts(
+                            label_city[0].trim(),
+                            label_city[1].trim(),
+                            city_region[1].trim(),
+                        ));
+                    }
+                } else {
+                    return Ok(Location::with_parts(
+                        "",
+                        city_region[0].trim(),
+                        city_region[1].trim(),
+                    ));
+                }
+            }
+        }
+        Ok(Location::new(s))
     }
 }
 
@@ -387,15 +569,33 @@ pub struct GeocodedLocation {
 /// `LabeledCount` represents an attribute value and the number of occurrences
 /// of that value in the data set. For instance, a location label and the number
 /// of times that location occurs among the assets.
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct LabeledCount {
     pub label: String,
     pub count: usize,
 }
 
+/// Field of the search results on which to sort.
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum SortField {
+    Date,
+    Identifier,
+    Filename,
+    MediaType,
+}
+
+/// Order by which to sort the search results.
+///
+/// If not specified in the search paramaters, the default is ascending.
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+pub enum SortOrder {
+    Ascending,
+    Descending,
+}
+
 /// `SearchResult` is returned by data repository queries for assets matching a
 /// given set of criteria.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SearchResult {
     /// Asset identifier.
     pub asset_id: String,
@@ -704,10 +904,10 @@ mod tests {
     }
 
     #[test]
-    fn test_location_serde() {
+    fn test_location_str_serde() {
         let loc = Location::with_parts("plaza", "São Paulo", "State of São Paulo");
-        let cooked = loc.serialize();
-        let actual = Location::deserialize(&cooked);
+        let cooked = loc.str_serialize();
+        let actual = Location::str_deserialize(&cooked);
         assert_eq!(actual, loc);
 
         let loc = Location {
@@ -715,8 +915,8 @@ mod tests {
             city: Some("São Paulo".into()),
             region: Some("State of São Paulo".into()),
         };
-        let cooked = loc.serialize();
-        let actual = Location::deserialize(&cooked);
+        let cooked = loc.str_serialize();
+        let actual = Location::str_deserialize(&cooked);
         assert_eq!(actual, loc);
 
         let loc = Location {
@@ -724,8 +924,8 @@ mod tests {
             city: None,
             region: None,
         };
-        let cooked = loc.serialize();
-        let actual = Location::deserialize(&cooked);
+        let cooked = loc.str_serialize();
+        let actual = Location::str_deserialize(&cooked);
         assert_eq!(actual, loc);
 
         let loc = Location {
@@ -733,8 +933,8 @@ mod tests {
             city: None,
             region: Some("California".into()),
         };
-        let cooked = loc.serialize();
-        let actual = Location::deserialize(&cooked);
+        let cooked = loc.str_serialize();
+        let actual = Location::str_deserialize(&cooked);
         assert_eq!(actual, loc);
 
         let loc = Location {
@@ -742,8 +942,8 @@ mod tests {
             city: Some("São Paulo".into()),
             region: None,
         };
-        let cooked = loc.serialize();
-        let actual = Location::deserialize(&cooked);
+        let cooked = loc.str_serialize();
+        let actual = Location::str_deserialize(&cooked);
         assert_eq!(actual, loc);
 
         let loc = Location {
@@ -751,8 +951,8 @@ mod tests {
             city: None,
             region: Some("State of São Paulo".into()),
         };
-        let cooked = loc.serialize();
-        let actual = Location::deserialize(&cooked);
+        let cooked = loc.str_serialize();
+        let actual = Location::str_deserialize(&cooked);
         assert_eq!(actual, loc);
 
         let loc = Location {
@@ -760,9 +960,194 @@ mod tests {
             city: None,
             region: None,
         };
-        let cooked = loc.serialize();
-        let actual = Location::deserialize(&cooked);
+        let cooked = loc.str_serialize();
+        let actual = Location::str_deserialize(&cooked);
         assert_eq!(actual, loc);
+    }
+
+    #[test]
+    fn test_location_has_values() {
+        let loc = Location {
+            label: None,
+            city: Some("Portland".into()),
+            region: None,
+        };
+        assert!(loc.has_values());
+
+        let loc = Location {
+            label: None,
+            city: Some("Portland".into()),
+            region: Some("Oregon".into()),
+        };
+        assert!(loc.has_values());
+
+        let loc = Location {
+            label: None,
+            city: None,
+            region: Some("Oregon".into()),
+        };
+        assert!(loc.has_values());
+
+        let loc = Location {
+            label: Some("museum".into()),
+            city: Some("Portland".into()),
+            region: None,
+        };
+        assert!(loc.has_values());
+
+        let loc = Location {
+            label: Some("museum".into()),
+            city: None,
+            region: None,
+        };
+        assert!(loc.has_values());
+
+        let loc = Location {
+            label: Some("museum".into()),
+            city: None,
+            region: Some("Oregon".into()),
+        };
+        assert!(loc.has_values());
+
+        let loc = Location {
+            label: Some("museum".into()),
+            city: Some("Portland".into()),
+            region: Some("Oregon".into()),
+        };
+        assert!(loc.has_values());
+
+        let loc = Location {
+            label: None,
+            city: None,
+            region: None,
+        };
+        assert!(!loc.has_values());
+    }
+
+    #[test]
+    fn test_location_stringify() {
+        // label, city, region
+        let input = Location {
+            label: Some("museum".into()),
+            city: Some("Portland".into()),
+            region: Some("Oregon".into()),
+        };
+        let actual = input.to_string();
+        assert_eq!(actual, "museum - Portland, Oregon");
+
+        // label, city
+        let input = Location {
+            label: Some("museum".into()),
+            city: Some("Portland".into()),
+            region: None,
+        };
+        let actual = input.to_string();
+        assert_eq!(actual, "museum - Portland");
+
+        // label, region
+        let input = Location {
+            label: Some("museum".into()),
+            city: None,
+            region: Some("Oregon".into()),
+        };
+        let actual = input.to_string();
+        assert_eq!(actual, "museum - Oregon");
+
+        // city and region
+        let input = Location {
+            label: None,
+            city: Some("Portland".into()),
+            region: Some("Oregon".into()),
+        };
+        let actual = input.to_string();
+        assert_eq!(actual, "Portland, Oregon");
+
+        // label only
+        let input = Location {
+            label: Some("museum".into()),
+            city: None,
+            region: None,
+        };
+        let actual = input.to_string();
+        assert_eq!(actual, "museum");
+
+        // city only
+        let input = Location {
+            label: None,
+            city: Some("Portland".into()),
+            region: None,
+        };
+        let actual = input.to_string();
+        assert_eq!(actual, "Portland");
+
+        // region only
+        let input = Location {
+            label: None,
+            city: None,
+            region: Some("Oregon".into()),
+        };
+        let actual = input.to_string();
+        assert_eq!(actual, "Oregon");
+
+        // none
+        let input = Location {
+            label: None,
+            city: None,
+            region: None,
+        };
+        let actual = input.to_string();
+        assert_eq!(actual, "");
+    }
+
+    #[test]
+    fn test_location_from_str() {
+        let expected = Location {
+            label: Some("classical garden".into()),
+            city: None,
+            region: None,
+        };
+        let actual = Location::from_str("classical garden").unwrap();
+        assert_eq!(expected, actual);
+
+        let expected = Location {
+            label: None,
+            city: Some("Portland".into()),
+            region: Some("Oregon".into()),
+        };
+        let actual = Location::from_str("Portland, Oregon").unwrap();
+        assert_eq!(expected, actual);
+
+        let expected = Location {
+            label: Some("classical garden".into()),
+            city: Some("Portland".into()),
+            region: Some("Oregon".into()),
+        };
+        let actual = Location::from_str("classical garden - Portland, Oregon").unwrap();
+        assert_eq!(expected, actual);
+
+        let expected = Location {
+            label: Some("museum".into()),
+            city: Some("Portland".into()),
+            region: Some("Oregon".into()),
+        };
+        let actual = Location::from_str("museum-Portland,Oregon").unwrap();
+        assert_eq!(expected, actual);
+
+        let expected = Location {
+            label: Some("foo, bar, baz".into()),
+            city: None,
+            region: None,
+        };
+        let actual = Location::from_str("foo, bar, baz").unwrap();
+        assert_eq!(expected, actual);
+
+        let expected = Location {
+            label: Some("foo - bar - baz, quux".into()),
+            city: None,
+            region: None,
+        };
+        let actual = Location::from_str("foo - bar - baz, quux").unwrap();
+        assert_eq!(expected, actual);
     }
 
     #[test]

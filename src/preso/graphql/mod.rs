@@ -7,7 +7,7 @@ use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, Location, SearchResult};
 use crate::domain::usecases::analyze::Counts;
 use crate::domain::usecases::diagnose::Diagnosis;
-use base64::{engine::general_purpose, Engine as _};
+use crate::preso::common::SearchMeta;
 use chrono::prelude::*;
 use juniper::{
     EmptySubscription, FieldResult, GraphQLEnum, GraphQLInputObject, GraphQLScalar, InputValue,
@@ -126,16 +126,9 @@ impl Asset {
     }
 
     /// Relative path of the asset within the asset store.
-    fn filepath(&self) -> String {
-        if let Ok(decoded) = general_purpose::STANDARD.decode(&self.key) {
-            if let Ok(as_string) = std::str::from_utf8(&decoded) {
-                as_string.to_owned()
-            } else {
-                "invalid UTF-8".into()
-            }
-        } else {
-            "invalid base64".into()
-        }
+    #[graphql(name = "filepath")]
+    fn filepath_gql(&self) -> String {
+        self.filepath()
     }
 
     /// The date/time that best represents the asset.
@@ -202,13 +195,13 @@ pub enum SortField {
     MediaType,
 }
 
-impl From<SortField> for crate::domain::usecases::search::SortField {
+impl From<SortField> for crate::domain::entities::SortField {
     fn from(val: SortField) -> Self {
         match val {
-            SortField::Date => crate::domain::usecases::search::SortField::Date,
-            SortField::Identifier => crate::domain::usecases::search::SortField::Identifier,
-            SortField::Filename => crate::domain::usecases::search::SortField::Filename,
-            SortField::MediaType => crate::domain::usecases::search::SortField::MediaType,
+            SortField::Date => crate::domain::entities::SortField::Date,
+            SortField::Identifier => crate::domain::entities::SortField::Identifier,
+            SortField::Filename => crate::domain::entities::SortField::Filename,
+            SortField::MediaType => crate::domain::entities::SortField::MediaType,
         }
     }
 }
@@ -219,11 +212,11 @@ pub enum SortOrder {
     Descending,
 }
 
-impl From<SortOrder> for crate::domain::usecases::search::SortOrder {
+impl From<SortOrder> for crate::domain::entities::SortOrder {
     fn from(val: SortOrder) -> Self {
         match val {
-            SortOrder::Ascending => crate::domain::usecases::search::SortOrder::Ascending,
-            SortOrder::Descending => crate::domain::usecases::search::SortOrder::Descending,
+            SortOrder::Ascending => crate::domain::entities::SortOrder::Ascending,
+            SortOrder::Descending => crate::domain::entities::SortOrder::Descending,
         }
     }
 }
@@ -271,14 +264,12 @@ impl From<SearchParams> for crate::domain::usecases::search::Params {
             after_date: val.after,
             sort_field: Some(
                 val.sort_field
-                    .map_or(crate::domain::usecases::search::SortField::Date, |v| {
-                        v.into()
-                    }),
+                    .map_or(crate::domain::entities::SortField::Date, |v| v.into()),
             ),
-            sort_order: Some(val.sort_order.map_or(
-                crate::domain::usecases::search::SortOrder::Descending,
-                |v| v.into(),
-            )),
+            sort_order: Some(
+                val.sort_order
+                    .map_or(crate::domain::entities::SortOrder::Descending, |v| v.into()),
+            ),
         }
     }
 }
@@ -311,11 +302,6 @@ impl SearchResult {
     fn datetime(&self) -> DateTime<Utc> {
         self.datetime
     }
-}
-
-struct SearchMeta {
-    results: Vec<SearchResult>,
-    count: i32,
 }
 
 #[juniper::graphql_object(description = "`SearchMeta` is returned from the `search` query.")]
@@ -614,55 +600,6 @@ impl From<LocationInput> for Location {
     }
 }
 
-/// `AssetInput` is used to update the details of an asset.
-#[derive(Clone, GraphQLInputObject)]
-pub struct AssetInput {
-    /// New set of tags to replace the existing set.
-    tags: Option<Vec<String>>,
-    /// New caption to replace any existing value. Note that the caption text
-    /// may contain hashtags which are merged with the other tags, and may have
-    /// an @location that sets the location, if it has not yet defined.
-    caption: Option<String>,
-    /// New location to replace any existing value.
-    location: Option<LocationInput>,
-    /// A date/time that overrides intrinsic values; a `null` clears the custom
-    /// field and reverts back to the intrinsic value.
-    datetime: Option<DateTime<Utc>>,
-    /// New media type, useful for fixing assets where the automatic detection
-    /// guessed wrong. Beware that setting a wrong value means the asset will
-    /// likely not display correctly.
-    media_type: Option<String>,
-    /// New filename to replace any existing value.
-    filename: Option<String>,
-}
-
-impl From<AssetInput> for crate::domain::usecases::update::AssetInput {
-    fn from(val: AssetInput) -> Self {
-        let mut tags = val.tags.unwrap_or(vec![]);
-        // Filter out empty tags, as the front-end may send those because it is
-        // too lazy to filter them itself.
-        tags.retain(|t| !t.is_empty());
-        let location: Option<Location> = val.location.map(|v| v.into());
-        crate::domain::usecases::update::AssetInput {
-            tags,
-            caption: val.caption,
-            location,
-            media_type: val.media_type,
-            datetime: val.datetime,
-            filename: val.filename,
-        }
-    }
-}
-
-/// `AssetInputId` is used to update the details of an asset.
-#[derive(GraphQLInputObject)]
-pub struct AssetInputId {
-    /// Identifier for the asset to be updated.
-    id: String,
-    /// Input for the asset.
-    input: AssetInput,
-}
-
 pub struct QueryRoot;
 
 #[juniper::graphql_object(Context = GraphContext)]
@@ -763,61 +700,6 @@ impl QueryRoot {
         Ok(types)
     }
 
-    /// Search for assets that were recently imported.
-    ///
-    /// Recently imported assets do not have any tags, location, or caption, and
-    /// thus are waiting for the user to give them additional details.
-    ///
-    /// The count indicates how many results to return in a single query,
-    /// limited to a maximum of 250. Default value is `10`.
-    ///
-    /// The offset is useful for pagination. Default value is `0`.
-    fn recent(
-        #[graphql(ctx)] ctx: &GraphContext,
-        since: Option<DateTime<Utc>>,
-        count: Option<i32>,
-        offset: Option<i32>,
-    ) -> FieldResult<SearchMeta> {
-        use crate::domain::usecases::recent::{Params, RecentImports};
-        use crate::domain::usecases::UseCase;
-        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
-        let usecase = RecentImports::new(Box::new(repo));
-        let params = Params { after_date: since };
-        let mut results: Vec<SearchResult> = usecase.call(params)?;
-        let total_count = results.len() as i32;
-        let results = paginate_vector(&mut results, offset, count);
-        Ok(SearchMeta {
-            results,
-            count: total_count,
-        })
-    }
-
-    /// Search for assets by the given parameters.
-    ///
-    /// The count indicates how many results to return in a single query,
-    /// limited to a maximum of 250. Default value is `10`.
-    ///
-    /// The offset is useful for pagination. Default value is `0`.
-    fn search(
-        #[graphql(ctx)] ctx: &GraphContext,
-        params: SearchParams,
-        count: Option<i32>,
-        offset: Option<i32>,
-    ) -> FieldResult<SearchMeta> {
-        use crate::domain::usecases::search::{Params, SearchAssets};
-        use crate::domain::usecases::UseCase;
-        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
-        let usecase = SearchAssets::new(Box::new(repo));
-        let params: Params = params.into();
-        let mut results: Vec<SearchResult> = usecase.call(params)?;
-        let total_count = results.len() as i32;
-        let results = paginate_vector(&mut results, offset, count);
-        Ok(SearchMeta {
-            results,
-            count: total_count,
-        })
-    }
-
     /// Retrieve the list of tags and their associated asset count.
     fn tags(#[graphql(ctx)] ctx: &GraphContext) -> FieldResult<Vec<LabeledCount>> {
         use crate::domain::usecases::tags::AllTags;
@@ -841,49 +723,10 @@ impl QueryRoot {
     }
 }
 
-/// Return the optional value bounded by the given range, or the default value
-/// if `value` is `None`.
-fn bounded_int_value(value: Option<i32>, default: i32, minimum: i32, maximum: i32) -> i32 {
-    if let Some(v) = value {
-        std::cmp::min(std::cmp::max(v, minimum), maximum)
-    } else {
-        default
-    }
-}
-
-/// Truncate the given vector to yield the desired portion.
-///
-/// If offset is None, it defaults to 0, while count defaults to 10. Offset is
-/// bound between zero and the length of the input vector. Count is bound by 1
-/// and 250.
-fn paginate_vector<T>(input: &mut Vec<T>, offset: Option<i32>, count: Option<i32>) -> Vec<T> {
-    let total_count = input.len() as i32;
-    let count = bounded_int_value(count, 10, 1, 250) as usize;
-    let offset = bounded_int_value(offset, 0, 0, total_count) as usize;
-    let mut results = input.split_off(offset);
-    results.truncate(count);
-    results
-}
-
 pub struct MutationRoot;
 
 #[juniper::graphql_object(Context = GraphContext)]
 impl MutationRoot {
-    /// Perform an import on all files in the uploads directory.
-    fn ingest(#[graphql(ctx)] ctx: &GraphContext) -> FieldResult<i32> {
-        use crate::domain::usecases::ingest::{IngestAssets, Params};
-        use crate::domain::usecases::UseCase;
-        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
-        let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
-        let geocoder = find_location_repository();
-        let usecase = IngestAssets::new(Arc::new(repo), Arc::new(blobs), geocoder);
-        let path = std::env::var("UPLOAD_PATH").unwrap_or_else(|_| "tmp/uploads".to_owned());
-        let uploads_path = PathBuf::from(path);
-        let params = Params::new(uploads_path);
-        let count = usecase.call(params)?;
-        Ok(count as i32)
-    }
-
     /// Diagnosis and repair issues in the database and blob store.
     fn repair(
         #[graphql(ctx)] ctx: &GraphContext,
@@ -903,39 +746,6 @@ impl MutationRoot {
         Ok(results)
     }
 
-    /// Update the asset with the given values.
-    fn update(
-        #[graphql(ctx)] ctx: &GraphContext,
-        id: String,
-        asset: AssetInput,
-    ) -> FieldResult<Asset> {
-        use crate::domain::usecases::update::{Params, UpdateAsset};
-        use crate::domain::usecases::UseCase;
-        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
-        let usecase = UpdateAsset::new(Box::new(repo));
-        let params: Params = Params::new(id, asset.into());
-        let result: Asset = usecase.call(params)?;
-        Ok(result)
-    }
-
-    /// Update multiple assets with the given values.
-    ///
-    /// Returns the number of updated assets.
-    fn bulk_update(
-        #[graphql(ctx)] ctx: &GraphContext,
-        assets: Vec<AssetInputId>,
-    ) -> FieldResult<i32> {
-        use crate::domain::usecases::update::{Params, UpdateAsset};
-        use crate::domain::usecases::UseCase;
-        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
-        let usecase = UpdateAsset::new(Box::new(repo));
-        for asset in assets.iter() {
-            let params: Params = Params::new(asset.id.clone(), asset.input.clone().into());
-            usecase.call(params)?;
-        }
-        Ok(assets.len() as i32)
-    }
-
     /// Attempt to fill in the city and region for assets that have GPS
     /// coordinates available in the file metadata.
     ///
@@ -950,7 +760,7 @@ impl MutationRoot {
         let usecase = Geocoder::new(Box::new(repo), Box::new(blobs), geocoder);
         let result = usecase.call(Params::new(overwrite));
         if let Ok(count) = result {
-            return Ok(count as i32)
+            return Ok(count as i32);
         }
         error!("geocode error: {:?}", result);
         Ok(-1)
@@ -1019,7 +829,7 @@ mod tests {
     use super::*;
     use crate::data::sources::MockEntityDataSource;
     use anyhow::anyhow;
-    use juniper::{InputValue, ToInputValue, Variables};
+    use juniper::{InputValue, Variables};
     use mockall::predicate::*;
 
     fn make_date_time(
@@ -1033,47 +843,6 @@ mod tests {
         Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
             .single()
             .unwrap()
-    }
-
-    #[test]
-    fn test_bounded_int_value() {
-        assert_eq!(10, bounded_int_value(None, 10, 1, 250));
-        assert_eq!(15, bounded_int_value(Some(15), 10, 1, 250));
-        assert_eq!(1, bounded_int_value(Some(-8), 10, 1, 250));
-        assert_eq!(250, bounded_int_value(Some(1000), 10, 1, 250));
-    }
-
-    #[test]
-    fn test_paginate_vector() {
-        // sensible "first" page
-        let mut input: Vec<u32> = Vec::new();
-        for v in 0..102 {
-            input.push(v);
-        }
-        let actual = paginate_vector(&mut input, Some(0), Some(10));
-        assert_eq!(actual.len(), 10);
-        assert_eq!(actual[0], 0);
-        assert_eq!(actual[9], 9);
-
-        // page somewhere in the middle
-        let mut input: Vec<u32> = Vec::new();
-        for v in 0..102 {
-            input.push(v);
-        }
-        let actual = paginate_vector(&mut input, Some(40), Some(20));
-        assert_eq!(actual.len(), 20);
-        assert_eq!(actual[0], 40);
-        assert_eq!(actual[19], 59);
-
-        // last page with over extension
-        let mut input: Vec<u32> = Vec::new();
-        for v in 0..102 {
-            input.push(v);
-        }
-        let actual = paginate_vector(&mut input, Some(90), Some(100));
-        assert_eq!(actual.len(), 12);
-        assert_eq!(actual[0], 90);
-        assert_eq!(actual[11], 101);
     }
 
     #[test]
@@ -1470,606 +1239,6 @@ mod tests {
         assert!(errors[0].error().message().contains("oh no"));
     }
 
-    fn make_search_results() -> Vec<SearchResult> {
-        vec![
-            SearchResult {
-                asset_id: "cafebabe".to_owned(),
-                filename: "img_1234.png".to_owned(),
-                media_type: "image/png".to_owned(),
-                location: Some(Location::new("hawaii")),
-                datetime: make_date_time(2012, 5, 31, 21, 10, 11),
-            },
-            SearchResult {
-                asset_id: "babecafe".to_owned(),
-                filename: "img_2345.gif".to_owned(),
-                media_type: "image/gif".to_owned(),
-                location: Some(Location::new("london")),
-                datetime: make_date_time(2013, 5, 31, 21, 10, 11),
-            },
-            SearchResult {
-                asset_id: "cafed00d".to_owned(),
-                filename: "img_3456.mov".to_owned(),
-                media_type: "video/quicktime".to_owned(),
-                location: Some(Location::new("paris")),
-                datetime: make_date_time(2014, 5, 31, 21, 10, 11),
-            },
-            SearchResult {
-                asset_id: "d00dcafe".to_owned(),
-                filename: "img_4567.jpg".to_owned(),
-                media_type: "image/jpeg".to_owned(),
-                location: Some(Location::new("hawaii")),
-                datetime: make_date_time(2015, 5, 31, 21, 10, 11),
-            },
-            SearchResult {
-                asset_id: "deadbeef".to_owned(),
-                filename: "img_5678.mov".to_owned(),
-                media_type: "video/quicktime".to_owned(),
-                location: Some(Location::new("london")),
-                datetime: make_date_time(2016, 5, 31, 21, 10, 11),
-            },
-            SearchResult {
-                asset_id: "cafebeef".to_owned(),
-                filename: "img_6789.jpg".to_owned(),
-                media_type: "image/jpeg".to_owned(),
-                location: Some(Location::new("paris")),
-                datetime: make_date_time(2017, 5, 31, 21, 10, 11),
-            },
-            SearchResult {
-                asset_id: "deadcafe".to_owned(),
-                filename: "img_7890.jpg".to_owned(),
-                media_type: "image/jpeg".to_owned(),
-                location: Some(Location::new("yosemite")),
-                datetime: make_date_time(2018, 5, 31, 21, 10, 11),
-            },
-        ]
-    }
-
-    #[test]
-    fn test_query_search_ok() {
-        // arrange
-        let results = make_search_results();
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_tags()
-            .with(always())
-            .returning(move |_| Ok(results.clone()));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let mut vars = Variables::new();
-        let params = SearchParams {
-            tags: Some(vec!["cat".to_owned()]),
-            locations: None,
-            after: None,
-            before: None,
-            filename: None,
-            media_type: None,
-            sort_field: Some(SortField::Identifier),
-            sort_order: Some(SortOrder::Ascending),
-        };
-        vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute_sync(
-            r#"query Search($params: SearchParams!) {
-                search(params: $params) {
-                    results { id filename mediaType location { label } datetime }
-                    count
-                }
-            }"#,
-            None,
-            &schema,
-            &vars,
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        assert_eq!(errors.len(), 0);
-        let res = res.as_object_value().unwrap();
-        let res = res.get_field_value("search").unwrap();
-        let search = res.as_object_value().unwrap();
-        let count_field = search.get_field_value("count").unwrap();
-        let count_value = count_field.as_scalar_value::<i32>().unwrap();
-        assert_eq!(*count_value, 7);
-        let results_field = search.get_field_value("results").unwrap();
-        let result_value = results_field.as_list_value().unwrap();
-
-        // check the first result
-        let entry_object = result_value[0].as_object_value().unwrap();
-        let entry_field = entry_object.get_field_value("id").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "babecafe");
-        let entry_field = entry_object.get_field_value("filename").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "img_2345.gif");
-        let entry_field = entry_object.get_field_value("mediaType").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "image/gif");
-        let entry_field = entry_object.get_field_value("location").unwrap();
-        let object_value = entry_field.as_object_value().unwrap();
-        let entry_field = object_value.get_field_value("label").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "london");
-        let entry_field = entry_object.get_field_value("datetime").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(&entry_value[..19], "2013-05-31T21:10:11");
-
-        // check the last result
-        let entry_object = result_value[6].as_object_value().unwrap();
-        let entry_field = entry_object.get_field_value("id").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "deadcafe");
-        let entry_field = entry_object.get_field_value("filename").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "img_7890.jpg");
-        let entry_field = entry_object.get_field_value("mediaType").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "image/jpeg");
-        let entry_field = entry_object.get_field_value("location").unwrap();
-        let object_value = entry_field.as_object_value().unwrap();
-        let entry_field = object_value.get_field_value("label").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "yosemite");
-        let entry_field = entry_object.get_field_value("datetime").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(&entry_value[..19], "2018-05-31T21:10:11");
-    }
-
-    fn make_many_results() -> Vec<SearchResult> {
-        let mut results: Vec<SearchResult> = Vec::new();
-        let locations = ["hawaii", "paris", "london"];
-        for index in 1..108 {
-            // add leading zeros so sorting by id works naturally
-            let asset_id = format!("cafebabe-{:04}", index);
-            let filename = format!("img_1{}.jpg", index);
-            let base_time = make_date_time(2012, 5, 31, 21, 10, 11);
-            let duration = chrono::Duration::days(index);
-            let datetime = base_time + duration;
-            let location_index = (index % locations.len() as i64) as usize;
-            results.push(SearchResult {
-                asset_id,
-                filename,
-                media_type: "image/jpeg".to_owned(),
-                location: Some(Location::new(locations[location_index])),
-                datetime,
-            });
-        }
-        results
-    }
-
-    #[test]
-    fn test_query_recent_ok() {
-        // arrange
-        let results = vec![SearchResult {
-            asset_id: "cafebabe".to_owned(),
-            filename: "img_1234.png".to_owned(),
-            media_type: "image/png".to_owned(),
-            location: None,
-            datetime: make_date_time(2019, 5, 13, 20, 46, 11),
-        }];
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_query_newborn()
-            .with(always())
-            .returning(move |_| Ok(results.clone()));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let mut vars = Variables::new();
-        let since = Some(Utc::now());
-        vars.insert("since".to_owned(), since.to_input_value());
-        let (res, errors) = juniper::execute_sync(
-            r#"query Recent($since: DateTime) {
-                recent(since: $since) {
-                    results { id }
-                    count
-                }
-            }"#,
-            None,
-            &schema,
-            &vars,
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        assert_eq!(errors.len(), 0);
-        let res = res.as_object_value().unwrap();
-        let res = res.get_field_value("recent").unwrap();
-        let recent = res.as_object_value().unwrap();
-        let count_field = recent.get_field_value("count").unwrap();
-        let count_value = count_field.as_scalar_value::<i32>().unwrap();
-        assert_eq!(*count_value, 1);
-        let results_field = recent.get_field_value("results").unwrap();
-        let result_value = results_field.as_list_value().unwrap();
-        assert_eq!(result_value.len(), 1);
-
-        // check the result
-        let entry_object = result_value[0].as_object_value().unwrap();
-        let entry_field = entry_object.get_field_value("id").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe");
-    }
-
-    #[test]
-    fn test_query_recent_err() {
-        // arrange
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_query_newborn()
-            .with(always())
-            .returning(|_| Err(anyhow!("oh no")));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let mut vars = Variables::new();
-        let since = Some(Utc::now());
-        vars.insert("since".to_owned(), since.to_input_value());
-        let (res, errors) = juniper::execute_sync(
-            r#"query Recent($since: DateTime) {
-                recent(since: $since) {
-                    results { id }
-                    count
-                }
-            }"#,
-            None,
-            &schema,
-            &vars,
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        assert!(res.is_null());
-        assert_eq!(errors.len(), 1);
-        assert!(errors[0].error().message().contains("oh no"));
-    }
-
-    #[test]
-    fn test_query_search_page_first() {
-        // arrange
-        let results = make_many_results();
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_tags()
-            .with(always())
-            .returning(move |_| Ok(results.clone()));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let mut vars = Variables::new();
-        let params = SearchParams {
-            tags: Some(vec!["cat".to_owned()]),
-            locations: None,
-            after: None,
-            before: None,
-            filename: None,
-            media_type: None,
-            sort_field: Some(SortField::Identifier),
-            sort_order: Some(SortOrder::Ascending),
-        };
-        vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute_sync(
-            r#"query Search($params: SearchParams!) {
-                search(params: $params, count: 10) {
-                    results { id }
-                    count
-                }
-            }"#,
-            None,
-            &schema,
-            &vars,
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        assert_eq!(errors.len(), 0);
-        let res = res.as_object_value().unwrap();
-        let res = res.get_field_value("search").unwrap();
-        let search = res.as_object_value().unwrap();
-        let count_field = search.get_field_value("count").unwrap();
-        let count_value = count_field.as_scalar_value::<i32>().unwrap();
-        assert_eq!(*count_value, 107);
-        let results_field = search.get_field_value("results").unwrap();
-        let result_value = results_field.as_list_value().unwrap();
-        assert_eq!(result_value.len(), 10);
-
-        // check the first result
-        let entry_object = result_value[0].as_object_value().unwrap();
-        let entry_field = entry_object.get_field_value("id").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-0001");
-
-        // check the last result
-        let entry_object = result_value[9].as_object_value().unwrap();
-        let entry_field = entry_object.get_field_value("id").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-0010");
-    }
-
-    #[test]
-    fn test_query_search_page_middle() {
-        // arrange
-        let results = make_many_results();
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_tags()
-            .with(always())
-            .returning(move |_| Ok(results.clone()));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let mut vars = Variables::new();
-        let params = SearchParams {
-            tags: Some(vec!["cat".to_owned()]),
-            locations: None,
-            after: None,
-            before: None,
-            filename: None,
-            media_type: None,
-            sort_field: Some(SortField::Identifier),
-            sort_order: Some(SortOrder::Ascending),
-        };
-        vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute_sync(
-            r#"query Search($params: SearchParams!) {
-                search(params: $params, count: 10, offset: 20) {
-                    results { id }
-                    count
-                }
-            }"#,
-            None,
-            &schema,
-            &vars,
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        assert_eq!(errors.len(), 0);
-        let res = res.as_object_value().unwrap();
-        let res = res.get_field_value("search").unwrap();
-        let search = res.as_object_value().unwrap();
-        let count_field = search.get_field_value("count").unwrap();
-        let count_value = count_field.as_scalar_value::<i32>().unwrap();
-        assert_eq!(*count_value, 107);
-        let results_field = search.get_field_value("results").unwrap();
-        let result_value = results_field.as_list_value().unwrap();
-        assert_eq!(result_value.len(), 10);
-
-        // check the first result
-        let entry_object = result_value[0].as_object_value().unwrap();
-        let entry_field = entry_object.get_field_value("id").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-0021");
-
-        // check the last result
-        let entry_object = result_value[9].as_object_value().unwrap();
-        let entry_field = entry_object.get_field_value("id").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-0030");
-    }
-
-    #[test]
-    fn test_query_search_page_last() {
-        // arrange
-        let results = make_many_results();
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_tags()
-            .with(always())
-            .returning(move |_| Ok(results.clone()));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let mut vars = Variables::new();
-        let params = SearchParams {
-            tags: Some(vec!["cat".to_owned()]),
-            locations: None,
-            after: None,
-            before: None,
-            filename: None,
-            media_type: None,
-            sort_field: Some(SortField::Identifier),
-            sort_order: Some(SortOrder::Ascending),
-        };
-        vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute_sync(
-            r#"query Search($params: SearchParams!) {
-                search(params: $params, count: 100, offset: 80) {
-                    results { id }
-                    count
-                }
-            }"#,
-            None,
-            &schema,
-            &vars,
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        assert_eq!(errors.len(), 0);
-        let res = res.as_object_value().unwrap();
-        let res = res.get_field_value("search").unwrap();
-        let search = res.as_object_value().unwrap();
-        let count_field = search.get_field_value("count").unwrap();
-        let count_value = count_field.as_scalar_value::<i32>().unwrap();
-        assert_eq!(*count_value, 107);
-        let results_field = search.get_field_value("results").unwrap();
-        let result_value = results_field.as_list_value().unwrap();
-        assert_eq!(result_value.len(), 27);
-
-        // check the first result
-        let entry_object = result_value[0].as_object_value().unwrap();
-        let entry_field = entry_object.get_field_value("id").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-0081");
-
-        // check the last result
-        let entry_object = result_value[26].as_object_value().unwrap();
-        let entry_field = entry_object.get_field_value("id").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-0107");
-    }
-
-    #[test]
-    fn test_query_search_complex() {
-        // arrange
-        let results = make_many_results();
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_tags()
-            .with(always())
-            .returning(move |_| Ok(results.clone()));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let mut vars = Variables::new();
-        // slightly more complex search parameters
-        let params = SearchParams {
-            tags: Some(vec!["cat".to_owned()]),
-            locations: Some(vec!["hawaii".to_owned()]),
-            after: None,
-            before: None,
-            filename: None,
-            media_type: None,
-            sort_field: Some(SortField::Identifier),
-            sort_order: Some(SortOrder::Ascending),
-        };
-        vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute_sync(
-            r#"query Search($params: SearchParams!) {
-                search(params: $params, count: 100) {
-                    results { id }
-                    count
-                }
-            }"#,
-            None,
-            &schema,
-            &vars,
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        assert_eq!(errors.len(), 0);
-        let res = res.as_object_value().unwrap();
-        let res = res.get_field_value("search").unwrap();
-        let search = res.as_object_value().unwrap();
-        let count_field = search.get_field_value("count").unwrap();
-        let count_value = count_field.as_scalar_value::<i32>().unwrap();
-        assert_eq!(*count_value, 35);
-        let results_field = search.get_field_value("results").unwrap();
-        let result_value = results_field.as_list_value().unwrap();
-        assert_eq!(result_value.len(), 35);
-
-        // check the first result
-        let entry_object = result_value[0].as_object_value().unwrap();
-        let entry_field = entry_object.get_field_value("id").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-0003");
-
-        // check the last result
-        let entry_object = result_value[34].as_object_value().unwrap();
-        let entry_field = entry_object.get_field_value("id").unwrap();
-        let entry_value = entry_field.as_scalar_value::<String>().unwrap();
-        assert_eq!(entry_value, "cafebabe-0105");
-    }
-
-    #[test]
-    fn test_query_search_none() {
-        // arrange
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_tags()
-            .with(always())
-            .returning(move |_| Ok(vec![]));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let mut vars = Variables::new();
-        let params = SearchParams {
-            tags: Some(vec!["cat".to_owned()]),
-            locations: None,
-            after: None,
-            before: None,
-            filename: None,
-            media_type: None,
-            sort_field: Some(SortField::Identifier),
-            sort_order: Some(SortOrder::Ascending),
-        };
-        vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute_sync(
-            r#"query Search($params: SearchParams!) {
-                search(params: $params) {
-                    results { id filename mediaType location { label } datetime }
-                    count
-                }
-            }"#,
-            None,
-            &schema,
-            &vars,
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        assert_eq!(errors.len(), 0);
-        let res = res.as_object_value().unwrap();
-        let res = res.get_field_value("search").unwrap();
-        let search = res.as_object_value().unwrap();
-        let count_field = search.get_field_value("count").unwrap();
-        let count_value = count_field.as_scalar_value::<i32>().unwrap();
-        assert_eq!(*count_value, 0);
-        let results_field = search.get_field_value("results").unwrap();
-        let result_value = results_field.as_list_value().unwrap();
-        assert_eq!(result_value.len(), 0);
-    }
-
-    #[test]
-    fn test_query_search_err() {
-        // arrange
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_tags()
-            .with(eq(vec!["cat".to_owned()]))
-            .returning(|_| Err(anyhow!("oh no")));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let mut vars = Variables::new();
-        let params = SearchParams {
-            tags: Some(vec!["cat".to_owned()]),
-            locations: None,
-            after: None,
-            before: None,
-            filename: None,
-            media_type: None,
-            sort_field: Some(SortField::Identifier),
-            sort_order: Some(SortOrder::Ascending),
-        };
-        vars.insert("params".to_owned(), params.to_input_value());
-        let (res, errors) = juniper::execute_sync(
-            r#"query Search($params: SearchParams!) {
-                search(params: $params) {
-                    results { id }
-                    count
-                }
-            }"#,
-            None,
-            &schema,
-            &vars,
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        assert!(res.is_null());
-        assert_eq!(errors.len(), 1);
-        assert!(errors[0].error().message().contains("oh no"));
-    }
-
     #[test]
     fn test_query_tags_ok() {
         // arrange
@@ -2216,279 +1385,5 @@ mod tests {
         assert!(res.is_null());
         assert_eq!(errors.len(), 1);
         assert!(errors[0].error().message().contains("oh no"));
-    }
-
-    #[test]
-    fn test_mutation_update_ok() {
-        // arrange
-        let asset1 = Asset {
-            key: "abc123".to_owned(),
-            checksum: "cafebabe".to_owned(),
-            filename: "img_1234.jpg".to_owned(),
-            byte_length: 1048576,
-            media_type: "image/jpeg".to_owned(),
-            tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: make_date_time(2018, 5, 31, 21, 10, 11),
-            caption: None,
-            location: Some(Location::new("hawaii")),
-            user_date: None,
-            original_date: None,
-            dimensions: None,
-        };
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_get_asset()
-            .with(eq("abc123"))
-            .returning(move |_| Ok(asset1.clone()));
-        mock.expect_put_asset().with(always()).returning(|_| Ok(()));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let mut vars = Variables::new();
-        let input = AssetInput {
-            tags: Some(vec!["kitten".to_owned()]),
-            caption: Some("saw a #cat playing".to_owned()),
-            location: Some(LocationInput {
-                label: Some("london".to_owned()),
-                city: None,
-                region: None,
-            }),
-            datetime: None,
-            media_type: None,
-            filename: None,
-        };
-        vars.insert("input".to_owned(), input.to_input_value());
-        let (res, errors) = juniper::execute_sync(
-            r#"mutation Update($input: AssetInput!) {
-                update(id: "abc123", asset: $input) {
-                    id tags location { label } caption
-                }
-            }"#,
-            None,
-            &schema,
-            &vars,
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        assert_eq!(errors.len(), 0);
-        let res = res.as_object_value().unwrap();
-        let res = res.get_field_value("update").unwrap();
-        let object = res.as_object_value().unwrap();
-        let field = object.get_field_value("id").unwrap();
-        let value = field.as_scalar_value::<String>().unwrap();
-        assert_eq!(value, "abc123");
-        let field = object.get_field_value("location").unwrap();
-        let lobject = field.as_object_value().unwrap();
-        let field = lobject.get_field_value("label").unwrap();
-        let value = field.as_scalar_value::<String>().unwrap();
-        assert_eq!(value, "london");
-        let field = object.get_field_value("caption").unwrap();
-        let value = field.as_scalar_value::<String>().unwrap();
-        assert_eq!(value, "saw a #cat playing");
-        let field = object.get_field_value("tags").unwrap();
-        let value = field.as_list_value().unwrap();
-        let tags = ["cat", "kitten"];
-        for (idx, entry) in value.iter().enumerate() {
-            let actual = entry.as_scalar_value::<String>().unwrap();
-            assert_eq!(actual, tags[idx]);
-        }
-    }
-
-    #[test]
-    fn test_mutation_update_err() {
-        // arrange
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_get_asset()
-            .with(always())
-            .returning(|_| Err(anyhow!("oh no")));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let mut vars = Variables::new();
-        let input = AssetInput {
-            tags: Some(vec!["kitten".to_owned()]),
-            caption: None,
-            location: None,
-            datetime: None,
-            media_type: None,
-            filename: None,
-        };
-        vars.insert("input".to_owned(), input.to_input_value());
-        let (res, errors) = juniper::execute_sync(
-            r#"mutation Update($input: AssetInput!) {
-                update(id: "abc123", asset: $input) { id }
-            }"#,
-            None,
-            &schema,
-            &vars,
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        assert!(res.is_null());
-        assert_eq!(errors.len(), 1);
-        assert!(errors[0].error().message().contains("oh no"));
-    }
-
-    #[test]
-    fn test_update_empty_location() {
-        // arrange
-        let asset1 = Asset {
-            key: "abc123".to_owned(),
-            checksum: "cafebabe".to_owned(),
-            filename: "img_1234.jpg".to_owned(),
-            byte_length: 1048576,
-            media_type: "image/jpeg".to_owned(),
-            tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: make_date_time(2018, 5, 31, 21, 10, 11),
-            caption: None,
-            location: Some(Location::new("hawaii")),
-            user_date: None,
-            original_date: None,
-            dimensions: None,
-        };
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_get_asset()
-            .with(eq("abc123"))
-            .returning(move |_| Ok(asset1.clone()));
-        mock.expect_put_asset().with(always()).returning(|_| Ok(()));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let mut vars = Variables::new();
-        let input = AssetInput {
-            tags: Some(vec!["kitten".to_owned()]),
-            caption: Some("saw a #cat playing".to_owned()),
-            location: Some(LocationInput {
-                label: Some("".to_owned()),
-                city: None,
-                region: None,
-            }),
-            datetime: None,
-            media_type: None,
-            filename: None,
-        };
-        vars.insert("input".to_owned(), input.to_input_value());
-        let (res, errors) = juniper::execute_sync(
-            r#"mutation Update($input: AssetInput!) {
-                update(id: "abc123", asset: $input) {
-                    id tags location { label } caption
-                }
-            }"#,
-            None,
-            &schema,
-            &vars,
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        assert_eq!(errors.len(), 0);
-        let res = res.as_object_value().unwrap();
-        let res = res.get_field_value("update").unwrap();
-        let object = res.as_object_value().unwrap();
-        let field = object.get_field_value("location").unwrap();
-        assert!(field.is_null());
-    }
-
-    #[test]
-    fn test_mutation_bulk_update_ok() {
-        // arrange
-        let asset1 = Asset {
-            key: "monday6".to_owned(),
-            checksum: "cafebabe".to_owned(),
-            filename: "img_1234.jpg".to_owned(),
-            byte_length: 1048576,
-            media_type: "image/jpeg".to_owned(),
-            tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: make_date_time(2018, 5, 31, 21, 10, 11),
-            caption: None,
-            location: Some(Location::new("hawaii")),
-            user_date: None,
-            original_date: None,
-            dimensions: None,
-        };
-        let asset2 = Asset {
-            key: "tuesday7".to_owned(),
-            checksum: "cafed00d".to_owned(),
-            filename: "img_2468.jpg".to_owned(),
-            byte_length: 1048576,
-            media_type: "image/jpeg".to_owned(),
-            tags: vec!["cat".to_owned(), "dog".to_owned()],
-            import_date: make_date_time(2018, 6, 9, 14, 0, 11),
-            caption: None,
-            location: Some(Location::new("oakland")),
-            user_date: None,
-            original_date: None,
-            dimensions: None,
-        };
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_get_asset()
-            .with(eq("monday6"))
-            .returning(move |_| Ok(asset1.clone()));
-        mock.expect_get_asset()
-            .with(eq("tuesday7"))
-            .returning(move |_| Ok(asset2.clone()));
-        mock.expect_put_asset().with(always()).returning(|_| Ok(()));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let mut vars = Variables::new();
-        let assets = vec![
-            AssetInputId {
-                id: "monday6".to_owned(),
-                input: AssetInput {
-                    tags: Some(vec!["kitten".to_owned()]),
-                    caption: Some("saw a #cat playing with a #dog".to_owned()),
-                    location: Some(LocationInput {
-                        label: Some("hawaii".to_owned()),
-                        city: None,
-                        region: None,
-                    }),
-                    datetime: None,
-                    media_type: None,
-                    filename: None,
-                },
-            },
-            AssetInputId {
-                id: "tuesday7".to_owned(),
-                input: AssetInput {
-                    tags: Some(vec!["kitten".to_owned()]),
-                    caption: Some("saw a #cat playing".to_owned()),
-                    location: Some(LocationInput {
-                        label: Some("london".to_owned()),
-                        city: None,
-                        region: None,
-                    }),
-                    datetime: None,
-                    media_type: None,
-                    filename: None,
-                },
-            },
-        ];
-        vars.insert("assets".to_owned(), assets.to_input_value());
-        let (res, errors) = juniper::execute_sync(
-            r#"mutation BulkUpdate($assets: [AssetInputId!]!) {
-                bulkUpdate(assets: $assets)
-            }"#,
-            None,
-            &schema,
-            &vars,
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        assert_eq!(errors.len(), 0);
-        let res = res.as_object_value().unwrap();
-        let res = res.get_field_value("bulkUpdate").unwrap();
-        let actual = res.as_scalar_value::<i32>().unwrap();
-        assert_eq!(*actual, 2);
     }
 }

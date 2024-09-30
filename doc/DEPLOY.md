@@ -7,7 +7,7 @@ The base directory contains a `docker-compose.yml` file which is used to build t
 On the build host:
 
 ```shell
-docker compose build --pull --build-arg BASE_URL=http://192.168.1.3:3000
+docker compose build --pull
 docker image rm 192.168.1.3:5000/tanuki
 docker image tag tanuki-app 192.168.1.3:5000/tanuki
 docker push 192.168.1.3:5000/tanuki
@@ -32,3 +32,16 @@ Google Cloud offers a [reverse geocoding](https://developers.google.com/maps/doc
 1. Set the `GOOGLE_MAPS_API_KEY` environment variable with the value of the API key when starting the application.
 
 Note that the API key must be associated with the geocoding API, an existing key may work but it must be assigned to that API. A key restricted to exclusively that service is more secure against abuse.
+
+## Database Migration
+
+### Basic procedure
+
+1. dump current database
+2. stop container
+3. rename database directory
+4. build and deploy
+5. verify empty
+6. load database dump
+7. verify search works
+8. verify recent assets

@@ -18,7 +18,8 @@ pub mod geo;
 
 // Cache of String keys to Vec<u8> image data for caching thumbnails.
 //
-// Cache capacity of 100 for 15kb thumbnails is around 1 megabyte.
+// Cache capacity of 100 for 150kb thumbnails is around 10 megabytes (this
+// assumes 72x72 resolution JPEG images resized to about 960x960 pixels).
 //
 // If the Mutex proves to be problematic, switch to ReentrantMutex in the
 // parking_lot crate, which allows recursive locking.

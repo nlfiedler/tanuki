@@ -4,7 +4,10 @@ use std::process::exit;
 
 #[tokio::main]
 async fn main() {
-    let port = env::var("PORT").unwrap_or("8080".into());
+    // discard the host portion of the address, we always use localhost and keep
+    // only the port, which can be changed via configuration
+    let site_addr = env::var("LEPTOS_SITE_ADDR").unwrap_or("127.0.0.1:3000".into());
+    let port = site_addr.split(":").nth(1).unwrap();
     let path = env::var("HEALTHCHECK_PATH").unwrap_or("/".into());
     let url_str = format!("http://localhost:{}{}", port, path);
     let url = Url::parse(&url_str).expect("URL parse");

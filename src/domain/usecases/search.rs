@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::entities::SearchResult;
+use crate::domain::entities::{SearchResult, SortField, SortOrder};
 use crate::domain::repositories::RecordRepository;
 use anyhow::Error;
 use chrono::prelude::*;
@@ -222,24 +222,6 @@ fn sort_by_media_type_ascending(a: &SearchResult, b: &SearchResult) -> std::cmp:
 
 fn sort_by_media_type_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
     b.media_type.cmp(&a.media_type)
-}
-
-/// Field of the search results on which to sort.
-#[derive(Clone, Copy)]
-pub enum SortField {
-    Date,
-    Identifier,
-    Filename,
-    MediaType,
-}
-
-/// Order by which to sort the search results.
-///
-/// If not specified in the search paramaters, the default is ascending.
-#[derive(Clone, Copy, PartialEq)]
-pub enum SortOrder {
-    Ascending,
-    Descending,
 }
 
 #[derive(Clone, Default)]

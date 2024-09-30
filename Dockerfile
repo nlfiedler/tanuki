@@ -5,46 +5,23 @@ FROM rust:latest AS builder
 ENV DEBIAN_FRONTEND="noninteractive"
 RUN apt-get -q update && \
     apt-get -q -y install clang
+RUN cargo install cargo-leptos
+RUN rustup target add wasm32-unknown-unknown
 WORKDIR /build
+COPY assets assets/
 COPY Cargo.toml .
 COPY src src/
-RUN cargo build --release
+COPY style style/
+RUN cargo leptos build --release
 
 #
 # build the healthcheck binary
 #
 FROM rust:latest AS healthy
-WORKDIR /health
+WORKDIR /build
 COPY healthcheck/Cargo.toml .
 COPY healthcheck/src src/
 RUN cargo build --release
-
-#
-# build the flutter app
-#
-# For consistency, use the Dart image as a base, add a version of Flutter that
-# is known to work via the fvm tool, and then enable the web platform as a build
-# target.
-#
-#
-FROM dart:stable AS flutter
-ARG BASE_URL=http://localhost:3000
-ENV DEBIAN_FRONTEND="noninteractive"
-RUN apt-get -q update && \
-    apt-get -q -y install unzip
-RUN dart pub global activate fvm
-RUN fvm install stable
-WORKDIR /flutter
-COPY lib lib/
-COPY pubspec.yaml .
-COPY public public/
-COPY web web/
-RUN fvm use --force stable
-RUN fvm flutter config --enable-web
-RUN fvm flutter pub get
-ENV BASE_URL="${BASE_URL}"
-RUN fvm flutter pub run environment_config:generate
-RUN fvm flutter build web
 
 #
 # build the final image
@@ -52,19 +29,22 @@ RUN fvm flutter build web
 # ensure SSL and CA certificates are available for HTTPS client
 #
 FROM debian:latest
+ARG SITE_ADDR="0.0.0.0:3000"
+ENV DEBIAN_FRONTEND="noninteractive"
 RUN apt-get -q update && \
-    apt-get -q -y install ca-certificates
-WORKDIR /tanuki
+    apt-get -q -y install openssl ca-certificates
+WORKDIR /app
 COPY --from=builder /build/target/release/tanuki .
-COPY --from=healthy /health/target/release/healthcheck .
-COPY --from=flutter /flutter/build/web web/
+COPY --from=builder /build/target/site site
+COPY --from=builder /build/Cargo.toml .
+COPY --from=healthy /build/target/release/healthcheck .
 VOLUME /assets
 VOLUME /database
 ENV DB_PATH="/database"
 ENV UPLOAD_PATH="/assets/uploads"
 ENV ASSETS_PATH="/assets/blobstore"
-ENV HOST="0.0.0.0"
-ENV PORT=3000
+ENV LEPTOS_SITE_ADDR="${SITE_ADDR}"
+ENV LEPTOS_SITE_ROOT="site"
 ENV RUST_LOG="info"
 EXPOSE ${PORT}
 HEALTHCHECK CMD ./healthcheck

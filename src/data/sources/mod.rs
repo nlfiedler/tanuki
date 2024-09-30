@@ -121,7 +121,7 @@ impl EntityDataSourceImpl {
             .iter()
             .map(|t| {
                 let raw = String::from_utf8((*t.0).to_vec()).unwrap();
-                Location::deserialize(&raw)
+                Location::str_deserialize(&raw)
             })
             .collect();
         Ok(results)
@@ -358,7 +358,7 @@ impl Document for Asset {
             // this is an abuse of the indexing library in order to maintain the
             // index in the event of documents being updated or removed
             if let Some(loc) = self.location.as_ref() {
-                let encoded = loc.serialize();
+                let encoded = loc.str_serialize();
                 emitter.emit(encoded.as_bytes(), None)?;
             }
         } else if view == "by_year" {
