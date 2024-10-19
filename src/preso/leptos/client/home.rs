@@ -284,19 +284,25 @@ pub fn HomePage() -> impl IntoView {
                 <TagList
                     attrs=selected_tags
                     rm_attr=move |attr| {
-                        set_selected_tags
-                            .update(|coll| {
-                                coll.remove(&attr);
-                            })
+                        batch(|| {
+                            set_selected_tags
+                                .update(|coll| {
+                                    coll.remove(&attr);
+                                });
+                            selected_page.set(1);
+                        })
                     }
                 />
                 <TagList
                     attrs=selected_locations
                     rm_attr=move |attr| {
-                        set_selected_locations
-                            .update(|coll| {
-                                coll.remove(&attr);
-                            })
+                        batch(|| {
+                            set_selected_locations
+                                .update(|coll| {
+                                    coll.remove(&attr);
+                                });
+                            selected_page.set(1);
+                        })
                     }
                 />
             </div>
