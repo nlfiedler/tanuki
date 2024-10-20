@@ -1,12 +1,18 @@
 * Action Items
 ** Pending
+*** TODO selecting seems to cause everything to re-render (because of videos?)
 *** display options: have an option that makes the images really big (single column, huge images)
 *** add (un)select-all buttons
 *** make =fa-angle-down= icon in =card-header= actually do something
 *** add item to ~dropdown~ menu to show the asset in full size in a modal
 *** add item to ~dropdown~ menu to navigate to asset view
 ** Browse
-*** retain search parameters and page number when navigating back and forth
+*** TODO retain search parameters and page number when navigating back and forth
+**** could use a signal above the routes, use =provide_context()= to send down the tree
+**** could use local storage for each signal value and hydrate on page load
+*** TODO make the selectors row sticky when scrolling
+**** allow navbar to scroll away
+**** container with selectors and container with tags should be sticky
 *** when multiple attributes are selected, add a ~clear all~ button/tag
 *** change query to find intersection of selected locations
 **** currently is finding the union of such locations
@@ -50,7 +56,10 @@
 *** calendar view for browsing by months
 **** PhotoPrism has a ~calendar~ view that shows months of years in descending order with a random thumbnail
 **** clicking on the month opens an "album" of everything in that month
+** Dismissing dropdowns (pagination, color scheme)
+*** use =on_click_outside= in =leptos-use= crate
 ** Details
+*** center smaller images
 *** input validation of some sort, probably
 *** completion for tags (like home screen search)
 *** somehow offer completion of location even though its in 3 separate fields
@@ -147,11 +156,9 @@ assertion failed: actual.is_ok()
 *** graphql: mutation to change the orientation for an image via usecase
 *** webui: icon to show orientation of image, if it is an image
 **** need an icon for ~unset~ orientation for those really old images
-** Light/Dark theme switch
-*** dark mode is enabled in Bulma using the =attr:data-theme= on the =Html= tag in =mod.rs=
-*** c.f. https://github.com/leptos-rs/example-darkmode (very elaborate example)
-*** use =bulma-switch= from https://bulma.io/extensions/ for the HTML element
-*** use =gloo_storage= crate to store theme selection in =LocalStorage=
+** Placeholder thumbnails
+*** when an asset cannot produce a thumbnail, server a placeholder
+*** PhotoPrism generates suitable thumbnails for other kinds of files, saves them to disk
 ** Manage revisions of assets
 *** when uploading a replacement file for an asset, keep the old file
 *** add the old identifier to a new property in the asset record
@@ -190,8 +197,6 @@ include it in the database records.
 **** Display available metadata
 *** Render Markdown as HTML in a scrollable view
 *** Display anything textual in a scrollable text area
-*** Thumbnails for non-images
-**** PhotoPrism generates suitable thumbnails for other kinds of files, saves them to disk
 *** HEIC/HEIF images
 **** HEIF is an image file format employing HEVC (h.265) image coding
 **** [[https://aomediacodec.github.io/av1-avif/][AV1]] is the free alternative to encumbered HEVC

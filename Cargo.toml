@@ -36,7 +36,7 @@ leptos = "0.6.15"
 leptos_actix = { version = "0.6.15", optional = true }
 leptos_meta = "0.6.15"
 leptos_router = "0.6.15"
-leptos-use = { version = "0.13.5", features = ["use_drop_zone"] }
+leptos-use = "0.13.5"
 log = "0.4.8"
 lru = { version = "0.12.1", optional = true }
 mime = { version = "0.3.17", optional = true }
@@ -106,6 +106,8 @@ ssr = [
     "leptos/ssr",
     "leptos_meta/ssr",
     "leptos_router/ssr",
+    "leptos-use/ssr",
+    "leptos-use/actix",
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode

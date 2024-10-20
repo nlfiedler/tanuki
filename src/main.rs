@@ -202,7 +202,7 @@ async fn graphql(
 
 // Produce a thumbnail for the asset of the requested size.
 #[cfg(feature = "ssr")]
-async fn get_thumbnail(req: HttpRequest) -> HttpResponse {
+async fn get_thumbnail(req: HttpRequest) -> actix_web::Result<HttpResponse> {
     // => /rest/thumbnail/{w}/{h}/{id}
     let width: u32 = req.match_info().get("w").unwrap().parse().unwrap();
     let height: u32 = req.match_info().get("h").unwrap().parse().unwrap();
@@ -214,22 +214,20 @@ async fn get_thumbnail(req: HttpRequest) -> HttpResponse {
             let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
             blobs.thumbnail(width, height, &identifier)
         })
-        // TODO: i do not understand why ? will not work for this result
-        .await
-        .unwrap();
+        .await?;
         match result {
-            Ok(data) => HttpResponse::Ok()
+            Ok(data) => Ok(HttpResponse::Ok()
                 .content_type("image/jpeg")
                 .append_header((header::CONTENT_LENGTH, data.len() as u64))
                 .append_header((header::ETAG, etag))
-                .body(data),
+                .body(data)),
             Err(err) => {
                 error!("get_thumbnail result: {}", err);
-                HttpResponse::NotFound().finish()
+                Ok(HttpResponse::NotFound().finish())
             }
         }
     } else {
-        HttpResponse::NotModified().finish()
+        Ok(HttpResponse::NotModified().finish())
     }
 }
 

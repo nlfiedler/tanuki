@@ -18,7 +18,6 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     view! {
-        <Html attr:data-theme="dark" />
         <Stylesheet id="leptos" href="/pkg/tanuki.css" />
         <Stylesheet href="/assets/fontawesome/css/all.min.css" />
         <Title text="Tanuki" />
