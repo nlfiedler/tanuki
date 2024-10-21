@@ -54,24 +54,37 @@ fn AssetFigure(asset: Asset) -> impl IntoView {
             {move || {
                 let src = format!("/rest/asset/{}", asset.get_value().key);
                 if asset.get_value().media_type.starts_with("video/") {
+                    let mut media_type = asset.get_value().media_type;
+                    if media_type == "video/quicktime" {
+                        media_type = "video/mp4".into();
+                    }
                     view! {
                         <video controls>
-                            <source src=src type=asset.get_value().media_type.clone() />
+                            <source src=src type=media_type />
                             Bummer, your browser does not support the HTML5
                             <code>video</code>
                             tag.
                         </video>
                     }
-                        .into_any()
+                        .into_view()
+                } else if asset.get_value().media_type.starts_with("audio/") {
+                    let src = format!("/rest/asset/{}", asset.get_value().key);
+                    view! {
+                        <figcaption>{move || asset.get_value().filename}</figcaption>
+                        <audio controls>
+                            <source src=src type=asset.get_value().media_type />
+                        </audio>
+                    }
+                        .into_view()
                 } else {
                     view! {
                         <img
                             src=src
-                            alt=asset.get_value().filename.clone()
-                            style="max-width: 100%; width: auto;"
+                            alt=asset.get_value().filename
+                            style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
                         />
                     }
-                        .into_any()
+                        .into_view()
                 }
             }}
         </figure>
@@ -410,9 +423,9 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                         <p class="control is-expanded">
                             <input
                                 class="input"
-                                type="text"
+                                type="number"
                                 readonly
-                                value=asset.get_value().byte_length.to_string()
+                                value=asset.get_value().byte_length
                             />
                         </p>
                     </div>

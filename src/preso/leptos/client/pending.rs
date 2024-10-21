@@ -6,15 +6,18 @@ use crate::preso::common::SearchMeta;
 use crate::preso::leptos::client::{nav, paging};
 use crate::preso::leptos::server::*;
 use chrono::{DateTime, TimeDelta, Utc};
+use codee::string::{FromToStringCodec, JsonSerdeCodec};
 use leptos::ev::Event;
 use leptos::html::Input;
 use leptos::*;
+use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt;
 use std::str::FromStr;
 
 #[allow(dead_code)]
-#[derive(Copy, Clone, Eq, Hash, PartialEq)]
+#[derive(Copy, Clone, Deserialize, Eq, Hash, PartialEq, Serialize)]
 enum RecentRange {
     Day,
     Week,
@@ -33,6 +36,12 @@ impl RecentRange {
             RecentRange::Year => Some(now - TimeDelta::days(365 as i64)),
             RecentRange::All => None,
         }
+    }
+}
+
+impl Default for RecentRange {
+    fn default() -> Self {
+        RecentRange::All
     }
 }
 
@@ -84,11 +93,28 @@ async fn save_changes(asset_ids: HashSet<String>, tags: HashSet<String>, locatio
 #[component]
 pub fn PendingPage() -> impl IntoView {
     // range of time for which to find recent imports
-    let selected_range = create_rw_signal(RecentRange::All);
+    let (selected_range, set_selected_range, _) =
+        use_local_storage_with_options::<RecentRange, JsonSerdeCodec>(
+            "pending-selected-range",
+            UseStorageOptions::default()
+                .initial_value(RecentRange::All)
+                .delay_during_hydration(true),
+        );
     // page of results to be displayed (1-based)
-    let selected_page = create_rw_signal(1);
+    let (selected_page, set_selected_page, _) =
+        use_local_storage_with_options::<i32, FromToStringCodec>(
+            "pending-selected-page",
+            UseStorageOptions::default()
+                .initial_value(1)
+                .delay_during_hydration(true),
+        );
     // number of assets to display in a single page of results
-    let page_size = create_rw_signal(18);
+    let (page_size, set_page_size, _) = use_local_storage_with_options::<i32, FromToStringCodec>(
+        "page-size",
+        UseStorageOptions::default()
+            .initial_value(18)
+            .delay_during_hydration(true),
+    );
     // search for recent imports within the given time range
     let results = create_resource(
         move || (selected_range.get(), selected_page.get(), page_size.get()),
@@ -120,12 +146,11 @@ pub fn PendingPage() -> impl IntoView {
 
     view! {
         <nav::NavBar />
-
         <div class="container mb-4">
             <nav class="level">
                 <div class="level-left">
                     <div class="level-item">
-                        <RangeSelector selected_range />
+                        <RangeSelector selected_range set_selected_range />
                     </div>
                     <div class="level-item">
                         <PendingCount results />
@@ -146,7 +171,13 @@ pub fn PendingPage() -> impl IntoView {
                                     }
                                     Ok(meta) => {
                                         view! {
-                                            <paging::PageControls meta selected_page page_size />
+                                            <paging::PageControls
+                                                meta
+                                                selected_page
+                                                set_selected_page
+                                                page_size
+                                                set_page_size
+                                            />
                                         }
                                             .into_view()
                                     }
@@ -289,7 +320,10 @@ fn PendingCount(
 }
 
 #[component]
-fn RangeSelector(selected_range: RwSignal<RecentRange>) -> impl IntoView {
+fn RangeSelector(
+    selected_range: Signal<RecentRange>,
+    set_selected_range: WriteSignal<RecentRange>,
+) -> impl IntoView {
     let elements = store_value(vec![
         RecentRange::All,
         RecentRange::Year,
@@ -306,7 +340,10 @@ fn RangeSelector(selected_range: RwSignal<RecentRange>) -> impl IntoView {
                     fallback=move || {
                         view! {
                             <p class="control">
-                                <button class="button" on:click=move |_| selected_range.set(range)>
+                                <button
+                                    class="button"
+                                    on:click=move |_| set_selected_range.set(range)
+                                >
                                     {move || {
                                         view! { {move || { range.to_string() }} }
                                     }}
@@ -555,7 +592,20 @@ fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) 
                                                         tag.
                                                     </video>
                                                 }
-                                                    .into_any()
+                                                    .into_view()
+                                            } else if asset.get_value().media_type.starts_with("audio/")
+                                            {
+                                                let src = format!(
+                                                    "/rest/asset/{}",
+                                                    asset.get_value().asset_id,
+                                                );
+                                                view! {
+                                                    <figcaption>{move || asset.get_value().filename}</figcaption>
+                                                    <audio controls>
+                                                        <source src=src type=asset.get_value().media_type />
+                                                    </audio>
+                                                }
+                                                    .into_view()
                                             } else {
                                                 let src = format!(
                                                     "/rest/thumbnail/960/960/{}",
@@ -568,7 +618,7 @@ fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) 
                                                         style="max-width: 100%; width: auto;"
                                                     />
                                                 }
-                                                    .into_any()
+                                                    .into_view()
                                             }
                                         }}
                                     </figure>

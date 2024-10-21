@@ -2,8 +2,12 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::preso::leptos::server::get_count;
+use html::Div;
 use leptos::*;
-use leptos_use::{use_color_mode_with_options, ColorMode, UseColorModeOptions, UseColorModeReturn};
+use leptos_use::{
+    on_click_outside, use_color_mode_with_options, ColorMode, UseColorModeOptions,
+    UseColorModeReturn,
+};
 
 #[component]
 pub fn NavBar() -> impl IntoView {
@@ -17,6 +21,8 @@ pub fn NavBar() -> impl IntoView {
     };
     let UseColorModeReturn { mode, set_mode, .. } =
         use_color_mode_with_options(UseColorModeOptions::default().attribute("data-theme"));
+    let dropdown_ref = create_node_ref::<Div>();
+    let _ = on_click_outside(dropdown_ref, move |_| scheme_dropdown_open.set(false));
 
     view! {
         <nav class="navbar" role="navigation" aria-label="main navigation">
@@ -53,7 +59,7 @@ pub fn NavBar() -> impl IntoView {
 
                 <div class="navbar-end">
                     <div class="navbar-item">
-                        <div class=move || scheme_dropdown_class()>
+                        <div class=move || scheme_dropdown_class() node_ref=dropdown_ref>
                             <div class="dropdown-trigger">
                                 <button
                                     class="button"
@@ -80,7 +86,13 @@ pub fn NavBar() -> impl IntoView {
                             <div class="dropdown-menu" id="dropdown-menu" role="menu">
                                 <div class="dropdown-content">
                                     <a
-                                        class="dropdown-item"
+                                        class=move || {
+                                            if mode.get() == ColorMode::Light {
+                                                "dropdown-item is-active"
+                                            } else {
+                                                "dropdown-item"
+                                            }
+                                        }
                                         on:click=move |_| {
                                             set_mode.set(ColorMode::Light);
                                             scheme_dropdown_open.set(false)
@@ -92,7 +104,13 @@ pub fn NavBar() -> impl IntoView {
                                         <span>Light</span>
                                     </a>
                                     <a
-                                        class="dropdown-item"
+                                        class=move || {
+                                            if mode.get() == ColorMode::Dark {
+                                                "dropdown-item is-active"
+                                            } else {
+                                                "dropdown-item"
+                                            }
+                                        }
                                         on:click=move |_| {
                                             set_mode.set(ColorMode::Dark);
                                             scheme_dropdown_open.set(false)
@@ -104,7 +122,13 @@ pub fn NavBar() -> impl IntoView {
                                         <span>Dark</span>
                                     </a>
                                     <a
-                                        class="dropdown-item"
+                                        class=move || {
+                                            if mode.get() == ColorMode::Auto {
+                                                "dropdown-item is-active"
+                                            } else {
+                                                "dropdown-item"
+                                            }
+                                        }
                                         on:click=move |_| {
                                             set_mode.set(ColorMode::Auto);
                                             scheme_dropdown_open.set(false)

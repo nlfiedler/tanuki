@@ -15,6 +15,7 @@ use std::str;
 use std::sync::{Arc, LazyLock, Mutex};
 
 pub mod geo;
+mod placeholder;
 
 // Cache of String keys to Vec<u8> image data for caching thumbnails.
 //
@@ -240,7 +241,13 @@ impl BlobRepository for BlobRepositoryImpl {
 
     fn thumbnail(&self, width: u32, height: u32, asset_id: &str) -> Result<Vec<u8>, Error> {
         let filepath = self.blob_path(asset_id)?;
-        create_thumbnail(&filepath, width, height)
+        let result = create_thumbnail(&filepath, width, height);
+        if result.is_err() {
+            // an error will occur only when the asset is not an image, which is
+            // not really an error and we can simply serve a placeholder
+            return Ok(Vec::from(&placeholder::PLACEHOLDER[..]));
+        }
+        result
     }
 
     fn clear_cache(&self, asset_id: &str) -> Result<(), Error> {

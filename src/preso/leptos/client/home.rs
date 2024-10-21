@@ -6,9 +6,11 @@ use crate::preso::common::{SearchMeta, SearchParams, Season, Year};
 use crate::preso::leptos::client::{nav, paging};
 use crate::preso::leptos::server::*;
 use chrono::{DateTime, Datelike, TimeZone, Utc};
+use codee::string::{FromToStringCodec, JsonSerdeCodec};
 use leptos::ev::Event;
 use leptos::html::Input;
 use leptos::*;
+use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
 use std::collections::HashSet;
 
 struct SearchParamsBuilder {
@@ -120,18 +122,53 @@ impl SearchParamsBuilder {
 #[component]
 pub fn HomePage() -> impl IntoView {
     // multiple tags will _narrow_ the search results
-    let (selected_tags, set_selected_tags) = create_signal::<HashSet<String>>(HashSet::new());
+    let (selected_tags, set_selected_tags, _) =
+        use_local_storage_with_options::<HashSet<String>, JsonSerdeCodec>(
+            "home-selected-tags",
+            UseStorageOptions::default()
+                .initial_value(HashSet::new())
+                .delay_during_hydration(true),
+        );
     // multiple locations will _widen_ the search results
-    let (selected_locations, set_selected_locations) =
-        create_signal::<HashSet<String>>(HashSet::new());
+    let (selected_locations, set_selected_locations, _) =
+        use_local_storage_with_options::<HashSet<String>, JsonSerdeCodec>(
+            "home-selected-locations",
+            UseStorageOptions::default()
+                .initial_value(HashSet::new())
+                .delay_during_hydration(true),
+        );
     // chosen year by which to narrow results
-    let (selected_year, set_selected_year) = create_signal::<Option<i32>>(None);
+    let (selected_year, set_selected_year, _) =
+        use_local_storage_with_options::<Option<i32>, JsonSerdeCodec>(
+            "home-selected-year",
+            UseStorageOptions::default()
+                .initial_value(None)
+                .delay_during_hydration(true),
+        );
     // chosen year by which to narrow results
-    let (selected_season, set_selected_season) = create_signal::<Option<Season>>(None);
+    let (selected_season, set_selected_season, _) =
+        use_local_storage_with_options::<Option<Season>, JsonSerdeCodec>(
+            "home-selected-season",
+            UseStorageOptions::default()
+                .initial_value(None)
+                .delay_during_hydration(true),
+        );
     // page of results to be displayed (1-based)
-    let selected_page = create_rw_signal(1);
+    let (selected_page, set_selected_page, _) =
+        use_local_storage_with_options::<i32, FromToStringCodec>(
+            "home-selected-page",
+            UseStorageOptions::default()
+                .initial_value(1)
+                .delay_during_hydration(true),
+        );
     // number of assets to display in a single page of results
-    let page_size = create_rw_signal(18);
+    // let page_size = create_rw_signal(18);
+    let (page_size, set_page_size, _) = use_local_storage_with_options::<i32, FromToStringCodec>(
+        "page-size",
+        UseStorageOptions::default()
+            .initial_value(18)
+            .delay_during_hydration(true),
+    );
     // search for assets using the given criteria
     let results = create_resource(
         move || {
@@ -164,7 +201,6 @@ pub fn HomePage() -> impl IntoView {
 
     view! {
         <nav::NavBar />
-
         <div class="container">
             <nav class="level">
                 <div class="level-left">
@@ -177,7 +213,7 @@ pub fn HomePage() -> impl IntoView {
                                             .update(|tags| {
                                                 tags.insert(label);
                                             });
-                                        selected_page.set(1);
+                                        set_selected_page.set(1);
                                     })
                                 } />
                             </p>
@@ -192,7 +228,7 @@ pub fn HomePage() -> impl IntoView {
                                             .update(|locations| {
                                                 locations.insert(label);
                                             });
-                                        selected_page.set(1);
+                                        set_selected_page.set(1);
                                     })
                                 } />
                             </p>
@@ -206,7 +242,7 @@ pub fn HomePage() -> impl IntoView {
                                     set_year=move |value| {
                                         batch(|| {
                                             set_selected_year.set(value);
-                                            selected_page.set(1);
+                                            set_selected_page.set(1);
                                         })
                                     }
                                 />
@@ -220,10 +256,12 @@ pub fn HomePage() -> impl IntoView {
                                     selected_season
                                     set_season=move |value| {
                                         batch(|| {
-                                            let year = Utc::now().year();
-                                            set_selected_year.set(Some(year));
+                                            if value.is_some() && selected_year.get().is_none() {
+                                                let year = Utc::now().year();
+                                                set_selected_year.set(Some(year));
+                                            }
                                             set_selected_season.set(value);
-                                            selected_page.set(1);
+                                            set_selected_page.set(1);
                                         })
                                     }
                                 />
@@ -268,7 +306,13 @@ pub fn HomePage() -> impl IntoView {
                                     }
                                     Ok(meta) => {
                                         view! {
-                                            <paging::PageControls meta selected_page page_size />
+                                            <paging::PageControls
+                                                meta
+                                                selected_page
+                                                set_selected_page
+                                                page_size
+                                                set_page_size
+                                            />
                                         }
                                             .into_view()
                                     }
@@ -289,7 +333,7 @@ pub fn HomePage() -> impl IntoView {
                                 .update(|coll| {
                                     coll.remove(&attr);
                                 });
-                            selected_page.set(1);
+                            set_selected_page.set(1);
                         })
                     }
                 />
@@ -301,7 +345,7 @@ pub fn HomePage() -> impl IntoView {
                                 .update(|coll| {
                                     coll.remove(&attr);
                                 });
-                            selected_page.set(1);
+                            set_selected_page.set(1);
                         })
                     }
                 />
@@ -340,17 +384,31 @@ fn ResultsDisplay(meta: SearchMeta) -> impl IntoView {
                             <div class="card-image">
                                 <figure class="image">
                                     {move || {
+                                        let filename = store_value(asset.filename.to_owned());
                                         if asset.media_type.starts_with("video/") {
                                             let src = format!("/rest/asset/{}", asset.asset_id);
+                                            let mut media_type = asset.media_type.clone();
+                                            if media_type == "video/quicktime" {
+                                                media_type = "video/mp4".into();
+                                            }
                                             view! {
                                                 <video controls>
-                                                    <source src=src type=asset.media_type.clone() />
+                                                    <source src=src type=media_type />
                                                     Bummer, your browser does not support the HTML5
                                                     <code>video</code>
                                                     tag.
                                                 </video>
                                             }
-                                                .into_any()
+                                                .into_view()
+                                        } else if asset.media_type.starts_with("audio/") {
+                                            let src = format!("/rest/asset/{}", asset.asset_id);
+                                            view! {
+                                                <figcaption>{move || filename.get_value()}</figcaption>
+                                                <audio controls>
+                                                    <source src=src type=asset.media_type.clone() />
+                                                </audio>
+                                            }
+                                                .into_view()
                                         } else {
                                             let src = format!(
                                                 "/rest/thumbnail/960/960/{}",
@@ -363,7 +421,7 @@ fn ResultsDisplay(meta: SearchMeta) -> impl IntoView {
                                                     style="max-width: 100%; width: auto;"
                                                 />
                                             }
-                                                .into_any()
+                                                .into_view()
                                         }
                                     }}
                                 </figure>
@@ -398,7 +456,7 @@ fn CardContent(datetime: DateTime<Utc>, location: Option<Location>) -> impl Into
 
 /// Show list of selected attributes as tags/chips.
 #[component]
-fn TagList<F>(attrs: ReadSignal<HashSet<String>>, rm_attr: F) -> impl IntoView
+fn TagList<F>(attrs: Signal<HashSet<String>>, rm_attr: F) -> impl IntoView
 where
     F: Fn(String) + Copy + 'static,
 {
@@ -593,7 +651,7 @@ where
 }
 
 #[component]
-fn YearChooser<F>(selected_year: ReadSignal<Option<i32>>, set_year: F) -> impl IntoView
+fn YearChooser<F>(selected_year: Signal<Option<i32>>, set_year: F) -> impl IntoView
 where
     F: Fn(Option<i32>) + Copy + 'static,
 {
@@ -700,7 +758,7 @@ where
 }
 
 #[component]
-fn SeasonChooser<F>(selected_season: ReadSignal<Option<Season>>, set_season: F) -> impl IntoView
+fn SeasonChooser<F>(selected_season: Signal<Option<Season>>, set_season: F) -> impl IntoView
 where
     F: Fn(Option<Season>) + Copy + 'static,
 {

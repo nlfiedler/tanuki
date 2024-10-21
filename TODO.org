@@ -1,18 +1,17 @@
 * Action Items
 ** Pending
-*** TODO selecting seems to cause everything to re-render (because of videos?)
+*** changing selection causes everything to re-render (more obvious when videos are present)
 *** display options: have an option that makes the images really big (single column, huge images)
 *** add (un)select-all buttons
 *** make =fa-angle-down= icon in =card-header= actually do something
 *** add item to ~dropdown~ menu to show the asset in full size in a modal
 *** add item to ~dropdown~ menu to navigate to asset view
 ** Browse
-*** TODO retain search parameters and page number when navigating back and forth
-**** could use a signal above the routes, use =provide_context()= to send down the tree
-**** could use local storage for each signal value and hydrate on page load
-*** TODO make the selectors row sticky when scrolling
-**** allow navbar to scroll away
+*** make the selectors row sticky when scrolling
+**** allow =nav= element to scroll away
 **** container with selectors and container with tags should be sticky
+**** this is difficult because Bulma assumes =is-fixed-top= is for a =nav= at the top
+**** trying to squeeze everything into =nav= forces all of the elements onto one row
 *** when multiple attributes are selected, add a ~clear all~ button/tag
 *** change query to find intersection of selected locations
 **** currently is finding the union of such locations
@@ -56,37 +55,29 @@
 *** calendar view for browsing by months
 **** PhotoPrism has a ~calendar~ view that shows months of years in descending order with a random thumbnail
 **** clicking on the month opens an "album" of everything in that month
-** Dismissing dropdowns (pagination, color scheme)
-*** use =on_click_outside= in =leptos-use= crate
 ** Details
-*** center smaller images
+*** Lightbox style asset browsing
+**** show full-size image at 100% width of browser window
+**** show chevron arrows on left and right to navigate among search results
+**** controls appear when mouse moves over asset display, then fade away
 *** input validation of some sort, probably
 *** completion for tags (like home screen search)
 *** somehow offer completion of location even though its in 3 separate fields
-*** preview of small images makes them large; should serve original size for smaller images
 *** add ~copy~ button next to asset path
 *** Read timezone info from Exif tags when displaying asset details
 **** everything is assuming that the date/time is UTC, which is almost always wrong
 **** Exif field is named =OffsetTimeOriginal= in ~primary~
 **** frontend should use ~timezone~ value (if available) to show correct time in asset details
-*** Lightbox style asset browsing
-**** show full-size image at 100% width of browser window
-**** show chevron arrows on left and right to navigate among search results
-**** controls appear when mouse moves over asset display, then fade away
-*** details formatting and presentation
-**** format byte size using locale-specific number formatting
-**** display the date and caption prominently
-**** display the other details using a smaller font
-**** display select information from EXIF metadata (e.g. camera)
-*** show tiny map of where photo was taken on details page
+*** Format byte size using locale-specific number formatting
+*** Show tiny map of where photo was taken
 **** [[https://cloud.google.com/maps-platform/][Google Maps]]
 - customer uses their own API key, sets in preferences
 - for =testing= account: =AIzaSyAI73udKC3KVk6aIBqOjSqSv6PEQ0qd638=
 **** [[https://mariusandra.github.io/pigeon-maps/][Pigeon Maps]]
 - Uses data from OpenStreetMap, Wikimedia for the tiles
-*** find out if =mp4= crate can read GPS coords from videos
+*** Find out if =mp4= crate can read GPS coords from videos
 **** Preview.app will display location information for videos
-*** Show addition file metadata (TIFF, EXIF, JFIF, IPTC)
+*** Show additional file metadata (TIFF, EXIF, JFIF, IPTC)
 ** Uploads
 *** theoretically could show the thumbnail of images before uploading
 **** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
@@ -156,9 +147,6 @@ assertion failed: actual.is_ok()
 *** graphql: mutation to change the orientation for an image via usecase
 *** webui: icon to show orientation of image, if it is an image
 **** need an icon for ~unset~ orientation for those really old images
-** Placeholder thumbnails
-*** when an asset cannot produce a thumbnail, server a placeholder
-*** PhotoPrism generates suitable thumbnails for other kinds of files, saves them to disk
 ** Manage revisions of assets
 *** when uploading a replacement file for an asset, keep the old file
 *** add the old identifier to a new property in the asset record
@@ -177,9 +165,7 @@ assertion failed: actual.is_ok()
 **** =location/= for location details (GPS, etc)
 **** =decoration/= for ML added values (labels, keywords)
 ** Data Format Support
-*** Support audio formats
-**** add audio playback support using the =audio= tag
-**** read =ID3= tags in audio files
+*** Read =ID3= tags in audio files
 *** Detect time zone offset in EXIF data
 According to Wikipedia the 2.31 version of EXIF will support time-zone
 information. Eventually, the application should be able to detect this and
