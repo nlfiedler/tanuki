@@ -4,7 +4,7 @@
 use crate::domain::entities::{Asset, AssetInput, Location};
 use crate::preso::leptos::client::nav;
 use crate::preso::leptos::server::{fetch_asset, update_asset};
-use chrono::{DateTime, FixedOffset, Local, NaiveDateTime, Utc};
+use chrono::{DateTime, Local, NaiveDateTime, Utc};
 use leptos::*;
 use leptos_router::use_params_map;
 use std::collections::HashMap;
@@ -146,10 +146,26 @@ fn AssetForm(asset: Asset) -> impl IntoView {
             datetime_input_ref.get().unwrap().value(),
             local.offset().to_string()
         );
-        if let Ok(datetime) = datetime_str.parse::<DateTime<FixedOffset>>() {
-            if asset.get_value().best_date() != datetime {
-                input.datetime = Some(datetime.to_utc());
+        // Despite formatting the asset datetime with seconds into the input
+        // field, sometimes the browser does not display or return the seconds,
+        // so we must be flexible here.
+        let pattern = if datetime_str.len() == 22 {
+            "%Y-%m-%dT%H:%M%z"
+        } else {
+            "%Y-%m-%dT%H:%M:%S%z"
+        };
+        match DateTime::parse_from_str(&datetime_str, pattern) {
+            Ok(datetime) => {
+                if asset.get_value().best_date() != datetime {
+                    input.datetime = Some(datetime.to_utc());
+                }
             }
+            Err(err) => log::error!(
+                "datetime parse error: {:?}; input: {}, format: {}",
+                err,
+                datetime_str,
+                pattern
+            ),
         }
         // location (label, city, region)
         let mut location = Location::default();
