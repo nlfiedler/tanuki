@@ -101,8 +101,11 @@ fn merge_asset_input(asset: &mut Asset, input: AssetInput) {
             asset.location = result.location.map(|v| Location::new(&v));
         }
     }
-    // permit user to update/remove the custom date/time
-    asset.user_date = input.datetime;
+    // custom date/time can be updated but never cleared, otherwise it is
+    // impossible to update the asset without always setting the date/time
+    if input.datetime.is_some() {
+        asset.user_date = input.datetime;
+    }
     // do not overwrite media_type with null/blank values
     if let Some(mt) = input.media_type {
         if !mt.is_empty() {
@@ -591,40 +594,6 @@ mod tests {
         assert!(asset.caption.is_none());
         assert_eq!(asset.location.unwrap().label.unwrap(), "hawaii");
         assert_eq!(asset.user_date.unwrap(), user_date);
-        assert_eq!(asset.media_type, "image/jpeg");
-    }
-
-    #[test]
-    fn test_merge_asset_input_clear_userdate() {
-        let mut asset = Asset {
-            key: "abc123".to_owned(),
-            checksum: "cafebabe".to_owned(),
-            filename: "fighting_kittens.jpg".to_owned(),
-            byte_length: 39932,
-            media_type: "image/jpeg".to_owned(),
-            tags: vec!["kittens".to_owned()],
-            import_date: Utc::now(),
-            caption: None,
-            location: Some(Location::new("hawaii")),
-            user_date: Some(make_date_time(2018, 5, 31, 21, 10, 11)),
-            original_date: None,
-            dimensions: None,
-        };
-        let input = AssetInput {
-            key: "abc123".to_owned(),
-            tags: None,
-            caption: None,
-            location: None,
-            datetime: None,
-            media_type: None,
-            filename: None,
-        };
-        merge_asset_input(&mut asset, input);
-        assert_eq!(asset.tags.len(), 1);
-        assert_eq!(asset.tags[0], "kittens");
-        assert!(asset.caption.is_none());
-        assert_eq!(asset.location.unwrap().label.unwrap(), "hawaii");
-        assert!(asset.user_date.is_none());
         assert_eq!(asset.media_type, "image/jpeg");
     }
 
