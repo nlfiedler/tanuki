@@ -14,11 +14,11 @@ Meanwhile, leveraging HTML 5 features with a modern browser, you can build a ful
 
 Considering all that HTML 5 can offer, and the rise of WebAssembly, a framework like [Leptos](https://leptos.dev) begins to be very appealing. Leptos enables easy code-sharing between client and server, avoiding duplicate effort. It renders the initial page quickly and hydrates it after loading, and can begin filling in data during the initial request. The client/server connection in Leptos is effectively seamless, eliminating the need to explicitly serialize and deserialize parameters between the client and server.
 
-A couple of drawbacks with Leptos are that the build setup is a little complicated due to the necessary feature gating, and it is still new, so some parts have bugs (`leptos-use` can crash the server).
+A couple of drawbacks with Leptos are that the build setup is a little complicated due to the necessary feature gating. Configuring some crates, such as `leptos-use` can be tricky, resulting in a build that can cause the server to panic.
 
 On a related note, the CSS framework of choice is Bulma, for several reasons:
 
-1. Bulma is CSS-only and thus works well with Leptos. Both [Bootstrap](https://getbootstrap.com) and [Semantic UI](https://semantic-ui.com) both require writing JavaScript.
+1. Bulma is CSS-only and thus works well with Leptos. Both [Bootstrap](https://getbootstrap.com) and [Semantic UI](https://semantic-ui.com) require writing JavaScript.
 1. [Tailwind CSS](https://tailwindcss.com) is a utility CSS that has a steep learning curve and involves remembering a vast library of modifiers to craft elements from scratch.
 1. [Material Design Web Components](https://github.com/material-components/material-web) is in maintenance mode as of October 2024. It is built on [web components](https://developer.mozilla.org/en-US/docs/Web/API/Web_components) and thus relies heavily on JavaScript.
 
