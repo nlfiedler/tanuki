@@ -551,14 +551,15 @@ fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) 
             <For each=move || results.get_value() key=|r| r.asset_id.clone() let:elem>
                 {move || {
                     let asset = store_value(elem.clone());
-                    let card_style = if selected_assets.with(|list| list.contains(&elem.asset_id)) {
-                        "border: medium solid hsl(217, 71%, 53%);"
-                    } else {
-                        ""
-                    };
                     view! {
                         <div class="cell">
-                            <div class="card" style=card_style>
+                            <div
+                                class="card"
+                                class:selected=move || {
+                                    selected_assets
+                                        .with(|list| list.contains(&asset.get_value().asset_id))
+                                }
+                            >
                                 <header class="card-header">
                                     <p class="card-header-title">
                                         {move || asset.get_value().filename}
@@ -573,55 +574,7 @@ fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) 
                                     class="card-image"
                                     on:click=move |_| toggle_asset(&asset.get_value().asset_id)
                                 >
-                                    <figure class="image">
-                                        {move || {
-                                            if asset.get_value().media_type.starts_with("video/") {
-                                                let src = format!(
-                                                    "/rest/asset/{}",
-                                                    asset.get_value().asset_id,
-                                                );
-                                                let mut media_type = asset.get_value().media_type;
-                                                if media_type == "video/quicktime" {
-                                                    media_type = "video/mp4".into();
-                                                }
-                                                view! {
-                                                    <video controls>
-                                                        <source src=src type=media_type />
-                                                        Bummer, your browser does not support the HTML5
-                                                        <code>video</code>
-                                                        tag.
-                                                    </video>
-                                                }
-                                                    .into_view()
-                                            } else if asset.get_value().media_type.starts_with("audio/")
-                                            {
-                                                let src = format!(
-                                                    "/rest/asset/{}",
-                                                    asset.get_value().asset_id,
-                                                );
-                                                view! {
-                                                    <figcaption>{move || asset.get_value().filename}</figcaption>
-                                                    <audio controls>
-                                                        <source src=src type=asset.get_value().media_type />
-                                                    </audio>
-                                                }
-                                                    .into_view()
-                                            } else {
-                                                let src = format!(
-                                                    "/rest/thumbnail/960/960/{}",
-                                                    asset.get_value().asset_id,
-                                                );
-                                                view! {
-                                                    <img
-                                                        src=src
-                                                        alt=asset.get_value().filename.clone()
-                                                        style="max-width: 100%; width: auto;"
-                                                    />
-                                                }
-                                                    .into_view()
-                                            }
-                                        }}
-                                    </figure>
+                                    <CardFigure asset />
                                 </div>
                                 <div class="card-content">
                                     <div class="content">
@@ -634,6 +587,51 @@ fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) 
                 }}
             </For>
         </div>
+    }
+}
+
+#[component]
+fn CardFigure(asset: StoredValue<SearchResult>) -> impl IntoView {
+    view! {
+        <figure class="image">
+            {move || {
+                if asset.get_value().media_type.starts_with("video/") {
+                    let src = format!("/rest/asset/{}", asset.get_value().asset_id);
+                    let mut media_type = asset.get_value().media_type;
+                    if media_type == "video/quicktime" {
+                        media_type = "video/mp4".into();
+                    }
+                    view! {
+                        <video controls>
+                            <source src=src type=media_type />
+                            Bummer, your browser does not support the HTML5
+                            <code>video</code>
+                            tag.
+                        </video>
+                    }
+                        .into_view()
+                } else if asset.get_value().media_type.starts_with("audio/") {
+                    let src = format!("/rest/asset/{}", asset.get_value().asset_id);
+                    view! {
+                        <figcaption>{move || asset.get_value().filename}</figcaption>
+                        <audio controls>
+                            <source src=src type=asset.get_value().media_type />
+                        </audio>
+                    }
+                        .into_view()
+                } else {
+                    let src = format!("/rest/thumbnail/960/960/{}", asset.get_value().asset_id);
+                    view! {
+                        <img
+                            src=src
+                            alt=asset.get_value().filename.clone()
+                            style="max-width: 100%; width: auto;"
+                        />
+                    }
+                        .into_view()
+                }
+            }}
+        </figure>
     }
 }
 

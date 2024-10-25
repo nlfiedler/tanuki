@@ -1,8 +1,7 @@
 * Action Items
 ** Pending
-*** changing selection causes everything to re-render (more obvious when videos are present)
+*** would be nice to set the month and year for the selected assets
 *** display options: have an option that makes the images really big (single column, huge images)
-*** add (un)select-all buttons
 *** make =fa-angle-down= icon in =card-header= actually do something
 *** add item to ~dropdown~ menu to show the asset in full size in a modal
 *** add item to ~dropdown~ menu to navigate to asset view
@@ -60,9 +59,8 @@
 **** show full-size image at 100% width of browser window
 **** show chevron arrows on left and right to navigate among search results
 **** controls appear when mouse moves over asset display, then fade away
-*** input validation of some sort, probably
 *** completion for tags (like home screen search)
-*** somehow offer completion of location even though its in 3 separate fields
+*** somehow offer completion of location even though it's 3 fields
 *** add ~copy~ button next to asset path
 *** Read timezone info from Exif tags when displaying asset details
 **** everything is assuming that the date/time is UTC, which is almost always wrong
@@ -81,6 +79,12 @@
 ** Uploads
 *** theoretically could show the thumbnail of images before uploading
 **** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
+** Navbar
+*** light/dark mode: goes light during page load; chrome does not send color-scheme header
+** Hosting externally
+*** consider storage costs (currently under 100 GB)
+*** place basic auth server in front (Azure app gateway maybe?)
+*** consider if deploying in read-only mode (sync would be tricky)
 ** Dependencies
 *** latest =mp4= crate has an error with certain test fixture
 **** version =0.13= does not have the problem, but =0.14= does
