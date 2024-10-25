@@ -10,11 +10,15 @@ Code targeting the front-end will be marked with the `#[component]` macro, while
 
 Writing code using Rust within a fine-grained reactive framework can be rather tricky, mostly due to contending with the borrow checker. The flow of control through the continuations defined by the `view!` macro can lead to confusing error messages regarding the onwership of objects.
 
+* Leverage the reactive nature of Leptos for the best performance:
+    - Use `class:some_name=move || some_predicate_fn()` to reactively enable a CSS class; trying to dynamically configure the `style` will likely result in everything rendering again.
+    - Use `For` for iterating over lists of items
 * If components are not updating properly, check the console for warnings, you are probably accessing a signal from outside of a `view!` macro. Always access signals and resources inside `view!` code.
 * Always access resources (as in `create_resource()`) from within `Suspense` or `Transition` elements.
 * If the error `might not live long enough` occurs, try adding `move` to the closures in `For` and `Show` elements.
 * If adding `move` does not help, trying using `store_value()` to create a reactive copy of the objects.
 * If the error `tempoary value is dropped` occurs, try replacing `iter()` with `into_iter()` to take ownership. This works especially well with signals and stored values since they are always cloned anyway.
+* Do _not_ try to make a memo out of a resource, the console will show warnings/errors regarding components that could not be hydrated properly.
 
 ## Tools
 

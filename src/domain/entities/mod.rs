@@ -197,13 +197,11 @@ pub struct AssetInput {
     /// Any `Some` value here overwrites the location in the asset. This field
     /// takes precedence over any @location value in the caption.
     pub location: Option<Location>,
-    /// This value overwrites the asset user_date unconditionally. To avoid
-    /// removing the user date, copy the asset user date to this field before
-    /// invoking the use case.
+    /// Any `Some` value here overwrites the user-defined date.
     pub datetime: Option<DateTime<Utc>>,
-    /// Any `Some` value here overwrites the media_type in the asset.
+    /// Any `Some` value here overwrites the media_type property.
     pub media_type: Option<String>,
-    /// Replace the filename property in the asset.
+    /// Any `Some` value here overwrites the filename property.
     pub filename: Option<String>,
 }
 
