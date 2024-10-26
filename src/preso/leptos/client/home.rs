@@ -7,9 +7,11 @@ use crate::preso::leptos::client::{nav, paging};
 use crate::preso::leptos::server::*;
 use chrono::{DateTime, Datelike, TimeZone, Utc};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
+use html::Div;
 use leptos::ev::Event;
 use leptos::html::Input;
 use leptos::*;
+use leptos_use::on_click_outside;
 use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
 use std::collections::HashSet;
 
@@ -681,13 +683,8 @@ where
         },
     );
     let dropdown_open = create_rw_signal(false);
-    let dropdown_class = move || {
-        if dropdown_open.get() {
-            "dropdown is-active"
-        } else {
-            "dropdown"
-        }
-    };
+    let dropdown_ref = create_node_ref::<Div>();
+    let _ = on_click_outside(dropdown_ref, move |_| dropdown_open.set(false));
 
     view! {
         <Transition fallback=move || {
@@ -703,7 +700,11 @@ where
                         Ok(data) => {
                             let years = store_value(data);
                             view! {
-                                <div class=move || dropdown_class()>
+                                <div
+                                    class="dropdown"
+                                    class:is-active=move || dropdown_open.get()
+                                    node_ref=dropdown_ref
+                                >
                                     <div class="dropdown-trigger">
                                         <button
                                             class="button"
@@ -763,16 +764,11 @@ where
     F: Fn(Option<Season>) + Copy + 'static,
 {
     let dropdown_open = create_rw_signal(false);
-    let dropdown_class = move || {
-        if dropdown_open.get() {
-            "dropdown is-active"
-        } else {
-            "dropdown"
-        }
-    };
+    let dropdown_ref = create_node_ref::<Div>();
+    let _ = on_click_outside(dropdown_ref, move |_| dropdown_open.set(false));
 
     view! {
-        <div class=move || dropdown_class()>
+        <div class="dropdown" class:is-active=move || dropdown_open.get() node_ref=dropdown_ref>
             <div class="dropdown-trigger">
                 <button
                     class="button"

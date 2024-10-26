@@ -15,13 +15,6 @@ pub fn PageControls(
     set_page_size: WriteSignal<i32>,
 ) -> impl IntoView {
     let dropdown_open = create_rw_signal(false);
-    let dropdown_class = move || {
-        if dropdown_open.get() {
-            "dropdown is-active"
-        } else {
-            "dropdown"
-        }
-    };
     let dropdown_ref = create_node_ref::<Div>();
     let _ = on_click_outside(dropdown_ref, move |_| dropdown_open.set(false));
 
@@ -86,7 +79,11 @@ pub fn PageControls(
         <div class="level-item">
             <div class="field">
                 <p class="control">
-                    <div class=move || dropdown_class() node_ref=dropdown_ref>
+                    <div
+                        class="dropdown"
+                        class:is-active=move || dropdown_open.get()
+                        node_ref=dropdown_ref
+                    >
                         <div class="dropdown-trigger">
                             <button
                                 class="button"
