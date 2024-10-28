@@ -6,6 +6,8 @@ use leptos_meta::*;
 use leptos_router::*;
 
 mod asset;
+mod edit;
+mod forms;
 mod home;
 mod nav;
 mod paging;
@@ -27,6 +29,7 @@ pub fn App() -> impl IntoView {
                     <Route path="" view=home::HomePage />
                     <Route path="/upload" view=upload::UploadPage />
                     <Route path="/pending" view=pending::PendingPage />
+                    <Route path="/edit" view=edit::EditPage />
                     <Route path="/asset/:id" view=asset::AssetPage />
                     <Route path="/*any" view=NotFound />
                 </Routes>

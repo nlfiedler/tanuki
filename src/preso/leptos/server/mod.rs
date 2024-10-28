@@ -1,8 +1,8 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::entities::{Asset, AssetInput, LabeledCount, Location};
-use crate::preso::common::{SearchMeta, SearchParams, Year};
+use crate::domain::entities::*;
+use crate::preso::leptos::common::*;
 use chrono::{DateTime, Utc};
 use leptos::server_fn::ServerFnError;
 
@@ -52,6 +52,30 @@ pub mod ssr {
     pub fn blobs() -> Result<BlobRepositoryImpl, ServerFnError> {
         Ok(BlobRepositoryImpl::new(ASSETS_PATH.as_path()))
     }
+}
+
+/// Return the optional value bounded by the given range, or the default value
+/// if `value` is `None`.
+fn bounded_int_value(value: Option<i32>, default: i32, minimum: i32, maximum: i32) -> i32 {
+    if let Some(v) = value {
+        std::cmp::min(std::cmp::max(v, minimum), maximum)
+    } else {
+        default
+    }
+}
+
+/// Truncate the given vector to yield the desired portion.
+///
+/// If offset is None, it defaults to 0, while count defaults to 10. Offset is
+/// bound between zero and the length of the input vector. Count is bound by 1
+/// and 250.
+pub fn paginate_vector<T>(input: &mut Vec<T>, offset: Option<i32>, count: Option<i32>) -> Vec<T> {
+    let total_count = input.len() as i32;
+    let count = bounded_int_value(count, 10, 1, 250) as usize;
+    let offset = bounded_int_value(offset, 0, 0, total_count) as usize;
+    let mut results = input.split_off(offset);
+    results.truncate(count);
+    results
 }
 
 ///
@@ -165,6 +189,23 @@ pub async fn fetch_raw_locations() -> Result<Vec<Location>, ServerFnError> {
 }
 
 ///
+/// Retrieve all of the media types and their counts.
+///
+#[leptos::server]
+pub async fn fetch_types() -> Result<Vec<LabeledCount>, ServerFnError> {
+    use crate::domain::usecases::types::AllMediaTypes;
+    use crate::domain::usecases::{NoParams, UseCase};
+
+    let repo = ssr::db()?;
+    let usecase = AllMediaTypes::new(Box::new(repo));
+    let params = NoParams {};
+    let types: Vec<LabeledCount> = usecase
+        .call(params)
+        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+    Ok(types)
+}
+
+///
 /// Retrieve an asset by its unique identifier.
 ///
 #[leptos::server]
@@ -181,7 +222,9 @@ pub async fn fetch_asset(id: String) -> Result<Asset, ServerFnError> {
     Ok(asset)
 }
 
+///
 /// Update the asset with the given values.
+///
 #[leptos::server]
 pub async fn update_asset(asset: AssetInput) -> Result<Option<Asset>, ServerFnError> {
     use crate::domain::usecases::update::{Params, UpdateAsset};
@@ -212,7 +255,6 @@ pub async fn search(
     use crate::domain::entities::SearchResult;
     use crate::domain::usecases::search::{Params, SearchAssets};
     use crate::domain::usecases::UseCase;
-    use crate::preso::common::paginate_vector;
 
     let repo = ssr::db()?;
     let usecase = SearchAssets::new(Box::new(repo));
@@ -243,6 +285,7 @@ pub async fn search(
     })
 }
 
+///
 /// Search for assets that were recently imported.
 ///
 /// Recently imported assets do not have any tags, location, or caption, and
@@ -252,6 +295,7 @@ pub async fn search(
 /// limited to a maximum of 250. Default value is `10`.
 ///
 /// The offset is useful for pagination. Default value is `0`.
+///
 #[leptos::server]
 pub async fn recent(
     since: Option<DateTime<Utc>>,
@@ -261,7 +305,6 @@ pub async fn recent(
     use crate::domain::entities::SearchResult;
     use crate::domain::usecases::recent::{Params, RecentImports};
     use crate::domain::usecases::UseCase;
-    use crate::preso::common::paginate_vector;
 
     let repo = ssr::db()?;
     let usecase = RecentImports::new(Box::new(repo));
@@ -283,9 +326,11 @@ pub async fn recent(
     })
 }
 
+///
 /// Update multiple assets with the given values.
 ///
 /// Returns the number of updated assets.
+///
 #[leptos::server]
 pub async fn bulk_update(assets: Vec<AssetInput>) -> Result<i32, ServerFnError> {
     use crate::domain::usecases::update::{Params, UpdateAsset};
@@ -300,4 +345,72 @@ pub async fn bulk_update(assets: Vec<AssetInput>) -> Result<i32, ServerFnError> 
             .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
     }
     Ok(assets.len() as i32)
+}
+
+///
+/// Perform one or more operations on multiple assets.
+///
+#[leptos::server(BulkEdit, "/api", "Cbor")]
+pub async fn bulk_edit(ops: BulkEditParams) -> Result<u64, ServerFnError> {
+    use crate::domain::usecases::edit::{EditAssets, Params};
+    use crate::domain::usecases::UseCase;
+
+    let repo = ssr::db()?;
+    let usecase = EditAssets::new(Box::new(repo));
+    let params = Params {
+        assets: ops.assets,
+        tag_ops: ops.tag_ops,
+        location_ops: ops.location_ops,
+        datetime_op: ops.datetime_op,
+    };
+    let count = usecase
+        .call(params)
+        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+    Ok(count)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bounded_int_value() {
+        assert_eq!(10, bounded_int_value(None, 10, 1, 250));
+        assert_eq!(15, bounded_int_value(Some(15), 10, 1, 250));
+        assert_eq!(1, bounded_int_value(Some(-8), 10, 1, 250));
+        assert_eq!(250, bounded_int_value(Some(1000), 10, 1, 250));
+    }
+
+    #[test]
+    fn test_paginate_vector() {
+        // sensible "first" page
+        let mut input: Vec<u32> = Vec::new();
+        for v in 0..102 {
+            input.push(v);
+        }
+        let actual = paginate_vector(&mut input, Some(0), Some(10));
+        assert_eq!(actual.len(), 10);
+        assert_eq!(actual[0], 0);
+        assert_eq!(actual[9], 9);
+
+        // page somewhere in the middle
+        let mut input: Vec<u32> = Vec::new();
+        for v in 0..102 {
+            input.push(v);
+        }
+        let actual = paginate_vector(&mut input, Some(40), Some(20));
+        assert_eq!(actual.len(), 20);
+        assert_eq!(actual[0], 40);
+        assert_eq!(actual[19], 59);
+
+        // last page with over extension
+        let mut input: Vec<u32> = Vec::new();
+        for v in 0..102 {
+            input.push(v);
+        }
+        let actual = paginate_vector(&mut input, Some(90), Some(100));
+        assert_eq!(actual.len(), 12);
+        assert_eq!(actual[0], 90);
+        assert_eq!(actual[11], 101);
+    }
 }

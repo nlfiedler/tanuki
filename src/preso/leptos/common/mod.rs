@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::entities::{LabeledCount, SearchResult, SortField, SortOrder};
+use crate::domain::entities::*;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -79,72 +79,15 @@ impl fmt::Display for Season {
     }
 }
 
-/// Return the optional value bounded by the given range, or the default value
-/// if `value` is `None`.
-fn bounded_int_value(value: Option<i32>, default: i32, minimum: i32, maximum: i32) -> i32 {
-    if let Some(v) = value {
-        std::cmp::min(std::cmp::max(v, minimum), maximum)
-    } else {
-        default
-    }
-}
-
-/// Truncate the given vector to yield the desired portion.
-///
-/// If offset is None, it defaults to 0, while count defaults to 10. Offset is
-/// bound between zero and the length of the input vector. Count is bound by 1
-/// and 250.
-pub fn paginate_vector<T>(input: &mut Vec<T>, offset: Option<i32>, count: Option<i32>) -> Vec<T> {
-    let total_count = input.len() as i32;
-    let count = bounded_int_value(count, 10, 1, 250) as usize;
-    let offset = bounded_int_value(offset, 0, 0, total_count) as usize;
-    let mut results = input.split_off(offset);
-    results.truncate(count);
-    results
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_bounded_int_value() {
-        assert_eq!(10, bounded_int_value(None, 10, 1, 250));
-        assert_eq!(15, bounded_int_value(Some(15), 10, 1, 250));
-        assert_eq!(1, bounded_int_value(Some(-8), 10, 1, 250));
-        assert_eq!(250, bounded_int_value(Some(1000), 10, 1, 250));
-    }
-
-    #[test]
-    fn test_paginate_vector() {
-        // sensible "first" page
-        let mut input: Vec<u32> = Vec::new();
-        for v in 0..102 {
-            input.push(v);
-        }
-        let actual = paginate_vector(&mut input, Some(0), Some(10));
-        assert_eq!(actual.len(), 10);
-        assert_eq!(actual[0], 0);
-        assert_eq!(actual[9], 9);
-
-        // page somewhere in the middle
-        let mut input: Vec<u32> = Vec::new();
-        for v in 0..102 {
-            input.push(v);
-        }
-        let actual = paginate_vector(&mut input, Some(40), Some(20));
-        assert_eq!(actual.len(), 20);
-        assert_eq!(actual[0], 40);
-        assert_eq!(actual[19], 59);
-
-        // last page with over extension
-        let mut input: Vec<u32> = Vec::new();
-        for v in 0..102 {
-            input.push(v);
-        }
-        let actual = paginate_vector(&mut input, Some(90), Some(100));
-        assert_eq!(actual.len(), 12);
-        assert_eq!(actual[0], 90);
-        assert_eq!(actual[11], 101);
-    }
+/// Set of operations to transform the given list of assets.
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub struct BulkEditParams {
+    /// Identifiers of assets to be modified.
+    pub assets: Vec<String>,
+    /// Add or remove tags.
+    pub tag_ops: Vec<TagOperation>,
+    /// Modify the location.
+    pub location_ops: Vec<LocationOperation>,
+    /// Modify the user date.
+    pub datetime_op: Option<DatetimeOperation>,
 }

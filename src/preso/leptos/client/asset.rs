@@ -306,7 +306,6 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                                 class="input"
                                 type="datetime-local"
                                 node_ref=datetime_input_ref
-                                placeholder="Custom Date"
                                 value=convert_utc_to_local(asset.get_value().best_date())
                                     .format("%Y-%m-%dT%H:%M:%S")
                                     .to_string()

@@ -1,19 +1,16 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::data::repositories::geo::find_location_repository;
 use crate::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl};
 use crate::data::sources::EntityDataSource;
-use crate::domain::entities::{Asset, LabeledCount, Location, SearchResult};
+use crate::domain::entities::{Asset, LabeledCount, Location};
 use crate::domain::usecases::analyze::Counts;
 use crate::domain::usecases::diagnose::Diagnosis;
-use crate::preso::common::SearchMeta;
 use chrono::prelude::*;
 use juniper::{
-    EmptySubscription, FieldResult, GraphQLEnum, GraphQLInputObject, GraphQLScalar, InputValue,
-    ParseScalarResult, ParseScalarValue, RootNode, ScalarToken, ScalarValue, Value,
+    EmptySubscription, FieldResult, GraphQLEnum, GraphQLScalar, InputValue, ParseScalarResult,
+    ParseScalarValue, RootNode, ScalarToken, ScalarValue, Value,
 };
-use log::error;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -187,40 +184,6 @@ impl LabeledCount {
     }
 }
 
-#[derive(GraphQLEnum)]
-pub enum SortField {
-    Date,
-    Identifier,
-    Filename,
-    MediaType,
-}
-
-impl From<SortField> for crate::domain::entities::SortField {
-    fn from(val: SortField) -> Self {
-        match val {
-            SortField::Date => crate::domain::entities::SortField::Date,
-            SortField::Identifier => crate::domain::entities::SortField::Identifier,
-            SortField::Filename => crate::domain::entities::SortField::Filename,
-            SortField::MediaType => crate::domain::entities::SortField::MediaType,
-        }
-    }
-}
-
-#[derive(GraphQLEnum)]
-pub enum SortOrder {
-    Ascending,
-    Descending,
-}
-
-impl From<SortOrder> for crate::domain::entities::SortOrder {
-    fn from(val: SortOrder) -> Self {
-        match val {
-            SortOrder::Ascending => crate::domain::entities::SortOrder::Ascending,
-            SortOrder::Descending => crate::domain::entities::SortOrder::Descending,
-        }
-    }
-}
-
 //
 // Note on using juniper and defining input objects: If a runtime error occurs
 // that says "Can't unify non-input concrete type" then try naming the input
@@ -229,93 +192,6 @@ impl From<SortOrder> for crate::domain::entities::SortOrder {
 // the entities module results in this error. It may have something to do with
 // the reliance on macros to generate code for interfacing with juniper.
 //
-
-/// `SearchParams` defines the various parameters by which to search for assets.
-#[derive(GraphQLInputObject)]
-pub struct SearchParams {
-    /// Tags that an asset should have. All should match.
-    pub tags: Option<Vec<String>>,
-    /// Locations of an asset. At least one must match.
-    pub locations: Option<Vec<String>>,
-    /// Date for filtering asset results. Only those assets whose canonical date
-    /// occurs _on_ or _after_ this date will be returned.
-    pub after: Option<DateTime<Utc>>,
-    /// Date for filtering asset results. Only those assets whose canonical date
-    /// occurs _before_ this date will be returned.
-    pub before: Option<DateTime<Utc>>,
-    /// Find assets whose filename (e.g. `img_3011.jpg`) matches the one given.
-    pub filename: Option<String>,
-    /// Find assets whose media type (e.g. `image/jpeg`) matches the one given.
-    pub media_type: Option<String>,
-    /// Field by which to sort the results.
-    pub sort_field: Option<SortField>,
-    /// Order by which to sort the results.
-    pub sort_order: Option<SortOrder>,
-}
-
-impl From<SearchParams> for crate::domain::usecases::search::Params {
-    fn from(val: SearchParams) -> Self {
-        crate::domain::usecases::search::Params {
-            tags: val.tags.unwrap_or(vec![]),
-            locations: val.locations.unwrap_or(vec![]),
-            filename: val.filename,
-            media_type: val.media_type,
-            before_date: val.before,
-            after_date: val.after,
-            sort_field: Some(
-                val.sort_field
-                    .map_or(crate::domain::entities::SortField::Date, |v| v.into()),
-            ),
-            sort_order: Some(
-                val.sort_order
-                    .map_or(crate::domain::entities::SortOrder::Descending, |v| v.into()),
-            ),
-        }
-    }
-}
-
-#[juniper::graphql_object(
-    description = "An attribute name and the number of assets it references."
-)]
-impl SearchResult {
-    /// The identifier of the matching asset.
-    fn id(&self) -> String {
-        self.asset_id.clone()
-    }
-
-    /// The filename for the matching asset.
-    fn filename(&self) -> String {
-        self.filename.clone()
-    }
-
-    /// Media type of the asset.
-    fn media_type(&self) -> String {
-        self.media_type.clone()
-    }
-
-    /// The location for the matching asset, if available.
-    fn location(&self) -> Option<Location> {
-        self.location.clone()
-    }
-
-    /// The date/time for the matching asset.
-    fn datetime(&self) -> DateTime<Utc> {
-        self.datetime
-    }
-}
-
-#[juniper::graphql_object(description = "`SearchMeta` is returned from the `search` query.")]
-impl SearchMeta {
-    /// The list of results retrieved via the query.
-    fn results(&self) -> Vec<SearchResult> {
-        self.results.clone()
-    }
-
-    /// The total number of matching assets in the system, useful for pagination.
-    fn count(&self) -> i32 {
-        self.count
-    }
-}
 
 #[derive(GraphQLEnum)]
 pub enum ErrorCode {
@@ -417,189 +293,6 @@ impl Counts {
     }
 }
 
-/// `EditFilter` is used to select assets when performing a bulk edit.
-#[derive(Clone, GraphQLInputObject)]
-pub struct EditFilter {
-    /// Asset must have all of these tags.
-    pub tags: Vec<String>,
-    /// Asset location must match defined fields of location. If any field is an
-    /// empty string, then the corresponding asset field must be undefined.
-    pub location: Option<LocationInput>,
-    /// Asset "best" date must be before this date.
-    pub before: Option<DateTime<Utc>>,
-    /// Asset "best" date must be after this date.
-    pub after: Option<DateTime<Utc>>,
-    /// Asset media type must match this value.
-    pub media_type: Option<String>,
-}
-
-impl From<EditFilter> for crate::domain::usecases::edit::Filter {
-    fn from(val: EditFilter) -> Self {
-        crate::domain::usecases::edit::Filter {
-            tags: val.tags,
-            location: val.location.map(|l| l.into()),
-            before_date: val.before,
-            after_date: val.after,
-            media_type: val.media_type,
-        }
-    }
-}
-
-#[derive(Clone, GraphQLEnum)]
-pub enum TagAction {
-    Add,
-    Remove,
-}
-
-/// `EditTag` is the operation to perform on the asset tags.
-#[derive(Clone, GraphQLInputObject)]
-pub struct EditTag {
-    /// Action to take on the tags list.
-    action: TagAction,
-    /// Name of the tag to be added or removed.
-    value: String,
-}
-
-impl From<EditTag> for crate::domain::usecases::edit::TagOperation {
-    fn from(val: EditTag) -> Self {
-        match val.action {
-            TagAction::Add => crate::domain::usecases::edit::TagOperation::Add(val.value),
-            TagAction::Remove => crate::domain::usecases::edit::TagOperation::Remove(val.value),
-        }
-    }
-}
-
-#[derive(Clone, GraphQLEnum)]
-pub enum LocationAction {
-    Set,
-    Clear,
-}
-
-#[derive(Clone, GraphQLEnum)]
-pub enum LocationField {
-    Label,
-    City,
-    Region,
-}
-
-impl From<LocationField> for crate::domain::usecases::edit::LocationField {
-    fn from(val: LocationField) -> Self {
-        match val {
-            LocationField::Label => crate::domain::usecases::edit::LocationField::Label,
-            LocationField::City => crate::domain::usecases::edit::LocationField::City,
-            LocationField::Region => crate::domain::usecases::edit::LocationField::Region,
-        }
-    }
-}
-
-/// `EditLocation` indicates what action to take on the location.
-#[derive(Clone, GraphQLInputObject)]
-pub struct EditLocation {
-    /// Field of the location record to be modified.
-    field: LocationField,
-    /// Action to take on the location field.
-    action: LocationAction,
-    /// Value for setting the corresponding location field.
-    value: Option<String>,
-}
-
-impl From<EditLocation> for crate::domain::usecases::edit::LocationOperation {
-    fn from(val: EditLocation) -> Self {
-        let field: crate::domain::usecases::edit::LocationField = val.field.into();
-        let empty = String::from("oops");
-        match val.action {
-            LocationAction::Set => crate::domain::usecases::edit::LocationOperation::Set(
-                field,
-                val.value.unwrap_or(empty),
-            ),
-            LocationAction::Clear => crate::domain::usecases::edit::LocationOperation::Clear(field),
-        }
-    }
-}
-
-#[derive(Clone, GraphQLEnum)]
-pub enum DatetimeAction {
-    /// Set the "user" date to the value given.
-    Set,
-    /// Add the given number of days to the best date, save as "user" date.
-    Add,
-    /// Subtract the given number of days from the best date, save as "user" date.
-    Subtract,
-    /// Clear the "user" date field.
-    Clear,
-}
-
-/// `EditDatetime` indicates what action to take on the asset date/time.
-#[derive(Clone, GraphQLInputObject)]
-pub struct EditDatetime {
-    /// Action to take regarding the asset date/time.
-    action: DatetimeAction,
-    /// New date/time to apply to the asset.
-    value: Option<DateTime<Utc>>,
-    /// Number of days to add or remove from the "best" asset date/time.
-    delta: Option<i32>,
-}
-
-impl From<EditDatetime> for crate::domain::usecases::edit::DatetimeOperation {
-    fn from(val: EditDatetime) -> Self {
-        let value = val.value.unwrap_or(Utc::now());
-        let delta = val.delta.unwrap_or(0) as u16;
-        match val.action {
-            DatetimeAction::Set => crate::domain::usecases::edit::DatetimeOperation::Set(value),
-            DatetimeAction::Add => crate::domain::usecases::edit::DatetimeOperation::Add(delta),
-            DatetimeAction::Subtract => {
-                crate::domain::usecases::edit::DatetimeOperation::Subtract(delta)
-            }
-            DatetimeAction::Clear => crate::domain::usecases::edit::DatetimeOperation::Clear,
-        }
-    }
-}
-
-/// `EditParams` specify a filter to select assets and actions to perform on those assets.
-#[derive(Clone, GraphQLInputObject)]
-pub struct EditParams {
-    /// Criteria for finding assets to be modified.
-    pub filter: EditFilter,
-    /// Operations to perform on the tags.
-    pub tags: Vec<EditTag>,
-    /// Operations to perform on the location fields.
-    pub location: Vec<EditLocation>,
-    /// Optional date/time operation to perform.
-    pub datetime: Option<EditDatetime>,
-}
-
-impl From<EditParams> for crate::domain::usecases::edit::Params {
-    fn from(val: EditParams) -> Self {
-        crate::domain::usecases::edit::Params {
-            filter: val.filter.into(),
-            tag_ops: val.tags.into_iter().map(|v| v.into()).collect(),
-            location_ops: val.location.into_iter().map(|v| v.into()).collect(),
-            datetime_op: val.datetime.map(|v| v.into()),
-        }
-    }
-}
-
-/// `Location` is used to update the location field of an asset.
-#[derive(Clone, GraphQLInputObject)]
-pub struct LocationInput {
-    /// New value for the label of the location.
-    label: Option<String>,
-    /// New value for the city.
-    city: Option<String>,
-    /// New value for the region.
-    region: Option<String>,
-}
-
-impl From<LocationInput> for Location {
-    fn from(val: LocationInput) -> Self {
-        Location {
-            label: val.label,
-            city: val.city,
-            region: val.region,
-        }
-    }
-}
-
 pub struct QueryRoot;
 
 #[juniper::graphql_object(Context = GraphContext)]
@@ -655,21 +348,8 @@ impl QueryRoot {
         Ok(results)
     }
 
-    /// Retrieve the list of location parts and their associated asset count.
-    ///
-    /// Parts include the location label split on commas, and the city and
-    /// region, if available.
-    fn locations(#[graphql(ctx)] ctx: &GraphContext) -> FieldResult<Vec<LabeledCount>> {
-        use crate::domain::usecases::location::PartedLocations;
-        use crate::domain::usecases::{NoParams, UseCase};
-        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
-        let usecase = PartedLocations::new(Box::new(repo));
-        let locations: Vec<LabeledCount> = usecase.call(NoParams {})?;
-        Ok(locations)
-    }
-
     /// Retrieve the list of unique locations with their full structure.
-    fn all_locations(#[graphql(ctx)] ctx: &GraphContext) -> FieldResult<Vec<Location>> {
+    fn locations(#[graphql(ctx)] ctx: &GraphContext) -> FieldResult<Vec<Location>> {
         use crate::domain::usecases::location::CompleteLocations;
         use crate::domain::usecases::{NoParams, UseCase};
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
@@ -744,54 +424,6 @@ impl MutationRoot {
         params.repair = true;
         let results: Vec<Diagnosis> = usecase.call(params)?;
         Ok(results)
-    }
-
-    /// Attempt to fill in the city and region for assets that have GPS
-    /// coordinates available in the file metadata.
-    ///
-    /// If overwrite is true, will replace whatever city and region may already
-    /// be present.
-    fn geocode(#[graphql(ctx)] ctx: &GraphContext, overwrite: bool) -> FieldResult<i32> {
-        use crate::domain::usecases::geocode::{Geocoder, Params};
-        use crate::domain::usecases::UseCase;
-        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
-        let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
-        let geocoder = find_location_repository();
-        let usecase = Geocoder::new(Box::new(repo), Box::new(blobs), geocoder);
-        let result = usecase.call(Params::new(overwrite));
-        if let Ok(count) = result {
-            return Ok(count as i32);
-        }
-        error!("geocode error: {:?}", result);
-        Ok(-1)
-    }
-
-    /// Perform a search and replace of all of the assets.
-    fn edit(#[graphql(ctx)] ctx: &GraphContext, params: EditParams) -> FieldResult<i32> {
-        use crate::domain::usecases::edit::{EditAssets, Params};
-        use crate::domain::usecases::UseCase;
-        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
-        let usecase = EditAssets::new(Box::new(repo));
-        let parms: Params = params.into();
-        let results: u64 = usecase.call(parms)?;
-        Ok(results as i32)
-    }
-
-    /// Fill in city and region for locations whose label matches a query.
-    fn relocate(
-        #[graphql(ctx)] ctx: &GraphContext,
-        query: String,
-        city: String,
-        region: String,
-        clear_label: Option<bool>,
-    ) -> FieldResult<i32> {
-        use crate::domain::usecases::relocate::{Params, Relocate};
-        use crate::domain::usecases::UseCase;
-        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
-        let usecase = Relocate::new(Box::new(repo));
-        let params = Params::new(query, city, region, clear_label.unwrap_or(false));
-        let results: u64 = usecase.call(params)?;
-        Ok(results as i32)
     }
 
     /// Dump all asset records from the database to the given file path in JSON format.
@@ -988,81 +620,6 @@ mod tests {
         let (res, errors) =
             juniper::execute_sync(r#"query { count }"#, None, &schema, &Variables::new(), &ctx)
                 .unwrap();
-        // assert
-        assert!(res.is_null());
-        assert_eq!(errors.len(), 1);
-        assert!(errors[0].error().message().contains("oh no"));
-    }
-
-    #[test]
-    fn test_query_locations_ok() {
-        // arrange
-        let expected = vec![
-            LabeledCount {
-                label: "hawaii".to_owned(),
-                count: 42,
-            },
-            LabeledCount {
-                label: "paris".to_owned(),
-                count: 101,
-            },
-            LabeledCount {
-                label: "london".to_owned(),
-                count: 14,
-            },
-        ];
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_all_locations()
-            .returning(move || Ok(expected.clone()));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let (res, _errors) = juniper::execute_sync(
-            r#"query { locations { label count } }"#,
-            None,
-            &schema,
-            &Variables::new(),
-            &ctx,
-        )
-        .unwrap();
-        // assert
-        let res = res.as_object_value().unwrap();
-        let res = res.get_field_value("locations").unwrap();
-        let list_result = res.as_list_value().unwrap();
-        let labels = ["hawaii", "paris", "london"];
-        let counts = [42, 101, 14];
-        for (idx, result) in list_result.iter().enumerate() {
-            let object = result.as_object_value().unwrap();
-            let res = object.get_field_value("label").unwrap();
-            let actual = res.as_scalar_value::<String>().unwrap();
-            assert_eq!(actual, labels[idx]);
-            let res = object.get_field_value("count").unwrap();
-            let actual = res.as_scalar_value::<i32>().unwrap();
-            assert_eq!(*actual, counts[idx]);
-        }
-    }
-
-    #[test]
-    fn test_query_locations_err() {
-        // arrange
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_all_locations()
-            .returning(|| Err(anyhow!("oh no")));
-        let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
-        let assets_path = Box::new(PathBuf::from("/tmp"));
-        let ctx = Arc::new(GraphContext::new(datasource, assets_path));
-        // act
-        let schema = create_schema();
-        let (res, errors) = juniper::execute_sync(
-            r#"query { locations { label count } }"#,
-            None,
-            &schema,
-            &Variables::new(),
-            &ctx,
-        )
-        .unwrap();
         // assert
         assert!(res.is_null());
         assert_eq!(errors.len(), 1);

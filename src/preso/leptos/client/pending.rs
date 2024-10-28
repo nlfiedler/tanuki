@@ -2,8 +2,8 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::{AssetInput, Location, SearchResult};
-use crate::preso::common::SearchMeta;
-use crate::preso::leptos::client::{nav, paging};
+use crate::preso::leptos::client::{forms, nav, paging};
+use crate::preso::leptos::common::SearchMeta;
 use crate::preso::leptos::server::*;
 use chrono::{DateTime, TimeDelta, Utc};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
@@ -241,34 +241,15 @@ pub fn PendingPage() -> impl IntoView {
 
         <div class="container mt-3 mb-3">
             <div class="field is-grouped is-grouped-multiline">
-                {move || {
-                    selected_tags
-                        .get()
-                        .into_iter()
-                        .map(move |attr| {
-                            let stored_attr = store_value(attr);
-                            view! {
-                                <div class="control">
-                                    <div class="tags has-addons">
-                                        <a class="tag">{move || stored_attr.get_value()}</a>
-                                        <a
-                                            class="tag is-delete"
-                                            on:click=move |_| {
-                                                stored_attr
-                                                    .with_value(|attr| {
-                                                        set_selected_tags
-                                                            .update(|coll| {
-                                                                coll.remove(attr);
-                                                            })
-                                                    })
-                                            }
-                                        ></a>
-                                    </div>
-                                </div>
-                            }
-                        })
-                        .collect::<Vec<_>>()
-                }}
+                <forms::TagList
+                    attrs=selected_tags.into()
+                    rm_attr=move |attr| {
+                        set_selected_tags
+                            .update(|coll| {
+                                coll.remove(&attr);
+                            });
+                    }
+                />
             </div>
         </div>
 

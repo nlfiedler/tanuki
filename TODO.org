@@ -1,7 +1,7 @@
 * Action Items
 ** Pending
 *** would be nice to set the month and year for the selected assets
-*** display options: have an option that makes the images really big (single column, huge images)
+*** display modes: have an option that makes the images really big (single column, huge images)
 *** make =fa-angle-down= icon in =card-header= actually do something
 *** add item to ~dropdown~ menu to show the asset in full size in a modal
 *** add item to ~dropdown~ menu to navigate to asset view
@@ -17,13 +17,13 @@
 **** need to be able to distinquish between ~Paris, TX~ and ~Paris, France~
 *** hovering over asset should fetch and display details in a large tooltip
 *** add date order button on gallery (ascending/descending)
-*** enable different modes of display
+*** display modes
 **** grid of 300x300 images with caption info (date, location/filename) (a la PhotoPrism)
 **** wide blocks with thumbnails on left, more details on right (c.f. anilist.co)
 **** responsive grid; images only, scaled to fit in a row and fill horizontally (i.e. ~mujina~)
 **** grid of just images, maybe 180x180; images cropped to the square (a la Apple Photos)
 **** list of rows, tiny thumbnail (96x96), caption, location, date
-*** image gallery paging
+*** paging
 **** spring-loaded next-page navigation
 ***** scroll to the bottom and keep trying to scroll
 ***** show some indication (e.g. a spinner) that holding will fetch the next page
@@ -99,21 +99,8 @@ assertion failed: actual.is_ok()
 **** selecting a tag or location offers a rename function
 **** selecting multiple tags/locations offers option to remove from all assets
 ** Bulk edit
-*** start by browsing/searching for assets
-*** use the selection checkbox on each asset to select
-*** provide (un)select all buttons to toggle selections
-*** access the operation popup menu (FAB) to edit selected items
-*** menu contains item to perform a bulk edit
-*** navigates to screen with form for changing multiple properties
-**** set a custom date
-**** add a location
-**** remove a location
-**** rename a location
-**** add a tag
-**** remove a tag
-**** rename a tag
-**** set caption
-**** change media type
+*** buttons to select all and unselect all
+*** hover over asset thumbnail will show larger version as tooltip
 ** Advanced Search
 *** Add support for searching by mimetype
 *** Advanced queries using Google-style operators
@@ -248,25 +235,15 @@ include it in the database records.
 **** use EXAF similar to how zorigami does its database backup
 ** Bulk Export
 *** Easy selection and export of multiple images
-**** Selection process
-***** Maybe show selection icon thingy on hover, click to select
-****** use =Stack= with =Align= and a flat button
-***** Maybe shift-click to select by thumbnails
-**** Export process
-***** Maybe app bar has "export" feature to export selected assets
-***** Maybe action panel appears when there are selections
-***** Show "file save" dialog to choose local file path
-***** Save assets using their unique filename
-**** Web support is lacking
-***** JS has a =showSaveFilePicker()= but seems like =dart:html= does not expose this API
 ** Architecture Review
+*** Consider if SQLite would be a suitable database
 *** Use async throughout, avoid the =block_on()= function
-The =juniper= API can invoke async operations, thereby all of the usecases
-can also by async, and the calls to the repositories can also be async. This
-will require having async trait support in Rust.
+**** Both =juniper= and =[leptos::server]= are or support async fns
+**** Thereforce, all use cases can also be async, and the repos, and so on
 *** Large file upload
 **** split file into chunks, upload one-by-one, showing progress
 ***** default to 8MB chunks, most images will be smaller than that
+***** partly this avoids any limitations actix has, but also reverse proxies like nginx
 *** GraphQL server
 **** consider https://github.com/async-graphql/async-graphql as alternative to juniper
 ***** handles multipart requests (file uploads)

@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::preso::common::SearchMeta;
+use crate::preso::leptos::common::SearchMeta;
 use html::Div;
 use leptos::*;
 use leptos_use::on_click_outside;

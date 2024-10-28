@@ -470,6 +470,45 @@ impl FromStr for Location {
     }
 }
 
+/// Action to perform on the asset tags.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum TagOperation {
+    /// Add a tag with the given value.
+    Add(String),
+    /// Remove the tag that matches the given value.
+    Remove(String),
+}
+
+/// Identify the field of the location to be modified.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum LocationField {
+    Label,
+    City,
+    Region,
+}
+
+/// Action to perform on the asset location.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum LocationOperation {
+    /// Set the value for the corresponding field.
+    Set(LocationField, String),
+    /// Clear the corresponding field.
+    Clear(LocationField),
+}
+
+/// Set, clear, add, or subtract from the asset date.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum DatetimeOperation {
+    /// Set the "user" date to the value given.
+    Set(DateTime<Utc>),
+    /// Add the given number of days to the best date, save as "user" date.
+    Add(u16),
+    /// Subtract the given number of days from the best date, save as "user" date.
+    Subtract(u16),
+    /// Clear the "user" date field.
+    Clear,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum NorthSouth {
     North,

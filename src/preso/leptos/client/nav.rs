@@ -48,6 +48,10 @@ pub fn NavBar() -> impl IntoView {
                     <a class="navbar-item" href="/pending">
                         Pending
                     </a>
+
+                    <a class="navbar-item" href="/edit">
+                        Edit
+                    </a>
                 </div>
 
                 <div class="navbar-end">
