@@ -182,85 +182,65 @@ pub fn EditPage() -> impl IntoView {
             <nav class="level">
                 <div class="level-left">
                     <div class="level-item">
-                        <div class="field">
-                            <p class="control">
-                                <TagsChooser add_tag=move |label| {
-                                    set_selected_tags
-                                        .update(|tags| {
-                                            tags.insert(label);
-                                        });
-                                } />
-                            </p>
+                        <TagsChooser add_tag=move |label| {
+                            set_selected_tags
+                                .update(|tags| {
+                                    tags.insert(label);
+                                });
+                        } />
+                    </div>
+                    <div class="level-item">
+                        <LocationsChooser add_location=move |label| {
+                            set_selected_locations
+                                .update(|locations| {
+                                    locations.insert(label);
+                                });
+                        } />
+                    </div>
+                    <div class="level-item">
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label">After</label>
+                            </div>
+                            <div class="field-body">
+                                <p class="control">
+                                    <input
+                                        class="input"
+                                        type="date"
+                                        id="after-input"
+                                        value=move || utc_to_date_str(after_date.get())
+                                        node_ref=after_date_input_ref
+                                        on:change=move |ev: Event| {
+                                            ev.stop_propagation();
+                                            let value = after_date_input_ref.get().unwrap().value();
+                                            set_after_date.set(date_str_to_utc(&value));
+                                        }
+                                    />
+                                </p>
+                            </div>
                         </div>
                     </div>
                     <div class="level-item">
-                        <div class="field">
-                            <p class="control">
-                                <LocationsChooser add_location=move |label| {
-                                    set_selected_locations
-                                        .update(|locations| {
-                                            locations.insert(label);
-                                        });
-                                } />
-                            </p>
-                        </div>
-                    </div>
-                    <div class="level-item">
-                        <div class="field">
-                            <p class="control">
-                                <div class="field is-horizontal">
-                                    <div class="field-label is-normal">
-                                        <label class="label">After</label>
-                                    </div>
-                                    <div class="field-body">
-                                        <div class="field">
-                                            <p class="control">
-                                                <input
-                                                    class="input"
-                                                    type="date"
-                                                    id="after-input"
-                                                    value=move || utc_to_date_str(after_date.get())
-                                                    node_ref=after_date_input_ref
-                                                    on:change=move |ev: Event| {
-                                                        ev.stop_propagation();
-                                                        let value = after_date_input_ref.get().unwrap().value();
-                                                        set_after_date.set(date_str_to_utc(&value));
-                                                    }
-                                                />
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </p>
-                        </div>
-                    </div>
-                    <div class="level-item">
-                        <div class="field">
-                            <p class="control">
-                                <div class="field is-horizontal">
-                                    <div class="field-label is-normal">
-                                        <label class="label">Before</label>
-                                    </div>
-                                    <div class="field-body">
-                                        <div class="field">
-                                            <p class="control">
-                                                <input
-                                                    class="input"
-                                                    type="date"
-                                                    id="before-input"
-                                                    value=move || utc_to_date_str(before_date.get())
-                                                    node_ref=before_date_input_ref
-                                                    on:change=move |ev: Event| {
-                                                        ev.stop_propagation();
-                                                        let value = before_date_input_ref.get().unwrap().value();
-                                                        set_before_date.set(date_str_to_utc(&value));
-                                                    }
-                                                />
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </p>
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label">Before</label>
+                            </div>
+                            <div class="field-body">
+                                <p class="control">
+                                    <input
+                                        class="input"
+                                        type="date"
+                                        id="before-input"
+                                        value=move || utc_to_date_str(before_date.get())
+                                        node_ref=before_date_input_ref
+                                        on:change=move |ev: Event| {
+                                            ev.stop_propagation();
+                                            let value = before_date_input_ref.get().unwrap().value();
+                                            set_before_date.set(date_str_to_utc(&value));
+                                        }
+                                    />
+                                </p>
+                            </div>
                         </div>
                     </div>
                     <div class="level-item">
@@ -725,12 +705,12 @@ fn CardFigure(asset: StoredValue<SearchResult>) -> impl IntoView {
                     }
                         .into_view()
                 } else {
-                    let src = format!("/rest/thumbnail/400/400/{}", asset.get_value().asset_id);
+                    let src = format!("/rest/thumbnail/640/640/{}", asset.get_value().asset_id);
                     view! {
                         <img
                             src=src
                             alt=asset.get_value().filename.clone()
-                            style="max-width: 100%; width: auto;"
+                            style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
                         />
                     }
                         .into_view()
@@ -804,28 +784,26 @@ where
                                         <label class="label">Tags</label>
                                     </div>
                                     <div class="field-body">
-                                        <div class="field">
-                                            <p class="control">
-                                                <input
-                                                    class="input"
-                                                    type="text"
-                                                    id="tags-input"
-                                                    list="tag-labels"
-                                                    placeholder="Choose tags"
-                                                    node_ref=input_ref
-                                                    on:change=on_change
-                                                />
-                                                <datalist id="tag-labels">
-                                                    <For
-                                                        each=move || tags.get_value()
-                                                        key=|t| t.label.clone()
-                                                        let:tag
-                                                    >
-                                                        <option value=tag.label></option>
-                                                    </For>
-                                                </datalist>
-                                            </p>
-                                        </div>
+                                        <p class="control">
+                                            <input
+                                                class="input"
+                                                type="text"
+                                                id="tags-input"
+                                                list="tag-labels"
+                                                placeholder="Choose tags"
+                                                node_ref=input_ref
+                                                on:change=on_change
+                                            />
+                                            <datalist id="tag-labels">
+                                                <For
+                                                    each=move || tags.get_value()
+                                                    key=|t| t.label.clone()
+                                                    let:tag
+                                                >
+                                                    <option value=tag.label></option>
+                                                </For>
+                                            </datalist>
+                                        </p>
                                     </div>
                                 </div>
                             }
@@ -887,28 +865,26 @@ where
                                         <label class="label">Locations</label>
                                     </div>
                                     <div class="field-body">
-                                        <div class="field">
-                                            <p class="control">
-                                                <input
-                                                    class="input"
-                                                    type="text"
-                                                    id="locations-input"
-                                                    list="location-labels"
-                                                    placeholder="Choose locations"
-                                                    node_ref=input_ref
-                                                    on:change=on_change
-                                                />
-                                                <datalist id="location-labels">
-                                                    <For
-                                                        each=move || locations.get_value()
-                                                        key=|l| l.label.clone()
-                                                        let:loc
-                                                    >
-                                                        <option value=loc.label></option>
-                                                    </For>
-                                                </datalist>
-                                            </p>
-                                        </div>
+                                        <p class="control">
+                                            <input
+                                                class="input"
+                                                type="text"
+                                                id="locations-input"
+                                                list="location-labels"
+                                                placeholder="Choose locations"
+                                                node_ref=input_ref
+                                                on:change=on_change
+                                            />
+                                            <datalist id="location-labels">
+                                                <For
+                                                    each=move || locations.get_value()
+                                                    key=|l| l.label.clone()
+                                                    let:loc
+                                                >
+                                                    <option value=loc.label></option>
+                                                </For>
+                                            </datalist>
+                                        </p>
                                     </div>
                                 </div>
                             }

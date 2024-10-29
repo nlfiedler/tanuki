@@ -206,34 +206,26 @@ pub fn HomePage() -> impl IntoView {
             <nav class="level">
                 <div class="level-left">
                     <div class="level-item">
-                        <div class="field">
-                            <p class="control">
-                                <TagsChooser add_tag=move |label| {
-                                    batch(|| {
-                                        set_selected_tags
-                                            .update(|tags| {
-                                                tags.insert(label);
-                                            });
-                                        set_selected_page.set(1);
-                                    })
-                                } />
-                            </p>
-                        </div>
+                        <TagsChooser add_tag=move |label| {
+                            batch(|| {
+                                set_selected_tags
+                                    .update(|tags| {
+                                        tags.insert(label);
+                                    });
+                                set_selected_page.set(1);
+                            })
+                        } />
                     </div>
                     <div class="level-item">
-                        <div class="field">
-                            <p class="control">
-                                <LocationsChooser add_location=move |label| {
-                                    batch(|| {
-                                        set_selected_locations
-                                            .update(|locations| {
-                                                locations.insert(label);
-                                            });
-                                        set_selected_page.set(1);
-                                    })
-                                } />
-                            </p>
-                        </div>
+                        <LocationsChooser add_location=move |label| {
+                            batch(|| {
+                                set_selected_locations
+                                    .update(|locations| {
+                                        locations.insert(label);
+                                    });
+                                set_selected_page.set(1);
+                            })
+                        } />
                     </div>
                     <div class="level-item">
                         <div class="field">
@@ -419,7 +411,7 @@ fn ResultsDisplay(meta: SearchMeta) -> impl IntoView {
                                                 <img
                                                     src=src
                                                     alt=asset.filename.clone()
-                                                    style="max-width: 100%; width: auto;"
+                                                    style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
                                                 />
                                             }
                                                 .into_view()
@@ -504,28 +496,26 @@ where
                                         <label class="label">Tags</label>
                                     </div>
                                     <div class="field-body">
-                                        <div class="field">
-                                            <p class="control">
-                                                <input
-                                                    class="input"
-                                                    type="text"
-                                                    id="tags-input"
-                                                    list="tag-labels"
-                                                    placeholder="Choose tags"
-                                                    node_ref=input_ref
-                                                    on:change=on_change
-                                                />
-                                                <datalist id="tag-labels">
-                                                    <For
-                                                        each=move || tags.get_value()
-                                                        key=|t| t.label.clone()
-                                                        let:tag
-                                                    >
-                                                        <option value=tag.label></option>
-                                                    </For>
-                                                </datalist>
-                                            </p>
-                                        </div>
+                                        <p class="control">
+                                            <input
+                                                class="input"
+                                                type="text"
+                                                id="tags-input"
+                                                list="tag-labels"
+                                                placeholder="Choose tags"
+                                                node_ref=input_ref
+                                                on:change=on_change
+                                            />
+                                            <datalist id="tag-labels">
+                                                <For
+                                                    each=move || tags.get_value()
+                                                    key=|t| t.label.clone()
+                                                    let:tag
+                                                >
+                                                    <option value=tag.label></option>
+                                                </For>
+                                            </datalist>
+                                        </p>
                                     </div>
                                 </div>
                             }
@@ -587,28 +577,26 @@ where
                                         <label class="label">Locations</label>
                                     </div>
                                     <div class="field-body">
-                                        <div class="field">
-                                            <p class="control">
-                                                <input
-                                                    class="input"
-                                                    type="text"
-                                                    id="locations-input"
-                                                    list="location-labels"
-                                                    placeholder="Choose locations"
-                                                    node_ref=input_ref
-                                                    on:change=on_change
-                                                />
-                                                <datalist id="location-labels">
-                                                    <For
-                                                        each=move || locations.get_value()
-                                                        key=|l| l.label.clone()
-                                                        let:loc
-                                                    >
-                                                        <option value=loc.label></option>
-                                                    </For>
-                                                </datalist>
-                                            </p>
-                                        </div>
+                                        <p class="control">
+                                            <input
+                                                class="input"
+                                                type="text"
+                                                id="locations-input"
+                                                list="location-labels"
+                                                placeholder="Choose locations"
+                                                node_ref=input_ref
+                                                on:change=on_change
+                                            />
+                                            <datalist id="location-labels">
+                                                <For
+                                                    each=move || locations.get_value()
+                                                    key=|l| l.label.clone()
+                                                    let:loc
+                                                >
+                                                    <option value=loc.label></option>
+                                                </For>
+                                            </datalist>
+                                        </p>
                                     </div>
                                 </div>
                             }

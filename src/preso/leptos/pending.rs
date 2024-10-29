@@ -120,7 +120,12 @@ impl fmt::Display for RecentRange {
 
 /// Convert the inputs into a list of `AssetInputId` and send to the server as a
 /// bulk update.
-async fn save_changes(asset_ids: HashSet<String>, tags: HashSet<String>, location: Location) {
+async fn save_changes(
+    asset_ids: HashSet<String>,
+    tags: HashSet<String>,
+    location: Location,
+    datetime: Option<DateTime<Utc>>,
+) {
     let tags: Vec<String> = tags.into_iter().collect();
     let location = Some(location);
     let inputs: Vec<AssetInput> = asset_ids
@@ -130,7 +135,7 @@ async fn save_changes(asset_ids: HashSet<String>, tags: HashSet<String>, locatio
             tags: Some(tags.clone()),
             location: location.clone(),
             caption: None,
-            datetime: None,
+            datetime,
             filename: None,
             media_type: None,
         })
@@ -187,6 +192,7 @@ pub fn PendingPage() -> impl IntoView {
     let selected_assets = create_rw_signal::<HashSet<String>>(HashSet::new());
     let (selected_tags, set_selected_tags) = create_signal::<HashSet<String>>(HashSet::new());
     let (selected_location, set_selected_location) = create_signal(Location::default());
+    let datetime_input_ref: NodeRef<html::Input> = create_node_ref();
     let submittable = create_memo(move |_| {
         with!(|selected_assets, selected_tags, selected_location| {
             // a location is not really considered "set" unless the label is
@@ -198,10 +204,32 @@ pub fn PendingPage() -> impl IntoView {
     });
     // compile the set of asset inputs and send to the server
     let save_action = create_action(move |_input: &()| {
+        // datetime: convert from local to UTC
+        let local = chrono::offset::Local::now();
+        let datetime_str = format!(
+            "{}{}",
+            datetime_input_ref.get().unwrap().value(),
+            local.offset().to_string()
+        );
+        let datetime = if datetime_str.len() > 6 {
+            // need to be flexible with the date/time format
+            let pattern = if datetime_str.len() == 22 {
+                "%Y-%m-%dT%H:%M%z"
+            } else {
+                "%Y-%m-%dT%H:%M:%S%z"
+            };
+            match DateTime::parse_from_str(&datetime_str, pattern) {
+                Ok(datetime) => Some(datetime.to_utc()),
+                Err(_) => None,
+            }
+        } else {
+            None
+        };
         save_changes(
             selected_assets.get(),
             selected_tags.get(),
             selected_location.get(),
+            datetime,
         )
     });
 
@@ -253,25 +281,33 @@ pub fn PendingPage() -> impl IntoView {
             <nav class="level">
                 <div class="level-left">
                     <div class="level-item">
-                        <div class="field">
-                            <p class="control">
-                                <TagsChooser add_tag=move |label| {
-                                    set_selected_tags
-                                        .update(|tags| {
-                                            tags.insert(label);
-                                        })
-                                } />
-                            </p>
-                        </div>
+                        <TagsChooser add_tag=move |label| {
+                            set_selected_tags
+                                .update(|tags| {
+                                    tags.insert(label);
+                                })
+                        } />
                     </div>
                     <div class="level-item">
-                        <div class="field">
-                            <p class="control">
-                                <LocationsChooser set_location=move |value| {
-                                    let location = Location::from_str(&value).unwrap();
-                                    set_selected_location.set(location);
-                                } />
-                            </p>
+                        <LocationsChooser set_location=move |value| {
+                            let location = Location::from_str(&value).unwrap();
+                            set_selected_location.set(location);
+                        } />
+                    </div>
+                    <div class="level-item">
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label">Date</label>
+                            </div>
+                            <div class="field-body">
+                                <p class="control">
+                                    <input
+                                        class="input"
+                                        type="datetime-local"
+                                        node_ref=datetime_input_ref
+                                    />
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -456,28 +492,26 @@ where
                                         <label class="label">Tags</label>
                                     </div>
                                     <div class="field-body">
-                                        <div class="field">
-                                            <p class="control">
-                                                <input
-                                                    class="input"
-                                                    type="text"
-                                                    id="tags-input"
-                                                    list="tag-labels"
-                                                    placeholder="Choose tags"
-                                                    node_ref=input_ref
-                                                    on:change=on_change
-                                                />
-                                                <datalist id="tag-labels">
-                                                    <For
-                                                        each=move || tags.get_value()
-                                                        key=|t| t.label.clone()
-                                                        let:tag
-                                                    >
-                                                        <option value=tag.label></option>
-                                                    </For>
-                                                </datalist>
-                                            </p>
-                                        </div>
+                                        <p class="control">
+                                            <input
+                                                class="input"
+                                                type="text"
+                                                id="tags-input"
+                                                list="tag-labels"
+                                                placeholder="Choose tags"
+                                                node_ref=input_ref
+                                                on:change=on_change
+                                            />
+                                            <datalist id="tag-labels">
+                                                <For
+                                                    each=move || tags.get_value()
+                                                    key=|t| t.label.clone()
+                                                    let:tag
+                                                >
+                                                    <option value=tag.label></option>
+                                                </For>
+                                            </datalist>
+                                        </p>
                                     </div>
                                 </div>
                             }
@@ -538,31 +572,29 @@ where
                                         <label class="label">Location</label>
                                     </div>
                                     <div class="field-body">
-                                        <div class="field">
-                                            <p class="control">
-                                                <input
-                                                    class="input"
-                                                    type="text"
-                                                    id="locations-input"
-                                                    list="location-labels"
-                                                    placeholder="Choose location"
-                                                    node_ref=input_ref
-                                                    on:change=on_change
-                                                />
-                                                <datalist id="location-labels">
-                                                    {move || {
-                                                        locations
-                                                            .get_value()
-                                                            .iter()
-                                                            .map(|loc| {
-                                                                let desc = loc.to_string();
-                                                                view! { <option value=desc></option> }
-                                                            })
-                                                            .collect::<Vec<_>>()
-                                                    }}
-                                                </datalist>
-                                            </p>
-                                        </div>
+                                        <p class="control">
+                                            <input
+                                                class="input"
+                                                type="text"
+                                                id="locations-input"
+                                                list="location-labels"
+                                                placeholder="Choose location"
+                                                node_ref=input_ref
+                                                on:change=on_change
+                                            />
+                                            <datalist id="location-labels">
+                                                {move || {
+                                                    locations
+                                                        .get_value()
+                                                        .iter()
+                                                        .map(|loc| {
+                                                            let desc = loc.to_string();
+                                                            view! { <option value=desc></option> }
+                                                        })
+                                                        .collect::<Vec<_>>()
+                                                }}
+                                            </datalist>
+                                        </p>
                                     </div>
                                 </div>
                             }
@@ -667,7 +699,7 @@ fn CardFigure(asset: StoredValue<SearchResult>) -> impl IntoView {
                         <img
                             src=src
                             alt=asset.get_value().filename.clone()
-                            style="max-width: 100%; width: auto;"
+                            style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
                         />
                     }
                         .into_view()

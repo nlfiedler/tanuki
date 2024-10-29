@@ -1,6 +1,5 @@
 * Action Items
 ** Pending
-*** would be nice to set the date/time for the selected assets
 *** display modes: have an option that makes the images really big (single column, huge images)
 *** make =fa-angle-down= icon in =card-header= actually do something
 *** add item to ~dropdown~ menu to show the asset in full size in a modal
