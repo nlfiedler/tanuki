@@ -6,8 +6,6 @@ use crate::preso::leptos::SearchMeta;
 use crate::preso::leptos::{forms, nav, paging};
 use chrono::{DateTime, TimeDelta, Utc};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
-use leptos::ev::Event;
-use leptos::html::Input;
 use leptos::*;
 use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
 use serde::{Deserialize, Serialize};
@@ -281,7 +279,7 @@ pub fn PendingPage() -> impl IntoView {
             <nav class="level">
                 <div class="level-left">
                     <div class="level-item">
-                        <TagsChooser add_tag=move |label| {
+                        <forms::TagsChooser add_tag=move |label| {
                             set_selected_tags
                                 .update(|tags| {
                                     tags.insert(label);
@@ -289,7 +287,7 @@ pub fn PendingPage() -> impl IntoView {
                         } />
                     </div>
                     <div class="level-item">
-                        <LocationsChooser set_location=move |value| {
+                        <forms::FullLocationChooser set_location=move |value| {
                             let location = Location::from_str(&value).unwrap();
                             set_selected_location.set(location);
                         } />
@@ -441,170 +439,6 @@ fn RangeSelector(
             </For>
         </div>
     }
-}
-
-#[component]
-fn TagsChooser<F>(add_tag: F) -> impl IntoView
-where
-    F: Fn(String) + Copy + 'static,
-{
-    // the tags returned from the server are in no particular order
-    let tags = create_resource(
-        || (),
-        |_| async move {
-            let mut results = super::fetch_tags().await;
-            if let Ok(data) = results.as_mut() {
-                data.sort_by(|a, b| a.label.cmp(&b.label));
-            }
-            results
-        },
-    );
-
-    let input_ref = NodeRef::<Input>::new();
-    //
-    // n.b. on:change is called under several conditions:
-    // - user selects one of the available datalist options
-    // - user types some text and presses the Enter key
-    // - user types some text and moves the focus
-    //
-    let on_change = move |ev: Event| {
-        let input = input_ref.get().unwrap();
-        ev.stop_propagation();
-        add_tag(input.value());
-        input.set_value("");
-    };
-
-    view! {
-        <Transition fallback=move || {
-            view! { "Loading..." }
-        }>
-            {move || {
-                tags.get()
-                    .map(|resp| match resp {
-                        Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
-                        }
-                        Ok(data) => {
-                            let tags = store_value(data);
-                            view! {
-                                <div class="field is-horizontal">
-                                    <div class="field-label is-normal">
-                                        <label class="label">Tags</label>
-                                    </div>
-                                    <div class="field-body">
-                                        <p class="control">
-                                            <input
-                                                class="input"
-                                                type="text"
-                                                id="tags-input"
-                                                list="tag-labels"
-                                                placeholder="Choose tags"
-                                                node_ref=input_ref
-                                                on:change=on_change
-                                            />
-                                            <datalist id="tag-labels">
-                                                <For
-                                                    each=move || tags.get_value()
-                                                    key=|t| t.label.clone()
-                                                    let:tag
-                                                >
-                                                    <option value=tag.label></option>
-                                                </For>
-                                            </datalist>
-                                        </p>
-                                    </div>
-                                </div>
-                            }
-                                .into_view()
-                        }
-                    })
-            }}
-        </Transition>
-    }
-}
-
-#[component]
-fn LocationsChooser<F>(set_location: F) -> impl IntoView
-where
-    F: Fn(String) + Copy + 'static,
-{
-    // the locations returned from the server are in no particular order
-    let locations = create_resource(
-        || (),
-        |_| async move {
-            let mut results = super::fetch_raw_locations().await;
-            if let Ok(data) = results.as_mut() {
-                data.sort_by(|a, b| a.label.cmp(&b.label));
-            }
-            results
-        },
-    );
-
-    let input_ref = NodeRef::<Input>::new();
-    //
-    // n.b. on:change is called under several conditions:
-    // - user selects one of the available datalist options
-    // - user types some text and presses the Enter key
-    // - user types some text and moves the focus
-    //
-    let on_change = move |ev: Event| {
-        let input = input_ref.get().unwrap();
-        ev.stop_propagation();
-        set_location(input.value());
-    };
-
-    view! {
-        <Transition fallback=move || {
-            view! { "Loading..." }
-        }>
-            {move || {
-                locations
-                    .get()
-                    .map(|resp| match resp {
-                        Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
-                        }
-                        Ok(data) => {
-                            let locations = store_value(data);
-                            view! {
-                                <div class="field is-horizontal">
-                                    <div class="field-label is-normal">
-                                        <label class="label">Location</label>
-                                    </div>
-                                    <div class="field-body">
-                                        <p class="control">
-                                            <input
-                                                class="input"
-                                                type="text"
-                                                id="locations-input"
-                                                list="location-labels"
-                                                placeholder="Choose location"
-                                                node_ref=input_ref
-                                                on:change=on_change
-                                            />
-                                            <datalist id="location-labels">
-                                                {move || {
-                                                    locations
-                                                        .get_value()
-                                                        .iter()
-                                                        .map(|loc| {
-                                                            let desc = loc.to_string();
-                                                            view! { <option value=desc></option> }
-                                                        })
-                                                        .collect::<Vec<_>>()
-                                                }}
-                                            </datalist>
-                                        </p>
-                                    </div>
-                                </div>
-                            }
-                                .into_view()
-                        }
-                    })
-            }}
-        </Transition>
-    }
-    .into_view()
 }
 
 #[component]
