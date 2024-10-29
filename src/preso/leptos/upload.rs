@@ -1,11 +1,35 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::preso::leptos::client::nav;
+use crate::preso::leptos::nav;
 use leptos::html::Div;
 use leptos::*;
 use leptos_use::{use_drop_zone_with_options, UseDropZoneOptions, UseDropZoneReturn};
 use web_sys::wasm_bindgen::JsCast;
+
+///
+/// Import files in the `uploads` directory as if uplaoded via the browser.
+///
+#[leptos::server]
+pub async fn ingest() -> Result<u32, ServerFnError> {
+    use crate::data::repositories::geo::find_location_repository;
+    use crate::domain::usecases::ingest::{IngestAssets, Params};
+    use crate::domain::usecases::UseCase;
+    use std::path::PathBuf;
+    use std::sync::Arc;
+
+    let repo = super::ssr::db()?;
+    let blobs = super::ssr::blobs()?;
+    let geocoder = find_location_repository();
+    let usecase = IngestAssets::new(Arc::new(repo), Arc::new(blobs), geocoder);
+    let path = std::env::var("UPLOAD_PATH").unwrap_or_else(|_| "tmp/uploads".to_owned());
+    let uploads_path = PathBuf::from(path);
+    let params = Params::new(uploads_path);
+    let count = usecase
+        .call(params)
+        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+    Ok(count as u32)
+}
 
 #[component]
 pub fn UploadPage() -> impl IntoView {
@@ -170,7 +194,6 @@ pub fn UploadPage() -> impl IntoView {
 /// Ingest the files in the `uploads` directory and navigate to pending page
 /// upon completion.
 async fn import_files() {
-    use crate::preso::leptos::server::ingest;
     if let Err(err) = ingest().await {
         log::error!("file import failed: {err:#?}");
     }

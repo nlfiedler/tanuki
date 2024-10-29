@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::preso::leptos::server::get_count;
+use crate::preso::leptos::get_count;
 use html::Div;
 use leptos::*;
 use leptos_use::{

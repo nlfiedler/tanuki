@@ -1,6 +1,6 @@
 * Action Items
 ** Pending
-*** would be nice to set the month and year for the selected assets
+*** would be nice to set the date/time for the selected assets
 *** display modes: have an option that makes the images really big (single column, huge images)
 *** make =fa-angle-down= icon in =card-header= actually do something
 *** add item to ~dropdown~ menu to show the asset in full size in a modal
@@ -12,6 +12,8 @@
 **** this is difficult because Bulma assumes =is-fixed-top= is for a =nav= at the top
 **** trying to squeeze everything into =nav= forces all of the elements onto one row
 *** when multiple attributes are selected, add a ~clear all~ button/tag
+*** filter years in ~Year~ selector when there are results available
+**** that is, find all possible years available among the results, only show those
 *** change query to find intersection of selected locations
 **** currently is finding the union of such locations
 **** need to be able to distinquish between ~Paris, TX~ and ~Paris, France~
@@ -79,6 +81,13 @@
 ** Uploads
 *** theoretically could show the thumbnail of images before uploading
 **** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
+** Edit
+*** completion for location fields (move into a component)
+*** show the number of matching results
+*** buttons to select all and unselect all
+*** hover over asset thumbnail will show larger version as tooltip
+*** add or subtract some number of days
+*** set the caption
 ** Navbar
 *** light/dark mode: goes light during page load; chrome does not send color-scheme header
 ** Hosting externally
@@ -98,9 +107,6 @@ assertion failed: actual.is_ok()
 *** screen for showing all tags, locations, years, with count values
 **** selecting a tag or location offers a rename function
 **** selecting multiple tags/locations offers option to remove from all assets
-** Bulk edit
-*** buttons to select all and unselect all
-*** hover over asset thumbnail will show larger version as tooltip
 ** Advanced Search
 *** Add support for searching by mimetype
 *** Advanced queries using Google-style operators

@@ -2,9 +2,8 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::{AssetInput, Location, SearchResult};
-use crate::preso::leptos::client::{forms, nav, paging};
-use crate::preso::leptos::common::SearchMeta;
-use crate::preso::leptos::server::*;
+use crate::preso::leptos::SearchMeta;
+use crate::preso::leptos::{forms, nav, paging};
 use chrono::{DateTime, TimeDelta, Utc};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
 use leptos::ev::Event;
@@ -15,6 +14,68 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt;
 use std::str::FromStr;
+
+///
+/// Search for assets that were recently imported.
+///
+/// Recently imported assets do not have any tags, location, or caption, and
+/// thus are waiting for the user to give them additional details.
+///
+/// The count indicates how many results to return in a single query,
+/// limited to a maximum of 250. Default value is `10`.
+///
+/// The offset is useful for pagination. Default value is `0`.
+///
+#[leptos::server]
+pub async fn recent(
+    since: Option<DateTime<Utc>>,
+    count: Option<i32>,
+    offset: Option<i32>,
+) -> Result<SearchMeta, ServerFnError> {
+    use crate::domain::entities::SearchResult;
+    use crate::domain::usecases::recent::{Params, RecentImports};
+    use crate::domain::usecases::UseCase;
+
+    let repo = super::ssr::db()?;
+    let usecase = RecentImports::new(Box::new(repo));
+    let params = Params { after_date: since };
+    let mut results: Vec<SearchResult> = usecase
+        .call(params)
+        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+    let total_count = results.len() as i32;
+    let results = super::paginate_vector(&mut results, offset, count);
+    let last_page: i32 = if total_count == 0 {
+        1
+    } else {
+        (total_count as u32).div_ceil(count.unwrap_or(10) as u32) as i32
+    };
+    Ok(SearchMeta {
+        results,
+        count: total_count,
+        last_page,
+    })
+}
+
+///
+/// Update multiple assets with the given values.
+///
+/// Returns the number of updated assets.
+///
+#[leptos::server]
+pub async fn bulk_update(assets: Vec<AssetInput>) -> Result<i32, ServerFnError> {
+    use crate::domain::usecases::update::{Params, UpdateAsset};
+    use crate::domain::usecases::UseCase;
+
+    let repo = super::ssr::db()?;
+    let usecase = UpdateAsset::new(Box::new(repo));
+    for asset in assets.iter() {
+        let params: Params = Params::new(asset.clone().into());
+        usecase
+            .call(params)
+            .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+    }
+    Ok(assets.len() as i32)
+}
 
 #[allow(dead_code)]
 #[derive(Copy, Clone, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -355,7 +416,7 @@ where
     let tags = create_resource(
         || (),
         |_| async move {
-            let mut results = fetch_tags().await;
+            let mut results = super::fetch_tags().await;
             if let Ok(data) = results.as_mut() {
                 data.sort_by(|a, b| a.label.cmp(&b.label));
             }
@@ -437,7 +498,7 @@ where
     let locations = create_resource(
         || (),
         |_| async move {
-            let mut results = fetch_raw_locations().await;
+            let mut results = super::fetch_raw_locations().await;
             if let Ok(data) = results.as_mut() {
                 data.sort_by(|a, b| a.label.cmp(&b.label));
             }

@@ -2,9 +2,8 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::*;
-use crate::preso::leptos::client::{forms, nav};
-use crate::preso::leptos::common::{BulkEditParams, SearchMeta, SearchParams};
-use crate::preso::leptos::server::*;
+use crate::preso::leptos::{forms, nav};
+use crate::preso::leptos::{BulkEditParams, SearchMeta, SearchParams};
 use chrono::{DateTime, Local, Utc};
 use codee::string::JsonSerdeCodec;
 use html::Div;
@@ -14,6 +13,28 @@ use leptos::*;
 use leptos_use::on_click_outside;
 use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
 use std::collections::HashSet;
+
+///
+/// Perform one or more operations on multiple assets.
+///
+#[leptos::server(BulkEdit, "/api", "Cbor")]
+pub async fn bulk_edit(ops: BulkEditParams) -> Result<u64, ServerFnError> {
+    use crate::domain::usecases::edit::{EditAssets, Params};
+    use crate::domain::usecases::UseCase;
+
+    let repo = super::ssr::db()?;
+    let usecase = EditAssets::new(Box::new(repo));
+    let params = Params {
+        assets: ops.assets,
+        tag_ops: ops.tag_ops,
+        location_ops: ops.location_ops,
+        datetime_op: ops.datetime_op,
+    };
+    let count = usecase
+        .call(params)
+        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+    Ok(count)
+}
 
 struct SearchParamsBuilder {
     params: SearchParams,
@@ -143,7 +164,7 @@ pub fn EditPage() -> impl IntoView {
                 builder = builder.set_media_type(media_type);
             }
             let params = builder.build();
-            search(params, Some(100), Some(0)).await
+            super::search(params, Some(100), Some(0)).await
         },
     );
     let selected_assets = create_rw_signal::<HashSet<String>>(HashSet::new());
@@ -493,7 +514,7 @@ fn TagsEditForm(
     let tags = create_resource(
         || (),
         |_| async move {
-            let mut results = fetch_tags().await;
+            let mut results = super::fetch_tags().await;
             if let Ok(data) = results.as_mut() {
                 data.sort_by(|a, b| a.label.cmp(&b.label));
             }
@@ -743,7 +764,7 @@ where
     let tags = create_resource(
         || (),
         |_| async move {
-            let mut results = fetch_tags().await;
+            let mut results = super::fetch_tags().await;
             if let Ok(data) = results.as_mut() {
                 data.sort_by(|a, b| a.label.cmp(&b.label));
             }
@@ -825,7 +846,7 @@ where
     let locations = create_resource(
         || (),
         |_| async move {
-            let mut results = fetch_all_locations().await;
+            let mut results = super::fetch_all_locations().await;
             if let Ok(data) = results.as_mut() {
                 data.sort_by(|a, b| a.label.cmp(&b.label));
             }
@@ -908,7 +929,7 @@ where
     let types = create_resource(
         || (),
         |_| async move {
-            let mut results = fetch_types().await;
+            let mut results = super::fetch_types().await;
             if let Ok(data) = results.as_mut() {
                 data.sort_by(|a, b| a.label.cmp(&b.label));
             }

@@ -2,12 +2,49 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::{Asset, AssetInput, Location};
-use crate::preso::leptos::client::nav;
-use crate::preso::leptos::server::{fetch_asset, update_asset};
+use crate::preso::leptos::nav;
 use chrono::{DateTime, Local, NaiveDateTime, Utc};
 use leptos::*;
 use leptos_router::use_params_map;
 use std::collections::HashMap;
+
+///
+/// Retrieve an asset by its unique identifier.
+///
+#[leptos::server]
+pub async fn fetch_asset(id: String) -> Result<Asset, ServerFnError> {
+    use crate::domain::usecases::fetch::{FetchAsset, Params};
+    use crate::domain::usecases::UseCase;
+
+    let repo = super::ssr::db()?;
+    let usecase = FetchAsset::new(Box::new(repo));
+    let params = Params::new(id);
+    let asset = usecase
+        .call(params)
+        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+    Ok(asset)
+}
+
+///
+/// Update the asset with the given values.
+///
+#[leptos::server]
+pub async fn update_asset(asset: AssetInput) -> Result<Option<Asset>, ServerFnError> {
+    use crate::domain::usecases::update::{Params, UpdateAsset};
+    use crate::domain::usecases::UseCase;
+
+    if asset.has_values() {
+        let repo = super::ssr::db()?;
+        let usecase = UpdateAsset::new(Box::new(repo));
+        let params: Params = Params::new(asset.into());
+        let result: Asset = usecase
+            .call(params)
+            .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        Ok(Some(result))
+    } else {
+        Ok(None)
+    }
+}
 
 #[component]
 pub fn AssetPage() -> impl IntoView {

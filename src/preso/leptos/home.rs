@@ -2,9 +2,8 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::{Location, SortField, SortOrder};
-use crate::preso::leptos::client::{forms, nav, paging};
-use crate::preso::leptos::common::{SearchMeta, SearchParams, Season, Year};
-use crate::preso::leptos::server::*;
+use crate::preso::leptos::{forms, nav, paging};
+use crate::preso::leptos::{SearchMeta, SearchParams, Season, Year};
 use chrono::{DateTime, Datelike, TimeZone, Utc};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
 use html::Div;
@@ -197,7 +196,7 @@ pub fn HomePage() -> impl IntoView {
             }
             let params = builder.build();
             let offset = count * (page - 1);
-            search(params, Some(count), Some(offset)).await
+            super::search(params, Some(count), Some(offset)).await
         },
     );
 
@@ -465,7 +464,7 @@ where
     let tags = create_resource(
         || (),
         |_| async move {
-            let mut results = fetch_tags().await;
+            let mut results = super::fetch_tags().await;
             if let Ok(data) = results.as_mut() {
                 data.sort_by(|a, b| a.label.cmp(&b.label));
             }
@@ -547,7 +546,7 @@ where
     let locations = create_resource(
         || (),
         |_| async move {
-            let mut results = fetch_all_locations().await;
+            let mut results = super::fetch_all_locations().await;
             if let Ok(data) = results.as_mut() {
                 data.sort_by(|a, b| a.label.cmp(&b.label));
             }
@@ -630,7 +629,7 @@ where
     let years = create_resource(
         || (),
         |_| async move {
-            let mut results = fetch_years().await;
+            let mut results = super::fetch_years().await;
             if let Ok(data) = results.as_mut() {
                 // sort in reverse chronological order for selection convenience
                 // (most recent years near the top of the dropdown menu)

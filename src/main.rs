@@ -281,7 +281,7 @@ async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> 
 async fn main() -> std::io::Result<()> {
     use leptos::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
-    use tanuki::preso::leptos::client::*;
+    use tanuki::preso::leptos::*;
 
     let conf = get_configuration(None).await.unwrap();
     let addr = conf.leptos_options.site_addr;
@@ -400,7 +400,8 @@ mod tests {
             .append_header((header::CONTENT_LENGTH, payload.len()))
             .set_payload(payload)
             .to_request();
-        let mut resp: HashMap<String, Vec<String>> = test::call_and_read_body_json(&mut app, req).await;
+        let mut resp: HashMap<String, Vec<String>> =
+            test::call_and_read_body_json(&mut app, req).await;
         // assert
         let ids: Vec<String> = resp.remove("ids").unwrap();
         assert_eq!(ids.len(), 1);
@@ -467,7 +468,8 @@ mod tests {
             .append_header((header::CONTENT_LENGTH, payload.len()))
             .set_payload(payload)
             .to_request();
-        let mut resp: HashMap<String, Vec<String>> = test::call_and_read_body_json(&mut app, req).await;
+        let mut resp: HashMap<String, Vec<String>> =
+            test::call_and_read_body_json(&mut app, req).await;
         // assert
         let ids: Vec<String> = resp.remove("ids").unwrap();
         assert_eq!(ids.len(), 1);
