@@ -10,7 +10,54 @@ use leptos::ev::Event;
 use leptos::html::Input;
 use leptos::*;
 use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct LocationData {
+    labels: Vec<String>,
+    cities: Vec<String>,
+    regions: Vec<String>,
+}
+
+///
+/// Retrieve all of the unique location parts as separate lists (labels, cities,
+/// and regions each in their own list).
+///
+#[leptos::server]
+pub async fn fetch_location_parts() -> Result<LocationData, ServerFnError> {
+    use crate::domain::usecases::location::CompleteLocations;
+    use crate::domain::usecases::{NoParams, UseCase};
+
+    let repo = super::ssr::db()?;
+    let usecase = CompleteLocations::new(Box::new(repo));
+    let locations: Vec<Location> = usecase
+        .call(NoParams {})
+        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+    let mut data = LocationData {
+        labels: vec![],
+        cities: vec![],
+        regions: vec![],
+    };
+    for loc in locations.into_iter() {
+        if let Some(label) = loc.label {
+            data.labels.push(label);
+        }
+        if let Some(city) = loc.city {
+            data.cities.push(city);
+        }
+        if let Some(region) = loc.region {
+            data.regions.push(region);
+        }
+    }
+    data.labels.sort();
+    data.cities.sort();
+    data.regions.sort();
+    data.labels.dedup();
+    data.cities.dedup();
+    data.regions.dedup();
+    Ok(data)
+}
 
 ///
 /// Perform one or more operations on multiple assets.
@@ -173,6 +220,13 @@ pub fn EditPage() -> impl IntoView {
         ops.assets = selected_assets.get().into_iter().collect();
         apply_changes(ops)
     });
+    let select_all = create_action(move |ids: &HashSet<String>| {
+        let owned = ids.to_owned();
+        async move { selected_assets.set(owned) }
+    });
+    let unselect_all = create_action(move |_input: &()| async move {
+        selected_assets.set(HashSet::new());
+    });
 
     view! {
         <nav::NavBar />
@@ -285,6 +339,46 @@ pub fn EditPage() -> impl IntoView {
                 </div>
                 <div class="level-right">
                     <div class="level-item">
+                        <button class="button" on:click=move |_| unselect_all.dispatch(())>
+                            <span class="icon">
+                                <i class="fa-regular fa-square"></i>
+                            </span>
+                        </button>
+                    </div>
+                    <Transition fallback=move || {
+                        view! { "..." }
+                    }>
+                        {move || {
+                            results
+                                .get()
+                                .map(|result| match result {
+                                    Err(_) => view! { <span>ERROR</span> }.into_view(),
+                                    Ok(meta) => {
+                                        let ids = store_value(
+                                            meta
+                                                .results
+                                                .iter()
+                                                .map(|r| r.asset_id.clone())
+                                                .collect::<HashSet<String>>(),
+                                        );
+                                        view! {
+                                            <div class="level-item">
+                                                <button
+                                                    class="button"
+                                                    on:click=move |_| select_all.dispatch(ids.get_value())
+                                                >
+                                                    <span class="icon">
+                                                        <i class="fa-regular fa-square-check"></i>
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        }
+                                            .into_view()
+                                    }
+                                })
+                        }}
+                    </Transition>
+                    <div class="level-item">
                         <div class="field">
                             <p class="control">
                                 <Show
@@ -342,6 +436,8 @@ fn EditForm<F>(set_modal_active: WriteSignal<bool>, ops_ready: F) -> impl IntoVi
 where
     F: Fn(BulkEditParams) + Copy + 'static,
 {
+    // the locations returned from the server are in no particular order
+    let location_parts = create_resource(|| (), |_| async move { fetch_location_parts().await });
     let datetime_input_ref: NodeRef<html::Input> = create_node_ref();
     let location_input_ref: NodeRef<html::Input> = create_node_ref();
     let city_input_ref: NodeRef<html::Input> = create_node_ref();
@@ -436,38 +532,97 @@ where
                 <label class="label" style="text-align: left;">
                     Set Location
                 </label>
-                <div class="field-body">
-                    <div class="field">
-                        <p class="control is-expanded">
-                            <input
-                                class="input"
-                                type="text"
-                                node_ref=location_input_ref
-                                placeholder="Description"
-                            />
-                        </p>
-                    </div>
-                    <div class="field">
-                        <p class="control is-expanded">
-                            <input
-                                class="input"
-                                type="text"
-                                node_ref=city_input_ref
-                                placeholder="City"
-                            />
-                        </p>
-                    </div>
-                    <div class="field">
-                        <p class="control is-expanded">
-                            <input
-                                class="input"
-                                type="text"
-                                node_ref=region_input_ref
-                                placeholder="Region"
-                            />
-                        </p>
-                    </div>
-                </div>
+                <Transition fallback=move || {
+                    view! { "Loading locations..." }
+                }>
+                    {move || {
+                        location_parts
+                            .get()
+                            .map(|resp| match resp {
+                                Err(err) => {
+                                    view! { <span>{move || format!("Error: {}", err)}</span> }
+                                        .into_view()
+                                }
+                                Ok(data) => {
+                                    let locations = store_value(data);
+                                    view! {
+                                        <div class="field-body">
+                                            <div class="field">
+                                                <p class="control is-expanded">
+                                                    <input
+                                                        class="input"
+                                                        type="text"
+                                                        list="location-labels"
+                                                        node_ref=location_input_ref
+                                                        placeholder="Description"
+                                                    />
+                                                    <datalist id="location-labels">
+                                                        {move || {
+                                                            locations
+                                                                .get_value()
+                                                                .labels
+                                                                .iter()
+                                                                .map(|val| {
+                                                                    view! { <option value=val></option> }
+                                                                })
+                                                                .collect::<Vec<_>>()
+                                                        }}
+                                                    </datalist>
+                                                </p>
+                                            </div>
+                                            <div class="field">
+                                                <p class="control is-expanded">
+                                                    <input
+                                                        class="input"
+                                                        type="text"
+                                                        list="location-cities"
+                                                        node_ref=city_input_ref
+                                                        placeholder="City"
+                                                    />
+                                                    <datalist id="location-cities">
+                                                        {move || {
+                                                            locations
+                                                                .get_value()
+                                                                .cities
+                                                                .iter()
+                                                                .map(|val| {
+                                                                    view! { <option value=val></option> }
+                                                                })
+                                                                .collect::<Vec<_>>()
+                                                        }}
+                                                    </datalist>
+                                                </p>
+                                            </div>
+                                            <div class="field">
+                                                <p class="control is-expanded">
+                                                    <input
+                                                        class="input"
+                                                        type="text"
+                                                        list="location-regions"
+                                                        node_ref=region_input_ref
+                                                        placeholder="Region"
+                                                    />
+                                                    <datalist id="location-regions">
+                                                        {move || {
+                                                            locations
+                                                                .get_value()
+                                                                .regions
+                                                                .iter()
+                                                                .map(|val| {
+                                                                    view! { <option value=val></option> }
+                                                                })
+                                                                .collect::<Vec<_>>()
+                                                        }}
+                                                    </datalist>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    }
+                                        .into_view()
+                                }
+                            })
+                    }}
+                </Transition>
             </div>
         </section>
         <footer class="modal-card-foot">

@@ -81,9 +81,7 @@
 *** theoretically could show the thumbnail of images before uploading
 **** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
 ** Edit
-*** completion for location fields (move into a component)
 *** show the number of matching results
-*** buttons to select all and unselect all
 *** hover over asset thumbnail will show larger version as tooltip
 *** add or subtract some number of days
 *** set the caption
