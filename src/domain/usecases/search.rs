@@ -95,7 +95,10 @@ fn filter_by_date_range(results: Vec<SearchResult>, params: &Params) -> Vec<Sear
 
 // Filter the search results by location(s), if specified.
 //
-// Matches a result if it contains any of the specified locations.
+// Matches a result if it contains all of the specified location values. This
+// means that a search for "paris, texas" will turn up results that have both
+// "paris" and "texas" as part of the location entry, and not simply return
+// results that contain either "paris" or "texas".
 fn filter_by_locations(results: Vec<SearchResult>, params: &Params) -> Vec<SearchResult> {
     if params.locations.is_empty() {
         results
@@ -107,7 +110,7 @@ fn filter_by_locations(results: Vec<SearchResult>, params: &Params) -> Vec<Searc
             .into_iter()
             .filter(|r| {
                 if let Some(location) = r.location.as_ref() {
-                    locations.iter().any(|l| location.partial_match(l))
+                    locations.iter().all(|l| location.partial_match(l))
                 } else {
                     false
                 }
@@ -507,7 +510,7 @@ mod tests {
                 asset_id: "deadbeef".to_owned(),
                 filename: "IMG_5678.MOV".to_owned(),
                 media_type: "VIDEO/QUICKTIME".to_owned(),
-                location: Some(Location::new("london")),
+                location: Some(Location::with_parts("", "london", "england")),
                 datetime: make_date_time(2016, 5, 31, 21, 10, 11),
             },
             SearchResult {
@@ -528,7 +531,7 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_results_location() {
+    fn test_filter_results_location_single() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
@@ -538,16 +541,34 @@ mod tests {
         let usecase = SearchAssets::new(Box::new(mock));
         let mut params: Params = Default::default();
         params.tags = vec!["kitten".to_owned()];
-        params.locations = vec!["london".to_owned(), "paris".to_owned()];
+        params.locations = vec!["london".to_owned()];
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
         let results = result.unwrap();
-        assert_eq!(results.len(), 4);
+        assert_eq!(results.len(), 2);
         assert!(results.iter().any(|l| l.filename == "IMG_2345.GIF"));
-        assert!(results.iter().any(|l| l.filename == "IMG_6431.MOV"));
         assert!(results.iter().any(|l| l.filename == "IMG_5678.MOV"));
-        assert!(results.iter().any(|l| l.filename == "IMG_6789.JPG"));
+    }
+
+    #[test]
+    fn test_filter_results_location_multiple() {
+        // arrange
+        let results = make_search_results();
+        let mut mock = MockRecordRepository::new();
+        mock.expect_query_by_tags()
+            .returning(move |_| Ok(results.clone()));
+        // act
+        let usecase = SearchAssets::new(Box::new(mock));
+        let mut params: Params = Default::default();
+        params.tags = vec!["kitten".to_owned()];
+        params.locations = vec!["london".to_owned(), "england".into()];
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert!(results.iter().any(|l| l.filename == "IMG_5678.MOV"));
     }
 
     #[test]

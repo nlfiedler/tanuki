@@ -545,7 +545,7 @@ fn test_query_by_locations() {
     let mut asset = common::build_basic_asset();
     asset.key = "thursday9".to_owned();
     asset.filename = "img_5678.jpg".to_owned();
-    asset.location = Some(Location::new("hawaii"));
+    asset.location = Some(Location::with_parts("", "oahu", "hawaii"));
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "friday10".to_owned();
@@ -565,14 +565,18 @@ fn test_query_by_locations() {
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
 
-    // searching with two locations
-    let locations = vec!["hawaii".to_owned(), "paris".to_owned()];
+    // searching with a single location
+    let locations = vec!["hawaii".to_owned()];
     let actual = datasource.query_by_locations(locations).unwrap();
-    assert_eq!(actual.len(), 4);
+    assert_eq!(actual.len(), 2);
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
-    assert!(actual.iter().any(|l| l.filename == "img_2345.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
-    assert!(actual.iter().any(|l| l.filename == "img_6789.jpg"));
+
+    // searching with multiple locations
+    let locations = vec!["hawaii".into(), "oahu".into()];
+    let actual = datasource.query_by_locations(locations).unwrap();
+    assert_eq!(actual.len(), 1);
+    assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
 
     // searching location term split from commas
     let locations = vec!["france".to_owned()];

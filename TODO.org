@@ -13,9 +13,6 @@
 *** when multiple attributes are selected, add a ~clear all~ button/tag
 *** filter years in ~Year~ selector when there are results available
 **** that is, find all possible years available among the results, only show those
-*** change query to find intersection of selected locations
-**** currently is finding the union of such locations
-**** need to be able to distinquish between ~Paris, TX~ and ~Paris, France~
 *** hovering over asset should fetch and display details in a large tooltip
 *** add date order button on gallery (ascending/descending)
 *** display modes
@@ -85,6 +82,8 @@
 *** hover over asset thumbnail will show larger version as tooltip
 *** add or subtract some number of days
 *** set the caption
+*** advanced search: search for assets with location ~label~ but not other fields
+**** e.g. has ~home~ but not ~castro valley~ and not ~san lorenzo~
 ** Navbar
 *** light/dark mode: goes light during page load; chrome does not send color-scheme header
 ** Hosting externally

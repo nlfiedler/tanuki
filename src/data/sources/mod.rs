@@ -182,12 +182,7 @@ impl EntityDataSource for EntityDataSourceImpl {
     fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error> {
         // secondary index keys are lowercase
         let locations: Vec<String> = locations.into_iter().map(|v| v.to_lowercase()).collect();
-        // query each of the keys and collect the results into one list
-        let mut query_results: Vec<QueryResult> = Vec::new();
-        for key in locations.iter() {
-            let mut results = self.database.query_by_key("by_location", key)?;
-            query_results.append(&mut results);
-        }
+        let query_results = self.database.query_all_keys("by_location", locations)?;
         let search_results = convert_results(query_results);
         Ok(search_results)
     }
