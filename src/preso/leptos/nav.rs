@@ -57,7 +57,7 @@ pub fn NavBar() -> impl IntoView {
                 <div class="navbar-end">
                     <div class="navbar-item">
                         <div
-                            class="dropdown"
+                            class="dropdown is-right"
                             class:is-active=move || dropdown_open.get()
                             node_ref=dropdown_ref
                         >
