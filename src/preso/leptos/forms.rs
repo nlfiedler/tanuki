@@ -85,7 +85,9 @@ where
                             view! {
                                 <div class="field is-horizontal">
                                     <div class="field-label is-normal">
-                                        <label class="label">Tags</label>
+                                        <label class="label" for="tags-input">
+                                            Tags
+                                        </label>
                                     </div>
                                     <div class="field-body">
                                         <p class="control">
@@ -166,7 +168,9 @@ where
                             view! {
                                 <div class="field is-horizontal">
                                     <div class="field-label is-normal">
-                                        <label class="label">Locations</label>
+                                        <label class="label" for="locations-input">
+                                            Locations
+                                        </label>
                                     </div>
                                     <div class="field-body">
                                         <p class="control">
@@ -246,7 +250,9 @@ where
                             view! {
                                 <div class="field is-horizontal">
                                     <div class="field-label is-normal">
-                                        <label class="label">Location</label>
+                                        <label class="label" for="locations-input">
+                                            Location
+                                        </label>
                                     </div>
                                     <div class="field-body">
                                         <p class="control">

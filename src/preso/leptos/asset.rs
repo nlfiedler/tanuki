@@ -265,6 +265,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                                 <input
                                     class="file-input"
                                     type="file"
+                                    id="file-input"
                                     name="replacement"
                                     disabled=move || upload_action.pending().get()
                                     on:input=move |ev| upload_action.dispatch(ev)
@@ -334,7 +335,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
         <div class="m-4">
             <div class="mb-2 field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label">Date</label>
+                    <label class="label" for="datetime-input">Date</label>
                 </div>
                 <div class="field-body">
                     <div class="field">
@@ -342,6 +343,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                             <input
                                 class="input"
                                 type="datetime-local"
+                                id="datetime-input"
                                 node_ref=datetime_input_ref
                                 value=convert_utc_to_local(asset.get_value().best_date())
                                     .format("%Y-%m-%dT%H:%M:%S")
@@ -357,6 +359,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                             <input
                                 class="input"
                                 type="text"
+                                id="filename-input"
                                 node_ref=filename_input_ref
                                 value=asset.get_value().filename
                             />
@@ -370,7 +373,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
 
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label">Caption</label>
+                    <label class="label" for="caption-input">Caption</label>
                 </div>
                 <div class="field-body">
                     <div class="field is-expanded">
@@ -379,6 +382,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                                 <input
                                     class="input"
                                     type="text"
+                                    id="caption-input"
                                     node_ref=caption_input_ref
                                     placeholder="Description with #tags and @location"
                                     value=asset.get_value().caption.unwrap_or_default()
@@ -395,7 +399,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
 
             <div class="mb-2 field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label">Tags</label>
+                    <label class="label" for="tags-input">Tags</label>
                 </div>
                 <div class="field-body">
                     <div class="field is-expanded">
@@ -404,6 +408,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                                 <input
                                     class="input"
                                     type="text"
+                                    id="tags-input"
                                     node_ref=tags_input_ref
                                     placeholder="List of tags separated by commas."
                                     value=asset.get_value().tags.join(", ")
@@ -419,7 +424,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
 
             <div class="mb-2 field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label">Location</label>
+                    <label class="label" for="location-input">Location</label>
                 </div>
                 <div class="field-body">
                     <div class="field">
@@ -427,6 +432,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                             <input
                                 class="input"
                                 type="text"
+                                id="location-input"
                                 node_ref=location_input_ref
                                 placeholder="Description"
                                 value=asset
@@ -442,6 +448,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                             <input
                                 class="input"
                                 type="text"
+                                id="city-input"
                                 node_ref=city_input_ref
                                 placeholder="City"
                                 value=asset.get_value().location.map(|l| l.city).unwrap_or_default()
@@ -453,6 +460,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                             <input
                                 class="input"
                                 type="text"
+                                id="region-input"
                                 node_ref=region_input_ref
                                 placeholder="Region"
                                 value=asset
@@ -468,7 +476,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
 
             <div class="mb-2 field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label">File Size</label>
+                    <label class="label" for="filesize-input">File Size</label>
                 </div>
                 <div class="field-body">
                     <div class="field">
@@ -476,6 +484,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                             <input
                                 class="input"
                                 type="number"
+                                id="filesize-input"
                                 readonly
                                 value=asset.get_value().byte_length
                             />
@@ -486,7 +495,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
 
             <div class="mb-2 field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label">Media Type</label>
+                    <label class="label" for="mediatype-input">Media Type</label>
                 </div>
                 <div class="field-body">
                     <div class="field">
@@ -494,6 +503,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                             <input
                                 class="input"
                                 type="text"
+                                id="mediatype-input"
                                 node_ref=mediatype_input_ref
                                 value=asset.get_value().media_type
                             />
@@ -504,7 +514,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
 
             <div class="mb-2 field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label">Asset Path</label>
+                    <label class="label" for="path-input">Asset Path</label>
                 </div>
                 <div class="field-body">
                     <div class="field">
@@ -512,6 +522,7 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                             <input
                                 class="input"
                                 type="text"
+                                id="path-input"
                                 readonly
                                 value=asset.get_value().filepath()
                             />

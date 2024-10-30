@@ -295,12 +295,15 @@ pub fn PendingPage() -> impl IntoView {
                     <div class="level-item">
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label">Date</label>
+                                <label class="label" for="date-input">
+                                    Date
+                                </label>
                             </div>
                             <div class="field-body">
                                 <p class="control">
                                     <input
                                         class="input"
+                                        id="date-input"
                                         type="datetime-local"
                                         node_ref=datetime_input_ref
                                     />

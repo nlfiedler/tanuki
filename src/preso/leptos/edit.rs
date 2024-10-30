@@ -252,7 +252,9 @@ pub fn EditPage() -> impl IntoView {
                     <div class="level-item">
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label">After</label>
+                                <label class="label" for="after-input">
+                                    After
+                                </label>
                             </div>
                             <div class="field-body">
                                 <p class="control">
@@ -275,7 +277,9 @@ pub fn EditPage() -> impl IntoView {
                     <div class="level-item">
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label">Before</label>
+                                <label class="label" for="before-input">
+                                    Before
+                                </label>
                             </div>
                             <div class="field-body">
                                 <p class="control">
@@ -510,7 +514,7 @@ where
         </header>
         <section class="modal-card-body">
             <div class="mb-2 field">
-                <label class="label" style="text-align: left;">
+                <label class="label" style="text-align: left;" for="datetime-input">
                     Set Date and Time
                 </label>
                 <div class="field-body">
@@ -519,6 +523,7 @@ where
                             <input
                                 class="input"
                                 type="datetime-local"
+                                id="datetime-input"
                                 node_ref=datetime_input_ref
                             />
                         </p>
@@ -529,9 +534,6 @@ where
             <TagsEditForm del_tags add_tags />
 
             <div class="mb-2 field">
-                <label class="label" style="text-align: left;">
-                    Set Location
-                </label>
                 <Transition fallback=move || {
                     view! { "Loading locations..." }
                 }>
@@ -546,12 +548,20 @@ where
                                 Ok(data) => {
                                     let locations = store_value(data);
                                     view! {
+                                        <label
+                                            class="label"
+                                            style="text-align: left;"
+                                            for="location-input"
+                                        >
+                                            Set Location
+                                        </label>
                                         <div class="field-body">
                                             <div class="field">
                                                 <p class="control is-expanded">
                                                     <input
                                                         class="input"
                                                         type="text"
+                                                        id="location-input"
                                                         list="location-labels"
                                                         node_ref=location_input_ref
                                                         placeholder="Description"
@@ -575,6 +585,7 @@ where
                                                     <input
                                                         class="input"
                                                         type="text"
+                                                        id="cities-input"
                                                         list="location-cities"
                                                         node_ref=city_input_ref
                                                         placeholder="City"
@@ -598,6 +609,7 @@ where
                                                     <input
                                                         class="input"
                                                         type="text"
+                                                        id="regions-input"
                                                         list="location-regions"
                                                         node_ref=region_input_ref
                                                         placeholder="Region"
@@ -671,7 +683,11 @@ fn TagsEditForm(
                             let tags = store_value(data);
                             view! {
                                 <div class="mb-2 field">
-                                    <label class="label" style="text-align: left;">
+                                    <label
+                                        class="label"
+                                        style="text-align: left;"
+                                        for="del-tags-input"
+                                    >
                                         Remove Tags
                                     </label>
                                     <div class="field-body">
@@ -721,7 +737,11 @@ fn TagsEditForm(
                                     </div>
                                 </div>
                                 <div class="mb-2 field">
-                                    <label class="label" style="text-align: left;">
+                                    <label
+                                        class="label"
+                                        style="text-align: left;"
+                                        for="add_tags-input"
+                                    >
                                         Add Tags
                                     </label>
                                     <div class="field-body">

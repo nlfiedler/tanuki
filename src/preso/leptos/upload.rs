@@ -98,7 +98,8 @@ pub fn UploadPage() -> impl IntoView {
                     <div class="level-item">
                         <button
                             class="button"
-                            disabled=move || upload_action.pending().get()
+                            class:is-loading=move || import_action.pending().get()
+                            disabled=move || import_action.pending().get()
                             on:click=move |_| import_action.dispatch(())
                         >
                             Import
@@ -116,6 +117,7 @@ pub fn UploadPage() -> impl IntoView {
                                 <input
                                     class="file-input"
                                     type="file"
+                                    id="file-input"
                                     multiple
                                     name="uploads"
                                     disabled=move || upload_action.pending().get()
