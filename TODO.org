@@ -1,4 +1,13 @@
 * Action Items
+** Help
+*** write help pages for each of the main pages
+**** pending page
+- query always looks for assets without tags, caption, and location label (all 3 are missing)
+**** details page
+- replacing the asset with the exact same file content will have no effect, even if a different file name
+- replacing an asset will change the asset identifier, media type, file name, etc
+- n.b. QuickTime Player can export an AVI as MOV; be sure to rename the file to .mp4 for Chrome
+- n.b. when converting videos, make sure quality and frame rate are as good as the original
 ** Pending
 *** display modes: have an option that makes the images really big (single column, huge images)
 *** make =fa-angle-down= icon in =card-header= actually do something
@@ -57,8 +66,8 @@
 **** show full-size image at 100% width of browser window
 **** show chevron arrows on left and right to navigate among search results
 **** controls appear when mouse moves over asset display, then fade away
-*** completion for tags (like home screen search)
-*** somehow offer completion of location even though it's 3 fields
+*** completion for tags (like bulk edit form)
+*** completion for location fields (like bulk edit form)
 *** add ~copy~ button next to asset path
 *** Read timezone info from Exif tags when displaying asset details
 **** everything is assuming that the date/time is UTC, which is almost always wrong
@@ -78,12 +87,15 @@
 *** theoretically could show the thumbnail of images before uploading
 **** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
 ** Edit
-*** show the number of matching results
 *** hover over asset thumbnail will show larger version as tooltip
 *** add or subtract some number of days
 *** set the caption
 *** advanced search: search for assets with location ~label~ but not other fields
 **** e.g. has ~home~ but not ~castro valley~ and not ~san lorenzo~
+**** query: ~loc:home not loc:'castro valley' not loc:'san lorenzo'~
+**** the edit use case previously had this type of feature
+*** replace form elements with a single text field and ~Search~ button
+**** show a help text below the input field with basic syntax
 ** Navbar
 *** light/dark mode: goes light during page load; chrome does not send color-scheme header
 ** Hosting externally
@@ -104,42 +116,25 @@ assertion failed: actual.is_ok()
 **** selecting a tag or location offers a rename function
 **** selecting multiple tags/locations offers option to remove from all assets
 ** Advanced Search
-*** Add support for searching by mimetype
-*** Advanced queries using Google-style operators
-**** copy perkeep style query support from mujina to tanuki
-**** webui needs an "advanced" tab/link selector on the search page
-**** =is:image= and similar to filter by media type
-**** =format:jpeg= to search by media type
-**** =filename:img_1234.*= to search by filename
-**** =tag:cats= to search by tag
-**** =loc:home= to search by location
-**** =before:2017-05= to search before a date
-**** =after:2015= to search after a date
-**** =locrect:48.63,-123.37,46.59,-121.28= to search within geographic coords
-**** =with:<name>= to filter by people (need to know the people though)
-**** =NOT= to exclude assets with a certain tag (~joseph NOT christina~)
-**** =AND= and =OR= operators and grouping with parentheses
-*** Support searching for assets that have no tags
-*** Support searching for assets that have no location
-*** Support searching for assets that have no caption
-*** Support searching the caption text
-*** searching for images by dimensions (~pano~, ~landscape~, ~portrait~)
-*** searching for images based on type (~selfie~, ~screen shot~)
-*** searching assets by metadata values (=meta:exif:field=value=)
-*** search for images similar to a selected image (a la geeqie)
-*** search for images taken with certain cameras
-** Display and alter orientation of images
-*** add ~rotate left~ and ~rotate right~ to the dropdown menu on assets in the ~Pending~ screen
-*** usecase: add, set, or remove the orientation EXIF property of an image
-**** create a new revision of the asset before changing
-**** translate the =jpeg-data= code in =exif= into Rust
-***** c.f. https://www.memorysafety.org/blog/porting-c-to-rust-for-av1/
-***** c.f. https://c2rust.com
-**** use =libexif= and Rust version of =jpeg-data= to make change
-*** graphql: query for asset gives orientation value
-*** graphql: mutation to change the orientation for an image via usecase
-*** webui: icon to show orientation of image, if it is an image
-**** need an icon for ~unset~ orientation for those really old images
+*** efficiency: use a ~cursor~ of sorts to paginate results
+**** since the advanced search bascially scans all records, use a cursor to return pages of results
+**** return a tokenized version of the cursor as an opaque ~continuation~ token
+**** usecase will take an =Option<Token>= that it uses to continue the database iteration
+*** Advanced queries textual operators and operands
+**** copy the perkeep style query support from mujina (=src/query.js=)
+**** operands can be enclosed in single or double quotes
+**** operations can be grouped with parentheses
+**** operations; no ~and~ operator because that is the default
+| name   | example            | description                  |
+|--------+--------------------+------------------------------|
+| is     | is:image           | match on the media ~type~    |
+| format | format:jpeg        | match on the media ~subtype~ |
+| tag    | tag:cats           | match on a tag               |
+| loc    | loc:paris          | match on any location field  |
+| before | before:2017-05-13  | match before a given date    |
+| after  | after:2017-05-13   | match after a given date     |
+| not    | not format:jpeg    | inverse of next operation    |
+| or     | tag:cat or tag:dog | boolean or operator          |
 ** Manage revisions of assets
 *** when uploading a replacement file for an asset, keep the old file
 *** add the old identifier to a new property in the asset record

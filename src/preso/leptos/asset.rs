@@ -250,9 +250,18 @@ fn AssetForm(asset: Asset) -> impl IntoView {
             .unwrap_or(false)
     };
     // upload replacement file asynchronously and show updated asset
+    let (asset_unchanged, set_asset_unchanged) = create_signal(false);
     let upload_action = create_action(move |ev: &leptos::ev::Event| {
         let selected = file_event_to_file_vec(ev.clone());
-        upload_file(asset.get_value().key, selected[0].clone())
+        upload_file(asset.get_value().key, selected[0].clone(), move || {
+            set_asset_unchanged.set(true);
+            set_timeout(
+                move || {
+                    set_asset_unchanged.set(false);
+                },
+                std::time::Duration::from_secs(5),
+            );
+        })
     });
 
     view! {
@@ -335,6 +344,11 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                 </div>
             </div>
         </nav>
+        <div class="notification is-warning" class:is-hidden=move || !asset_unchanged.get()>
+            <button class="delete" on:click=move |_| set_asset_unchanged.set(false)></button>
+            The replacement asset is identical to the original,
+            please choose a different file.
+        </div>
         <div class="m-4">
             <div class="mb-2 field is-horizontal">
                 <div class="field-label is-normal">
@@ -578,7 +592,10 @@ fn file_event_to_file_vec(ev: leptos::ev::Event) -> Vec<web_sys::File> {
 }
 
 /// Upload a file, then navigate to the details page for the replacement asset.
-async fn upload_file(key: String, file: web_sys::File) {
+async fn upload_file<F>(key: String, file: web_sys::File, no_change: F)
+where
+    F: Fn() + Copy + 'static,
+{
     let form_data = web_sys::FormData::new().unwrap();
     let filename = file.name();
     form_data
@@ -595,11 +612,16 @@ async fn upload_file(key: String, file: web_sys::File) {
         Ok(res) => {
             // expected body {"ids:", ["new-id"]} with exactly one entry
             let results: HashMap<String, Vec<String>> = res.json().await.unwrap();
-            let url = format!("/asset/{}", results["ids"][0]);
-            let navigate = leptos_router::use_navigate();
-            let mut options = leptos_router::NavigateOptions::default();
-            options.replace = true;
-            navigate(&url, options);
+            let new_key = &results["ids"][0];
+            if new_key == &key {
+                no_change()
+            } else {
+                let url = format!("/asset/{}", new_key);
+                let navigate = leptos_router::use_navigate();
+                let mut options = leptos_router::NavigateOptions::default();
+                options.replace = true;
+                navigate(&url, options);
+            }
         }
     }
 }

@@ -59,13 +59,14 @@ impl super::UseCase<Asset, Params> for ReplaceAsset {
     fn call(&self, params: Params) -> Result<Asset, Error> {
         let digest = checksum_file(&params.filepath)?;
         let asset = match self.records.get_asset_by_digest(&digest)? {
-            Some(_) => {
+            Some(existing) => {
                 // if an identical asset already exists, then replace is not
                 // possible and we simply need to remove the uploaded file
                 std::fs::remove_file(&params.filepath)?;
-                // return the original record as-is so the client can know that
-                // nothing changed on the backend
-                self.records.get_asset(&params.asset_id)?
+                // return the record of the existing asset so that the client
+                // can either detect that nothing changed, or navigate to the
+                // other asset with this matching checksum
+                existing
             }
             None => {
                 let mut asset = self.update_asset(digest, params.clone())?;
@@ -154,8 +155,6 @@ mod tests {
         let existing_digest =
             "sha256-d020066fd41970c2eebc51b1e712a500de4966cef0daf4890dc238d80cbaebb2";
         let unchanged_asset_id = "Li90ZXN0cy9maXh0dXJlcy9maWdodGluZ19raXR0ZW5zLmpwZw==";
-        let unchanged_digest =
-            "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09";
         // copy test file to temporary path as it will be (re)moved
         let tmpdir = tempdir().unwrap();
         let original = PathBuf::from("./tests/fixtures/IMG_0385.JPG");
@@ -181,25 +180,6 @@ mod tests {
                     dimensions: None,
                 }))
             });
-        records
-            .expect_get_asset()
-            .with(eq(unchanged_asset_id))
-            .returning(move |_| {
-                Ok(Asset {
-                    key: unchanged_asset_id.to_owned(),
-                    checksum: unchanged_digest.to_owned(),
-                    filename: "fighting_kittens.jpg".to_owned(),
-                    byte_length: 39932,
-                    media_type: "image/jpeg".to_owned(),
-                    tags: vec!["cows".to_owned()],
-                    import_date: Utc::now(),
-                    caption: None,
-                    location: Some(Location::new("hawaii")),
-                    user_date: None,
-                    original_date: None,
-                    dimensions: None,
-                })
-            });
         let blobs = MockBlobRepository::new();
         let geocoder = MockLocationRepository::new();
         // act
@@ -210,9 +190,9 @@ mod tests {
         // assert
         assert!(result.is_ok());
         let asset = result.unwrap();
-        assert_eq!(asset.checksum, unchanged_digest);
-        assert_eq!(asset.filename, "fighting_kittens.jpg");
-        assert_eq!(asset.byte_length, 39932);
+        assert_eq!(asset.checksum, existing_digest);
+        assert_eq!(asset.filename, "IMG_0385.JPG");
+        assert_eq!(asset.byte_length, 59908);
         assert_eq!(asset.media_type, "image/jpeg");
         assert!(asset.location.is_some());
         let location = asset.location.unwrap();
