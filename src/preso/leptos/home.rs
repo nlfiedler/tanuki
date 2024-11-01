@@ -51,8 +51,13 @@ impl SearchParamsBuilder {
         self
     }
 
+    fn media_type(mut self, media_type: String) -> Self {
+        self.params.media_type = Some(media_type);
+        self
+    }
+
     /// Set the year but not the season.
-    fn set_year(mut self, year: i32) -> Self {
+    fn year(mut self, year: i32) -> Self {
         let after = Utc
             .with_ymd_and_hms(year, 1, 1, 0, 0, 0)
             .earliest()
@@ -67,13 +72,13 @@ impl SearchParamsBuilder {
     }
 
     /// Set the season for the current year.
-    fn set_season(self, season: Season) -> Self {
+    fn season(self, season: Season) -> Self {
         let year = Utc::now().year();
-        self.set_year_and_season(year, season)
+        self.year_and_season(year, season)
     }
 
     /// Set the year and season together.
-    fn set_year_and_season(mut self, year: i32, season: Season) -> Self {
+    fn year_and_season(mut self, year: i32, season: Season) -> Self {
         let (after, before) = match season {
             Season::Winter => (
                 Utc.with_ymd_and_hms(year, 1, 1, 0, 0, 0)
@@ -152,6 +157,14 @@ pub fn HomePage() -> impl IntoView {
                 .initial_value(None)
                 .delay_during_hydration(true),
         );
+    // chosen media type by which to narrow results
+    let (selected_type, set_selected_type, _) =
+        use_local_storage_with_options::<Option<String>, JsonSerdeCodec>(
+            "edit-selected-type",
+            UseStorageOptions::default()
+                .initial_value(None)
+                .delay_during_hydration(true),
+        );
     // page of results to be displayed (1-based)
     let (selected_page, set_selected_page, _) =
         use_local_storage_with_options::<i32, FromToStringCodec>(
@@ -176,21 +189,25 @@ pub fn HomePage() -> impl IntoView {
                 selected_locations.get(),
                 selected_year.get(),
                 selected_season.get(),
+                selected_type.get(),
                 selected_page.get(),
                 page_size.get(),
             )
         },
-        |(tags, locs, year, season, page, count)| async move {
+        |(tags, locs, year, season, media_type, page, count)| async move {
             let mut builder = SearchParamsBuilder::new();
             builder = builder.tags(tags).locations(locs);
             if let Some(year) = year {
                 if let Some(season) = season {
-                    builder = builder.set_year_and_season(year, season);
+                    builder = builder.year_and_season(year, season);
                 } else {
-                    builder = builder.set_year(year);
+                    builder = builder.year(year);
                 }
             } else if let Some(season) = season {
-                builder = builder.set_season(season);
+                builder = builder.season(season);
+            }
+            if let Some(media_type) = media_type {
+                builder = builder.media_type(media_type);
             }
             let params = builder.build();
             let offset = count * (page - 1);
@@ -254,6 +271,18 @@ pub fn HomePage() -> impl IntoView {
                                             set_selected_season.set(value);
                                             set_selected_page.set(1);
                                         })
+                                    }
+                                />
+                            </p>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div class="field">
+                            <p class="control">
+                                <forms::TypesChooser
+                                    selected_type
+                                    set_type=move |value| {
+                                        set_selected_type.set(value);
                                     }
                                 />
                             </p>
