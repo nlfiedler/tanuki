@@ -282,7 +282,10 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                 </div>
                 <div class="level-item">
                     <p class="control">
-                        <a href=format!("/rest/asset/{}", asset.get_value().key) target="_blank">
+                        <a
+                            href=format!("/rest/asset/{}", asset.get_value().key)
+                            download=asset.get_value().filename
+                        >
                             <button class="button">
                                 <span class="icon">
                                     <i class="fa-solid fa-download"></i>
@@ -335,7 +338,9 @@ fn AssetForm(asset: Asset) -> impl IntoView {
         <div class="m-4">
             <div class="mb-2 field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="datetime-input">Date</label>
+                    <label class="label" for="datetime-input">
+                        Date
+                    </label>
                 </div>
                 <div class="field-body">
                     <div class="field">
@@ -373,7 +378,9 @@ fn AssetForm(asset: Asset) -> impl IntoView {
 
             <div class="field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="caption-input">Caption</label>
+                    <label class="label" for="caption-input">
+                        Caption
+                    </label>
                 </div>
                 <div class="field-body">
                     <div class="field is-expanded">
@@ -399,7 +406,9 @@ fn AssetForm(asset: Asset) -> impl IntoView {
 
             <div class="mb-2 field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="tags-input">Tags</label>
+                    <label class="label" for="tags-input">
+                        Tags
+                    </label>
                 </div>
                 <div class="field-body">
                     <div class="field is-expanded">
@@ -424,7 +433,9 @@ fn AssetForm(asset: Asset) -> impl IntoView {
 
             <div class="mb-2 field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="location-input">Location</label>
+                    <label class="label" for="location-input">
+                        Location
+                    </label>
                 </div>
                 <div class="field-body">
                     <div class="field">
@@ -476,7 +487,9 @@ fn AssetForm(asset: Asset) -> impl IntoView {
 
             <div class="mb-2 field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="filesize-input">File Size</label>
+                    <label class="label" for="filesize-input">
+                        File Size
+                    </label>
                 </div>
                 <div class="field-body">
                     <div class="field">
@@ -495,7 +508,9 @@ fn AssetForm(asset: Asset) -> impl IntoView {
 
             <div class="mb-2 field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="mediatype-input">Media Type</label>
+                    <label class="label" for="mediatype-input">
+                        Media Type
+                    </label>
                 </div>
                 <div class="field-body">
                     <div class="field">
@@ -514,7 +529,9 @@ fn AssetForm(asset: Asset) -> impl IntoView {
 
             <div class="mb-2 field is-horizontal">
                 <div class="field-label is-normal">
-                    <label class="label" for="path-input">Asset Path</label>
+                    <label class="label" for="path-input">
+                        Asset Path
+                    </label>
                 </div>
                 <div class="field-body">
                     <div class="field">

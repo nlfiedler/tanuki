@@ -265,9 +265,12 @@ async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> 
     if let Ok(asset) = result {
         let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
         if let Ok(filepath) = blobs.blob_path(&asset.key) {
-            let file = NamedFile::open(filepath)?;
+            // the browser uses whatever name is given here, despite the
+            // `download` attribute on the a href element
+            let file = std::fs::File::open(filepath)?;
+            let named_file = NamedFile::from_file(file, asset.filename)?;
             let mime_type: mime::Mime = asset.media_type.parse().unwrap();
-            Ok(Either::Left(file.set_content_type(mime_type)))
+            Ok(Either::Left(named_file.set_content_type(mime_type)))
         } else {
             Ok(Either::Right(HttpResponse::InternalServerError().finish()))
         }
