@@ -343,6 +343,36 @@ pub fn EditPage() -> impl IntoView {
                 </div>
                 <div class="level-right">
                     <div class="level-item">
+                        <Transition fallback=move || {
+                            view! { "..." }
+                        }>
+                            {move || {
+                                results
+                                    .get()
+                                    .map(|result| match result {
+                                        Err(err) => {
+                                            view! { <span>{move || format!("Error: {}", err)}</span> }
+                                                .into_view()
+                                        }
+                                        Ok(meta) => {
+                                            view! {
+                                                <span>
+                                                    {move || {
+                                                        if meta.count > 100 {
+                                                            format!("{} results (100 shown)", meta.count)
+                                                        } else {
+                                                            format!("{} results", meta.count)
+                                                        }
+                                                    }}
+                                                </span>
+                                            }
+                                                .into_view()
+                                        }
+                                    })
+                            }}
+                        </Transition>
+                    </div>
+                    <div class="level-item">
                         <button class="button" on:click=move |_| unselect_all.dispatch(())>
                             <span class="icon">
                                 <i class="fa-regular fa-square"></i>
