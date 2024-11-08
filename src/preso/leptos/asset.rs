@@ -320,7 +320,10 @@ fn AssetForm(asset: Asset) -> impl IntoView {
                                                     class="button"
                                                     on:click=move |_| save_action.dispatch(())
                                                 >
-                                                    Save
+                                                    <span class="icon">
+                                                        <i class="fa-solid fa-floppy-disk"></i>
+                                                    </span>
+                                                    <span>Save</span>
                                                 </button>
                                             }
                                         }
