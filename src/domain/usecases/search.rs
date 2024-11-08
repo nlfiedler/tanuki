@@ -8,7 +8,7 @@ use chrono::prelude::*;
 use std::cmp;
 use std::fmt;
 
-/// Use case to perform complex queries on the asset database.
+/// Use case to perform queries against the database indices.
 pub struct SearchAssets {
     repo: Box<dyn RecordRepository>,
 }

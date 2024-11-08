@@ -86,6 +86,11 @@ pub trait EntityDataSource: Send + Sync {
 
     /// Return all asset identifiers in the database.
     fn all_assets(&self) -> Result<Vec<String>, Error>;
+
+    /// Return all assets from the data source in lexicographical order,
+    /// optionally starting from the asset that follows the given identifier,
+    /// and returning a limited number.
+    fn scan_assets(&self, seek_from: Option<String>, count: usize) -> Result<Vec<Asset>, Error>;
 }
 
 /// Implementation of the entity data source utilizing mokuroku to manage
@@ -282,6 +287,28 @@ impl EntityDataSource for EntityDataSourceImpl {
 
     fn all_assets(&self) -> Result<Vec<String>, Error> {
         self.database.find_prefix("asset/")
+    }
+
+    fn scan_assets(&self, seek_from: Option<String>, count: usize) -> Result<Vec<Asset>, Error> {
+        let prefixed_seek = seek_from.map(|s| format!("asset/{}", s));
+        let prefix_bytes = prefixed_seek.as_ref().map(|p| p.as_bytes().to_owned());
+        // request one additional result and filter the one that matches the
+        // seek_from key, but also stopping when there are enough results
+        let pairs = self.database.scan("asset/", prefixed_seek, count + 1)?;
+        let mut results: Vec<Asset> = Vec::with_capacity(pairs.len());
+        for (key, value) in pairs.into_iter() {
+            if prefix_bytes
+                .as_ref()
+                .filter(|p| key.as_ref() == *p)
+                .is_none()
+            {
+                results.push(Asset::from_bytes(key.as_ref(), value.as_ref())?);
+                if results.len() >= count {
+                    break;
+                }
+            }
+        }
+        Ok(results)
     }
 }
 

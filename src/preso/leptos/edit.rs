@@ -2,9 +2,9 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::*;
+use crate::preso::leptos::BulkEditParams;
 use crate::preso::leptos::{forms, nav};
-use crate::preso::leptos::{BulkEditParams, SearchMeta, SearchParams};
-use chrono::{DateTime, Local, Utc};
+use chrono::{DateTime, Utc};
 use codee::string::JsonSerdeCodec;
 use leptos::ev::Event;
 use leptos::html::Input;
@@ -59,6 +59,25 @@ pub async fn fetch_location_parts() -> Result<LocationData, ServerFnError> {
     Ok(data)
 }
 
+#[leptos::server]
+pub async fn scan_assets(query: String) -> Result<ScanResult, ServerFnError> {
+    use crate::domain::usecases::scan::{Params, ScanAssets};
+    use crate::domain::usecases::UseCase;
+
+    let repo = super::ssr::db()?;
+    let usecase = ScanAssets::new(Box::new(repo));
+    // for now there is no paging, and limit is always 100
+    let params = Params {
+        query,
+        limit: 100,
+        cursor: None,
+    };
+    let result = usecase
+        .call(params)
+        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+    Ok(result)
+}
+
 ///
 /// Perform one or more operations on multiple assets.
 ///
@@ -81,136 +100,24 @@ pub async fn bulk_edit(ops: BulkEditParams) -> Result<u64, ServerFnError> {
     Ok(count)
 }
 
-struct SearchParamsBuilder {
-    params: SearchParams,
-}
-
-impl SearchParamsBuilder {
-    fn new() -> Self {
-        // default search will show nothing, but sorting will be by date in
-        // descending order until options are provided to change that
-        Self {
-            params: SearchParams {
-                tags: None,
-                locations: None,
-                after: None,
-                before: None,
-                filename: None,
-                media_type: None,
-                sort_field: Some(SortField::Date),
-                sort_order: Some(SortOrder::Descending),
-            },
-        }
-    }
-
-    fn tags(mut self, tags: HashSet<String>) -> Self {
-        self.params.tags = if tags.is_empty() {
-            None
-        } else {
-            Some(tags.into_iter().collect())
-        };
-        self
-    }
-
-    fn locations(mut self, locations: HashSet<String>) -> Self {
-        self.params.locations = if locations.is_empty() {
-            None
-        } else {
-            Some(locations.into_iter().collect())
-        };
-        self
-    }
-
-    fn set_after(mut self, after: DateTime<Utc>) -> Self {
-        self.params.after = Some(after);
-        self
-    }
-
-    fn set_before(mut self, before: DateTime<Utc>) -> Self {
-        self.params.before = Some(before);
-        self
-    }
-
-    fn set_media_type(mut self, media_type: String) -> Self {
-        self.params.media_type = Some(media_type);
-        self
-    }
-
-    fn build(&self) -> SearchParams {
-        self.params.clone()
-    }
-}
-
 #[component]
 pub fn EditPage() -> impl IntoView {
-    let after_date_input_ref: NodeRef<html::Input> = create_node_ref();
-    let before_date_input_ref: NodeRef<html::Input> = create_node_ref();
-    // multiple tags will _narrow_ the search results
-    let (selected_tags, set_selected_tags, _) =
-        use_local_storage_with_options::<HashSet<String>, JsonSerdeCodec>(
-            "edit-selected-tags",
-            UseStorageOptions::default()
-                .initial_value(HashSet::new())
-                .delay_during_hydration(true),
-        );
-    // multiple locations will _widen_ the search results
-    let (selected_locations, set_selected_locations, _) =
-        use_local_storage_with_options::<HashSet<String>, JsonSerdeCodec>(
-            "edit-selected-locations",
-            UseStorageOptions::default()
-                .initial_value(HashSet::new())
-                .delay_during_hydration(true),
-        );
-    // date for which assets must have a "best" date after
-    let (after_date, set_after_date, _) =
-        use_local_storage_with_options::<Option<DateTime<Utc>>, JsonSerdeCodec>(
-            "edit-after-date",
-            UseStorageOptions::default()
-                .initial_value(None)
-                .delay_during_hydration(true),
-        );
-    // date for which assets must have a "best" date before
-    let (before_date, set_before_date, _) =
-        use_local_storage_with_options::<Option<DateTime<Utc>>, JsonSerdeCodec>(
-            "edit-before-date",
-            UseStorageOptions::default()
-                .initial_value(None)
-                .delay_during_hydration(true),
-        );
-    // chosen media type by which to narrow results
-    let (selected_type, set_selected_type, _) =
-        use_local_storage_with_options::<Option<String>, JsonSerdeCodec>(
-            "edit-selected-type",
-            UseStorageOptions::default()
-                .initial_value(None)
-                .delay_during_hydration(true),
-        );
+    let (query, set_query, _) = use_local_storage_with_options::<String, JsonSerdeCodec>(
+        "edit-query",
+        UseStorageOptions::default()
+            .initial_value(String::new())
+            .delay_during_hydration(true),
+    );
+    let input_ref = NodeRef::<Input>::new();
+    let on_change = move |ev: Event| {
+        let input = input_ref.get().unwrap();
+        ev.stop_propagation();
+        set_query.set(input.value());
+    };
     // search for assets using the given criteria
     let results = create_resource(
-        move || {
-            (
-                selected_tags.get(),
-                selected_locations.get(),
-                after_date.get(),
-                before_date.get(),
-                selected_type.get(),
-            )
-        },
-        |(tags, locs, after, before, media_type)| async move {
-            let mut builder = SearchParamsBuilder::new();
-            builder = builder.tags(tags).locations(locs);
-            if let Some(after) = after {
-                builder = builder.set_after(after);
-            }
-            if let Some(before) = before {
-                builder = builder.set_before(before);
-            }
-            if let Some(media_type) = media_type {
-                builder = builder.set_media_type(media_type);
-            }
-            let params = builder.build();
-            super::search(params, Some(100), Some(0)).await
-        },
+        move || (query.get()),
+        |query_str| async move { scan_assets(query_str).await },
     );
     let selected_assets = create_rw_signal::<HashSet<String>>(HashSet::new());
     let submittable = create_memo(move |_| selected_assets.with(|coll| coll.len() > 0));
@@ -230,148 +137,34 @@ pub fn EditPage() -> impl IntoView {
 
     view! {
         <nav::NavBar />
-        <div class="container">
-            <nav class="level">
-                <div class="level-left">
-                    <div class="level-item">
-                        <forms::TagsChooser add_tag=move |label| {
-                            set_selected_tags
-                                .update(|tags| {
-                                    tags.insert(label);
-                                });
-                        } />
-                    </div>
-                    <div class="level-item">
-                        <forms::LocationsChooser add_location=move |label| {
-                            set_selected_locations
-                                .update(|locations| {
-                                    locations.insert(label);
-                                });
-                        } />
-                    </div>
-                    <div class="level-item">
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="after-input">
-                                    After
-                                </label>
-                            </div>
-                            <div class="field-body">
-                                <p class="control">
-                                    <input
-                                        class="input"
-                                        type="date"
-                                        id="after-input"
-                                        value=move || utc_to_date_str(after_date.get())
-                                        node_ref=after_date_input_ref
-                                        on:change=move |ev: Event| {
-                                            ev.stop_propagation();
-                                            let value = after_date_input_ref.get().unwrap().value();
-                                            set_after_date.set(date_str_to_utc(&value));
-                                        }
-                                    />
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="level-item">
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="before-input">
-                                    Before
-                                </label>
-                            </div>
-                            <div class="field-body">
-                                <p class="control">
-                                    <input
-                                        class="input"
-                                        type="date"
-                                        id="before-input"
-                                        value=move || utc_to_date_str(before_date.get())
-                                        node_ref=before_date_input_ref
-                                        on:change=move |ev: Event| {
-                                            ev.stop_propagation();
-                                            let value = before_date_input_ref.get().unwrap().value();
-                                            set_before_date.set(date_str_to_utc(&value));
-                                        }
-                                    />
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="level-item">
-                        <div class="field">
-                            <p class="control">
-                                <forms::TypesChooser
-                                    selected_type
-                                    set_type=move |value| {
-                                        set_selected_type.set(value);
-                                    }
-                                />
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-        </div>
-
         <div class="container my-3">
             <nav class="level">
                 <div class="level-left">
                     <div class="level-item">
-                        <div class="field is-grouped is-grouped-multiline">
-                            <forms::TagList
-                                attrs=selected_tags
-                                rm_attr=move |attr| {
-                                    set_selected_tags
-                                        .update(|coll| {
-                                            coll.remove(&attr);
-                                        });
-                                }
-                            />
-                            <forms::TagList
-                                attrs=selected_locations
-                                rm_attr=move |attr| {
-                                    set_selected_locations
-                                        .update(|coll| {
-                                            coll.remove(&attr);
-                                        });
-                                }
-                            />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="query-input">
+                                    Query
+                                </label>
+                            </div>
+                            <div class="field-body">
+                                <p class="control is-expanded">
+                                    <input
+                                        class="input"
+                                        style="max-width: 400%; width: 400%;"
+                                        type="text"
+                                        id="query-input"
+                                        placeholder="Enter a search query"
+                                        value=move || query.get()
+                                        node_ref=input_ref
+                                        on:change=on_change
+                                    />
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="level-right">
-                    <div class="level-item">
-                        <Transition fallback=move || {
-                            view! { "..." }
-                        }>
-                            {move || {
-                                results
-                                    .get()
-                                    .map(|result| match result {
-                                        Err(err) => {
-                                            view! { <span>{move || format!("Error: {}", err)}</span> }
-                                                .into_view()
-                                        }
-                                        Ok(meta) => {
-                                            view! {
-                                                <span>
-                                                    {move || {
-                                                        if meta.count > 100 {
-                                                            format!("{} results (100 shown)", meta.count)
-                                                        } else {
-                                                            format!("{} results", meta.count)
-                                                        }
-                                                    }}
-                                                </span>
-                                            }
-                                                .into_view()
-                                        }
-                                    })
-                            }}
-                        </Transition>
-                    </div>
                     <div class="level-item">
                         <button class="button" on:click=move |_| unselect_all.dispatch(())>
                             <span class="icon">
@@ -456,8 +249,8 @@ pub fn EditPage() -> impl IntoView {
                         Err(err) => {
                             view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
                         }
-                        Ok(meta) => {
-                            view! { <ResultsDisplay meta selected_assets /> }
+                        Ok(scan_result) => {
+                            view! { <ResultsDisplay scan_result selected_assets /> }
                         }
                     })
             }}
@@ -830,9 +623,12 @@ fn TagsEditForm(
 }
 
 #[component]
-fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) -> impl IntoView {
+fn ResultsDisplay(
+    scan_result: ScanResult,
+    selected_assets: RwSignal<HashSet<String>>,
+) -> impl IntoView {
     // store the results in the reactive system so the view can be Fn()
-    let results = store_value(meta.results);
+    let results = store_value(scan_result.results);
     let toggle_asset = move |id: &String| {
         selected_assets.update(|list| {
             if list.contains(id) {
@@ -935,36 +731,6 @@ fn CardContent(datetime: DateTime<Utc>, location: Option<Location>) -> impl Into
                 <span>{move || location.get_value().unwrap().to_string()}</span>
             </Show>
         </div>
-    }
-}
-
-/// Convert a DateTime<Utc> to a date in string format, assuming local time zone.
-fn utc_to_date_str(datetime: Option<DateTime<Utc>>) -> String {
-    match datetime {
-        Some(dt) => {
-            // this is quite complicated for some reason
-            let local_now = Local::now();
-            let naive_utc = dt.naive_utc();
-            let datetime_local =
-                DateTime::<Local>::from_naive_utc_and_offset(naive_utc, local_now.offset().clone());
-            datetime_local.naive_local().format("%Y-%m-%d").to_string()
-        }
-        None => "".into(),
-    }
-}
-
-/// Convert a string like "2003-08-30" to a DateTime<Utc>, assuming that the
-/// input was for the local time zone. If the value cannot be parsed then `None`
-/// is returned.
-fn date_str_to_utc(value: &str) -> Option<DateTime<Utc>> {
-    let local = chrono::offset::Local::now();
-    let datetime_str = format!("{}T00:00{}", value, local.offset().to_string());
-    match DateTime::parse_from_str(&datetime_str, "%Y-%m-%dT%H:%M%z") {
-        Ok(datetime) => Some(datetime.to_utc()),
-        Err(_err) => {
-            // log::error!("datetime parse error: {:?}; input: {}", err, value);
-            None
-        }
     }
 }
 

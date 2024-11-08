@@ -659,6 +659,16 @@ impl SearchResult {
     }
 }
 
+/// `ScanResults` is returned from the use case for scanning all assets in the
+/// database for those entries that match a given query string.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ScanResult {
+    /// A subset of matching results.
+    pub results: Vec<SearchResult>,
+    /// An opaque value for continuing the scan in an efficient manner.
+    pub cursor: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

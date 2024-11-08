@@ -716,9 +716,7 @@ fn test_query_newborn() {
     assert!(!actual[0].asset_id.starts_with("asset/"));
     assert!(actual.iter().any(|l| l.asset_id == "wednesday8"));
     assert!(actual.iter().any(|l| l.asset_id == "thursday9"
-        && l.location
-            .as_ref()
-            .map_or(false, |v| v == &portland_maine)));
+        && l.location.as_ref().map_or(false, |v| v == &portland_maine)));
     assert!(actual.iter().any(|l| l.asset_id == "friday10"));
     assert!(actual.iter().any(|l| l.asset_id == "abc123"));
 }
@@ -757,4 +755,39 @@ fn test_query_newborn_old() {
     assert!(actual.iter().any(|l| l.asset_id == "wednesday3"));
     assert!(actual.iter().any(|l| l.asset_id == "thursday4"));
     assert!(actual.iter().any(|l| l.asset_id == "friday5"));
+}
+
+#[test]
+fn test_scan_assets() {
+    let db_path = DBPath::new("_test_scan_assets");
+    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+
+    let mut asset = common::build_basic_asset();
+    asset.key = "aaaaaaa".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    asset.key = "bbbbbbb".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    asset.key = "ccccccc".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    asset.key = "ddddddd".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    asset.key = "eeeeeee".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    asset.key = "fffffff".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    asset.key = "ggggggg".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    asset.key = "hhhhhhh".to_owned();
+    datasource.put_asset(&asset).unwrap();
+    let results = datasource.scan_assets(Some("ccccccc".into()), 3).unwrap();
+    assert_eq!(results.len(), 3);
+    assert_eq!(results[0].key, "ddddddd");
+    assert_eq!(results[1].key, "eeeeeee");
+    assert_eq!(results[2].key, "fffffff");
+
+    let actual = datasource.scan_assets(None, 3).unwrap();
+    assert_eq!(actual.len(), 3);
+    assert_eq!(actual[0].key, "aaaaaaa");
+    assert_eq!(actual[1].key, "bbbbbbb");
+    assert_eq!(actual[2].key, "ccccccc");
 }

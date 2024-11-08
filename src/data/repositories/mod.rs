@@ -90,6 +90,14 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.all_assets()
     }
 
+    fn scan_assets(
+        &self,
+        seek_from: Option<String>,
+        count: usize,
+    ) -> Result<Vec<Asset>, Error> {
+        self.datasource.scan_assets(seek_from, count)
+    }
+
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error> {
         self.datasource.query_by_tags(tags)
     }

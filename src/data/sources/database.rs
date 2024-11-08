@@ -3,8 +3,8 @@
 //
 use crate::domain::entities::Asset;
 use anyhow::Error;
-use rocksdb::backup::{BackupEngine, BackupEngineOptions};
-use rocksdb::{Env, Options};
+use rocksdb::backup::{self, BackupEngine, BackupEngineOptions};
+use rocksdb::{Direction, Env, IteratorMode, Options};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::str;
@@ -90,7 +90,7 @@ impl Database {
         let backup_opts = BackupEngineOptions::new(&backup_path)?;
         let env = Env::new()?;
         let mut backup_engine = BackupEngine::open(&backup_opts, &env)?;
-        let mut restore_option = rocksdb::backup::RestoreOptions::default();
+        let mut restore_option = backup::RestoreOptions::default();
         restore_option.set_keep_log_files(true);
         backup_engine.restore_from_latest_backup(&db_path, &db_path, &restore_option)?;
         Ok(())
@@ -305,6 +305,41 @@ impl Database {
             }
             let key_str = str::from_utf8(&key[pre_bytes.len()..])?;
             results.push(key_str.to_owned());
+        }
+        Ok(results)
+    }
+
+    ///
+    /// Find all keys and values such that the key starts with the given prefix,
+    /// optionally seeking to the key given in `seek_from`, and returning up to
+    /// `count` items.
+    ///
+    /// Unlike other queries, this function returns the raw key/value pairs.
+    ///
+    pub fn scan(
+        &self,
+        prefix: &str,
+        seek_from: Option<String>,
+        count: usize,
+    ) -> Result<Vec<(Box<[u8]>, Box<[u8]>)>, Error> {
+        let prefix_bytes = prefix.as_bytes();
+        let db = self.db.lock().unwrap();
+        let mut iter = db.db().prefix_iterator(prefix_bytes);
+        if let Some(from_str) = seek_from {
+            let from_bytes = from_str.as_bytes();
+            iter.set_mode(IteratorMode::From(from_bytes, Direction::Forward));
+        }
+        let mut results: Vec<(Box<[u8]>, Box<[u8]>)> = Vec::new();
+        for item in iter {
+            let (key, value) = item?;
+            let pre = &key[..prefix_bytes.len()];
+            if pre != prefix_bytes {
+                break;
+            }
+            results.push((key, value));
+            if results.len() >= count {
+                break;
+            }
         }
         Ok(results)
     }

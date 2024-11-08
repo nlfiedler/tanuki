@@ -52,6 +52,15 @@ pub trait RecordRepository: Send {
     /// Return all asset identifiers in the database.
     fn all_assets(&self) -> Result<Vec<String>, Error>;
 
+    /// Return all assets from the data source in lexicographical order,
+    /// optionally starting from the asset that follows the given identifier,
+    /// and returning a limited number.
+    fn scan_assets(
+        &self,
+        seek_from: Option<String>,
+        count: usize,
+    ) -> Result<Vec<Asset>, Error>;
+
     /// Search for assets that have all of the given tags.
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error>;
 

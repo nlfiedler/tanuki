@@ -28,6 +28,7 @@ pub mod load;
 pub mod location;
 pub mod recent;
 pub mod replace;
+pub mod scan;
 pub mod search;
 pub mod tags;
 pub mod types;
