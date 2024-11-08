@@ -27,7 +27,6 @@
 ****** character escapes within quoted strings will be evaluated
 ****** dates are RFC 3339 formatted (https://datatracker.ietf.org/doc/html/rfc3339)
 ** Optimizations
-*** use =include_bytes!= to pull placeholder image into code from a file
 *** find and remove =allow(dead_code)=
 *** find and remove =allow(unused)=
 *** consider if the search filtering should be pushed further down for performance

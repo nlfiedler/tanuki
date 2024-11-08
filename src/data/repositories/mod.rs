@@ -15,7 +15,10 @@ use std::str;
 use std::sync::{Arc, LazyLock, Mutex};
 
 pub mod geo;
-mod placeholder;
+
+// from https://commons.wikimedia.org/wiki/File:Placeholder_view_vector.svg
+// sized to 991x768 pixels
+const PLACEHOLDER: &[u8] = include_bytes!("placeholder.png");
 
 // Cache of String keys to Vec<u8> image data for caching thumbnails.
 //
@@ -90,11 +93,7 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.all_assets()
     }
 
-    fn scan_assets(
-        &self,
-        seek_from: Option<String>,
-        count: usize,
-    ) -> Result<Vec<Asset>, Error> {
+    fn scan_assets(&self, seek_from: Option<String>, count: usize) -> Result<Vec<Asset>, Error> {
         self.datasource.scan_assets(seek_from, count)
     }
 
@@ -253,7 +252,7 @@ impl BlobRepository for BlobRepositoryImpl {
         if result.is_err() {
             // an error will occur only when the asset is not an image, which is
             // not really an error and we can simply serve a placeholder
-            return Ok(Vec::from(&placeholder::PLACEHOLDER[..]));
+            return Ok(Vec::from(PLACEHOLDER));
         }
         result
     }
