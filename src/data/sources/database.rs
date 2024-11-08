@@ -3,8 +3,7 @@
 //
 use crate::domain::entities::Asset;
 use anyhow::Error;
-use rocksdb::backup::{self, BackupEngine, BackupEngineOptions};
-use rocksdb::{Direction, Env, IteratorMode, Options};
+use rocksdb::{Direction, IteratorMode, Options};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::str;
@@ -66,67 +65,6 @@ impl Database {
         let arc = Arc::new(Mutex::new(db));
         db_refs.insert(buf, Arc::downgrade(&arc));
         Ok(Self { db: arc })
-    }
-
-    ///
-    /// Create a backup of the database at the given path.
-    ///
-    #[allow(dead_code)]
-    pub fn create_backup<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
-        let backup_opts = BackupEngineOptions::new(path.as_ref())?;
-        let env = Env::new()?;
-        let mut backup_engine = BackupEngine::open(&backup_opts, &env)?;
-        let db = self.db.lock().unwrap();
-        backup_engine.create_new_backup(db.db())?;
-        backup_engine.purge_old_backups(1)?;
-        Ok(())
-    }
-
-    ///
-    /// Restore the database from the backup path to the given db path.
-    ///
-    #[allow(dead_code)]
-    pub fn restore_from_backup<P: AsRef<Path>>(backup_path: P, db_path: P) -> Result<(), Error> {
-        let backup_opts = BackupEngineOptions::new(&backup_path)?;
-        let env = Env::new()?;
-        let mut backup_engine = BackupEngine::open(&backup_opts, &env)?;
-        let mut restore_option = backup::RestoreOptions::default();
-        restore_option.set_keep_log_files(true);
-        backup_engine.restore_from_latest_backup(&db_path, &db_path, &restore_option)?;
-        Ok(())
-    }
-
-    ///
-    /// Insert the value if the database does not already contain the given key.
-    ///
-    #[allow(dead_code)]
-    pub fn insert_document(&self, key: &[u8], value: &[u8]) -> Result<(), Error> {
-        let db = self.db.lock().unwrap();
-        let existing = db.db().get(key)?;
-        if existing.is_none() {
-            db.db().put(key, value)?;
-        }
-        Ok(())
-    }
-
-    ///
-    /// Retrieve the value with the given key.
-    ///
-    #[allow(dead_code)]
-    pub fn get_document(&self, key: &[u8]) -> Result<Option<Vec<u8>>, Error> {
-        let db = self.db.lock().unwrap();
-        let result = db.db().get(key)?;
-        Ok(result)
-    }
-
-    ///
-    /// Put the key/value pair into the database.
-    ///
-    #[allow(dead_code)]
-    pub fn put_document(&self, key: &[u8], value: &[u8]) -> Result<(), Error> {
-        let db = self.db.lock().unwrap();
-        db.db().put(key, value)?;
-        Ok(())
     }
 
     ///
@@ -340,29 +278,6 @@ impl Database {
             if results.len() >= count {
                 break;
             }
-        }
-        Ok(results)
-    }
-
-    ///
-    /// Fetch the key/value pairs for those keys that start with the given
-    /// prefix.
-    ///
-    #[allow(dead_code)]
-    pub fn fetch_prefix(&self, prefix: &str) -> Result<HashMap<String, Box<[u8]>>, Error> {
-        let pre_bytes = prefix.as_bytes();
-        // this only gets us started, we then have to check for the end of the range
-        let db = self.db.lock().unwrap();
-        let iter = db.db().prefix_iterator(pre_bytes);
-        let mut results: HashMap<String, Box<[u8]>> = HashMap::new();
-        for item in iter {
-            let (key, value) = item?;
-            let pre = &key[..pre_bytes.len()];
-            if pre != pre_bytes {
-                break;
-            }
-            let key_str = str::from_utf8(&key)?;
-            results.insert(key_str.to_owned(), value);
         }
         Ok(results)
     }

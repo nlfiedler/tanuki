@@ -27,8 +27,6 @@
 ****** character escapes within quoted strings will be evaluated
 ****** dates are RFC 3339 formatted (https://datatracker.ietf.org/doc/html/rfc3339)
 ** Optimizations
-*** find and remove =allow(dead_code)=
-*** find and remove =allow(unused)=
 *** consider if the search filtering should be pushed further down for performance
 **** database layer could employ a minheap to retain the N elements that match the filter and sort order
 *** consider how to cache query results to avoid scanning index again for pagination

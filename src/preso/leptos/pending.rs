@@ -75,7 +75,6 @@ pub async fn bulk_update(assets: Vec<AssetInput>) -> Result<i32, ServerFnError> 
     Ok(assets.len() as i32)
 }
 
-#[allow(dead_code)]
 #[derive(Copy, Clone, Deserialize, Eq, Hash, PartialEq, Serialize)]
 enum RecentRange {
     Day,

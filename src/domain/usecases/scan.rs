@@ -1,7 +1,6 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-#![allow(unused)]
 use crate::domain::entities::{ScanResult, SearchResult};
 use crate::domain::repositories::RecordRepository;
 use anyhow::Error;
@@ -84,9 +83,7 @@ mod test {
     use super::*;
     use crate::domain::entities::Asset;
     use crate::domain::repositories::MockRecordRepository;
-    use anyhow::anyhow;
     use chrono::prelude::*;
-    use mockall::predicate::*;
 
     #[test]
     fn test_scan_zero_assets() {
@@ -744,7 +741,7 @@ mod parser {
     //!
 
     use super::lexer::{Token, TokenType};
-    use super::query::{build_predicate, Constraint, TagPredicate};
+    use super::query::{build_predicate, Constraint};
     use crate::domain::usecases::scan::lexer;
     use anyhow::{anyhow, Error};
     use std::sync::mpsc::Receiver;
@@ -809,9 +806,9 @@ mod parser {
             loop {
                 let p = self.peek()?;
                 if p.typ == TokenType::And {
-                    self.next();
+                    self.next()?;
                 } else if p.typ == TokenType::Or {
-                    self.next();
+                    self.next()?;
                     return self.parse_or_rhs(ret);
                 } else if p.typ == TokenType::Close || p.typ == TokenType::EOF {
                     break;
@@ -855,7 +852,7 @@ mod parser {
             loop {
                 let p = self.peek()?;
                 if p.typ == TokenType::Not {
-                    self.next();
+                    self.next()?;
                     negated = !negated;
                     continue;
                 }
@@ -872,7 +869,7 @@ mod parser {
             let mut a: Vec<String> = vec![];
             // confirm that the first token is a predicate, everything else is wrong
             if i.typ == TokenType::Predicate {
-                self.next();
+                self.next()?;
                 a.push(i.val);
             } else {
                 return Err(anyhow!("expected predicate, got {}", i));
@@ -880,7 +877,7 @@ mod parser {
             loop {
                 i = self.peek()?;
                 if i.typ == TokenType::Colon {
-                    self.next();
+                    self.next()?;
                     continue;
                 } else if i.typ == TokenType::Arg {
                     i = self.next()?;
@@ -916,7 +913,7 @@ mod parser {
                 ret = Constraint::Or(Box::new(ret), Box::new(rhs));
                 let p = self.peek()?;
                 if p.typ == TokenType::Or {
-                    self.next();
+                    self.next()?;
                 } else if p.typ == TokenType::And
                     || p.typ == TokenType::Close
                     || p.typ == TokenType::EOF
@@ -932,7 +929,7 @@ mod parser {
             let ret = self.parse_operand()?;
             let p = self.peek()?;
             if p.typ == TokenType::And {
-                self.next();
+                self.next()?;
             } else if p.typ == TokenType::Or || p.typ == TokenType::Close || p.typ == TokenType::EOF
             {
                 return Ok(ret);
@@ -948,7 +945,7 @@ mod parser {
                 ret = Constraint::And(Box::new(ret), Box::new(rhs));
                 let p = self.peek()?;
                 if p.typ == TokenType::And {
-                    self.next();
+                    self.next()?;
                     continue;
                 }
                 break;
@@ -1241,7 +1238,7 @@ mod lexer {
             while let Some(ch) = self.peek() {
                 if valid.contains(ch) {
                     // consume the character
-                    self.next();
+                    let _ = self.next();
                 } else {
                     break;
                 }
@@ -1255,7 +1252,7 @@ mod lexer {
             while let Some(ch) = self.peek() {
                 if valid(ch) {
                     // consume the character
-                    self.next();
+                    let _ = self.next();
                 } else {
                     break;
                 }
@@ -1546,7 +1543,6 @@ mod lexer {
     #[cfg(test)]
     mod test {
         use super::{lex, replace_escapes, TokenType};
-        use std::collections::HashMap;
         use std::vec::Vec;
 
         /// `verify_success` lexes a query and verifies that the tokens
