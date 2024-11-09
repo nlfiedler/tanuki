@@ -630,6 +630,16 @@ pub enum SortOrder {
     Descending,
 }
 
+impl From<&str> for SortOrder {
+    fn from(value: &str) -> Self {
+        if value == "ascending" {
+            SortOrder::Ascending
+        } else {
+            SortOrder::Descending
+        }
+    }
+}
+
 /// `SearchResult` is returned by data repository queries for assets matching a
 /// given set of criteria.
 #[derive(Clone, Debug, Deserialize, Serialize)]

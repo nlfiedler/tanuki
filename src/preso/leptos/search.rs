@@ -1,6 +1,7 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
+use crate::domain::entities::{SortField, SortOrder};
 use crate::preso::leptos::{nav, paging, results};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
 use leptos::ev::Event;
@@ -14,6 +15,12 @@ pub fn SearchPage() -> impl IntoView {
         "search-query",
         UseStorageOptions::default()
             .initial_value(String::new())
+            .delay_during_hydration(true),
+    );
+    let (sort_order, set_sort_order, _) = use_local_storage_with_options::<String, JsonSerdeCodec>(
+        "search-sort-order",
+        UseStorageOptions::default()
+            .initial_value("descending")
             .delay_during_hydration(true),
     );
     // page of results to be displayed (1-based)
@@ -40,10 +47,25 @@ pub fn SearchPage() -> impl IntoView {
     };
     // search for assets using the given criteria
     let results = create_resource(
-        move || (query.get(), selected_page.get(), page_size.get()),
-        |(query_str, page, count)| async move {
+        move || {
+            (
+                query.get(),
+                sort_order.get(),
+                selected_page.get(),
+                page_size.get(),
+            )
+        },
+        |(query_str, order, page, count)| async move {
             let offset = count * (page - 1);
-            super::scan_assets(query_str, None, None, Some(count), Some(offset)).await
+            let sort_order = SortOrder::from(order.as_str());
+            super::scan_assets(
+                query_str,
+                Some(SortField::Date),
+                Some(sort_order),
+                Some(count),
+                Some(offset),
+            )
+            .await
         },
     );
 
@@ -63,7 +85,7 @@ pub fn SearchPage() -> impl IntoView {
                                 <p class="control is-expanded">
                                     <input
                                         class="input"
-                                        style="max-width: 400%; width: 400%;"
+                                        style="max-width: 300%; width: 300%;"
                                         type="text"
                                         id="query-input"
                                         placeholder="Enter a search query"
@@ -78,26 +100,39 @@ pub fn SearchPage() -> impl IntoView {
                 </div>
                 <div class="level-right">
                     <div class="level-item">
-                        <Transition fallback=move || {
-                            view! { "..." }
-                        }>
-                            {move || {
-                                results
-                                    .get()
-                                    .map(|result| match result {
-                                        Err(err) => {
-                                            view! { <span>{move || format!("Error: {}", err)}</span> }
-                                                .into_view()
+                        <div class="field">
+                            <p class="control">
+                                <Show
+                                    when=move || sort_order.get() == "ascending"
+                                    fallback=move || {
+                                        view! {
+                                            <button
+                                                class="button"
+                                                on:click=move |_| { set_sort_order.set("ascending".into()) }
+                                            >
+                                                <span class="icon">
+                                                    <i class="fa-solid fa-arrow-up-9-1" aria-hidden="true"></i>
+                                                </span>
+                                            </button>
                                         }
-                                        Ok(meta) => {
-                                            view! {
-                                                <span>{move || format!("{} results", meta.count)}</span>
-                                            }
-                                                .into_view()
+                                    }
+                                >
+                                    <button
+                                        class="button"
+                                        on:click=move |_| {
+                                            set_sort_order.set("descending".into())
                                         }
-                                    })
-                            }}
-                        </Transition>
+                                    >
+                                        <span class="icon">
+                                            <i
+                                                class="fa-solid fa-arrow-down-1-9"
+                                                aria-hidden="true"
+                                            ></i>
+                                        </span>
+                                    </button>
+                                </Show>
+                            </p>
+                        </div>
                     </div>
                     <Transition fallback=move || {
                         view! { "Loading..." }

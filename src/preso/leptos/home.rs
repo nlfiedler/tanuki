@@ -33,6 +33,11 @@ impl SearchParamsBuilder {
         }
     }
 
+    fn sort_order(mut self, order: SortOrder) -> Self {
+        self.params.sort_order = Some(order);
+        self
+    }
+
     fn tags(mut self, tags: HashSet<String>) -> Self {
         self.params.tags = if tags.is_empty() {
             None
@@ -181,6 +186,12 @@ pub fn HomePage() -> impl IntoView {
             .initial_value(18)
             .delay_during_hydration(true),
     );
+    let (sort_order, set_sort_order, _) = use_local_storage_with_options::<String, JsonSerdeCodec>(
+        "home-sort-order",
+        UseStorageOptions::default()
+            .initial_value("descending")
+            .delay_during_hydration(true),
+    );
     // search for assets using the given criteria
     let results = create_resource(
         move || {
@@ -192,9 +203,10 @@ pub fn HomePage() -> impl IntoView {
                 selected_type.get(),
                 selected_page.get(),
                 page_size.get(),
+                sort_order.get(),
             )
         },
-        |(tags, locs, year, season, media_type, page, count)| async move {
+        |(tags, locs, year, season, media_type, page, count, order)| async move {
             let mut builder = SearchParamsBuilder::new();
             builder = builder.tags(tags).locations(locs);
             if let Some(year) = year {
@@ -209,6 +221,7 @@ pub fn HomePage() -> impl IntoView {
             if let Some(media_type) = media_type {
                 builder = builder.media_type(media_type);
             }
+            builder = builder.sort_order(SortOrder::from(order.as_str()));
             let params = builder.build();
             let offset = count * (page - 1);
             super::search(params, Some(count), Some(offset)).await
@@ -292,26 +305,39 @@ pub fn HomePage() -> impl IntoView {
 
                 <div class="level-right">
                     <div class="level-item">
-                        <Transition fallback=move || {
-                            view! { "..." }
-                        }>
-                            {move || {
-                                results
-                                    .get()
-                                    .map(|result| match result {
-                                        Err(err) => {
-                                            view! { <span>{move || format!("Error: {}", err)}</span> }
-                                                .into_view()
+                        <div class="field">
+                            <p class="control">
+                                <Show
+                                    when=move || sort_order.get() == "ascending"
+                                    fallback=move || {
+                                        view! {
+                                            <button
+                                                class="button"
+                                                on:click=move |_| { set_sort_order.set("ascending".into()) }
+                                            >
+                                                <span class="icon">
+                                                    <i class="fa-solid fa-arrow-up-9-1" aria-hidden="true"></i>
+                                                </span>
+                                            </button>
                                         }
-                                        Ok(meta) => {
-                                            view! {
-                                                <span>{move || format!("{} results", meta.count)}</span>
-                                            }
-                                                .into_view()
+                                    }
+                                >
+                                    <button
+                                        class="button"
+                                        on:click=move |_| {
+                                            set_sort_order.set("descending".into())
                                         }
-                                    })
-                            }}
-                        </Transition>
+                                    >
+                                        <span class="icon">
+                                            <i
+                                                class="fa-solid fa-arrow-down-1-9"
+                                                aria-hidden="true"
+                                            ></i>
+                                        </span>
+                                    </button>
+                                </Show>
+                            </p>
+                        </div>
                     </div>
                     <Transition fallback=move || {
                         view! { "Loading..." }
