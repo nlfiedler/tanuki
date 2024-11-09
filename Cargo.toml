@@ -69,6 +69,7 @@ web-sys = { version = "0.3.70", features = [
 
 [dev-dependencies]
 mockall = "0.13.0"
+serial_test = "3.2.0"
 tempfile = "3.1.0"
 
 [profile.release]

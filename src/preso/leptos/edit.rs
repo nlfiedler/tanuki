@@ -2,10 +2,10 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::*;
-use crate::preso::leptos::BulkEditParams;
-use crate::preso::leptos::{forms, nav};
+use crate::preso::leptos::{forms, nav, paging};
+use crate::preso::leptos::{BulkEditParams, SearchMeta};
 use chrono::{DateTime, Utc};
-use codee::string::JsonSerdeCodec;
+use codee::string::{FromToStringCodec, JsonSerdeCodec};
 use leptos::ev::Event;
 use leptos::html::Input;
 use leptos::*;
@@ -59,25 +59,6 @@ pub async fn fetch_location_parts() -> Result<LocationData, ServerFnError> {
     Ok(data)
 }
 
-#[leptos::server]
-pub async fn scan_assets(query: String) -> Result<ScanResult, ServerFnError> {
-    use crate::domain::usecases::scan::{Params, ScanAssets};
-    use crate::domain::usecases::UseCase;
-
-    let repo = super::ssr::db()?;
-    let usecase = ScanAssets::new(Box::new(repo));
-    // for now there is no paging, and limit is always 100
-    let params = Params {
-        query,
-        limit: 100,
-        cursor: None,
-    };
-    let result = usecase
-        .call(params)
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
-    Ok(result)
-}
-
 ///
 /// Perform one or more operations on multiple assets.
 ///
@@ -108,6 +89,22 @@ pub fn EditPage() -> impl IntoView {
             .initial_value(String::new())
             .delay_during_hydration(true),
     );
+    // page of results to be displayed (1-based)
+    let (selected_page, set_selected_page, _) =
+        use_local_storage_with_options::<i32, FromToStringCodec>(
+            "edit-selected-page",
+            UseStorageOptions::default()
+                .initial_value(1)
+                .delay_during_hydration(true),
+        );
+    // number of assets to display in a single page of results
+    // let page_size = create_rw_signal(18);
+    let (page_size, set_page_size, _) = use_local_storage_with_options::<i32, FromToStringCodec>(
+        "page-size",
+        UseStorageOptions::default()
+            .initial_value(18)
+            .delay_during_hydration(true),
+    );
     let input_ref = NodeRef::<Input>::new();
     let on_change = move |ev: Event| {
         let input = input_ref.get().unwrap();
@@ -116,8 +113,11 @@ pub fn EditPage() -> impl IntoView {
     };
     // search for assets using the given criteria
     let results = create_resource(
-        move || (query.get()),
-        |query_str| async move { scan_assets(query_str).await },
+        move || (query.get(), selected_page.get(), page_size.get()),
+        |(query_str, page, count)| async move {
+            let offset = count * (page - 1);
+            super::scan_assets(query_str, None, None, Some(count), Some(offset)).await
+        },
     );
     let selected_assets = create_rw_signal::<HashSet<String>>(HashSet::new());
     let submittable = create_memo(move |_| selected_assets.with(|coll| coll.len() > 0));
@@ -151,7 +151,7 @@ pub fn EditPage() -> impl IntoView {
                                 <p class="control is-expanded">
                                     <input
                                         class="input"
-                                        style="max-width: 400%; width: 400%;"
+                                        style="max-width: 300%; width: 300%;"
                                         type="text"
                                         id="query-input"
                                         placeholder="Enter a search query"
@@ -165,6 +165,54 @@ pub fn EditPage() -> impl IntoView {
                     </div>
                 </div>
                 <div class="level-right">
+                    <div class="level-item">
+                        <Transition fallback=move || {
+                            view! { "..." }
+                        }>
+                            {move || {
+                                results
+                                    .get()
+                                    .map(|result| match result {
+                                        Err(err) => {
+                                            view! { <span>{move || format!("Error: {}", err)}</span> }
+                                                .into_view()
+                                        }
+                                        Ok(meta) => {
+                                            view! {
+                                                <span>{move || format!("{} results", meta.count)}</span>
+                                            }
+                                                .into_view()
+                                        }
+                                    })
+                            }}
+                        </Transition>
+                    </div>
+                    <Transition fallback=move || {
+                        view! { "Loading..." }
+                    }>
+                        {move || {
+                            results
+                                .get()
+                                .map(|result| match result {
+                                    Err(err) => {
+                                        view! { <span>{move || format!("Error: {}", err)}</span> }
+                                            .into_view()
+                                    }
+                                    Ok(meta) => {
+                                        view! {
+                                            <paging::PageControls
+                                                meta
+                                                selected_page
+                                                set_selected_page
+                                                page_size
+                                                set_page_size
+                                            />
+                                        }
+                                            .into_view()
+                                    }
+                                })
+                        }}
+                    </Transition>
                     <div class="level-item">
                         <button class="button" on:click=move |_| unselect_all.dispatch(())>
                             <span class="icon">
@@ -249,8 +297,8 @@ pub fn EditPage() -> impl IntoView {
                         Err(err) => {
                             view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
                         }
-                        Ok(scan_result) => {
-                            view! { <ResultsDisplay scan_result selected_assets /> }
+                        Ok(meta) => {
+                            view! { <ResultsDisplay meta selected_assets /> }
                         }
                     })
             }}
@@ -623,12 +671,9 @@ fn TagsEditForm(
 }
 
 #[component]
-fn ResultsDisplay(
-    scan_result: ScanResult,
-    selected_assets: RwSignal<HashSet<String>>,
-) -> impl IntoView {
+fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) -> impl IntoView {
     // store the results in the reactive system so the view can be Fn()
-    let results = store_value(scan_result.results);
+    let results = store_value(meta.results);
     let toggle_asset = move |id: &String| {
         selected_assets.update(|list| {
             if list.contains(id) {

@@ -20,6 +20,8 @@ mod home;
 mod nav;
 mod paging;
 mod pending;
+mod results;
+mod search;
 mod upload;
 
 #[component]
@@ -35,6 +37,7 @@ pub fn App() -> impl IntoView {
             <main>
                 <Routes>
                     <Route path="" view=home::HomePage />
+                    <Route path="/search" view=search::SearchPage />
                     <Route path="/upload" view=upload::UploadPage />
                     <Route path="/pending" view=pending::PendingPage />
                     <Route path="/edit" view=edit::EditPage />
@@ -360,6 +363,42 @@ pub async fn search(
         sort_order: params.sort_order,
     };
     let mut results: Vec<SearchResult> = usecase
+        .call(params)
+        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+    let total_count = results.len() as i32;
+    let results = paginate_vector(&mut results, offset, count);
+    let last_page: i32 = if total_count == 0 {
+        1
+    } else {
+        (total_count as u32).div_ceil(count.unwrap_or(10) as u32) as i32
+    };
+    Ok(SearchMeta {
+        results,
+        count: total_count,
+        last_page,
+    })
+}
+
+#[leptos::server]
+pub async fn scan_assets(
+    query: String,
+    sort_field: Option<SortField>,
+    sort_order: Option<SortOrder>,
+    count: Option<i32>,
+    offset: Option<i32>,
+) -> Result<SearchMeta, ServerFnError> {
+    use crate::domain::usecases::scan::{Params, ScanAssets};
+    use crate::domain::usecases::UseCase;
+
+    let repo = ssr::db()?;
+    let usecase = ScanAssets::new(Box::new(repo));
+    // for now there is no paging, and limit is always 100
+    let params = Params {
+        query,
+        sort_field,
+        sort_order,
+    };
+    let mut results = usecase
         .call(params)
         .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
     let total_count = results.len() as i32;

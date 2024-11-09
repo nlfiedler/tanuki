@@ -1,11 +1,20 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::entities::{ScanResult, SearchResult};
+use crate::domain::entities::{SearchResult, SortField, SortOrder};
 use crate::domain::repositories::RecordRepository;
 use anyhow::Error;
+use query::Constraint;
 use std::cmp;
 use std::fmt;
+use std::num::NonZeroUsize;
+use std::sync::{LazyLock, Mutex};
+
+// Average search result entry will be around 128 bytes. In the worst case, if
+// search results are 256 bytes and the search yields 10,000 results, the space
+// required will be 2.5 MB. As such, maintain a cache of one entry at most.
+static LRU_CACHE: LazyLock<Mutex<lru::LruCache<String, Vec<SearchResult>>>> =
+    LazyLock::new(|| Mutex::new(lru::LruCache::new(NonZeroUsize::new(1).unwrap())));
 
 /// Use case to scan all assets in the database, matching against multiple
 /// criteria with optional boolean operators and grouping.
@@ -19,48 +28,48 @@ impl ScanAssets {
     }
 }
 
-impl super::UseCase<ScanResult, Params> for ScanAssets {
-    fn call(&self, params: Params) -> Result<ScanResult, Error> {
+impl super::UseCase<Vec<SearchResult>, Params> for ScanAssets {
+    fn call(&self, params: Params) -> Result<Vec<SearchResult>, Error> {
         use crate::domain::usecases::scan::query::Predicate;
         let cons = parser::parse_query(&params.query)?;
-        let mut results: Vec<SearchResult> = Vec::with_capacity(params.limit);
-        let mut cursor = params.cursor.clone();
-        while results.len() < params.limit {
-            let batch = self.repo.scan_assets(cursor.clone(), params.limit)?;
-            // results are assumed to be in lexicographical order
-            cursor = batch.last().map(|a| a.key.to_owned());
-            for asset in batch.into_iter() {
-                if cons.matches(&asset) {
-                    results.push(SearchResult::new(&asset));
+        let mut results: Vec<SearchResult> = vec![];
+        if matches!(cons, Constraint::Empty) {
+            return Ok(results);
+        }
+
+        let mut cache = LRU_CACHE.lock().unwrap();
+        if let Some(cached) = cache.get(&params.query) {
+            results = cached.to_owned();
+        } else {
+            // use a cursor to iterate all of the assets in batches
+            let mut cursor: Option<String> = None;
+            loop {
+                let batch = self.repo.scan_assets(cursor, 1024)?;
+                // results are assumed to be in lexicographical order so the
+                // last key will be used to start scanning the next batch
+                cursor = batch.last().map(|a| a.key.to_owned());
+                for asset in batch.into_iter() {
+                    if cons.matches(&asset) {
+                        results.push(SearchResult::new(&asset));
+                    }
+                }
+                // stop when all records have been scanned
+                if cursor.is_none() {
+                    break;
                 }
             }
-            // stop when all records have been scanned
-            if cursor.is_none() {
-                break;
-            }
+            cache.put(params.query, results.clone());
         }
-        Ok(ScanResult { results, cursor })
+        super::sort_results(&mut results, params.sort_field, params.sort_order);
+        Ok(results)
     }
 }
 
 #[derive(Clone, Default)]
 pub struct Params {
-    /// The query as a raw string.
     pub query: String,
-    /// Maximum number of assets to return in a single scan.
-    pub limit: usize,
-    /// Opaque value used to efficiently page through all assets.
-    pub cursor: Option<String>,
-}
-
-impl Params {
-    pub fn new(query: String, cursor: Option<String>, limit: usize) -> Self {
-        Self {
-            query,
-            limit,
-            cursor,
-        }
-    }
+    pub sort_field: Option<SortField>,
+    pub sort_order: Option<SortOrder>,
 }
 
 impl fmt::Display for Params {
@@ -86,21 +95,47 @@ mod test {
     use chrono::prelude::*;
 
     #[test]
+    #[serial_test::serial]
+    fn test_scan_empty_query() {
+        // arrange
+        let mut mock = MockRecordRepository::new();
+        mock.expect_scan_assets().never();
+        // act
+        let usecase = ScanAssets::new(Box::new(mock));
+        let params = Params {
+            query: "    ".into(),
+            sort_field: None,
+            sort_order: None,
+        };
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    #[serial_test::serial]
     fn test_scan_zero_assets() {
         // arrange
         let mut mock = MockRecordRepository::new();
         mock.expect_scan_assets().returning(|_, _| Ok(vec![]));
         // act
         let usecase = ScanAssets::new(Box::new(mock));
-        let params = Params::new("tag:clouds".into(), None, 100);
+        let params = Params {
+            query: "tag:rainbows".into(),
+            sort_field: None,
+            sort_order: None,
+        };
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
-        let list = result.unwrap();
-        assert!(list.results.is_empty());
+        let results = result.unwrap();
+        assert!(results.is_empty());
     }
 
     #[test]
+    #[serial_test::serial]
     fn test_scan_no_results() {
         // arrange
         let mut mock = MockRecordRepository::new();
@@ -127,15 +162,20 @@ mod test {
             .returning(|_, _| Ok(vec![]));
         // act
         let usecase = ScanAssets::new(Box::new(mock));
-        let params = Params::new("tag:clouds".into(), None, 100);
+        let params = Params {
+            query: "tag:horses".into(),
+            sort_field: None,
+            sort_order: None,
+        };
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
-        let list = result.unwrap();
-        assert!(list.results.is_empty());
+        let results = result.unwrap();
+        assert!(results.is_empty());
     }
 
     #[test]
+    #[serial_test::serial]
     fn test_scan_one_result() {
         // arrange
         let mut mock = MockRecordRepository::new();
@@ -192,13 +232,104 @@ mod test {
             .returning(|_, _| Ok(vec![]));
         // act
         let usecase = ScanAssets::new(Box::new(mock));
-        let params = Params::new("tag:clouds".into(), None, 100);
+        let params = Params {
+            query: "tag:clouds".into(),
+            sort_field: None,
+            sort_order: None,
+        };
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
-        let list = result.unwrap();
-        assert_eq!(list.results.len(), 1);
-        assert_eq!(list.results[0].asset_id, "cde345");
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].asset_id, "cde345");
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_scan_cache_sort_by_date() {
+        // arrange
+        let mut mock = MockRecordRepository::new();
+        mock.expect_scan_assets()
+            .withf(|c, _| c.is_none())
+            .times(1)
+            .returning(move |_, _| {
+                Ok(vec![
+                    Asset {
+                        key: "abc123".to_owned(),
+                        checksum: "cafebabe".to_owned(),
+                        filename: "img_1234.jpg".to_owned(),
+                        byte_length: 1024,
+                        media_type: "image/jpeg".to_owned(),
+                        tags: vec!["cat".to_owned(), "dog".to_owned()],
+                        import_date: Utc::now(),
+                        caption: None,
+                        location: None,
+                        user_date: None,
+                        original_date: None,
+                        dimensions: None,
+                    },
+                    Asset {
+                        key: "bcd234".to_owned(),
+                        checksum: "cafebabe".to_owned(),
+                        filename: "img_1234.jpg".to_owned(),
+                        byte_length: 1024,
+                        media_type: "image/jpeg".to_owned(),
+                        tags: vec!["kitten".to_owned(), "puppy".to_owned()],
+                        import_date: Utc::now(),
+                        caption: None,
+                        location: None,
+                        user_date: None,
+                        original_date: None,
+                        dimensions: None,
+                    },
+                    Asset {
+                        key: "cde345".to_owned(),
+                        checksum: "cafebabe".to_owned(),
+                        filename: "img_1234.jpg".to_owned(),
+                        byte_length: 1024,
+                        media_type: "image/jpeg".to_owned(),
+                        tags: vec!["clouds".to_owned(), "rainbow".to_owned()],
+                        import_date: Utc::now(),
+                        caption: None,
+                        location: None,
+                        user_date: None,
+                        original_date: None,
+                        dimensions: None,
+                    },
+                ])
+            });
+        mock.expect_scan_assets()
+            .withf(|c, _| c.is_some())
+            .times(1)
+            .returning(|_, _| Ok(vec![]));
+        // act
+        let usecase = ScanAssets::new(Box::new(mock));
+        let params = Params {
+            query: "tag:kitten".into(),
+            sort_field: Some(SortField::Date),
+            sort_order: Some(SortOrder::Descending),
+        };
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].asset_id, "bcd234");
+
+        // act (same search but different sort order, should hit the cache and
+        // yet sort the results accordingly)
+        let params = Params {
+            query: "tag:kitten".into(),
+            sort_field: Some(SortField::Date),
+            sort_order: Some(SortOrder::Ascending),
+        };
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].asset_id, "bcd234");
     }
 }
 
@@ -262,8 +393,8 @@ mod query {
         Not(Box<dyn Predicate>),
         /// Matches if the given predicate function returns `true`.
         Lambda(Box<dyn Predicate>),
-        /// Dummy return value for certain parser functions.
-        Dummy,
+        /// An empty query that matches nothing.
+        Empty,
     }
 
     impl Predicate for Constraint {
@@ -273,7 +404,7 @@ mod query {
                 Constraint::Or(left, right) => left.matches(asset) || right.matches(asset),
                 Constraint::Not(child) => !child.matches(asset),
                 Constraint::Lambda(pred) => pred.matches(asset),
-                Constraint::Dummy => false,
+                Constraint::Empty => false,
             }
         }
     }
@@ -799,7 +930,7 @@ mod parser {
         fn parse_exp(&mut self) -> Result<Constraint, Error> {
             if let Ok(p) = self.peek() {
                 if p.typ == TokenType::EOF {
-                    return Ok(Constraint::Dummy);
+                    return Ok(Constraint::Empty);
                 }
             }
             let mut ret = self.parse_operand()?;
@@ -823,7 +954,7 @@ mod parser {
         fn parse_operand(&mut self) -> Result<Constraint, Error> {
             // negated := p.stripNot()
             let negated = self.strip_not()?;
-            let mut ret = Constraint::Dummy;
+            let mut ret = Constraint::Empty;
             let op = self.peek()?;
             if op.typ == TokenType::Error {
                 return Err(anyhow!("error: {}", op.val));
@@ -957,6 +1088,14 @@ mod parser {
     #[cfg(test)]
     mod test {
         use super::*;
+
+        #[test]
+        fn test_parser_empty_query() {
+            let result = parse_query("");
+            assert!(result.is_ok());
+            let cons = result.unwrap();
+            assert!(matches!(cons, Constraint::Empty));
+        }
 
         #[test]
         fn test_parser_one_predicate() {

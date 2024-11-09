@@ -3,6 +3,7 @@
 //
 use super::entities::{
     Dimensions, EastWest, GeocodedLocation, GeodeticAngle, GlobalPosition, Location, NorthSouth,
+    SearchResult, SortField, SortOrder,
 };
 use anyhow::{anyhow, Error};
 use base64::{engine::general_purpose, Engine as _};
@@ -533,6 +534,82 @@ fn select_best_extension(media_type: &mime::Mime) -> Option<String> {
             }
         })
         .map(str::to_owned)
+}
+
+// If a sort was requested, sort the results in-place using an unstable sort
+// since it conserves space and the original ordering is not at all important
+// (or known for that matter).
+pub fn sort_results(
+    results: &mut [SearchResult],
+    field: Option<SortField>,
+    order: Option<SortOrder>,
+) {
+    if let Some(field) = field {
+        let order = order.unwrap_or(SortOrder::Ascending);
+        let compare = match field {
+            SortField::Date => {
+                if order == SortOrder::Ascending {
+                    sort_by_date_ascending
+                } else {
+                    sort_by_date_descending
+                }
+            }
+            SortField::Identifier => {
+                if order == SortOrder::Ascending {
+                    sort_by_id_ascending
+                } else {
+                    sort_by_id_descending
+                }
+            }
+            SortField::Filename => {
+                if order == SortOrder::Ascending {
+                    sort_by_filename_ascending
+                } else {
+                    sort_by_filename_descending
+                }
+            }
+            SortField::MediaType => {
+                if order == SortOrder::Ascending {
+                    sort_by_media_type_ascending
+                } else {
+                    sort_by_media_type_descending
+                }
+            }
+        };
+        results.sort_unstable_by(compare)
+    }
+}
+
+fn sort_by_date_ascending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    a.datetime.cmp(&b.datetime)
+}
+
+fn sort_by_date_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    b.datetime.cmp(&a.datetime)
+}
+
+fn sort_by_id_ascending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    a.asset_id.cmp(&b.asset_id)
+}
+
+fn sort_by_id_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    b.asset_id.cmp(&a.asset_id)
+}
+
+fn sort_by_filename_ascending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    a.filename.cmp(&b.filename)
+}
+
+fn sort_by_filename_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    b.filename.cmp(&a.filename)
+}
+
+fn sort_by_media_type_ascending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    a.media_type.cmp(&b.media_type)
+}
+
+fn sort_by_media_type_descending(a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
+    b.media_type.cmp(&a.media_type)
 }
 
 #[cfg(test)]

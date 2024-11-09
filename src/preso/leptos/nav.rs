@@ -41,6 +41,10 @@ pub fn NavBar() -> impl IntoView {
                         Home
                     </a>
 
+                    <a class="navbar-item" href="/search">
+                        Search
+                    </a>
+
                     <a class="navbar-item" href="/upload">
                         Upload
                     </a>
