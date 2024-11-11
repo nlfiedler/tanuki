@@ -49,7 +49,11 @@ impl ReplaceAsset {
             let converted = super::convert_location(self.geocoder.find_location(&coords).ok());
             asset.location = super::merge_locations(asset.location.clone(), converted);
         }
-        asset.original_date = get_original_date(&params.media_type, &params.filepath).ok();
+        if let Some(od) = get_original_date(&params.media_type, &params.filepath).ok() {
+            // only overwrite the original date/time if a new one can be
+            // extracted from the new asset
+            asset.original_date = Some(od);
+        }
         asset.dimensions = super::get_dimensions(&params.media_type, &params.filepath).ok();
         Ok(asset)
     }
@@ -339,6 +343,6 @@ mod tests {
         assert_eq!(asset.byte_length, 39932);
         assert_eq!(asset.media_type, "image/jpeg");
         assert!(asset.location.is_none());
-        assert!(asset.original_date.is_none());
+        assert!(asset.original_date.is_some());
     }
 }

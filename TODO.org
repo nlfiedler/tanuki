@@ -82,7 +82,6 @@
 **** PhotoPrism has a ~calendar~ view that shows months of years in descending order with a random thumbnail
 **** clicking on the month opens an "album" of everything in that month
 ** Details
-*** Replacing a video seems to reset the ~best~ date to today
 *** Lightbox style asset browsing
 **** show full-size image at 100% width of browser window
 **** show chevron arrows on left and right to navigate among search results
