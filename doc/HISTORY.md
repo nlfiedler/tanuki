@@ -87,3 +87,7 @@ Finally have an easy-to-use method for assigning tags and locations to new asset
 Replaced Flutter front-end with [Leptos](https://leptos.dev), project is now entirely Rust.
 
 Finally added web-based interface for bulk edit of many assets.
+
+## November 2024
+
+Replicated the advanced text-based query support found in [Perkeep](https://perkeep.org).
