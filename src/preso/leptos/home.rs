@@ -165,7 +165,7 @@ pub fn HomePage() -> impl IntoView {
     // chosen media type by which to narrow results
     let (selected_type, set_selected_type, _) =
         use_local_storage_with_options::<Option<String>, JsonSerdeCodec>(
-            "edit-selected-type",
+            "home-selected-type",
             UseStorageOptions::default()
                 .initial_value(None)
                 .delay_during_hydration(true),
