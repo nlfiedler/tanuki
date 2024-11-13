@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::repositories::RecordRepository;
+use crate::domain::repositories::{RecordRepository, SearchRepository};
 use anyhow::Error;
 use log::info;
 use std::cmp;
@@ -10,11 +10,12 @@ use std::path::PathBuf;
 
 pub struct Load {
     records: Box<dyn RecordRepository>,
+    cache: Box<dyn SearchRepository>,
 }
 
 impl Load {
-    pub fn new(records: Box<dyn RecordRepository>) -> Self {
-        Self { records }
+    pub fn new(records: Box<dyn RecordRepository>, cache: Box<dyn SearchRepository>) -> Self {
+        Self { records, cache }
     }
 }
 
@@ -22,6 +23,7 @@ impl super::UseCase<u64, Params> for Load {
     fn call(&self, params: Params) -> Result<u64, Error> {
         info!("load commencing...");
         let count = self.records.load(&params.filepath)?;
+        self.cache.clear()?;
         info!("load complete");
         Ok(count)
     }
@@ -57,7 +59,7 @@ impl cmp::Eq for Params {}
 mod tests {
     use super::super::UseCase;
     use super::*;
-    use crate::domain::repositories::MockRecordRepository;
+    use crate::domain::repositories::{MockRecordRepository, MockSearchRepository};
     use anyhow::anyhow;
 
     #[test]
@@ -65,8 +67,10 @@ mod tests {
         // arrange
         let mut records = MockRecordRepository::new();
         records.expect_load().returning(|_| Ok(101));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_clear().returning(|| Ok(()));
         // act
-        let usecase = Load::new(Box::new(records));
+        let usecase = Load::new(Box::new(records), Box::new(cache));
         let params = Params::new("dump.json".into());
         let result = usecase.call(params);
         // assert
@@ -80,8 +84,10 @@ mod tests {
         // arrange
         let mut records = MockRecordRepository::new();
         records.expect_load().returning(|_| Err(anyhow!("oh no")));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_clear().returning(|| Ok(()));
         // act
-        let usecase = Load::new(Box::new(records));
+        let usecase = Load::new(Box::new(records), Box::new(cache));
         let params = Params::new("dump.json".into());
         let result = usecase.call(params);
         // assert

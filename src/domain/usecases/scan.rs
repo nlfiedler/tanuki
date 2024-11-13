@@ -2,29 +2,22 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::{SearchResult, SortField, SortOrder};
-use crate::domain::repositories::RecordRepository;
+use crate::domain::repositories::{RecordRepository, SearchRepository};
 use anyhow::Error;
 use query::Constraint;
 use std::cmp;
 use std::fmt;
-use std::num::NonZeroUsize;
-use std::sync::{LazyLock, Mutex};
-
-// Average search result entry will be around 128 bytes. In the worst case, if
-// search results are 256 bytes and the search yields 10,000 results, the space
-// required will be 2.5 MB. As such, maintain a cache of one entry at most.
-static LRU_CACHE: LazyLock<Mutex<lru::LruCache<String, Vec<SearchResult>>>> =
-    LazyLock::new(|| Mutex::new(lru::LruCache::new(NonZeroUsize::new(1).unwrap())));
 
 /// Use case to scan all assets in the database, matching against multiple
 /// criteria with optional boolean operators and grouping.
 pub struct ScanAssets {
     repo: Box<dyn RecordRepository>,
+    cache: Box<dyn SearchRepository>,
 }
 
 impl ScanAssets {
-    pub fn new(repo: Box<dyn RecordRepository>) -> Self {
-        Self { repo }
+    pub fn new(repo: Box<dyn RecordRepository>, cache: Box<dyn SearchRepository>) -> Self {
+        Self { repo, cache }
     }
 }
 
@@ -37,9 +30,8 @@ impl super::UseCase<Vec<SearchResult>, Params> for ScanAssets {
             return Ok(results);
         }
 
-        let mut cache = LRU_CACHE.lock().unwrap();
-        if let Some(cached) = cache.get(&params.query) {
-            results = cached.to_owned();
+        if let Some(cached) = self.cache.get(&params.query)? {
+            results = cached;
         } else {
             // use a cursor to iterate all of the assets in batches
             let mut cursor: Option<String> = None;
@@ -58,7 +50,7 @@ impl super::UseCase<Vec<SearchResult>, Params> for ScanAssets {
                     break;
                 }
             }
-            cache.put(params.query, results.clone());
+            self.cache.put(params.query, results.clone())?;
         }
         super::sort_results(&mut results, params.sort_field, params.sort_order);
         Ok(results)
@@ -91,17 +83,19 @@ mod test {
     use super::super::UseCase;
     use super::*;
     use crate::domain::entities::Asset;
-    use crate::domain::repositories::MockRecordRepository;
+    use crate::domain::repositories::{MockRecordRepository, MockSearchRepository};
     use chrono::prelude::*;
 
     #[test]
-    #[serial_test::serial]
     fn test_scan_empty_query() {
         // arrange
         let mut mock = MockRecordRepository::new();
         mock.expect_scan_assets().never();
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().never();
+        cache.expect_put().never();
         // act
-        let usecase = ScanAssets::new(Box::new(mock));
+        let usecase = ScanAssets::new(Box::new(mock), Box::new(cache));
         let params = Params {
             query: "    ".into(),
             sort_field: None,
@@ -115,13 +109,15 @@ mod test {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_scan_zero_assets() {
         // arrange
         let mut mock = MockRecordRepository::new();
         mock.expect_scan_assets().returning(|_, _| Ok(vec![]));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = ScanAssets::new(Box::new(mock));
+        let usecase = ScanAssets::new(Box::new(mock), Box::new(cache));
         let params = Params {
             query: "tag:rainbows".into(),
             sort_field: None,
@@ -135,7 +131,6 @@ mod test {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_scan_no_results() {
         // arrange
         let mut mock = MockRecordRepository::new();
@@ -160,8 +155,11 @@ mod test {
         mock.expect_scan_assets()
             .withf(|c, _| c.is_some())
             .returning(|_, _| Ok(vec![]));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = ScanAssets::new(Box::new(mock));
+        let usecase = ScanAssets::new(Box::new(mock), Box::new(cache));
         let params = Params {
             query: "tag:horses".into(),
             sort_field: None,
@@ -175,7 +173,6 @@ mod test {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_scan_one_result() {
         // arrange
         let mut mock = MockRecordRepository::new();
@@ -230,8 +227,11 @@ mod test {
         mock.expect_scan_assets()
             .withf(|c, _| c.is_some())
             .returning(|_, _| Ok(vec![]));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = ScanAssets::new(Box::new(mock));
+        let usecase = ScanAssets::new(Box::new(mock), Box::new(cache));
         let params = Params {
             query: "tag:clouds".into(),
             sort_field: None,
@@ -245,66 +245,79 @@ mod test {
         assert_eq!(results[0].asset_id, "cde345");
     }
 
+    fn make_scan_assets() -> Vec<Asset> {
+        vec![
+            Asset {
+                key: "abc123".to_owned(),
+                checksum: "cafebabe".to_owned(),
+                filename: "img_1234.jpg".to_owned(),
+                byte_length: 1024,
+                media_type: "image/jpeg".to_owned(),
+                tags: vec!["cat".to_owned(), "dog".to_owned()],
+                import_date: Utc::now(),
+                caption: None,
+                location: None,
+                user_date: None,
+                original_date: None,
+                dimensions: None,
+            },
+            Asset {
+                key: "bcd234".to_owned(),
+                checksum: "cafebabe".to_owned(),
+                filename: "img_1234.jpg".to_owned(),
+                byte_length: 1024,
+                media_type: "image/jpeg".to_owned(),
+                tags: vec!["kitten".to_owned(), "puppy".to_owned()],
+                import_date: Utc::now(),
+                caption: None,
+                location: None,
+                user_date: None,
+                original_date: None,
+                dimensions: None,
+            },
+            Asset {
+                key: "cde345".to_owned(),
+                checksum: "cafebabe".to_owned(),
+                filename: "img_1234.jpg".to_owned(),
+                byte_length: 1024,
+                media_type: "image/jpeg".to_owned(),
+                tags: vec!["clouds".to_owned(), "rainbow".to_owned()],
+                import_date: Utc::now(),
+                caption: None,
+                location: None,
+                user_date: None,
+                original_date: None,
+                dimensions: None,
+            },
+        ]
+    }
+
     #[test]
-    #[serial_test::serial]
     fn test_scan_cache_sort_by_date() {
         // arrange
         let mut mock = MockRecordRepository::new();
         mock.expect_scan_assets()
             .withf(|c, _| c.is_none())
             .times(1)
-            .returning(move |_, _| {
-                Ok(vec![
-                    Asset {
-                        key: "abc123".to_owned(),
-                        checksum: "cafebabe".to_owned(),
-                        filename: "img_1234.jpg".to_owned(),
-                        byte_length: 1024,
-                        media_type: "image/jpeg".to_owned(),
-                        tags: vec!["cat".to_owned(), "dog".to_owned()],
-                        import_date: Utc::now(),
-                        caption: None,
-                        location: None,
-                        user_date: None,
-                        original_date: None,
-                        dimensions: None,
-                    },
-                    Asset {
-                        key: "bcd234".to_owned(),
-                        checksum: "cafebabe".to_owned(),
-                        filename: "img_1234.jpg".to_owned(),
-                        byte_length: 1024,
-                        media_type: "image/jpeg".to_owned(),
-                        tags: vec!["kitten".to_owned(), "puppy".to_owned()],
-                        import_date: Utc::now(),
-                        caption: None,
-                        location: None,
-                        user_date: None,
-                        original_date: None,
-                        dimensions: None,
-                    },
-                    Asset {
-                        key: "cde345".to_owned(),
-                        checksum: "cafebabe".to_owned(),
-                        filename: "img_1234.jpg".to_owned(),
-                        byte_length: 1024,
-                        media_type: "image/jpeg".to_owned(),
-                        tags: vec!["clouds".to_owned(), "rainbow".to_owned()],
-                        import_date: Utc::now(),
-                        caption: None,
-                        location: None,
-                        user_date: None,
-                        original_date: None,
-                        dimensions: None,
-                    },
-                ])
-            });
+            .returning(move |_, _| Ok(make_scan_assets()));
         mock.expect_scan_assets()
             .withf(|c, _| c.is_some())
             .times(1)
             .returning(|_, _| Ok(vec![]));
+        let mut cache = MockSearchRepository::new();
+        let mut cache_hit = false;
+        cache.expect_get().returning(move |_| {
+            if cache_hit {
+                let assets = make_scan_assets();
+                Ok(Some(vec![SearchResult::new(&assets[1])]))
+            } else {
+                cache_hit = true;
+                Ok(None)
+            }
+        });
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = ScanAssets::new(Box::new(mock));
+        let usecase = ScanAssets::new(Box::new(mock), Box::new(cache));
         let params = Params {
             query: "tag:kitten".into(),
             sort_field: Some(SortField::Date),

@@ -19,9 +19,10 @@ pub async fn ingest() -> Result<u32, ServerFnError> {
     use std::sync::Arc;
 
     let repo = super::ssr::db()?;
+    let cache = super::ssr::cache()?;
     let blobs = super::ssr::blobs()?;
     let geocoder = find_location_repository();
-    let usecase = IngestAssets::new(Arc::new(repo), Arc::new(blobs), geocoder);
+    let usecase = IngestAssets::new(Arc::new(repo), Arc::new(cache), Arc::new(blobs), geocoder);
     let path = std::env::var("UPLOAD_PATH").unwrap_or_else(|_| "tmp/uploads".to_owned());
     let uploads_path = PathBuf::from(path);
     let params = Params::new(uploads_path);

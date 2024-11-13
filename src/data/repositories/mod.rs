@@ -4,8 +4,7 @@
 use crate::data::models::AssetDumpModel;
 use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, Location, SearchResult};
-use crate::domain::repositories::BlobRepository;
-use crate::domain::repositories::RecordRepository;
+use crate::domain::repositories::{BlobRepository, RecordRepository, SearchRepository};
 use anyhow::{anyhow, Error};
 use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
@@ -27,7 +26,7 @@ const PLACEHOLDER: &[u8] = include_bytes!("placeholder.png");
 //
 // If the Mutex proves to be problematic, switch to ReentrantMutex in the
 // parking_lot crate, which allows recursive locking.
-static LRU_CACHE: LazyLock<Mutex<lru::LruCache<String, Vec<u8>>>> =
+static IMAGE_CACHE: LazyLock<Mutex<lru::LruCache<String, Vec<u8>>>> =
     LazyLock::new(|| Mutex::new(lru::LruCache::new(NonZeroUsize::new(100).unwrap())));
 
 // Use an `Arc` to hold the data source to make cloning easy for the caller. If
@@ -268,7 +267,7 @@ impl BlobRepository for BlobRepositoryImpl {
 // Clear the cache entries that correspond to the given file.
 fn clear_thumbnail(file_name: &str) -> Result<(), Error> {
     let suffix = format!("/{}", file_name);
-    let mut cache = LRU_CACHE.lock().unwrap();
+    let mut cache = IMAGE_CACHE.lock().unwrap();
     // find cache keys that have the suffix defined by create_thumbnail()
     let mut keys: Vec<String> = vec![];
     for (key, _) in cache.iter() {
@@ -296,7 +295,7 @@ fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8
         // the ones before, but eventually there will be a cache hit. This is
         // only really an issue with performance testing that hits the same URL
         // repeatedly, which is not realistic.
-        let mut cache = LRU_CACHE.lock().unwrap();
+        let mut cache = IMAGE_CACHE.lock().unwrap();
         if let Some(reference) = cache.get(&cache_key) {
             return Ok(reference.to_owned());
         }
@@ -322,7 +321,7 @@ fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8
     // The image crate's JpegEncoder will use a quality factor of 75 by default,
     // which yields very good results (e.g. libvips uses the same default).
     img.write_to(&mut cursor, image::ImageFormat::Jpeg)?;
-    let mut cache = LRU_CACHE.lock().unwrap();
+    let mut cache = IMAGE_CACHE.lock().unwrap();
     let buffer: Vec<u8> = cursor.into_inner();
     cache.put(cache_key, buffer.clone());
     Ok(buffer)
@@ -358,6 +357,39 @@ fn correct_orientation(orientation: u16, img: image::DynamicImage) -> image::Dyn
         7 => img.fliph().rotate90(),
         8 => img.rotate270(),
         _ => img,
+    }
+}
+
+// Average search result entry will be around 128 bytes. In the worst case, if
+// search results are 256 bytes and the search yields 10,000 results, the space
+// required will be 2.5 MB.
+static SEARCH_CACHE: LazyLock<Mutex<lru::LruCache<String, Vec<SearchResult>>>> =
+    LazyLock::new(|| Mutex::new(lru::LruCache::new(NonZeroUsize::new(2).unwrap())));
+
+pub struct SearchRepositoryImpl();
+
+impl SearchRepositoryImpl {
+    pub fn new() -> Self {
+        Self()
+    }
+}
+
+impl SearchRepository for SearchRepositoryImpl {
+    fn put(&self, key: String, val: Vec<SearchResult>) -> Result<(), Error> {
+        let mut cache = SEARCH_CACHE.lock().unwrap();
+        cache.put(key, val);
+        Ok(())
+    }
+
+    fn get(&self, key: &str) -> Result<Option<Vec<SearchResult>>, Error> {
+        let mut cache = SEARCH_CACHE.lock().unwrap();
+        Ok(cache.get(key).map(|v| v.to_owned()))
+    }
+
+    fn clear(&self) -> Result<(), Error> {
+        let mut cache = SEARCH_CACHE.lock().unwrap();
+        cache.clear();
+        Ok(())
     }
 }
 
@@ -1565,13 +1597,67 @@ mod tests {
 
         // test removing a single entry from the cache
         {
-            let cache = LRU_CACHE.lock().unwrap();
+            let cache = IMAGE_CACHE.lock().unwrap();
             assert_eq!(cache.len(), 3);
         }
         clear_thumbnail("dcp_1069.jpg").unwrap();
         {
-            let cache = LRU_CACHE.lock().unwrap();
+            let cache = IMAGE_CACHE.lock().unwrap();
             assert_eq!(cache.len(), 2);
         }
+    }
+
+    #[test]
+    fn test_search_repository_impl() {
+        use crate::domain::entities::{SortField, SortOrder};
+        use crate::domain::usecases::search::Params;
+        let sut = SearchRepositoryImpl::new();
+        let asset1 = Asset {
+            key: "abc123".into(),
+            checksum: "cafebabe".to_owned(),
+            filename: "fighting_kittens.jpg".to_owned(),
+            byte_length: 39932,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec!["kittens".to_owned()],
+            caption: None,
+            import_date: Utc::now(),
+            location: None,
+            user_date: None,
+            original_date: None,
+            dimensions: None,
+        };
+        let params = Params {
+            tags: vec!["kittens".into()],
+            locations: vec!["paris".into()],
+            filename: None,
+            media_type: None,
+            before_date: None,
+            after_date: None,
+            sort_field: Some(SortField::Date),
+            sort_order: Some(SortOrder::Ascending),
+        };
+        let cache_key = format!("{}", params);
+        let result = sut.get(&cache_key);
+        assert!(result.is_ok());
+        let value = result.unwrap();
+        assert!(value.is_none());
+
+        let results: Vec<SearchResult> = vec![SearchResult::new(&asset1)];
+        let result = sut.put(cache_key.clone(), results.clone());
+        assert!(result.is_ok());
+
+        let result = sut.get(&cache_key);
+        assert!(result.is_ok());
+        let value = result.unwrap();
+        assert!(value.is_some());
+        let actual = value.unwrap();
+        assert_eq!(actual.len(), 1);
+        assert_eq!(actual[0], results[0]);
+
+        assert!(sut.clear().is_ok());
+        let result = sut.get(&cache_key);
+        assert!(result.is_ok());
+        let value = result.unwrap();
+        assert!(value.is_none());
     }
 }

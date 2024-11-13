@@ -4,7 +4,7 @@
 use crate::domain::entities::{
     Asset, DatetimeOperation, Location, LocationField, LocationOperation, TagOperation,
 };
-use crate::domain::repositories::RecordRepository;
+use crate::domain::repositories::{RecordRepository, SearchRepository};
 use anyhow::Error;
 use std::cmp;
 use std::fmt;
@@ -14,11 +14,12 @@ use std::fmt;
 /// assets.
 pub struct EditAssets {
     records: Box<dyn RecordRepository>,
+    cache: Box<dyn SearchRepository>,
 }
 
 impl EditAssets {
-    pub fn new(records: Box<dyn RecordRepository>) -> Self {
-        Self { records }
+    pub fn new(records: Box<dyn RecordRepository>, cache: Box<dyn SearchRepository>) -> Self {
+        Self { records, cache }
     }
 }
 
@@ -31,6 +32,9 @@ impl super::UseCase<u64, Params> for EditAssets {
                 self.records.put_asset(&asset)?;
                 fixed_count += 1;
             }
+        }
+        if fixed_count > 0 {
+            self.cache.clear()?;
         }
         Ok(fixed_count)
     }

@@ -1,7 +1,9 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::repositories::{BlobRepository, LocationRepository, RecordRepository};
+use crate::domain::repositories::{
+    BlobRepository, LocationRepository, RecordRepository, SearchRepository,
+};
 use crate::domain::usecases::import;
 use crate::domain::usecases::infer_media_type;
 use anyhow::Error;
@@ -15,6 +17,7 @@ use std::sync::Arc;
 
 pub struct IngestAssets {
     records: Arc<dyn RecordRepository>,
+    cache: Arc<dyn SearchRepository>,
     blobs: Arc<dyn BlobRepository>,
     geocoder: Arc<dyn LocationRepository>,
 }
@@ -22,11 +25,13 @@ pub struct IngestAssets {
 impl IngestAssets {
     pub fn new(
         records: Arc<dyn RecordRepository>,
+        cache: Arc<dyn SearchRepository>,
         blobs: Arc<dyn BlobRepository>,
         geocoder: Arc<dyn LocationRepository>,
     ) -> Self {
         Self {
             records,
+            cache,
             blobs,
             geocoder,
         }
@@ -38,6 +43,7 @@ impl super::UseCase<usize, Params> for IngestAssets {
         // process all of the files in the uploads directory
         let usecase = import::ImportAsset::new(
             self.records.clone(),
+            self.cache.clone(),
             self.blobs.clone(),
             self.geocoder.clone(),
         );
@@ -99,6 +105,7 @@ mod tests {
     use crate::domain::repositories::MockBlobRepository;
     use crate::domain::repositories::MockLocationRepository;
     use crate::domain::repositories::MockRecordRepository;
+    use crate::domain::repositories::MockSearchRepository;
     use mockall::predicate::*;
     use std::path::Path;
     use tempfile::tempdir;
@@ -136,6 +143,8 @@ mod tests {
             .withf(move |digest| digests.iter().any(|d| *d == digest))
             .returning(|_| Ok(None));
         records.expect_put_asset().returning(|_| Ok(()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_clear().returning(|| Ok(()));
         let mut blobs = MockBlobRepository::new();
         blobs
             .expect_store_blob()
@@ -152,7 +161,12 @@ mod tests {
             .expect_find_location()
             .returning(|_| Ok(Default::default()));
         // act
-        let usecase = IngestAssets::new(Arc::new(records), Arc::new(blobs), Arc::new(geocoder));
+        let usecase = IngestAssets::new(
+            Arc::new(records),
+            Arc::new(cache),
+            Arc::new(blobs),
+            Arc::new(geocoder),
+        );
         let params = Params::new(uploads_path.path().to_owned());
         let result = usecase.call(params);
         // assert

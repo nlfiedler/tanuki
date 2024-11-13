@@ -642,7 +642,7 @@ impl From<&str> for SortOrder {
 
 /// `SearchResult` is returned by data repository queries for assets matching a
 /// given set of criteria.
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct SearchResult {
     /// Asset identifier.
     pub asset_id: String,

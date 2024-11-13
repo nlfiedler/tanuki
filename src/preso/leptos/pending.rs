@@ -65,7 +65,8 @@ pub async fn bulk_update(assets: Vec<AssetInput>) -> Result<i32, ServerFnError> 
     use crate::domain::usecases::UseCase;
 
     let repo = super::ssr::db()?;
-    let usecase = UpdateAsset::new(Box::new(repo));
+    let cache = super::ssr::cache()?;
+    let usecase = UpdateAsset::new(Box::new(repo), Box::new(cache));
     for asset in assets.iter() {
         let params: Params = Params::new(asset.clone().into());
         usecase

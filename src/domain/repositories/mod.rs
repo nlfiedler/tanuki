@@ -55,11 +55,7 @@ pub trait RecordRepository: Send {
     /// Return all assets from the data source in lexicographical order,
     /// optionally starting from the asset that follows the given identifier,
     /// and returning a limited number.
-    fn scan_assets(
-        &self,
-        seek_from: Option<String>,
-        count: usize,
-    ) -> Result<Vec<Asset>, Error>;
+    fn scan_assets(&self, seek_from: Option<String>, count: usize) -> Result<Vec<Asset>, Error>;
 
     /// Search for assets that have all of the given tags.
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error>;
@@ -132,4 +128,19 @@ pub trait BlobRepository {
 pub trait LocationRepository: Send + Sync {
     /// Find a descriptive location for the given global coordinates.
     fn find_location(&self, coords: &GlobalPosition) -> Result<GeocodedLocation, Error>;
+}
+
+///
+/// Repository for maintaining a cache of search results.
+///
+#[cfg_attr(test, automock)]
+pub trait SearchRepository: Send + Sync {
+    /// Save the search results keyed by a query string.
+    fn put(&self, key: String, val: Vec<SearchResult>) -> Result<(), Error>;
+
+    /// Find the cached search results for the given query, if any.
+    fn get(&self, key: &str) -> Result<Option<Vec<SearchResult>>, Error>;
+
+    /// Clear all cached search results.
+    fn clear(&self) -> Result<(), Error>;
 }

@@ -35,7 +35,8 @@ pub async fn update_asset(asset: AssetInput) -> Result<Option<Asset>, ServerFnEr
 
     if asset.has_values() {
         let repo = super::ssr::db()?;
-        let usecase = UpdateAsset::new(Box::new(repo));
+        let cache = super::ssr::cache()?;
+        let usecase = UpdateAsset::new(Box::new(repo), Box::new(cache));
         let params: Params = Params::new(asset.into());
         let result: Asset = usecase
             .call(params)

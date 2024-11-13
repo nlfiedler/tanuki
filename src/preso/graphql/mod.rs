@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl};
+use crate::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl, SearchRepositoryImpl};
 use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, Location};
 use crate::domain::usecases::analyze::Counts;
@@ -442,7 +442,8 @@ impl MutationRoot {
         use crate::domain::usecases::load::{Load, Params};
         use crate::domain::usecases::UseCase;
         let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
-        let usecase = Load::new(Box::new(repo));
+        let cache = SearchRepositoryImpl::new();
+        let usecase = Load::new(Box::new(repo), Box::new(cache));
         let params = Params::new(filepath.into());
         let results: u64 = usecase.call(params)?;
         Ok(results as i32)

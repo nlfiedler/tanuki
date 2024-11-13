@@ -2,7 +2,7 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::{Asset, AssetInput, Location};
-use crate::domain::repositories::RecordRepository;
+use crate::domain::repositories::{RecordRepository, SearchRepository};
 use anyhow::Error;
 use std::cmp;
 use std::fmt;
@@ -13,11 +13,12 @@ use std::fmt;
 ///
 pub struct UpdateAsset {
     records: Box<dyn RecordRepository>,
+    cache: Box<dyn SearchRepository>,
 }
 
 impl UpdateAsset {
-    pub fn new(records: Box<dyn RecordRepository>) -> Self {
-        Self { records }
+    pub fn new(records: Box<dyn RecordRepository>, cache: Box<dyn SearchRepository>) -> Self {
+        Self { records, cache }
     }
 }
 
@@ -29,6 +30,7 @@ impl super::UseCase<Asset, Params> for UpdateAsset {
         merge_asset_input(&mut asset, params.asset);
         // store the updated record in the repository
         self.records.put_asset(&asset)?;
+        self.cache.clear()?;
         Ok(asset)
     }
 }
@@ -322,7 +324,7 @@ mod tests {
     use super::super::UseCase;
     use super::*;
     use crate::domain::entities::Location;
-    use crate::domain::repositories::MockRecordRepository;
+    use crate::domain::repositories::{MockRecordRepository, MockSearchRepository};
     use anyhow::anyhow;
     use chrono::prelude::*;
     use mockall::predicate::*;
@@ -659,8 +661,10 @@ mod tests {
             .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
         records.expect_put_asset().returning(move |_| Ok(()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_clear().returning(|| Ok(()));
         // act
-        let usecase = UpdateAsset::new(Box::new(records));
+        let usecase = UpdateAsset::new(Box::new(records), Box::new(cache));
         let params = Params::new(input);
         let result = usecase.call(params);
         // assert
@@ -683,8 +687,10 @@ mod tests {
         mock.expect_get_asset()
             .with(eq("abc123"))
             .returning(move |_| Err(anyhow!("oh no")));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_clear().returning(|| Ok(()));
         // act
-        let usecase = UpdateAsset::new(Box::new(mock));
+        let usecase = UpdateAsset::new(Box::new(mock), Box::new(cache));
         let input = AssetInput {
             key: "abc123".to_owned(),
             tags: None,

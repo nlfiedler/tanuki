@@ -6,7 +6,7 @@ mod common;
 use anyhow::Error;
 use common::DBPath;
 use std::sync::Arc;
-use tanuki::data::repositories::RecordRepositoryImpl;
+use tanuki::data::repositories::{RecordRepositoryImpl, SearchRepositoryImpl};
 use tanuki::data::sources::EntityDataSource;
 use tanuki::data::sources::EntityDataSourceImpl;
 use tanuki::domain::entities::Location;
@@ -100,7 +100,8 @@ fn test_search_tags_and_location() -> Result<(), Error> {
     datasource.put_asset(&asset)?;
 
     let repo = RecordRepositoryImpl::new(Arc::new(datasource));
-    let usecase = SearchAssets::new(Box::new(repo));
+    let cache = SearchRepositoryImpl::new();
+    let usecase = SearchAssets::new(Box::new(repo), Box::new(cache));
 
     // simple search with a single tag and location label
     let mut params: Params = Default::default();

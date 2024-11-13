@@ -20,7 +20,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::sync::{Arc, LazyLock};
 use tanuki::data::repositories::geo::find_location_repository;
-use tanuki::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl};
+use tanuki::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl, SearchRepositoryImpl};
 use tanuki::data::sources::{EntityDataSource, EntityDataSourceImpl};
 use tanuki::domain::repositories::{BlobRepository, RecordRepository};
 use tanuki::domain::usecases::UseCase;
@@ -95,7 +95,8 @@ async fn replace_asset(mut payload: Multipart, req: HttpRequest) -> Result<HttpR
             f = web::block(move || f.write_all(&data).map(|_| f)).await??;
         }
         let result = web::block(move || {
-            let usecase = ReplaceAsset::new(records, blobs, geocoder);
+            let cache = Arc::new(SearchRepositoryImpl::new());
+            let usecase = ReplaceAsset::new(records, cache, blobs, geocoder);
             let params = Params::new(asset_id, filepath_clone, content_type);
             usecase.call(params)
         })
@@ -155,7 +156,8 @@ async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
         let blobs_1 = blobs.clone();
         let geocoder_1 = geocoder.clone();
         let result = web::block(move || {
-            let usecase = ImportAsset::new(records_1, blobs_1, geocoder_1);
+            let cache = Arc::new(SearchRepositoryImpl::new());
+            let usecase = ImportAsset::new(records_1, cache, blobs_1, geocoder_1);
             let params = Params::new(filepath_clone, content_type);
             usecase.call(params)
         })
@@ -373,6 +375,7 @@ mod tests {
     use actix_web::{http, test, web, App};
     use base64::{engine::general_purpose, Engine as _};
     use tanuki::data::repositories::geo::DummyLocationRepository;
+    use tanuki::data::repositories::SearchRepositoryImpl;
     use tanuki::domain::usecases::checksum_file;
 
     #[actix_web::test]
@@ -433,8 +436,14 @@ mod tests {
             // clean up previous test runs
             records.delete_asset(&asset.key).unwrap();
         }
+        let cache = SearchRepositoryImpl::new();
         let geocoder = DummyLocationRepository::new();
-        let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs), Arc::new(geocoder));
+        let usecase = ImportAsset::new(
+            Arc::new(records),
+            Arc::new(cache),
+            Arc::new(blobs),
+            Arc::new(geocoder),
+        );
         let params = Params::new(filepath, mime::IMAGE_JPEG);
         let asset = usecase.call(params).unwrap();
         let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
@@ -500,9 +509,15 @@ mod tests {
         let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
         let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
         let records = RecordRepositoryImpl::new(ctx);
+        let cache = SearchRepositoryImpl::new();
         let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
         let geocoder = DummyLocationRepository::new();
-        let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs), Arc::new(geocoder));
+        let usecase = ImportAsset::new(
+            Arc::new(records),
+            Arc::new(cache),
+            Arc::new(blobs),
+            Arc::new(geocoder),
+        );
         let params = Params::new(filepath, mime::IMAGE_JPEG);
         let asset = usecase.call(params).unwrap();
         let mut app = test::init_service(

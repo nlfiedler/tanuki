@@ -2,28 +2,21 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::{SearchResult, SortField, SortOrder};
-use crate::domain::repositories::RecordRepository;
+use crate::domain::repositories::{RecordRepository, SearchRepository};
 use anyhow::Error;
 use chrono::prelude::*;
 use std::cmp;
 use std::fmt;
-use std::num::NonZeroUsize;
-use std::sync::{LazyLock, Mutex};
-
-// Average search result entry will be around 128 bytes. In the worst case, if
-// search results are 256 bytes and the search yields 10,000 results, the space
-// required will be 2.5 MB. As such, maintain a cache of one entry at most.
-static LRU_CACHE: LazyLock<Mutex<lru::LruCache<Params, Vec<SearchResult>>>> =
-    LazyLock::new(|| Mutex::new(lru::LruCache::new(NonZeroUsize::new(1).unwrap())));
 
 /// Use case to perform queries against the database indices.
 pub struct SearchAssets {
     repo: Box<dyn RecordRepository>,
+    cache: Box<dyn SearchRepository>,
 }
 
 impl SearchAssets {
-    pub fn new(repo: Box<dyn RecordRepository>) -> Self {
-        Self { repo }
+    pub fn new(repo: Box<dyn RecordRepository>, cache: Box<dyn SearchRepository>) -> Self {
+        Self { repo, cache }
     }
 
     // Perform an initial search of the assets.
@@ -66,12 +59,11 @@ impl super::UseCase<Vec<SearchResult>, Params> for SearchAssets {
     fn call(&self, params: Params) -> Result<Vec<SearchResult>, Error> {
         // Check if a similar search was performed earlier, ignoring the sorting
         // parameters; the sorting will be performed again as needed.
-        let mut cache = LRU_CACHE.lock().unwrap();
         let mut results: Vec<SearchResult>;
-        if let Some(cached) = cache.get(&params) {
-            results = cached.to_owned();
+        let cache_key = params.to_string();
+        if let Some(cached) = self.cache.get(&cache_key)? {
+            results = cached;
         } else {
-            let original_params = params.clone();
             let mut params = params.clone();
             // Perform the initial query to get all results, removing whatever
             // criteria was selected so the filtering is straightforward.
@@ -80,7 +72,7 @@ impl super::UseCase<Vec<SearchResult>, Params> for SearchAssets {
             results = filter_by_locations(results, &params);
             results = filter_by_filename(results, &params);
             results = filter_by_media_type(results, &params);
-            cache.put(original_params, results.clone());
+            self.cache.put(cache_key, results.clone())?;
         }
         super::sort_results(&mut results, params.sort_field, params.sort_order);
         Ok(results)
@@ -183,7 +175,31 @@ pub struct Params {
 
 impl fmt::Display for Params {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Params(tags: {})", self.tags.len())
+        // format the search parameters similarly to the scan query string for
+        // the sake of generating a key for the cached search repository
+        for tag in self.tags.iter() {
+            if !tag.is_empty() {
+                write!(f, " tag:{}", tag)?;
+            }
+        }
+        for loc in self.locations.iter() {
+            if !loc.is_empty() {
+                write!(f, " loc:{}", loc)?;
+            }
+        }
+        if let Some(mt) = self.media_type.as_ref() {
+            // very crude splitting of media type into predicates
+            let parts: Vec<&str> = mt.split("/").collect();
+            write!(f, " is:{}", parts[0])?;
+            write!(f, " format:{}", parts[1])?;
+        }
+        if let Some(bd) = self.before_date {
+            write!(f, " before:{}", bd.format("%Y-%m-%d").to_string())?;
+        }
+        if let Some(ad) = self.after_date {
+            write!(f, " after:{}", ad.format("%Y-%m-%d").to_string())?;
+        }
+        write!(f, "")
     }
 }
 
@@ -199,18 +215,6 @@ impl cmp::PartialEq for Params {
     }
 }
 
-impl std::hash::Hash for Params {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        // ignore sorting when hashing a set of parameters
-        self.tags.hash(state);
-        self.locations.hash(state);
-        self.filename.hash(state);
-        self.media_type.hash(state);
-        self.before_date.hash(state);
-        self.after_date.hash(state);
-    }
-}
-
 impl cmp::Eq for Params {}
 
 #[cfg(test)]
@@ -218,7 +222,7 @@ mod tests {
     use super::super::UseCase;
     use super::*;
     use crate::domain::entities::Location;
-    use crate::domain::repositories::MockRecordRepository;
+    use crate::domain::repositories::{MockRecordRepository, MockSearchRepository};
     use anyhow::anyhow;
     use mockall::predicate::*;
 
@@ -236,42 +240,35 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
-    fn test_search_cache_hashing() {
-        // Ensure the lru hashing is working as expected, such that parameters
-        // that change only in terms of sorting will still retrieve the cached
-        // set of results.
-        let mut cache = lru::LruCache::new(NonZeroUsize::new(2).unwrap());
-        let mut params: Params = Default::default();
-        params.tags = vec!["kitten".to_owned()];
-        params.sort_field = Some(SortField::Date);
-        params.sort_order = Some(SortOrder::Ascending);
-        let results: Vec<String> = vec![
-            "honey".into(),
-            "marmelade".into(),
-            "marmite".into(),
-            "mustard".into(),
-            "sugar".into(),
-            "maple syrup".into(),
-        ];
-        cache.put(params, results);
+    fn test_search_params_format() {
+        let params = Params {
+            tags: vec![],
+            locations: vec![],
+            filename: None,
+            media_type: None,
+            before_date: None,
+            after_date: None,
+            sort_field: None,
+            sort_order: None,
+        };
+        assert_eq!(params.to_string(), "");
 
-        let mut params: Params = Default::default();
-        params.tags = vec!["kitten".to_owned()];
-        params.sort_field = Some(SortField::Date);
-        params.sort_order = Some(SortOrder::Descending);
-        assert!(cache.contains(&params));
-
-        // different parameters are _not_ in the cache
-        let mut params: Params = Default::default();
-        params.tags = vec!["puppy".to_owned()];
-        params.sort_field = Some(SortField::Date);
-        params.sort_order = Some(SortOrder::Ascending);
-        assert_eq!(cache.contains(&params), false);
+        let after = make_date_time(2018, 5, 31, 21, 10, 11);
+        let before = make_date_time(2019, 8, 30, 12, 08, 31);
+        let params = Params {
+            tags: vec!["kittens".into(), "puppies".into()],
+            locations: vec!["paris".into()],
+            filename: None,
+            media_type: Some("image/jpeg".into()),
+            before_date: Some(before),
+            after_date: Some(after),
+            sort_field: None,
+            sort_order: None,
+        };
+        assert_eq!(params.to_string(), " tag:kittens tag:puppies loc:paris is:image format:jpeg before:2019-08-30 after:2018-05-31");
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_search_assets_tags_ok() {
         // arrange
         let results = vec![SearchResult {
@@ -284,8 +281,11 @@ mod tests {
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["assets_tags_ok".to_owned()];
         let result = usecase.call(params);
@@ -297,14 +297,16 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_search_assets_tags_err() {
         // arrange
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Err(anyhow!("oh no")));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().never();
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["assets_tags_err".to_owned()];
         let result = usecase.call(params);
@@ -313,7 +315,6 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_search_assets_after_ok() {
         // arrange
         let results = vec![SearchResult {
@@ -328,8 +329,11 @@ mod tests {
         mock.expect_query_after_date()
             .with(eq(after))
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.after_date = Some(after);
         let result = usecase.call(params);
@@ -341,7 +345,6 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_search_assets_before_ok() {
         // arrange
         let results = vec![SearchResult {
@@ -356,8 +359,11 @@ mod tests {
         mock.expect_query_before_date()
             .with(eq(before))
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.before_date = Some(before);
         let result = usecase.call(params);
@@ -369,7 +375,6 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_search_assets_range_ok() {
         // arrange
         let results = vec![SearchResult {
@@ -385,8 +390,11 @@ mod tests {
         mock.expect_query_date_range()
             .with(eq(after), eq(before))
             .returning(move |_, _| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.after_date = Some(after);
         params.before_date = Some(before);
@@ -399,7 +407,6 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_search_assets_locations_ok() {
         // arrange
         let results = vec![SearchResult {
@@ -412,8 +419,11 @@ mod tests {
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_locations()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.locations = vec!["hawaii".to_owned()];
         let result = usecase.call(params);
@@ -425,7 +435,6 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_search_assets_filename_ok() {
         // arrange
         let results = vec![SearchResult {
@@ -439,8 +448,11 @@ mod tests {
         mock.expect_query_by_filename()
             .with(eq("Img_1234.jpg"))
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.filename = Some("Img_1234.jpg".to_owned());
         let result = usecase.call(params);
@@ -452,7 +464,6 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_search_assets_media_type_ok() {
         // arrange
         let results = vec![SearchResult {
@@ -466,8 +477,11 @@ mod tests {
         mock.expect_query_by_media_type()
             .with(eq("imaGE/jpeg"))
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.media_type = Some("imaGE/jpeg".to_owned());
         let result = usecase.call(params);
@@ -534,15 +548,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_filter_results_location_single() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["kitten".to_owned()];
         params.locations = vec!["london".to_owned()];
@@ -556,15 +572,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_filter_results_location_multiple() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["kitten".to_owned()];
         params.locations = vec!["london".to_owned(), "england".into()];
@@ -577,15 +595,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_filter_results_filename() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["kitten".to_owned()];
         params.filename = Some("img_2345.gif".to_owned());
@@ -598,15 +618,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_filter_results_media_type() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["kitten".to_owned()];
         params.media_type = Some("video/quicktime".to_owned());
@@ -620,15 +642,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_filter_results_date_range() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["kitten".to_owned()];
         params.after_date = Some(make_date_time(2014, 4, 28, 21, 10, 11));
@@ -644,15 +668,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_filter_results_after_date() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["kitten".to_owned()];
         params.after_date = Some(make_date_time(2016, 4, 28, 21, 10, 11));
@@ -667,15 +693,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_filter_results_before_date() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["kitten".to_owned()];
         params.before_date = Some(make_date_time(2016, 4, 28, 21, 10, 11));
@@ -691,15 +719,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_order_results_ascending_date() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["ascending_date".to_owned()];
         params.sort_field = Some(SortField::Date);
@@ -719,15 +749,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_order_results_descending_date() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["descending_date".to_owned()];
         params.sort_field = Some(SortField::Date);
@@ -747,7 +779,6 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_search_cache_sort_by_date() {
         // arrange
         let results = make_search_results();
@@ -756,8 +787,19 @@ mod tests {
         mock.expect_query_by_tags()
             .times(1)
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        let mut cache_hit = false;
+        cache.expect_get().returning(move |_| {
+            if cache_hit {
+                Ok(Some(make_search_results()))
+            } else {
+                cache_hit = true;
+                Ok(None)
+            }
+        });
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["kittens".to_owned()];
         params.sort_field = Some(SortField::Date);
@@ -796,15 +838,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_order_results_ascending_filename() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["ascending_filename".to_owned()];
         params.sort_field = Some(SortField::Filename);
@@ -824,15 +868,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_order_results_descending_filename() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["descending_filename".to_owned()];
         params.sort_field = Some(SortField::Filename);
@@ -852,15 +898,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_order_results_ascending_identifier() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["ascending_identifier".to_owned()];
         params.sort_field = Some(SortField::Identifier);
@@ -880,15 +928,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_order_results_descending_identifier() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["descending_identifier".to_owned()];
         params.sort_field = Some(SortField::Identifier);
@@ -908,15 +958,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_order_results_ascending_media_type() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["ascending_media_type".to_owned()];
         params.sort_field = Some(SortField::MediaType);
@@ -936,15 +988,17 @@ mod tests {
     }
 
     #[test]
-    #[serial_test::serial]
     fn test_order_results_descending_media_type() {
         // arrange
         let results = make_search_results();
         let mut mock = MockRecordRepository::new();
         mock.expect_query_by_tags()
             .returning(move |_| Ok(results.clone()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
         // act
-        let usecase = SearchAssets::new(Box::new(mock));
+        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
         let mut params: Params = Default::default();
         params.tags = vec!["descending_media_type".to_owned()];
         params.sort_field = Some(SortField::MediaType);

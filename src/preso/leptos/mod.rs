@@ -164,7 +164,7 @@ pub struct BulkEditParams {
 
 #[cfg(feature = "ssr")]
 pub mod ssr {
-    use crate::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl};
+    use crate::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl, SearchRepositoryImpl};
     use crate::data::sources::EntityDataSourceImpl;
     use leptos::{ServerFnError, ServerFnErrorErr};
     use std::env;
@@ -200,6 +200,11 @@ pub mod ssr {
             .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
         let repo = RecordRepositoryImpl::new(Arc::new(source));
         Ok(repo)
+    }
+
+    /// Return the search cache repository instance.
+    pub fn cache() -> Result<SearchRepositoryImpl, ServerFnError> {
+        Ok(SearchRepositoryImpl::new())
     }
 
     ///
@@ -351,7 +356,8 @@ pub async fn search(
     use crate::domain::usecases::UseCase;
 
     let repo = ssr::db()?;
-    let usecase = SearchAssets::new(Box::new(repo));
+    let cache = ssr::cache()?;
+    let usecase = SearchAssets::new(Box::new(repo), Box::new(cache));
     let params = Params {
         tags: params.tags.unwrap_or(vec![]),
         locations: params.locations.unwrap_or(vec![]),
@@ -391,7 +397,8 @@ pub async fn scan_assets(
     use crate::domain::usecases::UseCase;
 
     let repo = ssr::db()?;
-    let usecase = ScanAssets::new(Box::new(repo));
+    let cache = ssr::cache()?;
+    let usecase = ScanAssets::new(Box::new(repo), Box::new(cache));
     // for now there is no paging, and limit is always 100
     let params = Params {
         query,

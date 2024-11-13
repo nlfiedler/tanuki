@@ -2,11 +2,10 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::Asset;
-use crate::domain::repositories::RecordRepository;
-use crate::domain::repositories::{BlobRepository, LocationRepository};
-use crate::domain::usecases::{
-    checksum_file, get_gps_coordinates, get_original_date,
+use crate::domain::repositories::{
+    BlobRepository, LocationRepository, RecordRepository, SearchRepository,
 };
+use crate::domain::usecases::{checksum_file, get_gps_coordinates, get_original_date};
 use anyhow::Error;
 use chrono::prelude::*;
 use std::cmp;
@@ -16,6 +15,7 @@ use std::sync::Arc;
 
 pub struct ImportAsset {
     records: Arc<dyn RecordRepository>,
+    cache: Arc<dyn SearchRepository>,
     blobs: Arc<dyn BlobRepository>,
     geocoder: Arc<dyn LocationRepository>,
 }
@@ -23,11 +23,13 @@ pub struct ImportAsset {
 impl ImportAsset {
     pub fn new(
         records: Arc<dyn RecordRepository>,
+        cache: Arc<dyn SearchRepository>,
         blobs: Arc<dyn BlobRepository>,
         geocoder: Arc<dyn LocationRepository>,
     ) -> Self {
         Self {
             records,
+            cache,
             blobs,
             geocoder,
         }
@@ -75,6 +77,7 @@ impl super::UseCase<Asset, Params> for ImportAsset {
             None => {
                 let asset = self.create_asset(digest, params.clone())?;
                 self.records.put_asset(&asset)?;
+                self.cache.clear()?;
                 asset
             }
         };
@@ -121,6 +124,7 @@ mod tests {
     use crate::domain::repositories::MockBlobRepository;
     use crate::domain::repositories::MockLocationRepository;
     use crate::domain::repositories::MockRecordRepository;
+    use crate::domain::repositories::MockSearchRepository;
     use base64::{engine::general_purpose, Engine as _};
     use mockall::predicate::*;
     use std::path::Path;
@@ -182,6 +186,8 @@ mod tests {
             .with(eq(digest))
             .returning(|_| Ok(None));
         records.expect_put_asset().returning(|_| Ok(()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_clear().returning(|| Ok(()));
         let mut blobs = MockBlobRepository::new();
         blobs
             .expect_store_blob()
@@ -196,7 +202,12 @@ mod tests {
             })
         });
         // act
-        let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs), Arc::new(geocoder));
+        let usecase = ImportAsset::new(
+            Arc::new(records),
+            Arc::new(cache),
+            Arc::new(blobs),
+            Arc::new(geocoder),
+        );
         let media_type = mime::IMAGE_JPEG;
         let params = Params::new(infile, media_type);
         let result = usecase.call(params);
@@ -244,6 +255,8 @@ mod tests {
             .expect_get_asset_by_digest()
             .with(eq(digest))
             .returning(move |_| Ok(Some(asset1.clone())));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_clear().never();
         let mut blobs = MockBlobRepository::new();
         blobs
             .expect_store_blob()
@@ -254,7 +267,12 @@ mod tests {
             .expect_find_location()
             .returning(|_| Ok(Default::default()));
         // act
-        let usecase = ImportAsset::new(Arc::new(records), Arc::new(blobs), Arc::new(geocoder));
+        let usecase = ImportAsset::new(
+            Arc::new(records),
+            Arc::new(cache),
+            Arc::new(blobs),
+            Arc::new(geocoder),
+        );
         let media_type = mime::IMAGE_JPEG;
         let params = Params::new(infile, media_type);
         let result = usecase.call(params);

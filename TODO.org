@@ -1,4 +1,6 @@
 * Action Items
+** Bugs
+*** some png files fail to produce thumbnails (most work okay)
 ** Help
 *** write help pages for each of the main pages
 **** pending page
@@ -28,6 +30,7 @@
 ****** dates are RFC 3339 formatted (https://datatracker.ietf.org/doc/html/rfc3339)
 ** Styles
 *** the =max-width: 300%;= hack on the query input field needs a better solution
+**** replace the use of ~level~ with a simple flex row
 ** Pending
 *** display modes: have an option that makes the images really big (single column, huge images)
 *** hovering over asset should show larger version in a large tooltip
@@ -82,10 +85,33 @@
 **** PhotoPrism has a ~calendar~ view that shows months of years in descending order with a random thumbnail
 **** clicking on the month opens an "album" of everything in that month
 ** Details
+*** use local storage to define asset id, set from home page, read/write from asset page
 *** Lightbox style asset browsing
-**** show full-size image at 100% width of browser window
+**** show full-size image
 **** show chevron arrows on left and right to navigate among search results
 **** controls appear when mouse moves over asset display, then fade away
+**** create new ~browse~ parameters for ~asset~ page
+***** encapsulate everything in one struct
+- query string
+- selected tags
+- selected locations
+- selected year
+- selected season
+- selected media type
+- selected page
+- page size
+- sort order
+- current asset index
+***** use JSON serde to store this as local variable, CBOR for server function
+***** results display invokes =onclick= fn attribute, implemented in ~home~ and ~search~ pages
+***** ~home~ and ~search~ pages construct the appropriate ~browser~ params
+***** ~browse~ params are stored in local storage, then ~asset~ page is opened
+***** ~asset~ page uses ~browse~ params from local storage to invoke server fn
+***** add server function that returns the asset details given the ~browse~ params
+***** add server functions for moving ~forward~ and ~backward~ within the overall results
+***** server functions will manage paging the results
+***** ~scan~ and ~search~ use cases will continue caching as usual
+**** test the ~save~ and ~replace~ functions
 *** completion for tags (like bulk edit form)
 *** completion for location fields (like bulk edit form)
 *** add ~copy~ button next to asset path

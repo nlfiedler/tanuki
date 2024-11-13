@@ -2,8 +2,8 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::Asset;
-use crate::domain::repositories::RecordRepository;
 use crate::domain::repositories::{BlobRepository, LocationRepository};
+use crate::domain::repositories::{RecordRepository, SearchRepository};
 use crate::domain::usecases::{checksum_file, get_gps_coordinates, get_original_date};
 use anyhow::Error;
 use chrono::prelude::*;
@@ -20,6 +20,7 @@ use std::sync::Arc;
 ///
 pub struct ReplaceAsset {
     records: Arc<dyn RecordRepository>,
+    cache: Arc<dyn SearchRepository>,
     blobs: Arc<dyn BlobRepository>,
     geocoder: Arc<dyn LocationRepository>,
 }
@@ -27,11 +28,13 @@ pub struct ReplaceAsset {
 impl ReplaceAsset {
     pub fn new(
         records: Arc<dyn RecordRepository>,
+        cache: Arc<dyn SearchRepository>,
         blobs: Arc<dyn BlobRepository>,
         geocoder: Arc<dyn LocationRepository>,
     ) -> Self {
         Self {
             records,
+            cache,
             blobs,
             geocoder,
         }
@@ -87,6 +90,8 @@ impl super::UseCase<Asset, Params> for ReplaceAsset {
                 // asset identifier has been generated and the client should not
                 // be requesting a thumbnail using the old identifier
                 self.blobs.clear_cache(&asset.key)?;
+                // search cache is always cleared whenever records are changed
+                self.cache.clear()?;
                 asset
             }
         };
@@ -136,6 +141,7 @@ mod tests {
     use crate::domain::repositories::MockBlobRepository;
     use crate::domain::repositories::MockLocationRepository;
     use crate::domain::repositories::MockRecordRepository;
+    use crate::domain::repositories::MockSearchRepository;
     use mockall::predicate::*;
     use tempfile::tempdir;
 
@@ -184,10 +190,17 @@ mod tests {
                     dimensions: None,
                 }))
             });
+        let mut cache = MockSearchRepository::new();
+        cache.expect_clear().never();
         let blobs = MockBlobRepository::new();
         let geocoder = MockLocationRepository::new();
         // act
-        let usecase = ReplaceAsset::new(Arc::new(records), Arc::new(blobs), Arc::new(geocoder));
+        let usecase = ReplaceAsset::new(
+            Arc::new(records),
+            Arc::new(cache),
+            Arc::new(blobs),
+            Arc::new(geocoder),
+        );
         let media_type = mime::IMAGE_JPEG;
         let params = Params::new(unchanged_asset_id.to_owned(), infile, media_type);
         let result = usecase.call(params);
@@ -246,6 +259,8 @@ mod tests {
             .expect_delete_asset()
             .with(eq(asset_id))
             .returning(move |_| Ok(()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_clear().returning(|| Ok(()));
         let mut blobs = MockBlobRepository::new();
         blobs.expect_rename_blob().returning(|_, _| Ok(()));
         blobs
@@ -258,7 +273,12 @@ mod tests {
             .expect_find_location()
             .returning(|_| Ok(Default::default()));
         // act
-        let usecase = ReplaceAsset::new(Arc::new(records), Arc::new(blobs), Arc::new(geocoder));
+        let usecase = ReplaceAsset::new(
+            Arc::new(records),
+            Arc::new(cache),
+            Arc::new(blobs),
+            Arc::new(geocoder),
+        );
         let media_type = mime::IMAGE_JPEG;
         let params = Params::new(asset_id.to_owned(), infile, media_type);
         let result = usecase.call(params);
@@ -319,6 +339,8 @@ mod tests {
             .expect_delete_asset()
             .with(eq(asset_id))
             .returning(move |_| Ok(()));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_clear().returning(|| Ok(()));
         let mut blobs = MockBlobRepository::new();
         blobs.expect_rename_blob().returning(|_, _| Ok(()));
         blobs
@@ -331,7 +353,12 @@ mod tests {
             .expect_find_location()
             .returning(|_| Ok(Default::default()));
         // act
-        let usecase = ReplaceAsset::new(Arc::new(records), Arc::new(blobs), Arc::new(geocoder));
+        let usecase = ReplaceAsset::new(
+            Arc::new(records),
+            Arc::new(cache),
+            Arc::new(blobs),
+            Arc::new(geocoder),
+        );
         let media_type = mime::IMAGE_JPEG;
         let params = Params::new(asset_id.to_owned(), infile, media_type);
         let result = usecase.call(params);

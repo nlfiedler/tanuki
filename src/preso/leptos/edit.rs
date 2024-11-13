@@ -68,7 +68,8 @@ pub async fn bulk_edit(ops: BulkEditParams) -> Result<u64, ServerFnError> {
     use crate::domain::usecases::UseCase;
 
     let repo = super::ssr::db()?;
-    let usecase = EditAssets::new(Box::new(repo));
+    let cache = super::ssr::cache()?;
+    let usecase = EditAssets::new(Box::new(repo), Box::new(cache));
     let params = Params {
         assets: ops.assets,
         tag_ops: ops.tag_ops,
