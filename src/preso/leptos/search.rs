@@ -2,6 +2,7 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::{SortField, SortOrder};
+use crate::preso::leptos::BrowseParams;
 use crate::preso::leptos::{nav, paging, results};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
 use leptos::ev::Event;
@@ -68,6 +69,20 @@ pub fn SearchPage() -> impl IntoView {
             .await
         },
     );
+    // begin browsing assets, starting with the chosen asset; the given index is
+    // zero-based within the current page of results
+    let browse_asset = create_action(move |idx: &usize| {
+        let page = selected_page.get_untracked();
+        let count = page_size.get_untracked();
+        let offset = count * (page - 1);
+        let mut browse = BrowseParams::default();
+        let order = sort_order.get_untracked();
+        browse.sort_field = Some(SortField::Date);
+        browse.sort_order = Some(SortOrder::from(order.as_str()));
+        browse.query = Some(query.get_untracked());
+        browse.asset_index = *idx + offset as usize;
+        begin_browsing(browse)
+    });
 
     view! {
         <nav::NavBar />
@@ -175,10 +190,29 @@ pub fn SearchPage() -> impl IntoView {
                             view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
                         }
                         Ok(meta) => {
-                            view! { <results::ResultsDisplay meta /> }
+                            view! {
+                                <results::ResultsDisplay
+                                    meta
+                                    onclick=move |idx| browse_asset.dispatch(idx)
+                                />
+                            }
                         }
                     })
             }}
         </Transition>
     }
+}
+
+/// Set the browse params to begin browsing with the chosen asset. Navigates to
+/// the asset details page.
+async fn begin_browsing(params: BrowseParams) {
+    let (_, set_browse_params, _) = use_local_storage_with_options::<BrowseParams, JsonSerdeCodec>(
+        "browse-params",
+        UseStorageOptions::default()
+            .initial_value(BrowseParams::default())
+            .delay_during_hydration(true),
+    );
+    set_browse_params.set(params);
+    let navigate = leptos_router::use_navigate();
+    navigate("/asset", Default::default());
 }

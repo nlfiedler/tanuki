@@ -2,7 +2,7 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::domain::entities::{
-    DatetimeOperation, LabeledCount, Location, LocationOperation, SearchResult, SortField,
+    Asset, DatetimeOperation, LabeledCount, Location, LocationOperation, SearchResult, SortField,
     SortOrder, TagOperation,
 };
 use chrono::{DateTime, Utc};
@@ -41,7 +41,7 @@ pub fn App() -> impl IntoView {
                     <Route path="/upload" view=upload::UploadPage />
                     <Route path="/pending" view=pending::PendingPage />
                     <Route path="/edit" view=edit::EditPage />
-                    <Route path="/asset/:id" view=asset::AssetPage />
+                    <Route path="/asset" view=asset::AssetPage />
                     <Route path="/*any" view=NotFound />
                 </Routes>
             </main>
@@ -76,25 +76,16 @@ fn NotFound() -> impl IntoView {
     }
 }
 
+/// Parameters used by the browse page to search for matching assets.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SearchParams {
-    /// Tags that an asset should have. All should match.
     pub tags: Option<Vec<String>>,
-    /// Locations of an asset. At least one must match.
     pub locations: Option<Vec<String>>,
-    /// Date for filtering asset results. Only those assets whose canonical date
-    /// occurs _on_ or _after_ this date will be returned.
     pub after: Option<DateTime<Utc>>,
-    /// Date for filtering asset results. Only those assets whose canonical date
-    /// occurs _before_ this date will be returned.
     pub before: Option<DateTime<Utc>>,
-    /// Find assets whose filename (e.g. `img_3011.jpg`) matches the one given.
     pub filename: Option<String>,
-    /// Find assets whose media type (e.g. `image/jpeg`) matches the one given.
     pub media_type: Option<String>,
-    /// Field by which to sort the results.
     pub sort_field: Option<SortField>,
-    /// Order by which to sort the results.
     pub sort_order: Option<SortOrder>,
 }
 
@@ -106,6 +97,49 @@ pub struct SearchMeta {
     pub count: i32,
     /// Last possible page of available assets matching the query.
     pub last_page: i32,
+}
+
+/// Parameters used by the asset details page to peruse a set of results
+/// produced by either the main page or the search page.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct BrowseParams {
+    pub query: Option<String>,
+    pub tags: Option<Vec<String>>,
+    pub locations: Option<Vec<String>>,
+    pub after: Option<DateTime<Utc>>,
+    pub before: Option<DateTime<Utc>>,
+    pub filename: Option<String>,
+    pub media_type: Option<String>,
+    pub sort_field: Option<SortField>,
+    pub sort_order: Option<SortOrder>,
+    /// Zero-based index of asset within results to be retrieved.
+    pub asset_index: usize,
+}
+
+impl From<SearchParams> for BrowseParams {
+    fn from(input: SearchParams) -> Self {
+        Self {
+            query: None,
+            tags: input.tags,
+            locations: input.locations,
+            after: input.after,
+            before: input.before,
+            filename: input.filename,
+            media_type: input.media_type,
+            sort_field: input.sort_field,
+            sort_order: input.sort_order,
+            asset_index: 0,
+        }
+    }
+}
+
+/// Response from the browser server function.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct BrowseMeta {
+    /// If no such asset was available, will be `None`.
+    pub asset: Option<Asset>,
+    /// Index of the last entry in the search results.
+    pub last_index: usize,
 }
 
 /// A year for which there are `count` assets, converted from a `LabeledCount`.
@@ -164,7 +198,9 @@ pub struct BulkEditParams {
 
 #[cfg(feature = "ssr")]
 pub mod ssr {
-    use crate::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl, SearchRepositoryImpl};
+    use crate::data::repositories::{
+        BlobRepositoryImpl, RecordRepositoryImpl, SearchRepositoryImpl,
+    };
     use crate::data::sources::EntityDataSourceImpl;
     use leptos::{ServerFnError, ServerFnErrorErr};
     use std::env;
@@ -399,7 +435,6 @@ pub async fn scan_assets(
     let repo = ssr::db()?;
     let cache = ssr::cache()?;
     let usecase = ScanAssets::new(Box::new(repo), Box::new(cache));
-    // for now there is no paging, and limit is always 100
     let params = Params {
         query,
         sort_field,
@@ -420,6 +455,107 @@ pub async fn scan_assets(
         count: total_count,
         last_page,
     })
+}
+
+/// Retrieve details for a single asset within the overall search results. The
+/// performance of this function depends greatly on the caching of search
+/// results in the search and scan use cases.
+#[leptos::server(Browse, "/api", "Cbor")]
+pub async fn browse(params: BrowseParams) -> Result<BrowseMeta, ServerFnError> {
+    use crate::domain::usecases::UseCase;
+
+    let repo = ssr::db()?;
+    let cache = ssr::cache()?;
+    let results = if let Some(query) = params.query {
+        use crate::domain::usecases::scan::{Params, ScanAssets};
+        let usecase = ScanAssets::new(Box::new(repo), Box::new(cache));
+        let params = Params {
+            query,
+            sort_field: params.sort_field,
+            sort_order: params.sort_order,
+        };
+        usecase
+            .call(params)
+            .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?
+    } else {
+        use crate::domain::usecases::search::{Params, SearchAssets};
+        let usecase = SearchAssets::new(Box::new(repo), Box::new(cache));
+        let params = Params {
+            tags: params.tags.unwrap_or(vec![]),
+            locations: params.locations.unwrap_or(vec![]),
+            after_date: params.after,
+            before_date: params.before,
+            filename: params.filename,
+            media_type: params.media_type,
+            sort_field: params.sort_field,
+            sort_order: params.sort_order,
+        };
+        usecase
+            .call(params)
+            .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?
+    };
+
+    // retrieve the desired asset details from among the results
+    let asset = if let Some(result) = results.get(params.asset_index) {
+        use crate::domain::usecases::fetch::{FetchAsset, Params};
+        let repo = ssr::db()?;
+        let usecase = FetchAsset::new(Box::new(repo));
+        let params = Params::new(result.asset_id.to_owned());
+        // ignore any errors at this point and convert to an option
+        usecase.call(params).ok()
+    } else {
+        None
+    };
+
+    let last_index = if results.is_empty() {
+        0
+    } else {
+        results.len() - 1
+    };
+    Ok(BrowseMeta { asset, last_index })
+}
+
+/// An asset was replaced while in the midst of browsing, need to refresh
+/// the cached search results and find the index of the new asset.
+#[leptos::server(BrowseReplace, "/api", "Cbor")]
+pub async fn browse_replace(
+    params: BrowseParams,
+    asset_id: String,
+) -> Result<Option<usize>, ServerFnError> {
+    use crate::domain::usecases::UseCase;
+
+    let repo = ssr::db()?;
+    let cache = ssr::cache()?;
+    let results = if let Some(query) = params.query {
+        use crate::domain::usecases::scan::{Params, ScanAssets};
+        let usecase = ScanAssets::new(Box::new(repo), Box::new(cache));
+        let params = Params {
+            query,
+            sort_field: params.sort_field,
+            sort_order: params.sort_order,
+        };
+        usecase
+            .call(params)
+            .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?
+    } else {
+        use crate::domain::usecases::search::{Params, SearchAssets};
+        let usecase = SearchAssets::new(Box::new(repo), Box::new(cache));
+        let params = Params {
+            tags: params.tags.unwrap_or(vec![]),
+            locations: params.locations.unwrap_or(vec![]),
+            after_date: params.after,
+            before_date: params.before,
+            filename: params.filename,
+            media_type: params.media_type,
+            sort_field: params.sort_field,
+            sort_order: params.sort_order,
+        };
+        usecase
+            .call(params)
+            .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?
+    };
+
+    Ok(results.iter().position(|r| r.asset_id == asset_id))
 }
 
 #[cfg(test)]

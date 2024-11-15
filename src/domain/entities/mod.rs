@@ -613,7 +613,7 @@ pub struct LabeledCount {
 }
 
 /// Field of the search results on which to sort.
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub enum SortField {
     Date,
     Identifier,

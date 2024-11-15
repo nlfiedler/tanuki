@@ -7,19 +7,26 @@ use chrono::{DateTime, Utc};
 use leptos::*;
 
 #[component]
-pub fn ResultsDisplay(meta: SearchMeta) -> impl IntoView {
+pub fn ResultsDisplay<F>(meta: SearchMeta, onclick: F) -> impl IntoView
+where
+    F: Fn(usize) + Copy + 'static,
+{
     // store the results in the reactive system so the view can be Fn()
     let results = store_value(meta.results);
     view! {
         <div class="grid is-col-min-16 padding-2">
-            <For each=move || results.get_value() key=|r| r.asset_id.clone() let:asset>
+            <For
+                each=move || results.get_value().into_iter().enumerate().map(|(i, r)| store_value((i, r)))
+                key=|r| r.get_value().1.asset_id
+                let:elem
+            >
                 <div class="cell">
-                    <a href=format!("/asset/{}", asset.asset_id)>
+                    <a on:click=move |_| onclick(elem.get_value().0)>
                         <div class="card">
                             <div class="card-image">
                                 <figure class="image">
                                     {move || {
-                                        let filename = store_value(asset.filename.to_owned());
+                                        let asset = elem.get_value().1;
                                         if asset.media_type.starts_with("video/") {
                                             let src = format!("/rest/asset/{}", asset.asset_id);
                                             let mut media_type = asset.media_type.clone();
@@ -38,7 +45,7 @@ pub fn ResultsDisplay(meta: SearchMeta) -> impl IntoView {
                                         } else if asset.media_type.starts_with("audio/") {
                                             let src = format!("/rest/asset/{}", asset.asset_id);
                                             view! {
-                                                <figcaption>{move || filename.get_value()}</figcaption>
+                                                <figcaption>{move || asset.filename.clone()}</figcaption>
                                                 <audio controls>
                                                     <source src=src type=asset.media_type.clone() />
                                                 </audio>
@@ -63,7 +70,10 @@ pub fn ResultsDisplay(meta: SearchMeta) -> impl IntoView {
                             </div>
                             <div class="card-content">
                                 <div class="content">
-                                    <CardContent datetime=asset.datetime location=asset.location />
+                                    <CardContent
+                                        datetime=elem.get_value().1.datetime
+                                        location=elem.get_value().1.location
+                                    />
                                 </div>
                             </div>
                         </div>

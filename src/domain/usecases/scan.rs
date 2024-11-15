@@ -4,6 +4,7 @@
 use crate::domain::entities::{SearchResult, SortField, SortOrder};
 use crate::domain::repositories::{RecordRepository, SearchRepository};
 use anyhow::Error;
+use log::info;
 use query::Constraint;
 use std::cmp;
 use std::fmt;
@@ -34,9 +35,11 @@ impl super::UseCase<Vec<SearchResult>, Params> for ScanAssets {
             results = cached;
         } else {
             // use a cursor to iterate all of the assets in batches
+            let mut scan_count: usize = 0;
             let mut cursor: Option<String> = None;
             loop {
                 let batch = self.repo.scan_assets(cursor, 1024)?;
+                scan_count += batch.len();
                 // results are assumed to be in lexicographical order so the
                 // last key will be used to start scanning the next batch
                 cursor = batch.last().map(|a| a.key.to_owned());
@@ -50,6 +53,7 @@ impl super::UseCase<Vec<SearchResult>, Params> for ScanAssets {
                     break;
                 }
             }
+            info!("scanned {} total assets, {} matching", scan_count, results.len());
             self.cache.put(params.query, results.clone())?;
         }
         super::sort_results(&mut results, params.sort_field, params.sort_order);

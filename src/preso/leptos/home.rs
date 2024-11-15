@@ -3,7 +3,7 @@
 //
 use crate::domain::entities::{SortField, SortOrder};
 use crate::preso::leptos::{forms, nav, paging, results};
-use crate::preso::leptos::{SearchParams, Season, Year};
+use crate::preso::leptos::{BrowseParams, SearchParams, Season, Year};
 use chrono::{Datelike, TimeZone, Utc};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
 use html::Div;
@@ -31,6 +31,33 @@ impl SearchParamsBuilder {
                 sort_order: Some(SortOrder::Descending),
             },
         }
+    }
+
+    /// Build the search parameters from all of the available selections.
+    fn make(
+        tags: HashSet<String>,
+        locs: HashSet<String>,
+        year: Option<i32>,
+        season: Option<Season>,
+        media_type: Option<String>,
+        order: String,
+    ) -> SearchParams {
+        let mut builder = SearchParamsBuilder::new();
+        builder = builder.tags(tags).locations(locs);
+        if let Some(year) = year {
+            if let Some(season) = season {
+                builder = builder.year_and_season(year, season);
+            } else {
+                builder = builder.year(year);
+            }
+        } else if let Some(season) = season {
+            builder = builder.season(season);
+        }
+        if let Some(media_type) = media_type {
+            builder = builder.media_type(media_type);
+        }
+        builder = builder.sort_order(SortOrder::from(order.as_str()));
+        builder.build()
     }
 
     fn sort_order(mut self, order: SortOrder) -> Self {
@@ -130,7 +157,7 @@ impl SearchParamsBuilder {
 
 #[component]
 pub fn HomePage() -> impl IntoView {
-    // multiple tags will _narrow_ the search results
+    // multiple tags will narrow the search results
     let (selected_tags, set_selected_tags, _) =
         use_local_storage_with_options::<HashSet<String>, JsonSerdeCodec>(
             "home-selected-tags",
@@ -138,7 +165,7 @@ pub fn HomePage() -> impl IntoView {
                 .initial_value(HashSet::new())
                 .delay_during_hydration(true),
         );
-    // multiple locations will _widen_ the search results
+    // multiple locations will narrow the search results
     let (selected_locations, set_selected_locations, _) =
         use_local_storage_with_options::<HashSet<String>, JsonSerdeCodec>(
             "home-selected-locations",
@@ -207,26 +234,28 @@ pub fn HomePage() -> impl IntoView {
             )
         },
         |(tags, locs, year, season, media_type, page, count, order)| async move {
-            let mut builder = SearchParamsBuilder::new();
-            builder = builder.tags(tags).locations(locs);
-            if let Some(year) = year {
-                if let Some(season) = season {
-                    builder = builder.year_and_season(year, season);
-                } else {
-                    builder = builder.year(year);
-                }
-            } else if let Some(season) = season {
-                builder = builder.season(season);
-            }
-            if let Some(media_type) = media_type {
-                builder = builder.media_type(media_type);
-            }
-            builder = builder.sort_order(SortOrder::from(order.as_str()));
-            let params = builder.build();
+            let params = SearchParamsBuilder::make(tags, locs, year, season, media_type, order);
             let offset = count * (page - 1);
             super::search(params, Some(count), Some(offset)).await
         },
     );
+    // begin browsing assets, starting with the chosen asset; the given index is
+    // zero-based within the current page of results
+    let browse_asset = create_action(move |idx: &usize| {
+        let tags = selected_tags.get_untracked();
+        let locs = selected_locations.get_untracked();
+        let year = selected_year.get_untracked();
+        let season = selected_season.get_untracked();
+        let media_type = selected_type.get_untracked();
+        let order = sort_order.get_untracked();
+        let params = SearchParamsBuilder::make(tags, locs, year, season, media_type, order);
+        let page = selected_page.get_untracked();
+        let count = page_size.get_untracked();
+        let offset = count * (page - 1);
+        let mut browse = BrowseParams::from(params);
+        browse.asset_index = *idx + offset as usize;
+        begin_browsing(browse)
+    });
 
     view! {
         <nav::NavBar />
@@ -409,7 +438,12 @@ pub fn HomePage() -> impl IntoView {
                             view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
                         }
                         Ok(meta) => {
-                            view! { <results::ResultsDisplay meta /> }
+                            view! {
+                                <results::ResultsDisplay
+                                    meta
+                                    onclick=move |idx| browse_asset.dispatch(idx)
+                                />
+                            }
                         }
                     })
             }}
@@ -597,4 +631,18 @@ where
             </div>
         </div>
     }
+}
+
+/// Set the browse params to begin browsing with the chosen asset. Navigates to
+/// the asset details page.
+async fn begin_browsing(params: BrowseParams) {
+    let (_, set_browse_params, _) = use_local_storage_with_options::<BrowseParams, JsonSerdeCodec>(
+        "browse-params",
+        UseStorageOptions::default()
+            .initial_value(BrowseParams::default())
+            .delay_during_hydration(true),
+    );
+    set_browse_params.set(params);
+    let navigate = leptos_router::use_navigate();
+    navigate("/asset", Default::default());
 }

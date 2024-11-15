@@ -3,9 +3,11 @@
 //
 use crate::domain::entities::{Asset, AssetInput, Location};
 use crate::preso::leptos::nav;
+use crate::preso::leptos::BrowseParams;
 use chrono::{DateTime, Local, NaiveDateTime, Utc};
+use codee::string::JsonSerdeCodec;
 use leptos::*;
-use leptos_router::use_params_map;
+use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
 use std::collections::HashMap;
 
 ///
@@ -49,11 +51,51 @@ pub async fn update_asset(asset: AssetInput) -> Result<Option<Asset>, ServerFnEr
 
 #[component]
 pub fn AssetPage() -> impl IntoView {
-    let params = use_params_map();
-    let asset_resource = create_resource(
-        move || params.with(|params| params.get("id").cloned()),
-        |id| async move { fetch_asset(id.unwrap_or_default().to_owned()).await },
+    // let params = use_params_map();
+    let (browse_params, set_browse_params, _) =
+        use_local_storage_with_options::<BrowseParams, JsonSerdeCodec>(
+            "browse-params",
+            UseStorageOptions::default()
+                .initial_value(BrowseParams::default())
+                .delay_during_hydration(true),
+        );
+    let browse_resource = create_resource(
+        move || browse_params.get(),
+        |params| async move {
+            log::info!("params: {:?}", params);
+            super::browse(params).await
+        },
     );
+    let asset_replaced = create_action(move |id: &String| {
+        // when an asset is replaced, the cached search results are cleared, and
+        // the position of the new asset within the updated results may change;
+        // refresh the search results, find the new position of the asset, and
+        // restart the browsing process
+        let id = id.to_owned();
+        async move {
+            let params = browse_params.get_untracked();
+            if let Ok(Some(index)) = super::browse_replace(params, id).await {
+                let params = browse_params.get_untracked();
+                if index == params.asset_index {
+                    // setting the params field to the same value will have no
+                    // effect, so refresh the page instead; this may cause the
+                    // local storage signal to revert momentarily, so the view
+                    // below will handle this by displaying nothing in place of
+                    // the missing asset
+                    let window = web_sys::window().unwrap();
+                    let document = window.document().unwrap();
+                    let location = document.location().unwrap();
+                    if let Err(err) = location.reload() {
+                        log::error!("page reload failed: {err:#?}");
+                    }
+                } else {
+                    // if the index has in fact changed, then setting that in
+                    // the browse params signal will cause the page to refresh
+                    set_browse_params.update(|p| p.asset_index = index);
+                }
+            }
+        }
+    });
 
     view! {
         <nav::NavBar />
@@ -63,17 +105,88 @@ pub fn AssetPage() -> impl IntoView {
                 view! { "Loading asset details..." }
             }>
                 {move || {
-                    asset_resource
+                    browse_resource
                         .get()
                         .map(|result| match result {
                             Err(err) => {
                                 view! { <span>{move || format!("Error: {}", err)}</span> }
                                     .into_view()
                             }
-                            Ok(asset) => {
+                            Ok(meta) => {
+                                let asset = store_value(meta.asset);
                                 view! {
-                                    <AssetFigure asset=asset.clone() />
-                                    <AssetForm asset />
+                                    <div class="columns">
+                                        <div
+                                            class="px-0 column is-narrow"
+                                            style="display: flex; min-height: 90vh; max-height: 90vh; align-items: center;"
+                                        >
+                                            <Show
+                                                when=move || { browse_params.get().asset_index > 0 }
+                                                fallback=move || {
+                                                    view! {
+                                                        <button class="button" disabled>
+                                                            <span class="icon">
+                                                                <i class="fa-solid fa-arrow-left"></i>
+                                                            </span>
+                                                        </button>
+                                                    }
+                                                }
+                                            >
+                                                <button
+                                                    class="button"
+                                                    on:click=move |_| {
+                                                        set_browse_params.update(|p| p.asset_index -= 1)
+                                                    }
+                                                >
+                                                    <span class="icon">
+                                                        <i class="fa-solid fa-arrow-left"></i>
+                                                    </span>
+                                                </button>
+                                            </Show>
+                                        </div>
+                                        <div class="column">
+                                            <Show
+                                                when=move || asset.with_value(|a| a.is_some())
+                                                fallback=move || {}
+                                            >
+                                                <AssetFigure asset=asset.get_value().unwrap() />
+                                                <AssetForm
+                                                    asset=asset.get_value().unwrap()
+                                                    replaced=move |id| asset_replaced.dispatch(id)
+                                                />
+                                            </Show>
+                                        </div>
+                                        <div
+                                            class="px-0 column is-narrow"
+                                            style="display: flex; min-height: 90vh; max-height: 90vh; align-items: center;"
+                                        >
+                                            <Show
+                                                when=move || {
+                                                    meta.last_index > browse_params.get().asset_index
+                                                }
+                                                fallback=move || {
+                                                    view! {
+                                                        <button class="button" disabled>
+                                                            <span class="icon">
+                                                                <i class="fa-solid fa-arrow-right"></i>
+                                                            </span>
+                                                        </button>
+                                                    }
+                                                }
+                                            >
+                                                <button
+                                                    class="button"
+                                                    on:click=move |_| {
+                                                        set_browse_params.update(|p| p.asset_index += 1)
+                                                    }
+                                                >
+                                                    <span class="icon">
+                                                        <i class="fa-solid fa-arrow-right"></i>
+                                                    </span>
+                                                </button>
+                                            </Show>
+                                        </div>
+                                    </div>
                                 }
                                     .into_view()
                             }
@@ -130,7 +243,10 @@ fn AssetFigure(asset: Asset) -> impl IntoView {
 }
 
 #[component]
-fn AssetForm(asset: Asset) -> impl IntoView {
+fn AssetForm<E>(asset: Asset, replaced: E) -> impl IntoView
+where
+    E: Fn(String) + Copy + 'static,
+{
     let asset = store_value(asset);
     let datetime_input_ref: NodeRef<html::Input> = create_node_ref();
     let filename_input_ref: NodeRef<html::Input> = create_node_ref();
@@ -254,15 +370,20 @@ fn AssetForm(asset: Asset) -> impl IntoView {
     let (asset_unchanged, set_asset_unchanged) = create_signal(false);
     let upload_action = create_action(move |ev: &leptos::ev::Event| {
         let selected = file_event_to_file_vec(ev.clone());
-        upload_file(asset.get_value().key, selected[0].clone(), move || {
-            set_asset_unchanged.set(true);
-            set_timeout(
-                move || {
-                    set_asset_unchanged.set(false);
-                },
-                std::time::Duration::from_secs(5),
-            );
-        })
+        upload_file(
+            asset.get_value().key,
+            selected[0].clone(),
+            move || {
+                set_asset_unchanged.set(true);
+                set_timeout(
+                    move || {
+                        set_asset_unchanged.set(false);
+                    },
+                    std::time::Duration::from_secs(5),
+                );
+            },
+            move |id| replaced(id),
+        )
     });
 
     view! {
@@ -596,9 +717,10 @@ fn file_event_to_file_vec(ev: leptos::ev::Event) -> Vec<web_sys::File> {
 }
 
 /// Upload a file, then navigate to the details page for the replacement asset.
-async fn upload_file<F>(key: String, file: web_sys::File, no_change: F)
+async fn upload_file<F, E>(key: String, file: web_sys::File, no_change: F, changed: E)
 where
     F: Fn() + Copy + 'static,
+    E: Fn(String) + Copy + 'static,
 {
     let form_data = web_sys::FormData::new().unwrap();
     let filename = file.name();
@@ -620,11 +742,7 @@ where
             if new_key == &key {
                 no_change()
             } else {
-                let url = format!("/asset/{}", new_key);
-                let navigate = leptos_router::use_navigate();
-                let mut options = leptos_router::NavigateOptions::default();
-                options.replace = true;
-                navigate(&url, options);
+                changed(new_key.to_owned());
             }
         }
     }
