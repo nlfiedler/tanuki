@@ -324,7 +324,10 @@ pub fn HomePage() -> impl IntoView {
                                 <forms::TypesChooser
                                     selected_type
                                     set_type=move |value| {
-                                        set_selected_type.set(value);
+                                        batch(|| {
+                                            set_selected_type.set(value);
+                                            set_selected_page.set(1);
+                                        })
                                     }
                                 />
                             </p>
