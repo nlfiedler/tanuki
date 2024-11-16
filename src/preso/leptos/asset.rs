@@ -61,10 +61,7 @@ pub fn AssetPage() -> impl IntoView {
         );
     let browse_resource = create_resource(
         move || browse_params.get(),
-        |params| async move {
-            log::info!("params: {:?}", params);
-            super::browse(params).await
-        },
+        |params| async move { super::browse(params).await },
     );
     let asset_replaced = create_action(move |id: &String| {
         // when an asset is replaced, the cached search results are cleared, and
@@ -92,6 +89,17 @@ pub fn AssetPage() -> impl IntoView {
                     // if the index has in fact changed, then setting that in
                     // the browse params signal will cause the page to refresh
                     set_browse_params.update(|p| p.asset_index = index);
+                }
+            } else {
+                // on the other hand, the replaced asset may disappear from the
+                // search results, such as when a png becomes a jpg for a search
+                // that was specifically for image/png
+                let params = browse_params.get_untracked();
+                if params.asset_index > 0 {
+                    set_browse_params.update(|p| p.asset_index -= 1);
+                } else {
+                    let navigate = leptos_router::use_navigate();
+                    navigate("/", Default::default());
                 }
             }
         }
