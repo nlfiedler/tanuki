@@ -1,12 +1,14 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::entities::{AssetInput, Location, SearchResult};
+use crate::domain::entities::{AssetInput, Location, SearchResult, SortField, SortOrder};
 use crate::preso::leptos::SearchMeta;
 use crate::preso::leptos::{forms, nav, paging};
 use chrono::{DateTime, TimeDelta, Utc};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
+use html::Div;
 use leptos::*;
+use leptos_use::on_click_outside;
 use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -27,6 +29,8 @@ use std::str::FromStr;
 #[leptos::server]
 pub async fn recent(
     since: Option<DateTime<Utc>>,
+    sort_field: Option<SortField>,
+    sort_order: Option<SortOrder>,
     count: Option<i32>,
     offset: Option<i32>,
 ) -> Result<SearchMeta, ServerFnError> {
@@ -36,7 +40,11 @@ pub async fn recent(
 
     let repo = super::ssr::db()?;
     let usecase = RecentImports::new(Box::new(repo));
-    let params = Params { after_date: since };
+    let params = Params {
+        after_date: since,
+        sort_field,
+        sort_order,
+    };
     let mut results: Vec<SearchResult> = usecase
         .call(params)
         .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
@@ -116,6 +124,62 @@ impl fmt::Display for RecentRange {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+enum SortCombo {
+    DateAsc,
+    DateDesc,
+    FileAsc,
+    FileDesc,
+}
+
+impl SortCombo {
+    fn sort_label(&self) -> String {
+        match self {
+            SortCombo::DateAsc => "Date".into(),
+            SortCombo::DateDesc => "Date".into(),
+            SortCombo::FileAsc => "Filename".into(),
+            SortCombo::FileDesc => "Filename".into(),
+        }
+    }
+
+    fn icon_class(&self) -> String {
+        match self {
+            SortCombo::DateAsc => "fa-solid fa-arrow-down-1-9".into(),
+            SortCombo::DateDesc => "fa-solid fa-arrow-up-9-1".into(),
+            SortCombo::FileAsc => "fa-solid fa-arrow-down-a-z".into(),
+            SortCombo::FileDesc => "fa-solid fa-arrow-up-z-a".into(),
+        }
+    }
+}
+
+impl Default for SortCombo {
+    fn default() -> Self {
+        SortCombo::DateAsc
+    }
+}
+
+impl Into<SortField> for SortCombo {
+    fn into(self) -> SortField {
+        match self {
+            SortCombo::DateAsc => SortField::Date,
+            SortCombo::DateDesc => SortField::Date,
+            SortCombo::FileAsc => SortField::Filename,
+            SortCombo::FileDesc => SortField::Filename,
+        }
+    }
+}
+
+impl Into<SortOrder> for SortCombo {
+    fn into(self) -> SortOrder {
+        match self {
+            SortCombo::DateAsc => SortOrder::Ascending,
+            SortCombo::DateDesc => SortOrder::Descending,
+            SortCombo::FileAsc => SortOrder::Ascending,
+            SortCombo::FileDesc => SortOrder::Descending,
+        }
+    }
+}
+
 /// Convert the inputs into a list of `AssetInputId` and send to the server as a
 /// bulk update.
 async fn save_changes(
@@ -179,12 +243,38 @@ pub fn PendingPage() -> impl IntoView {
             .initial_value(18)
             .delay_during_hydration(true),
     );
+    // sort selection is a combination of field name and order
+    let (sort_combo, set_sort_combo, _) = use_local_storage_with_options::<SortCombo, JsonSerdeCodec>(
+        "pending-sort-combo",
+        UseStorageOptions::default()
+            .initial_value(SortCombo::default())
+            .delay_during_hydration(true),
+    );
+    let sortmenu_open = create_rw_signal(false);
+    let sortmenu_ref = create_node_ref::<Div>();
+    let _ = on_click_outside(sortmenu_ref, move |_| sortmenu_open.set(false));
     // search for recent imports within the given time range
     let results = create_resource(
-        move || (selected_range.get(), selected_page.get(), page_size.get()),
-        |(range, page, count)| async move {
+        move || {
+            (
+                selected_range.get(),
+                selected_page.get(),
+                page_size.get(),
+                sort_combo.get(),
+            )
+        },
+        |(range, page, count, sortable)| async move {
             let offset = count * (page - 1);
-            recent(range.as_date(), Some(count), Some(offset)).await
+            let field: SortField = sortable.clone().into();
+            let order: SortOrder = sortable.into();
+            recent(
+                range.as_date(),
+                Some(field),
+                Some(order),
+                Some(count),
+                Some(offset),
+            )
+            .await
         },
     );
     let selected_assets = create_rw_signal::<HashSet<String>>(HashSet::new());
@@ -245,6 +335,112 @@ pub fn PendingPage() -> impl IntoView {
                 </div>
 
                 <div class="level-right">
+                    <div class="level-item">
+                        <div
+                            class="dropdown"
+                            class:is-active=move || sortmenu_open.get()
+                            node_ref=sortmenu_ref
+                        >
+                            <div class="dropdown-trigger">
+                                <button
+                                    class="button"
+                                    on:click=move |_| { sortmenu_open.update(|v| { *v = !*v }) }
+                                    aria-haspopup="true"
+                                    aria-controls="sort-menu"
+                                >
+                                    <span>{move || sort_combo.get().sort_label()}</span>
+                                    <span class="icon">
+                                        <i
+                                            class=move || { sort_combo.get().icon_class() }
+                                            aria-hidden="true"
+                                        ></i>
+                                    </span>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu" id="sort-menu" role="menu">
+                                <div class="dropdown-content">
+                                    <a
+                                        class=move || {
+                                            if sort_combo.get() == SortCombo::DateAsc {
+                                                "dropdown-item is-active"
+                                            } else {
+                                                "dropdown-item"
+                                            }
+                                        }
+                                        on:click=move |_| {
+                                            set_sort_combo.set(SortCombo::DateAsc);
+                                            sortmenu_open.set(false)
+                                        }
+                                    >
+                                        <span>Date</span>
+                                        <span class="icon">
+                                            <i class="fa-solid fa-arrow-down-1-9" aria-hidden="true"></i>
+                                        </span>
+                                    </a>
+                                    <a
+                                        class=move || {
+                                            if sort_combo.get() == SortCombo::DateDesc {
+                                                "dropdown-item is-active"
+                                            } else {
+                                                "dropdown-item"
+                                            }
+                                        }
+                                        on:click=move |_| {
+                                            set_sort_combo.set(SortCombo::DateDesc);
+                                            sortmenu_open.set(false)
+                                        }
+                                    >
+                                        <span>Date</span>
+                                        <span class="icon">
+                                            <i
+                                                class="fa-solid fa-arrow-up-9-1"
+                                                aria-hidden="true"
+                                            ></i>
+                                        </span>
+                                    </a>
+                                    <a
+                                        class=move || {
+                                            if sort_combo.get() == SortCombo::FileAsc {
+                                                "dropdown-item is-active"
+                                            } else {
+                                                "dropdown-item"
+                                            }
+                                        }
+                                        on:click=move |_| {
+                                            set_sort_combo.set(SortCombo::FileAsc);
+                                            sortmenu_open.set(false)
+                                        }
+                                    >
+                                        <span>Filename</span>
+                                        <span class="icon">
+                                            <i class="fa-solid fa-arrow-down-a-z" aria-hidden="true"></i>
+                                        </span>
+                                    </a>
+                                    <a
+                                        class=move || {
+                                            if sort_combo.get() == SortCombo::FileDesc {
+                                                "dropdown-item is-active"
+                                            } else {
+                                                "dropdown-item"
+                                            }
+                                        }
+                                        on:click=move |_| {
+                                            set_sort_combo.set(SortCombo::FileDesc);
+                                            sortmenu_open.set(false)
+                                        }
+                                    >
+                                        <span>Filename</span>
+                                        <span class="icon">
+                                            <i
+                                                class="fa-solid fa-arrow-up-z-a"
+                                                aria-hidden="true"
+                                            ></i>
+                                        </span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <Transition fallback=move || {
                         view! { "Loading..." }
                     }>
@@ -372,7 +568,7 @@ pub fn PendingPage() -> impl IntoView {
 
 #[component]
 fn PendingCount(
-    results: Resource<(RecentRange, i32, i32), Result<SearchMeta, ServerFnError>>,
+    results: Resource<(RecentRange, i32, i32, SortCombo), Result<SearchMeta, ServerFnError>>,
 ) -> impl IntoView {
     // must use Suspense or Transition when waiting for a resouce
     view! {

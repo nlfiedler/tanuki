@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2023 Nathan Fiedler
 //
-use crate::domain::entities::SearchResult;
+use crate::domain::entities::{SearchResult, SortField, SortOrder};
 use crate::domain::repositories::RecordRepository;
 use anyhow::Error;
 use chrono::prelude::*;
@@ -27,7 +27,8 @@ impl super::UseCase<Vec<SearchResult>, Params> for RecentImports {
                 .earliest()
                 .unwrap_or_else(Utc::now)
         });
-        let results = self.repo.query_newborn(after)?;
+        let mut results = self.repo.query_newborn(after)?;
+        super::sort_results(&mut results, params.sort_field, params.sort_order);
         Ok(results)
     }
 }
@@ -35,6 +36,8 @@ impl super::UseCase<Vec<SearchResult>, Params> for RecentImports {
 #[derive(Clone, Default)]
 pub struct Params {
     pub after_date: Option<DateTime<Utc>>,
+    pub sort_field: Option<SortField>,
+    pub sort_order: Option<SortOrder>,
 }
 
 impl fmt::Display for Params {
