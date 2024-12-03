@@ -44,7 +44,10 @@ pub fn SearchPage() -> impl IntoView {
     let on_change = move |ev: Event| {
         let input = input_ref.get().unwrap();
         ev.stop_propagation();
-        set_query.set(input.value());
+        batch(|| {
+            set_query.set(input.value());
+            set_selected_page.set(1);
+        });
     };
     // search for assets using the given criteria
     let results = create_resource(
