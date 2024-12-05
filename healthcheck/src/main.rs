@@ -12,7 +12,7 @@ async fn main() {
     let url_str = format!("http://localhost:{}{}", port, path);
     let url = Url::parse(&url_str).expect("URL parse");
     let client = Client::new();
-    let res = client.get(url.clone()).send().await;
+    let res = client.head(url.clone()).send().await;
     res.map(|res| {
         let status_code = res.status();
         if status_code.is_client_error() || status_code.is_server_error() {

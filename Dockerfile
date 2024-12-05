@@ -43,6 +43,7 @@ VOLUME /database
 ENV DB_PATH="/database"
 ENV UPLOAD_PATH="/assets/uploads"
 ENV ASSETS_PATH="/assets/blobstore"
+ENV HEALTHCHECK_PATH="/assets/favicon.ico"
 ENV LEPTOS_SITE_ADDR="${SITE_ADDR}"
 ENV LEPTOS_SITE_ROOT="site"
 ENV RUST_LOG="info"
