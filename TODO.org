@@ -1,10 +1,66 @@
 * Action Items
-** Try to update leptos and everything else
-*** note that 0.7.0 has API changes
-** Memory leak
+** TODO Try to update leptos and everything else
+*** DONE get everything to compile (tries to build =mio= for client)
+*** DONE fix the page content appearing twice (stacked vertically)
+*** TODO hydration errors, there are many and seemingly inconsistent
+**** =div= inside =p= is invalid
+*** TODO edit page, working vs broken [6/7]
+- [X] query
+- [X] selection
+- [X] select all
+- [X] unselect all
+- [X] paging
+- [X] page size
+- [ ] make changes -> hydration error
+**** modify changed the asset, but page refresh failed
+*** DONE search page, working vs broken [5/5]
+- [X] query
+- [X] sort order
+- [X] paging
+- [X] page size
+- [X] clicking asset
+*** TODO asset page, working vs broken [5/6]
+- [X] view preview
+- [X] view details
+- [X] download asset
+- [X] modify details
+- [X] navigation of results
+- [ ] replace asset
+*** TODO pending page, working vs broken [6/8]
+- [X] show pending assets
+- [ ] paging (not enough assets to test)
+- [X] sort order
+- [X] select assets
+- [X] choose tags
+- [X] choose location
+- [X] assign date
+- [ ] save changes -> hydration error
+**** modify changed the asset(s), but page refresh failed midway (pending count updated)
+*** TODO home page, working vs broken [0/10]
+- [ ] choosing tags
+- [ ] choosing locations
+- [ ] choosing year
+- [ ] choosing season
+- [ ] choosing media type
+- [ ] pagination
+- [ ] page size
+- [ ] sort order
+- [ ] light/dark mode
+- [ ] clicking asset
+*** TODO should be able to refactor code to remove some =StoredValue= usage
+*** TODO fix the color mode errors that appear in the console
+**** message says using the signal outside of a function (need to add =move ||=)
+*** TODO fix asset upload button (implement =upload_file()= like =replace_asset()=)
+*** TODO fix uploads page in a similar manner
+*** TODO remove unused REST API endpoints (=/rest/replace=)
+*** is there a way to use =LocalResource= to streamline some =Transition= that do lots of work
+*** DONE remove =use leptos::*;= everywhere
+** TODO Memory leak
 *** it is gradually leaking memory until the OS swaps
 *** simple =HEAD= request on static asset gains 100mb of memory usage every time
-*** consider if different memory allocator would help
+*** consider if setting limits on container would help
+** TODO Minimize "error" messages in the views
+*** rel notes shows getting resource and then =or_default()= to convert =None= to something sensible
 ** Help
 *** write help pages for each of the main pages
 **** pending page

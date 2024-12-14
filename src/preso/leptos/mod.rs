@@ -6,10 +6,11 @@ use crate::domain::entities::{
     SortOrder, TagOperation,
 };
 use chrono::{DateTime, Utc};
-use leptos::server_fn::ServerFnError;
 use leptos::*;
 use leptos_meta::*;
-use leptos_router::*;
+use leptos::prelude::*;
+use leptos_router::components::*;
+use leptos_router::path;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -22,12 +23,32 @@ mod paging;
 mod pending;
 mod results;
 mod search;
-mod upload;
+// mod upload;
+
+pub fn shell(options: LeptosOptions) -> impl IntoView {
+    view! {
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <AutoReload options=options.clone() />
+                <HydrationScripts options/>
+                <MetaTags/>
+            </head>
+            <body>
+                <App/>
+            </body>
+        </html>
+    }
+}
 
 #[component]
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
+
+    //                     <Route path=path!("/upload") view=upload::UploadPage />
 
     view! {
         <Stylesheet id="leptos" href="/pkg/tanuki.css" />
@@ -35,14 +56,12 @@ pub fn App() -> impl IntoView {
         <Title text="Tanuki" />
         <Router>
             <main>
-                <Routes>
-                    <Route path="" view=home::HomePage />
-                    <Route path="/search" view=search::SearchPage />
-                    <Route path="/upload" view=upload::UploadPage />
-                    <Route path="/pending" view=pending::PendingPage />
-                    <Route path="/edit" view=edit::EditPage />
-                    <Route path="/asset" view=asset::AssetPage />
-                    <Route path="/*any" view=NotFound />
+                <Routes fallback=NotFound>
+                    <Route path=path!("") view=home::HomePage />
+                    <Route path=path!("/search") view=search::SearchPage />
+                    <Route path=path!("/pending") view=pending::PendingPage />
+                    <Route path=path!("/edit") view=edit::EditPage />
+                    <Route path=path!("/asset") view=asset::AssetPage />
                 </Routes>
             </main>
         </Router>
@@ -89,7 +108,7 @@ pub struct SearchParams {
     pub sort_order: Option<SortOrder>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct SearchMeta {
     /// The subset of results after applying pagination.
     pub results: Vec<SearchResult>,
@@ -202,7 +221,8 @@ pub mod ssr {
         BlobRepositoryImpl, RecordRepositoryImpl, SearchRepositoryImpl,
     };
     use crate::data::sources::EntityDataSourceImpl;
-    use leptos::{ServerFnError, ServerFnErrorErr};
+    use leptos::server_fn::ServerFnError;
+    use leptos::server_fn::error::ServerFnErrorErr;
     use std::env;
     use std::path::PathBuf;
     use std::sync::{Arc, LazyLock};
@@ -282,13 +302,14 @@ pub fn paginate_vector<T>(input: &mut Vec<T>, offset: Option<i32>, count: Option
 pub async fn get_count() -> Result<u32, ServerFnError> {
     use crate::domain::usecases::count::CountAssets;
     use crate::domain::usecases::{NoParams, UseCase};
+    use leptos::server_fn::error::ServerFnErrorErr;
 
     let repo = ssr::db()?;
     let usecase = CountAssets::new(Box::new(repo));
     let params = NoParams {};
     let count = usecase
         .call(params)
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     Ok(count as u32)
 }
 
@@ -299,13 +320,14 @@ pub async fn get_count() -> Result<u32, ServerFnError> {
 pub async fn fetch_tags() -> Result<Vec<LabeledCount>, ServerFnError> {
     use crate::domain::usecases::tags::AllTags;
     use crate::domain::usecases::{NoParams, UseCase};
+    use leptos::server_fn::error::ServerFnErrorErr;
 
     let repo = ssr::db()?;
     let usecase = AllTags::new(Box::new(repo));
     let params = NoParams {};
     let tags: Vec<LabeledCount> = usecase
         .call(params)
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     Ok(tags)
 }
 
@@ -316,13 +338,14 @@ pub async fn fetch_tags() -> Result<Vec<LabeledCount>, ServerFnError> {
 pub async fn fetch_years() -> Result<Vec<Year>, ServerFnError> {
     use crate::domain::usecases::year::AllYears;
     use crate::domain::usecases::{NoParams, UseCase};
+    use leptos::server_fn::error::ServerFnErrorErr;
 
     let repo = ssr::db()?;
     let usecase = AllYears::new(Box::new(repo));
     let params = NoParams {};
     let str_years: Vec<LabeledCount> = usecase
         .call(params)
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     let years: Vec<Year> = str_years.into_iter().map(|y| y.into()).collect();
     Ok(years)
 }
@@ -335,13 +358,14 @@ pub async fn fetch_years() -> Result<Vec<Year>, ServerFnError> {
 pub async fn fetch_all_locations() -> Result<Vec<LabeledCount>, ServerFnError> {
     use crate::domain::usecases::location::PartedLocations;
     use crate::domain::usecases::{NoParams, UseCase};
+    use leptos::server_fn::error::ServerFnErrorErr;
 
     let repo = ssr::db()?;
     let usecase = PartedLocations::new(Box::new(repo));
     let params = NoParams {};
     let locations: Vec<LabeledCount> = usecase
         .call(params)
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     Ok(locations)
 }
 
@@ -352,12 +376,13 @@ pub async fn fetch_all_locations() -> Result<Vec<LabeledCount>, ServerFnError> {
 pub async fn fetch_raw_locations() -> Result<Vec<Location>, ServerFnError> {
     use crate::domain::usecases::location::CompleteLocations;
     use crate::domain::usecases::{NoParams, UseCase};
+    use leptos::server_fn::error::ServerFnErrorErr;
 
     let repo = ssr::db()?;
     let usecase = CompleteLocations::new(Box::new(repo));
     let locations: Vec<Location> = usecase
         .call(NoParams {})
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     Ok(locations)
 }
 
@@ -368,13 +393,14 @@ pub async fn fetch_raw_locations() -> Result<Vec<Location>, ServerFnError> {
 pub async fn fetch_types() -> Result<Vec<LabeledCount>, ServerFnError> {
     use crate::domain::usecases::types::AllMediaTypes;
     use crate::domain::usecases::{NoParams, UseCase};
+    use leptos::server_fn::error::ServerFnErrorErr;
 
     let repo = ssr::db()?;
     let usecase = AllMediaTypes::new(Box::new(repo));
     let params = NoParams {};
     let types: Vec<LabeledCount> = usecase
         .call(params)
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     Ok(types)
 }
 
@@ -390,6 +416,7 @@ pub async fn search(
     use crate::domain::entities::SearchResult;
     use crate::domain::usecases::search::{Params, SearchAssets};
     use crate::domain::usecases::UseCase;
+    use leptos::server_fn::error::ServerFnErrorErr;
 
     let repo = ssr::db()?;
     let cache = ssr::cache()?;
@@ -406,7 +433,7 @@ pub async fn search(
     };
     let mut results: Vec<SearchResult> = usecase
         .call(params)
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     let total_count = results.len() as i32;
     let results = paginate_vector(&mut results, offset, count);
     let last_page: i32 = if total_count == 0 {
@@ -431,6 +458,7 @@ pub async fn scan_assets(
 ) -> Result<SearchMeta, ServerFnError> {
     use crate::domain::usecases::scan::{Params, ScanAssets};
     use crate::domain::usecases::UseCase;
+    use leptos::server_fn::error::ServerFnErrorErr;
 
     let repo = ssr::db()?;
     let cache = ssr::cache()?;
@@ -442,7 +470,7 @@ pub async fn scan_assets(
     };
     let mut results = usecase
         .call(params)
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     let total_count = results.len() as i32;
     let results = paginate_vector(&mut results, offset, count);
     let last_page: i32 = if total_count == 0 {
@@ -460,9 +488,10 @@ pub async fn scan_assets(
 /// Retrieve details for a single asset within the overall search results. The
 /// performance of this function depends greatly on the caching of search
 /// results in the search and scan use cases.
-#[leptos::server(Browse, "/api", "Cbor")]
+#[leptos::server(name = Browse, prefix = "/api", input = server_fn::codec::Cbor)]
 pub async fn browse(params: BrowseParams) -> Result<BrowseMeta, ServerFnError> {
     use crate::domain::usecases::UseCase;
+    use leptos::server_fn::error::ServerFnErrorErr;
 
     let repo = ssr::db()?;
     let cache = ssr::cache()?;
@@ -476,7 +505,7 @@ pub async fn browse(params: BrowseParams) -> Result<BrowseMeta, ServerFnError> {
         };
         usecase
             .call(params)
-            .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?
+            .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?
     } else {
         use crate::domain::usecases::search::{Params, SearchAssets};
         let usecase = SearchAssets::new(Box::new(repo), Box::new(cache));
@@ -492,7 +521,7 @@ pub async fn browse(params: BrowseParams) -> Result<BrowseMeta, ServerFnError> {
         };
         usecase
             .call(params)
-            .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?
+            .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?
     };
 
     // retrieve the desired asset details from among the results
@@ -517,12 +546,13 @@ pub async fn browse(params: BrowseParams) -> Result<BrowseMeta, ServerFnError> {
 
 /// An asset was replaced while in the midst of browsing, need to refresh
 /// the cached search results and find the index of the new asset.
-#[leptos::server(BrowseReplace, "/api", "Cbor")]
+#[leptos::server(name = BrowseReplace, prefix = "/api", input = server_fn::codec::Cbor)]
 pub async fn browse_replace(
     params: BrowseParams,
     asset_id: String,
 ) -> Result<Option<usize>, ServerFnError> {
     use crate::domain::usecases::UseCase;
+    use leptos::server_fn::error::ServerFnErrorErr;
 
     let repo = ssr::db()?;
     let cache = ssr::cache()?;
@@ -536,7 +566,7 @@ pub async fn browse_replace(
         };
         usecase
             .call(params)
-            .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?
+            .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?
     } else {
         use crate::domain::usecases::search::{Params, SearchAssets};
         let usecase = SearchAssets::new(Box::new(repo), Box::new(cache));
@@ -552,7 +582,7 @@ pub async fn browse_replace(
         };
         usecase
             .call(params)
-            .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?
+            .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?
     };
 
     Ok(results.iter().position(|r| r.asset_id == asset_id))

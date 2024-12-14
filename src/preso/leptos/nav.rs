@@ -2,8 +2,8 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::preso::leptos::get_count;
-use html::Div;
-use leptos::*;
+use leptos::html::Div;
+use leptos::prelude::*;
 use leptos_use::{
     on_click_outside, use_color_mode_with_options, ColorMode, UseColorModeOptions,
     UseColorModeReturn,
@@ -11,8 +11,8 @@ use leptos_use::{
 
 #[component]
 pub fn NavBar() -> impl IntoView {
-    let dropdown_open = create_rw_signal(false);
-    let dropdown_ref = create_node_ref::<Div>();
+    let dropdown_open = RwSignal::new(false);
+    let dropdown_ref: NodeRef<Div> = NodeRef::new();
     let _ = on_click_outside(dropdown_ref, move |_| dropdown_open.set(false));
     let UseColorModeReturn { mode, set_mode, .. } =
         use_color_mode_with_options(UseColorModeOptions::default().attribute("data-theme"));
@@ -157,24 +157,18 @@ pub fn NavBar() -> impl IntoView {
 
 #[component]
 fn AssetCount() -> impl IntoView {
-    let count = create_resource(|| (), |_| async move { get_count().await });
+    let count = Resource::new(|| (), |_| async move { get_count().await });
 
     view! {
         <Transition fallback=move || {
             view! { "Loading..." }
         }>
-            {move || {
-                count
-                    .get()
-                    .map(|data| match data.clone() {
-                        Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
-                        }
-                        Ok(count) => {
-                            view! { <span>{move || format!("{} assets", count)}</span> }.into_view()
-                        }
-                    })
-            }}
+            <span>
+                {move || {
+                    let count = count.get().and_then(Result::ok).unwrap_or_default();
+                    format!("{} assets", count)
+                }}
+            </span>
         </Transition>
     }
 }

@@ -3,8 +3,9 @@
 //
 use crate::preso::leptos::nav;
 use leptos::html::Div;
-use leptos::*;
+use leptos::prelude::*;
 use leptos_use::{use_drop_zone_with_options, UseDropZoneOptions, UseDropZoneReturn};
+use server_fn::error::{ServerFnError, ServerFnErrorErr};
 use web_sys::wasm_bindgen::JsCast;
 
 ///
@@ -28,16 +29,16 @@ pub async fn ingest() -> Result<u32, ServerFnError> {
     let params = Params::new(uploads_path);
     let count = usecase
         .call(params)
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     Ok(count as u32)
 }
 
 #[component]
 pub fn UploadPage() -> impl IntoView {
     // boolean indicating if user is dragging files over the drop zone
-    let (is_over, set_is_over) = create_signal(false);
+    let (is_over, set_is_over) = signal(false);
     // drop zone element and destructured/renamed fields from the helper
-    let drop_zone_el = create_node_ref::<Div>();
+    let drop_zone_el: NodeRef<Div> = NodeRef::new();
     let UseDropZoneReturn {
         is_over_drop_zone: _ignored,
         files: dropped_files,
@@ -49,18 +50,18 @@ pub fn UploadPage() -> impl IntoView {
             .on_leave(move |_| set_is_over.set(false)),
     );
     // files selected from the file input element
-    let (selected_files, set_selected_files) = create_signal::<Vec<web_sys::File>>(vec![]);
+    let (selected_files, set_selected_files) = arc_signal::<Vec<web_sys::File>>(vec![]);
     // combination of the dropped files and those from the file selector
-    let all_files = create_memo(move |_| {
-        with!(|dropped_files, selected_files| {
-            let mut copy: Vec<web_sys::File> = dropped_files.iter().cloned().collect();
-            for select in selected_files {
-                copy.push(select.to_owned());
-            }
-            copy.sort_by(|a, b| a.name().cmp(&b.name()));
-            copy.dedup_by(|a, b| a.name() == b.name());
-            copy
-        })
+    let all_files = Memo::new(move |_| {
+        let dropped = dropped_files.read();
+        let selected = selected_files.read();
+        let mut copy: Vec<web_sys::File> = dropped.iter().cloned().collect();
+        for select in selected {
+            copy.push(select.to_owned());
+        }
+        copy.sort_by(|a, b| a.name().cmp(&b.name()));
+        copy.dedup_by(|a, b| a.name() == b.name());
+        copy
     });
     let has_files = move || all_files.get().len() > 0;
     let drop_style = move || {
@@ -74,12 +75,11 @@ pub fn UploadPage() -> impl IntoView {
         )
     };
     // import any files in the 'uploads' directory
-    let import_action = create_action(move |_input: &()| import_files());
+    let import_action = Action::new(move |_input: &()| import_files());
     // indicates number of files uploaded so far as percentage
-    let (progress, set_progress) = create_signal(0);
+    let (progress, set_progress) = signal(0);
     // upload the files asynchronously and update the progress
-    let upload_action =
-        create_action(move |_input: &()| upload_files(all_files.get(), set_progress));
+    let upload_action = Action::new(move |_input: &()| upload_files(all_files.get(), set_progress));
     // merge chosen files with any that were selected previously
     let files_selected = move |ev| {
         let mut selected = file_event_to_file_vec(ev);
@@ -101,7 +101,7 @@ pub fn UploadPage() -> impl IntoView {
                             class="button"
                             class:is-loading=move || import_action.pending().get()
                             disabled=move || import_action.pending().get()
-                            on:click=move |_| import_action.dispatch(())
+                            on:click=move |_| {import_action.dispatch(());}
                         >
                             Import
                         </button>
@@ -139,7 +139,7 @@ pub fn UploadPage() -> impl IntoView {
                             disabled=move || {
                                 has_files() == false || upload_action.pending().get()
                             }
-                            on:click=move |_| upload_action.dispatch(())
+                            on:click=move |_| {upload_action.dispatch(());}
                         >
                             Start Upload
                         </button>
@@ -202,7 +202,7 @@ async fn import_files() {
     }
     // navigate to the pending page for convenience and consistency with the
     // upload button
-    let navigate = leptos_router::use_navigate();
+    let navigate = leptos_router::hooks::use_navigate();
     navigate("/pending", Default::default());
 }
 
@@ -228,7 +228,7 @@ async fn upload_files(files: Vec<web_sys::File>, set_progress: WriteSignal<i32>)
     }
     // since we are unable to reset the drop zone with the current API, simply
     // send the browser to the pending page immediately
-    let navigate = leptos_router::use_navigate();
+    let navigate = leptos_router::hooks::use_navigate();
     navigate("/pending", Default::default());
 }
 

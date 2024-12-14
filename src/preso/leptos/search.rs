@@ -7,7 +7,7 @@ use crate::preso::leptos::{nav, paging, results};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
 use leptos::ev::Event;
 use leptos::html::Input;
-use leptos::*;
+use leptos::prelude::*;
 use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
 
 #[component]
@@ -40,17 +40,15 @@ pub fn SearchPage() -> impl IntoView {
             .initial_value(18)
             .delay_during_hydration(true),
     );
-    let input_ref = NodeRef::<Input>::new();
+    let input_ref: NodeRef<Input> = NodeRef::new();
     let on_change = move |ev: Event| {
         let input = input_ref.get().unwrap();
         ev.stop_propagation();
-        batch(|| {
-            set_query.set(input.value());
-            set_selected_page.set(1);
-        });
+        set_query.set(input.value());
+        set_selected_page.set(1);
     };
     // search for assets using the given criteria
-    let results = create_resource(
+    let results = Resource::new(
         move || {
             (
                 query.get(),
@@ -74,7 +72,7 @@ pub fn SearchPage() -> impl IntoView {
     );
     // begin browsing assets, starting with the chosen asset; the given index is
     // zero-based within the current page of results
-    let browse_asset = create_action(move |idx: &usize| {
+    let browse_asset = Action::new(move |idx: &usize| {
         let page = selected_page.get_untracked();
         let count = page_size.get_untracked();
         let offset = count * (page - 1);
@@ -155,28 +153,13 @@ pub fn SearchPage() -> impl IntoView {
                     <Transition fallback=move || {
                         view! { "Loading..." }
                     }>
-                        {move || {
-                            results
-                                .get()
-                                .map(|result| match result {
-                                    Err(err) => {
-                                        view! { <span>{move || format!("Error: {}", err)}</span> }
-                                            .into_view()
-                                    }
-                                    Ok(meta) => {
-                                        view! {
-                                            <paging::PageControls
-                                                meta
-                                                selected_page
-                                                set_selected_page
-                                                page_size
-                                                set_page_size
-                                            />
-                                        }
-                                            .into_view()
-                                    }
-                                })
-                        }}
+                        <paging::PageControls
+                            last_page=results.get().and_then(Result::ok).unwrap_or_default().last_page
+                            selected_page
+                            set_selected_page
+                            page_size
+                            set_page_size
+                        />
                     </Transition>
                 </div>
             </nav>
@@ -185,23 +168,10 @@ pub fn SearchPage() -> impl IntoView {
         <Transition fallback=move || {
             view! { "Loading..." }
         }>
-            {move || {
-                results
-                    .get()
-                    .map(|result| match result {
-                        Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
-                        }
-                        Ok(meta) => {
-                            view! {
-                                <results::ResultsDisplay
-                                    meta
-                                    onclick=move |idx| browse_asset.dispatch(idx)
-                                />
-                            }
-                        }
-                    })
-            }}
+            <results::ResultsDisplay
+                meta=results.get().and_then(Result::ok).unwrap_or_default()
+                onclick=move |idx| {browse_asset.dispatch(idx);}
+            />
         </Transition>
     }
 }
@@ -216,6 +186,6 @@ async fn begin_browsing(params: BrowseParams) {
             .delay_during_hydration(true),
     );
     set_browse_params.set(params);
-    let navigate = leptos_router::use_navigate();
+    let navigate = leptos_router::hooks::use_navigate();
     navigate("/asset", Default::default());
 }

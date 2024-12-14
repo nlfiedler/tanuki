@@ -1,10 +1,9 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use html::Div;
 use leptos::ev::Event;
-use leptos::html::Input;
-use leptos::*;
+use leptos::html::{Div, Input};
+use leptos::prelude::*;
 use leptos_use::on_click_outside;
 use std::collections::HashSet;
 
@@ -12,7 +11,7 @@ use std::collections::HashSet;
 #[component]
 pub fn TagList<F>(attrs: Signal<HashSet<String>>, rm_attr: F) -> impl IntoView
 where
-    F: Fn(String) + Copy + 'static,
+    F: Fn(String) + Copy + 'static + Send,
 {
     // be sure to access the signal inside the view!
     view! {
@@ -21,7 +20,7 @@ where
                 .get()
                 .into_iter()
                 .map(move |attr| {
-                    let attr = store_value(attr);
+                    let attr = StoredValue::new(attr);
                     view! {
                         <div class="control">
                             <div class="tags has-addons">
@@ -42,10 +41,10 @@ where
 #[component]
 pub fn TagsChooser<F>(add_tag: F) -> impl IntoView
 where
-    F: Fn(String) + Copy + 'static,
+    F: Fn(String) + Copy + 'static + Send,
 {
     // the tags returned from the server are in no particular order
-    let tags = create_resource(
+    let tags = Resource::new(
         || (),
         |_| async move {
             let mut results = super::fetch_tags().await;
@@ -74,49 +73,35 @@ where
         <Transition fallback=move || {
             view! { "Loading..." }
         }>
-            {move || {
-                tags.get()
-                    .map(|resp| match resp {
-                        Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
-                        }
-                        Ok(data) => {
-                            let tags = store_value(data);
-                            view! {
-                                <div class="field is-horizontal">
-                                    <div class="field-label is-normal">
-                                        <label class="label" for="tags-input">
-                                            Tags
-                                        </label>
-                                    </div>
-                                    <div class="field-body">
-                                        <p class="control">
-                                            <input
-                                                class="input"
-                                                type="text"
-                                                id="tags-input"
-                                                list="tag-labels"
-                                                placeholder="Choose tags"
-                                                node_ref=input_ref
-                                                on:change=on_change
-                                            />
-                                            <datalist id="tag-labels">
-                                                <For
-                                                    each=move || tags.get_value()
-                                                    key=|t| t.label.clone()
-                                                    let:tag
-                                                >
-                                                    <option value=tag.label></option>
-                                                </For>
-                                            </datalist>
-                                        </p>
-                                    </div>
-                                </div>
-                            }
-                                .into_view()
-                        }
-                    })
-            }}
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="tags-input">
+                        Tags
+                    </label>
+                </div>
+                <div class="field-body">
+                    <p class="control">
+                        <input
+                            class="input"
+                            type="text"
+                            id="tags-input"
+                            list="tag-labels"
+                            placeholder="Choose tags"
+                            node_ref=input_ref
+                            on:change=on_change
+                        />
+                        <datalist id="tag-labels">
+                            <For
+                                each=move || tags.get().and_then(Result::ok).unwrap_or_default()
+                                key=|t| t.label.clone()
+                                let:tag
+                            >
+                                <option value=tag.label></option>
+                            </For>
+                        </datalist>
+                    </p>
+                </div>
+            </div>
         </Transition>
     }
 }
@@ -124,10 +109,10 @@ where
 #[component]
 pub fn LocationsChooser<F>(add_location: F) -> impl IntoView
 where
-    F: Fn(String) + Copy + 'static,
+    F: Fn(String) + Copy + 'static + Send,
 {
     // the locations returned from the server are in no particular order
-    let locations = create_resource(
+    let locations = Resource::new(
         || (),
         |_| async move {
             let mut results = super::fetch_all_locations().await;
@@ -156,50 +141,37 @@ where
         <Transition fallback=move || {
             view! { "Loading..." }
         }>
-            {move || {
-                locations
-                    .get()
-                    .map(|resp| match resp {
-                        Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
-                        }
-                        Ok(data) => {
-                            let locations = store_value(data);
-                            view! {
-                                <div class="field is-horizontal">
-                                    <div class="field-label is-normal">
-                                        <label class="label" for="locations-input">
-                                            Locations
-                                        </label>
-                                    </div>
-                                    <div class="field-body">
-                                        <p class="control">
-                                            <input
-                                                class="input"
-                                                type="text"
-                                                id="locations-input"
-                                                list="location-labels"
-                                                placeholder="Choose locations"
-                                                node_ref=input_ref
-                                                on:change=on_change
-                                            />
-                                            <datalist id="location-labels">
-                                                <For
-                                                    each=move || locations.get_value()
-                                                    key=|l| l.label.clone()
-                                                    let:loc
-                                                >
-                                                    <option value=loc.label></option>
-                                                </For>
-                                            </datalist>
-                                        </p>
-                                    </div>
-                                </div>
-                            }
-                                .into_view()
-                        }
-                    })
-            }}
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="locations-input">
+                        Locations
+                    </label>
+                </div>
+                <div class="field-body">
+                    <p class="control">
+                        <input
+                            class="input"
+                            type="text"
+                            id="locations-input"
+                            list="location-labels"
+                            placeholder="Choose locations"
+                            node_ref=input_ref
+                            on:change=on_change
+                        />
+                        <datalist id="location-labels">
+                            <For
+                                each=move || {
+                                    locations.get().and_then(Result::ok).unwrap_or_default()
+                                }
+                                key=|l| l.label.clone()
+                                let:loc
+                            >
+                                <option value=loc.label></option>
+                            </For>
+                        </datalist>
+                    </p>
+                </div>
+            </div>
         </Transition>
     }
 }
@@ -207,10 +179,10 @@ where
 #[component]
 pub fn FullLocationChooser<F>(set_location: F) -> impl IntoView
 where
-    F: Fn(String) + Copy + 'static,
+    F: Fn(String) + Copy + 'static + Send,
 {
     // the locations returned from the server are in no particular order
-    let locations = create_resource(
+    let locations = Resource::new(
         || (),
         |_| async move {
             let mut results = super::fetch_raw_locations().await;
@@ -238,53 +210,40 @@ where
         <Transition fallback=move || {
             view! { "Loading..." }
         }>
-            {move || {
-                locations
-                    .get()
-                    .map(|resp| match resp {
-                        Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
-                        }
-                        Ok(data) => {
-                            let locations = store_value(data);
-                            view! {
-                                <div class="field is-horizontal">
-                                    <div class="field-label is-normal">
-                                        <label class="label" for="locations-input">
-                                            Location
-                                        </label>
-                                    </div>
-                                    <div class="field-body">
-                                        <p class="control">
-                                            <input
-                                                class="input"
-                                                type="text"
-                                                id="locations-input"
-                                                list="location-labels"
-                                                placeholder="Choose location"
-                                                node_ref=input_ref
-                                                on:change=on_change
-                                            />
-                                            <datalist id="location-labels">
-                                                {move || {
-                                                    locations
-                                                        .get_value()
-                                                        .iter()
-                                                        .map(|loc| {
-                                                            let desc = loc.to_string();
-                                                            view! { <option value=desc></option> }
-                                                        })
-                                                        .collect::<Vec<_>>()
-                                                }}
-                                            </datalist>
-                                        </p>
-                                    </div>
-                                </div>
-                            }
-                                .into_view()
-                        }
-                    })
-            }}
+            <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                    <label class="label" for="locations-input">
+                        Location
+                    </label>
+                </div>
+                <div class="field-body">
+                    <p class="control">
+                        <input
+                            class="input"
+                            type="text"
+                            id="locations-input"
+                            list="location-labels"
+                            placeholder="Choose location"
+                            node_ref=input_ref
+                            on:change=on_change
+                        />
+                        <datalist id="location-labels">
+                            {move || {
+                                locations
+                                    .get()
+                                    .and_then(Result::ok)
+                                    .unwrap_or_default()
+                                    .iter()
+                                    .map(|loc| {
+                                        let desc = loc.to_string();
+                                        view! { <option value=desc></option> }
+                                    })
+                                    .collect::<Vec<_>>()
+                            }}
+                        </datalist>
+                    </p>
+                </div>
+            </div>
         </Transition>
     }
     .into_view()
@@ -293,10 +252,10 @@ where
 #[component]
 pub fn TypesChooser<F>(selected_type: Signal<Option<String>>, set_type: F) -> impl IntoView
 where
-    F: Fn(Option<String>) + Copy + 'static,
+    F: Fn(Option<String>) + Copy + 'static + Send,
 {
     // the media types returned from the server are in no particular order
-    let types = create_resource(
+    let types = Resource::new(
         || (),
         |_| async move {
             let mut results = super::fetch_types().await;
@@ -306,83 +265,64 @@ where
             results
         },
     );
-    let dropdown_open = create_rw_signal(false);
-    let dropdown_ref = create_node_ref::<Div>();
+    let dropdown_open = RwSignal::new(false);
+    let dropdown_ref: NodeRef<Div> = NodeRef::new();
     let _ = on_click_outside(dropdown_ref, move |_| dropdown_open.set(false));
 
     view! {
         <Transition fallback=move || {
             view! { "Loading..." }
         }>
-            {move || {
-                types
-                    .get()
-                    .map(|resp| match resp {
-                        Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
-                        }
-                        Ok(data) => {
-                            let types = store_value(data);
-                            view! {
-                                <div
-                                    class="dropdown"
-                                    class:is-active=move || dropdown_open.get()
-                                    node_ref=dropdown_ref
-                                >
-                                    <div class="dropdown-trigger">
-                                        <button
-                                            class="button"
-                                            on:click=move |_| { dropdown_open.update(|v| { *v = !*v }) }
-                                            aria-haspopup="true"
-                                            aria-controls="dropdown-menu"
-                                        >
-                                            <Show
-                                                when=move || selected_type.get().is_some()
-                                                fallback=move || "Media Type"
-                                            >
-                                                {move || selected_type.get().unwrap()}
-                                            </Show>
-                                        </button>
-                                    </div>
-                                    <div class="dropdown-menu" id="dropdown-menu" role="menu">
-                                        <div class="dropdown-content">
-                                            <a
-                                                class="dropdown-item"
-                                                on:click=move |_| {
-                                                    set_type(None);
-                                                    dropdown_open.set(false)
-                                                }
-                                            >
-                                                Any
-                                            </a>
-                                            <For
-                                                each=move || types.get_value()
-                                                key=|t| t.clone().label
-                                                let:type_
-                                            >
-                                                {move || {
-                                                    let type_ = store_value(type_.clone());
-                                                    view! {
-                                                        <a
-                                                            class="dropdown-item"
-                                                            on:click=move |_| {
-                                                                set_type(Some(type_.get_value().label));
-                                                                dropdown_open.set(false)
-                                                            }
-                                                        >
-                                                            {move || type_.get_value().label}
-                                                        </a>
-                                                    }
-                                                }}
-                                            </For>
-                                        </div>
-                                    </div>
-                                </div>
+            <div class="dropdown" class:is-active=move || dropdown_open.get() node_ref=dropdown_ref>
+                <div class="dropdown-trigger">
+                    <button
+                        class="button"
+                        on:click=move |_| { dropdown_open.update(|v| { *v = !*v }) }
+                        aria-haspopup="true"
+                        aria-controls="dropdown-menu"
+                    >
+                        <Show
+                            when=move || selected_type.get().is_some()
+                            fallback=move || "Media Type"
+                        >
+                            {move || selected_type.get().unwrap()}
+                        </Show>
+                    </button>
+                </div>
+                <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                    <div class="dropdown-content">
+                        <a
+                            class="dropdown-item"
+                            on:click=move |_| {
+                                set_type(None);
+                                dropdown_open.set(false)
                             }
-                                .into_view()
-                        }
-                    })
-            }}
+                        >
+                            Any
+                        </a>
+                        <For
+                            each=move || types.get().and_then(Result::ok).unwrap_or_default()
+                            key=|t| t.clone().label
+                            let:type_
+                        >
+                            {move || {
+                                let type_ = StoredValue::new(type_.clone());
+                                view! {
+                                    <a
+                                        class="dropdown-item"
+                                        on:click=move |_| {
+                                            set_type(Some(type_.get_value().label));
+                                            dropdown_open.set(false)
+                                        }
+                                    >
+                                        {move || type_.get_value().label}
+                                    </a>
+                                }
+                            }}
+                        </For>
+                    </div>
+                </div>
+            </div>
         </Transition>
     }
 }

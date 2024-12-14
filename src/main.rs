@@ -1,6 +1,8 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
+#![recursion_limit = "256"]
+
 use actix_cors::Cors;
 #[cfg(feature = "ssr")]
 use actix_files::{Files, NamedFile};
@@ -186,7 +188,7 @@ async fn graphiql() -> actix_web::Result<HttpResponse> {
 
 #[cfg(feature = "ssr")]
 async fn graphql(
-    st: web::Data<(Arc<graphql::Schema>, leptos::LeptosOptions)>,
+    st: web::Data<(Arc<graphql::Schema>, leptos::prelude::LeptosOptions)>,
     data: web::Json<GraphQLRequest>,
 ) -> actix_web::Result<HttpResponse> {
     let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
@@ -284,19 +286,19 @@ async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> 
 #[cfg(feature = "ssr")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    use leptos::*;
+    use leptos::config::get_configuration;
     use leptos_actix::{generate_route_list, LeptosRoutes};
-    use tanuki::preso::leptos::*;
+    use tanuki::preso::leptos::{App, shell};
 
-    let conf = get_configuration(None).await.unwrap();
+    let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
-    let routes = generate_route_list(App);
 
     dotenv::dotenv().ok();
     env_logger::init();
     HttpServer::new(move || {
+        let routes = generate_route_list(App);
         let leptos_options = &conf.leptos_options;
-        let site_root = &leptos_options.site_root;
+        let site_root = leptos_options.site_root.to_string();
         let schema = Arc::new(graphql::create_schema());
         App::new()
             .app_data(web::Data::new((schema, leptos_options.to_owned())))
@@ -332,7 +334,10 @@ async fn main() -> std::io::Result<()> {
             .route("/rest/asset/{id}", web::head().to(raw_asset))
             .route("/rest/import", web::post().to(import_assets))
             .route("/rest/replace/{id}", web::post().to(replace_asset))
-            .leptos_routes(leptos_options.to_owned(), routes.to_owned(), App)
+            .leptos_routes(routes, {
+                let leptos_options = leptos_options.clone();
+                move || shell(leptos_options.clone())
+            })
     })
     .bind(addr)?
     .run()
@@ -360,7 +365,7 @@ pub fn main() {
 #[cfg(feature = "ssr")]
 #[actix_web::get("favicon.ico")]
 async fn favicon(
-    st: web::Data<(Arc<graphql::Schema>, leptos::LeptosOptions)>,
+    st: web::Data<(Arc<graphql::Schema>, leptos::prelude::LeptosOptions)>,
 ) -> actix_web::Result<actix_files::NamedFile> {
     let site_root = &st.1.site_root;
     Ok(actix_files::NamedFile::open(format!(

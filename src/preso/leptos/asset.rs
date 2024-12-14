@@ -6,9 +6,12 @@ use crate::preso::leptos::nav;
 use crate::preso::leptos::BrowseParams;
 use chrono::{DateTime, Local, NaiveDateTime, Utc};
 use codee::string::JsonSerdeCodec;
-use leptos::*;
+use leptos::html::Input;
+use leptos::prelude::*;
 use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
-use std::collections::HashMap;
+use server_fn::codec::{MultipartData, MultipartFormData};
+use server_fn::error::ServerFnErrorErr;
+use web_sys::{FormData, HtmlFormElement};
 
 ///
 /// Retrieve an asset by its unique identifier.
@@ -23,7 +26,7 @@ pub async fn fetch_asset(id: String) -> Result<Asset, ServerFnError> {
     let params = Params::new(id);
     let asset = usecase
         .call(params)
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     Ok(asset)
 }
 
@@ -42,11 +45,35 @@ pub async fn update_asset(asset: AssetInput) -> Result<Option<Asset>, ServerFnEr
         let params: Params = Params::new(asset.into());
         let result: Asset = usecase
             .call(params)
-            .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+            .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
         Ok(Some(result))
     } else {
         Ok(None)
     }
+}
+
+#[server(input = MultipartFormData)]
+pub async fn upload_file(data: MultipartData) -> Result<usize, ServerFnError> {
+    // `.into_inner()` returns the inner `multer` stream; it is `None` if we
+    // call this on the client, but always `Some(_)` on the server, so is safe
+    // to unwrap
+    let mut data = data.into_inner().unwrap();
+
+    // this will just measure the total number of bytes uploaded
+    let mut count = 0;
+    while let Ok(Some(mut field)) = data.next_field().await {
+        println!("\n[NEXT FIELD]\n");
+        let name = field.name().unwrap_or_default().to_string();
+        println!("  [NAME] {name}");
+        while let Ok(Some(chunk)) = field.chunk().await {
+            let len = chunk.len();
+            count += len;
+            println!("      [CHUNK] {len}");
+            // in a real server function, you'd do something like saving the file here
+        }
+    }
+
+    Ok(count)
 }
 
 #[component]
@@ -59,11 +86,11 @@ pub fn AssetPage() -> impl IntoView {
                 .initial_value(BrowseParams::default())
                 .delay_during_hydration(true),
         );
-    let browse_resource = create_resource(
+    let browse_resource = Resource::new(
         move || browse_params.get(),
         |params| async move { super::browse(params).await },
     );
-    let asset_replaced = create_action(move |id: &String| {
+    let asset_replaced = Action::new(move |id: &String| {
         // when an asset is replaced, the cached search results are cleared, and
         // the position of the new asset within the updated results may change;
         // refresh the search results, find the new position of the asset, and
@@ -98,7 +125,7 @@ pub fn AssetPage() -> impl IntoView {
                 if params.asset_index > 0 {
                     set_browse_params.update(|p| p.asset_index -= 1);
                 } else {
-                    let navigate = leptos_router::use_navigate();
+                    let navigate = leptos_router::hooks::use_navigate();
                     navigate("/", Default::default());
                 }
             }
@@ -118,10 +145,10 @@ pub fn AssetPage() -> impl IntoView {
                         .map(|result| match result {
                             Err(err) => {
                                 view! { <span>{move || format!("Error: {}", err)}</span> }
-                                    .into_view()
+                                    .into_any()
                             }
                             Ok(meta) => {
-                                let asset = store_value(meta.asset);
+                                let asset = StoredValue::new(meta.asset);
                                 view! {
                                     <div class="columns">
                                         <div
@@ -160,7 +187,9 @@ pub fn AssetPage() -> impl IntoView {
                                                 <AssetFigure asset=asset.get_value().unwrap() />
                                                 <AssetForm
                                                     asset=asset.get_value().unwrap()
-                                                    replaced=move |id| asset_replaced.dispatch(id)
+                                                    replaced=move |id| {
+                                                        let _ = asset_replaced.dispatch(id);
+                                                    }
                                                 />
                                             </Show>
                                         </div>
@@ -196,7 +225,7 @@ pub fn AssetPage() -> impl IntoView {
                                         </div>
                                     </div>
                                 }
-                                    .into_view()
+                                    .into_any()
                             }
                         })
                 }}
@@ -207,7 +236,7 @@ pub fn AssetPage() -> impl IntoView {
 
 #[component]
 fn AssetFigure(asset: Asset) -> impl IntoView {
-    let asset = store_value(asset);
+    let asset = StoredValue::new(asset);
     view! {
         <figure class="image">
             {move || {
@@ -225,7 +254,7 @@ fn AssetFigure(asset: Asset) -> impl IntoView {
                             tag.
                         </video>
                     }
-                        .into_view()
+                        .into_any()
                 } else if asset.get_value().media_type.starts_with("audio/") {
                     let src = format!("/rest/asset/{}", asset.get_value().key);
                     view! {
@@ -234,7 +263,7 @@ fn AssetFigure(asset: Asset) -> impl IntoView {
                             <source src=src type=asset.get_value().media_type />
                         </audio>
                     }
-                        .into_view()
+                        .into_any()
                 } else {
                     view! {
                         <img
@@ -243,7 +272,7 @@ fn AssetFigure(asset: Asset) -> impl IntoView {
                             style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
                         />
                     }
-                        .into_view()
+                        .into_any()
                 }
             }}
         </figure>
@@ -253,18 +282,18 @@ fn AssetFigure(asset: Asset) -> impl IntoView {
 #[component]
 fn AssetForm<E>(asset: Asset, replaced: E) -> impl IntoView
 where
-    E: Fn(String) + Copy + 'static,
+    E: Fn(String) + Copy + 'static + Send,
 {
-    let asset = store_value(asset);
-    let datetime_input_ref: NodeRef<html::Input> = create_node_ref();
-    let filename_input_ref: NodeRef<html::Input> = create_node_ref();
-    let caption_input_ref: NodeRef<html::Input> = create_node_ref();
-    let tags_input_ref: NodeRef<html::Input> = create_node_ref();
-    let mediatype_input_ref: NodeRef<html::Input> = create_node_ref();
-    let location_input_ref: NodeRef<html::Input> = create_node_ref();
-    let city_input_ref: NodeRef<html::Input> = create_node_ref();
-    let region_input_ref: NodeRef<html::Input> = create_node_ref();
-    let save_action = create_action(move |_input: &()| {
+    let asset = StoredValue::new(asset);
+    let datetime_input_ref: NodeRef<Input> = NodeRef::new();
+    let filename_input_ref: NodeRef<Input> = NodeRef::new();
+    let caption_input_ref: NodeRef<Input> = NodeRef::new();
+    let tags_input_ref: NodeRef<Input> = NodeRef::new();
+    let mediatype_input_ref: NodeRef<Input> = NodeRef::new();
+    let location_input_ref: NodeRef<Input> = NodeRef::new();
+    let city_input_ref: NodeRef<Input> = NodeRef::new();
+    let region_input_ref: NodeRef<Input> = NodeRef::new();
+    let save_action = Action::new(move |_input: &()| {
         let mut input = AssetInput::new(asset.get_value().key.clone());
         // caption
         let new_caption = caption_input_ref.get().unwrap().value();
@@ -375,49 +404,58 @@ where
             .unwrap_or(false)
     };
     // upload replacement file asynchronously and show updated asset
-    let (asset_unchanged, set_asset_unchanged) = create_signal(false);
-    let upload_action = create_action(move |ev: &leptos::ev::Event| {
-        let selected = file_event_to_file_vec(ev.clone());
-        upload_file(
-            asset.get_value().key,
-            selected[0].clone(),
-            move || {
-                set_asset_unchanged.set(true);
-                set_timeout(
-                    move || {
-                        set_asset_unchanged.set(false);
-                    },
-                    std::time::Duration::from_secs(5),
-                );
-            },
-            move |id| replaced(id),
-        )
+    let (asset_unchanged, set_asset_unchanged) = signal(false);
+    // let upload_action = Action::new(move |ev: &leptos::ev::Event| {
+    //     let selected = file_event_to_file_vec(ev.clone());
+    //     upload_file(
+    //         asset.get_value().key,
+    //         selected[0].clone(),
+    //         move || {
+    //             set_asset_unchanged.set(true);
+    //             set_timeout(
+    //                 move || {
+    //                     set_asset_unchanged.set(false);
+    //                 },
+    //                 std::time::Duration::from_secs(5),
+    //             );
+    //         },
+    //         move |id| replaced(id),
+    //     )
+    // });
+    let upload_action = Action::new_local(|data: &FormData| {
+        // `MultipartData` implements `From<FormData>`
+        upload_file(data.clone().into())
     });
 
     view! {
         <nav class="m-4 level">
             <div class="level-left">
                 <div class="level-item">
-                    <p class="control">
-                        <div class="file">
-                            <label class="file-label">
-                                <input
-                                    class="file-input"
-                                    type="file"
-                                    id="file-input"
-                                    name="replacement"
-                                    disabled=move || upload_action.pending().get()
-                                    on:input=move |ev| upload_action.dispatch(ev)
-                                />
-                                <span class="file-cta">
-                                    <span class="file-icon">
-                                        <i class="fas fa-upload"></i>
-                                    </span>
-                                    <span class="file-label">Replace</span>
+                    <div class="file">
+                        <label class="file-label">
+                            <input
+                                class="file-input"
+                                type="file"
+                                id="file-input"
+                                name="replacement"
+                                disabled=move || upload_action.pending().get()
+                                on:input=move |ev| {
+                                    use leptos::wasm_bindgen::JsCast;
+                                    ev.prevent_default();
+                                    let target = ev.target().unwrap().unchecked_into::<HtmlFormElement>();
+                                    let form_data = FormData::new_with_form(&target).unwrap();
+                                    let _ = form_data.append_with_str("asset_id", &asset.get_value().key);
+                                    upload_action.dispatch_local(form_data);
+                                }
+                            />
+                            <span class="file-cta">
+                                <span class="file-icon">
+                                    <i class="fas fa-upload"></i>
                                 </span>
-                            </label>
-                        </div>
-                    </p>
+                                <span class="file-label">Replace</span>
+                            </span>
+                        </label>
+                    </div>
                 </div>
                 <div class="level-item">
                     <p class="control">
@@ -448,7 +486,7 @@ where
                                             view! {
                                                 <button
                                                     class="button"
-                                                    on:click=move |_| save_action.dispatch(())
+                                                    on:click=move |_| {save_action.dispatch(());}
                                                 >
                                                     <span class="icon">
                                                         <i class="fa-solid fa-floppy-disk"></i>
@@ -460,7 +498,7 @@ where
                                     >
                                         <button
                                             class="button is-success"
-                                            on:click=move |_| save_action.dispatch(())
+                                            on:click=move |_| {save_action.dispatch(());}
                                         >
                                             <span class="icon is-small">
                                                 <i class="fas fa-check"></i>
@@ -708,50 +746,50 @@ fn convert_utc_to_local(datetime: DateTime<Utc>) -> NaiveDateTime {
     datetime_local.naive_local()
 }
 
-/// Convert the FileList from the given event into a Vec<File> type.
-fn file_event_to_file_vec(ev: leptos::ev::Event) -> Vec<web_sys::File> {
-    use web_sys::wasm_bindgen::JsCast;
-    let files = ev
-        .target()
-        .unwrap()
-        .unchecked_ref::<web_sys::HtmlInputElement>()
-        .files()
-        .unwrap();
-    let mut results: Vec<web_sys::File> = Vec::new();
-    for idx in 0..files.length() {
-        results.push(files.item(idx).unwrap());
-    }
-    results
-}
+// /// Convert the FileList from the given event into a Vec<File> type.
+// fn file_event_to_file_vec(ev: leptos::ev::Event) -> Vec<web_sys::File> {
+//     use web_sys::wasm_bindgen::JsCast;
+//     let files = ev
+//         .target()
+//         .unwrap()
+//         .unchecked_ref::<web_sys::HtmlInputElement>()
+//         .files()
+//         .unwrap();
+//     let mut results: Vec<web_sys::File> = Vec::new();
+//     for idx in 0..files.length() {
+//         results.push(files.item(idx).unwrap());
+//     }
+//     results
+// }
 
-/// Upload a file, then navigate to the details page for the replacement asset.
-async fn upload_file<F, E>(key: String, file: web_sys::File, no_change: F, changed: E)
-where
-    F: Fn() + Copy + 'static,
-    E: Fn(String) + Copy + 'static,
-{
-    let form_data = web_sys::FormData::new().unwrap();
-    let filename = file.name();
-    form_data
-        .set_with_blob_and_filename("asset", &file, &filename)
-        .unwrap();
-    let url = format!("/rest/replace/{}", key);
-    let result = gloo::net::http::Request::post(&url)
-        .body(form_data)
-        .unwrap()
-        .send()
-        .await;
-    match result {
-        Err(err) => log::error!("file upload failed: {err:#?}"),
-        Ok(res) => {
-            // expected body {"ids:", ["new-id"]} with exactly one entry
-            let results: HashMap<String, Vec<String>> = res.json().await.unwrap();
-            let new_key = &results["ids"][0];
-            if new_key == &key {
-                no_change()
-            } else {
-                changed(new_key.to_owned());
-            }
-        }
-    }
-}
+// /// Upload a file, then navigate to the details page for the replacement asset.
+// async fn upload_file<F, E>(key: String, file: web_sys::File, no_change: F, changed: E)
+// where
+//     F: Fn() + Copy + 'static + Send,
+//     E: Fn(String) + Copy + 'static + Send,
+// {
+//     let form_data = web_sys::FormData::new().unwrap();
+//     let filename = file.name();
+//     form_data
+//         .set_with_blob_and_filename("asset", &file, &filename)
+//         .unwrap();
+//     let url = format!("/rest/replace/{}", key);
+//     let result = gloo::net::http::Request::post(&url)
+//         .body(form_data)
+//         .unwrap()
+//         .send()
+//         .await;
+//     match result {
+//         Err(err) => log::error!("file upload failed: {err:#?}"),
+//         Ok(res) => {
+//             // expected body {"ids:", ["new-id"]} with exactly one entry
+//             let results: HashMap<String, Vec<String>> = res.json().await.unwrap();
+//             let new_key = &results["ids"][0];
+//             if new_key == &key {
+//                 no_change()
+//             } else {
+//                 changed(new_key.to_owned());
+//             }
+//         }
+//     }
+// }

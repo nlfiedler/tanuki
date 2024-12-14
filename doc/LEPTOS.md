@@ -6,6 +6,10 @@ See the documentation on the [web site](https://leptos.dev) for an introduction.
 
 Code targeting the front-end will be marked with the `#[component]` macro, while code meant to be compiled to the backend is feature-gated on the `ssr` feature. Hence, much of the backend code will be marked as such partly because it has no need to be on the client, but also some code and dependencies cannot be compiled to WASM.
 
+### Build Troubleshooting
+
+* Any time errors about compiling `mio` come up (that one seems to arise early in the build process), look for code that is meant to be compiled to the client but is not gated as such. That is, code meant for the client is pulling in dependencies intended for the server, including `mio`, which cannot be compiled to WASM, hence the errors. Typically this is fixed by marking a dependency as `optional` in the `Cargo.toml` file, or by making certain features as `ssr` only.
+
 ## Tips and Tricks
 
 Writing code using Rust within a fine-grained reactive framework can be rather tricky, mostly due to contending with the borrow checker. The flow of control through the continuations defined by the `view!` macro can lead to confusing error messages regarding the onwership of objects.
