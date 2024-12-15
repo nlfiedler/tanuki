@@ -16,6 +16,7 @@ pub fn NavBar() -> impl IntoView {
     let _ = on_click_outside(dropdown_ref, move |_| dropdown_open.set(false));
     let UseColorModeReturn { mode, set_mode, .. } =
         use_color_mode_with_options(UseColorModeOptions::default().attribute("data-theme"));
+    let count = Resource::new(|| (), |_| async move { get_count().await });
 
     view! {
         <nav class="navbar" role="navigation" aria-label="main navigation">
@@ -147,28 +148,22 @@ pub fn NavBar() -> impl IntoView {
                         </div>
                     </div>
                     <div class="navbar-item">
-                        <AssetCount />
+                        <Transition fallback=move || {
+                            view! { "Loading..." }
+                        }>
+                            <span>
+                                {move || {
+                                    let count = count
+                                        .get()
+                                        .and_then(Result::ok)
+                                        .unwrap_or_default();
+                                    format!("{} assets", count)
+                                }}
+                            </span>
+                        </Transition>
                     </div>
                 </div>
             </div>
         </nav>
-    }
-}
-
-#[component]
-fn AssetCount() -> impl IntoView {
-    let count = Resource::new(|| (), |_| async move { get_count().await });
-
-    view! {
-        <Transition fallback=move || {
-            view! { "Loading..." }
-        }>
-            <span>
-                {move || {
-                    let count = count.get().and_then(Result::ok).unwrap_or_default();
-                    format!("{} assets", count)
-                }}
-            </span>
-        </Transition>
     }
 }

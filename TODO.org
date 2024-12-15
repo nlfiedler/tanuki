@@ -2,38 +2,38 @@
 ** TODO Try to update leptos and everything else
 *** DONE get everything to compile (tries to build =mio= for client)
 *** DONE fix the page content appearing twice (stacked vertically)
-*** TODO hydration errors, there are many and seemingly inconsistent
+*** TODO hydration errors, there are many and sometimes inconsistent
 **** =div= inside =p= is invalid
-*** TODO edit page, working vs broken [6/7]
-- [X] query
-- [X] selection
-- [X] select all
-- [X] unselect all
-- [X] paging
-- [X] page size
+*** TODO edit page, working vs broken [0/7]
+- [ ] query
+- [ ] selection
+- [ ] select all
+- [ ] unselect all
+- [ ] paging
+- [ ] page size
 - [ ] make changes -> hydration error
 **** modify changed the asset, but page refresh failed
-*** DONE search page, working vs broken [5/5]
-- [X] query
-- [X] sort order
-- [X] paging
-- [X] page size
-- [X] clicking asset
-*** TODO asset page, working vs broken [5/6]
-- [X] view preview
-- [X] view details
-- [X] download asset
-- [X] modify details
-- [X] navigation of results
+*** TODO search page, working vs broken [0/5]
+- [ ] query
+- [ ] sort order
+- [ ] paging
+- [ ] page size
+- [ ] clicking asset
+*** TODO asset page, working vs broken [0/6]
+- [ ] view preview
+- [ ] view details
+- [ ] download asset
+- [ ] modify details
+- [ ] navigation of results
 - [ ] replace asset
-*** TODO pending page, working vs broken [6/8]
-- [X] show pending assets
+*** TODO pending page, working vs broken [0/8]
+- [ ] show pending assets
 - [ ] paging (not enough assets to test)
-- [X] sort order
-- [X] select assets
-- [X] choose tags
-- [X] choose location
-- [X] assign date
+- [ ] sort order
+- [ ] select assets
+- [ ] choose tags
+- [ ] choose location
+- [ ] assign date
 - [ ] save changes -> hydration error
 **** modify changed the asset(s), but page refresh failed midway (pending count updated)
 *** TODO home page, working vs broken [0/10]
@@ -49,7 +49,7 @@
 - [ ] clicking asset
 *** TODO should be able to refactor code to remove some =StoredValue= usage
 *** TODO fix the color mode errors that appear in the console
-**** message says using the signal outside of a function (need to add =move ||=)
+**** unclear why this error is happening
 *** TODO fix asset upload button (implement =upload_file()= like =replace_asset()=)
 *** TODO fix uploads page in a similar manner
 *** TODO remove unused REST API endpoints (=/rest/replace=)

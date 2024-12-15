@@ -58,6 +58,7 @@ pub fn SearchPage() -> impl IntoView {
             )
         },
         |(query_str, order, page, count)| async move {
+            log::info!("query: {}", query_str);
             let offset = count * (page - 1);
             let sort_order = SortOrder::from(order.as_str());
             super::scan_assets(
