@@ -471,7 +471,7 @@ where
                 // inject the current year if not already present so that the
                 // season selection has something to select when year is unset
                 let current_year = Utc::now().year();
-                if data[0].value != current_year {
+                if data.len() > 0 && data[0].value != current_year {
                     data.insert(
                         0,
                         Year {
