@@ -189,37 +189,33 @@ pub fn EditPage() -> impl IntoView {
                 <div class="level-right">
                     <div class="level-item">
                         <div class="field">
-                            <p class="control">
-                                <Show
-                                    when=move || sort_order.get() == "ascending"
-                                    fallback=move || {
-                                        view! {
-                                            <button
-                                                class="button"
-                                                on:click=move |_| { set_sort_order.set("ascending".into()) }
-                                            >
-                                                <span class="icon">
-                                                    <i class="fa-solid fa-arrow-up-9-1" aria-hidden="true"></i>
-                                                </span>
-                                            </button>
-                                        }
+                            <Show
+                                when=move || sort_order.get() == "ascending"
+                                fallback=move || {
+                                    view! {
+                                        <button
+                                            class="button"
+                                            on:click=move |_| { set_sort_order.set("ascending".into()) }
+                                        >
+                                            <span class="icon">
+                                                <i class="fa-solid fa-arrow-up-9-1" aria-hidden="true"></i>
+                                            </span>
+                                        </button>
                                     }
+                                }
+                            >
+                                <button
+                                    class="button"
+                                    on:click=move |_| { set_sort_order.set("descending".into()) }
                                 >
-                                    <button
-                                        class="button"
-                                        on:click=move |_| {
-                                            set_sort_order.set("descending".into())
-                                        }
-                                    >
-                                        <span class="icon">
-                                            <i
-                                                class="fa-solid fa-arrow-down-1-9"
-                                                aria-hidden="true"
-                                            ></i>
-                                        </span>
-                                    </button>
-                                </Show>
-                            </p>
+                                    <span class="icon">
+                                        <i
+                                            class="fa-solid fa-arrow-down-1-9"
+                                            aria-hidden="true"
+                                        ></i>
+                                    </span>
+                                </button>
+                            </Show>
                         </div>
                     </div>
                     <Transition fallback=move || {
@@ -290,25 +286,23 @@ pub fn EditPage() -> impl IntoView {
                     </Transition>
                     <div class="level-item">
                         <div class="field">
-                            <p class="control">
-                                <Show
-                                    when=move || submittable.get()
-                                    fallback=|| {
-                                        view! {
-                                            <button class="button" disabled>
-                                                Modify
-                                            </button>
-                                        }
+                            <Show
+                                when=move || submittable.get()
+                                fallback=|| {
+                                    view! {
+                                        <button class="button" disabled>
+                                            Modify
+                                        </button>
                                     }
-                                >
-                                    <input
-                                        class="button"
-                                        type="submit"
-                                        value="Modify"
-                                        on:click=move |_| set_modal_active.set(true)
-                                    />
-                                </Show>
-                            </p>
+                                }
+                            >
+                                <input
+                                    class="button"
+                                    type="submit"
+                                    value="Modify"
+                                    on:click=move |_| set_modal_active.set(true)
+                                />
+                            </Show>
                         </div>
                     </div>
                 </div>

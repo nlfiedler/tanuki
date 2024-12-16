@@ -398,82 +398,76 @@ where
         <nav class="m-4 level">
             <div class="level-left">
                 <div class="level-item">
-                    <p class="control">
-                        <div class="file">
-                            <label class="file-label">
-                                <input
-                                    class="file-input"
-                                    type="file"
-                                    id="file-input"
-                                    name="replacement"
-                                    disabled=move || upload_action.pending().get()
-                                    on:input=move |ev| upload_action.dispatch(ev)
-                                />
-                                <span class="file-cta">
-                                    <span class="file-icon">
-                                        <i class="fas fa-upload"></i>
-                                    </span>
-                                    <span class="file-label">Replace</span>
+                    <div class="file">
+                        <label class="file-label">
+                            <input
+                                class="file-input"
+                                type="file"
+                                id="file-input"
+                                name="replacement"
+                                disabled=move || upload_action.pending().get()
+                                on:input=move |ev| upload_action.dispatch(ev)
+                            />
+                            <span class="file-cta">
+                                <span class="file-icon">
+                                    <i class="fas fa-upload"></i>
                                 </span>
-                            </label>
-                        </div>
-                    </p>
+                                <span class="file-label">Replace</span>
+                            </span>
+                        </label>
+                    </div>
                 </div>
                 <div class="level-item">
-                    <p class="control">
-                        <a
-                            href=format!("/rest/asset/{}", asset.get_value().key)
-                            download=asset.get_value().filename
-                        >
-                            <button class="button">
-                                <span class="icon">
-                                    <i class="fa-solid fa-download"></i>
-                                </span>
-                                <span>Download</span>
-                            </button>
-                        </a>
-                    </p>
+                    <a
+                        href=format!("/rest/asset/{}", asset.get_value().key)
+                        download=asset.get_value().filename
+                    >
+                        <button class="button">
+                            <span class="icon">
+                                <i class="fa-solid fa-download"></i>
+                            </span>
+                            <span>Download</span>
+                        </button>
+                    </a>
                 </div>
             </div>
             <div class="level-right">
                 <div class="level-item">
-                    <p class="control">
-                        <Show
-                            when=move || save_pending.get()
-                            fallback=move || {
-                                view! {
-                                    <Show
-                                        when=move || save_success()
-                                        fallback=move || {
-                                            view! {
-                                                <button
-                                                    class="button"
-                                                    on:click=move |_| save_action.dispatch(())
-                                                >
-                                                    <span class="icon">
-                                                        <i class="fa-solid fa-floppy-disk"></i>
-                                                    </span>
-                                                    <span>Save</span>
-                                                </button>
-                                            }
+                    <Show
+                        when=move || save_pending.get()
+                        fallback=move || {
+                            view! {
+                                <Show
+                                    when=move || save_success()
+                                    fallback=move || {
+                                        view! {
+                                            <button
+                                                class="button"
+                                                on:click=move |_| save_action.dispatch(())
+                                            >
+                                                <span class="icon">
+                                                    <i class="fa-solid fa-floppy-disk"></i>
+                                                </span>
+                                                <span>Save</span>
+                                            </button>
                                         }
+                                    }
+                                >
+                                    <button
+                                        class="button is-success"
+                                        on:click=move |_| save_action.dispatch(())
                                     >
-                                        <button
-                                            class="button is-success"
-                                            on:click=move |_| save_action.dispatch(())
-                                        >
-                                            <span class="icon is-small">
-                                                <i class="fas fa-check"></i>
-                                            </span>
-                                            <span>Save</span>
-                                        </button>
-                                    </Show>
-                                }
+                                        <span class="icon is-small">
+                                            <i class="fas fa-check"></i>
+                                        </span>
+                                        <span>Save</span>
+                                    </button>
+                                </Show>
                             }
-                        >
-                            <button class="button is-loading">Save</button>
-                        </Show>
-                    </p>
+                        }
+                    >
+                        <button class="button is-loading">Save</button>
+                    </Show>
                 </div>
             </div>
         </nav>

@@ -1,6 +1,4 @@
 * Action Items
-** Try to update leptos and everything else
-*** note that 0.7.0 has API changes
 ** Memory leak
 *** it is gradually leaking memory until the OS swaps
 *** simple =HEAD= request on static asset gains 100mb of memory usage every time
@@ -124,6 +122,30 @@
 *** consider storage costs (currently under 100 GB)
 *** place basic auth server in front (Azure app gateway maybe?)
 *** consider if deploying in read-only mode (sync would be tricky)
+** Leptos
+*** Try to update leptos
+**** wait until 0.7.x or later, 0.7.0 is very buggy
+**** see =upgrade= branch; there are many problems
+**** c.f. https://github.com/leptos-rs/leptos/issues/3354
+*** Evaulate replacements for Leptos
+**** dioxus https://dioxuslabs.com/learn/0.5/
+**** iced https://iced.rs/
+**** sauron https://github.com/ivanceras/sauron
+**** sycamore https://sycamore.dev
+**** yew https://yew.rs/
+**** evaluation
+| name     | CSR, SSR | reactivity?   | actix? | CSS? | markup   | formatting? |
+|----------+----------+---------------+--------+------+----------+-------------|
+| dioxus   | both     | SolidJS style | maybe? |      | RSX      |             |
+| iced     |          |               |        |      |          |             |
+| leptos   | both     | SolidJS style | yes    | any  | HTML     | leptosfmt   |
+| sauron   |          |               |        |      |          |             |
+| sycamore |          |               |        |      | RSX like |             |
+| yew      |          |               |        |      |          |             |
+***** dioxus is very similar to leptos
+***** sycamore is very similar to leptos
+***** iced seems very basic, based on Elm
+***** sauron seems very basic, based on Elm
 ** Dependencies
 *** latest =mp4= crate has an error with certain test fixture
 **** version =0.13= does not have the problem, but =0.14= does

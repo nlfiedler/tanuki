@@ -286,51 +286,45 @@ pub fn HomePage() -> impl IntoView {
                     </div>
                     <div class="level-item">
                         <div class="field">
-                            <p class="control">
-                                <YearChooser
-                                    selected_year
-                                    set_year=move |value| {
-                                        batch(|| {
-                                            set_selected_year.set(value);
-                                            set_selected_page.set(1);
-                                        })
-                                    }
-                                />
-                            </p>
+                            <YearChooser
+                                selected_year
+                                set_year=move |value| {
+                                    batch(|| {
+                                        set_selected_year.set(value);
+                                        set_selected_page.set(1);
+                                    })
+                                }
+                            />
                         </div>
                     </div>
                     <div class="level-item">
                         <div class="field">
-                            <p class="control">
-                                <SeasonChooser
-                                    selected_season
-                                    set_season=move |value| {
-                                        batch(|| {
-                                            if value.is_some() && selected_year.get().is_none() {
-                                                let year = Utc::now().year();
-                                                set_selected_year.set(Some(year));
-                                            }
-                                            set_selected_season.set(value);
-                                            set_selected_page.set(1);
-                                        })
-                                    }
-                                />
-                            </p>
+                            <SeasonChooser
+                                selected_season
+                                set_season=move |value| {
+                                    batch(|| {
+                                        if value.is_some() && selected_year.get().is_none() {
+                                            let year = Utc::now().year();
+                                            set_selected_year.set(Some(year));
+                                        }
+                                        set_selected_season.set(value);
+                                        set_selected_page.set(1);
+                                    })
+                                }
+                            />
                         </div>
                     </div>
                     <div class="level-item">
                         <div class="field">
-                            <p class="control">
-                                <forms::TypesChooser
-                                    selected_type
-                                    set_type=move |value| {
-                                        batch(|| {
-                                            set_selected_type.set(value);
-                                            set_selected_page.set(1);
-                                        })
-                                    }
-                                />
-                            </p>
+                            <forms::TypesChooser
+                                selected_type
+                                set_type=move |value| {
+                                    batch(|| {
+                                        set_selected_type.set(value);
+                                        set_selected_page.set(1);
+                                    })
+                                }
+                            />
                         </div>
                     </div>
                 </div>
