@@ -30,6 +30,12 @@ Run both the backend and front-end tests with one command:
 cargo leptos test
 ```
 
+Run a single backend test:
+
+```shell
+cargo test --features=ssr test_location_from_str
+```
+
 ### Starting the server locally
 
 ```shell
