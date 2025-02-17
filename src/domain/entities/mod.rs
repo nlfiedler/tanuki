@@ -296,29 +296,13 @@ impl Location {
     pub fn indexable_values(&self) -> HashSet<String> {
         let mut values: HashSet<String> = HashSet::new();
         if let Some(label) = self.label.as_ref() {
-            let lower = label.to_lowercase();
-            // split the location label on commas
-            for entry in lower.split(',').map(|e| e.trim()).filter(|e| !e.is_empty()) {
-                values.insert(entry.to_owned());
-            }
+            values.insert(label.to_lowercase().to_owned());
         }
         if let Some(city) = self.city.as_ref() {
-            let city_lower = city.to_lowercase();
-            values.insert(city_lower.to_owned());
-            if let Some(region) = self.region.as_ref() {
-                let region_lower = region.to_lowercase();
-                // only emit the region value if it is distinct from the city,
-                // as some locations do not have a meaningful region name
-                if city_lower != region_lower
-                    && !region_lower.starts_with(&city_lower)
-                    && !region_lower.ends_with(&city_lower)
-                {
-                    values.insert(region_lower.to_owned());
-                }
-            }
-        } else if let Some(region) = self.region.as_ref() {
-            let region_lower = region.to_lowercase();
-            values.insert(region_lower.to_owned());
+            values.insert(city.to_lowercase().to_owned());
+        }
+        if let Some(region) = self.region.as_ref() {
+            values.insert(region.to_lowercase().to_owned());
         }
         values
     }
@@ -330,14 +314,6 @@ impl Location {
             let lower = label.to_lowercase();
             if lower == query {
                 return true;
-            }
-            if lower.contains(',') {
-                // split the location label on commas
-                for entry in lower.split(',').map(|e| e.trim()).filter(|e| !e.is_empty()) {
-                    if entry == query {
-                        return true;
-                    }
-                }
             }
         }
         if let Some(city) = self.city.as_ref() {
@@ -878,18 +854,19 @@ mod tests {
 
     #[test]
     fn test_location_indexable_values() {
-        let loc = Location::with_parts("foo, bar", "São Paulo", "State of São Paulo");
+        let loc = Location::with_parts("beach", "São Paulo", "State of São Paulo");
         let parts = loc.indexable_values();
         assert_eq!(parts.len(), 3);
-        assert!(parts.contains("foo"));
-        assert!(parts.contains("bar"));
+        assert!(parts.contains("beach"));
         assert!(parts.contains("são paulo"));
+        assert!(parts.contains("state of são paulo"));
 
-        let loc = Location::with_parts("fubar", "Jerusalem", "Jerusalem District");
+        let loc = Location::with_parts("temple", "Jerusalem", "Jerusalem District");
         let parts = loc.indexable_values();
-        assert_eq!(parts.len(), 2);
-        assert!(parts.contains("fubar"));
+        assert_eq!(parts.len(), 3);
+        assert!(parts.contains("temple"));
         assert!(parts.contains("jerusalem"));
+        assert!(parts.contains("jerusalem district"));
 
         let loc = Location::with_parts("bodega bay", "Bodega Bay", "California");
         let parts = loc.indexable_values();
@@ -905,29 +882,16 @@ mod tests {
         let parts = loc.indexable_values();
         assert_eq!(parts.len(), 1);
         assert!(parts.contains("oregon"));
-
-        let loc = Location {
-            label: Some(",foo,  quux  ,bar,".into()),
-            city: None,
-            region: None,
-        };
-        let parts = loc.indexable_values();
-        assert_eq!(parts.len(), 3);
-        assert!(parts.contains("foo"));
-        assert!(parts.contains("quux"));
-        assert!(parts.contains("bar"));
     }
 
     #[test]
     fn test_location_partial_match() {
-        let loc = Location::with_parts("foo, bar", "São Paulo", "State of São Paulo");
-        assert!(loc.partial_match("foo"));
-        assert!(loc.partial_match("bar"));
-        assert!(loc.partial_match("foo, bar"));
+        let loc = Location::with_parts("beach", "São Paulo", "State of São Paulo");
+        assert!(loc.partial_match("beach"));
         assert!(loc.partial_match("são paulo"));
         assert!(!loc.partial_match("berkeley"));
 
-        let loc = Location::with_parts("fubar", "Jerusalem", "Jerusalem District");
+        let loc = Location::with_parts("temple", "Jerusalem", "Jerusalem District");
         assert!(loc.partial_match("jerusalem"));
         assert!(!loc.partial_match("berkeley"));
 

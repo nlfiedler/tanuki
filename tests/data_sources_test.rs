@@ -5,6 +5,7 @@ mod common;
 
 use chrono::prelude::*;
 use common::DBPath;
+use std::str::FromStr;
 use tanuki::data::sources::EntityDataSource;
 use tanuki::data::sources::EntityDataSourceImpl;
 use tanuki::domain::entities::Location;
@@ -105,15 +106,15 @@ fn test_all_locations() {
     // multiple locations and occurrences
     let mut asset = common::build_basic_asset();
     asset.key = "single999".to_owned();
-    asset.location = Some(Location::new("paris, france"));
+    asset.location = Some(Location::from_str("paris, france").unwrap());
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "wonder101".to_owned();
-    asset.location = Some(Location::new("london"));
+    asset.location = Some(Location::from_str("london").unwrap());
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "tuesday42".to_owned();
-    asset.location = Some(Location::new("london"));
+    asset.location = Some(Location::from_str("london").unwrap());
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_locations().unwrap();
     assert_eq!(actual.len(), 4);
@@ -525,12 +526,12 @@ fn test_query_by_locations() {
     let mut asset = common::build_basic_asset();
     asset.key = "monday6".to_owned();
     asset.filename = "img_2345.jpg".to_owned();
-    asset.location = Some(Location::new("Paris, France"));
+    asset.location = Some(Location::from_str("Paris, France").unwrap());
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "monday8".to_owned();
     asset.filename = "img_6543.jpg".to_owned();
-    asset.location = Some(Location::new("Nice, France"));
+    asset.location = Some(Location::from_str("Nice, France").unwrap());
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
     asset.key = "tuesday7".to_owned();
