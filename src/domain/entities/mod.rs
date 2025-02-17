@@ -396,7 +396,7 @@ impl fmt::Display for Location {
         if has_label && has_city && has_region {
             write!(
                 f,
-                "{} - {}, {}",
+                "{}; {}, {}",
                 self.label.as_ref().unwrap(),
                 self.city.as_ref().unwrap(),
                 self.region.as_ref().unwrap()
@@ -411,14 +411,14 @@ impl fmt::Display for Location {
         } else if has_label && has_city {
             write!(
                 f,
-                "{} - {}",
+                "{}; {}",
                 self.label.as_ref().unwrap(),
                 self.city.as_ref().unwrap()
             )
         } else if has_label && has_region {
             write!(
                 f,
-                "{} - {}",
+                "{}; {}",
                 self.label.as_ref().unwrap(),
                 self.region.as_ref().unwrap()
             )
@@ -437,35 +437,57 @@ impl fmt::Display for Location {
 impl FromStr for Location {
     type Err = Error;
 
-    /// Parse the string into a location. If the input contains a comma (,) then
-    /// it is split and the first part becomes the city and the second part
-    /// becomes the region. If the input contains a dash (-) then the leading
-    /// value becomes the label and the remainder is treated as described
-    /// regarding the optional comma.
+    /// Parse the string into a location. Labels are separated by a semicolon
+    /// while city and region are separated by a comma. If there are no
+    /// separators, the input is treated as a label. Label, if present, comes
+    /// before city and region. If there is a semicolon but no comma, then the
+    /// second part is treated as the city. If there are too many semicolons or
+    /// commas, the input is treated as a label.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        //
+        // possible valid inputs:
+        //
+        // label
+        // label; city
+        // label; city, region
+        // city, region
+        //
         if s.is_empty() {
             return Ok(Default::default());
-        } else if s.contains(",") {
-            let city_region: Vec<&str> = s.split(",").collect();
-            if city_region.len() == 2 {
-                if city_region[0].contains("-") {
-                    let label_city: Vec<&str> = city_region[0].split('-').collect();
-                    if label_city.len() == 2 {
+        } else if s.contains(";") {
+            let label_tail: Vec<&str> = s.split(";").collect();
+            if label_tail.len() == 2 {
+                if label_tail[1].contains(",") {
+                    // label; city, region
+                    let city_region: Vec<&str> = label_tail[1].split(",").collect();
+                    if city_region.len() == 2 {
                         return Ok(Location::with_parts(
-                            label_city[0].trim(),
-                            label_city[1].trim(),
+                            label_tail[0].trim(),
+                            city_region[0].trim(),
                             city_region[1].trim(),
                         ));
                     }
                 } else {
+                    // label; city
                     return Ok(Location::with_parts(
+                        label_tail[0].trim(),
+                        label_tail[1].trim(),
                         "",
-                        city_region[0].trim(),
-                        city_region[1].trim(),
                     ));
                 }
             }
+        } else if s.contains(",") {
+            let city_region: Vec<&str> = s.split(",").collect();
+            if city_region.len() == 2 {
+                // city, region
+                return Ok(Location::with_parts(
+                    "",
+                    city_region[0].trim(),
+                    city_region[1].trim(),
+                ));
+            }
         }
+        // everything else is just a label
         Ok(Location::new(s))
     }
 }
@@ -1073,34 +1095,34 @@ mod tests {
 
     #[test]
     fn test_location_stringify() {
-        // label, city, region
+        // label + city + region
         let input = Location {
             label: Some("museum".into()),
             city: Some("Portland".into()),
             region: Some("Oregon".into()),
         };
         let actual = input.to_string();
-        assert_eq!(actual, "museum - Portland, Oregon");
+        assert_eq!(actual, "museum; Portland, Oregon");
 
-        // label, city
+        // label + city
         let input = Location {
             label: Some("museum".into()),
             city: Some("Portland".into()),
             region: None,
         };
         let actual = input.to_string();
-        assert_eq!(actual, "museum - Portland");
+        assert_eq!(actual, "museum; Portland");
 
-        // label, region
+        // label + region
         let input = Location {
             label: Some("museum".into()),
             city: None,
             region: Some("Oregon".into()),
         };
         let actual = input.to_string();
-        assert_eq!(actual, "museum - Oregon");
+        assert_eq!(actual, "museum; Oregon");
 
-        // city and region
+        // city + region
         let input = Location {
             label: None,
             city: Some("Portland".into()),
@@ -1148,6 +1170,12 @@ mod tests {
 
     #[test]
     fn test_location_from_str() {
+        // emtpy string
+        let expected: Location = Default::default();
+        let actual = Location::from_str("").unwrap();
+        assert_eq!(expected, actual);
+
+        // no separators
         let expected = Location {
             label: Some("classical garden".into()),
             city: None,
@@ -1156,44 +1184,58 @@ mod tests {
         let actual = Location::from_str("classical garden").unwrap();
         assert_eq!(expected, actual);
 
-        let expected = Location {
-            label: None,
-            city: Some("Portland".into()),
-            region: Some("Oregon".into()),
-        };
-        let actual = Location::from_str("Portland, Oregon").unwrap();
-        assert_eq!(expected, actual);
-
+        // all 3 parts
         let expected = Location {
             label: Some("classical garden".into()),
             city: Some("Portland".into()),
             region: Some("Oregon".into()),
         };
-        let actual = Location::from_str("classical garden - Portland, Oregon").unwrap();
+        let actual = Location::from_str("classical garden ; Portland , Oregon").unwrap();
         assert_eq!(expected, actual);
 
+        // label and city
         let expected = Location {
-            label: Some("museum".into()),
-            city: Some("Portland".into()),
-            region: Some("Oregon".into()),
+            label: Some("theater".into()),
+            city: Some("The City".into()),
+            region: None,
         };
-        let actual = Location::from_str("museum-Portland,Oregon").unwrap();
+        let actual = Location::from_str("theater ; The City").unwrap();
         assert_eq!(expected, actual);
 
+        // city and region
         let expected = Location {
-            label: Some("foo, bar, baz".into()),
+            label: None,
+            city: Some("Kailua-Kona".into()),
+            region: Some("Hawaii".into()),
+        };
+        let actual = Location::from_str("Kailua-Kona, Hawaii").unwrap();
+        assert_eq!(expected, actual);
+
+        // multiple semi-colons is invalid, converts to label only
+        let expected = Location {
+            label: Some("too ; many ; parts".into()),
             city: None,
             region: None,
         };
-        let actual = Location::from_str("foo, bar, baz").unwrap();
+        let actual = Location::from_str("too ; many ; parts").unwrap();
         assert_eq!(expected, actual);
 
+        // multiple commas is invalid, converts to label only
         let expected = Location {
-            label: Some("foo - bar - baz, quux".into()),
+            label: Some("too , many , parts".into()),
             city: None,
             region: None,
         };
-        let actual = Location::from_str("foo - bar - baz, quux").unwrap();
+        let actual = Location::from_str("too , many , parts").unwrap();
+        assert_eq!(expected, actual);
+
+        // one semicolon but multiple commas is also invalid
+        let expected = Location {
+            label: Some("label; too, many, parts".into()),
+            city: None,
+            region: None,
+        };
+        let actual = Location::from_str("label; too, many, parts").unwrap();
         assert_eq!(expected, actual);
     }
 

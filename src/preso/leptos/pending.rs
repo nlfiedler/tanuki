@@ -13,7 +13,6 @@ use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt;
-use std::str::FromStr;
 
 ///
 /// Search for assets that were recently imported.
@@ -484,8 +483,7 @@ pub fn PendingPage() -> impl IntoView {
                     </div>
                     <div class="level-item">
                         <forms::FullLocationChooser set_location=move |value| {
-                            let location = Location::from_str(&value).unwrap();
-                            set_selected_location.set(location);
+                            set_selected_location.set(value);
                         } />
                     </div>
                     <div class="level-item">

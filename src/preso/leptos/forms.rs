@@ -8,6 +8,8 @@ use leptos::*;
 use leptos_use::on_click_outside;
 use std::collections::HashSet;
 
+use crate::domain::entities::Location;
+
 /// Show list of selected attributes as tags/chips.
 #[component]
 pub fn TagList<F>(attrs: Signal<HashSet<String>>, rm_attr: F) -> impl IntoView
@@ -207,8 +209,9 @@ where
 #[component]
 pub fn FullLocationChooser<F>(set_location: F) -> impl IntoView
 where
-    F: Fn(String) + Copy + 'static,
+    F: Fn(Location) + Copy + 'static,
 {
+    use std::str::FromStr;
     // the locations returned from the server are in no particular order
     let locations = create_resource(
         || (),
@@ -231,7 +234,8 @@ where
     let on_change = move |ev: Event| {
         let input = input_ref.get().unwrap();
         ev.stop_propagation();
-        set_location(input.value());
+        let value = input.value();
+        set_location(Location::from_str(&value).unwrap());
     };
 
     view! {
@@ -271,8 +275,8 @@ where
                                                         .get_value()
                                                         .iter()
                                                         .map(|loc| {
-                                                            let desc = loc.to_string();
-                                                            view! { <option value=desc></option> }
+                                                            let value = loc.to_string();
+                                                            view! { <option value=value></option> }
                                                         })
                                                         .collect::<Vec<_>>()
                                                 }}
