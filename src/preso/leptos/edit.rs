@@ -384,21 +384,42 @@ where
         // location (label, city, region)
         let location_str = location_input_ref.get().unwrap().value();
         if location_str.len() > 0 {
-            params
-                .location_ops
-                .push(LocationOperation::Set(LocationField::Label, location_str));
+            // special input value for clearing the corresponding field
+            if location_str == "nihil" {
+                params
+                    .location_ops
+                    .push(LocationOperation::Clear(LocationField::Label));
+            } else {
+                params
+                    .location_ops
+                    .push(LocationOperation::Set(LocationField::Label, location_str));
+            }
         }
         let city_str = city_input_ref.get().unwrap().value();
         if city_str.len() > 0 {
-            params
-                .location_ops
-                .push(LocationOperation::Set(LocationField::City, city_str));
+            // special input value for clearing the corresponding field
+            if city_str == "nihil" {
+                params
+                    .location_ops
+                    .push(LocationOperation::Clear(LocationField::City));
+            } else {
+                params
+                    .location_ops
+                    .push(LocationOperation::Set(LocationField::City, city_str));
+            }
         }
         let region_str = region_input_ref.get().unwrap().value();
         if region_str.len() > 0 {
-            params
-                .location_ops
-                .push(LocationOperation::Set(LocationField::Region, region_str));
+            // special input value for clearing the corresponding field
+            if region_str == "nihil" {
+                params
+                    .location_ops
+                    .push(LocationOperation::Clear(LocationField::Region));
+            } else {
+                params
+                    .location_ops
+                    .push(LocationOperation::Set(LocationField::Region, region_str));
+            }
         }
         ops_ready(params);
     };
