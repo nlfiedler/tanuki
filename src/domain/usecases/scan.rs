@@ -53,7 +53,11 @@ impl super::UseCase<Vec<SearchResult>, Params> for ScanAssets {
                     break;
                 }
             }
-            info!("scanned {} total assets, {} matching", scan_count, results.len());
+            info!(
+                "scanned {} total assets, {} matching",
+                scan_count,
+                results.len()
+            );
             self.cache.put(params.query, results.clone())?;
         }
         super::sort_results(&mut results, params.sort_field, params.sort_order);
@@ -354,6 +358,7 @@ mod query {
     use crate::domain::entities::Asset;
     use anyhow::{anyhow, Error};
     use chrono::{DateTime, NaiveDate, NaiveTime, ParseError, Utc};
+    use std::str::FromStr;
 
     /// Determines if an asset matches certain criteria.
     pub trait Predicate: std::fmt::Debug {
@@ -385,10 +390,16 @@ mod query {
                 .ok_or_else(|| anyhow!("format requires 1 argument"))?;
             Ok(Box::new(SubtypePredicate::new(arg1)))
         } else if keyword == "loc" {
-            let arg1 = atom
-                .get(1)
-                .ok_or_else(|| anyhow!("loc requires 1 argument"))?;
-            Ok(Box::new(LocationPredicate::new(arg1)))
+            if atom.len() == 2 {
+                let query = atom.get(1).unwrap();
+                Ok(Box::new(LocationPredicate::new(query)))
+            } else if atom.len() == 3 {
+                let field = LocationField::from_str(atom.get(1).unwrap())?;
+                let query = atom.get(2).unwrap();
+                Ok(Box::new(LocationPredicate::with_field(field, query)))
+            } else {
+                Err(anyhow!("loc: requires 1 or 2 arguments"))
+            }
         } else if keyword == "tag" {
             let arg1 = atom
                 .get(1)
@@ -482,23 +493,88 @@ mod query {
         }
     }
 
+    /// Location field on which to match the query.
+    ///
+    /// Not to be confused with LocationField in the entities module.
+    #[derive(Clone, Debug)]
+    pub enum LocationField {
+        Any,
+        Label,
+        City,
+        Region,
+    }
+
+    impl FromStr for LocationField {
+        type Err = Error;
+
+        fn from_str(s: &str) -> Result<Self, Self::Err> {
+            if s == "label" {
+                Ok(LocationField::Label)
+            } else if s == "city" {
+                Ok(LocationField::City)
+            } else if s == "region" {
+                Ok(LocationField::Region)
+            } else if s == "any" {
+                Ok(LocationField::Any)
+            } else {
+                Err(anyhow!("field must be 'any', 'label', 'city', or 'region'"))
+            }
+        }
+    }
+
     /// Matches if the asset has a location field that matches the value.
     #[derive(Debug)]
-    pub struct LocationPredicate(String);
+    pub struct LocationPredicate(LocationField, String);
 
     impl LocationPredicate {
         pub fn new<S: Into<String>>(location: S) -> Self {
-            Self(location.into().to_lowercase())
+            Self(LocationField::Any, location.into().to_lowercase())
+        }
+
+        pub fn with_field<S: Into<String>>(field: LocationField, location: S) -> Self {
+            Self(field, location.into().to_lowercase())
         }
     }
 
     impl Predicate for LocationPredicate {
         fn matches(&self, asset: &Asset) -> bool {
-            asset
-                .location
-                .as_ref()
-                .map(|l| l.partial_match(&self.0))
-                .unwrap_or(false)
+            match self.0 {
+                LocationField::Any => asset
+                    .location
+                    .as_ref()
+                    .map(|l| l.partial_match(&self.1))
+                    .unwrap_or(false),
+                LocationField::Label => asset
+                    .location
+                    .as_ref()
+                    .map(|l| {
+                        l.label
+                            .as_ref()
+                            .map(|b| b.to_lowercase() == self.1)
+                            .unwrap_or(false)
+                    })
+                    .unwrap_or(false),
+                LocationField::City => asset
+                    .location
+                    .as_ref()
+                    .map(|l| {
+                        l.city
+                            .as_ref()
+                            .map(|c| c.to_lowercase() == self.1)
+                            .unwrap_or(false)
+                    })
+                    .unwrap_or(false),
+                LocationField::Region => asset
+                    .location
+                    .as_ref()
+                    .map(|l| {
+                        l.region
+                            .as_ref()
+                            .map(|r| r.to_lowercase() == self.1)
+                            .unwrap_or(false)
+                    })
+                    .unwrap_or(false),
+            }
         }
     }
 
@@ -592,6 +668,30 @@ mod query {
         use super::*;
         use crate::domain::entities::Location;
         use chrono::TimeZone;
+
+        #[test]
+        fn test_locationfield_from_str() {
+            let result = LocationField::from_str("city");
+            assert!(result.is_ok());
+            let result = LocationField::from_str("label");
+            assert!(result.is_ok());
+            let result = LocationField::from_str("region");
+            assert!(result.is_ok());
+            let result = LocationField::from_str("any");
+            assert!(result.is_ok());
+            let result = LocationField::from_str("boofar");
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn test_build_predicate() {
+            let result = build_predicate(vec!["loc".into(), "label".into(), "beach".into()]);
+            assert!(result.is_ok());
+            let result = build_predicate(vec!["loc".into(), "beach".into(), "label".into()]);
+            assert!(result.is_err());
+            let result = build_predicate(vec!["loc".into(), "beach".into()]);
+            assert!(result.is_ok());
+        }
 
         #[test]
         fn test_query_type_predicate() {
@@ -774,7 +874,15 @@ mod query {
             assert!(pred.matches(&asset1));
             let pred = LocationPredicate::new("france");
             assert!(pred.matches(&asset1));
+            let pred = LocationPredicate::with_field(LocationField::Region, "france");
+            assert!(pred.matches(&asset1));
+            let pred = LocationPredicate::with_field(LocationField::Region, "paris");
+            assert_eq!(pred.matches(&asset1), false);
+            let pred = LocationPredicate::with_field(LocationField::City, "paris");
+            assert!(pred.matches(&asset1));
             let pred = LocationPredicate::new("eiffel tower");
+            assert!(pred.matches(&asset1));
+            let pred = LocationPredicate::with_field(LocationField::Label, "eiffel tower");
             assert!(pred.matches(&asset1));
             let pred = LocationPredicate::new("texas");
             assert_eq!(pred.matches(&asset1), false);
@@ -1117,6 +1225,14 @@ mod parser {
         #[test]
         fn test_parser_one_predicate() {
             let result = parse_query("tag:kittens");
+            assert!(result.is_ok());
+            let cons = result.unwrap();
+            assert!(matches!(cons, Constraint::Lambda(_)));
+        }
+
+        #[test]
+        fn test_parser_complex_predicate() {
+            let result = parse_query("loc:city:paris");
             assert!(result.is_ok());
             let cons = result.unwrap();
             assert!(matches!(cons, Constraint::Lambda(_)));
@@ -1817,6 +1933,23 @@ mod lexer {
                 "tag:kittens -tag:clouds loc:'castro valley' loc:\"lower manhatten\"",
                 vec,
             );
+        }
+
+        #[test]
+        fn test_lexer_complex_predicates() {
+            let mut vec = Vec::new();
+            vec.push((TokenType::Predicate, "loc"));
+            vec.push((TokenType::Colon, ":"));
+            vec.push((TokenType::Arg, "city"));
+            vec.push((TokenType::Colon, ":"));
+            vec.push((TokenType::Arg, "london"));
+            vec.push((TokenType::Or, "or"));
+            vec.push((TokenType::Predicate, "loc"));
+            vec.push((TokenType::Colon, ":"));
+            vec.push((TokenType::Arg, "region"));
+            vec.push((TokenType::Colon, ":"));
+            vec.push((TokenType::Arg, "japan"));
+            verify_success("loc:city:london or loc:region:japan", vec);
         }
 
         #[test]

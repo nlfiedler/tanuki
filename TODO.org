@@ -1,4 +1,20 @@
 * Action Items
+** Try leptos upgrade again
+*** start from scratch, copying changes from ~upgrade~ branch
+** Rust vs JavaScript
+*** Rust pros
+- code sharing is convenient
+- remote calls and arguments are validated at compile-time
+*** Rust cons
+- Leptos is still very new and changes drastically
+- memory/thread safety is very tricky
+- some browser features are difficult to use
+*** JavaScript pros
+- browser features are very easy to use
+- many available packages
+*** JavaScript cons
+- must serialize and validate arguments for remote calls
+- some code duplication between client and server
 ** Database sync bug
 *** something is not quite right wrt database access
 *** error in logs
@@ -20,6 +36,40 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 **** happens when returning to a page after data changed outside of the browser
 ** Help
 *** write help pages for each of the main pages
+**** location string parsing
+- format is ~label~ ; ~city~ , ~region~
+- semicolon separates label from city and region
+- comma separates city from region
+- without separators, value is treated as ~label~ only
+- example label only: garden
+- example label only: London
+- example label only: England
+- example label + city: garden; London
+- example label + city + region: garden; London, England
+- example city + region: London, England
+- too many semicolons or commas result in a label-only value
+**** advanced query support
+***** operations can be grouped with parentheses
+***** supported operations of the form =predicate:value=
+| name   | example             | description                    |
+|--------+---------------------+--------------------------------|
+| is     | is:image            | match on the media ~type~      |
+| format | format:jpeg         | match on the media ~subtype~   |
+| tag    | tag:cats            | match on a tag                 |
+| loc    | loc:paris           | match on any location field    |
+| loc    | loc:any:nice        | match on any location field    |
+| loc    | loc:label:beach     | match on location label field  |
+| loc    | loc:city:paris      | match on location city field   |
+| loc    | loc:region:france   | match on location region field |
+| before | before:2017-05-13   | match before a given date      |
+| after  | after:2017-05-13    | match after a given date       |
+| -      | -format:jpeg        | inverse of next operation      |
+| or     | tag:cat or tag:dog  | boolean or operator            |
+| and    | tag:cat and tag:dog | boolean and operator           |
+***** predicate values can be enclosed in single or double quotes
+***** character escapes within quoted strings will be evaluated
+***** dates are RFC 3339 formatted (https://datatracker.ietf.org/doc/html/rfc3339)
+***** dates can be year (~2010~), year and month (~2010-05~), or full (~2010-05-13~)
 **** pending page
 - query always looks for assets without tags, caption, and location label (all 3 are missing)
 **** details page
@@ -28,27 +78,13 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 - n.b. QuickTime Player can export an AVI as MOV; be sure to rename the file to .mp4 for Chrome
 - n.b. when converting videos, make sure quality and frame rate are as good as the original
 **** edit page
-***** Advanced queries textual operators and operands
-****** operations can be grouped with parentheses
-****** supported operations of the form =predicate:value=
-| name   | example             | description                  |
-|--------+---------------------+------------------------------|
-| is     | is:image            | match on the media ~type~    |
-| format | format:jpeg         | match on the media ~subtype~ |
-| tag    | tag:cats            | match on a tag               |
-| loc    | loc:paris           | match on any location field  |
-| before | before:2017-05-13   | match before a given date    |
-| after  | after:2017-05-13    | match after a given date     |
-| -      | -format:jpeg        | inverse of next operation    |
-| or     | tag:cat or tag:dog  | boolean or operator          |
-| and    | tag:cat and tag:dog | boolean and operator         |
-****** predicate values can be enclosed in single or double quotes
-****** character escapes within quoted strings will be evaluated
-****** dates are RFC 3339 formatted (https://datatracker.ietf.org/doc/html/rfc3339)
+- search is always case insensitive
+- supports advanced query strings
 **** search page
-***** search is always case insensitive
+- search is always case insensitive
+- supports advanced query strings
 **** uploads page
-***** asset importer ignores hidden files and directories
+- asset importer ignores hidden files and directories
 ** Styles
 *** the =max-width: 300%;= hack on the query input field needs a better solution
 **** replace the use of ~level~ with a simple flex row
@@ -127,7 +163,9 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 ** Uploads
 *** theoretically could show the thumbnail of images before uploading
 **** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
-** Edit
+** Search
+** TODO Edit
+*** TODO enter ~nil~ for any location field to use =LocationOperation::Clear= on that field
 *** hover over asset thumbnail will show larger version as tooltip
 *** allow adding or subtracting a number of days
 *** add option to set the caption
