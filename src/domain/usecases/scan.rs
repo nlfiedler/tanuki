@@ -90,7 +90,7 @@ impl cmp::Eq for Params {}
 mod test {
     use super::super::UseCase;
     use super::*;
-    use crate::domain::entities::Asset;
+    use crate::domain::entities::{Asset, Location};
     use crate::domain::repositories::{MockRecordRepository, MockSearchRepository};
     use chrono::prelude::*;
 
@@ -264,7 +264,7 @@ mod test {
                 tags: vec!["cat".to_owned(), "dog".to_owned()],
                 import_date: Utc::now(),
                 caption: None,
-                location: None,
+                location: Some(Location::with_parts("", "Paris", "France")),
                 user_date: None,
                 original_date: None,
                 dimensions: None,
@@ -278,7 +278,7 @@ mod test {
                 tags: vec!["kitten".to_owned(), "puppy".to_owned()],
                 import_date: Utc::now(),
                 caption: None,
-                location: None,
+                location: Some(Location::with_parts("beach", "Nice", "France")),
                 user_date: None,
                 original_date: None,
                 dimensions: None,
@@ -292,12 +292,40 @@ mod test {
                 tags: vec!["clouds".to_owned(), "rainbow".to_owned()],
                 import_date: Utc::now(),
                 caption: None,
-                location: None,
+                location: Some(Location::with_parts("river", "", "")),
                 user_date: None,
                 original_date: None,
                 dimensions: None,
             },
         ]
+    }
+
+    #[test]
+    fn test_scan_unset_location_label() {
+        // arrange
+        let mut mock = MockRecordRepository::new();
+        mock.expect_scan_assets()
+            .withf(|c, _| c.is_none())
+            .returning(move |_, _| Ok(make_scan_assets()));
+        mock.expect_scan_assets()
+            .withf(|c, _| c.is_some())
+            .returning(|_, _| Ok(vec![]));
+        let mut cache = MockSearchRepository::new();
+        cache.expect_get().returning(|_| Ok(None));
+        cache.expect_put().once().returning(|_, _| Ok(()));
+        // act
+        let usecase = ScanAssets::new(Box::new(mock), Box::new(cache));
+        let params = Params {
+            query: "loc:label:".into(),
+            sort_field: None,
+            sort_order: None,
+        };
+        let result = usecase.call(params);
+        // assert
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].asset_id, "abc123");
     }
 
     #[test]
@@ -523,6 +551,9 @@ mod query {
     }
 
     /// Matches if the asset has a location field that matches the value.
+    ///
+    /// If the value is the empty string, then predicate matches if the
+    /// corresponding field is not set.
     #[derive(Debug)]
     pub struct LocationPredicate(LocationField, String);
 
@@ -538,42 +569,69 @@ mod query {
 
     impl Predicate for LocationPredicate {
         fn matches(&self, asset: &Asset) -> bool {
-            match self.0 {
-                LocationField::Any => asset
-                    .location
-                    .as_ref()
-                    .map(|l| l.partial_match(&self.1))
-                    .unwrap_or(false),
-                LocationField::Label => asset
-                    .location
-                    .as_ref()
-                    .map(|l| {
-                        l.label
-                            .as_ref()
-                            .map(|b| b.to_lowercase() == self.1)
-                            .unwrap_or(false)
-                    })
-                    .unwrap_or(false),
-                LocationField::City => asset
-                    .location
-                    .as_ref()
-                    .map(|l| {
-                        l.city
-                            .as_ref()
-                            .map(|c| c.to_lowercase() == self.1)
-                            .unwrap_or(false)
-                    })
-                    .unwrap_or(false),
-                LocationField::Region => asset
-                    .location
-                    .as_ref()
-                    .map(|l| {
-                        l.region
-                            .as_ref()
-                            .map(|r| r.to_lowercase() == self.1)
-                            .unwrap_or(false)
-                    })
-                    .unwrap_or(false),
+            if self.1.is_empty() {
+                // corresponding fields must not have a value
+                match self.0 {
+                    LocationField::Any => asset
+                        .location
+                        .as_ref()
+                        .map(|l| l.label.is_none() || l.city.is_none() || l.region.is_none())
+                        .unwrap_or(false),
+                    LocationField::Label => asset
+                        .location
+                        .as_ref()
+                        .map(|l| l.label.is_none())
+                        .unwrap_or(false),
+                    LocationField::City => asset
+                        .location
+                        .as_ref()
+                        .map(|l| l.city.is_none())
+                        .unwrap_or(false),
+                    LocationField::Region => asset
+                        .location
+                        .as_ref()
+                        .map(|l| l.region.is_none())
+                        .unwrap_or(false),
+                }
+            } else {
+                // corresponding field must have a matching value
+                match self.0 {
+                    LocationField::Any => asset
+                        .location
+                        .as_ref()
+                        .map(|l| l.partial_match(&self.1))
+                        .unwrap_or(false),
+                    LocationField::Label => asset
+                        .location
+                        .as_ref()
+                        .map(|l| {
+                            l.label
+                                .as_ref()
+                                .map(|b| b.to_lowercase() == self.1)
+                                .unwrap_or(false)
+                        })
+                        .unwrap_or(false),
+                    LocationField::City => asset
+                        .location
+                        .as_ref()
+                        .map(|l| {
+                            l.city
+                                .as_ref()
+                                .map(|c| c.to_lowercase() == self.1)
+                                .unwrap_or(false)
+                        })
+                        .unwrap_or(false),
+                    LocationField::Region => asset
+                        .location
+                        .as_ref()
+                        .map(|l| {
+                            l.region
+                                .as_ref()
+                                .map(|r| r.to_lowercase() == self.1)
+                                .unwrap_or(false)
+                        })
+                        .unwrap_or(false),
+                }
             }
         }
     }
@@ -690,6 +748,8 @@ mod query {
             let result = build_predicate(vec!["loc".into(), "beach".into(), "label".into()]);
             assert!(result.is_err());
             let result = build_predicate(vec!["loc".into(), "beach".into()]);
+            assert!(result.is_ok());
+            let result = build_predicate(vec!["loc".into(), "label".into(), "".into()]);
             assert!(result.is_ok());
         }
 
@@ -883,6 +943,40 @@ mod query {
             let pred = LocationPredicate::new("eiffel tower");
             assert!(pred.matches(&asset1));
             let pred = LocationPredicate::with_field(LocationField::Label, "eiffel tower");
+            assert!(pred.matches(&asset1));
+            let pred = LocationPredicate::new("texas");
+            assert_eq!(pred.matches(&asset1), false);
+        }
+
+        #[test]
+        fn test_query_location_predicate_empty() {
+            let pred = LocationPredicate::new("paris");
+            let asset1 = Asset {
+                key: "abc123".to_owned(),
+                checksum: "cafebabe".to_owned(),
+                filename: "img_1234.jpg".to_owned(),
+                byte_length: 1024,
+                media_type: "image/jpeg".to_owned(),
+                tags: vec!["tower".to_owned()],
+                import_date: Utc::now(),
+                caption: None,
+                location: Some(Location::with_parts("", "Paris", "France")),
+                user_date: None,
+                original_date: None,
+                dimensions: None,
+            };
+            assert!(pred.matches(&asset1));
+            let pred = LocationPredicate::new("france");
+            assert!(pred.matches(&asset1));
+            let pred = LocationPredicate::with_field(LocationField::Region, "france");
+            assert!(pred.matches(&asset1));
+            let pred = LocationPredicate::with_field(LocationField::Region, "paris");
+            assert_eq!(pred.matches(&asset1), false);
+            let pred = LocationPredicate::with_field(LocationField::City, "paris");
+            assert!(pred.matches(&asset1));
+            let pred = LocationPredicate::new("");
+            assert!(pred.matches(&asset1));
+            let pred = LocationPredicate::with_field(LocationField::Label, "");
             assert!(pred.matches(&asset1));
             let pred = LocationPredicate::new("texas");
             assert_eq!(pred.matches(&asset1), false);
@@ -1130,15 +1224,22 @@ mod parser {
             } else {
                 return Err(anyhow!("expected predicate, got {}", i));
             }
+            let mut arg_expected = false;
             loop {
                 i = self.peek()?;
                 if i.typ == TokenType::Colon {
+                    arg_expected = true;
                     self.next()?;
                     continue;
                 } else if i.typ == TokenType::Arg {
+                    arg_expected = false;
                     i = self.next()?;
                     a.push(i.val);
                     continue;
+                }
+                if arg_expected {
+                    // inject an empty argument after the trailing colon
+                    a.push("".into());
                 }
                 break;
             }
@@ -1233,6 +1334,11 @@ mod parser {
         #[test]
         fn test_parser_complex_predicate() {
             let result = parse_query("loc:city:paris");
+            assert!(result.is_ok());
+            let cons = result.unwrap();
+            assert!(matches!(cons, Constraint::Lambda(_)));
+
+            let result = parse_query("loc:city:");
             assert!(result.is_ok());
             let cons = result.unwrap();
             assert!(matches!(cons, Constraint::Lambda(_)));
@@ -1949,7 +2055,11 @@ mod lexer {
             vec.push((TokenType::Arg, "region"));
             vec.push((TokenType::Colon, ":"));
             vec.push((TokenType::Arg, "japan"));
-            verify_success("loc:city:london or loc:region:japan", vec);
+            vec.push((TokenType::Predicate, "loc"));
+            vec.push((TokenType::Colon, ":"));
+            vec.push((TokenType::Arg, "label"));
+            vec.push((TokenType::Colon, ":"));
+            verify_success("loc:city:london or loc:region:japan loc:label:", vec);
         }
 
         #[test]

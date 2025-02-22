@@ -1,6 +1,8 @@
 * Action Items
 ** Try leptos upgrade again
 *** start from scratch, copying changes from ~upgrade~ branch
+*** see =upgrade= branch; there are many problems
+*** c.f. https://github.com/leptos-rs/leptos/issues/3354
 ** Rust vs JavaScript
 *** Rust pros
 - code sharing is convenient
@@ -27,13 +29,15 @@ Caused by:
 thread 181039: /database/LOCK: No locks available
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 #+end_src
+*** try adding =info!= in the =Database= constructor to check on the weak/upgrade handling
 ** Memory leak
 *** it is gradually leaking memory until the OS swaps
 *** simple =HEAD= request on static asset gains 100mb of memory usage every time
 *** consider if different memory allocator would help
-** Pagination
-*** ensure current page is not greater than last page
+** TODO Pagination
+*** TODO ensure current page is not greater than last page
 **** happens when returning to a page after data changed outside of the browser
+**** happens when changing the query on the search page, or applying changes on edit page?
 ** Help
 *** write help pages for each of the main pages
 **** location string parsing
@@ -51,6 +55,8 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 **** advanced query support
 ***** operations can be grouped with parentheses
 ***** supported operations of the form =predicate:value=
+****** some predicate support multiple arguments separated by colon
+****** possible to have an empty argument (trailing only for now), as in =loc:label:=
 | name   | example             | description                    |
 |--------+---------------------+--------------------------------|
 | is     | is:image            | match on the media ~type~      |
@@ -175,30 +181,6 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 *** consider storage costs (currently under 100 GB)
 *** place basic auth server in front (Azure app gateway maybe?)
 *** consider if deploying in read-only mode (sync would be tricky)
-** Leptos
-*** Try to update leptos
-**** wait until 0.7.x or later, 0.7.0 is very buggy
-**** see =upgrade= branch; there are many problems
-**** c.f. https://github.com/leptos-rs/leptos/issues/3354
-*** Evaulate replacements for Leptos
-**** dioxus https://dioxuslabs.com/learn/0.5/
-**** iced https://iced.rs/
-**** sauron https://github.com/ivanceras/sauron
-**** sycamore https://sycamore.dev
-**** yew https://yew.rs/
-**** evaluation
-| name     | CSR, SSR | reactivity?   | actix? | CSS? | markup   | formatting? |
-|----------+----------+---------------+--------+------+----------+-------------|
-| dioxus   | both     | SolidJS style | maybe? |      | RSX      |             |
-| iced     |          |               |        |      |          |             |
-| leptos   | both     | SolidJS style | yes    | any  | HTML     | leptosfmt   |
-| sauron   |          |               |        |      |          |             |
-| sycamore |          |               |        |      | RSX like |             |
-| yew      |          |               |        |      |          |             |
-***** dioxus is very similar to leptos
-***** sycamore is very similar to leptos
-***** iced seems very basic, based on Elm
-***** sauron seems very basic, based on Elm
 ** Dependencies
 *** latest =mp4= crate has an error with certain test fixture
 **** version =0.13= does not have the problem, but =0.14= does
