@@ -296,7 +296,9 @@ impl Location {
     pub fn indexable_values(&self) -> HashSet<String> {
         let mut values: HashSet<String> = HashSet::new();
         if let Some(label) = self.label.as_ref() {
-            values.insert(label.to_lowercase().to_owned());
+            if !label.is_empty() {
+                values.insert(label.to_lowercase().to_owned());
+            }
         }
         if let Some(city) = self.city.as_ref() {
             values.insert(city.to_lowercase().to_owned());
@@ -882,6 +884,14 @@ mod tests {
         let parts = loc.indexable_values();
         assert_eq!(parts.len(), 1);
         assert!(parts.contains("oregon"));
+
+        let loc = Location::new("");
+        let parts = loc.indexable_values();
+        assert_eq!(parts.len(), 0);
+
+        let loc = Location::default();
+        let parts = loc.indexable_values();
+        assert_eq!(parts.len(), 0);
     }
 
     #[test]

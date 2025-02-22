@@ -106,12 +106,10 @@ impl EntityDataSourceImpl {
             "by_checksum",
             "by_date",
             "by_filename",
-            // by_location is location label split on commas
             "by_location",
             "by_media_type",
             "by_tags",
             "by_year",
-            // raw_locations is location label as entered
             "raw_locations",
             "newborn",
         ];
@@ -380,8 +378,10 @@ impl Document for Asset {
             // this is an abuse of the indexing library in order to maintain the
             // index in the event of documents being updated or removed
             if let Some(loc) = self.location.as_ref() {
-                let encoded = loc.str_serialize();
-                emitter.emit(encoded.as_bytes(), None)?;
+                if loc.has_values() {
+                    let encoded = loc.str_serialize();
+                    emitter.emit(encoded.as_bytes(), None)?;
+                }
             }
         } else if view == "by_year" {
             let year = if let Some(ud) = self.user_date.as_ref() {

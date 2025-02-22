@@ -158,6 +158,10 @@ fn test_raw_locations() {
     });
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset();
+    asset.key = "friday5".to_owned();
+    asset.location = Some(Location::default());
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset();
     asset.key = "wednesday3".to_owned();
     asset.location = Some(Location {
         label: Some("beach".into()),
