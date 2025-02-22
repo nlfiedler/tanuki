@@ -34,10 +34,6 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 *** it is gradually leaking memory until the OS swaps
 *** simple =HEAD= request on static asset gains 100mb of memory usage every time
 *** consider if different memory allocator would help
-** TODO Pagination
-*** TODO ensure current page is not greater than last page
-**** happens when returning to a page after data changed outside of the browser
-**** happens when changing the query on the search page, or applying changes on edit page?
 ** Help
 *** write help pages for each of the main pages
 **** location string parsing
