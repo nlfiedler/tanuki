@@ -373,7 +373,10 @@ pub fn PendingPage() -> impl IntoView {
                                     >
                                         <span>Date</span>
                                         <span class="icon">
-                                            <i class="fa-solid fa-arrow-down-1-9" aria-hidden="true"></i>
+                                            <i
+                                                class="fa-solid fa-arrow-down-1-9"
+                                                aria-hidden="true"
+                                            ></i>
                                         </span>
                                     </a>
                                     <a
@@ -391,10 +394,7 @@ pub fn PendingPage() -> impl IntoView {
                                     >
                                         <span>Date</span>
                                         <span class="icon">
-                                            <i
-                                                class="fa-solid fa-arrow-up-9-1"
-                                                aria-hidden="true"
-                                            ></i>
+                                            <i class="fa-solid fa-arrow-up-9-1" aria-hidden="true"></i>
                                         </span>
                                     </a>
                                     <a
@@ -412,7 +412,10 @@ pub fn PendingPage() -> impl IntoView {
                                     >
                                         <span>Filename</span>
                                         <span class="icon">
-                                            <i class="fa-solid fa-arrow-down-a-z" aria-hidden="true"></i>
+                                            <i
+                                                class="fa-solid fa-arrow-down-a-z"
+                                                aria-hidden="true"
+                                            ></i>
                                         </span>
                                     </a>
                                     <a
@@ -430,10 +433,7 @@ pub fn PendingPage() -> impl IntoView {
                                     >
                                         <span>Filename</span>
                                         <span class="icon">
-                                            <i
-                                                class="fa-solid fa-arrow-up-z-a"
-                                                aria-hidden="true"
-                                            ></i>
+                                            <i class="fa-solid fa-arrow-up-z-a" aria-hidden="true"></i>
                                         </span>
                                     </a>
                                 </div>
@@ -651,6 +651,15 @@ fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) 
             }
         })
     };
+    let show_asset = create_action(move |id: &String| {
+        let id = id.to_owned();
+        async move {
+            let navigate = leptos_router::use_navigate();
+            let url = format!("/asset/{}", id);
+            navigate(&url, Default::default());
+        }
+    });
+
     view! {
         <div class="grid is-col-min-16 padding-2">
             <For each=move || results.get_value() key=|r| r.asset_id.clone() let:elem>
@@ -669,9 +678,14 @@ fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) 
                                     <p class="card-header-title">
                                         {move || asset.get_value().filename}
                                     </p>
-                                    <button class="card-header-icon">
+                                    <button
+                                        class="card-header-icon"
+                                        on:click=move |_| {
+                                            show_asset.dispatch(asset.get_value().asset_id)
+                                        }
+                                    >
                                         <span class="icon">
-                                            <i class="fas fa-angle-down"></i>
+                                            <i class="fas fa-angle-right"></i>
                                         </span>
                                     </button>
                                 </header>

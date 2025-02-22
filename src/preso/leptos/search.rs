@@ -217,5 +217,5 @@ async fn begin_browsing(params: BrowseParams) {
     );
     set_browse_params.set(params);
     let navigate = leptos_router::use_navigate();
-    navigate("/asset", Default::default());
+    navigate("/browse", Default::default());
 }

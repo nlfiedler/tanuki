@@ -7,6 +7,7 @@ use crate::preso::leptos::BrowseParams;
 use chrono::{DateTime, Local, NaiveDateTime, Utc};
 use codee::string::JsonSerdeCodec;
 use leptos::*;
+use leptos_router::use_params_map;
 use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
 use std::collections::HashMap;
 
@@ -14,7 +15,7 @@ use std::collections::HashMap;
 /// Retrieve an asset by its unique identifier.
 ///
 #[leptos::server]
-pub async fn fetch_asset(id: String) -> Result<Asset, ServerFnError> {
+async fn fetch_asset(id: String) -> Result<Asset, ServerFnError> {
     use crate::domain::usecases::fetch::{FetchAsset, Params};
     use crate::domain::usecases::UseCase;
 
@@ -31,7 +32,7 @@ pub async fn fetch_asset(id: String) -> Result<Asset, ServerFnError> {
 /// Update the asset with the given values.
 ///
 #[leptos::server]
-pub async fn update_asset(asset: AssetInput) -> Result<Option<Asset>, ServerFnError> {
+async fn update_asset(asset: AssetInput) -> Result<Option<Asset>, ServerFnError> {
     use crate::domain::usecases::update::{Params, UpdateAsset};
     use crate::domain::usecases::UseCase;
 
@@ -51,6 +52,54 @@ pub async fn update_asset(asset: AssetInput) -> Result<Option<Asset>, ServerFnEr
 
 #[component]
 pub fn AssetPage() -> impl IntoView {
+    let params = use_params_map();
+    let asset_resource = create_resource(
+        move || params.with(|params| params.get("id").cloned()),
+        |id| async move { fetch_asset(id.unwrap_or_default().to_owned()).await },
+    );
+    let asset_replaced = create_action(move |id: &String| {
+        let id = id.to_owned();
+        async move {
+            let navigate = leptos_router::use_navigate();
+            let url = format!("/asset/{}", id);
+            navigate(&url, Default::default());
+        }
+    });
+
+    view! {
+        <nav::NavBar />
+
+        <div class="container">
+            <Transition fallback=move || {
+                view! { "Loading asset details..." }
+            }>
+                {move || {
+                    asset_resource
+                        .get()
+                        .map(|result| match result {
+                            Err(err) => {
+                                view! { <span>{move || format!("Error: {}", err)}</span> }
+                                    .into_view()
+                            }
+                            Ok(asset) => {
+                                view! {
+                                    <AssetFigure asset=asset.clone() />
+                                    <AssetForm
+                                        asset=asset
+                                        replaced=move |id| asset_replaced.dispatch(id)
+                                    />
+                                }
+                                    .into_view()
+                            }
+                        })
+                }}
+            </Transition>
+        </div>
+    }
+}
+
+#[component]
+pub fn BrowsePage() -> impl IntoView {
     // let params = use_params_map();
     let (browse_params, set_browse_params, _) =
         use_local_storage_with_options::<BrowseParams, JsonSerdeCodec>(

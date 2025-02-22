@@ -41,7 +41,8 @@ pub fn App() -> impl IntoView {
                     <Route path="/upload" view=upload::UploadPage />
                     <Route path="/pending" view=pending::PendingPage />
                     <Route path="/edit" view=edit::EditPage />
-                    <Route path="/asset" view=asset::AssetPage />
+                    <Route path="/browse" view=asset::BrowsePage />
+                    <Route path="/asset/:id" view=asset::AssetPage />
                     <Route path="/*any" view=NotFound />
                 </Routes>
             </main>

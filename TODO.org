@@ -94,9 +94,6 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 ** Pending
 *** display modes: have an option that makes the images really big (single column, huge images)
 *** hovering over asset should show larger version in a large tooltip
-*** make =fa-angle-down= icon in =card-header= actually do something
-*** add item to ~dropdown~ menu to show the asset in full size in a modal
-*** add item to ~dropdown~ menu to navigate to asset view
 ** Home
 *** make the selectors row sticky when scrolling
 **** allow =nav= element to scroll away
@@ -176,7 +173,7 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 ** Hosting externally
 *** consider storage costs (currently under 100 GB)
 *** place basic auth server in front (Azure app gateway maybe?)
-*** consider if deploying in read-only mode (sync would be tricky)
+*** consider deploying in read-only mode (sync would be tricky)
 ** Dependencies
 *** latest =mp4= crate has an error with certain test fixture
 **** version =0.13= does not have the problem, but =0.14= does
