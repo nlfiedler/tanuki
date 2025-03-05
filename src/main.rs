@@ -7,9 +7,13 @@ use actix_files::{Files, NamedFile};
 use actix_multipart::Multipart;
 #[cfg(feature = "ssr")]
 use actix_web::{
-    error::InternalError, http::header, http::StatusCode, middleware, web, App, Either, Error,
-    HttpMessage, HttpRequest, HttpResponse, HttpServer,
+    error::{ContentTypeError, InternalError, PayloadError},
+    http::header,
+    http::StatusCode,
+    middleware, web, App, Either, Error, HttpMessage, HttpRequest, HttpResponse, HttpServer,
 };
+use anyhow::anyhow;
+use chrono::{DateTime, TimeZone, Utc};
 use futures::{StreamExt, TryStreamExt};
 use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
@@ -53,60 +57,78 @@ static ASSETS_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
     PathBuf::from(path)
 });
 
-// The request body _could_ contain more than one asset, but this endpoint will
-// only process a single entity. Returns the newly assigned identifier for the
-// updated asset.
+// This request handler can only reasonbly process a single upload at a time
+// given that each upload consists of multiple fields in an unknown order.
 #[cfg(feature = "ssr")]
 async fn replace_asset(mut payload: Multipart, req: HttpRequest) -> Result<HttpResponse, Error> {
+    use std::str::FromStr;
     use tanuki::domain::usecases::replace::{Params, ReplaceAsset};
+    // Iterate over multipart form fields to gather the values necessary for
+    // importing the file; when the file content is encountered, it will be
+    // saved to a temporary location and the path added to upload_form.
+    let mut upload_form = UploadForm::default();
     let asset_id: String = req.match_info().get("id").unwrap().to_owned();
-    // prepare resources for the replace usecase
+    upload_form.set_asset_id(asset_id);
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        let field_name = field.name().ok_or(PayloadError::EncodingCorrupted)?;
+        if field_name == "file_blob" {
+            let content_type = field
+                .content_type()
+                .unwrap_or(&mime::APPLICATION_OCTET_STREAM)
+                .to_owned();
+            upload_form.set_media_type(content_type);
+            let disposition = field.content_disposition();
+            let filename = disposition
+                .ok_or(actix_web::error::ContentTypeError::ParseError)?
+                .get_filename()
+                .ok_or(actix_web::error::PayloadError::EncodingCorrupted)?;
+            let mut filepath = UPLOAD_PATH.clone();
+            filepath.push(filename);
+            upload_form.set_filepath(filepath.clone());
+            // file operations are blocking, use threadpool
+            let mut f = web::block(|| {
+                std::fs::create_dir_all(UPLOAD_PATH.as_path())?;
+                std::fs::File::create(filepath)
+            })
+            .await??;
+            // each Field is a stream of *Bytes* object
+            while let Some(chunk) = field.next().await {
+                let data = chunk?;
+                // file operations are blocking, use threadpool
+                f = web::block(move || f.write_all(&data).map(|_| f)).await??;
+            }
+        } else if field_name == "last_modified" {
+            let result = field.bytes(1000).await.unwrap();
+            let bytes = result.map_err(|_| ContentTypeError::ParseError)?;
+            let string = std::str::from_utf8(&bytes)?;
+            let float = f64::from_str(string).map_err(|_| ContentTypeError::ParseError)?;
+            let timestamp = Utc
+                .timestamp_millis_opt(float as i64)
+                .single()
+                .unwrap_or_else(Utc::now);
+            upload_form.set_modified(timestamp);
+        }
+    }
+    // perform database and file operations in a threadpool
     let source = EntityDataSourceImpl::new(DB_PATH.as_path())
         .map_err(|e| InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR))?;
     let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
     let records = Arc::new(RecordRepositoryImpl::new(ctx));
     let blobs = Arc::new(BlobRepositoryImpl::new(ASSETS_PATH.as_path()));
     let geocoder = find_location_repository();
-    // process one asset upload and return a list with updated identifier
     let mut asset_ids: Vec<String> = vec![];
-    if let Ok(Some(mut field)) = payload.try_next().await {
-        let disposition = field.content_disposition();
-        let content_type = field
-            .content_type()
-            .unwrap_or(&mime::APPLICATION_OCTET_STREAM)
-            .to_owned();
-        let filename = disposition
-            .ok_or(actix_web::error::ContentTypeError::ParseError)?
-            .get_filename()
-            .ok_or(actix_web::error::PayloadError::EncodingCorrupted)?;
-        let mut filepath = UPLOAD_PATH.clone();
-        filepath.push(filename);
-        let filepath_clone = filepath.clone();
-        // File operations are blocking, use threadpool
-        let mut f = web::block(|| {
-            std::fs::create_dir_all(UPLOAD_PATH.as_path())?;
-            std::fs::File::create(filepath)
-        })
-        .await??;
-        // each Field is a stream of *Bytes* object
-        while let Some(chunk) = field.next().await {
-            let data = chunk?;
-            // filesystem operations are blocking, we have to use threadpool
-            f = web::block(move || f.write_all(&data).map(|_| f)).await??;
-        }
-        let result = web::block(move || {
-            let cache = Arc::new(SearchRepositoryImpl::new());
-            let usecase = ReplaceAsset::new(records, cache, blobs, geocoder);
-            let params = Params::new(asset_id, filepath_clone, content_type);
-            usecase.call(params)
-        })
-        .await?;
-        match result {
-            Ok(asset) => asset_ids.push(asset.key),
-            Err(err) => {
-                error!("error replacing file: {}", err);
-                return Err(InternalError::new(err, StatusCode::INTERNAL_SERVER_ERROR).into());
-            }
+    let result = web::block(move || {
+        let cache = Arc::new(SearchRepositoryImpl::new());
+        let usecase = ReplaceAsset::new(records, cache, blobs, geocoder);
+        let params: Params = Params::try_from(upload_form)?;
+        usecase.call(params)
+    })
+    .await?;
+    match result {
+        Ok(asset) => asset_ids.push(asset.key),
+        Err(err) => {
+            error!("error replacing file: {}", err);
+            return Err(InternalError::new(err, StatusCode::INTERNAL_SERVER_ERROR).into());
         }
     }
     let mut output: HashMap<String, Vec<String>> = HashMap::new();
@@ -115,59 +137,153 @@ async fn replace_asset(mut payload: Multipart, req: HttpRequest) -> Result<HttpR
     Ok(HttpResponse::Ok().body(body))
 }
 
+// Parameters read from the multipart form for the file upload operations.
+#[derive(Debug, Default)]
+struct UploadForm {
+    // identifier of the asset, if being replaced
+    asset_id: Option<String>,
+    // path of the uploaded file
+    filepath: Option<PathBuf>,
+    // purported content type of the file
+    media_type: Option<mime::Mime>,
+    // last modified time provided by the client
+    modified: Option<DateTime<Utc>>,
+}
+
+impl UploadForm {
+    fn set_asset_id(&mut self, asset_id: String) {
+        self.asset_id = Some(asset_id);
+    }
+
+    fn set_filepath(&mut self, filepath: PathBuf) {
+        self.filepath = Some(filepath);
+    }
+
+    fn set_media_type(&mut self, media_type: mime::Mime) {
+        self.media_type = Some(media_type);
+    }
+
+    fn set_modified(&mut self, modified: DateTime<Utc>) {
+        self.modified = Some(modified);
+    }
+}
+
+impl TryFrom<UploadForm> for tanuki::domain::usecases::import::Params {
+    type Error = anyhow::Error;
+
+    fn try_from(value: UploadForm) -> Result<Self, Self::Error> {
+        if value.filepath.is_none() {
+            return Err(anyhow!("missing file path!"));
+        }
+        if value.media_type.is_none() {
+            return Err(anyhow!("missing content-type!"));
+        }
+        if value.modified.is_none() {
+            return Err(anyhow!("missing last modified date/time!"));
+        }
+        Ok(tanuki::domain::usecases::import::Params::new(
+            value.filepath.unwrap(),
+            value.media_type.unwrap(),
+            value.modified,
+        ))
+    }
+}
+
+impl TryFrom<UploadForm> for tanuki::domain::usecases::replace::Params {
+    type Error = anyhow::Error;
+
+    fn try_from(value: UploadForm) -> Result<Self, Self::Error> {
+        if value.asset_id.is_none() {
+            return Err(anyhow!("missing asset identifier!"));
+        }
+        if value.filepath.is_none() {
+            return Err(anyhow!("missing file path!"));
+        }
+        if value.media_type.is_none() {
+            return Err(anyhow!("missing content-type!"));
+        }
+        if value.modified.is_none() {
+            return Err(anyhow!("missing last modified date/time!"));
+        }
+        Ok(tanuki::domain::usecases::replace::Params::new(
+            value.asset_id.unwrap(),
+            value.filepath.unwrap(),
+            value.media_type.unwrap(),
+            value.modified,
+        ))
+    }
+}
+
+// This request handler can only reasonbly process a single upload at a time
+// given that each upload consists of multiple fields in an unknown order.
 #[cfg(feature = "ssr")]
 async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
+    use std::str::FromStr;
     use tanuki::domain::usecases::import::{ImportAsset, Params};
-    // prepare resources for the import usecase
+    // Iterate over multipart form fields to gather the values necessary for
+    // importing the file; when the file content is encountered, it will be
+    // saved to a temporary location and the path added to upload_form.
+    let mut upload_form = UploadForm::default();
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        let field_name = field.name().ok_or(PayloadError::EncodingCorrupted)?;
+        if field_name == "file_blob" {
+            let content_type = field
+                .content_type()
+                .unwrap_or(&mime::APPLICATION_OCTET_STREAM)
+                .to_owned();
+            upload_form.set_media_type(content_type);
+            let disposition = field.content_disposition();
+            let filename = disposition
+                .ok_or(ContentTypeError::ParseError)?
+                .get_filename()
+                .ok_or(PayloadError::EncodingCorrupted)?;
+            let mut filepath = UPLOAD_PATH.clone();
+            filepath.push(filename);
+            upload_form.set_filepath(filepath.clone());
+            // file operations are blocking, use threadpool
+            let mut f = web::block(|| {
+                std::fs::create_dir_all(UPLOAD_PATH.as_path())?;
+                std::fs::File::create(filepath)
+            })
+            .await??;
+            // the field value is a stream of *Bytes* objects
+            while let Some(chunk) = field.next().await {
+                let data = chunk?;
+                // file operations are blocking, use threadpool
+                f = web::block(move || f.write_all(&data).map(|_| f)).await??;
+            }
+        } else if field_name == "last_modified" {
+            let result = field.bytes(1000).await.unwrap();
+            let bytes = result.map_err(|_| ContentTypeError::ParseError)?;
+            let string = std::str::from_utf8(&bytes)?;
+            let float = f64::from_str(string).map_err(|_| ContentTypeError::ParseError)?;
+            let timestamp = Utc
+                .timestamp_millis_opt(float as i64)
+                .single()
+                .unwrap_or_else(Utc::now);
+            upload_form.set_modified(timestamp);
+        }
+    }
+    // perform database and file operations in a threadpool
     let source = EntityDataSourceImpl::new(DB_PATH.as_path())
         .map_err(|e| InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR))?;
     let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
     let records = Arc::new(RecordRepositoryImpl::new(ctx));
     let blobs = Arc::new(BlobRepositoryImpl::new(ASSETS_PATH.as_path()));
     let geocoder = find_location_repository();
-    // iterate over multipart stream
+    let result = web::block(move || {
+        let cache = Arc::new(SearchRepositoryImpl::new());
+        let usecase = ImportAsset::new(records, cache, blobs, geocoder);
+        let params: Params = Params::try_from(upload_form)?;
+        usecase.call(params)
+    })
+    .await?;
     let mut asset_ids: Vec<String> = Vec::new();
-    while let Ok(Some(mut field)) = payload.try_next().await {
-        let disposition = field.content_disposition();
-        let content_type = field
-            .content_type()
-            .unwrap_or(&mime::APPLICATION_OCTET_STREAM)
-            .to_owned();
-        let filename = disposition
-            .ok_or(actix_web::error::ContentTypeError::ParseError)?
-            .get_filename()
-            .ok_or(actix_web::error::PayloadError::EncodingCorrupted)?;
-        let mut filepath = UPLOAD_PATH.clone();
-        filepath.push(filename);
-        let filepath_clone = filepath.clone();
-        // File operations are blocking, use threadpool
-        let mut f = web::block(|| {
-            std::fs::create_dir_all(UPLOAD_PATH.as_path())?;
-            std::fs::File::create(filepath)
-        })
-        .await??;
-        // each Field is a stream of *Bytes* object
-        while let Some(chunk) = field.next().await {
-            let data = chunk?;
-            // filesystem operations are blocking, we have to use threadpool
-            f = web::block(move || f.write_all(&data).map(|_| f)).await??;
-        }
-        let records_1 = records.clone();
-        let blobs_1 = blobs.clone();
-        let geocoder_1 = geocoder.clone();
-        let result = web::block(move || {
-            let cache = Arc::new(SearchRepositoryImpl::new());
-            let usecase = ImportAsset::new(records_1, cache, blobs_1, geocoder_1);
-            let params = Params::new(filepath_clone, content_type);
-            usecase.call(params)
-        })
-        .await?;
-        match result {
-            Ok(asset) => asset_ids.push(asset.key),
-            Err(err) => {
-                error!("error importing file: {}", err);
-                return Err(InternalError::new(err, StatusCode::INTERNAL_SERVER_ERROR).into());
-            }
+    match result {
+        Ok(asset) => asset_ids.push(asset.key),
+        Err(err) => {
+            error!("error importing file: {}", err);
+            return Err(InternalError::new(err, StatusCode::INTERNAL_SERVER_ERROR).into());
         }
     }
     let mut output: HashMap<String, Vec<String>> = HashMap::new();
@@ -270,6 +386,8 @@ async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> 
             // the browser uses whatever name is given here, despite the
             // `download` attribute on the a href element
             let file = std::fs::File::open(filepath)?;
+            // n.b. NamedFile will handle the Range header and respond with 206
+            // Partial Content as appropriate, especially for video files
             let named_file = NamedFile::from_file(file, asset.filename)?;
             let mime_type: mime::Mime = asset.media_type.parse().unwrap();
             Ok(Either::Left(named_file.set_content_type(mime_type)))
@@ -380,26 +498,46 @@ mod tests {
 
     #[actix_web::test]
     async fn test_import_assets_ok() {
+        //
+        // request should look something like this:
+        //
+        // POST /upload HTTP/1.1
+        // Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+        //
+        // ------WebKitFormBoundary7MA4YWxkTrZu0gW
+        // Content-Disposition: form-data; name="file_blob"; filename="kittens.jpg"
+        // Content-Type: image/jpeg
+        //
+        // [Binary data of the JPEG file]
+        // ------WebKitFormBoundary7MA4YWxkTrZu0gW
+        // Content-Disposition: form-data; name="last_modified"
+        //
+        // 1651561047000.0
+        // ------WebKitFormBoundary7MA4YWxkTrZu0gW--
         let boundary = "----WebKitFormBoundary0gYa4NfETro6nMot";
-        // arrange
         let mut app =
             test::init_service(App::new().route("/import", web::post().to(import_assets))).await;
-        // act
         let ct_header = format!("multipart/form-data; boundary={}", boundary);
-        let filename = "./tests/fixtures/fighting_kittens.jpg";
-        let raw_file = std::fs::read(filename).unwrap();
+        let filename = "./tests/fixtures/shirt_small.heic";
+        let mut file = std::fs::File::open(filename).unwrap();
         let mut payload: Vec<u8> = Vec::new();
-        let mut boundary_before = String::from("--");
-        boundary_before.push_str(boundary);
-        boundary_before.push_str("\r\nContent-Disposition: form-data;");
-        boundary_before.push_str(r#" name="asset"; filename="kittens.jpg""#);
-        boundary_before.push_str("\r\nContent-Type: image/jpeg\r\n\r\n");
-        payload.write(boundary_before.as_bytes()).unwrap();
-        payload.write(&raw_file).unwrap();
-        let mut boundary_after = String::from("\r\n--");
-        boundary_after.push_str(boundary);
-        boundary_after.push_str("--\r\n");
-        payload.write(boundary_after.as_bytes()).unwrap();
+        let mut file_blob = String::from("--");
+        file_blob.push_str(boundary);
+        file_blob.push_str("\r\nContent-Disposition: form-data;");
+        file_blob.push_str(r#" name="file_blob"; filename="kittens.jpg""#);
+        file_blob.push_str("\r\nContent-Type: image/jpeg\r\n\r\n");
+        payload.write(file_blob.as_bytes()).unwrap();
+        std::io::copy(&mut file, &mut payload).unwrap();
+
+        let mut modified_time = String::from("\r\n--");
+        modified_time.push_str(boundary);
+        modified_time.push_str("\r\nContent-Disposition: form-data;");
+        modified_time.push_str(r#" name="last_modified""#);
+        modified_time.push_str("\r\n\r\n1651561047000.0\r\n--");
+        modified_time.push_str(boundary);
+        modified_time.push_str("--\r\n");
+        payload.write(modified_time.as_bytes()).unwrap();
+
         let req = test::TestRequest::with_uri("/import")
             .method(http::Method::POST)
             .append_header((header::CONTENT_TYPE, ct_header))
@@ -408,7 +546,6 @@ mod tests {
             .to_request();
         let mut resp: HashMap<String, Vec<String>> =
             test::call_and_read_body_json(&mut app, req).await;
-        // assert
         let ids: Vec<String> = resp.remove("ids").unwrap();
         assert_eq!(ids.len(), 1);
         // should be one identifier that is base64 encoded and the path and filename
@@ -420,7 +557,22 @@ mod tests {
     #[actix_web::test]
     async fn test_replace_asset_ok() {
         use tanuki::domain::usecases::import::{ImportAsset, Params};
-        // arrange
+        //
+        // request should look something like this:
+        //
+        // POST /upload HTTP/1.1
+        // Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+        //
+        // ------WebKitFormBoundary7MA4YWxkTrZu0gW
+        // Content-Disposition: form-data; name="file_blob"; filename="kittens.jpg"
+        // Content-Type: image/jpeg
+        //
+        // [Binary data of the JPEG file]
+        // ------WebKitFormBoundary7MA4YWxkTrZu0gW
+        // Content-Disposition: form-data; name="last_modified"
+        //
+        // 1651561047000.0
+        // ------WebKitFormBoundary7MA4YWxkTrZu0gW--
         let src_filename = "./tests/fixtures/f1t.jpg";
         let mut filepath = UPLOAD_PATH.clone();
         std::fs::create_dir_all(&filepath).unwrap();
@@ -444,7 +596,7 @@ mod tests {
             Arc::new(blobs),
             Arc::new(geocoder),
         );
-        let params = Params::new(filepath, mime::IMAGE_JPEG);
+        let params = Params::new(filepath, mime::IMAGE_JPEG, None);
         let asset = usecase.call(params).unwrap();
         let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
         let blob_path = blobs.blob_path(&asset.key).unwrap();
@@ -453,26 +605,31 @@ mod tests {
             digest,
             "sha256-5514da7cbe82ef4a0c8dd7c025fba78d8ad085b47ae8cee74fb87705b3d0a630"
         );
-        // act
         let mut app =
             test::init_service(App::new().route("/replace/{id}", web::post().to(replace_asset)))
                 .await;
         let boundary = "----WebKitFormBoundary0gYa4NfETro6nMot";
         let ct_header = format!("multipart/form-data; boundary={}", boundary);
         let filename = "./tests/fixtures/f2t.jpg";
-        let raw_file = std::fs::read(filename).unwrap();
+        let mut file = std::fs::File::open(filename).unwrap();
         let mut payload: Vec<u8> = Vec::new();
-        let mut boundary_before = String::from("--");
-        boundary_before.push_str(boundary);
-        boundary_before.push_str("\r\nContent-Disposition: form-data;");
-        boundary_before.push_str(r#" name="asset"; filename="f2t.jpg""#);
-        boundary_before.push_str("\r\nContent-Type: image/jpeg\r\n\r\n");
-        payload.write(boundary_before.as_bytes()).unwrap();
-        payload.write(&raw_file).unwrap();
-        let mut boundary_after = String::from("\r\n--");
-        boundary_after.push_str(boundary);
-        boundary_after.push_str("--\r\n");
-        payload.write(boundary_after.as_bytes()).unwrap();
+        let mut file_blob = String::from("--");
+        file_blob.push_str(boundary);
+        file_blob.push_str("\r\nContent-Disposition: form-data;");
+        file_blob.push_str(r#" name="file_blob"; filename="f2t.jpg""#);
+        file_blob.push_str("\r\nContent-Type: image/jpeg\r\n\r\n");
+        payload.write(file_blob.as_bytes()).unwrap();
+        std::io::copy(&mut file, &mut payload).unwrap();
+
+        let mut modified_time = String::from("\r\n--");
+        modified_time.push_str(boundary);
+        modified_time.push_str("\r\nContent-Disposition: form-data;");
+        modified_time.push_str(r#" name="last_modified""#);
+        modified_time.push_str("\r\n\r\n1651561047000.0\r\n--");
+        modified_time.push_str(boundary);
+        modified_time.push_str("--\r\n");
+        payload.write(modified_time.as_bytes()).unwrap();
+
         let uri = format!("/replace/{}", asset.key);
         let req = test::TestRequest::with_uri(&uri)
             .method(http::Method::POST)
@@ -482,7 +639,6 @@ mod tests {
             .to_request();
         let mut resp: HashMap<String, Vec<String>> =
             test::call_and_read_body_json(&mut app, req).await;
-        // assert
         let ids: Vec<String> = resp.remove("ids").unwrap();
         assert_eq!(ids.len(), 1);
         // should be one identifier that is base64 encoded and the path and filename
@@ -518,7 +674,7 @@ mod tests {
             Arc::new(blobs),
             Arc::new(geocoder),
         );
-        let params = Params::new(filepath, mime::IMAGE_JPEG);
+        let params = Params::new(filepath, mime::IMAGE_JPEG, None);
         let asset = usecase.call(params).unwrap();
         let mut app = test::init_service(
             App::new().route("/thumbnail/{w}/{h}/{id}", web::get().to(get_thumbnail)),

@@ -776,8 +776,12 @@ where
     let form_data = web_sys::FormData::new().unwrap();
     let filename = file.name();
     form_data
-        .set_with_blob_and_filename("asset", &file, &filename)
+        .set_with_blob_and_filename("file_blob", &file, &filename)
         .unwrap();
+    let filedate = file.last_modified().to_string();
+    // apps like Photos will set the file modified time to match the
+    // information it has when exporting the asset
+    form_data.set_with_str("last_modified", &filedate).unwrap();
     let url = format!("/rest/replace/{}", key);
     let result = gloo::net::http::Request::post(&url)
         .body(form_data)

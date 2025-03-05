@@ -4,32 +4,33 @@
 *** see =upgrade= branch; there are many problems
 *** c.f. https://github.com/leptos-rs/leptos/issues/3354
 ** Rust vs JavaScript
-*** Rust pros
+*** Rust benefits
 - code sharing is convenient
 - remote calls and arguments are validated at compile-time
-*** Rust cons
+*** Rust drawbacks
 - Leptos is still very new and changes drastically
 - memory/thread safety is very tricky
 - some browser features are difficult to use
-*** JavaScript pros
+*** JavaScript benefits
 - browser features are very easy to use
 - many available packages
-*** JavaScript cons
+*** JavaScript drawbacks
 - must serialize and validate arguments for remote calls
 - some code duplication between client and server
-** Database sync bug
+** TODO Database sync bug
 *** something is not quite right wrt database access
 *** error in logs
 #+begin_src
-thread 'tokio-runtime-worker' panicked at src/main.rs:261:67:
+thread 'tokio-runtime-worker' panicked at src/main.rs:377:67:
 called `Result::unwrap()` on an `Err` value: RocksDB database error
 
 Caused by:
-    IO error: lock hold by current process, acquire time 1734543329 acquiring \
-thread 181039: /database/LOCK: No locks available
-note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+    IO error: lock hold by current process, acquire time 1741154869 acquiring \
+    thread 14: /database/LOCK: No locks available
 #+end_src
 *** try adding =info!= in the =Database= constructor to check on the weak/upgrade handling
+** TODO Performance issues, database related?
+*** TODO attempt to measure what is taking so long
 ** Memory leak
 *** it is gradually leaking memory until the OS swaps
 *** simple =HEAD= request on static asset gains 100mb of memory usage every time
@@ -138,6 +139,8 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 ***** On this day
 ***** Tags
 ***** Locations
+*** view by ~days~ like Photos.app
+**** need a query that groups photos by day
 *** calendar view for browsing by months
 **** PhotoPrism has a ~calendar~ view that shows months of years in descending order with a random thumbnail
 **** clicking on the month opens an "album" of everything in that month
@@ -184,7 +187,7 @@ thread 'domain::usecases::tests::test_get_original_date' panicked at src/domain/
 assertion failed: actual.is_ok()
 #+end_src
 ** Attribute management
-*** screen for showing all tags, locations, years, with count values
+*** screen for showing all tags, locations, years, mediaTypes, with count values
 **** selecting a tag or location offers a rename function
 **** selecting multiple tags/locations offers option to remove from all assets
 ** Manage revisions of assets
@@ -259,6 +262,7 @@ include it in the database records.
 **** Turkey > Gallipoli Peninsula > Gali Winery
 **** Winery > vinification > fermentation tanks
 **** Architecture > Buildings > underground cellar
+*** Find similar images based on their histograms(?)
 *** Multiple libraries (like Apple Photos)
 ** Data Integrity
 *** Add a GraphQL mutation that will delete and rebuild all indices
@@ -286,10 +290,24 @@ include it in the database records.
 ** Bulk Export
 *** Easy selection and export of multiple images
 ** Architecture Review
-*** Consider if SQLite would be a suitable database
-*** Use async throughout, avoid the =block_on()= function
-**** Both =juniper= and =[leptos::server]= are or support async fns
-**** Thereforce, all use cases can also be async, and the repos, and so on
+*** Consider alternative record stores
+**** DuckDB
+***** https://duckdb.org
+***** https://crates.io/crates/duckdb
+***** column-oriented DBMS with SQL interface
+***** schema change may help with performance (split tags and location fields apart into columns)
+**** SQLite
+***** https://sqlite.org
+***** relational database, would require significant changes
+**** LMDB
+***** https://www.symas.com/mdb
+***** crates last updated 7 years ago
+***** supposedly awesomely fast
+***** does not support column families
+*** Use async throughout
+**** could avoid the need for the =block_on()= function
+**** both =juniper= and =[leptos::server]= are already or support async fns
+**** all use cases could then be async, and the repos, and so on
 *** Large file upload
 **** split file into chunks, upload one-by-one, showing progress
 ***** default to 8MB chunks, most images will be smaller than that

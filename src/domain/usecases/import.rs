@@ -48,8 +48,11 @@ impl ImportAsset {
             } else {
                 None
             };
-        // let location = get_location(&params.media_type, &params.filepath).ok();
-        let original_date = get_original_date(&params.media_type, &params.filepath).ok();
+        // some applications will set the file modified time appropriately, so
+        // if the asset itself does not have an original date/time, use that
+        let original_date = get_original_date(&params.media_type, &params.filepath)
+            .ok()
+            .or(params.last_modified);
         let dimensions = super::get_dimensions(&params.media_type, &params.filepath).ok();
         let asset = Asset {
             key: asset_id,
@@ -91,13 +94,19 @@ impl super::UseCase<Asset, Params> for ImportAsset {
 pub struct Params {
     filepath: PathBuf,
     media_type: mime::Mime,
+    last_modified: Option<DateTime<Utc>>,
 }
 
 impl Params {
-    pub fn new(filepath: PathBuf, media_type: mime::Mime) -> Self {
+    pub fn new(
+        filepath: PathBuf,
+        media_type: mime::Mime,
+        last_modified: Option<DateTime<Utc>>,
+    ) -> Self {
         Self {
             filepath,
             media_type,
+            last_modified,
         }
     }
 }
@@ -209,7 +218,7 @@ mod tests {
             Arc::new(geocoder),
         );
         let media_type = mime::IMAGE_JPEG;
-        let params = Params::new(infile, media_type);
+        let params = Params::new(infile, media_type, None);
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -274,7 +283,7 @@ mod tests {
             Arc::new(geocoder),
         );
         let media_type = mime::IMAGE_JPEG;
-        let params = Params::new(infile, media_type);
+        let params = Params::new(infile, media_type, None);
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());

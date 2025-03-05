@@ -214,8 +214,12 @@ async fn upload_files(files: Vec<web_sys::File>, set_progress: WriteSignal<i32>)
         let form_data = web_sys::FormData::new().unwrap();
         let filename = file.name();
         form_data
-            .set_with_blob_and_filename("asset", &file, &filename)
+            .set_with_blob_and_filename("file_blob", &file, &filename)
             .unwrap();
+        let filedate = file.last_modified().to_string();
+        // apps like Photos will set the file modified time to match the
+        // information it has when exporting the asset
+        form_data.set_with_str("last_modified", &filedate).unwrap();
         let res = gloo::net::http::Request::post("/rest/import")
             .body(form_data)
             .unwrap()

@@ -57,6 +57,9 @@ impl ReplaceAsset {
             // extracted from the new asset
             asset.original_date = Some(od);
         }
+        if asset.original_date.is_none() && params.last_modified.is_some() {
+            asset.original_date = params.last_modified;
+        }
         asset.dimensions = super::get_dimensions(&params.media_type, &params.filepath).ok();
         Ok(asset)
     }
@@ -107,14 +110,22 @@ pub struct Params {
     filepath: PathBuf,
     /// Media type for the new file.
     media_type: mime::Mime,
+    /// Last modified date/time of the file.
+    last_modified: Option<DateTime<Utc>>,
 }
 
 impl Params {
-    pub fn new(asset_id: String, filepath: PathBuf, media_type: mime::Mime) -> Self {
+    pub fn new(
+        asset_id: String,
+        filepath: PathBuf,
+        media_type: mime::Mime,
+        last_modified: Option<DateTime<Utc>>,
+    ) -> Self {
         Self {
             asset_id,
             filepath,
             media_type,
+            last_modified,
         }
     }
 }
@@ -202,7 +213,7 @@ mod tests {
             Arc::new(geocoder),
         );
         let media_type = mime::IMAGE_JPEG;
-        let params = Params::new(unchanged_asset_id.to_owned(), infile, media_type);
+        let params = Params::new(unchanged_asset_id.to_owned(), infile, media_type, None);
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -280,7 +291,7 @@ mod tests {
             Arc::new(geocoder),
         );
         let media_type = mime::IMAGE_JPEG;
-        let params = Params::new(asset_id.to_owned(), infile, media_type);
+        let params = Params::new(asset_id.to_owned(), infile, media_type, None);
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -360,7 +371,7 @@ mod tests {
             Arc::new(geocoder),
         );
         let media_type = mime::IMAGE_JPEG;
-        let params = Params::new(asset_id.to_owned(), infile, media_type);
+        let params = Params::new(asset_id.to_owned(), infile, media_type, None);
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());

@@ -64,7 +64,9 @@ impl super::UseCase<usize, Params> for IngestAssets {
                 } else {
                     mime::APPLICATION_OCTET_STREAM
                 };
-                let import_params = import::Params::new(file_path, content_type);
+                let modified = file_path.metadata()?.modified()?;
+                let utc_modified: chrono::DateTime<chrono::Utc> = modified.into();
+                let import_params = import::Params::new(file_path, content_type, Some(utc_modified));
                 usecase.call(import_params)?;
                 count += 1;
             }
