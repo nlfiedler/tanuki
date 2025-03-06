@@ -13,7 +13,7 @@ use std::convert::TryFrom;
 use std::path::Path;
 use std::str;
 
-mod database;
+pub mod database;
 
 /// Data source for entity objects.
 #[cfg_attr(test, automock)]

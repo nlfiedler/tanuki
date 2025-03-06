@@ -17,20 +17,6 @@
 *** JavaScript drawbacks
 - must serialize and validate arguments for remote calls
 - some code duplication between client and server
-** TODO Database sync bug
-*** something is not quite right wrt database access
-*** error in logs
-#+begin_src
-thread 'tokio-runtime-worker' panicked at src/main.rs:377:67:
-called `Result::unwrap()` on an `Err` value: RocksDB database error
-
-Caused by:
-    IO error: lock hold by current process, acquire time 1741154869 acquiring \
-    thread 14: /database/LOCK: No locks available
-#+end_src
-*** try adding =info!= in the =Database= constructor to check on the weak/upgrade handling
-** TODO Performance issues, database related?
-*** TODO attempt to measure what is taking so long
 ** Memory leak
 *** it is gradually leaking memory until the OS swaps
 *** simple =HEAD= request on static asset gains 100mb of memory usage every time

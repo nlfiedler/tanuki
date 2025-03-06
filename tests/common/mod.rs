@@ -6,6 +6,7 @@ use rocksdb::{Options, DB};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
+use tanuki::data::sources::database::drop_database_ref;
 use tanuki::domain::entities::{Asset, Location};
 
 // Track number of open database instances accessing a particular path. Once
@@ -67,6 +68,7 @@ impl Drop for DBPath {
             }
         }
         if should_delete {
+            drop_database_ref(&self.path);
             let opts = Options::default();
             DB::destroy(&opts, &self.path).unwrap();
             // let mut backup_path = PathBuf::from(&self.path);
