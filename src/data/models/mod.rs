@@ -269,13 +269,11 @@ mod tests {
         // let mut ser = serde_json::Serializer::new(&mut buffer);
         // Location::serialize(&location, &mut ser)?;
         // let actual = String::from_utf8(buffer)?;
-        // println!("json actual: {}", actual);
         // let mut de = serde_json::Deserializer::from_str(&actual);
         // let model = Location::deserialize(&mut de)?;
         // assert_eq!(model, location);
 
         // all fields
-        println!("all fields");
         let location = Location {
             label: Some("waikiki".into()),
             city: Some("Honolulu".into()),
@@ -290,7 +288,6 @@ mod tests {
         assert_eq!(model, location);
 
         // only label
-        println!("only label");
         let location = Location {
             label: Some("waikiki".into()),
             city: None,
@@ -305,7 +302,6 @@ mod tests {
         assert_eq!(model, location);
 
         // city, region
-        println!("city, region");
         let location = Location {
             label: None,
             city: Some("Honolulu".into()),
@@ -315,12 +311,10 @@ mod tests {
         let mut ser = serde_json::Serializer::new(&mut buffer);
         Location::serialize(&location, &mut ser)?;
         let actual = String::from_utf8(buffer)?;
-        println!("actual: {}", actual);
         let mut de = serde_json::Deserializer::from_str(&actual);
         let model = Location::deserialize(&mut de)?;
         assert_eq!(model, location);
 
-        println!("test complete");
         Ok(())
     }
 
@@ -342,7 +336,6 @@ mod tests {
         // assert_eq!(model, location);
 
         // all fields
-        println!("all fields");
         let location = Location {
             label: Some("waikiki".into()),
             city: Some("Honolulu".into()),
@@ -356,7 +349,6 @@ mod tests {
         assert_eq!(model, location);
 
         // only label
-        println!("only label");
         let location = Location {
             label: Some("waikiki".into()),
             city: None,
@@ -370,7 +362,6 @@ mod tests {
         assert_eq!(model, location);
 
         // city, region
-        println!("city, region");
         let location = Location {
             label: None,
             city: Some("Honolulu".into()),
@@ -383,7 +374,6 @@ mod tests {
         let model = Location::deserialize(&mut de)?;
         assert_eq!(model, location);
 
-        println!("test complete");
         Ok(())
     }
 

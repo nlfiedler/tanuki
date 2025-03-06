@@ -427,7 +427,6 @@ mod tests {
         let result = repo.find_location(&coords);
         assert!(result.is_ok());
         let location = result.unwrap();
-        println!("location: {:?}", location);
         assert!(location.city.is_none());
         assert_eq!(location.region.unwrap(), "New Territories");
         assert_eq!(location.country.unwrap(), "Hong Kong");
