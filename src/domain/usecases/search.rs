@@ -44,8 +44,6 @@ impl SearchAssets {
         } else if !params.locations.is_empty() {
             let locations = params.locations.drain(..).collect();
             self.repo.query_by_locations(locations)
-        } else if let Some(filename) = params.filename.take() {
-            self.repo.query_by_filename(&filename)
         } else if let Some(media_type) = params.media_type.take() {
             self.repo.query_by_media_type(&media_type)
         } else {
@@ -70,7 +68,6 @@ impl super::UseCase<Vec<SearchResult>, Params> for SearchAssets {
             results = self.query_assets(&mut params)?;
             results = filter_by_date_range(results, &params);
             results = filter_by_locations(results, &params);
-            results = filter_by_filename(results, &params);
             results = filter_by_media_type(results, &params);
             self.cache.put(cache_key, results.clone())?;
         }
@@ -125,24 +122,6 @@ fn filter_by_locations(results: Vec<SearchResult>, params: &Params) -> Vec<Searc
     }
 }
 
-// Filter the search results by file name, if specified.
-fn filter_by_filename(results: Vec<SearchResult>, params: &Params) -> Vec<SearchResult> {
-    if let Some(p_filename) = params.filename.as_ref() {
-        // All filtering comparisons are case-insensitive for now, so both the
-        // input and the index values are lowercased.
-        let filename = p_filename.to_lowercase();
-        results
-            .into_iter()
-            .filter(|r| {
-                let lowercase = r.filename.to_lowercase();
-                filename == lowercase
-            })
-            .collect()
-    } else {
-        results
-    }
-}
-
 // Filter the search results by media type, if specified.
 fn filter_by_media_type(results: Vec<SearchResult>, params: &Params) -> Vec<SearchResult> {
     if let Some(p_media_type) = params.media_type.as_ref() {
@@ -165,7 +144,6 @@ fn filter_by_media_type(results: Vec<SearchResult>, params: &Params) -> Vec<Sear
 pub struct Params {
     pub tags: Vec<String>,
     pub locations: Vec<String>,
-    pub filename: Option<String>,
     pub media_type: Option<String>,
     pub before_date: Option<DateTime<Utc>>,
     pub after_date: Option<DateTime<Utc>>,
@@ -208,7 +186,6 @@ impl cmp::PartialEq for Params {
         // ignore sorting when comparing two sets of parameters
         self.tags == other.tags
             && self.locations == other.locations
-            && self.filename == other.filename
             && self.media_type == other.media_type
             && self.before_date == other.before_date
             && self.after_date == other.after_date
@@ -244,7 +221,6 @@ mod tests {
         let params = Params {
             tags: vec![],
             locations: vec![],
-            filename: None,
             media_type: None,
             before_date: None,
             after_date: None,
@@ -258,7 +234,6 @@ mod tests {
         let params = Params {
             tags: vec!["kittens".into(), "puppies".into()],
             locations: vec!["paris".into()],
-            filename: None,
             media_type: Some("image/jpeg".into()),
             before_date: Some(before),
             after_date: Some(after),
@@ -435,35 +410,6 @@ mod tests {
     }
 
     #[test]
-    fn test_search_assets_filename_ok() {
-        // arrange
-        let results = vec![SearchResult {
-            asset_id: "cafebabe".to_owned(),
-            filename: "IMG_1234.jpg".to_owned(),
-            media_type: "image/jpeg".to_owned(),
-            location: Some(Location::new("hawaii")),
-            datetime: Utc::now(),
-        }];
-        let mut mock = MockRecordRepository::new();
-        mock.expect_query_by_filename()
-            .with(eq("Img_1234.jpg"))
-            .returning(move |_| Ok(results.clone()));
-        let mut cache = MockSearchRepository::new();
-        cache.expect_get().returning(|_| Ok(None));
-        cache.expect_put().once().returning(|_, _| Ok(()));
-        // act
-        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
-        params.filename = Some("Img_1234.jpg".to_owned());
-        let result = usecase.call(params);
-        // assert
-        assert!(result.is_ok());
-        let results = result.unwrap();
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0].filename, "IMG_1234.jpg");
-    }
-
-    #[test]
     fn test_search_assets_media_type_ok() {
         // arrange
         let results = vec![SearchResult {
@@ -592,29 +538,6 @@ mod tests {
         let results = result.unwrap();
         assert_eq!(results.len(), 1);
         assert!(results.iter().any(|l| l.filename == "IMG_5678.MOV"));
-    }
-
-    #[test]
-    fn test_filter_results_filename() {
-        // arrange
-        let results = make_search_results();
-        let mut mock = MockRecordRepository::new();
-        mock.expect_query_by_tags()
-            .returning(move |_| Ok(results.clone()));
-        let mut cache = MockSearchRepository::new();
-        cache.expect_get().returning(|_| Ok(None));
-        cache.expect_put().once().returning(|_, _| Ok(()));
-        // act
-        let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
-        params.tags = vec!["kitten".to_owned()];
-        params.filename = Some("img_2345.gif".to_owned());
-        let result = usecase.call(params);
-        // assert
-        assert!(result.is_ok());
-        let results = result.unwrap();
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0].filename, "IMG_2345.GIF");
     }
 
     #[test]

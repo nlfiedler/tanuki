@@ -63,9 +63,6 @@ pub trait RecordRepository: Send {
     /// Search for assets that have any of the given locations.
     fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error>;
 
-    /// Search for assets whose file name matches the one given.
-    fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error>;
-
     /// Search for assets whose media type matches the one given.
     fn query_by_media_type(&self, media_type: &str) -> Result<Vec<SearchResult>, Error>;
 

@@ -104,10 +104,6 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.query_by_locations(locations)
     }
 
-    fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error> {
-        self.datasource.query_by_filename(filename)
-    }
-
     fn query_by_media_type(&self, media_type: &str) -> Result<Vec<SearchResult>, Error> {
         self.datasource.query_by_media_type(media_type)
     }
@@ -1090,44 +1086,6 @@ mod tests {
     }
 
     #[test]
-    fn test_query_by_filename_ok() {
-        // arrange
-        let results = vec![SearchResult {
-            asset_id: "cafebabe".to_owned(),
-            filename: "img_1234.jpg".to_owned(),
-            media_type: "image/jpeg".to_owned(),
-            location: Some(Location::new("hawaii")),
-            datetime: Utc::now(),
-        }];
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_filename()
-            .with(eq("img_1234.jpg"))
-            .returning(move |_| Ok(results.clone()));
-        // act
-        let repo = RecordRepositoryImpl::new(Arc::new(mock));
-        let result = repo.query_by_filename("img_1234.jpg");
-        // assert
-        assert!(result.is_ok());
-        let results = result.unwrap();
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0].filename, "img_1234.jpg");
-    }
-
-    #[test]
-    fn test_query_by_filename_err() {
-        // arrange
-        let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_filename()
-            .with(eq("img_1234.jpg"))
-            .returning(move |_| Err(anyhow!("oh no")));
-        // act
-        let repo = RecordRepositoryImpl::new(Arc::new(mock));
-        let result = repo.query_by_filename("img_1234.jpg");
-        // assert
-        assert!(result.is_err());
-    }
-
-    #[test]
     fn test_query_by_media_type_ok() {
         // arrange
         let results = vec![SearchResult {
@@ -1629,7 +1587,6 @@ mod tests {
         let params = Params {
             tags: vec!["kittens".into()],
             locations: vec!["paris".into()],
-            filename: None,
             media_type: None,
             before_date: None,
             after_date: None,

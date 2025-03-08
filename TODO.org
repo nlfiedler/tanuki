@@ -1,4 +1,121 @@
 * Action Items
+** Evaluate DuckDB
+*** good: can create an in-memory database for easy testing
+*** good: location values can be consolidated into their own table
+*** concern: needs a lot of memory (minimum 125mb per thread)
+*** concern: designed for SSD and NVMe, writes may be slow on HDD
+*** concern: writes to a single file
+*** concern: design for bulk updates, not many small transactions
+*** domain and preso layers should not change at all
+*** design basic schema
+**** assets table
+| name       | description            | type         | typical size |
+|------------+------------------------+--------------+--------------|
+| PK         | primary key            | ?            |              |
+| path       | file path (key)        | varchar      |           64 |
+| hash       | sha256 digest          | varchar      |           64 |
+| filename   | original name          | varchar      |           12 |
+| filesize   | byte length            | ubigint      |            8 |
+| mimetype   | media type             | varchar      |           10 |
+| caption    |                        | varchar      |            0 |
+| tags       | list of tags           | varchar[]    |           20 |
+| location   | FK on locations        |              |              |
+| imported   | datetime of import     | timestamp_s  |           64 |
+| user_date  | user-defined datetime  | timestamp_s  |           64 |
+| orig_date  | original datetime      | timestamp_s  |           64 |
+| dimensions | image/video dimensions | usmallint[2] |            4 |
+***** set =path= to be ordered for faster lookup by asset ~key~
+**** locations table
+| name   | description | type    |
+|--------+-------------+---------|
+| PK     | primary key | ?       |
+| label  |             | varchar |
+| city   |             | varchar |
+| region |             | varchar |
+*** consider using COW for asset records, then using selected fields in =UPDATE= statement
+**** if only the user date changes, =UPDATE= would only touch that field
+*** derive SQL queries for each of the repository functions
+*** set up a basic prototype to play around
+**** install DuckDB CLI
+**** create on-disk database
+**** define schema
+**** load sample data from json
+**** perform basic queries
+**** try defining indexes
+**** use =explain analyze= to ensure indexes are used
+*** action plan
+**** move everything RocksDB specific into a new =rocksdb= module
+- [ ] data/sources/mod.rs becomes data/sources/rocksdb.rs
+- [ ] EntityDataSourceImpl, Document impl, mapper() and so on move to data/sources/rocksdb.rs
+- [ ] code in data/sources/database.rs moves into data/sources/rocksdb.rs
+**** create new DuckDB specific module in data/sources
+**** consider restricting =threads= to a small number as it may create many if there are many "cores"
+**** ~load~ usecase should delete indexes, load data, and recreate indexes to avoid poor performance
+**** ~load~ should use ~Appender API~ via =append_rows()= function to add many rows at a time
+***** can easily handle 10,000 rows at a time
+** Evaluate SQLite
+*** good: very mature and reliable
+*** good: can create an in-memory database for easy testing
+*** good: location values can be consolidated into their own table
+*** concern: lacks date/time types
+*** concern: lacks array type
+*** concern: writes to a single file
+*** domain and preso layers should not change at all
+*** design basic schema
+**** assets table
+| name      | description           | type    | typical size |
+|-----------+-----------------------+---------+--------------|
+| PK        | primary key           | ?       |              |
+| path      | file path (key)       | text    |           64 |
+| hash      | sha256 digest         | text    |           64 |
+| filename  | original name         | text    |           12 |
+| filesize  | byte length           | integer |            8 |
+| mimetype  | media type            | text    |           10 |
+| caption   |                       | text    |            0 |
+| tags      | comma-separated tags  | text    |           20 |
+| location  | FK on locations       |         |              |
+| imported  | datetime of import    | numeric |           64 |
+| user_date | user-defined datetime | numeric |           64 |
+| orig_date | original datetime     | numeric |           64 |
+| pixel_w   | image/video width     | integer |            2 |
+| pixel_h   | image/video height    | integer |            2 |
+**** use ~Unix timestamp~ for the date/time values
+**** create a unique index on =assets.path= for fast lookup by ~identifier~
+***** do the same for =asset.hash= for fast lookup by checksum
+#+begin_src sql
+CREATE UNIQUE INDEX IF NOT EXISTS paths ON assets (path);
+CREATE UNIQUE INDEX IF NOT EXISTS hashes ON assets (hash);
+#+end_src
+**** locations table
+| name   | description | type |
+|--------+-------------+------|
+| PK     | primary key | ?    |
+| label  |             | text |
+| city   |             | text |
+| region |             | text |
+*** consider how ~search~ and ~scan~ might change to work better with SQL
+**** SQL performs matching and filtering already, no need for the usecase to do it
+**** push down the query and filtering logic into the data source(s)
+**** turn the search parameters into 1st class entities
+*** consider using COW for asset records, then using selected fields in =UPDATE= statement
+**** if only the user date changes, =UPDATE= would only touch that field
+*** derive SQL queries for each of the repository functions
+*** set up a basic prototype to play around
+**** install SQLite CLI
+**** create on-disk database
+**** define schema
+**** load sample data from json
+**** perform basic queries
+**** try defining indexes
+**** use =explain= to ensure indexes are used
+*** action plan
+**** move everything RocksDB specific into a new =rocksdb= module
+- [ ] data/sources/mod.rs becomes data/sources/rocksdb.rs
+- [ ] EntityDataSourceImpl, Document impl, mapper() and so on move to data/sources/rocksdb.rs
+- [ ] code in data/sources/database.rs moves into data/sources/rocksdb.rs
+**** create new SQLite specific module in data/sources
+**** enable foreign key enforcement (=PRAGMA foreign_keys = true;=)
+**** should use =STRICT= tables for type enforcement (e.g. =CREATE TABLE t1(a ANY) STRICT;=)
 ** Try leptos upgrade again
 *** start from scratch, copying changes from ~upgrade~ branch
 *** see =upgrade= branch; there are many problems

@@ -38,9 +38,6 @@ pub trait EntityDataSource: Send + Sync {
     /// Search for assets that have any of the given locations.
     fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error>;
 
-    /// Search for assets whose file name matches the one given.
-    fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error>;
-
     /// Search for assets whose media type matches the one given.
     fn query_by_media_type(&self, media_type: &str) -> Result<Vec<SearchResult>, Error>;
 
@@ -105,7 +102,6 @@ impl EntityDataSourceImpl {
         let views = vec![
             "by_checksum",
             "by_date",
-            "by_filename",
             "by_location",
             "by_media_type",
             "by_tags",
@@ -186,14 +182,6 @@ impl EntityDataSource for EntityDataSourceImpl {
         // secondary index keys are lowercase
         let locations: Vec<String> = locations.into_iter().map(|v| v.to_lowercase()).collect();
         let query_results = self.database.query_all_keys("by_location", locations)?;
-        let search_results = convert_results(query_results);
-        Ok(search_results)
-    }
-
-    fn query_by_filename(&self, filename: &str) -> Result<Vec<SearchResult>, Error> {
-        // secondary index keys are lowercase
-        let filename = filename.to_lowercase();
-        let query_results = self.database.query_by_key("by_filename", filename)?;
         let search_results = convert_results(query_results);
         Ok(search_results)
     }
@@ -359,9 +347,6 @@ impl Document for Asset {
         } else if view == "by_checksum" {
             let lower = self.checksum.to_lowercase();
             emitter.emit(lower.as_bytes(), None)?;
-        } else if view == "by_filename" {
-            let lower = self.filename.to_lowercase();
-            emitter.emit(lower.as_bytes(), Some(&idv))?;
         } else if view == "by_media_type" {
             let lower = self.media_type.to_lowercase();
             emitter.emit(lower.as_bytes(), Some(&idv))?;

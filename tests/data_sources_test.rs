@@ -598,41 +598,6 @@ fn test_query_by_locations() {
 }
 
 #[test]
-fn test_query_by_filename() {
-    let db_path = DBPath::new("_test_query_by_filename");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
-
-    // zero assets
-    let actual = datasource.query_by_filename("img_1234.jpg").unwrap();
-    assert_eq!(actual.len(), 0);
-
-    // one asset
-    let asset = common::build_basic_asset();
-    datasource.put_asset(&asset).unwrap();
-    let actual = datasource.query_by_filename("imG_1234.jpG").unwrap();
-    assert_eq!(actual.len(), 1);
-    assert!(actual[0].filename == "img_1234.jpg");
-
-    // multiple assets
-    let mut asset = common::build_basic_asset();
-    asset.key = "monday6".to_owned();
-    asset.filename = "img_2345.jpg".to_owned();
-    datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "tuesday7".to_owned();
-    asset.filename = "IMG_3456.JPG".to_owned();
-    datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "wednesday8".to_owned();
-    asset.filename = "img_4567.jpg".to_owned();
-    datasource.put_asset(&asset).unwrap();
-    let actual = datasource.query_by_filename("Img_3456.Jpg").unwrap();
-    assert_eq!(actual.len(), 1);
-    assert!(!actual[0].asset_id.starts_with("asset/"));
-    assert_eq!(actual[0].filename, "IMG_3456.JPG");
-}
-
-#[test]
 fn test_query_by_media_type() {
     let db_path = DBPath::new("_test_query_by_media_type");
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
