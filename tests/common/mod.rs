@@ -6,7 +6,7 @@ use rocksdb::{Options, DB};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
-use tanuki::data::sources::database::drop_database_ref;
+use tanuki::data::sources::rocksdb::drop_database_ref;
 use tanuki::domain::entities::{Asset, Location};
 
 // Track number of open database instances accessing a particular path. Once

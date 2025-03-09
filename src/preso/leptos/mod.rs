@@ -202,16 +202,16 @@ pub mod ssr {
     use crate::data::repositories::{
         BlobRepositoryImpl, RecordRepositoryImpl, SearchRepositoryImpl,
     };
-    use crate::data::sources::EntityDataSourceImpl;
+    use crate::data::sources::new_datasource_for_path;
     use leptos::{ServerFnError, ServerFnErrorErr};
     use std::env;
     use std::path::PathBuf;
-    use std::sync::{Arc, LazyLock};
+    use std::sync::LazyLock;
 
     #[cfg(test)]
-    static DEFAULT_DB_PATH: &str = "tmp/test/rocksdb";
+    static DEFAULT_DB_PATH: &str = "tmp/test/database";
     #[cfg(not(test))]
-    static DEFAULT_DB_PATH: &str = "tmp/rocksdb";
+    static DEFAULT_DB_PATH: &str = "tmp/database";
 
     // Path to the database files.
     static DB_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
@@ -233,9 +233,9 @@ pub mod ssr {
     /// Construct a repository implementation for the database.
     ///
     pub fn db() -> Result<RecordRepositoryImpl, ServerFnError> {
-        let source = EntityDataSourceImpl::new(DB_PATH.as_path())
+        let source = new_datasource_for_path(DB_PATH.as_path())
             .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
-        let repo = RecordRepositoryImpl::new(Arc::new(source));
+        let repo = RecordRepositoryImpl::new(source);
         Ok(repo)
     }
 

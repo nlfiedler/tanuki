@@ -6,8 +6,8 @@ mod common;
 use chrono::prelude::*;
 use common::DBPath;
 use std::str::FromStr;
+use tanuki::data::sources::rocksdb::EntityDataSourceImpl;
 use tanuki::data::sources::EntityDataSource;
-use tanuki::data::sources::EntityDataSourceImpl;
 use tanuki::domain::entities::Location;
 
 #[test]

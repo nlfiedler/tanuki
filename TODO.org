@@ -5,7 +5,7 @@
 *** concern: needs a lot of memory (minimum 125mb per thread)
 *** concern: designed for SSD and NVMe, writes may be slow on HDD
 *** concern: writes to a single file
-*** concern: design for bulk updates, not many small transactions
+*** concern: designed for bulk updates, not many small transactions
 *** domain and preso layers should not change at all
 *** design basic schema
 **** assets table
@@ -45,10 +45,6 @@
 **** try defining indexes
 **** use =explain analyze= to ensure indexes are used
 *** action plan
-**** move everything RocksDB specific into a new =rocksdb= module
-- [ ] data/sources/mod.rs becomes data/sources/rocksdb.rs
-- [ ] EntityDataSourceImpl, Document impl, mapper() and so on move to data/sources/rocksdb.rs
-- [ ] code in data/sources/database.rs moves into data/sources/rocksdb.rs
 **** create new DuckDB specific module in data/sources
 **** consider restricting =threads= to a small number as it may create many if there are many "cores"
 **** ~load~ usecase should delete indexes, load data, and recreate indexes to avoid poor performance
@@ -94,8 +90,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS hashes ON assets (hash);
 | label  |             | text |
 | city   |             | text |
 | region |             | text |
-*** consider how ~search~ and ~scan~ might change to work better with SQL
-**** SQL performs matching and filtering already, no need for the usecase to do it
 *** derive SQL queries for each of the repository functions
 *** set up a basic prototype to play around
 **** install SQLite CLI
@@ -106,10 +100,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS hashes ON assets (hash);
 **** try defining indexes
 **** use =explain= to ensure indexes are used
 *** action plan
-**** move everything RocksDB specific into a new =rocksdb= module
-- [ ] data/sources/mod.rs becomes data/sources/rocksdb.rs
-- [ ] EntityDataSourceImpl, Document impl, mapper() and so on move to data/sources/rocksdb.rs
-- [ ] code in data/sources/database.rs moves into data/sources/rocksdb.rs
 **** create new SQLite specific module in data/sources
 **** enable foreign key enforcement (=PRAGMA foreign_keys = true;=)
 **** should use =STRICT= tables for type enforcement (e.g. =CREATE TABLE t1(a ANY) STRICT;=)

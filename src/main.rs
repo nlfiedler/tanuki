@@ -25,15 +25,15 @@ use std::path::PathBuf;
 use std::sync::{Arc, LazyLock};
 use tanuki::data::repositories::geo::find_location_repository;
 use tanuki::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl, SearchRepositoryImpl};
-use tanuki::data::sources::{EntityDataSource, EntityDataSourceImpl};
+use tanuki::data::sources::new_datasource_for_path;
 use tanuki::domain::repositories::{BlobRepository, RecordRepository};
 use tanuki::domain::usecases::UseCase;
 use tanuki::preso::graphql;
 
 #[cfg(test)]
-static DEFAULT_DB_PATH: &str = "tmp/test/rocksdb";
+static DEFAULT_DB_PATH: &str = "tmp/test/database";
 #[cfg(not(test))]
-static DEFAULT_DB_PATH: &str = "tmp/rocksdb";
+static DEFAULT_DB_PATH: &str = "tmp/database";
 
 #[cfg(test)]
 static DEFAULT_ASSETS_PATH: &str = "tmp/test/blobs";
@@ -110,9 +110,8 @@ async fn replace_asset(mut payload: Multipart, req: HttpRequest) -> Result<HttpR
         }
     }
     // perform database and file operations in a threadpool
-    let source = EntityDataSourceImpl::new(DB_PATH.as_path())
+    let ctx = new_datasource_for_path(DB_PATH.as_path())
         .map_err(|e| InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR))?;
-    let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
     let records = Arc::new(RecordRepositoryImpl::new(ctx));
     let blobs = Arc::new(BlobRepositoryImpl::new(ASSETS_PATH.as_path()));
     let geocoder = find_location_repository();
@@ -265,9 +264,8 @@ async fn import_assets(mut payload: Multipart) -> Result<HttpResponse, Error> {
         }
     }
     // perform database and file operations in a threadpool
-    let source = EntityDataSourceImpl::new(DB_PATH.as_path())
+    let ctx = new_datasource_for_path(DB_PATH.as_path())
         .map_err(|e| InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR))?;
-    let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
     let records = Arc::new(RecordRepositoryImpl::new(ctx));
     let blobs = Arc::new(BlobRepositoryImpl::new(ASSETS_PATH.as_path()));
     let geocoder = find_location_repository();
@@ -305,8 +303,7 @@ async fn graphql(
     st: web::Data<(Arc<graphql::Schema>, leptos::LeptosOptions)>,
     data: web::Json<GraphQLRequest>,
 ) -> actix_web::Result<HttpResponse> {
-    let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
-    let datasource: Arc<dyn EntityDataSource> = Arc::new(source);
+    let datasource = new_datasource_for_path(DB_PATH.as_path()).unwrap();
     let ctx = Arc::new(graphql::GraphContext::new(
         datasource,
         Box::new(ASSETS_PATH.clone()),
@@ -374,8 +371,7 @@ type AssetResponse = Either<NamedFile, HttpResponse>;
 #[cfg(feature = "ssr")]
 async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> {
     let result = web::block(move || {
-        let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
+        let ctx = new_datasource_for_path(DB_PATH.as_path()).unwrap();
         let records = RecordRepositoryImpl::new(ctx);
         records.get_asset_by_id(&info)
     })
@@ -578,8 +574,7 @@ mod tests {
         std::fs::create_dir_all(&filepath).unwrap();
         filepath.push("f1t.jpg");
         std::fs::copy(src_filename, &filepath).unwrap();
-        let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
+        let ctx = new_datasource_for_path(DB_PATH.as_path()).unwrap();
         let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
         let records = RecordRepositoryImpl::new(ctx);
         if let Ok(Some(asset)) = records.get_asset_by_digest(
@@ -662,8 +657,7 @@ mod tests {
         std::fs::create_dir_all(&filepath).unwrap();
         filepath.push("dcp_1069.jpg");
         std::fs::copy(src_filename, &filepath).unwrap();
-        let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
-        let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
+        let ctx = new_datasource_for_path(DB_PATH.as_path()).unwrap();
         let records = RecordRepositoryImpl::new(ctx);
         let cache = SearchRepositoryImpl::new();
         let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
