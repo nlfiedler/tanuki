@@ -1,12 +1,9 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::domain::entities::{SearchResult, SortField, SortOrder};
+use crate::domain::entities::{SearchParams, SearchResult};
 use crate::domain::repositories::{RecordRepository, SearchRepository};
 use anyhow::Error;
-use chrono::prelude::*;
-use std::cmp;
-use std::fmt;
 
 /// Use case to perform queries against the database indices.
 pub struct SearchAssets {
@@ -20,14 +17,10 @@ impl SearchAssets {
     }
 
     // Perform an initial search of the assets.
-    fn query_assets(&self, params: &mut Params) -> Result<Vec<SearchResult>, Error> {
-        //
-        // Perform the initial query using one of the criteria. The tags is the
-        // first choice since the secondary index does not contain any tags, so
-        // a filter on tags is not possible. What's more, the tags query is more
-        // sophisticated (matches assets that have _all_ of the keys, not just
-        // one) and as such filtering would not make sense.
-        //
+    fn query_assets(&self, params: &mut SearchParams) -> Result<Vec<SearchResult>, Error> {
+        // Perform the initial query using one of the criteria. Querying by tags
+        // is the first choice since the search results do not contain the tags,
+        // so a filter on tags would not be possible.
         if !params.tags.is_empty() {
             let tags = params.tags.drain(..).collect();
             self.repo.query_by_tags(tags)
@@ -53,8 +46,8 @@ impl SearchAssets {
     }
 }
 
-impl super::UseCase<Vec<SearchResult>, Params> for SearchAssets {
-    fn call(&self, params: Params) -> Result<Vec<SearchResult>, Error> {
+impl super::UseCase<Vec<SearchResult>, SearchParams> for SearchAssets {
+    fn call(&self, params: SearchParams) -> Result<Vec<SearchResult>, Error> {
         // Check if a similar search was performed earlier, ignoring the sorting
         // parameters; the sorting will be performed again as needed.
         let mut results: Vec<SearchResult>;
@@ -77,7 +70,7 @@ impl super::UseCase<Vec<SearchResult>, Params> for SearchAssets {
 }
 
 // Filter the search results by date range, if specified.
-fn filter_by_date_range(results: Vec<SearchResult>, params: &Params) -> Vec<SearchResult> {
+fn filter_by_date_range(results: Vec<SearchResult>, params: &SearchParams) -> Vec<SearchResult> {
     if params.after_date.is_some() && params.before_date.is_some() {
         let a = params.after_date.unwrap();
         let b = params.before_date.unwrap();
@@ -102,7 +95,7 @@ fn filter_by_date_range(results: Vec<SearchResult>, params: &Params) -> Vec<Sear
 // means that a search for "paris, texas" will turn up results that have both
 // "paris" and "texas" as part of the location entry, and not simply return
 // results that contain either "paris" or "texas".
-fn filter_by_locations(results: Vec<SearchResult>, params: &Params) -> Vec<SearchResult> {
+fn filter_by_locations(results: Vec<SearchResult>, params: &SearchParams) -> Vec<SearchResult> {
     if params.locations.is_empty() {
         results
     } else {
@@ -123,7 +116,7 @@ fn filter_by_locations(results: Vec<SearchResult>, params: &Params) -> Vec<Searc
 }
 
 // Filter the search results by media type, if specified.
-fn filter_by_media_type(results: Vec<SearchResult>, params: &Params) -> Vec<SearchResult> {
+fn filter_by_media_type(results: Vec<SearchResult>, params: &SearchParams) -> Vec<SearchResult> {
     if let Some(p_media_type) = params.media_type.as_ref() {
         // All filtering comparisons are case-insensitive for now, so both the
         // input and the index values are lowercased.
@@ -140,67 +133,14 @@ fn filter_by_media_type(results: Vec<SearchResult>, params: &Params) -> Vec<Sear
     }
 }
 
-#[derive(Clone, Default)]
-pub struct Params {
-    pub tags: Vec<String>,
-    pub locations: Vec<String>,
-    pub media_type: Option<String>,
-    pub before_date: Option<DateTime<Utc>>,
-    pub after_date: Option<DateTime<Utc>>,
-    pub sort_field: Option<SortField>,
-    pub sort_order: Option<SortOrder>,
-}
-
-impl fmt::Display for Params {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // format the search parameters similarly to the scan query string for
-        // the sake of generating a key for the cached search repository
-        for tag in self.tags.iter() {
-            if !tag.is_empty() {
-                write!(f, " tag:{}", tag)?;
-            }
-        }
-        for loc in self.locations.iter() {
-            if !loc.is_empty() {
-                write!(f, " loc:{}", loc)?;
-            }
-        }
-        if let Some(mt) = self.media_type.as_ref() {
-            // very crude splitting of media type into predicates
-            let parts: Vec<&str> = mt.split("/").collect();
-            write!(f, " is:{}", parts[0])?;
-            write!(f, " format:{}", parts[1])?;
-        }
-        if let Some(bd) = self.before_date {
-            write!(f, " before:{}", bd.format("%Y-%m-%d").to_string())?;
-        }
-        if let Some(ad) = self.after_date {
-            write!(f, " after:{}", ad.format("%Y-%m-%d").to_string())?;
-        }
-        write!(f, "")
-    }
-}
-
-impl cmp::PartialEq for Params {
-    fn eq(&self, other: &Self) -> bool {
-        // ignore sorting when comparing two sets of parameters
-        self.tags == other.tags
-            && self.locations == other.locations
-            && self.media_type == other.media_type
-            && self.before_date == other.before_date
-            && self.after_date == other.after_date
-    }
-}
-
-impl cmp::Eq for Params {}
-
 #[cfg(test)]
 mod tests {
     use super::super::UseCase;
     use super::*;
-    use crate::domain::entities::Location;
+    use crate::domain::entities::{Location, SortField, SortOrder};
     use crate::domain::repositories::{MockRecordRepository, MockSearchRepository};
     use anyhow::anyhow;
+    use chrono::prelude::*;
     use mockall::predicate::*;
 
     fn make_date_time(
@@ -218,7 +158,7 @@ mod tests {
 
     #[test]
     fn test_search_params_format() {
-        let params = Params {
+        let params = SearchParams {
             tags: vec![],
             locations: vec![],
             media_type: None,
@@ -231,7 +171,7 @@ mod tests {
 
         let after = make_date_time(2018, 5, 31, 21, 10, 11);
         let before = make_date_time(2019, 8, 30, 12, 08, 31);
-        let params = Params {
+        let params = SearchParams {
             tags: vec!["kittens".into(), "puppies".into()],
             locations: vec!["paris".into()],
             media_type: Some("image/jpeg".into()),
@@ -261,7 +201,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["assets_tags_ok".to_owned()];
         let result = usecase.call(params);
         // assert
@@ -282,7 +222,7 @@ mod tests {
         cache.expect_put().never();
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["assets_tags_err".to_owned()];
         let result = usecase.call(params);
         // assert
@@ -309,7 +249,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.after_date = Some(after);
         let result = usecase.call(params);
         // assert
@@ -339,7 +279,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.before_date = Some(before);
         let result = usecase.call(params);
         // assert
@@ -370,7 +310,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.after_date = Some(after);
         params.before_date = Some(before);
         let result = usecase.call(params);
@@ -399,7 +339,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.locations = vec!["hawaii".to_owned()];
         let result = usecase.call(params);
         // assert
@@ -428,7 +368,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.media_type = Some("imaGE/jpeg".to_owned());
         let result = usecase.call(params);
         // assert
@@ -505,7 +445,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["kitten".to_owned()];
         params.locations = vec!["london".to_owned()];
         let result = usecase.call(params);
@@ -529,7 +469,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["kitten".to_owned()];
         params.locations = vec!["london".to_owned(), "england".into()];
         let result = usecase.call(params);
@@ -552,7 +492,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["kitten".to_owned()];
         params.media_type = Some("video/quicktime".to_owned());
         let result = usecase.call(params);
@@ -576,7 +516,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["kitten".to_owned()];
         params.after_date = Some(make_date_time(2014, 4, 28, 21, 10, 11));
         params.before_date = Some(make_date_time(2017, 4, 28, 21, 10, 11));
@@ -602,7 +542,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["kitten".to_owned()];
         params.after_date = Some(make_date_time(2016, 4, 28, 21, 10, 11));
         let result = usecase.call(params);
@@ -627,7 +567,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["kitten".to_owned()];
         params.before_date = Some(make_date_time(2016, 4, 28, 21, 10, 11));
         let result = usecase.call(params);
@@ -653,7 +593,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["ascending_date".to_owned()];
         params.sort_field = Some(SortField::Date);
         params.sort_order = Some(SortOrder::Ascending);
@@ -683,7 +623,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["descending_date".to_owned()];
         params.sort_field = Some(SortField::Date);
         params.sort_order = Some(SortOrder::Descending);
@@ -723,7 +663,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["kittens".to_owned()];
         params.sort_field = Some(SortField::Date);
         params.sort_order = Some(SortOrder::Descending);
@@ -742,7 +682,7 @@ mod tests {
 
         // act (same search but different sort order, should hit the cache and
         // yet sort the results accordingly)
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["kittens".to_owned()];
         params.sort_field = Some(SortField::Date);
         params.sort_order = Some(SortOrder::Ascending);
@@ -772,7 +712,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["ascending_filename".to_owned()];
         params.sort_field = Some(SortField::Filename);
         params.sort_order = Some(SortOrder::Ascending);
@@ -802,7 +742,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["descending_filename".to_owned()];
         params.sort_field = Some(SortField::Filename);
         params.sort_order = Some(SortOrder::Descending);
@@ -832,7 +772,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["ascending_identifier".to_owned()];
         params.sort_field = Some(SortField::Identifier);
         params.sort_order = Some(SortOrder::Ascending);
@@ -862,7 +802,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["descending_identifier".to_owned()];
         params.sort_field = Some(SortField::Identifier);
         params.sort_order = Some(SortOrder::Descending);
@@ -892,7 +832,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["ascending_media_type".to_owned()];
         params.sort_field = Some(SortField::MediaType);
         params.sort_order = Some(SortOrder::Ascending);
@@ -922,7 +862,7 @@ mod tests {
         cache.expect_put().once().returning(|_, _| Ok(()));
         // act
         let usecase = SearchAssets::new(Box::new(mock), Box::new(cache));
-        let mut params: Params = Default::default();
+        let mut params: SearchParams = Default::default();
         params.tags = vec!["descending_media_type".to_owned()];
         params.sort_field = Some(SortField::MediaType);
         params.sort_order = Some(SortOrder::Descending);

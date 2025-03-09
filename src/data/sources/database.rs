@@ -247,7 +247,7 @@ impl Database {
 
     ///
     /// Find all keys and values such that the key starts with the given prefix,
-    /// optionally seeking to the key given in `seek_from`, and returning up to
+    /// optionally seeking to the key given in `cursor`, and returning up to
     /// `count` items.
     ///
     /// Unlike other queries, this function returns the raw key/value pairs.
@@ -255,13 +255,13 @@ impl Database {
     pub fn scan(
         &self,
         prefix: &str,
-        seek_from: Option<String>,
+        cursor: Option<String>,
         count: usize,
     ) -> Result<Vec<(Box<[u8]>, Box<[u8]>)>, Error> {
         let prefix_bytes = prefix.as_bytes();
         let db = self.db.lock().unwrap();
         let mut iter = db.db().prefix_iterator(prefix_bytes);
-        if let Some(from_str) = seek_from {
+        if let Some(from_str) = cursor {
             let from_bytes = from_str.as_bytes();
             iter.set_mode(IteratorMode::From(from_bytes, Direction::Forward));
         }

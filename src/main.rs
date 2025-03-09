@@ -377,7 +377,7 @@ async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> 
         let source = EntityDataSourceImpl::new(DB_PATH.as_path()).unwrap();
         let ctx: Arc<dyn EntityDataSource> = Arc::new(source);
         let records = RecordRepositoryImpl::new(ctx);
-        records.get_asset(&info)
+        records.get_asset_by_id(&info)
     })
     .await?;
     if let Ok(asset) = result {

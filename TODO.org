@@ -34,6 +34,7 @@
 | region |             | varchar |
 *** consider using COW for asset records, then using selected fields in =UPDATE= statement
 **** if only the user date changes, =UPDATE= would only touch that field
+**** this would suit the nature of a column-oriented DBMS (probably?)
 *** derive SQL queries for each of the repository functions
 *** set up a basic prototype to play around
 **** install DuckDB CLI
@@ -95,10 +96,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS hashes ON assets (hash);
 | region |             | text |
 *** consider how ~search~ and ~scan~ might change to work better with SQL
 **** SQL performs matching and filtering already, no need for the usecase to do it
-**** push down the query and filtering logic into the data source(s)
-**** turn the search parameters into 1st class entities
-*** consider using COW for asset records, then using selected fields in =UPDATE= statement
-**** if only the user date changes, =UPDATE= would only touch that field
 *** derive SQL queries for each of the repository functions
 *** set up a basic prototype to play around
 **** install SQLite CLI
@@ -116,6 +113,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS hashes ON assets (hash);
 **** create new SQLite specific module in data/sources
 **** enable foreign key enforcement (=PRAGMA foreign_keys = true;=)
 **** should use =STRICT= tables for type enforcement (e.g. =CREATE TABLE t1(a ANY) STRICT;=)
+** TODO bug: replacing an asset wiped all of the location fields
+** TODO bug? why do the 1913 photos not appear when browsing all assets in flipped order?
+*** could the index be out of date?
+*** is the query only going back 100 years?
 ** Try leptos upgrade again
 *** start from scratch, copying changes from ~upgrade~ branch
 *** see =upgrade= branch; there are many problems
@@ -214,24 +215,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS hashes ON assets (hash);
 **** responsive grid; images only, scaled to fit in a row and fill horizontally (i.e. ~mujina~)
 **** grid of just images, maybe 180x180; images cropped to the square (a la Apple Photos)
 **** list of rows, tiny thumbnail (96x96), caption, location, date
-*** paging
-**** spring-loaded next-page navigation
-***** scroll to the bottom and keep trying to scroll
-***** show some indication (e.g. a spinner) that holding will fetch the next page
-***** after two seconds or so, navigate to the next page
-**** consider other ways of showing lots of results w/o paging
-***** look at some examples and packages for ideas on design and implementation
-****** handles scrolling and waiting for data: https://pub.dev/packages/pagination_view
-****** has dots: https://pub.dev/packages/dot_pagination_swiper
-****** can show an error message: https://pub.dev/packages/flutter_pagination_helper
-****** infinite with limited caching: https://pub.dev/packages/infinite_pagination
-****** supports various views: https://pub.dev/packages/flutter_paginator
-**** consider how to display pages continuously (a la infinite list)
-***** would keep several pages in the widget tree at one time
-***** scrolling would drop a page widget from the tree, and add a new one
-***** when fetching a new page, the page widget would show a progress indicator
-***** the "dropped" pages would be changed to consist of placeholders to free memory
-**** using carousel style navigation arrows?
 *** navigation rail for filtering assets
 **** Nextcloud has a side bar for photos with these options:
 ***** Photos
@@ -276,6 +259,28 @@ CREATE UNIQUE INDEX IF NOT EXISTS hashes ON assets (hash);
 *** add option to set the caption
 ** Navbar
 *** light/dark mode: goes light during page load; chrome does not send color-scheme header
+** Pagination
+*** turn the ~Page n of m~ text into a button to input a page number
+**** clicking the button opens a dropdown with a text input field
+**** pressing ~Enter~ or clicking ~Go~ button will dismiss dropdown and go to that page
+*** paging alternatives
+**** spring-loaded next-page navigation
+***** scroll to the bottom and keep trying to scroll
+***** show some indication (e.g. a spinner) that holding will fetch the next page
+***** after two seconds or so, navigate to the next page
+**** consider other ways of showing lots of results w/o paging
+***** look at some examples and packages for ideas on design and implementation
+****** handles scrolling and waiting for data: https://pub.dev/packages/pagination_view
+****** has dots: https://pub.dev/packages/dot_pagination_swiper
+****** can show an error message: https://pub.dev/packages/flutter_pagination_helper
+****** infinite with limited caching: https://pub.dev/packages/infinite_pagination
+****** supports various views: https://pub.dev/packages/flutter_paginator
+**** consider how to display pages continuously (a la infinite list)
+***** would keep several pages in the widget tree at one time
+***** scrolling would drop a page widget from the tree, and add a new one
+***** when fetching a new page, the page widget would show a progress indicator
+***** the "dropped" pages would be changed to consist of placeholders to free memory
+**** using carousel style navigation arrows?
 ** Hosting externally
 *** consider storage costs (currently under 100 GB)
 *** place basic auth server in front (Azure app gateway maybe?)

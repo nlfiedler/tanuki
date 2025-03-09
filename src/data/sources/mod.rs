@@ -15,27 +15,32 @@ use std::str;
 
 pub mod database;
 
-/// Data source for entity objects.
+/// Data source for entity records.
 #[cfg_attr(test, automock)]
 pub trait EntityDataSource: Send + Sync {
-    /// Retrieve the asset record with the given identifier.
+    /// Retrieve an asset by its unique identifier, failing if not found.
     fn get_asset(&self, asset_id: &str) -> Result<Asset, Error>;
 
-    /// Store the asset record in the database.
+    /// Store the asset entity in the data source either as a new record or
+    /// updating an existing record, according to its unique identifier.
     fn put_asset(&self, asset: &Asset) -> Result<(), Error>;
 
-    /// Remove the asset record from the database.
+    /// Remove the asset record from the data source.
     fn delete_asset(&self, asset_id: &str) -> Result<(), Error>;
 
     /// Search for the asset with the given hash digest.
     ///
-    /// Returns the asset identifier.
+    /// Returns the asset identifier if a match is found.
     fn query_by_checksum(&self, digest: &str) -> Result<Option<String>, Error>;
 
     /// Search for assets that have all of the given tags.
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error>;
 
-    /// Search for assets that have any of the given locations.
+    /// Search for assets whose location fields match all of the given values.
+    ///
+    /// For example, searching for `["paris","france"]` will return assets that
+    /// have both `"paris"` and `"france"` in the location column, such as in
+    /// the `city` and `region` fields.
     fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for assets whose media type matches the one given.
@@ -49,7 +54,7 @@ pub trait EntityDataSource: Send + Sync {
 
     /// Search for assets whose best date is between the after and before dates.
     ///
-    /// As with `query_after_date()`, the after value inclusive.
+    /// As with `query_after_date()`, the after value is inclusive.
     fn query_date_range(
         &self,
         after: DateTime<Utc>,
@@ -81,13 +86,13 @@ pub trait EntityDataSource: Send + Sync {
     /// each tag.
     fn all_media_types(&self) -> Result<Vec<LabeledCount>, Error>;
 
-    /// Return all asset identifiers in the database.
+    /// Return all asset identifiers in the data source.
     fn all_assets(&self) -> Result<Vec<String>, Error>;
 
     /// Return all assets from the data source in lexicographical order,
     /// optionally starting from the asset that follows the given identifier,
     /// and returning a limited number.
-    fn scan_assets(&self, seek_from: Option<String>, count: usize) -> Result<Vec<Asset>, Error>;
+    fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<Vec<Asset>, Error>;
 }
 
 /// Implementation of the entity data source utilizing mokuroku to manage
@@ -275,11 +280,11 @@ impl EntityDataSource for EntityDataSourceImpl {
         self.database.find_prefix("asset/")
     }
 
-    fn scan_assets(&self, seek_from: Option<String>, count: usize) -> Result<Vec<Asset>, Error> {
-        let prefixed_seek = seek_from.map(|s| format!("asset/{}", s));
+    fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<Vec<Asset>, Error> {
+        let prefixed_seek = cursor.map(|s| format!("asset/{}", s));
         let prefix_bytes = prefixed_seek.as_ref().map(|p| p.as_bytes().to_owned());
         // request one additional result and filter the one that matches the
-        // seek_from key, but also stopping when there are enough results
+        // cursor key, but also stopping when there are enough results
         let pairs = self.database.scan("asset/", prefixed_seek, count + 1)?;
         let mut results: Vec<Asset> = Vec::with_capacity(pairs.len());
         for (key, value) in pairs.into_iter() {

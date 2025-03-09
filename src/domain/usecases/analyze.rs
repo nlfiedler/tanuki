@@ -54,7 +54,7 @@ impl super::UseCase<Counts, NoParams> for Analyze {
             if let Ok(blob_path) = self.blobs.blob_path(&asset_id) {
                 counts.total_assets += 1;
                 if blob_path.exists() {
-                    let asset = self.records.get_asset(&asset_id)?;
+                    let asset = self.records.get_asset_by_id(&asset_id)?;
                     if let Ok(media_type) = asset.media_type.parse::<mime::Mime>() {
                         if media_type.type_() == mime::IMAGE {
                             self.examine_image(&blob_path, &mut counts)?;
@@ -115,7 +115,7 @@ mod tests {
             .expect_all_assets()
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .returning(move |_| {
                 Ok(Asset {
@@ -173,7 +173,7 @@ mod tests {
             ])
         });
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .returning(move |_| {
                 Ok(Asset {
@@ -192,7 +192,7 @@ mod tests {
                 })
             });
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset2_id))
             .returning(move |_| {
                 Ok(Asset {
@@ -211,7 +211,7 @@ mod tests {
                 })
             });
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset3_id))
             .returning(move |_| {
                 Ok(Asset {

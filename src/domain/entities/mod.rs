@@ -640,6 +640,65 @@ impl From<&str> for SortOrder {
     }
 }
 
+///
+/// Parameters for searching for assets based on various criteria.
+///
+#[derive(Clone, Default)]
+pub struct SearchParams {
+    pub tags: Vec<String>,
+    pub locations: Vec<String>,
+    pub media_type: Option<String>,
+    pub before_date: Option<DateTime<Utc>>,
+    pub after_date: Option<DateTime<Utc>>,
+    pub sort_field: Option<SortField>,
+    pub sort_order: Option<SortOrder>,
+}
+
+impl fmt::Display for SearchParams {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // format the search parameters similarly to the scan query string for
+        // the sake of generating a key for the cached search repository
+        //
+        // for the sake of caching, ignore the sort field and sort order
+        for tag in self.tags.iter() {
+            if !tag.is_empty() {
+                write!(f, " tag:{}", tag)?;
+            }
+        }
+        for loc in self.locations.iter() {
+            if !loc.is_empty() {
+                write!(f, " loc:{}", loc)?;
+            }
+        }
+        if let Some(mt) = self.media_type.as_ref() {
+            // very crude splitting of media type into predicates
+            let parts: Vec<&str> = mt.split("/").collect();
+            write!(f, " is:{}", parts[0])?;
+            write!(f, " format:{}", parts[1])?;
+        }
+        if let Some(bd) = self.before_date {
+            write!(f, " before:{}", bd.format("%Y-%m-%d").to_string())?;
+        }
+        if let Some(ad) = self.after_date {
+            write!(f, " after:{}", ad.format("%Y-%m-%d").to_string())?;
+        }
+        write!(f, "")
+    }
+}
+
+impl cmp::PartialEq for SearchParams {
+    fn eq(&self, other: &Self) -> bool {
+        // ignore sorting when comparing two sets of parameters
+        self.tags == other.tags
+            && self.locations == other.locations
+            && self.media_type == other.media_type
+            && self.before_date == other.before_date
+            && self.after_date == other.after_date
+    }
+}
+
+impl cmp::Eq for SearchParams {}
+
 /// `SearchResult` is returned by data repository queries for assets matching a
 /// given set of criteria.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]

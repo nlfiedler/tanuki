@@ -25,7 +25,7 @@ impl UpdateAsset {
 impl super::UseCase<Asset, Params> for UpdateAsset {
     fn call(&self, params: Params) -> Result<Asset, Error> {
         // fetch existing record to merge with incoming values
-        let mut asset = self.records.get_asset(&params.asset.key)?;
+        let mut asset = self.records.get_asset_by_id(&params.asset.key)?;
         // merge the incoming values with the existing record
         merge_asset_input(&mut asset, params.asset);
         // store the updated record in the repository
@@ -657,7 +657,7 @@ mod tests {
         };
         let mut records = MockRecordRepository::new();
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
         records.expect_put_asset().returning(move |_| Ok(()));
@@ -684,7 +684,7 @@ mod tests {
     fn test_update_asset_err() {
         // arrange
         let mut mock = MockRecordRepository::new();
-        mock.expect_get_asset()
+        mock.expect_get_asset_by_id()
             .with(eq("abc123"))
             .returning(move |_| Err(anyhow!("oh no")));
         let mut cache = MockSearchRepository::new();

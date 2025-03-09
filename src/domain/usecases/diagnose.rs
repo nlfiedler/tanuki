@@ -30,7 +30,7 @@ impl Diagnose {
         if let Ok(blob_path) = self.blobs.blob_path(asset_id) {
             if blob_path.exists() {
                 // raise any database errors immediately
-                let asset = self.records.get_asset(asset_id)?;
+                let asset = self.records.get_asset_by_id(asset_id)?;
                 // check the file size
                 if let Ok(metadata) = fs::metadata(&blob_path) {
                     if metadata.len() != asset.byte_length {
@@ -118,7 +118,7 @@ impl Diagnose {
     // Replace the incorrect digest value in the asset record.
     fn fix_checksum(&self, asset_id: &str) {
         if let Ok(blob_path) = self.blobs.blob_path(asset_id) {
-            if let Ok(mut asset) = self.records.get_asset(asset_id) {
+            if let Ok(mut asset) = self.records.get_asset_by_id(asset_id) {
                 if let Ok(digest) = checksum_file(&blob_path) {
                     asset.checksum = digest;
                     let _ = self.records.put_asset(&asset);
@@ -137,7 +137,7 @@ impl Diagnose {
     // Replace the incorrect file size value in the asset record.
     fn fix_byte_length(&self, asset_id: &str) {
         if let Ok(blob_path) = self.blobs.blob_path(asset_id) {
-            if let Ok(mut asset) = self.records.get_asset(asset_id) {
+            if let Ok(mut asset) = self.records.get_asset_by_id(asset_id) {
                 if let Ok(metadata) = fs::metadata(&blob_path) {
                     asset.byte_length = metadata.len();
                     let _ = self.records.put_asset(&asset);
@@ -160,7 +160,7 @@ impl Diagnose {
         if let Ok(mut blob_path) = self.blobs.blob_path(old_asset_id) {
             if let Ok(old_decoded) = general_purpose::STANDARD.decode(old_asset_id) {
                 if let Ok(old_rel_path) = str::from_utf8(&old_decoded) {
-                    if let Ok(old_asset) = self.records.get_asset(old_asset_id) {
+                    if let Ok(old_asset) = self.records.get_asset_by_id(old_asset_id) {
                         // use glob crate to look for file with different extensions
                         blob_path.set_extension("*");
                         if let Some(pattern) = blob_path.to_str() {
@@ -220,7 +220,7 @@ impl Diagnose {
 
     // Replace the incorrect file name value in the asset record.
     fn fix_filename(&self, asset_id: &str) {
-        if let Ok(mut asset) = self.records.get_asset(asset_id) {
+        if let Ok(mut asset) = self.records.get_asset_by_id(asset_id) {
             let mut fixed = false;
             if let Ok(vector) = general_purpose::STANDARD.decode(asset_id) {
                 if let Ok(string) = str::from_utf8(&vector) {
@@ -243,7 +243,7 @@ impl Diagnose {
 
     // Replace the incorrect media type value in the asset record.
     fn fix_media_type(&self, asset_id: &str) {
-        if let Ok(mut asset) = self.records.get_asset(asset_id) {
+        if let Ok(mut asset) = self.records.get_asset_by_id(asset_id) {
             // the asset filename property is whatever was originally provided,
             // so should be safe to use that to get the extession
             let filename = Path::new(&asset.filename);
@@ -264,7 +264,7 @@ impl Diagnose {
     // Replace the incorrect original date value in the asset record.
     fn fix_original_date(&self, asset_id: &str) {
         if let Ok(blob_path) = self.blobs.blob_path(asset_id) {
-            if let Ok(mut asset) = self.records.get_asset(asset_id) {
+            if let Ok(mut asset) = self.records.get_asset_by_id(asset_id) {
                 if let Ok(mime_type) = asset.media_type.parse::<mime::Mime>() {
                     if let Ok(original) = get_original_date(&mime_type, &blob_path) {
                         asset.original_date = Some(original);
@@ -290,7 +290,7 @@ impl Diagnose {
     fn fix_extension(&self, old_asset_id: &str) {
         if let Ok(old_decoded) = general_purpose::STANDARD.decode(old_asset_id) {
             if let Ok(old_path) = str::from_utf8(&old_decoded) {
-                if let Ok(old_asset) = self.records.get_asset(old_asset_id) {
+                if let Ok(old_asset) = self.records.get_asset_by_id(old_asset_id) {
                     if let Ok(mime_type) = old_asset.media_type.parse::<mime::Mime>() {
                         let maybe_mime_extension = super::select_best_extension(&mime_type);
                         if let Some(mime_ext) = maybe_mime_extension {
@@ -466,7 +466,7 @@ mod tests {
             .expect_all_assets()
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .returning(move |_| {
                 Ok(Asset {
@@ -509,7 +509,7 @@ mod tests {
             .expect_all_assets()
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .returning(move |_| {
                 Ok(Asset {
@@ -583,7 +583,7 @@ mod tests {
             .expect_all_assets()
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .returning(move |_| Ok(asset1_clone.clone()));
         let mut blobs = MockBlobRepository::new();
@@ -611,7 +611,7 @@ mod tests {
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         let mut get_asset_count = 0;
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .times(4)
             .returning(move |_| {
@@ -682,7 +682,7 @@ mod tests {
             .expect_all_assets()
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .returning(move |_| Ok(asset1_clone.clone()));
         let mut blobs = MockBlobRepository::new();
@@ -708,7 +708,7 @@ mod tests {
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         let mut get_asset_count = 0;
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .times(3)
             .returning(move |_| {
@@ -765,7 +765,7 @@ mod tests {
             .expect_all_assets()
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .returning(move |_| Ok(asset1.clone()));
         let mut blobs = MockBlobRepository::new();
@@ -798,11 +798,11 @@ mod tests {
             }
         });
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .returning(move |_| Ok(asset1_clone.clone()));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(new_asset_id))
             .returning(move |_| Ok(new_asset.clone()));
         records
@@ -865,7 +865,7 @@ mod tests {
             .expect_all_assets()
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .returning(move |_| Ok(asset_bad.clone()));
         let mut blobs = MockBlobRepository::new();
@@ -891,7 +891,7 @@ mod tests {
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         let mut get_asset_count = 0;
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .times(3)
             .returning(move |_| {
@@ -951,7 +951,7 @@ mod tests {
             .expect_all_assets()
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .returning(move |_| Ok(asset_bad.clone()));
         let mut blobs = MockBlobRepository::new();
@@ -978,7 +978,7 @@ mod tests {
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         let mut get_asset_count = 0;
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .times(3)
             .returning(move |_| {
@@ -1052,7 +1052,7 @@ mod tests {
             .expect_all_assets()
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .returning(move |_| Ok(asset_bad.clone()));
         let mut blobs = MockBlobRepository::new();
@@ -1078,7 +1078,7 @@ mod tests {
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         let mut call_count = 0;
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .times(3)
             .returning(move |_| {
@@ -1150,7 +1150,7 @@ mod tests {
             .expect_all_assets()
             .returning(move || Ok(vec![asset1_id.to_owned()]));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .returning(move |_| Ok(asset1.clone()));
         let mut blobs = MockBlobRepository::new();
@@ -1181,11 +1181,11 @@ mod tests {
             }
         });
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset1_id))
             .returning(move |_| Ok(asset1_clone.clone()));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(fixed_assetid))
             .returning(move |_| Ok(fixed_asset.clone()));
         records

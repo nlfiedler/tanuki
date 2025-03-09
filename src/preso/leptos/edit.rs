@@ -134,7 +134,7 @@ pub fn EditPage() -> impl IntoView {
         |(query_str, order, page, count)| async move {
             let offset = count * (page - 1);
             let sort_order = SortOrder::from(order.as_str());
-            super::scan_assets(
+            super::fetch_assets(
                 query_str,
                 Some(SortField::Date),
                 Some(sort_order),

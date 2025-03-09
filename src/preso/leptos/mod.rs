@@ -388,14 +388,14 @@ pub async fn search(
     count: Option<i32>,
     offset: Option<i32>,
 ) -> Result<SearchMeta, ServerFnError> {
-    use crate::domain::entities::SearchResult;
-    use crate::domain::usecases::search::{Params, SearchAssets};
+    use crate::domain::entities::{SearchParams, SearchResult};
+    use crate::domain::usecases::search::SearchAssets;
     use crate::domain::usecases::UseCase;
 
     let repo = ssr::db()?;
     let cache = ssr::cache()?;
     let usecase = SearchAssets::new(Box::new(repo), Box::new(cache));
-    let params = Params {
+    let params = SearchParams {
         tags: params.tags.unwrap_or(vec![]),
         locations: params.locations.unwrap_or(vec![]),
         after_date: params.after,
@@ -422,7 +422,7 @@ pub async fn search(
 }
 
 #[leptos::server]
-pub async fn scan_assets(
+pub async fn fetch_assets(
     query: String,
     sort_field: Option<SortField>,
     sort_order: Option<SortOrder>,
@@ -478,9 +478,10 @@ pub async fn browse(params: BrowseParams) -> Result<BrowseMeta, ServerFnError> {
             .call(params)
             .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?
     } else {
-        use crate::domain::usecases::search::{Params, SearchAssets};
+        use crate::domain::entities::SearchParams;
+        use crate::domain::usecases::search::SearchAssets;
         let usecase = SearchAssets::new(Box::new(repo), Box::new(cache));
-        let params = Params {
+        let params = SearchParams {
             tags: params.tags.unwrap_or(vec![]),
             locations: params.locations.unwrap_or(vec![]),
             after_date: params.after,
@@ -537,9 +538,10 @@ pub async fn browse_replace(
             .call(params)
             .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?
     } else {
-        use crate::domain::usecases::search::{Params, SearchAssets};
+        use crate::domain::entities::SearchParams;
+        use crate::domain::usecases::search::SearchAssets;
         let usecase = SearchAssets::new(Box::new(repo), Box::new(cache));
-        let params = Params {
+        let params = SearchParams {
             tags: params.tags.unwrap_or(vec![]),
             locations: params.locations.unwrap_or(vec![]),
             after_date: params.after,

@@ -728,8 +728,8 @@ fn test_query_newborn_old() {
 }
 
 #[test]
-fn test_scan_assets() {
-    let db_path = DBPath::new("_test_scan_assets");
+fn test_fetch_assets() {
+    let db_path = DBPath::new("_test_fetch_assets");
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
 
     let mut asset = common::build_basic_asset();
@@ -749,13 +749,13 @@ fn test_scan_assets() {
     datasource.put_asset(&asset).unwrap();
     asset.key = "hhhhhhh".to_owned();
     datasource.put_asset(&asset).unwrap();
-    let results = datasource.scan_assets(Some("ccccccc".into()), 3).unwrap();
+    let results = datasource.fetch_assets(Some("ccccccc".into()), 3).unwrap();
     assert_eq!(results.len(), 3);
     assert_eq!(results[0].key, "ddddddd");
     assert_eq!(results[1].key, "eeeeeee");
     assert_eq!(results[2].key, "fffffff");
 
-    let actual = datasource.scan_assets(None, 3).unwrap();
+    let actual = datasource.fetch_assets(None, 3).unwrap();
     assert_eq!(actual.len(), 3);
     assert_eq!(actual[0].key, "aaaaaaa");
     assert_eq!(actual[1].key, "bbbbbbb");

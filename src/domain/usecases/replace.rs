@@ -42,7 +42,7 @@ impl ReplaceAsset {
 
     // Update an asset entity based on available information.
     fn update_asset(&self, digest: String, params: Params) -> Result<Asset, Error> {
-        let mut asset = self.records.get_asset(&params.asset_id)?;
+        let mut asset = self.records.get_asset_by_id(&params.asset_id)?;
         asset.checksum = digest;
         asset.filename = super::get_file_name(&params.filepath);
         asset.media_type = params.media_type.to_string();
@@ -262,7 +262,7 @@ mod tests {
             .with(eq(digest))
             .returning(move |_| Ok(None));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset_id))
             .returning(move |_| Ok(existing.clone()));
         records.expect_put_asset().returning(|_| Ok(()));
@@ -342,7 +342,7 @@ mod tests {
             .with(eq(digest))
             .returning(move |_| Ok(None));
         records
-            .expect_get_asset()
+            .expect_get_asset_by_id()
             .with(eq(asset_id))
             .returning(move |_| Ok(existing.clone()));
         records.expect_put_asset().returning(|_| Ok(()));

@@ -44,7 +44,7 @@ impl RecordRepositoryImpl {
 }
 
 impl RecordRepository for RecordRepositoryImpl {
-    fn get_asset(&self, asset_id: &str) -> Result<Asset, Error> {
+    fn get_asset_by_id(&self, asset_id: &str) -> Result<Asset, Error> {
         self.datasource.get_asset(asset_id)
     }
 
@@ -92,8 +92,8 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.all_assets()
     }
 
-    fn scan_assets(&self, seek_from: Option<String>, count: usize) -> Result<Vec<Asset>, Error> {
-        self.datasource.scan_assets(seek_from, count)
+    fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<Vec<Asset>, Error> {
+        self.datasource.fetch_assets(cursor, count)
     }
 
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error> {
@@ -434,7 +434,7 @@ mod tests {
             .returning(move |_| Ok(asset1.clone()));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
-        let result = repo.get_asset("abc123");
+        let result = repo.get_asset_by_id("abc123");
         // assert
         assert!(result.is_ok());
         let asset = result.unwrap();
@@ -450,7 +450,7 @@ mod tests {
             .returning(move |_| Err(anyhow!("oh no")));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
-        let result = repo.get_asset("abc123");
+        let result = repo.get_asset_by_id("abc123");
         // assert
         assert!(result.is_err());
     }
@@ -1567,8 +1567,7 @@ mod tests {
 
     #[test]
     fn test_search_repository_impl() {
-        use crate::domain::entities::{SortField, SortOrder};
-        use crate::domain::usecases::search::Params;
+        use crate::domain::entities::{SearchParams, SortField, SortOrder};
         let sut = SearchRepositoryImpl::new();
         let asset1 = Asset {
             key: "abc123".into(),
@@ -1584,7 +1583,7 @@ mod tests {
             original_date: None,
             dimensions: None,
         };
-        let params = Params {
+        let params = SearchParams {
             tags: vec!["kittens".into()],
             locations: vec!["paris".into()],
             media_type: None,

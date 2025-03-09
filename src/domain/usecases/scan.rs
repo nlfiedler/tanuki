@@ -38,7 +38,7 @@ impl super::UseCase<Vec<SearchResult>, Params> for ScanAssets {
             let mut scan_count: usize = 0;
             let mut cursor: Option<String> = None;
             loop {
-                let batch = self.repo.scan_assets(cursor, 1024)?;
+                let batch = self.repo.fetch_assets(cursor, 1024)?;
                 scan_count += batch.len();
                 // results are assumed to be in lexicographical order so the
                 // last key will be used to start scanning the next batch
@@ -98,7 +98,7 @@ mod test {
     fn test_scan_empty_query() {
         // arrange
         let mut mock = MockRecordRepository::new();
-        mock.expect_scan_assets().never();
+        mock.expect_fetch_assets().never();
         let mut cache = MockSearchRepository::new();
         cache.expect_get().never();
         cache.expect_put().never();
@@ -120,7 +120,7 @@ mod test {
     fn test_scan_zero_assets() {
         // arrange
         let mut mock = MockRecordRepository::new();
-        mock.expect_scan_assets().returning(|_, _| Ok(vec![]));
+        mock.expect_fetch_assets().returning(|_, _| Ok(vec![]));
         let mut cache = MockSearchRepository::new();
         cache.expect_get().returning(|_| Ok(None));
         cache.expect_put().once().returning(|_, _| Ok(()));
@@ -142,7 +142,7 @@ mod test {
     fn test_scan_no_results() {
         // arrange
         let mut mock = MockRecordRepository::new();
-        mock.expect_scan_assets()
+        mock.expect_fetch_assets()
             .withf(|c, _| c.is_none())
             .returning(move |_, _| {
                 Ok(vec![Asset {
@@ -160,7 +160,7 @@ mod test {
                     dimensions: None,
                 }])
             });
-        mock.expect_scan_assets()
+        mock.expect_fetch_assets()
             .withf(|c, _| c.is_some())
             .returning(|_, _| Ok(vec![]));
         let mut cache = MockSearchRepository::new();
@@ -184,7 +184,7 @@ mod test {
     fn test_scan_one_result() {
         // arrange
         let mut mock = MockRecordRepository::new();
-        mock.expect_scan_assets()
+        mock.expect_fetch_assets()
             .withf(|c, _| c.is_none())
             .returning(move |_, _| {
                 Ok(vec![
@@ -232,7 +232,7 @@ mod test {
                     },
                 ])
             });
-        mock.expect_scan_assets()
+        mock.expect_fetch_assets()
             .withf(|c, _| c.is_some())
             .returning(|_, _| Ok(vec![]));
         let mut cache = MockSearchRepository::new();
@@ -253,7 +253,7 @@ mod test {
         assert_eq!(results[0].asset_id, "cde345");
     }
 
-    fn make_scan_assets() -> Vec<Asset> {
+    fn make_fetch_assets() -> Vec<Asset> {
         vec![
             Asset {
                 key: "abc123".to_owned(),
@@ -304,10 +304,10 @@ mod test {
     fn test_scan_unset_location_label() {
         // arrange
         let mut mock = MockRecordRepository::new();
-        mock.expect_scan_assets()
+        mock.expect_fetch_assets()
             .withf(|c, _| c.is_none())
-            .returning(move |_, _| Ok(make_scan_assets()));
-        mock.expect_scan_assets()
+            .returning(move |_, _| Ok(make_fetch_assets()));
+        mock.expect_fetch_assets()
             .withf(|c, _| c.is_some())
             .returning(|_, _| Ok(vec![]));
         let mut cache = MockSearchRepository::new();
@@ -332,11 +332,11 @@ mod test {
     fn test_scan_cache_sort_by_date() {
         // arrange
         let mut mock = MockRecordRepository::new();
-        mock.expect_scan_assets()
+        mock.expect_fetch_assets()
             .withf(|c, _| c.is_none())
             .times(1)
-            .returning(move |_, _| Ok(make_scan_assets()));
-        mock.expect_scan_assets()
+            .returning(move |_, _| Ok(make_fetch_assets()));
+        mock.expect_fetch_assets()
             .withf(|c, _| c.is_some())
             .times(1)
             .returning(|_, _| Ok(vec![]));
@@ -344,7 +344,7 @@ mod test {
         let mut cache_hit = false;
         cache.expect_get().returning(move |_| {
             if cache_hit {
-                let assets = make_scan_assets();
+                let assets = make_fetch_assets();
                 Ok(Some(vec![SearchResult::new(&assets[1])]))
             } else {
                 cache_hit = true;

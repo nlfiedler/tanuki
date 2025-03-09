@@ -15,30 +15,32 @@ use std::path::{Path, PathBuf};
 ///
 #[cfg_attr(test, automock)]
 pub trait RecordRepository: Send {
-    /// Retrieve an asset by its unique identifier.
-    fn get_asset(&self, asset_id: &str) -> Result<Asset, Error>;
+    /// Retrieve an asset by its unique identifier, failing if not found.
+    fn get_asset_by_id(&self, asset_id: &str) -> Result<Asset, Error>;
 
-    /// Attempt to find an asset by SHA-256 hash digest.
+    /// Find an asset by its SHA-256 checksum, returning `None` if not found.
     fn get_asset_by_digest(&self, digest: &str) -> Result<Option<Asset>, Error>;
 
-    /// Store the asset entity in the data storage system.
+    /// Store the asset entity in the database either as a new record or
+    /// updating an existing record, according to its unique identifier.
     fn put_asset(&self, asset: &Asset) -> Result<(), Error>;
 
     /// Remove the asset record from the database.
     fn delete_asset(&self, asset_id: &str) -> Result<(), Error>;
 
-    /// Return the number of assets stored in the storage system.
+    /// Return the number of asset records stored in the database.
     fn count_assets(&self) -> Result<u64, Error>;
 
-    /// Return all of the known locations and the number of assets associated
-    /// with each location. Results include those processed by splitting on commas.
+    /// Return all of the location values and the number of assets associated
+    /// with each value. Values are extracted from each of the parts of the
+    /// location field.
     fn all_locations(&self) -> Result<Vec<LabeledCount>, Error>;
 
     /// Return all of the unique locations with all available field values.
     fn raw_locations(&self) -> Result<Vec<Location>, Error>;
 
-    /// Return all of the known years and the number of assets associated with
-    /// each year.
+    /// Return all of the years for which their are assests and the number of
+    /// assets associated with each year.
     fn all_years(&self) -> Result<Vec<LabeledCount>, Error>;
 
     /// Return all of the known tags and the number of assets associated with
@@ -52,15 +54,22 @@ pub trait RecordRepository: Send {
     /// Return all asset identifiers in the database.
     fn all_assets(&self) -> Result<Vec<String>, Error>;
 
-    /// Return all assets from the data source in lexicographical order,
-    /// optionally starting from the asset that follows the given identifier,
-    /// and returning a limited number.
-    fn scan_assets(&self, seek_from: Option<String>, count: usize) -> Result<Vec<Asset>, Error>;
+    /// Return all assets from the database in no specific order, optionally
+    /// starting from the asset that follows the given cursor, and returning a
+    /// limited number.
+    ///
+    /// The order of the returned results must be consistent from one call to
+    /// the next such that eventually every record will be visited once.
+    fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<Vec<Asset>, Error>;
 
     /// Search for assets that have all of the given tags.
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error>;
 
-    /// Search for assets that have any of the given locations.
+    /// Search for assets whose location fields match all of the given values.
+    ///
+    /// For example, searching for `["paris","france"]` will return assets that
+    /// have both `"paris"` and `"france"` in the location column, such as in
+    /// the `city` and `region` fields.
     fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error>;
 
     /// Search for assets whose media type matches the one given.
