@@ -288,8 +288,12 @@ fn merge_locations(asset: Option<Location>, input: Option<Location>) -> Option<L
                 }
             }
             return Some(existing);
+        } else {
+            // input was none, return original value
+            return Some(existing);
         }
     }
+    // original value is none, return input as-is
     input
 }
 
@@ -889,11 +893,12 @@ mod tests {
         let result = merge_locations(asset, input);
         assert!(result.is_none());
 
-        // input is none, result is none
-        let asset = Some(Location::new("foobar".into()));
+        // asset is some, input is none, result is asset
+        let asset = Some(Location::with_parts("beach", "Monterey", "California"));
+        let expected = asset.clone();
         let input: Option<Location> = None;
-        let result = merge_locations(asset, input);
-        assert!(result.is_none());
+        let actual = merge_locations(asset, input);
+        assert_eq!(actual, expected);
 
         // asset is none, input is returned
         let asset: Option<Location> = None;

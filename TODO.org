@@ -113,7 +113,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS hashes ON assets (hash);
 **** create new SQLite specific module in data/sources
 **** enable foreign key enforcement (=PRAGMA foreign_keys = true;=)
 **** should use =STRICT= tables for type enforcement (e.g. =CREATE TABLE t1(a ANY) STRICT;=)
-** TODO bug: replacing an asset wiped all of the location fields
 ** TODO bug? why do the 1913 photos not appear when browsing all assets in flipped order?
 *** could the index be out of date?
 *** is the query only going back 100 years?
