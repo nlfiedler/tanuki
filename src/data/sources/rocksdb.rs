@@ -337,10 +337,21 @@ impl EntityDataSourceImpl {
 }
 
 impl EntityDataSource for EntityDataSourceImpl {
-    fn get_asset(&self, asset_id: &str) -> Result<Asset, Error> {
+    fn get_asset_by_id(&self, asset_id: &str) -> Result<Asset, Error> {
         let db_key = format!("asset/{}", asset_id);
         let maybe_asset = self.database.get_asset(&db_key)?;
         maybe_asset.ok_or_else(|| anyhow!(format!("missing asset {}", asset_id)))
+    }
+
+    fn get_asset_by_digest(&self, digest: &str) -> Result<Option<Asset>, Error> {
+        // secondary index keys are lowercase
+        let digest = digest.to_lowercase();
+        if let Some(qr_row) = self.database.query_one_by_key("by_checksum", digest)? {
+            let asset_id_raw: Vec<u8> = Vec::from(qr_row.doc_id.as_ref());
+            let asset_id_str = String::from_utf8(asset_id_raw).unwrap();
+            return self.database.get_asset(&asset_id_str);
+        }
+        Ok(None)
     }
 
     fn put_asset(&self, asset: &Asset) -> Result<(), Error> {
@@ -353,18 +364,6 @@ impl EntityDataSource for EntityDataSourceImpl {
         let key = format!("asset/{}", asset_id);
         self.database.delete_document(key.as_bytes())?;
         Ok(())
-    }
-
-    fn query_by_checksum(&self, digest: &str) -> Result<Option<String>, Error> {
-        // secondary index keys are lowercase
-        let digest = digest.to_lowercase();
-        let maybe_value = self.database.query_one_by_key("by_checksum", digest)?;
-        Ok(maybe_value.map(|v| {
-            let vec: Vec<u8> = Vec::from(v.doc_id.as_ref());
-            // Remove the leading 'asset/' on the document identifier for
-            // those records that contribute to this particular index.
-            String::from_utf8(vec).unwrap().split_off(6)
-        }))
     }
 
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error> {

@@ -17,47 +17,47 @@ fn test_get_put_delete_asset() {
 
     // a missing asset results in an error
     let asset_id = "no_such_id";
-    let result = datasource.get_asset(asset_id);
+    let result = datasource.get_asset_by_id(asset_id);
     assert!(result.is_err());
 
     // put/get should return exactly the same asset
     let expected = common::build_basic_asset();
     datasource.put_asset(&expected).unwrap();
-    let actual = datasource.get_asset(&expected.key).unwrap();
+    let actual = datasource.get_asset_by_id(&expected.key).unwrap();
     common::compare_assets(&expected, &actual);
 
     // delete should result in get returning an error
     datasource.delete_asset(&expected.key).unwrap();
-    let result = datasource.get_asset(&expected.key);
+    let result = datasource.get_asset_by_id(&expected.key);
     assert!(result.is_err());
 }
 
 #[test]
-fn test_query_by_checksum() {
-    let db_path = DBPath::new("_test_query_by_checksum");
+fn test_get_asset_by_digest() {
+    let db_path = DBPath::new("_test_get_asset_by_digest");
     let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
 
     // populate the database with some assets
-    let asset = common::build_basic_asset();
-    datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "single999".to_owned();
-    asset.checksum = "SHA1-DEADBEEF".to_owned();
-    datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "wonder101".to_owned();
-    asset.checksum = "deadd00d".to_owned();
-    datasource.put_asset(&asset).unwrap();
+    let asset_babe = common::build_basic_asset();
+    datasource.put_asset(&asset_babe).unwrap();
+    let mut asset_beef = common::build_basic_asset();
+    asset_beef.key = "single999".to_owned();
+    asset_beef.checksum = "SHA1-DEADBEEF".to_owned();
+    datasource.put_asset(&asset_beef).unwrap();
+    let mut asset_dood = common::build_basic_asset();
+    asset_dood.key = "wonder101".to_owned();
+    asset_dood.checksum = "deadd00d".to_owned();
+    datasource.put_asset(&asset_dood).unwrap();
 
     // check for absent results as well as expected matches
-    let actual = datasource.query_by_checksum("cafedeadd00d").unwrap();
+    let actual = datasource.get_asset_by_digest("cafedeadd00d").unwrap();
     assert!(actual.is_none());
-    let actual = datasource.query_by_checksum("CAFEBABE").unwrap();
-    assert_eq!(actual.unwrap(), "basic113");
-    let actual = datasource.query_by_checksum("sha1-DeadBeef").unwrap();
-    assert_eq!(actual.unwrap(), "single999");
-    let actual = datasource.query_by_checksum("deadd00d").unwrap();
-    assert_eq!(actual.unwrap(), "wonder101");
+    let actual = datasource.get_asset_by_digest("CAFEBABE").unwrap();
+    assert_eq!(actual.unwrap().key.as_str(), "basic113");
+    let actual = datasource.get_asset_by_digest("sha1-DeadBeef").unwrap();
+    assert_eq!(actual.unwrap().key.as_str(), "single999");
+    let actual = datasource.get_asset_by_digest("deadd00d").unwrap();
+    assert_eq!(actual.unwrap().key.as_str(), "wonder101");
 }
 
 #[test]

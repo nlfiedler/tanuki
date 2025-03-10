@@ -16,7 +16,10 @@ pub mod rocksdb;
 #[cfg_attr(test, automock)]
 pub trait EntityDataSource: Send + Sync {
     /// Retrieve an asset by its unique identifier, failing if not found.
-    fn get_asset(&self, asset_id: &str) -> Result<Asset, Error>;
+    fn get_asset_by_id(&self, asset_id: &str) -> Result<Asset, Error>;
+
+    /// Find an asset by its SHA-256 checksum, returning `None` if not found.
+    fn get_asset_by_digest(&self, digest: &str) -> Result<Option<Asset>, Error>;
 
     /// Store the asset entity in the data source either as a new record or
     /// updating an existing record, according to its unique identifier.
@@ -24,11 +27,6 @@ pub trait EntityDataSource: Send + Sync {
 
     /// Remove the asset record from the data source.
     fn delete_asset(&self, asset_id: &str) -> Result<(), Error>;
-
-    /// Search for the asset with the given hash digest.
-    ///
-    /// Returns the asset identifier if a match is found.
-    fn query_by_checksum(&self, digest: &str) -> Result<Option<String>, Error>;
 
     /// Search for assets that have all of the given tags.
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error>;

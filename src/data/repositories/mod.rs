@@ -45,15 +45,11 @@ impl RecordRepositoryImpl {
 
 impl RecordRepository for RecordRepositoryImpl {
     fn get_asset_by_id(&self, asset_id: &str) -> Result<Asset, Error> {
-        self.datasource.get_asset(asset_id)
+        self.datasource.get_asset_by_id(asset_id)
     }
 
     fn get_asset_by_digest(&self, digest: &str) -> Result<Option<Asset>, Error> {
-        if let Some(asset_id) = self.datasource.query_by_checksum(digest)? {
-            Ok(Some(self.datasource.get_asset(&asset_id)?))
-        } else {
-            Ok(None)
-        }
+        self.datasource.get_asset_by_digest(&digest)
     }
 
     fn put_asset(&self, asset: &Asset) -> Result<(), Error> {
@@ -134,7 +130,7 @@ impl RecordRepository for RecordRepositoryImpl {
         let mut writer = std::io::BufWriter::new(file);
         let mut count: u64 = 0;
         for asset_id in self.datasource.all_assets()? {
-            let asset = self.datasource.get_asset(&asset_id)?;
+            let asset = self.datasource.get_asset_by_id(&asset_id)?;
             // construct a vector and write each asset one by one in order to
             // inject a newline after each row
             let mut buffer: Vec<u8> = Vec::new();
@@ -429,7 +425,7 @@ mod tests {
             dimensions: None,
         };
         let mut mock = MockEntityDataSource::new();
-        mock.expect_get_asset()
+        mock.expect_get_asset_by_id()
             .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
         // act
@@ -445,7 +441,7 @@ mod tests {
     fn test_get_asset_err() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_get_asset()
+        mock.expect_get_asset_by_id()
             .with(eq("abc123"))
             .returning(move |_| Err(anyhow!("oh no")));
         // act
@@ -473,12 +469,9 @@ mod tests {
             dimensions: None,
         };
         let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_checksum()
+        mock.expect_get_asset_by_digest()
             .with(eq("cafebabe"))
-            .returning(move |_| Ok(Some("abc123".to_owned())));
-        mock.expect_get_asset()
-            .with(eq("abc123"))
-            .returning(move |_| Ok(asset1.clone()));
+            .returning(move |_| Ok(Some(asset1.clone())));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.get_asset_by_digest("cafebabe");
@@ -493,7 +486,8 @@ mod tests {
     fn test_get_asset_by_digest_none() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_checksum().returning(move |_| Ok(None));
+        mock.expect_get_asset_by_digest()
+            .returning(move |_| Ok(None));
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.get_asset_by_digest("cafebabe");
@@ -507,7 +501,7 @@ mod tests {
     fn test_get_asset_by_digest_err() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_checksum()
+        mock.expect_get_asset_by_digest()
             .with(eq("abc123"))
             .returning(move |_| Err(anyhow!("oh no")));
         // act
@@ -1135,58 +1129,64 @@ mod tests {
         let mut mock = MockEntityDataSource::new();
         mock.expect_all_assets()
             .returning(move || Ok(vec![key1.to_owned(), key2.to_owned(), key3.to_owned()]));
-        mock.expect_get_asset().with(eq(key1)).returning(move |_| {
-            Ok(Asset {
-                key: key1.to_owned(),
-                checksum: digest1.to_owned(),
-                filename: "f1t.jpg".to_owned(),
-                byte_length: 841,
-                media_type: "image/jpeg".to_owned(),
-                tags: vec!["cat".to_owned(), "dog".to_owned()],
-                import_date: Utc::now(),
-                caption: Some("cute cat and dog playing".into()),
-                location: None,
-                user_date: None,
-                original_date: None,
-                dimensions: Some(Dimensions(48, 80)),
-            })
-        });
-        mock.expect_get_asset().with(eq(key2)).returning(move |_| {
-            Ok(Asset {
-                key: key2.to_owned(),
-                checksum: digest2.to_owned(),
-                filename: "dcp_1069.jpg".to_owned(),
-                byte_length: 80977,
-                media_type: "image/jpeg".to_owned(),
-                tags: vec!["mariachi".to_owned()],
-                import_date: Utc::now(),
-                caption: Some("mariachi band playing".into()),
-                location: Some(Location::new("cabo san lucas".into())),
-                user_date: None,
-                original_date: None,
-                dimensions: Some(Dimensions(440, 292)),
-            })
-        });
-        mock.expect_get_asset().with(eq(key3)).returning(move |_| {
-            Ok(Asset {
-                key: key3.to_owned(),
-                checksum: digest3.to_owned(),
-                filename: "shirt_small.heic".to_owned(),
-                byte_length: 4995,
-                media_type: "image/jpeg".to_owned(),
-                tags: vec!["coffee".to_owned()],
-                import_date: Utc::now(),
-                caption: None,
-                location: Some(Location {
-                    label: Some("peet's".into()),
-                    city: Some("Berkeley".into()),
-                    region: Some("CA".into()),
-                }),
-                user_date: None,
-                original_date: None,
-                dimensions: Some(Dimensions(324, 304)),
-            })
-        });
+        mock.expect_get_asset_by_id()
+            .with(eq(key1))
+            .returning(move |_| {
+                Ok(Asset {
+                    key: key1.to_owned(),
+                    checksum: digest1.to_owned(),
+                    filename: "f1t.jpg".to_owned(),
+                    byte_length: 841,
+                    media_type: "image/jpeg".to_owned(),
+                    tags: vec!["cat".to_owned(), "dog".to_owned()],
+                    import_date: Utc::now(),
+                    caption: Some("cute cat and dog playing".into()),
+                    location: None,
+                    user_date: None,
+                    original_date: None,
+                    dimensions: Some(Dimensions(48, 80)),
+                })
+            });
+        mock.expect_get_asset_by_id()
+            .with(eq(key2))
+            .returning(move |_| {
+                Ok(Asset {
+                    key: key2.to_owned(),
+                    checksum: digest2.to_owned(),
+                    filename: "dcp_1069.jpg".to_owned(),
+                    byte_length: 80977,
+                    media_type: "image/jpeg".to_owned(),
+                    tags: vec!["mariachi".to_owned()],
+                    import_date: Utc::now(),
+                    caption: Some("mariachi band playing".into()),
+                    location: Some(Location::new("cabo san lucas".into())),
+                    user_date: None,
+                    original_date: None,
+                    dimensions: Some(Dimensions(440, 292)),
+                })
+            });
+        mock.expect_get_asset_by_id()
+            .with(eq(key3))
+            .returning(move |_| {
+                Ok(Asset {
+                    key: key3.to_owned(),
+                    checksum: digest3.to_owned(),
+                    filename: "shirt_small.heic".to_owned(),
+                    byte_length: 4995,
+                    media_type: "image/jpeg".to_owned(),
+                    tags: vec!["coffee".to_owned()],
+                    import_date: Utc::now(),
+                    caption: None,
+                    location: Some(Location {
+                        label: Some("peet's".into()),
+                        city: Some("Berkeley".into()),
+                        region: Some("CA".into()),
+                    }),
+                    user_date: None,
+                    original_date: None,
+                    dimensions: Some(Dimensions(324, 304)),
+                })
+            });
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let tmpdir = tempdir().unwrap();

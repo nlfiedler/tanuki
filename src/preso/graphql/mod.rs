@@ -496,7 +496,7 @@ mod tests {
             dimensions: None,
         };
         let mut mock = MockEntityDataSource::new();
-        mock.expect_get_asset()
+        mock.expect_get_asset_by_id()
             .with(eq("abc123"))
             .returning(move |_| Ok(asset1.clone()));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
@@ -564,7 +564,7 @@ mod tests {
     fn test_query_asset_err() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_get_asset()
+        mock.expect_get_asset_by_id()
             .with(eq("abc123"))
             .returning(|_| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
@@ -720,12 +720,9 @@ mod tests {
             dimensions: None,
         };
         let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_checksum()
+        mock.expect_get_asset_by_digest()
             .with(eq("cafebabe"))
-            .returning(move |_| Ok(Some("abc123".to_owned())));
-        mock.expect_get_asset()
-            .with(eq("abc123"))
-            .returning(move |_| Ok(asset1.clone()));
+            .returning(move |_| Ok(Some(asset1.clone())));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
         let assets_path = Box::new(PathBuf::from("/tmp"));
         let ctx = Arc::new(GraphContext::new(datasource, assets_path));
@@ -750,7 +747,7 @@ mod tests {
     fn test_query_lookup_none() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_checksum()
+        mock.expect_get_asset_by_digest()
             .with(eq("cafebabe"))
             .returning(|_| Ok(None));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);
@@ -775,7 +772,7 @@ mod tests {
     fn test_query_lookup_err() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_query_by_checksum()
+        mock.expect_get_asset_by_digest()
             .with(eq("cafebabe"))
             .returning(|_| Err(anyhow!("oh no")));
         let datasource: Arc<dyn EntityDataSource> = Arc::new(mock);

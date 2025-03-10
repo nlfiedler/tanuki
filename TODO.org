@@ -58,51 +58,137 @@
 *** concern: lacks array type
 *** concern: writes to a single file
 *** domain and preso layers should not change at all
-*** design basic schema
+*** TODO design basic schema
 **** assets table
-| name      | description           | type    | typical size |
-|-----------+-----------------------+---------+--------------|
-| PK        | primary key           | ?       |              |
-| path      | file path (key)       | text    |           64 |
-| hash      | sha256 digest         | text    |           64 |
-| filename  | original name         | text    |           12 |
-| filesize  | byte length           | integer |            8 |
-| mimetype  | media type            | text    |           10 |
-| caption   |                       | text    |            0 |
-| tags      | comma-separated tags  | text    |           20 |
-| location  | FK on locations       |         |              |
-| imported  | datetime of import    | numeric |           64 |
-| user_date | user-defined datetime | numeric |           64 |
-| orig_date | original datetime     | numeric |           64 |
-| pixel_w   | image/video width     | integer |            2 |
-| pixel_h   | image/video height    | integer |            2 |
+| name      | description           | type             | typical size |
+|-----------+-----------------------+------------------+--------------|
+| path      | file path/identifier  | text primary key |           64 |
+| hash      | sha256 digest         | text             |           64 |
+| filename  | original name         | text             |           12 |
+| filesize  | byte length           | integer          |            8 |
+| mimetype  | media type            | text             |           10 |
+| caption   |                       | text             |            0 |
+| tags      | comma-separated tags  | text             |           20 |
+| location  | FK on locations.id    | integer          |            8 |
+| imported  | datetime of import    | integer          |           64 |
+| user_date | user-defined datetime | integer          |           64 |
+| orig_date | original datetime     | integer          |           64 |
+| pixel_w   | image/video width     | integer          |            2 |
+| pixel_h   | image/video height    | integer          |            2 |
 **** use ~Unix timestamp~ for the date/time values
-**** create a unique index on =assets.path= for fast lookup by ~identifier~
-***** do the same for =asset.hash= for fast lookup by checksum
+**** create a unique index on =assets.hash= for fast lookup
 #+begin_src sql
-CREATE UNIQUE INDEX IF NOT EXISTS paths ON assets (path);
 CREATE UNIQUE INDEX IF NOT EXISTS hashes ON assets (hash);
 #+end_src
 **** locations table
-| name   | description | type |
-|--------+-------------+------|
-| PK     | primary key | ?    |
-| label  |             | text |
-| city   |             | text |
-| region |             | text |
-*** derive SQL queries for each of the repository functions
-*** set up a basic prototype to play around
-**** install SQLite CLI
-**** create on-disk database
-**** define schema
-**** load sample data from json
-**** perform basic queries
-**** try defining indexes
-**** use =explain= to ensure indexes are used
-*** action plan
-**** create new SQLite specific module in data/sources
-**** enable foreign key enforcement (=PRAGMA foreign_keys = true;=)
-**** should use =STRICT= tables for type enforcement (e.g. =CREATE TABLE t1(a ANY) STRICT;=)
+***** rely on automatic =rowid= column that is the primary key
+| name   | description | type                |
+|--------+-------------+---------------------|
+| id     |             | integer primary key |
+| label  |             | text                |
+| city   |             | text                |
+| region |             | text                |
+*** TODO derive SQL queries for each of the repository functions
+**** DONE get_asset_by_id() -> Asset
+#+begin_src sql
+SELECT assets.*, locations.* FROM assets
+LEFT JOIN locations ON assets.location = locations.id
+WHERE path = ?;
+#+end_src
+**** DONE get_asset_by_digest() -> Option<Asset>
+***** if nothing is found, return None
+#+begin_src sql
+SELECT * from assets WHERE hash = ?;
+#+end_src
+**** TODO query_by_tags() -> Vec<SearchResult>
+#+begin_src sql
+SELECT * from assets WHERE path = ?;
+#+end_src
+**** TODO query_by_locations() -> Vec<SearchResult>
+#+begin_src sql
+SELECT * from assets WHERE path = ?;
+#+end_src
+**** DONE query_by_media_type() -> Vec<SearchResult>
+***** query and select the best date for the search result
+#+begin_src sql
+SELECT path,filename,mimetype,location,imported,user_date,orig_date from assets WHERE mimetype = ?;
+#+end_src
+**** TODO query_before_date()
+***** write application-defined SQL functions for generating index values
+****** c.f. https://docs.rs/rusqlite/latest/rusqlite/functions/index.html
+****** be sure to use =FunctionFlags::SQLITE_DETERMINISTIC= when defining the fn
+***** use ~Indexes On Expressions~ support: https://sqlite.org/expridx.html
+***** query and select the best date for the search result
+***** need to compare to user_date if available, else orig_date, else imported
+***** find out if an index can be generated on different columns for differnt rows
+#+begin_src sql
+SELECT path,filename,mimetype,location,best_date(imported,user_date,orig_date) AS datetime from assets WHERE path = ?;
+#+end_src
+**** TODO query_after_date()
+***** do whatever was done for query_before_date()
+#+begin_src sql
+SELECT path,filename,mimetype,location,imported,user_date,orig_date from assets WHERE path = ?;
+#+end_src
+**** TODO query_date_range()
+***** do whatever was done for query_before_date()
+#+begin_src sql
+SELECT path,filename,mimetype,location,imported,user_date,orig_date from assets WHERE path = ?;
+#+end_src
+**** TODO query_newborn()
+#+begin_src sql
+SELECT path,filename,mimetype,location,imported,user_date,orig_date from assets WHERE path = ?;
+#+end_src
+**** DONE all_locations()
+***** query and convert results to =Vec<LabeledCount>= somehow
+#+begin_src sql
+SELECT * from locations;
+#+end_src
+**** DONE raw_locations()
+***** query and convert results to =Vec<Location>=
+#+begin_src sql
+SELECT * from locations;
+#+end_src
+**** TODO all_years()
+***** use app-defined fn =best_year()= to extract year from the best available date
+#+begin_src sql
+SELECT * from by_year WHERE year = ?;
+#+end_src
+**** DONE all_tags()
+***** query, split value on commas, convert to =Vec<LabeledCount>=
+#+begin_src sql
+SELECT tags from assets;
+#+end_src
+**** DONE all_media_types()
+***** query and collect into =Vec<LabeledCount>=
+#+begin_src sql
+SELECT mimetype from assets;
+#+end_src
+**** DONE fetch_assets()
+***** use the ~path~ column as the ~cursor~
+***** add the =WHERE= clause only when a cursor is given
+#+begin_src sql
+SELECT * FROM assets
+WHERE path > ?
+ORDER BY path
+LIMIT 1024;
+#+end_src
+*** TODO set up a basic prototype to play around
+**** TODO install SQLite CLI
+**** TODO create on-disk database
+**** TODO define schema
+**** TODO load sample data from json
+**** TODO perform basic queries
+**** TODO try defining indexes
+**** TODO use =explain= to ensure indexes are used
+*** TODO action plan
+**** TODO consider how unreferenced rows in =locations= table could eventually be removed
+**** TODO create new SQLite specific module in data/sources
+**** TODO enable error/warning logging initially https://sqlite.org/errlog.html
+**** TODO enable foreign key enforcement (=PRAGMA foreign_keys = ON;=)
+**** TODO should use =STRICT= tables for type enforcement (e.g. =CREATE TABLE t1(a ANY) STRICT;=)
+**** TODO enable WAL mode with =PRAGMA journal_mode=WAL;=
+**** TODO should find an efficient way to build an index on the tags
+***** otherwise =all_tags()= does a full table scan to build the tags list
 ** TODO bug? why do the 1913 photos not appear when browsing all assets in flipped order?
 *** could the index be out of date?
 *** is the query only going back 100 years?
