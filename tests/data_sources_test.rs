@@ -750,14 +750,14 @@ fn test_fetch_assets() {
     asset.key = "hhhhhhh".to_owned();
     datasource.put_asset(&asset).unwrap();
     let results = datasource.fetch_assets(Some("ccccccc".into()), 3).unwrap();
-    assert_eq!(results.len(), 3);
-    assert_eq!(results[0].key, "ddddddd");
-    assert_eq!(results[1].key, "eeeeeee");
-    assert_eq!(results[2].key, "fffffff");
+    assert_eq!(results.assets.len(), 3);
+    assert_eq!(results.assets[0].key, "ddddddd");
+    assert_eq!(results.assets[1].key, "eeeeeee");
+    assert_eq!(results.assets[2].key, "fffffff");
 
     let actual = datasource.fetch_assets(None, 3).unwrap();
-    assert_eq!(actual.len(), 3);
-    assert_eq!(actual[0].key, "aaaaaaa");
-    assert_eq!(actual[1].key, "bbbbbbb");
-    assert_eq!(actual[2].key, "ccccccc");
+    assert_eq!(actual.assets.len(), 3);
+    assert_eq!(actual.assets[0].key, "aaaaaaa");
+    assert_eq!(actual.assets[1].key, "bbbbbbb");
+    assert_eq!(actual.assets[2].key, "ccccccc");
 }

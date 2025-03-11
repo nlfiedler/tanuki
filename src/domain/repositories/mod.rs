@@ -54,13 +54,13 @@ pub trait RecordRepository: Send {
     /// Return all asset identifiers in the database.
     fn all_assets(&self) -> Result<Vec<String>, Error>;
 
-    /// Return all assets from the database in no specific order, optionally
-    /// starting from the asset that follows the given cursor, and returning a
-    /// limited number.
+    /// Return all assets from the database in no specific order.
     ///
-    /// The order of the returned results must be consistent from one call to
-    /// the next such that eventually every record will be visited once.
-    fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<Vec<Asset>, Error>;
+    /// The `cursor` should start as `None` to begin the retrieval from the
+    /// "first" assets in the database. On the next call, the `cursor` should be
+    /// the value returned in the `FetchedAssets` in order to continue the scan
+    /// through the database.
+    fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<FetchedAssets, Error>;
 
     /// Search for assets that have all of the given tags.
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error>;
@@ -98,6 +98,18 @@ pub trait RecordRepository: Send {
 
     /// Import all of the assets found in the named JSON file.
     fn load(&self, filepath: &Path) -> Result<u64, Error>;
+}
+
+///
+/// Value returned by `fetch_assets()` that includes the assets retrieved and a
+/// cursor-like value that can be used to continue retrieving assets from the
+/// last-visited location in the data source. When the returned `cursor` value
+/// is `None` then there are no more assets left to be visited.
+///
+pub struct FetchedAssets {
+    pub assets: Vec<Asset>,
+    /// If `None`, then there are no more assets available.
+    pub cursor: Option<String>,
 }
 
 ///

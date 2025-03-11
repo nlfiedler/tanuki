@@ -38,17 +38,15 @@ impl super::UseCase<Vec<SearchResult>, Params> for ScanAssets {
             let mut scan_count: usize = 0;
             let mut cursor: Option<String> = None;
             loop {
-                let batch = self.repo.fetch_assets(cursor, 1024)?;
-                scan_count += batch.len();
-                // results are assumed to be in lexicographical order so the
-                // last key will be used to start scanning the next batch
-                cursor = batch.last().map(|a| a.key.to_owned());
-                for asset in batch.into_iter() {
+                let mut batch = self.repo.fetch_assets(cursor, 1024)?;
+                scan_count += batch.assets.len();
+                for asset in batch.assets.into_iter() {
                     if cons.matches(&asset) {
                         results.push(SearchResult::new(&asset));
                     }
                 }
                 // stop when all records have been scanned
+                cursor = batch.cursor.take();
                 if cursor.is_none() {
                     break;
                 }
@@ -91,7 +89,7 @@ mod test {
     use super::super::UseCase;
     use super::*;
     use crate::domain::entities::{Asset, Location};
-    use crate::domain::repositories::{MockRecordRepository, MockSearchRepository};
+    use crate::domain::repositories::{FetchedAssets, MockRecordRepository, MockSearchRepository};
     use chrono::prelude::*;
 
     #[test]
@@ -120,7 +118,12 @@ mod test {
     fn test_scan_zero_assets() {
         // arrange
         let mut mock = MockRecordRepository::new();
-        mock.expect_fetch_assets().returning(|_, _| Ok(vec![]));
+        mock.expect_fetch_assets().returning(|_, _| {
+            Ok(FetchedAssets {
+                assets: vec![],
+                cursor: None,
+            })
+        });
         let mut cache = MockSearchRepository::new();
         cache.expect_get().returning(|_| Ok(None));
         cache.expect_put().once().returning(|_, _| Ok(()));
@@ -145,24 +148,32 @@ mod test {
         mock.expect_fetch_assets()
             .withf(|c, _| c.is_none())
             .returning(move |_, _| {
-                Ok(vec![Asset {
-                    key: "abc123".to_owned(),
-                    checksum: "cafebabe".to_owned(),
-                    filename: "img_1234.jpg".to_owned(),
-                    byte_length: 1024,
-                    media_type: "image/jpeg".to_owned(),
-                    tags: vec!["cat".to_owned(), "dog".to_owned()],
-                    import_date: Utc::now(),
-                    caption: None,
-                    location: None,
-                    user_date: None,
-                    original_date: None,
-                    dimensions: None,
-                }])
+                Ok(FetchedAssets {
+                    assets: vec![Asset {
+                        key: "abc123".to_owned(),
+                        checksum: "cafebabe".to_owned(),
+                        filename: "img_1234.jpg".to_owned(),
+                        byte_length: 1024,
+                        media_type: "image/jpeg".to_owned(),
+                        tags: vec!["cat".to_owned(), "dog".to_owned()],
+                        import_date: Utc::now(),
+                        caption: None,
+                        location: None,
+                        user_date: None,
+                        original_date: None,
+                        dimensions: None,
+                    }],
+                    cursor: None,
+                })
             });
         mock.expect_fetch_assets()
             .withf(|c, _| c.is_some())
-            .returning(|_, _| Ok(vec![]));
+            .returning(|_, _| {
+                Ok(FetchedAssets {
+                    assets: vec![],
+                    cursor: None,
+                })
+            });
         let mut cache = MockSearchRepository::new();
         cache.expect_get().returning(|_| Ok(None));
         cache.expect_put().once().returning(|_, _| Ok(()));
@@ -187,54 +198,62 @@ mod test {
         mock.expect_fetch_assets()
             .withf(|c, _| c.is_none())
             .returning(move |_, _| {
-                Ok(vec![
-                    Asset {
-                        key: "abc123".to_owned(),
-                        checksum: "cafebabe".to_owned(),
-                        filename: "img_1234.jpg".to_owned(),
-                        byte_length: 1024,
-                        media_type: "image/jpeg".to_owned(),
-                        tags: vec!["cat".to_owned(), "dog".to_owned()],
-                        import_date: Utc::now(),
-                        caption: None,
-                        location: None,
-                        user_date: None,
-                        original_date: None,
-                        dimensions: None,
-                    },
-                    Asset {
-                        key: "bcd234".to_owned(),
-                        checksum: "cafebabe".to_owned(),
-                        filename: "img_1234.jpg".to_owned(),
-                        byte_length: 1024,
-                        media_type: "image/jpeg".to_owned(),
-                        tags: vec!["kitten".to_owned(), "puppy".to_owned()],
-                        import_date: Utc::now(),
-                        caption: None,
-                        location: None,
-                        user_date: None,
-                        original_date: None,
-                        dimensions: None,
-                    },
-                    Asset {
-                        key: "cde345".to_owned(),
-                        checksum: "cafebabe".to_owned(),
-                        filename: "img_1234.jpg".to_owned(),
-                        byte_length: 1024,
-                        media_type: "image/jpeg".to_owned(),
-                        tags: vec!["clouds".to_owned(), "rainbow".to_owned()],
-                        import_date: Utc::now(),
-                        caption: None,
-                        location: None,
-                        user_date: None,
-                        original_date: None,
-                        dimensions: None,
-                    },
-                ])
+                Ok(FetchedAssets {
+                    assets: vec![
+                        Asset {
+                            key: "abc123".to_owned(),
+                            checksum: "cafebabe".to_owned(),
+                            filename: "img_1234.jpg".to_owned(),
+                            byte_length: 1024,
+                            media_type: "image/jpeg".to_owned(),
+                            tags: vec!["cat".to_owned(), "dog".to_owned()],
+                            import_date: Utc::now(),
+                            caption: None,
+                            location: None,
+                            user_date: None,
+                            original_date: None,
+                            dimensions: None,
+                        },
+                        Asset {
+                            key: "bcd234".to_owned(),
+                            checksum: "cafebabe".to_owned(),
+                            filename: "img_1234.jpg".to_owned(),
+                            byte_length: 1024,
+                            media_type: "image/jpeg".to_owned(),
+                            tags: vec!["kitten".to_owned(), "puppy".to_owned()],
+                            import_date: Utc::now(),
+                            caption: None,
+                            location: None,
+                            user_date: None,
+                            original_date: None,
+                            dimensions: None,
+                        },
+                        Asset {
+                            key: "cde345".to_owned(),
+                            checksum: "cafebabe".to_owned(),
+                            filename: "img_1234.jpg".to_owned(),
+                            byte_length: 1024,
+                            media_type: "image/jpeg".to_owned(),
+                            tags: vec!["clouds".to_owned(), "rainbow".to_owned()],
+                            import_date: Utc::now(),
+                            caption: None,
+                            location: None,
+                            user_date: None,
+                            original_date: None,
+                            dimensions: None,
+                        },
+                    ],
+                    cursor: None,
+                })
             });
         mock.expect_fetch_assets()
             .withf(|c, _| c.is_some())
-            .returning(|_, _| Ok(vec![]));
+            .returning(|_, _| {
+                Ok(FetchedAssets {
+                    assets: vec![],
+                    cursor: None,
+                })
+            });
         let mut cache = MockSearchRepository::new();
         cache.expect_get().returning(|_| Ok(None));
         cache.expect_put().once().returning(|_, _| Ok(()));
@@ -306,10 +325,20 @@ mod test {
         let mut mock = MockRecordRepository::new();
         mock.expect_fetch_assets()
             .withf(|c, _| c.is_none())
-            .returning(move |_, _| Ok(make_fetch_assets()));
+            .returning(move |_, _| {
+                Ok(FetchedAssets {
+                    assets: make_fetch_assets(),
+                    cursor: None,
+                })
+            });
         mock.expect_fetch_assets()
             .withf(|c, _| c.is_some())
-            .returning(|_, _| Ok(vec![]));
+            .returning(|_, _| {
+                Ok(FetchedAssets {
+                    assets: vec![],
+                    cursor: None,
+                })
+            });
         let mut cache = MockSearchRepository::new();
         cache.expect_get().returning(|_| Ok(None));
         cache.expect_put().once().returning(|_, _| Ok(()));
@@ -335,11 +364,21 @@ mod test {
         mock.expect_fetch_assets()
             .withf(|c, _| c.is_none())
             .times(1)
-            .returning(move |_, _| Ok(make_fetch_assets()));
+            .returning(move |_, _| {
+                Ok(FetchedAssets {
+                    assets: make_fetch_assets(),
+                    cursor: Some("cde345".to_owned()),
+                })
+            });
         mock.expect_fetch_assets()
             .withf(|c, _| c.is_some())
             .times(1)
-            .returning(|_, _| Ok(vec![]));
+            .returning(|_, _| {
+                Ok(FetchedAssets {
+                    assets: vec![],
+                    cursor: None,
+                })
+            });
         let mut cache = MockSearchRepository::new();
         let mut cache_hit = false;
         cache.expect_get().returning(move |_| {

@@ -4,7 +4,7 @@
 use crate::data::models::AssetDumpModel;
 use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, Location, SearchResult};
-use crate::domain::repositories::{BlobRepository, RecordRepository, SearchRepository};
+use crate::domain::repositories::{BlobRepository, FetchedAssets, RecordRepository, SearchRepository};
 use anyhow::{anyhow, Error};
 use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
@@ -88,7 +88,7 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.all_assets()
     }
 
-    fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<Vec<Asset>, Error> {
+    fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<FetchedAssets, Error> {
         self.datasource.fetch_assets(cursor, count)
     }
 

@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Nathan Fiedler
 //
 use crate::domain::entities::{Asset, LabeledCount, Location, SearchResult};
+use crate::domain::repositories::FetchedAssets;
 use anyhow::Error;
 use chrono::prelude::*;
 #[cfg(test)]
@@ -84,10 +85,13 @@ pub trait EntityDataSource: Send + Sync {
     /// Return all asset identifiers in the data source.
     fn all_assets(&self) -> Result<Vec<String>, Error>;
 
-    /// Return all assets from the data source in lexicographical order,
-    /// optionally starting from the asset that follows the given identifier,
-    /// and returning a limited number.
-    fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<Vec<Asset>, Error>;
+    /// Return all assets from the data source in no specific order.
+    ///
+    /// The `cursor` should start as `None` to begin the retrieval from the
+    /// "first" assets in the data source. On the next call, the `cursor` should
+    /// be the value returned in the `FetchedAssets` in order to continue the
+    /// scan through the data source.
+    fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<FetchedAssets, Error>;
 }
 
 ///

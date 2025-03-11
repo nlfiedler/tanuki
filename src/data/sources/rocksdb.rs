@@ -4,6 +4,7 @@
 use crate::data::models::AssetModel;
 use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, Location, SearchResult};
+use crate::domain::repositories::FetchedAssets;
 use anyhow::{anyhow, Error};
 use chrono::prelude::*;
 use mokuroku::{base32, Document, Emitter, QueryResult};
@@ -471,7 +472,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         self.database.find_prefix("asset/")
     }
 
-    fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<Vec<Asset>, Error> {
+    fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<FetchedAssets, Error> {
         let prefixed_seek = cursor.map(|s| format!("asset/{}", s));
         let prefix_bytes = prefixed_seek.as_ref().map(|p| p.as_bytes().to_owned());
         // request one additional result and filter the one that matches the
@@ -490,7 +491,13 @@ impl EntityDataSource for EntityDataSourceImpl {
                 }
             }
         }
-        Ok(results)
+        // results are in lexicographical order so the last key will be used to
+        // start scanning the next batch
+        let cursor = results.last().map(|a| a.key.to_owned());
+        Ok(FetchedAssets {
+            assets: results,
+            cursor,
+        })
     }
 }
 
