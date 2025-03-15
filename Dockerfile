@@ -32,7 +32,7 @@ FROM debian:latest
 ARG SITE_ADDR="0.0.0.0:3000"
 ENV DEBIAN_FRONTEND="noninteractive"
 RUN apt-get -q update && \
-    apt-get -q -y install openssl ca-certificates
+    apt-get -q -y install openssl ca-certificates libsqlite3-0
 WORKDIR /app
 COPY --from=builder /build/target/release/tanuki .
 COPY --from=builder /build/target/site site
@@ -40,7 +40,8 @@ COPY --from=builder /build/Cargo.toml .
 COPY --from=healthy /build/target/release/healthcheck .
 VOLUME /assets
 VOLUME /database
-ENV DB_PATH="/database"
+ENV DATABASE_PATH="/database"
+ENV DATABASE_TYPE="rocksdb"
 ENV UPLOAD_PATH="/assets/uploads"
 ENV ASSETS_PATH="/assets/blobstore"
 ENV HEALTHCHECK_PATH="/assets/favicon.ico"

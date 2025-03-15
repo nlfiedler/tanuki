@@ -6,97 +6,138 @@ mod common;
 use chrono::prelude::*;
 use common::DBPath;
 use std::str::FromStr;
-use tanuki::data::sources::rocksdb::EntityDataSourceImpl;
+use tanuki::data::sources::rocksdb::EntityDataSourceImpl as RockySource;
+use tanuki::data::sources::sqlite::EntityDataSourceImpl as SqliteSource;
 use tanuki::data::sources::EntityDataSource;
 use tanuki::domain::entities::Location;
 
 #[test]
-fn test_get_put_delete_asset() {
-    let db_path = DBPath::new("_test_get_put_asset");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+fn test_data_source_get_put_delete_asset() {
+    let db_path_r = DBPath::new("_test_get_put_asset");
+    let datasource = RockySource::new(&db_path_r).unwrap();
+    do_test_get_put_delete_asset(Box::new(datasource));
 
+    let db_path_s = DBPath::new("_test_get_put_asset");
+    let datasource = SqliteSource::new(&db_path_s).unwrap();
+    do_test_get_put_delete_asset(Box::new(datasource));
+}
+
+fn do_test_get_put_delete_asset(datasource: Box<dyn EntityDataSource>) {
     // a missing asset results in an error
     let asset_id = "no_such_id";
     let result = datasource.get_asset_by_id(asset_id);
     assert!(result.is_err());
 
-    // put/get should return exactly the same asset
-    let expected = common::build_basic_asset();
+    // store and retrieve an asset with all fields populated, then update the
+    // asset and fetch again to check that update works as expected
+    let expected = common::build_complete_asset("basic123");
     datasource.put_asset(&expected).unwrap();
-    let actual = datasource.get_asset_by_id(&expected.key).unwrap();
-    common::compare_assets(&expected, &actual);
+    let mut actual1 = datasource.get_asset_by_id(&expected.key).unwrap();
+    common::compare_assets(&expected, &actual1);
+    actual1.tags = vec!["beach".into()];
+    actual1.location = Some(Location::with_parts("", "Honolulu", "Hawaii"));
+    datasource.put_asset(&actual1).unwrap();
+    let actual2 = datasource.get_asset_by_id(&expected.key).unwrap();
+    common::compare_assets(&actual1, &actual2);
 
     // delete should result in get returning an error
     datasource.delete_asset(&expected.key).unwrap();
     let result = datasource.get_asset_by_id(&expected.key);
     assert!(result.is_err());
+
+    // store and retrieve an asset with only required fields
+    let expected = common::build_minimal_asset("emptyone");
+    datasource.put_asset(&expected).unwrap();
+    let actual = datasource.get_asset_by_id(&expected.key).unwrap();
+    common::compare_assets(&expected, &actual);
 }
 
 #[test]
-fn test_get_asset_by_digest() {
+fn test_data_source_get_asset_by_digest() {
     let db_path = DBPath::new("_test_get_asset_by_digest");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_get_asset_by_digest(Box::new(datasource));
 
+    let db_path_s = DBPath::new("_test_get_asset_by_digest");
+    let datasource = SqliteSource::new(&db_path_s).unwrap();
+    do_test_get_asset_by_digest(Box::new(datasource));
+}
+
+fn do_test_get_asset_by_digest(datasource: Box<dyn EntityDataSource>) {
     // populate the database with some assets
-    let asset_babe = common::build_basic_asset();
+    let asset_babe = common::build_basic_asset("basic113");
     datasource.put_asset(&asset_babe).unwrap();
-    let mut asset_beef = common::build_basic_asset();
-    asset_beef.key = "single999".to_owned();
-    asset_beef.checksum = "SHA1-DEADBEEF".to_owned();
+    let asset_beef = common::build_basic_asset("single999");
     datasource.put_asset(&asset_beef).unwrap();
-    let mut asset_dood = common::build_basic_asset();
-    asset_dood.key = "wonder101".to_owned();
-    asset_dood.checksum = "deadd00d".to_owned();
+    let asset_dood = common::build_basic_asset("wonder101");
     datasource.put_asset(&asset_dood).unwrap();
 
     // check for absent results as well as expected matches
     let actual = datasource.get_asset_by_digest("cafedeadd00d").unwrap();
     assert!(actual.is_none());
-    let actual = datasource.get_asset_by_digest("CAFEBABE").unwrap();
+    let actual = datasource
+        .get_asset_by_digest("sha1-721004ffd2cd0e307749d5dbf7e6e0bd79b7b486")
+        .unwrap();
     assert_eq!(actual.unwrap().key.as_str(), "basic113");
-    let actual = datasource.get_asset_by_digest("sha1-DeadBeef").unwrap();
+    let actual = datasource
+        .get_asset_by_digest("sha1-ef9efab3207038062dd5c32995708a998bfec16a")
+        .unwrap();
     assert_eq!(actual.unwrap().key.as_str(), "single999");
-    let actual = datasource.get_asset_by_digest("deadd00d").unwrap();
+    let actual = datasource
+        .get_asset_by_digest("sha1-a54f786ff532e17eeb5efdc8030cf7812da7bef4")
+        .unwrap();
     assert_eq!(actual.unwrap().key.as_str(), "wonder101");
 }
 
 #[test]
-fn test_count_assets() {
+fn test_data_source_count_assets() {
     let db_path = DBPath::new("_test_count_assets");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_count_assets(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_count_assets");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_count_assets(Box::new(datasource));
+}
+
+fn do_test_count_assets(datasource: Box<dyn EntityDataSource>) {
     // zero assets
     let actual = datasource.count_assets().unwrap();
     assert_eq!(actual, 0);
 
     // one asset(s)
-    let asset = common::build_basic_asset();
+    let asset = common::build_basic_asset("basic456");
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.count_assets().unwrap();
     assert_eq!(actual, 1);
 
     // three assets
-    let mut asset = common::build_basic_asset();
-    asset.key = "single999".to_owned();
+    let asset = common::build_basic_asset("single999");
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "wonder101".to_owned();
+    let asset = common::build_basic_asset("wonder101");
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.count_assets().unwrap();
     assert_eq!(actual, 3);
 }
 
 #[test]
-fn test_all_locations() {
+fn test_data_source_all_locations() {
     let db_path = DBPath::new("_test_all_locations");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_all_locations(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_all_locations");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_all_locations(Box::new(datasource));
+}
+
+fn do_test_data_source_all_locations(datasource: Box<dyn EntityDataSource>) {
     // zero locations
     let actual = datasource.all_locations().unwrap();
     assert_eq!(actual.len(), 0);
 
     // one location(s)
-    let asset = common::build_basic_asset();
+    let asset = common::build_basic_asset("basic113");
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_locations().unwrap();
     assert_eq!(actual.len(), 1);
@@ -104,65 +145,68 @@ fn test_all_locations() {
     assert_eq!(actual[0].count, 1);
 
     // multiple locations and occurrences
-    let mut asset = common::build_basic_asset();
-    asset.key = "single999".to_owned();
-    asset.location = Some(Location::from_str("paris, france").unwrap());
+    let mut asset = common::build_basic_asset("single999");
+    asset.location = Some(Location::with_parts("plaza", "Paris", "France"));
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "wonder101".to_owned();
-    asset.location = Some(Location::from_str("london").unwrap());
+    let mut asset = common::build_basic_asset("wonder101");
+    asset.location = Some(Location::with_parts("", "Paris", "Texas"));
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "tuesday42".to_owned();
-    asset.location = Some(Location::from_str("london").unwrap());
+    let mut asset = common::build_basic_asset("tuesday42");
+    asset.location = Some(Location::with_parts("airport", "Houston", "Texas"));
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_locations().unwrap();
-    assert_eq!(actual.len(), 4);
-    assert!(actual.iter().any(|l| l.label == "hawaii" && l.count == 1));
-    assert!(actual.iter().any(|l| l.label == "london" && l.count == 2));
-    assert!(actual.iter().any(|l| l.label == "paris" && l.count == 1));
+    assert_eq!(actual.len(), 7);
+    assert!(actual.iter().any(|l| l.label == "airport" && l.count == 1));
     assert!(actual.iter().any(|l| l.label == "france" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "hawaii" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "houston" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "paris" && l.count == 2));
+    assert!(actual.iter().any(|l| l.label == "plaza" && l.count == 1));
+    assert!(actual.iter().any(|l| l.label == "texas" && l.count == 2));
 }
 
 #[test]
-fn test_raw_locations() {
+fn test_data_source_raw_locations() {
     let db_path = DBPath::new("_test_raw_locations");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_raw_locations(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_raw_locations");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_raw_locations(Box::new(datasource));
+}
+
+fn do_test_data_source_raw_locations(datasource: Box<dyn EntityDataSource>) {
     // zero locations
     let actual = datasource.raw_locations().unwrap();
     assert_eq!(actual.len(), 0);
 
     // one location(s)
-    let asset = common::build_basic_asset();
+    let asset = common::build_basic_asset("basic789");
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.raw_locations().unwrap();
     assert_eq!(actual.len(), 1);
     assert_eq!(actual[0].label, Some("hawaii".into()));
 
     // multiple locations and occurrences
-    let mut asset = common::build_basic_asset();
-    asset.key = "monday1".to_owned();
+    let mut asset = common::build_basic_asset("monday1");
     asset.location = Some(Location {
         label: None,
         city: Some("Paris".into()),
         region: Some("France".into()),
     });
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "tuesday2".to_owned();
+    let mut asset = common::build_basic_asset("tuesday2");
     asset.location = Some(Location {
         label: Some("beach".into()),
         city: Some("Waikiki".into()),
         region: Some("Hawaii".into()),
     });
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "friday5".to_owned();
+    let mut asset = common::build_basic_asset("friday5");
     asset.location = Some(Location::default());
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "wednesday3".to_owned();
+    let mut asset = common::build_basic_asset("wednesday3");
     asset.location = Some(Location {
         label: Some("beach".into()),
         city: Some("Waikiki".into()),
@@ -200,16 +244,23 @@ fn make_date_time(
 }
 
 #[test]
-fn test_all_years() {
+fn test_data_source_all_years() {
     let db_path = DBPath::new("_test_all_years");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_all_years(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_all_years");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_all_years(Box::new(datasource));
+}
+
+fn do_test_data_source_all_years(datasource: Box<dyn EntityDataSource>) {
     // zero years
     let actual = datasource.all_years().unwrap();
     assert_eq!(actual.len(), 0);
 
     // one year(s)
-    let asset = common::build_basic_asset();
+    let asset = common::build_basic_asset("basic112");
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_years().unwrap();
     assert_eq!(actual.len(), 1);
@@ -217,16 +268,13 @@ fn test_all_years() {
     assert_eq!(actual[0].count, 1);
 
     // multiple years and occurrences
-    let mut asset = common::build_basic_asset();
-    asset.key = "single999".to_owned();
+    let mut asset = common::build_basic_asset("single999");
     asset.import_date = make_date_time(2018, 7, 4, 12, 12, 12);
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "wonder101".to_owned();
+    let mut asset = common::build_basic_asset("wonder101");
     asset.import_date = make_date_time(2017, 7, 4, 12, 12, 12);
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "tuesday42".to_owned();
+    let mut asset = common::build_basic_asset("tuesday42");
     asset.import_date = make_date_time(2016, 7, 4, 12, 12, 12);
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_years().unwrap();
@@ -237,16 +285,23 @@ fn test_all_years() {
 }
 
 #[test]
-fn test_all_tags() {
+fn test_data_source_all_tags() {
     let db_path = DBPath::new("_test_all_tags");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_all_tags(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_all_tags");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_all_tags(Box::new(datasource));
+}
+
+fn do_test_data_source_all_tags(datasource: Box<dyn EntityDataSource>) {
     // zero assets, zero tags
     let actual = datasource.all_tags().unwrap();
     assert_eq!(actual.len(), 0);
 
     // one asset, two tag(s)
-    let asset = common::build_basic_asset();
+    let asset = common::build_basic_asset("basic111");
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_tags().unwrap();
     assert_eq!(actual.len(), 2);
@@ -254,16 +309,13 @@ fn test_all_tags() {
     assert!(actual.iter().any(|l| l.label == "dog" && l.count == 1));
 
     // multiple tags and occurrences
-    let mut asset = common::build_basic_asset();
-    asset.key = "single999".to_owned();
+    let mut asset = common::build_basic_asset("single999");
     asset.tags = vec!["bird".to_owned(), "dog".to_owned()];
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "wonder101".to_owned();
+    let mut asset = common::build_basic_asset("wonder101");
     asset.tags = vec!["cat".to_owned(), "mouse".to_owned()];
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "tuesday42".to_owned();
+    let mut asset = common::build_basic_asset("tuesday42");
     asset.tags = vec!["cat".to_owned(), "lizard".to_owned(), "chicken".to_owned()];
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_tags().unwrap();
@@ -277,16 +329,23 @@ fn test_all_tags() {
 }
 
 #[test]
-fn test_all_media_types() {
+fn test_data_source_all_media_types() {
     let db_path = DBPath::new("_test_all_media_types");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_all_media_types(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_all_media_types");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_all_media_types(Box::new(datasource));
+}
+
+fn do_test_data_source_all_media_types(datasource: Box<dyn EntityDataSource>) {
     // zero assets
     let actual = datasource.all_media_types().unwrap();
     assert_eq!(actual.len(), 0);
 
     // one asset
-    let asset = common::build_basic_asset();
+    let asset = common::build_basic_asset("basic222");
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_media_types().unwrap();
     assert_eq!(actual.len(), 1);
@@ -294,16 +353,13 @@ fn test_all_media_types() {
     assert_eq!(actual[0].count, 1);
 
     // multiple assets
-    let mut asset = common::build_basic_asset();
-    asset.key = "monday6".to_owned();
+    let mut asset = common::build_basic_asset("monday6");
     asset.media_type = "image/jpeg".to_owned();
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "tuesday7".to_owned();
+    let mut asset = common::build_basic_asset("tuesday7");
     asset.media_type = "video/mpeg".to_owned();
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "wednesday8".to_owned();
+    let mut asset = common::build_basic_asset("wednesday8");
     asset.media_type = "video/x-msvideo".to_owned();
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_media_types().unwrap();
@@ -320,16 +376,23 @@ fn test_all_media_types() {
 }
 
 #[test]
-fn test_query_all_assets() {
+fn test_data_source_query_all_assets() {
     let db_path = DBPath::new("_test_query_all_assets");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_query_all_assets(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_query_all_assets");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_query_all_assets(Box::new(datasource));
+}
+
+fn do_test_data_source_query_all_assets(datasource: Box<dyn EntityDataSource>) {
     // zero assets
     let actual = datasource.all_assets().unwrap();
     assert_eq!(actual.len(), 0);
 
     // one asset
-    let asset = common::build_basic_asset();
+    let asset = common::build_basic_asset("basic113");
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.all_assets().unwrap();
     assert_eq!(actual.len(), 1);
@@ -356,89 +419,118 @@ fn test_query_all_assets() {
 }
 
 #[test]
-fn test_query_by_tags() {
+fn test_data_source_query_by_tags() {
     let db_path = DBPath::new("_test_query_by_tags");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_query_by_tags(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_query_by_tags");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_query_by_tags(Box::new(datasource));
+}
+
+fn do_test_data_source_query_by_tags(datasource: Box<dyn EntityDataSource>) {
     // zero assets
     let tags = vec!["cAt".to_owned()];
     let actual = datasource.query_by_tags(tags.clone()).unwrap();
     assert_eq!(actual.len(), 0);
 
     // one asset
-    let asset = common::build_basic_asset();
+    let asset = common::build_basic_asset("basic123");
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.query_by_tags(tags.clone()).unwrap();
     assert_eq!(actual.len(), 1);
     assert!(actual[0].filename == "img_1234.jpg");
 
     // multiple assets
-    let mut asset = common::build_basic_asset();
-    asset.key = "monday6".to_owned();
+    let mut asset = common::build_basic_asset("monday6");
     asset.filename = "img_2345.jpg".to_owned();
     asset.tags = vec!["bird".to_owned(), "dog".to_owned()];
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "tuesday7".to_owned();
+    let mut asset = common::build_basic_asset("tuesday7");
     asset.filename = "img_3456.jpg".to_owned();
+    asset.user_date = Some(
+        Utc.with_ymd_and_hms(2004, 5, 31, 21, 10, 11)
+            .single()
+            .unwrap(),
+    );
     asset.tags = vec!["CAT".to_owned(), "mouse".to_owned()];
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "wednesday8".to_owned();
+    let mut asset = common::build_basic_asset("wednesday8");
     asset.filename = "img_4567.jpg".to_owned();
+    asset.user_date = Some(
+        Utc.with_ymd_and_hms(2007, 5, 31, 21, 10, 11)
+            .single()
+            .unwrap(),
+    );
     asset.tags = vec!["Cat".to_owned(), "lizard".to_owned(), "chicken".to_owned()];
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "thursday9".to_owned();
+    let mut asset = common::build_basic_asset("thursday9");
     asset.filename = "img_5678.jpg".to_owned();
     asset.tags = vec!["bird".to_owned(), "dog".to_owned()];
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "friday10".to_owned();
+    let mut asset = common::build_basic_asset("friday10");
     asset.filename = "img_6789.jpg".to_owned();
     asset.tags = vec!["mouse".to_owned(), "house".to_owned()];
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.query_by_tags(tags).unwrap();
     assert_eq!(actual.len(), 3);
-    assert!(!actual[0].asset_id.starts_with("asset/"));
-    assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
-    assert!(actual.iter().any(|l| l.filename == "img_3456.jpg"));
-    assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
+    assert_eq!(actual[0].asset_id.starts_with("asset/"), false);
+    assert!(actual
+        .iter()
+        .any(|l| l.filename == "img_1234.jpg" && l.datetime.year() == 2018));
+    assert!(actual
+        .iter()
+        .any(|l| l.filename == "img_3456.jpg" && l.datetime.year() == 2004));
+    assert!(actual
+        .iter()
+        .any(|l| l.filename == "img_4567.jpg" && l.datetime.year() == 2007));
 }
 
 #[test]
-fn test_query_by_tags_exact() {
+fn test_data_source_query_by_tags_exact() {
     let db_path = DBPath::new("_test_query_by_tags_exact");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_query_by_tags_exact(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_query_by_tags_exact");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_query_by_tags_exact(Box::new(datasource));
+}
+
+fn do_test_data_source_query_by_tags_exact(datasource: Box<dyn EntityDataSource>) {
     // ensure key matches are exact (cat vs cats)
-    let mut asset = common::build_basic_asset();
-    asset.key = "monday6".to_owned();
+    let mut asset = common::build_basic_asset("monday6");
     asset.filename = "img_2345.jpg".to_owned();
     asset.tags = vec!["birds".to_owned(), "dogs".to_owned()];
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "tuesday7".to_owned();
+    let mut asset = common::build_basic_asset("tuesday7");
     asset.filename = "img_3456.jpg".to_owned();
     asset.tags = vec!["cat".to_owned(), "dog".to_owned()];
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "wednesday8".to_owned();
+    let mut asset = common::build_basic_asset("wednesday8");
     asset.filename = "img_4567.jpg".to_owned();
     asset.tags = vec!["cats".to_owned(), "bird".to_owned()];
     datasource.put_asset(&asset).unwrap();
     let tags = vec!["bird".to_owned()];
     let actual = datasource.query_by_tags(tags).unwrap();
     assert_eq!(actual.len(), 1);
-    assert!(!actual[0].asset_id.starts_with("asset/"));
-    assert!(actual[0].filename == "img_4567.jpg");
+    assert_eq!(actual[0].asset_id, "wednesday8");
+    assert_eq!(actual[0].filename, "img_4567.jpg");
 }
 
 #[test]
-fn test_query_by_dates() {
+fn test_data_source_query_by_dates() {
     let db_path = DBPath::new("_test_query_by_dates");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_query_by_dates(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_query_by_dates");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_query_by_dates(Box::new(datasource));
+}
+
+fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
     let date1 = make_date_time(2011, 8, 30, 12, 12, 12);
     let date2 = make_date_time(2013, 8, 30, 12, 12, 12);
     let date3 = make_date_time(2015, 8, 30, 12, 12, 12);
@@ -451,7 +543,7 @@ fn test_query_by_dates() {
     assert_eq!(datasource.query_date_range(date1, date2).unwrap().len(), 0);
 
     // one asset
-    let asset = common::build_basic_asset();
+    let asset = common::build_basic_asset("basic113");
     datasource.put_asset(&asset).unwrap();
     assert_eq!(datasource.query_before_date(date1).unwrap().len(), 0);
     assert_eq!(datasource.query_before_date(date5).unwrap().len(), 1);
@@ -460,42 +552,37 @@ fn test_query_by_dates() {
     assert_eq!(datasource.query_date_range(date1, date5).unwrap().len(), 1);
 
     // multiple assets
-    let mut asset = common::build_basic_asset();
-    asset.key = "monday6".to_owned();
+    let mut asset = common::build_basic_asset("monday6");
     asset.filename = "img_2345.jpg".to_owned();
     asset.user_date = Some(date1);
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "tuesday7".to_owned();
+    let mut asset = common::build_basic_asset("tuesday7");
     asset.filename = "img_3456.jpg".to_owned();
     asset.user_date = Some(date2);
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "wednesday8".to_owned();
+    let mut asset = common::build_basic_asset("wednesday8");
     asset.filename = "img_4567.jpg".to_owned();
     asset.user_date = Some(date3);
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "thursday9".to_owned();
+    let mut asset = common::build_basic_asset("thursday9");
     asset.filename = "img_5678.jpg".to_owned();
     asset.user_date = Some(date4);
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "friday10".to_owned();
+    let mut asset = common::build_basic_asset("friday10");
     asset.filename = "img_6789.jpg".to_owned();
     asset.user_date = Some(date5);
     datasource.put_asset(&asset).unwrap();
 
     let actual = datasource.query_before_date(date4).unwrap();
     assert_eq!(actual.len(), 3);
-    assert!(!actual[0].asset_id.starts_with("asset/"));
+    assert_eq!(actual[0].asset_id.starts_with("asset/"), false);
     assert!(actual.iter().any(|l| l.filename == "img_2345.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_3456.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
 
     let actual = datasource.query_after_date(date3).unwrap();
     assert_eq!(actual.len(), 4);
-    assert!(!actual[0].asset_id.starts_with("asset/"));
+    assert_eq!(actual[0].asset_id.starts_with("asset/"), false);
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
@@ -503,77 +590,71 @@ fn test_query_by_dates() {
 
     let actual = datasource.query_date_range(date3, date5).unwrap();
     assert_eq!(actual.len(), 3);
-    assert!(!actual[0].asset_id.starts_with("asset/"));
+    assert_eq!(actual[0].asset_id.starts_with("asset/"), false);
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
 }
 
 #[test]
-fn test_query_by_locations() {
+fn test_data_source_query_by_locations() {
     let db_path = DBPath::new("_test_query_by_locations");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_query_by_locations(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_query_by_locations");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_query_by_locations(Box::new(datasource));
+}
+
+fn do_test_data_source_query_by_locations(datasource: Box<dyn EntityDataSource>) {
     // zero assets
     let locations = vec!["haWAii".to_owned()];
     let actual = datasource.query_by_locations(locations.clone()).unwrap();
     assert_eq!(actual.len(), 0);
 
     // one asset
-    let asset = common::build_basic_asset();
+    let asset = common::build_basic_asset("basic113");
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.query_by_locations(locations.clone()).unwrap();
     assert_eq!(actual.len(), 1);
     assert!(actual[0].filename == "img_1234.jpg");
 
     // multiple assets
-    let mut asset = common::build_basic_asset();
-    asset.key = "monday6".to_owned();
+    let mut asset = common::build_basic_asset("monday6");
     asset.filename = "img_2345.jpg".to_owned();
     asset.location = Some(Location::from_str("Paris, France").unwrap());
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "monday8".to_owned();
+    let mut asset = common::build_basic_asset("monday8");
     asset.filename = "img_6543.jpg".to_owned();
     asset.location = Some(Location::from_str("Nice, France").unwrap());
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "tuesday7".to_owned();
+    let mut asset = common::build_basic_asset("tuesday7");
     asset.filename = "img_3456.jpg".to_owned();
     asset.location = Some(Location::new("london"));
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "wednesday8".to_owned();
+    let mut asset = common::build_basic_asset("wednesday8");
     asset.filename = "img_4567.jpg".to_owned();
     asset.location = Some(Location::new("seoul"));
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "thursday9".to_owned();
+    let mut asset = common::build_basic_asset("thursday9");
     asset.filename = "img_5678.jpg".to_owned();
     asset.location = Some(Location::with_parts("", "oahu", "hawaii"));
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "friday10".to_owned();
+    let mut asset = common::build_basic_asset("friday10");
     asset.filename = "img_6789.jpg".to_owned();
     asset.location = Some(Location::new("paris"));
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "friday11".to_owned();
+    let mut asset = common::build_basic_asset("friday11");
     asset.filename = "img_6879.jpg".to_owned();
     asset.location = Some(Location::with_parts("city center", "portland", "OR"));
     datasource.put_asset(&asset).unwrap();
-
-    // searching with one location
-    let actual = datasource.query_by_locations(locations).unwrap();
-    assert_eq!(actual.len(), 2);
-    assert!(!actual[0].asset_id.starts_with("asset/"));
-    assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
-    assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
 
     // searching with a single location
     let locations = vec!["hawaii".to_owned()];
     let actual = datasource.query_by_locations(locations).unwrap();
     assert_eq!(actual.len(), 2);
+    assert_eq!(actual[0].asset_id.starts_with("asset/"), false);
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
 
@@ -598,49 +679,60 @@ fn test_query_by_locations() {
 }
 
 #[test]
-fn test_query_by_media_type() {
+fn test_data_source_query_by_media_type() {
     let db_path = DBPath::new("_test_query_by_media_type");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_query_by_media_type(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_query_by_media_type");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_query_by_media_type(Box::new(datasource));
+}
+
+fn do_test_data_source_query_by_media_type(datasource: Box<dyn EntityDataSource>) {
     // zero assets
     let actual = datasource.query_by_media_type("image/jpeg").unwrap();
     assert_eq!(actual.len(), 0);
 
     // one asset
-    let asset = common::build_basic_asset();
+    let asset = common::build_basic_asset("basic113");
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.query_by_media_type("imaGE/jpeg").unwrap();
     assert_eq!(actual.len(), 1);
     assert!(actual[0].media_type == "image/jpeg");
 
     // multiple assets
-    let mut asset = common::build_basic_asset();
-    asset.key = "monday6".to_owned();
+    let mut asset = common::build_basic_asset("monday6");
     asset.filename = "img_2345.jpg".to_owned();
     asset.media_type = "image/png".to_owned();
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "tuesday7".to_owned();
+    let mut asset = common::build_basic_asset("tuesday7");
     asset.filename = "img_3456.jpg".to_owned();
     asset.media_type = "video/mpeg".to_owned();
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset();
-    asset.key = "wednesday8".to_owned();
+    let mut asset = common::build_basic_asset("wednesday8");
     asset.filename = "img_4567.jpg".to_owned();
     asset.media_type = "IMAGE/JPEG".to_owned();
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.query_by_media_type("image/JPeg").unwrap();
     assert_eq!(actual.len(), 2);
-    assert!(!actual[0].asset_id.starts_with("asset/"));
+    assert_eq!(actual[0].asset_id.starts_with("asset/"), false);
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
 }
 
 #[test]
-fn test_query_newborn() {
+fn test_data_source_query_newborn() {
     let db_path = DBPath::new("_test_query_newborn");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_query_newborn(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_query_newborn");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_query_newborn(Box::new(datasource));
+}
+
+fn do_test_data_source_query_newborn(datasource: Box<dyn EntityDataSource>) {
     let date1 = make_date_time(2011, 8, 30, 12, 12, 12);
     let date2 = make_date_time(2013, 8, 30, 12, 12, 12);
     let date3 = make_date_time(2015, 8, 30, 12, 12, 12);
@@ -683,7 +775,6 @@ fn test_query_newborn() {
 
     let actual = datasource.query_newborn(date3).unwrap();
     assert_eq!(actual.len(), 4);
-    assert!(!actual[0].asset_id.starts_with("asset/"));
     assert!(actual.iter().any(|l| l.asset_id == "wednesday8"));
     assert!(actual.iter().any(|l| l.asset_id == "thursday9"
         && l.location.as_ref().map_or(false, |v| v == &portland_maine)));
@@ -692,10 +783,17 @@ fn test_query_newborn() {
 }
 
 #[test]
-fn test_query_newborn_old() {
+fn test_data_source_query_newborn_old() {
     let db_path = DBPath::new("_test_query_newborn_old");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_query_newborn_old(Box::new(datasource));
 
+    let db_path = DBPath::new("_test_query_newborn_old");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_query_newborn_old(Box::new(datasource));
+}
+
+fn do_test_data_source_query_newborn_old(datasource: Box<dyn EntityDataSource>) {
     let import_date = make_date_time(1940, 8, 20, 12, 12, 12);
     let asset = common::build_newborn_asset("monday1", import_date);
     datasource.put_asset(&asset).unwrap();
@@ -728,26 +826,32 @@ fn test_query_newborn_old() {
 }
 
 #[test]
-fn test_fetch_assets() {
+fn test_data_source_fetch_assets() {
     let db_path = DBPath::new("_test_fetch_assets");
-    let datasource = EntityDataSourceImpl::new(&db_path).unwrap();
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_fetch_assets(Box::new(datasource));
 
-    let mut asset = common::build_basic_asset();
-    asset.key = "aaaaaaa".to_owned();
+    let db_path = DBPath::new("_test_fetch_assets");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_fetch_assets(Box::new(datasource));
+}
+
+fn do_test_data_source_fetch_assets(datasource: Box<dyn EntityDataSource>) {
+    let asset = common::build_basic_asset("aaaaaaa");
     datasource.put_asset(&asset).unwrap();
-    asset.key = "bbbbbbb".to_owned();
+    let asset = common::build_basic_asset("bbbbbbb");
     datasource.put_asset(&asset).unwrap();
-    asset.key = "ccccccc".to_owned();
+    let asset = common::build_basic_asset("ccccccc");
     datasource.put_asset(&asset).unwrap();
-    asset.key = "ddddddd".to_owned();
+    let asset = common::build_basic_asset("ddddddd");
     datasource.put_asset(&asset).unwrap();
-    asset.key = "eeeeeee".to_owned();
+    let asset = common::build_basic_asset("eeeeeee");
     datasource.put_asset(&asset).unwrap();
-    asset.key = "fffffff".to_owned();
+    let asset = common::build_basic_asset("fffffff");
     datasource.put_asset(&asset).unwrap();
-    asset.key = "ggggggg".to_owned();
+    let asset = common::build_basic_asset("ggggggg");
     datasource.put_asset(&asset).unwrap();
-    asset.key = "hhhhhhh".to_owned();
+    let asset = common::build_basic_asset("hhhhhhh");
     datasource.put_asset(&asset).unwrap();
     let results = datasource.fetch_assets(Some("ccccccc".into()), 3).unwrap();
     assert_eq!(results.assets.len(), 3);

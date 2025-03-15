@@ -5,7 +5,8 @@ services:
     build:
       context: .
     environment:
-      DB_PATH: /database
+      DATABASE_PATH: /database
+      DATABASE_TYPE: rocksdb
       UPLOAD_PATH: /assets/uploads
       ASSETS_PATH: /assets/blobstore
       PORT: 3000

@@ -42,7 +42,7 @@ static DEFAULT_ASSETS_PATH: &str = "tmp/blobs";
 
 // Path to the database files.
 static DB_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
-    let path = env::var("DB_PATH").unwrap_or_else(|_| DEFAULT_DB_PATH.to_owned());
+    let path = env::var("DATABASE_PATH").unwrap_or_else(|_| DEFAULT_DB_PATH.to_owned());
     PathBuf::from(path)
 });
 

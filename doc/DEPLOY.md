@@ -1,5 +1,9 @@
 # Deploying
 
+## Database
+
+By default the application will use [RocksDB](https://rocksdb.org) for storing metadata, but can be configured to use [SQLite](https://sqlite.org) instead. This is done by setting the `DATABASE_TYPE` environment variable to the value "sqlite" (compared case-insensitively, so "SQLite" will also work).
+
 ## Using Docker
 
 The base directory contains a `docker-compose.yml` file which is used to build the application in stages and produce a relatively small final image.

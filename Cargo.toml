@@ -68,9 +68,17 @@ web-sys = { version = "=0.3.70", features = [
     "XmlHttpRequestUpload",
 ] }
 
+[target.'cfg(unix)'.dependencies]
+rusqlite = { version = "0.34.0", features = ["functions"] }
+
+[target.'cfg(windows)'.dependencies]
+rusqlite = { version = "0.34.0", features = ["functions", "bundled"] }
+
 [dev-dependencies]
 mockall = "0.13.1"
+sha1 = "0.10.6"
 tempfile = "3.15.0"
+xid = "1.1.1"
 
 [profile.release]
 strip = "debuginfo"

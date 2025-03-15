@@ -6,8 +6,9 @@ use rocksdb::{Options, DB};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
-use tanuki::data::sources::rocksdb::drop_database_ref;
-use tanuki::domain::entities::{Asset, Location};
+use tanuki::data::sources::rocksdb::drop_database_ref as drop_rocksdb;
+use tanuki::data::sources::sqlite::drop_database_ref as drop_sqlite;
+use tanuki::domain::entities::{Asset, Dimensions, Location};
 
 // Track number of open database instances accessing a particular path. Once
 // the last reference is gone, we can safely delete the database.
@@ -33,7 +34,7 @@ impl DBPath {
     /// The suffix prevents re-use of database files from a previous failed run
     /// in which the directory was not deleted.
     pub fn new(suffix: &str) -> DBPath {
-        let mut path = ulid::Ulid::new().to_string();
+        let mut path = format!("{}", xid::new());
         path.push_str(suffix);
         let db_path = PathBuf::from(path.to_lowercase());
         // keep track of the number of times this path has been opened
@@ -68,12 +69,17 @@ impl Drop for DBPath {
             }
         }
         if should_delete {
-            drop_database_ref(&self.path);
-            let opts = Options::default();
-            DB::destroy(&opts, &self.path).unwrap();
-            // let mut backup_path = PathBuf::from(&self.path);
-            // backup_path.set_extension("backup");
-            // let _ = fs::remove_dir_all(&backup_path);
+            let mut lock_path = self.path.to_path_buf();
+            lock_path.push("LOCK");
+            if std::fs::exists(&lock_path).unwrap() {
+                // RocksDB gets special treatment
+                drop_rocksdb(&self.path);
+                let opts = Options::default();
+                DB::destroy(&opts, &self.path).unwrap();
+            } else {
+                drop_sqlite(&self.path);
+                std::fs::remove_dir_all(&self.path).unwrap();
+            }
         }
     }
 }
@@ -85,15 +91,16 @@ impl AsRef<Path> for DBPath {
 }
 
 /// Construct a simple asset instance.
-pub fn build_basic_asset() -> Asset {
-    // use a predictable date for the date-related tests
+pub fn build_basic_asset(key: &str) -> Asset {
+    let checksum = compute_key_hash(key);
+    // use a specific date for the date-related tests
     let import_date = Utc
         .with_ymd_and_hms(2018, 5, 31, 21, 10, 11)
         .single()
         .unwrap();
     Asset {
-        key: "basic113".to_owned(),
-        checksum: "cafebabe".to_owned(),
+        key: key.to_owned(),
+        checksum,
         filename: "img_1234.jpg".to_owned(),
         byte_length: 1024,
         media_type: "image/jpeg".to_owned(),
@@ -107,14 +114,57 @@ pub fn build_basic_asset() -> Asset {
     }
 }
 
+/// Construct an asset in which every field is populated.
+#[allow(dead_code)]
+pub fn build_complete_asset(key: &str) -> Asset {
+    let mut asset = build_basic_asset(key);
+    asset.user_date = Some(
+        Utc.with_ymd_and_hms(2018, 6, 1, 18, 15, 0)
+            .single()
+            .unwrap(),
+    );
+    asset.original_date = Some(
+        Utc.with_ymd_and_hms(2018, 5, 30, 12, 30, 0)
+            .single()
+            .unwrap(),
+    );
+    asset.dimensions = Some(Dimensions(1024, 768));
+    asset
+}
+
+// Construct an asset with only required fields populated.
+#[allow(dead_code)]
+pub fn build_minimal_asset(key: &str) -> Asset {
+    let checksum = compute_key_hash(key);
+    // limit the datetime to millisecond precision as not all data sources can
+    // store nanosecond precision values, and invoking the nanos variaents on
+    // DateTime will restrict the date year
+    let now_ms = Utc::now().timestamp_millis();
+    let import_date = DateTime::from_timestamp_millis(now_ms).unwrap();
+    Asset {
+        key: key.to_owned(),
+        checksum,
+        filename: "img_2468.jpg".to_owned(),
+        byte_length: 1048576,
+        media_type: "image/jpeg".to_owned(),
+        tags: vec![],
+        import_date,
+        caption: None,
+        location: None,
+        user_date: None,
+        original_date: None,
+        dimensions: None,
+    }
+}
+
 // Construct a simple asset whose import date/time is now.
 #[allow(dead_code)]
 pub fn build_recent_asset(key: &str) -> Asset {
-    // use a predictable date for the date-related tests
+    let checksum = compute_key_hash(key);
     let import_date = Utc::now();
     Asset {
         key: key.to_owned(),
-        checksum: "cafed00d".to_owned(),
+        checksum,
         filename: "img_2468.jpg".to_owned(),
         byte_length: 1048576,
         media_type: "image/jpeg".to_owned(),
@@ -131,9 +181,10 @@ pub fn build_recent_asset(key: &str) -> Asset {
 /// Construct a "newborn" asset instance with the given key and date.
 #[allow(dead_code)]
 pub fn build_newborn_asset(key: &str, import_date: DateTime<Utc>) -> Asset {
+    let checksum = compute_key_hash(key);
     Asset {
         key: key.to_owned(),
-        checksum: "cafebabe".to_owned(),
+        checksum,
         filename: "img_1234.jpg".to_owned(),
         byte_length: 1048576,
         media_type: "image/jpeg".to_owned(),
@@ -158,7 +209,18 @@ pub fn compare_assets(a: &Asset, b: &Asset) {
     assert_eq!(a.media_type, b.media_type);
     assert_eq!(a.tags, b.tags);
     assert_eq!(a.import_date, b.import_date);
+    assert_eq!(a.caption, b.caption);
     assert_eq!(a.location, b.location);
     assert_eq!(a.user_date, b.user_date);
     assert_eq!(a.original_date, b.original_date);
+    assert_eq!(a.dimensions, b.dimensions);
+}
+
+// generate a sha1-XXX style hash of the given input
+fn compute_key_hash(key: &str) -> String {
+    use sha1::{Digest, Sha1};
+    let mut hasher = Sha1::new();
+    hasher.update(key.as_bytes());
+    let digest = hasher.finalize();
+    return format!("sha1-{:x}", digest);
 }

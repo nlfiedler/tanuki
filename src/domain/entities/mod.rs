@@ -154,9 +154,9 @@ impl Asset {
         self
     }
 
-    /// Set the label field of the location property of the asset.
-    pub fn location(&mut self, location: String) -> &mut Self {
-        self.location = Some(Location::new(&location));
+    /// Set the location property of the asset.
+    pub fn location(&mut self, location: Location) -> &mut Self {
+        self.location = Some(location);
         self
     }
 
@@ -244,7 +244,7 @@ impl cmp::PartialEq for AssetInput {
 impl cmp::Eq for AssetInput {}
 
 /// Location information regarding an asset.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct Location {
     /// User-defined label describing the location.
     pub label: Option<String>,
@@ -756,7 +756,7 @@ mod tests {
         asset.tags(vec!["cat".to_owned(), "dog".to_owned()]);
         asset.import_date(make_date_time(2018, 5, 31, 21, 10, 11));
         asset.caption("this is a caption".to_owned());
-        asset.location("hawaii".to_owned());
+        asset.location(Location::new("hawaii"));
         asset.user_date(make_date_time(2017, 6, 9, 21, 10, 11));
         asset.original_date(make_date_time(2016, 10, 14, 21, 10, 11));
         asset.dimensions(Dimensions(640, 480));

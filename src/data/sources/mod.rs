@@ -12,6 +12,7 @@ use std::str;
 use std::sync::Arc;
 
 pub mod rocksdb;
+pub mod sqlite;
 
 /// Data source for entity records.
 #[cfg_attr(test, automock)]
@@ -97,9 +98,20 @@ pub trait EntityDataSource: Send + Sync {
 ///
 /// Construct a new entity data source implementation for the given path.
 ///
+/// The particular implementation is chosen using the `DATABASE_TYPE`
+/// environment variable, with "sqlite" and "rocksdb" being supported values. If
+/// not set, or the value is not recognized, defaults to RocksDB
+///
 pub fn new_datasource_for_path<P: AsRef<Path>>(
     db_path: P,
 ) -> Result<Arc<dyn EntityDataSource>, Error> {
-    let source = rocksdb::EntityDataSourceImpl::new(db_path)?;
-    Ok(Arc::new(source))
+    let db_type = std::env::var("DATABASE_TYPE")
+        .map(|v| v.to_lowercase())
+        .unwrap_or("rocksdb".into());
+    let source: Arc<dyn EntityDataSource> = if db_type == "sqlite" {
+        Arc::new(sqlite::EntityDataSourceImpl::new(db_path)?)
+    } else {
+        Arc::new(rocksdb::EntityDataSourceImpl::new(db_path)?)
+    };
+    Ok(source)
 }

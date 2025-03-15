@@ -1,6 +1,6 @@
 # Tanuki
 
-An application for collecting, tagging, browsing, and searching assets, primarily images and videos. Written in [Rust](https://www.rust-lang.org) with a [Leptos](https://leptos.dev) powered front-end and limited [GraphQL](https://graphql.org) support. Metadata is stored in [RocksDB](https://rocksdb.org) and file content is stored unmodified within a date/time formatted directory structure.
+An application for collecting, tagging, browsing, and searching assets, primarily images and videos. Written in [Rust](https://www.rust-lang.org) with a [Leptos](https://leptos.dev) powered front-end and limited [GraphQL](https://graphql.org) support. Metadata is stored in [RocksDB](https://rocksdb.org) and file content is stored unmodified within a date/time formatted directory structure. Supports [SQLite](https://sqlite.org) as an alternative to RocksDB.
 
 ## Building and Testing
 

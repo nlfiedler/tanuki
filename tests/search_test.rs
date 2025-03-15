@@ -23,15 +23,13 @@ fn test_search_tags_and_location() -> Result<(), Error> {
     // the label field, in order to test the search usecase and its filtering by
     // location, which is tricky compared to filtering on other fields
     //
-    let mut asset = common::build_basic_asset();
-    asset.key = "monday6".to_owned();
+    let mut asset = common::build_basic_asset("monday6");
     asset.filename = "img_2345.jpg".to_owned();
     asset.location = Some(Location::new("golden gate park"));
     asset.tags = vec!["bird".to_owned(), "dog".to_owned()];
     datasource.put_asset(&asset)?;
 
-    let mut asset = common::build_basic_asset();
-    asset.key = "tuesday7".to_owned();
+    let mut asset = common::build_basic_asset("tuesday7");
     asset.filename = "img_3456.jpg".to_owned();
     asset.location = Some(Location {
         label: None,
@@ -41,14 +39,12 @@ fn test_search_tags_and_location() -> Result<(), Error> {
     asset.tags = vec!["CAT".to_owned(), "mouse".to_owned()];
     datasource.put_asset(&asset)?;
 
-    let mut asset = common::build_basic_asset();
-    asset.key = "wednesday8".to_owned();
+    let mut asset = common::build_basic_asset("wednesday8");
     asset.filename = "img_4567.jpg".to_owned();
     asset.tags = vec!["Cat".to_owned(), "lizard".to_owned(), "chicken".to_owned()];
     datasource.put_asset(&asset)?;
 
-    let mut asset = common::build_basic_asset();
-    asset.key = "thursday9".to_owned();
+    let mut asset = common::build_basic_asset("thursday9");
     asset.filename = "img_5678.jpg".to_owned();
     asset.location = Some(Location {
         label: Some("classical garden".into()),
@@ -58,15 +54,13 @@ fn test_search_tags_and_location() -> Result<(), Error> {
     asset.tags = vec!["bird".to_owned(), "dog".to_owned()];
     datasource.put_asset(&asset)?;
 
-    let mut asset = common::build_basic_asset();
-    asset.key = "friday10".to_owned();
+    let mut asset = common::build_basic_asset("friday10");
     asset.filename = "img_6789.jpg".to_owned();
     asset.location = Some(Location::new("london"));
     asset.tags = vec!["mouse".to_owned(), "house".to_owned()];
     datasource.put_asset(&asset)?;
 
-    let mut asset = common::build_basic_asset();
-    asset.key = "thunder1".to_owned();
+    let mut asset = common::build_basic_asset("thunder1");
     asset.filename = "img_7890.jpg".to_owned();
     asset.location = Some(Location {
         label: None,
@@ -76,8 +70,7 @@ fn test_search_tags_and_location() -> Result<(), Error> {
     asset.tags = vec!["bird".to_owned(), "dog".to_owned()];
     datasource.put_asset(&asset)?;
 
-    let mut asset = common::build_basic_asset();
-    asset.key = "lightning0".to_owned();
+    let mut asset = common::build_basic_asset("lightning0");
     asset.filename = "DCP12345.jpg".to_owned();
     asset.location = Some(Location {
         label: None,
@@ -87,8 +80,7 @@ fn test_search_tags_and_location() -> Result<(), Error> {
     asset.tags = vec!["bird".to_owned(), "dog".to_owned()];
     datasource.put_asset(&asset)?;
 
-    let mut asset = common::build_basic_asset();
-    asset.key = "cloudy9".to_owned();
+    let mut asset = common::build_basic_asset("cloudy9");
     asset.filename = "DCP23456.jpg".to_owned();
     asset.location = Some(Location {
         label: None,

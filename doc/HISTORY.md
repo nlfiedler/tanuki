@@ -66,7 +66,7 @@ later abandon using Dart (see architecture decision records).
 
 ## April 2020
 
-Replaced backend Node.js code with [Rust](https://www.rust-lang.org).
+Replaced backend Node.js code with [Rust](https://www.rust-lang.org). Replaced PouchDB with [RocksDB](https://rocksdb.org) and the [mokuroku](https://github.com/nlfiedler/mokuroku) crate.
 
 ## September 2020
 
@@ -91,3 +91,7 @@ Finally added web-based interface for bulk edit of many assets.
 ## November 2024
 
 Replicated the advanced text-based query support found in [Perkeep](https://perkeep.org).
+
+## March 2025
+
+Added support for [SQLite](https://sqlite.org) as an alternative to RocksDB.

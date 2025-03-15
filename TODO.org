@@ -3,16 +3,24 @@
 *** good: can create an in-memory database for easy testing
 *** good: location values can be consolidated into their own table
 *** good: supports arrays and lists as column types
+*** good: CLI for manually querying and altering database
+*** good: web ui https://duckdb.org/2025/03/12/duckdb-ui.html
 *** concern: needs a lot of memory (minimum 125mb per thread)
 *** concern: designed for SSD and NVMe, writes may be slow on HDD
 *** concern: writes to a single file
 *** concern: designed for bulk updates, not many small transactions
-*** design basic schema
+*** TODO consider how to define indexes for tags, locations
+*** TODO find out how to create app-defined functions (for =best_date()=)
+**** is a scalar UDF needed for this?
+**** scalar UDF support was added in Feb/2025
+**** scalar UDF support is enabled with =vscalar= feature
+**** should be a function called =register_scalar()=
+*** TODO design basic schema
 **** assets table
 | name       | description            | type                | typical size |
 |------------+------------------------+---------------------+--------------|
-| path       | file path/identifier   | varchar primary key |           64 |
-| hash       | sha256 digest          | varchar             |           64 |
+| key        | file path/identifier   | varchar primary key |           64 |
+| hash       | sha256 digest          | varchar unique      |           64 |
 | filename   | original name          | varchar             |           12 |
 | filesize   | byte length            | ubigint             |            8 |
 | mimetype   | media type             | varchar             |           10 |
@@ -22,8 +30,7 @@
 | imported   | datetime of import     | timestamp_s         |           64 |
 | user_date  | user-defined datetime  | timestamp_s         |           64 |
 | orig_date  | original datetime      | timestamp_s         |           64 |
-| dimensions | image/video dimensions | usmallint[2]        |            4 |
-***** set =path= to be ordered for faster lookup by asset ~key~
+| dimensions | image/video dimensions | uinteger[2]         |            8 |
 **** locations table
 | name   | type                |
 |--------+---------------------|
@@ -34,177 +41,60 @@
 *** consider using COW for asset records, then using selected fields in =UPDATE= statement
 **** if only the user date changes, =UPDATE= would only touch that field
 **** this would suit the nature of a column-oriented DBMS (probably?)
-*** derive SQL queries for each of the repository functions
-*** set up a basic prototype to play around
-**** install DuckDB CLI
-**** create on-disk database
-**** define schema
-**** load sample data from json
-**** perform basic queries
-**** try defining indexes
-**** use =explain analyze= to ensure indexes are used
-*** action plan
-**** create new DuckDB specific module in data/sources
-**** consider restricting =threads= to a small number as it may create many if there are many "cores"
-**** ~load~ usecase should delete indexes, load data, and recreate indexes to avoid poor performance
-**** ~load~ should use ~Appender API~ via =append_rows()= function to add many rows at a time
-***** can easily handle 10,000 rows at a time
-** Evaluate SQLite
-*** good: very mature and reliable
-*** good: can create an in-memory database for easy testing
-*** good: location values can be consolidated into their own table
-*** concern: lacks date/time types
-*** concern: lacks array type
-*** concern: writes to a single file
-*** DONE design basic schema
-**** assets table
-| name      | description           | type             | typical size |
-|-----------+-----------------------+------------------+--------------|
-| path      | file path/identifier  | text primary key |           64 |
-| hash      | sha256 digest         | text             |           64 |
-| filename  | original name         | text             |           12 |
-| filesize  | byte length           | integer          |            8 |
-| mimetype  | media type            | text             |           10 |
-| caption   |                       | text             |            0 |
-| tags      | comma-separated tags  | text             |           20 |
-| location  | FK on locations.id    | integer          |            8 |
-| imported  | datetime of import    | integer          |           64 |
-| user_date | user-defined datetime | integer          |           64 |
-| orig_date | original datetime     | integer          |           64 |
-| pixel_w   | image/video width     | integer          |            2 |
-| pixel_h   | image/video height    | integer          |            2 |
-**** use ~Unix timestamp~ for the date/time values
-**** create a unique index on =assets.hash= for fast lookup
-#+begin_src sql
-CREATE UNIQUE INDEX IF NOT EXISTS hashes ON assets (hash);
-#+end_src
-**** locations table
-***** rely on automatic =rowid= column that is the primary key
-| name   | type                |
-|--------+---------------------|
-| id     | integer primary key |
-| label  | text                |
-| city   | text                |
-| region | text                |
-*** DONE derive SQL queries for each of the repository functions
-**** DONE get_asset_by_id() -> Asset
-#+begin_src sql
-SELECT assets.*, locations.* FROM assets
-LEFT JOIN locations ON assets.location = locations.id
-WHERE path = ?;
-#+end_src
-**** DONE get_asset_by_digest() -> Option<Asset>
-***** if nothing is found, return None
-#+begin_src sql
-SELECT * from assets WHERE hash = ?;
-#+end_src
-**** DONE query_by_tags() -> Vec<SearchResult>
-***** for now, do a full table scan and match tags in Rust
-#+begin_src sql
-SELECT path, filename, mimetype, tags, label, city, region,
-       first_some(user_date,orig_date,imported) AS datetime
-FROM assets
-LEFT JOIN locations ON assets.location = locations.id;
-#+end_src
-**** DONE query_by_locations() -> Vec<SearchResult>
-#+begin_src sql
-SELECT assets.*, locations.* FROM assets
-LEFT JOIN locations ON assets.location = locations.id
-WHERE locations.label = ? OR locations.city = ? OR locations.region = ?;
-#+end_src
-**** DONE query_by_media_type() -> Vec<SearchResult>
-***** query and select the best date for the search result
-#+begin_src sql
-SELECT path,filename,mimetype,location,imported,user_date,orig_date from assets WHERE mimetype = ?;
-#+end_src
-**** DONE query_before_date() -> Vec<SearchResult>
-***** write app-defined fn named =first_some()= that selects first Some argument
-****** c.f. https://docs.rs/rusqlite/latest/rusqlite/functions/index.html
-****** be sure to use =FunctionFlags::SQLITE_DETERMINISTIC= when defining the fn
-***** define index on ~assets~ for the =first_some()= of date fields in preferred order
-***** query on ~assets~ as usual, should use index (use =EXPLAIN= to validate index is used)
-#+begin_src sql
-SELECT path, filename, mimetype, label, city, region,
-       first_some(user_date, orig_date, imported) AS datetime
-FROM assets
-LEFT JOIN locations ON assets.location = locations.id
-WHERE datetime < ?;
-#+end_src
-**** DONE query_after_date() -> Vec<SearchResult>
-***** do whatever was done for query_before_date()
-#+begin_src sql
-SELECT path,filename,mimetype,location,imported,user_date,orig_date from assets WHERE path = ?;
-#+end_src
-**** DONE query_date_range() -> Vec<SearchResult>
-***** do whatever was done for query_before_date()
-#+begin_src sql
-SELECT path,filename,mimetype,location,imported,user_date,orig_date from assets WHERE path = ?;
-#+end_src
-**** DONE query_newborn() -> Vec<SearchResult>
-***** maybe this will work
-#+begin_src sql
-SELECT path, filename, mimetype, label, city, region,
-       first_some(user_date,orig_date,imported) AS datetime
-FROM assets
-LEFT JOIN locations ON assets.location = locations.id
-WHERE tags = NULL, caption = NULL, label = NULL;
-#+end_src
-**** DONE all_locations() -> Vec<LabeledCount>
-***** query and convert results to =Vec<LabeledCount>= somehow
-***** can use logic of =count_all_keys()= in mokuroku
-#+begin_src sql
-SELECT * from locations;
-#+end_src
-**** DONE raw_locations() -> Vec<Location>
-***** query and convert results to =Vec<Location>=
-#+begin_src sql
-SELECT * from locations;
-#+end_src
-**** DONE all_years() -> Vec<LabeledCount>
-***** use best date, convert to =Vec<LabeledCount>=
-***** can use logic of =count_all_keys()= in mokuroku
-#+begin_src sql
-SELECT user_date, orig_date, imported FROM assets;
-#+end_src
-**** DONE all_tags() -> Vec<LabeledCount>
-***** query, split value on commas, convert to =Vec<LabeledCount>=
-***** can use logic of =count_all_keys()= in mokuroku
-#+begin_src sql
-SELECT tags from assets;
-#+end_src
-**** DONE all_media_types() -> Vec<LabeledCount>
-***** query and collect into =Vec<LabeledCount>=
-***** can use logic of =count_all_keys()= in mokuroku
-#+begin_src sql
-SELECT mimetype from assets;
-#+end_src
-**** DONE fetch_assets() -> Vec<Asset>
-***** use the ~path~ column as the ~cursor~
-***** add the =WHERE= clause only when a cursor is given
-#+begin_src sql
-SELECT * FROM assets
-WHERE path > ?
-ORDER BY path
-LIMIT 1024;
-#+end_src
 *** TODO action plan
-**** DONE consider how unreferenced rows in =locations= table could eventually be removed
-**** TODO create new SQLite specific module in data/sources
-**** TODO enable error/warning logging initially https://sqlite.org/errlog.html
-**** TODO enable foreign key enforcement (=PRAGMA foreign_keys = ON;=)
-**** TODO should use =STRICT= tables for type enforcement (e.g. =CREATE TABLE t1(a ANY) STRICT;=)
-**** TODO enable WAL mode with =PRAGMA journal_mode=WAL;=
-**** TODO consider how to build indexes for tags, locations, dates
-***** otherwise many queries will do full table scans
-**** TODO use =explain= to ensure indexes are used
-**** TODO consider when to clean up the database (e.g. find orphaned locations)
-** TODO bug? why do the 1913 photos not appear when browsing all assets in flipped order?
-*** could the index be out of date?
+**** TODO create new DuckDB specific module in data/sources
+**** TODO consider restricting =threads= to a small number as it may create many if there are many "cores"
+**** TODO ~load~ usecase should delete indexes, load data, and recreate indexes to avoid poor performance
+***** c.f. https://duckdb.org/docs/stable/guides/performance/indexing
+**** TODO ~load~ should use ~Appender API~ via =append_rows()= function to add many rows at a time
+***** DuckDB can easily handle 10,000 rows at a time
+** TODO move the (Asset) serde into the rocksdb codebase
+*** use CBOR, but do it manually
+*** all of =data/models= will go away
+** TODO consider dropping the extra date/time fields, just use one
+*** find out if the =import_date= and =original_date= are used for anything
+*** no need for =import_date=, it can be derived from the asset path
+*** no need for =original_date=, the value is in the file itself
+*** on import, use original date or import date
+*** on update, overwrite with new value, if any
+*** =import_date= is needed for =query_newborn()= otherwise original date would take precedence
+**** RocksDB can derive from the asset key
+**** SQLite will need to keep the =imported= column for performance
+*** test clearing the date/time field in the webui to see what happens
+** TODO add a =/liveness= route for docker healthcheck
+** TODO Finish SQLite implementation
+*** TODO consider how to make loading many assets faster
+**** send a batch of assets at once via new =load()= on =EntityDataSource=
+**** use =SELECT key FROM assets WHERE key IN (...)= to search multiple values at once
+**** partition the incoming assets into UPDATE/INSERT groups appropriately
+**** load timing for 21,502 records
+| progress   | time   |
+|------------+--------|
+| initial    | 3.235s |
+| loc dedupe | 2.020s |
+*** TODO fix the =query_by_tags()= to use =REGEXP=
+**** can combine multiple =tags REGEXP '\bvalue\b'= with =AND=
+#+begin_src sql
+SELECT COUNT(*) FROM assets WHERE tags REGEXP '\bjoseph\b' AND tags REGEXP '\bchristina\b';
+#+end_src
+*** TODO see what can be done about =query_by_locations()=
+*** consider when to remove orphaned locations
+** TODO bug? why do the 1913 photos not appear when browsing all assets?
+*** could the index be out of date? NO
+*** what is the actual date used for those assets?
 *** is the query only going back 100 years?
 ** Try leptos upgrade again
 *** start from scratch, copying changes from ~upgrade~ branch
 *** see =upgrade= branch; there are many problems
 *** c.f. https://github.com/leptos-rs/leptos/issues/3354
+** RocksDB vs SQLite
+*** 21,502 assets
+*** disk usage immediately after load, does not reflect size after compaction
+| Metric     | RocksDB    | SQLite     |
+|------------+------------+------------|
+| load time  | 4 sec      | 6 min      |
+| disk uage  | 39,298,784 | 13,450,984 |
+| asset size | 1827       | 625        |
 ** Rust vs JavaScript
 *** Rust benefits
 - code sharing is convenient
