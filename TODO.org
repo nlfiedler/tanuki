@@ -49,8 +49,12 @@
 **** TODO ~load~ should use ~Appender API~ via =append_rows()= function to add many rows at a time
 ***** DuckDB can easily handle 10,000 rows at a time
 ** TODO move the (Asset) serde into the rocksdb codebase
-*** use CBOR, but do it manually
+*** use a compact binary format, CBOR crates appear largely unmaintained or incomplete
+*** perform the serde manually in =from_bytes()= and =to_bytes()=
 *** all of =data/models= will go away
+*** BSON seems very mature and full-featured
+*** use =serde_json= directly for ~dump~ and ~load~ usecases
+*** add =Serialize= and =Deserialize= to =Location= for Leptos
 ** TODO consider dropping the extra date/time fields, just use one
 *** find out if the =import_date= and =original_date= are used for anything
 *** no need for =import_date=, it can be derived from the asset path
@@ -61,8 +65,8 @@
 **** RocksDB can derive from the asset key
 **** SQLite will need to keep the =imported= column for performance
 *** test clearing the date/time field in the webui to see what happens
-** TODO add a =/liveness= route for docker healthcheck
 ** TODO Finish SQLite implementation
+*** TODO convert =asset_from_row()= into a =From= or =Into=
 *** TODO consider how to make loading many assets faster
 **** send a batch of assets at once via new =load()= on =EntityDataSource=
 **** use =SELECT key FROM assets WHERE key IN (...)= to search multiple values at once
@@ -78,7 +82,7 @@
 SELECT COUNT(*) FROM assets WHERE tags REGEXP '\bjoseph\b' AND tags REGEXP '\bchristina\b';
 #+end_src
 *** TODO see what can be done about =query_by_locations()=
-*** consider when to remove orphaned locations
+*** TODO consider when to remove orphaned locations
 ** TODO bug? why do the 1913 photos not appear when browsing all assets?
 *** could the index be out of date? NO
 *** what is the actual date used for those assets?

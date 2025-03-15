@@ -440,6 +440,11 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/graphql").route(web::post().to(graphql)))
             .service(web::resource("/graphiql").route(web::get().to(graphiql)))
             .service(favicon)
+            .service(
+                web::resource("/liveness")
+                    .route(web::get().to(|| HttpResponse::Ok()))
+                    .route(web::head().to(|| HttpResponse::Ok())),
+            )
             // use a different path than /api which Leptos uses by default
             .route("/rest/thumbnail/{w}/{h}/{id}", web::get().to(get_thumbnail))
             .route("/rest/asset/{id}", web::get().to(raw_asset))
