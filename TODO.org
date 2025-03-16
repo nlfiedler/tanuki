@@ -48,13 +48,7 @@
 ***** c.f. https://duckdb.org/docs/stable/guides/performance/indexing
 **** TODO ~load~ should use ~Appender API~ via =append_rows()= function to add many rows at a time
 ***** DuckDB can easily handle 10,000 rows at a time
-** TODO move the (Asset) serde into the rocksdb codebase
-*** use a compact binary format, CBOR crates appear largely unmaintained or incomplete
-*** perform the serde manually in =from_bytes()= and =to_bytes()=
-*** all of =data/models= will go away
-*** BSON seems very mature and full-featured
-*** use =serde_json= directly for ~dump~ and ~load~ usecases
-*** add =Serialize= and =Deserialize= to =Location= for Leptos
+** TODO change =timestamp_millis()= to just =timestamp()=, only want second precision
 ** TODO consider dropping the extra date/time fields, just use one
 *** find out if the =import_date= and =original_date= are used for anything
 *** no need for =import_date=, it can be derived from the asset path

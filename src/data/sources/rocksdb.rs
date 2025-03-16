@@ -1,15 +1,13 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::data::models::AssetModel;
 use crate::data::sources::EntityDataSource;
-use crate::domain::entities::{Asset, LabeledCount, Location, SearchResult};
+use crate::domain::entities::{Asset, Dimensions, LabeledCount, Location, SearchResult};
 use crate::domain::repositories::FetchedAssets;
 use anyhow::{anyhow, Error};
 use chrono::prelude::*;
 use mokuroku::{base32, Document, Emitter, QueryResult};
 use rocksdb::{Direction, IteratorMode, Options};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::path::{Path, PathBuf};
@@ -525,17 +523,303 @@ fn encode_datetime(date: &DateTime<Utc>) -> Vec<u8> {
 
 impl Document for Asset {
     fn from_bytes(key: &[u8], value: &[u8]) -> Result<Self, mokuroku::Error> {
-        let mut de = serde_cbor::Deserializer::from_slice(value);
-        let mut result = AssetModel::deserialize(&mut de)?;
+        use ciborium::Value;
         // remove the "asset/" key prefix added by the data source
-        result.key = str::from_utf8(&key[6..])?.to_owned();
-        Ok(result)
+        let key = str::from_utf8(&key[6..])?.to_owned();
+
+        // process the raw Value into something easier to iterate over
+        let raw_value: Value =
+            ciborium::de::from_reader(value).map_err(|err| anyhow!("cbor read error: {}", err))?;
+        let as_map: Vec<(Value, Value)> = raw_value
+            .into_map()
+            .map_err(|_| anyhow!("value: cbor into_map() error"))?;
+        let mut values: HashMap<String, Value> = HashMap::new();
+        for (name, value) in as_map.into_iter() {
+            values.insert(
+                name.into_text()
+                    .map_err(|_| anyhow!("name: cbor into_text() error"))?,
+                value,
+            );
+        }
+
+        let checksum: String = values
+            .remove("ch")
+            .ok_or_else(|| anyhow!("missing 'ch' field"))?
+            .into_text()
+            .map_err(|_| anyhow!("ch: cbor into_text() error"))?;
+
+        let filename: String = values
+            .remove("fn")
+            .ok_or_else(|| anyhow!("missing 'fn' field"))?
+            .into_text()
+            .map_err(|_| anyhow!("fn: cbor into_text() error"))?;
+
+        let iv: ciborium::value::Integer = values
+            .remove("sz")
+            .ok_or_else(|| anyhow!("missing 'sz' field"))?
+            .into_integer()
+            .map_err(|_| anyhow!("sz: cbor into_integer() error"))?;
+        let ii: i128 = ciborium::value::Integer::into(iv);
+        let byte_length: u64 = ii as u64;
+
+        let media_type: String = values
+            .remove("mt")
+            .ok_or_else(|| anyhow!("missing 'mt' field"))?
+            .into_text()
+            .map_err(|_| anyhow!("mt: cbor into_text() error"))?;
+
+        let mut tags: Vec<String> = vec![];
+        for v in values
+            .remove("ta")
+            .ok_or_else(|| anyhow!("missing 'ta' field"))?
+            .into_array()
+            .map_err(|_| anyhow!("ta: cbor into_array() error"))?
+            .into_iter()
+        {
+            tags.push(
+                v.into_text()
+                    .map_err(|_| anyhow!("tag: cbor into_text() error"))?,
+            );
+        }
+
+        let iv: ciborium::value::Integer = values
+            .remove("id")
+            .ok_or_else(|| anyhow!("missing 'id' field"))?
+            .into_integer()
+            .map_err(|_| anyhow!("id: cbor into_integer() error"))?;
+        let ii: i128 = ciborium::value::Integer::into(iv);
+        let import_date: DateTime<Utc> = DateTime::from_timestamp(ii as i64, 0).unwrap();
+
+        let cp_value: Value = values
+            .remove("cp")
+            .ok_or_else(|| anyhow!("missing 'cp' field"))?;
+        let caption: Option<String> = if cp_value.is_null() {
+            None
+        } else {
+            Some(
+                cp_value
+                    .into_text()
+                    .map_err(|_| anyhow!("cp: cbor into_text() error"))?,
+            )
+        };
+
+        let lo_value: Value = values
+            .remove("lo")
+            .ok_or_else(|| anyhow!("missing 'lo' field"))?;
+        let location: Option<Location> = if lo_value.is_null() {
+            None
+        } else {
+            let as_map: Vec<(Value, Value)> = lo_value
+                .into_map()
+                .map_err(|_| anyhow!("lo: cbor into_map() error"))?;
+            let mut label: Option<String> = None;
+            let mut city: Option<String> = None;
+            let mut region: Option<String> = None;
+            for (name, value) in as_map.into_iter() {
+                if name.as_text() == Some("l") {
+                    if !value.is_null() {
+                        label = Some(
+                            value
+                                .into_text()
+                                .map_err(|_| anyhow!("l: cbor into_text() error"))?,
+                        )
+                    };
+                } else if name.as_text() == Some("c") {
+                    if !value.is_null() {
+                        city = Some(
+                            value
+                                .into_text()
+                                .map_err(|_| anyhow!("c: cbor into_text() error"))?,
+                        )
+                    };
+                } else if name.as_text() == Some("r") {
+                    if !value.is_null() {
+                        region = Some(
+                            value
+                                .into_text()
+                                .map_err(|_| anyhow!("r: cbor into_text() error"))?,
+                        )
+                    };
+                }
+            }
+            Some(Location {
+                label,
+                city,
+                region,
+            })
+        };
+
+        let ud_value: Value = values
+            .remove("ud")
+            .ok_or_else(|| anyhow!("missing 'ud' field"))?;
+        let user_date: Option<DateTime<Utc>> = if ud_value.is_null() {
+            None
+        } else {
+            let iv = ud_value
+                .into_integer()
+                .map_err(|_| anyhow!("ud: cbor into_integer() error"))?;
+            let ii: i128 = ciborium::value::Integer::into(iv);
+            Some(DateTime::from_timestamp(ii as i64, 0).unwrap())
+        };
+
+        let od_value: Value = values
+            .remove("od")
+            .ok_or_else(|| anyhow!("missing 'od' field"))?;
+        let original_date: Option<DateTime<Utc>> = if od_value.is_null() {
+            None
+        } else {
+            let iv = od_value
+                .into_integer()
+                .map_err(|_| anyhow!("od: cbor into_integer() error"))?;
+            let ii: i128 = ciborium::value::Integer::into(iv);
+            Some(DateTime::from_timestamp(ii as i64, 0).unwrap())
+        };
+
+        let dm_value: Value = values
+            .remove("dm")
+            .ok_or_else(|| anyhow!("missing 'dm' field"))?;
+        let dimensions: Option<Dimensions> = if dm_value.is_null() {
+            None
+        } else {
+            let mut as_arr: Vec<Value> = dm_value
+                .into_array()
+                .map_err(|_| anyhow!("dm: cbor into_array() error"))?;
+            let iv = as_arr
+                .remove(0)
+                .into_integer()
+                .map_err(|_| anyhow!("dm.0: cbor into_integer() error"))?;
+            let w: i128 = ciborium::value::Integer::into(iv);
+            let iv = as_arr
+                .remove(0)
+                .into_integer()
+                .map_err(|_| anyhow!("dm.1: cbor into_integer() error"))?;
+            let h: i128 = ciborium::value::Integer::into(iv);
+            Some(Dimensions(w as u32, h as u32))
+        };
+
+        Ok(Asset {
+            key,
+            checksum,
+            filename,
+            byte_length,
+            media_type,
+            tags,
+            import_date,
+            caption,
+            location,
+            user_date,
+            original_date,
+            dimensions,
+        })
     }
 
     fn to_bytes(&self) -> Result<Vec<u8>, mokuroku::Error> {
+        use ciborium::Value;
         let mut encoded: Vec<u8> = Vec::new();
-        let mut ser = serde_cbor::Serializer::new(&mut encoded);
-        AssetModel::serialize(self, &mut ser)?;
+        // Emit everything except the key since that is part of the data store
+        // already, and use short names for an overall smaller size.
+        let mut fields: Vec<(Value, Value)> = vec![];
+
+        // checksum
+        fields.push((Value::Text("ch".into()), Value::Text(self.checksum.clone())));
+
+        // filename
+        fields.push((Value::Text("fn".into()), Value::Text(self.filename.clone())));
+
+        // byte_length
+        fields.push((
+            Value::Text("sz".into()),
+            Value::Integer(self.byte_length.into()),
+        ));
+
+        // media_type
+        fields.push((
+            Value::Text("mt".into()),
+            Value::Text(self.media_type.clone()),
+        ));
+
+        // tags
+        fields.push((
+            Value::Text("ta".into()),
+            Value::Array(
+                self.tags
+                    .iter()
+                    .map(|t| Value::Text(t.to_owned()))
+                    .collect(),
+            ),
+        ));
+
+        // import_date
+        fields.push((
+            Value::Text("id".into()),
+            Value::Integer(self.import_date.timestamp().into()),
+        ));
+
+        // caption
+        if let Some(ref cp) = self.caption {
+            fields.push((Value::Text("cp".into()), Value::Text(cp.to_owned())));
+        } else {
+            fields.push((Value::Text("cp".into()), Value::Null));
+        }
+
+        // location
+        if let Some(ref loc) = self.location {
+            let mut parts: Vec<(Value, Value)> = vec![];
+            if let Some(ref label) = loc.label {
+                parts.push((Value::Text("l".into()), Value::Text(label.to_owned())));
+            } else {
+                parts.push((Value::Text("l".into()), Value::Null));
+            }
+            if let Some(ref city) = loc.city {
+                parts.push((Value::Text("c".into()), Value::Text(city.to_owned())));
+            } else {
+                parts.push((Value::Text("c".into()), Value::Null));
+            }
+            if let Some(ref region) = loc.region {
+                parts.push((Value::Text("r".into()), Value::Text(region.to_owned())));
+            } else {
+                parts.push((Value::Text("r".into()), Value::Null));
+            }
+            fields.push((Value::Text("lo".into()), Value::Map(parts)));
+        } else {
+            fields.push((Value::Text("lo".into()), Value::Null));
+        }
+
+        // user_date
+        if let Some(ud) = self.user_date {
+            fields.push((
+                Value::Text("ud".into()),
+                Value::Integer(ud.timestamp().into()),
+            ));
+        } else {
+            fields.push((Value::Text("ud".into()), Value::Null));
+        }
+
+        // original_date
+        if let Some(od) = self.original_date {
+            fields.push((
+                Value::Text("od".into()),
+                Value::Integer(od.timestamp().into()),
+            ));
+        } else {
+            fields.push((Value::Text("od".into()), Value::Null));
+        }
+
+        // dimensions
+        if let Some(ref dim) = self.dimensions {
+            fields.push((
+                Value::Text("dm".into()),
+                Value::Array(vec![
+                    Value::Integer(dim.0.into()),
+                    Value::Integer(dim.1.into()),
+                ]),
+            ));
+        } else {
+            fields.push((Value::Text("dm".into()), Value::Null));
+        }
+        let doc = Value::Map(fields);
+        ciborium::ser::into_writer(&doc, &mut encoded)
+            .map_err(|err| anyhow!("cbor write error: {}", err))?;
         Ok(encoded)
     }
 
@@ -624,39 +908,147 @@ pub fn mapper(
     Ok(())
 }
 
-/// Database index value for an asset.
-#[derive(Serialize, Deserialize)]
-#[serde(remote = "SearchResult")]
-struct IndexValue {
-    #[serde(skip)]
-    pub asset_id: String,
-    /// Original filename of the asset.
-    #[serde(rename = "n")]
-    pub filename: String,
-    /// Detected media type of the file.
-    #[serde(rename = "m")]
-    pub media_type: String,
-    /// Location of the asset.
-    #[serde(rename = "l")]
-    pub location: Option<Location>,
-    /// Best date/time for the indexed asset.
-    #[serde(rename = "d")]
-    pub datetime: DateTime<Utc>,
-}
-
 impl SearchResult {
-    // Deserialize from a slice of bytes.
     fn from_bytes(value: &[u8]) -> Result<Self, Error> {
-        let mut de = serde_cbor::Deserializer::from_slice(value);
-        let result = IndexValue::deserialize(&mut de)?;
-        Ok(result)
+        use ciborium::Value;
+        // process the raw Value into something easier to iterate over
+        let raw_value: Value =
+            ciborium::de::from_reader(value).map_err(|err| anyhow!("cbor read error: {}", err))?;
+        let as_map: Vec<(Value, Value)> = raw_value
+            .into_map()
+            .map_err(|_| anyhow!("value: cbor into_map() error"))?;
+        let mut values: HashMap<String, Value> = HashMap::new();
+        for (name, value) in as_map.into_iter() {
+            values.insert(
+                name.into_text()
+                    .map_err(|_| anyhow!("name: cbor into_text() error"))?,
+                value,
+            );
+        }
+
+        let filename: String = values
+            .remove("n")
+            .ok_or_else(|| anyhow!("missing 'n' field"))?
+            .into_text()
+            .map_err(|_| anyhow!("n: cbor into_text() error"))?;
+
+        let media_type: String = values
+            .remove("m")
+            .ok_or_else(|| anyhow!("missing 'm' field"))?
+            .into_text()
+            .map_err(|_| anyhow!("m: cbor into_text() error"))?;
+
+        let lo_value: Value = values
+            .remove("l")
+            .ok_or_else(|| anyhow!("missing 'l' field"))?;
+        let location: Option<Location> = if lo_value.is_null() {
+            None
+        } else {
+            let as_map: Vec<(Value, Value)> = lo_value
+                .into_map()
+                .map_err(|_| anyhow!("l: cbor into_map() error"))?;
+            let mut label: Option<String> = None;
+            let mut city: Option<String> = None;
+            let mut region: Option<String> = None;
+            for (name, value) in as_map.into_iter() {
+                if name.as_text() == Some("l") {
+                    if !value.is_null() {
+                        label = Some(
+                            value
+                                .into_text()
+                                .map_err(|_| anyhow!("l: cbor into_text() error"))?,
+                        )
+                    };
+                } else if name.as_text() == Some("c") {
+                    if !value.is_null() {
+                        city = Some(
+                            value
+                                .into_text()
+                                .map_err(|_| anyhow!("c: cbor into_text() error"))?,
+                        )
+                    };
+                } else if name.as_text() == Some("r") {
+                    if !value.is_null() {
+                        region = Some(
+                            value
+                                .into_text()
+                                .map_err(|_| anyhow!("r: cbor into_text() error"))?,
+                        )
+                    };
+                }
+            }
+            Some(Location {
+                label,
+                city,
+                region,
+            })
+        };
+
+        let iv: ciborium::value::Integer = values
+            .remove("d")
+            .ok_or_else(|| anyhow!("missing 'd' field"))?
+            .into_integer()
+            .map_err(|_| anyhow!("d: cbor into_integer() error"))?;
+        let ii: i128 = ciborium::value::Integer::into(iv);
+        let datetime: DateTime<Utc> = DateTime::from_timestamp(ii as i64, 0).unwrap();
+
+        Ok(SearchResult {
+            asset_id: Default::default(),
+            filename,
+            media_type,
+            location,
+            datetime,
+        })
     }
 
-    // Serialize to a vector of bytes.
     fn to_bytes(&self) -> Result<Vec<u8>, Error> {
+        use ciborium::Value;
         let mut encoded: Vec<u8> = Vec::new();
-        let mut ser = serde_cbor::Serializer::new(&mut encoded);
-        IndexValue::serialize(self, &mut ser)?;
+        // Emit everything except the asset_id since that is part of the data
+        // store already, and use short names for an overall smaller size.
+        let mut fields: Vec<(Value, Value)> = vec![];
+
+        // filename
+        fields.push((Value::Text("n".into()), Value::Text(self.filename.clone())));
+
+        // media_type
+        fields.push((
+            Value::Text("m".into()),
+            Value::Text(self.media_type.clone()),
+        ));
+
+        // location
+        if let Some(ref loc) = self.location {
+            let mut parts: Vec<(Value, Value)> = vec![];
+            if let Some(ref label) = loc.label {
+                parts.push((Value::Text("l".into()), Value::Text(label.to_owned())));
+            } else {
+                parts.push((Value::Text("l".into()), Value::Null));
+            }
+            if let Some(ref city) = loc.city {
+                parts.push((Value::Text("c".into()), Value::Text(city.to_owned())));
+            } else {
+                parts.push((Value::Text("c".into()), Value::Null));
+            }
+            if let Some(ref region) = loc.region {
+                parts.push((Value::Text("r".into()), Value::Text(region.to_owned())));
+            } else {
+                parts.push((Value::Text("r".into()), Value::Null));
+            }
+            fields.push((Value::Text("l".into()), Value::Map(parts)));
+        } else {
+            fields.push((Value::Text("l".into()), Value::Null));
+        }
+
+        // datetime
+        fields.push((
+            Value::Text("d".into()),
+            Value::Integer(self.datetime.timestamp().into()),
+        ));
+
+        let doc = Value::Map(fields);
+        ciborium::ser::into_writer(&doc, &mut encoded)
+            .map_err(|err| anyhow!("cbor write error: {}", err))?;
         Ok(encoded)
     }
 }
@@ -670,5 +1062,174 @@ impl TryFrom<QueryResult> for SearchResult {
         let key_vec = (*value.doc_id).to_vec();
         result.asset_id = String::from_utf8(key_vec)?.split_off(6);
         Ok(result)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    // Asset does not implement a full Eq, it only compares the key
+    fn compare_assets(a: &Asset, b: &Asset) {
+        assert_eq!(a.key, b.key);
+        assert_eq!(a.checksum, b.checksum);
+        assert_eq!(a.filename, b.filename);
+        assert_eq!(a.byte_length, b.byte_length);
+        assert_eq!(a.media_type, b.media_type);
+        assert_eq!(a.tags, b.tags);
+        assert_eq!(a.import_date, b.import_date);
+        assert_eq!(a.caption, b.caption);
+        assert_eq!(a.location, b.location);
+        assert_eq!(a.user_date, b.user_date);
+        assert_eq!(a.original_date, b.original_date);
+        assert_eq!(a.dimensions, b.dimensions);
+    }
+
+    // SearchResult does not serialize the asset identifier
+    fn compare_results(a: &SearchResult, b: &SearchResult) {
+        assert_eq!(a.filename, b.filename);
+        assert_eq!(a.media_type, b.media_type);
+        assert_eq!(a.location, b.location);
+        assert_eq!(a.datetime, b.datetime);
+    }
+
+    // generate a sha1-XXX style hash of the given input
+    fn compute_key_hash(key: &str) -> String {
+        use sha1::{Digest, Sha1};
+        let mut hasher = Sha1::new();
+        hasher.update(key.as_bytes());
+        let digest = hasher.finalize();
+        return format!("sha1-{:x}", digest);
+    }
+
+    /// Construct an asset in which every field is populated.
+    pub fn build_complete_asset(key: &str) -> Asset {
+        let mut asset = build_minimal_asset(key);
+        asset.tags = vec!["beach".into(), "birds".into(), "waves".into()];
+        asset.caption = Some("fun in the sun".into());
+        asset.location = Some(Location::with_parts("beach", "Honolulu", "Hawaii"));
+        asset.user_date = Some(
+            Utc.with_ymd_and_hms(2018, 6, 1, 18, 15, 0)
+                .single()
+                .unwrap(),
+        );
+        asset.original_date = Some(
+            Utc.with_ymd_and_hms(2018, 5, 30, 12, 30, 0)
+                .single()
+                .unwrap(),
+        );
+        asset.dimensions = Some(Dimensions(1024, 768));
+        asset
+    }
+
+    /// Construct an asset with only required fields populated.
+    pub fn build_minimal_asset(key: &str) -> Asset {
+        let checksum = compute_key_hash(key);
+        let now_s = Utc::now().timestamp();
+        let import_date = DateTime::from_timestamp(now_s, 0).unwrap();
+        Asset {
+            key: key.to_owned(),
+            checksum,
+            filename: "img_2468.jpg".to_owned(),
+            byte_length: 1048576,
+            media_type: "image/jpeg".to_owned(),
+            tags: vec![],
+            import_date,
+            caption: None,
+            location: None,
+            user_date: None,
+            original_date: None,
+            dimensions: None,
+        }
+    }
+
+    #[test]
+    fn test_asset_from_to_bytes() {
+        // test with bare minimum asset
+        let asset = build_minimal_asset("minimal");
+        let bytes = asset.to_bytes().unwrap();
+        let key = "asset/minimal";
+        let actual = Asset::from_bytes(&key.as_bytes(), &bytes).unwrap();
+        compare_assets(&asset, &actual);
+
+        // test with maximally complete asset
+        let asset = build_complete_asset("maximal");
+        let bytes = asset.to_bytes().unwrap();
+        let key = "asset/maximal";
+        let actual = Asset::from_bytes(&key.as_bytes(), &bytes).unwrap();
+        compare_assets(&asset, &actual);
+
+        // test with asset that has only location label
+        let mut asset = build_minimal_asset("labelonly");
+        asset.location = Some(Location::new("hong kong"));
+        let bytes = asset.to_bytes().unwrap();
+        let key = "asset/labelonly";
+        let actual = Asset::from_bytes(&key.as_bytes(), &bytes).unwrap();
+        compare_assets(&asset, &actual);
+
+        // test with asset that has only location city
+        let mut asset = build_minimal_asset("cityonly");
+        asset.location = Some(Location {
+            label: None,
+            city: Some("Paris".into()),
+            region: None,
+        });
+        let bytes = asset.to_bytes().unwrap();
+        let key = "asset/cityonly";
+        let actual = Asset::from_bytes(&key.as_bytes(), &bytes).unwrap();
+        compare_assets(&asset, &actual);
+
+        // test with asset that has only location region
+        let mut asset = build_minimal_asset("regiononly");
+        asset.location = Some(Location {
+            label: None,
+            city: None,
+            region: Some("Oregon".into()),
+        });
+        let bytes = asset.to_bytes().unwrap();
+        let key = "asset/regiononly";
+        let actual = Asset::from_bytes(&key.as_bytes(), &bytes).unwrap();
+        compare_assets(&asset, &actual);
+    }
+
+    #[test]
+    fn test_searchresult_from_to_bytes() {
+        let now_s = Utc::now().timestamp();
+        let datetime = DateTime::from_timestamp(now_s, 0).unwrap();
+        // test with result that has only location label
+        let expected = SearchResult {
+            asset_id: "".into(),
+            filename: "img_1234.jpg".into(),
+            media_type: "image/jpeg".into(),
+            location: Some(Location::new("beach")),
+            datetime,
+        };
+        let bytes = expected.to_bytes().unwrap();
+        let actual = SearchResult::from_bytes(&bytes).unwrap();
+        compare_results(&expected, &actual);
+
+        // test with result that has only location city
+        let expected = SearchResult {
+            asset_id: "".into(),
+            filename: "img_1234.jpg".into(),
+            media_type: "image/jpeg".into(),
+            location: Some(Location::with_parts("", "Paris", "")),
+            datetime,
+        };
+        let bytes = expected.to_bytes().unwrap();
+        let actual = SearchResult::from_bytes(&bytes).unwrap();
+        compare_results(&expected, &actual);
+
+        // test with result that has only location region
+        let expected = SearchResult {
+            asset_id: "".into(),
+            filename: "img_1234.jpg".into(),
+            media_type: "image/jpeg".into(),
+            location: Some(Location::with_parts("", "", "Oregon")),
+            datetime,
+        };
+        let bytes = expected.to_bytes().unwrap();
+        let actual = SearchResult::from_bytes(&bytes).unwrap();
+        compare_results(&expected, &actual);
     }
 }

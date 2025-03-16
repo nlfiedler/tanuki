@@ -1,10 +1,11 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use crate::data::models::AssetDumpModel;
 use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, Location, SearchResult};
-use crate::domain::repositories::{BlobRepository, FetchedAssets, RecordRepository, SearchRepository};
+use crate::domain::repositories::{
+    BlobRepository, FetchedAssets, RecordRepository, SearchRepository,
+};
 use anyhow::{anyhow, Error};
 use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
@@ -131,13 +132,10 @@ impl RecordRepository for RecordRepositoryImpl {
         let mut count: u64 = 0;
         for asset_id in self.datasource.all_assets()? {
             let asset = self.datasource.get_asset_by_id(&asset_id)?;
-            // construct a vector and write each asset one by one in order to
-            // inject a newline after each row
-            let mut buffer: Vec<u8> = Vec::new();
-            let mut ser = serde_json::Serializer::new(&mut buffer);
-            AssetDumpModel::serialize(&asset, &mut ser)?;
-            buffer.push(0x0a);
-            writer.write(&buffer[..])?;
+            // separate assets by a newline for easy viewing and editing
+            let text = serde_json::to_string(&asset)?;
+            writer.write(&text.as_bytes())?;
+            writer.write(b"\n")?;
             count += 1;
         }
         Ok(count)
@@ -154,9 +152,8 @@ impl RecordRepository for RecordRepositoryImpl {
             if len == 0 {
                 break;
             }
-            let mut de = serde_json::Deserializer::from_str(&line);
-            let model = AssetDumpModel::deserialize(&mut de)?;
-            self.datasource.put_asset(&model)?;
+            let asset: Asset = serde_json::from_str(&line)?;
+            self.datasource.put_asset(&asset)?;
             count += 1;
         }
         Ok(count)

@@ -11,7 +11,7 @@ use std::fmt;
 use std::str::FromStr;
 
 /// Width and height in pixels of an image or video asset.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Dimensions(pub u32, pub u32);
 
 /// Digital asset entity.
@@ -244,7 +244,7 @@ impl cmp::PartialEq for AssetInput {
 impl cmp::Eq for AssetInput {}
 
 /// Location information regarding an asset.
-#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct Location {
     /// User-defined label describing the location.
     pub label: Option<String>,

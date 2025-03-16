@@ -118,6 +118,7 @@ pub fn build_basic_asset(key: &str) -> Asset {
 #[allow(dead_code)]
 pub fn build_complete_asset(key: &str) -> Asset {
     let mut asset = build_basic_asset(key);
+    asset.location = Some(Location::with_parts("beach", "Honolulu", "Hawaii"));
     asset.user_date = Some(
         Utc.with_ymd_and_hms(2018, 6, 1, 18, 15, 0)
             .single()
@@ -132,15 +133,12 @@ pub fn build_complete_asset(key: &str) -> Asset {
     asset
 }
 
-// Construct an asset with only required fields populated.
+/// Construct an asset with only required fields populated.
 #[allow(dead_code)]
 pub fn build_minimal_asset(key: &str) -> Asset {
     let checksum = compute_key_hash(key);
-    // limit the datetime to millisecond precision as not all data sources can
-    // store nanosecond precision values, and invoking the nanos variaents on
-    // DateTime will restrict the date year
-    let now_ms = Utc::now().timestamp_millis();
-    let import_date = DateTime::from_timestamp_millis(now_ms).unwrap();
+    let now_s = Utc::now().timestamp();
+    let import_date = DateTime::from_timestamp(now_s, 0).unwrap();
     Asset {
         key: key.to_owned(),
         checksum,
