@@ -1230,13 +1230,22 @@ mod tests {
                 );
                 Ok(())
             });
+        mock.expect_put_asset()
+            .withf(move |asset| asset.key == "2eHJndjc4ZzF6bjZ4anN6c2s4Lm1vdg==")
+            .returning(|asset| {
+                assert_eq!(asset.filename, "IMG_6019.MOV");
+                assert_eq!(asset.byte_length, 37190970);
+                assert_eq!(asset.location, Some(Location::new("car".into())));
+                Ok(())
+            });
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.load(Path::new("tests/fixtures/dump.json"));
+        println!("result: {:?}", result);
         // assert
         assert!(result.is_ok());
         let count = result.unwrap();
-        assert_eq!(count, 3);
+        assert_eq!(count, 4);
     }
 
     #[test]

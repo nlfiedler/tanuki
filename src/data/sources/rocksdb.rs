@@ -608,7 +608,18 @@ impl Document for Asset {
             .ok_or_else(|| anyhow!("missing 'lo' field"))?;
         let location: Option<Location> = if lo_value.is_null() {
             None
+        } else if lo_value.is_text() {
+            // location may be just a string if only a label is given
+            let label = lo_value
+                .into_text()
+                .map_err(|_| anyhow!("lo: cbor into_text() error"))?;
+            Some(Location {
+                label: Some(label),
+                city: None,
+                region: None,
+            })
         } else {
+            // otherwise the location has three fields
             let as_map: Vec<(Value, Value)> = lo_value
                 .into_map()
                 .map_err(|_| anyhow!("lo: cbor into_map() error"))?;
@@ -764,23 +775,31 @@ impl Document for Asset {
 
         // location
         if let Some(ref loc) = self.location {
-            let mut parts: Vec<(Value, Value)> = vec![];
-            if let Some(ref label) = loc.label {
-                parts.push((Value::Text("l".into()), Value::Text(label.to_owned())));
+            // if location has only a label, emit as a string
+            if loc.label.is_some() && loc.city.is_none() && loc.region.is_none() {
+                fields.push((
+                    Value::Text("lo".into()),
+                    Value::Text(loc.label.as_ref().unwrap().to_owned()),
+                ));
             } else {
-                parts.push((Value::Text("l".into()), Value::Null));
+                let mut parts: Vec<(Value, Value)> = vec![];
+                if let Some(ref label) = loc.label {
+                    parts.push((Value::Text("l".into()), Value::Text(label.to_owned())));
+                } else {
+                    parts.push((Value::Text("l".into()), Value::Null));
+                }
+                if let Some(ref city) = loc.city {
+                    parts.push((Value::Text("c".into()), Value::Text(city.to_owned())));
+                } else {
+                    parts.push((Value::Text("c".into()), Value::Null));
+                }
+                if let Some(ref region) = loc.region {
+                    parts.push((Value::Text("r".into()), Value::Text(region.to_owned())));
+                } else {
+                    parts.push((Value::Text("r".into()), Value::Null));
+                }
+                fields.push((Value::Text("lo".into()), Value::Map(parts)));
             }
-            if let Some(ref city) = loc.city {
-                parts.push((Value::Text("c".into()), Value::Text(city.to_owned())));
-            } else {
-                parts.push((Value::Text("c".into()), Value::Null));
-            }
-            if let Some(ref region) = loc.region {
-                parts.push((Value::Text("r".into()), Value::Text(region.to_owned())));
-            } else {
-                parts.push((Value::Text("r".into()), Value::Null));
-            }
-            fields.push((Value::Text("lo".into()), Value::Map(parts)));
         } else {
             fields.push((Value::Text("lo".into()), Value::Null));
         }

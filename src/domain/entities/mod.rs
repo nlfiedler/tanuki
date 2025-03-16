@@ -244,7 +244,7 @@ impl cmp::PartialEq for AssetInput {
 impl cmp::Eq for AssetInput {}
 
 /// Location information regarding an asset.
-#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct Location {
     /// User-defined label describing the location.
     pub label: Option<String>,
