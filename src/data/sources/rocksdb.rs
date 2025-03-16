@@ -516,8 +516,8 @@ fn convert_results(query_results: Vec<QueryResult>) -> Vec<SearchResult> {
 
 /// Encode the date/time as a BigEndian base32hex encoded value.
 fn encode_datetime(date: &DateTime<Utc>) -> Vec<u8> {
-    let millis = date.timestamp_millis();
-    let bytes = millis.to_be_bytes().to_vec();
+    let seconds = date.timestamp();
+    let bytes = seconds.to_be_bytes().to_vec();
     base32::encode(&bytes)
 }
 

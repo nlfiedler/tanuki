@@ -215,14 +215,14 @@ impl EntityDataSource for EntityDataSourceImpl {
         } else {
             Value::Null
         };
-        let imported = asset.import_date.timestamp_millis();
+        let imported = asset.import_date.timestamp();
         let user_date = if let Some(ud) = asset.user_date {
-            Value::Integer(ud.timestamp_millis())
+            Value::Integer(ud.timestamp())
         } else {
             Value::Null
         };
         let orig_date = if let Some(od) = asset.original_date {
-            Value::Integer(od.timestamp_millis())
+            Value::Integer(od.timestamp())
         } else {
             Value::Null
         };
@@ -366,7 +366,7 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
-        let before_ms = before.timestamp_millis();
+        let before_s = before.timestamp();
         //
         // SQLite "indexes on expressions" stipulates that the expression used
         // to query the table must match the one used to define the index, so be
@@ -380,7 +380,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE bestdate < ?1",
         )?;
-        let iter = stmt.query_map([before_ms], |row| search_result_from_row_no_tags(row))?;
+        let iter = stmt.query_map([before_s], |row| search_result_from_row_no_tags(row))?;
         let mut results: Vec<SearchResult> = vec![];
         for result in iter {
             results.push(result?);
@@ -389,7 +389,7 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_after_date(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
-        let after_ms = after.timestamp_millis();
+        let after_s = after.timestamp();
         //
         // SQLite "indexes on expressions" stipulates that the expression used
         // to query the table must match the one used to define the index, so be
@@ -403,7 +403,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE bestdate >= ?1",
         )?;
-        let iter = stmt.query_map([after_ms], |row| search_result_from_row_no_tags(row))?;
+        let iter = stmt.query_map([after_s], |row| search_result_from_row_no_tags(row))?;
         let mut results: Vec<SearchResult> = vec![];
         for result in iter {
             results.push(result?);
@@ -416,8 +416,8 @@ impl EntityDataSource for EntityDataSourceImpl {
         after: DateTime<Utc>,
         before: DateTime<Utc>,
     ) -> Result<Vec<SearchResult>, Error> {
-        let after_ms = after.timestamp_millis();
-        let before_ms = before.timestamp_millis();
+        let after_s = after.timestamp();
+        let before_s = before.timestamp();
         //
         // SQLite "indexes on expressions" stipulates that the expression used
         // to query the table must match the one used to define the index, so be
@@ -431,7 +431,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE bestdate >= ?1 AND bestdate < ?2",
         )?;
-        let iter = stmt.query_map([after_ms, before_ms], |row| {
+        let iter = stmt.query_map([after_s, before_s], |row| {
             search_result_from_row_no_tags(row)
         })?;
         let mut results: Vec<SearchResult> = vec![];
@@ -442,7 +442,7 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
-        let after_ms = after.timestamp_millis();
+        let after_s = after.timestamp();
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region, imported
@@ -450,7 +450,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE imported >= ?1 AND tags IS NULL AND caption IS NULL AND label IS NULL",
         )?;
-        let iter = stmt.query_map([after_ms], |row| search_result_from_row_no_tags(row))?;
+        let iter = stmt.query_map([after_s], |row| search_result_from_row_no_tags(row))?;
         let mut results: Vec<SearchResult> = vec![];
         for result in iter {
             results.push(result?);
@@ -528,15 +528,15 @@ impl EntityDataSource for EntityDataSourceImpl {
         let year_iter = stmt.query_map([], |row| {
             // prefer user_date if available
             if let Some(value) = row.get::<usize, Option<i64>>(0)? {
-                return Ok(DateTime::from_timestamp_millis(value).unwrap());
+                return Ok(DateTime::from_timestamp(value, 0).unwrap());
             }
             // otherwise use original date
             if let Some(value) = row.get::<usize, Option<i64>>(1)? {
-                return Ok(DateTime::from_timestamp_millis(value).unwrap());
+                return Ok(DateTime::from_timestamp(value, 0).unwrap());
             }
             // imported is not null and the last resort
             let value: i64 = row.get(2)?;
-            Ok(DateTime::from_timestamp_millis(value).unwrap())
+            Ok(DateTime::from_timestamp(value, 0).unwrap())
         })?;
         let mut key_counts: HashMap<i32, usize> = HashMap::new();
         for result in year_iter {
@@ -670,8 +670,8 @@ fn asset_from_row(row: &rusqlite::Row) -> Result<Asset, rusqlite::Error> {
     asset.byte_length(filesize);
     let mimetype: String = row.get(4)?;
     asset.media_type(mimetype);
-    let imported_ms: i64 = row.get(8)?;
-    let imported: DateTime<Utc> = DateTime::from_timestamp_millis(imported_ms).unwrap();
+    let imported_s: i64 = row.get(8)?;
+    let imported: DateTime<Utc> = DateTime::from_timestamp(imported_s, 0).unwrap();
     asset.import_date(imported);
 
     // cells that may be null
@@ -682,12 +682,12 @@ fn asset_from_row(row: &rusqlite::Row) -> Result<Asset, rusqlite::Error> {
         let tags: Vec<String> = tags_str.split("\t").map(|t| t.to_owned()).collect();
         asset.tags(tags);
     }
-    if let Some(user_date_ms) = row.get(9)? {
-        let user_date: DateTime<Utc> = DateTime::from_timestamp_millis(user_date_ms).unwrap();
+    if let Some(user_date_s) = row.get(9)? {
+        let user_date: DateTime<Utc> = DateTime::from_timestamp(user_date_s, 0).unwrap();
         asset.user_date(user_date);
     }
-    if let Some(orig_date_ms) = row.get(10)? {
-        let orig_date: DateTime<Utc> = DateTime::from_timestamp_millis(orig_date_ms).unwrap();
+    if let Some(orig_date_s) = row.get(10)? {
+        let orig_date: DateTime<Utc> = DateTime::from_timestamp(orig_date_s, 0).unwrap();
         asset.original_date(orig_date);
     }
     if let Some(pixel_w) = row.get(11)? {
@@ -717,8 +717,8 @@ fn search_result_from_row_tags(row: &rusqlite::Row) -> Result<SearchResult, rusq
     let key: String = row.get(0)?;
     let filename: String = row.get(1)?;
     let mimetype: String = row.get(2)?;
-    let datetime_ms: i64 = row.get(7)?;
-    let datetime = DateTime::from_timestamp_millis(datetime_ms).unwrap();
+    let datetime_s: i64 = row.get(7)?;
+    let datetime = DateTime::from_timestamp(datetime_s, 0).unwrap();
 
     // location is a combination of optional values
     let label: Option<String> = row.get(4)?;
@@ -750,8 +750,8 @@ fn search_result_from_row_no_tags(row: &rusqlite::Row) -> Result<SearchResult, r
     let key: String = row.get(0)?;
     let filename: String = row.get(1)?;
     let mimetype: String = row.get(2)?;
-    let datetime_ms: i64 = row.get(6)?;
-    let datetime = DateTime::from_timestamp_millis(datetime_ms).unwrap();
+    let datetime_s: i64 = row.get(6)?;
+    let datetime = DateTime::from_timestamp(datetime_s, 0).unwrap();
 
     // location is a combination of optional values
     let label: Option<String> = row.get(3)?;
