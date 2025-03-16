@@ -141,7 +141,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE key = ?1",
         )?;
-        let mut asset_iter = stmt.query_map([asset_id], |row| asset_from_row(row))?;
+        let mut asset_iter = stmt.query_map([asset_id], |row| Asset::try_from(row))?;
         if let Some(result) = asset_iter.next() {
             Ok(result?)
         } else {
@@ -156,7 +156,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE hash = ?1",
         )?;
-        let mut asset_iter = stmt.query_map([digest], |row| asset_from_row(row))?;
+        let mut asset_iter = stmt.query_map([digest], |row| Asset::try_from(row))?;
         if let Some(result) = asset_iter.next() {
             Ok(Some(result?))
         } else {
@@ -641,7 +641,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         // functions to avoid the type mismatch.
         let asset_iter = stmt
             .query_map([cursor.unwrap_or("0".into()), count.to_string()], |row| {
-                asset_from_row(row)
+                Asset::try_from(row)
             })?;
         let mut results: Vec<Asset> = vec![];
         for result in asset_iter {
@@ -657,58 +657,62 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 }
 
-// for a row in which "SELECT assets.*, locations.*" was queried
-fn asset_from_row(row: &rusqlite::Row) -> Result<Asset, rusqlite::Error> {
-    // all of the not null cells
-    let key: String = row.get(0)?;
-    let mut asset = Asset::new(key);
-    let hash: String = row.get(1)?;
-    asset.checksum(hash);
-    let filename: String = row.get(2)?;
-    asset.filename(filename);
-    let filesize: u64 = row.get(3)?;
-    asset.byte_length(filesize);
-    let mimetype: String = row.get(4)?;
-    asset.media_type(mimetype);
-    let imported_s: i64 = row.get(8)?;
-    let imported: DateTime<Utc> = DateTime::from_timestamp(imported_s, 0).unwrap();
-    asset.import_date(imported);
+impl<'a> TryFrom<&'a rusqlite::Row<'_>> for Asset {
+    type Error = rusqlite::Error;
 
-    // cells that may be null
-    if let Some(caption) = row.get(5)? {
-        asset.caption(caption);
-    }
-    if let Some(tags_str) = row.get::<usize, Option<String>>(6)? {
-        let tags: Vec<String> = tags_str.split("\t").map(|t| t.to_owned()).collect();
-        asset.tags(tags);
-    }
-    if let Some(user_date_s) = row.get(9)? {
-        let user_date: DateTime<Utc> = DateTime::from_timestamp(user_date_s, 0).unwrap();
-        asset.user_date(user_date);
-    }
-    if let Some(orig_date_s) = row.get(10)? {
-        let orig_date: DateTime<Utc> = DateTime::from_timestamp(orig_date_s, 0).unwrap();
-        asset.original_date(orig_date);
-    }
-    if let Some(pixel_w) = row.get(11)? {
-        // if one is given we then assume the other is not null
-        let pixel_h: u32 = row.get(12)?;
-        asset.dimensions(Dimensions(pixel_w, pixel_h));
-    }
+    // for a row in which "SELECT assets.*, locations.*" was queried
+    fn try_from(row: &rusqlite::Row) -> Result<Self, rusqlite::Error> {
+        // all of the not null cells
+        let key: String = row.get(0)?;
+        let mut asset = Asset::new(key);
+        let hash: String = row.get(1)?;
+        asset.checksum(hash);
+        let filename: String = row.get(2)?;
+        asset.filename(filename);
+        let filesize: u64 = row.get(3)?;
+        asset.byte_length(filesize);
+        let mimetype: String = row.get(4)?;
+        asset.media_type(mimetype);
+        let imported_s: i64 = row.get(8)?;
+        let imported: DateTime<Utc> = DateTime::from_timestamp(imported_s, 0).unwrap();
+        asset.import_date(imported);
 
-    // location is a combination of optional values
-    let label: Option<String> = row.get(14)?;
-    let city: Option<String> = row.get(15)?;
-    let region: Option<String> = row.get(16)?;
-    let location = Location {
-        label,
-        city,
-        region,
-    };
-    if location.has_values() {
-        asset.location(location);
+        // cells that may be null
+        if let Some(caption) = row.get(5)? {
+            asset.caption(caption);
+        }
+        if let Some(tags_str) = row.get::<usize, Option<String>>(6)? {
+            let tags: Vec<String> = tags_str.split("\t").map(|t| t.to_owned()).collect();
+            asset.tags(tags);
+        }
+        if let Some(user_date_s) = row.get(9)? {
+            let user_date: DateTime<Utc> = DateTime::from_timestamp(user_date_s, 0).unwrap();
+            asset.user_date(user_date);
+        }
+        if let Some(orig_date_s) = row.get(10)? {
+            let orig_date: DateTime<Utc> = DateTime::from_timestamp(orig_date_s, 0).unwrap();
+            asset.original_date(orig_date);
+        }
+        if let Some(pixel_w) = row.get(11)? {
+            // if one is given we then assume the other is not null
+            let pixel_h: u32 = row.get(12)?;
+            asset.dimensions(Dimensions(pixel_w, pixel_h));
+        }
+
+        // location is a combination of optional values
+        let label: Option<String> = row.get(14)?;
+        let city: Option<String> = row.get(15)?;
+        let region: Option<String> = row.get(16)?;
+        let location = Location {
+            label,
+            city,
+            region,
+        };
+        if location.has_values() {
+            asset.location(location);
+        }
+        Ok(asset)
     }
-    Ok(asset)
 }
 
 // create a search result from the row returned by the query_by_tags() function
@@ -784,6 +788,11 @@ fn query_location_rowid(loc: &Location, db: &Connection) -> Result<i64, rusqlite
     let city_is_some = loc.city.is_some();
     let region_is_some = loc.region.is_some();
 
+    //
+    // All this redundancy because getting the type compotibility right is
+    // difficult with Rust, and we need to use "IS NULL" in SQLite rather than
+    // "= NULL" since the two expressions are apparently not the same thing.
+    //
     if label_is_some && city_is_some && region_is_some {
         // 7) 1 1 1
         let mut stmt =

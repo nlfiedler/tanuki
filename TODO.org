@@ -48,12 +48,12 @@
 ***** c.f. https://duckdb.org/docs/stable/guides/performance/indexing
 **** TODO ~load~ should use ~Appender API~ via =append_rows()= function to add many rows at a time
 ***** DuckDB can easily handle 10,000 rows at a time
-** TODO Finish SQLite implementation
-*** TODO convert =asset_from_row()= into a =From= or =Into=
+** TODO change dump/load to operate in batches
 *** TODO change =RecordRepositoryImpl::dump()= in repo to call =fetch_assets()= to get assets in batches
+*** TODO change =RecordRepositoryImpl::load()= to read batches of lines at a time, convert to =Vec<Asset>=
+*** TODO add =store_assets()= to data sources that receives a =Vec<Asset>= argument
+** TODO Finish SQLite implementation
 *** TODO consider how to make loading many assets faster
-**** change =RecordRepositoryImpl::load()= to read batches of lines at a time, convert to =Vec<Asset>=
-**** add =store_assets()= to data sources that receives a =Vec<Asset>= argument
 **** use =SELECT key FROM assets WHERE key IN (...)= to search multiple values at once
 **** partition the incoming assets into UPDATE/INSERT groups appropriately
 **** load timing for 21,502 records on M1 w/USB-HDD (Zbackup)
