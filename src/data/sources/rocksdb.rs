@@ -497,6 +497,16 @@ impl EntityDataSource for EntityDataSourceImpl {
             cursor,
         })
     }
+
+    fn store_assets(&self, incoming: Vec<Asset>) -> Result<(), Error> {
+        // RocksDB is already super fast at writing key/value pairs, and other
+        // than serializing the asset into bytes, there is nothing special to be
+        // done here in terms of performance.
+        for asset in incoming.iter() {
+            self.put_asset(asset)?;
+        }
+        Ok(())
+    }
 }
 
 /// Convert the database query results to our search results.

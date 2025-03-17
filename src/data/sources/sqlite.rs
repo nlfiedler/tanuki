@@ -215,27 +215,27 @@ impl EntityDataSource for EntityDataSourceImpl {
         } else {
             Value::Null
         };
-        let imported = asset.import_date.timestamp();
         let user_date = if let Some(ud) = asset.user_date {
             Value::Integer(ud.timestamp())
         } else {
             Value::Null
-        };
-        let orig_date = if let Some(od) = asset.original_date {
-            Value::Integer(od.timestamp())
-        } else {
-            Value::Null
-        };
-        let (pixel_w, pixel_h): (Value, Value) = if let Some(ref dim) = asset.dimensions {
-            (Value::Integer(dim.0.into()), Value::Integer(dim.1.into()))
-        } else {
-            (Value::Null, Value::Null)
         };
 
         // check if an asset with the given key already exists
         let mut stmt = db.prepare("SELECT COUNT(*) FROM assets WHERE key = ?1")?;
         let count: u64 = stmt.query_row([&asset.key], |row| row.get(0))?;
         if count == 0 {
+            let imported = asset.import_date.timestamp();
+            let orig_date = if let Some(od) = asset.original_date {
+                Value::Integer(od.timestamp())
+            } else {
+                Value::Null
+            };
+            let (pixel_w, pixel_h): (Value, Value) = if let Some(ref dim) = asset.dimensions {
+                (Value::Integer(dim.0.into()), Value::Integer(dim.1.into()))
+            } else {
+                (Value::Null, Value::Null)
+            };
             db.execute(
                 "INSERT INTO assets
                 (key, hash, filename, filesize, mimetype, caption, tags, location, imported,
@@ -654,6 +654,13 @@ impl EntityDataSource for EntityDataSourceImpl {
             assets: results,
             cursor,
         })
+    }
+
+    fn store_assets(&self, incoming: Vec<Asset>) -> Result<(), Error> {
+        for asset in incoming.iter() {
+            self.put_asset(asset)?;
+        }
+        Ok(())
     }
 }
 

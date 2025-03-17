@@ -93,6 +93,13 @@ pub trait EntityDataSource: Send + Sync {
     /// be the value returned in the `FetchedAssets` in order to continue the
     /// scan through the data source.
     fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<FetchedAssets, Error>;
+
+    /// Store multiple assets into the data source.
+    ///
+    /// Data sources are free to implement this in whatever manner helps with
+    /// performance and/or data integrity. For some, this may mean nothing more
+    /// than simply iterating over the set and invoking `put_asset()`.
+    fn store_assets(&self, incoming: Vec<Asset>) -> Result<(), Error>;
 }
 
 ///

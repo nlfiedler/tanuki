@@ -4,12 +4,12 @@
 mod common;
 
 use chrono::prelude::*;
-use common::DBPath;
+use common::{compare_assets, DBPath};
 use std::str::FromStr;
 use tanuki::data::sources::rocksdb::EntityDataSourceImpl as RockySource;
 use tanuki::data::sources::sqlite::EntityDataSourceImpl as SqliteSource;
 use tanuki::data::sources::EntityDataSource;
-use tanuki::domain::entities::Location;
+use tanuki::domain::entities::{Asset, Location};
 
 #[test]
 fn test_data_source_get_put_delete_asset() {
@@ -864,4 +864,37 @@ fn do_test_data_source_fetch_assets(datasource: Box<dyn EntityDataSource>) {
     assert_eq!(actual.assets[0].key, "aaaaaaa");
     assert_eq!(actual.assets[1].key, "bbbbbbb");
     assert_eq!(actual.assets[2].key, "ccccccc");
+}
+
+#[test]
+fn test_data_source_store_assets() {
+    let db_path = DBPath::new("_test_store_assets");
+    let datasource = RockySource::new(&db_path).unwrap();
+    do_test_data_source_store_assets(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_store_assets");
+    let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_store_assets(Box::new(datasource));
+}
+
+fn do_test_data_source_store_assets(datasource: Box<dyn EntityDataSource>) {
+    let incoming: Vec<Asset> = vec![
+        common::build_basic_asset("aaaaaaa"),
+        common::build_basic_asset("bbbbbbb"),
+        common::build_basic_asset("ccccccc"),
+        common::build_basic_asset("ddddddd"),
+        common::build_basic_asset("eeeeeee"),
+        common::build_basic_asset("fffffff"),
+        common::build_basic_asset("ggggggg"),
+        common::build_basic_asset("hhhhhhh"),
+    ];
+    let result = datasource.store_assets(incoming.clone());
+    assert!(result.is_ok());
+
+    let mut fetched = datasource.fetch_assets(None, 100).unwrap();
+    assert_eq!(fetched.assets.len(), incoming.len());
+    fetched.assets.sort_unstable_by(|a, b| a.key.cmp(&b.key));
+    for pairs in fetched.assets.iter().zip(incoming.iter()) {
+        compare_assets(pairs.0, pairs.1);
+    }
 }

@@ -129,23 +129,30 @@ impl RecordRepository for RecordRepositoryImpl {
         use std::io::Write;
         let file = std::fs::File::create(filepath)?;
         let mut writer = std::io::BufWriter::new(file);
-        let mut count: u64 = 0;
-        for asset_id in self.datasource.all_assets()? {
-            let asset = self.datasource.get_asset_by_id(&asset_id)?;
-            // separate assets by a newline for easy viewing and editing
-            let text = serde_json::to_string(&asset)?;
-            writer.write(&text.as_bytes())?;
-            writer.write(b"\n")?;
-            count += 1;
+        let mut count: usize = 0;
+        let mut cursor: Option<String> = None;
+        loop {
+            let mut batch = self.datasource.fetch_assets(cursor, 1024)?;
+            count += batch.assets.len();
+            for asset in batch.assets.into_iter() {
+                let text = serde_json::to_string(&asset)?;
+                writer.write(&text.as_bytes())?;
+                writer.write(b"\n")?;
+            }
+            cursor = batch.cursor.take();
+            if cursor.is_none() {
+                break;
+            }
         }
-        Ok(count)
+        Ok(count as u64)
     }
 
     fn load(&self, filepath: &Path) -> Result<u64, Error> {
         use std::io::BufRead;
         let file = std::fs::File::open(filepath)?;
         let mut reader = std::io::BufReader::new(file);
-        let mut count: u64 = 0;
+        let mut count: usize = 0;
+        let mut batch: Vec<Asset> = vec![];
         loop {
             let mut line = String::new();
             let len = reader.read_line(&mut line)?;
@@ -153,10 +160,18 @@ impl RecordRepository for RecordRepositoryImpl {
                 break;
             }
             let asset: Asset = serde_json::from_str(&line)?;
-            self.datasource.put_asset(&asset)?;
-            count += 1;
+            batch.push(asset);
+            if batch.len() >= 1024 {
+                count += batch.len();
+                self.datasource.store_assets(batch)?;
+                batch = vec![];
+            }
         }
-        Ok(count)
+        if !batch.is_empty() {
+            count += batch.len();
+            self.datasource.store_assets(batch)?;
+        }
+        Ok(count as u64)
     }
 }
 
@@ -1124,64 +1139,67 @@ mod tests {
         let digest2 = "sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07";
         let digest3 = "sha256-2955581c357f7b4b3cd29af11d9bebd32a4ad1746e36c6792dc9fa41a1d967ae";
         let mut mock = MockEntityDataSource::new();
-        mock.expect_all_assets()
-            .returning(move || Ok(vec![key1.to_owned(), key2.to_owned(), key3.to_owned()]));
-        mock.expect_get_asset_by_id()
-            .with(eq(key1))
-            .returning(move |_| {
-                Ok(Asset {
-                    key: key1.to_owned(),
-                    checksum: digest1.to_owned(),
-                    filename: "f1t.jpg".to_owned(),
-                    byte_length: 841,
-                    media_type: "image/jpeg".to_owned(),
-                    tags: vec!["cat".to_owned(), "dog".to_owned()],
-                    import_date: Utc::now(),
-                    caption: Some("cute cat and dog playing".into()),
-                    location: None,
-                    user_date: None,
-                    original_date: None,
-                    dimensions: Some(Dimensions(48, 80)),
+        mock.expect_fetch_assets()
+            .withf(|c, _| c.is_none())
+            .returning(move |_, _| {
+                Ok(FetchedAssets {
+                    assets: vec![
+                        Asset {
+                            key: key1.to_owned(),
+                            checksum: digest1.to_owned(),
+                            filename: "f1t.jpg".to_owned(),
+                            byte_length: 841,
+                            media_type: "image/jpeg".to_owned(),
+                            tags: vec!["cat".to_owned(), "dog".to_owned()],
+                            import_date: Utc::now(),
+                            caption: Some("cute cat and dog playing".into()),
+                            location: None,
+                            user_date: None,
+                            original_date: None,
+                            dimensions: Some(Dimensions(48, 80)),
+                        },
+                        Asset {
+                            key: key2.to_owned(),
+                            checksum: digest2.to_owned(),
+                            filename: "dcp_1069.jpg".to_owned(),
+                            byte_length: 80977,
+                            media_type: "image/jpeg".to_owned(),
+                            tags: vec!["mariachi".to_owned()],
+                            import_date: Utc::now(),
+                            caption: Some("mariachi band playing".into()),
+                            location: Some(Location::new("cabo san lucas".into())),
+                            user_date: None,
+                            original_date: None,
+                            dimensions: Some(Dimensions(440, 292)),
+                        },
+                        Asset {
+                            key: key3.to_owned(),
+                            checksum: digest3.to_owned(),
+                            filename: "shirt_small.heic".to_owned(),
+                            byte_length: 4995,
+                            media_type: "image/jpeg".to_owned(),
+                            tags: vec!["coffee".to_owned()],
+                            import_date: Utc::now(),
+                            caption: None,
+                            location: Some(Location {
+                                label: Some("peet's".into()),
+                                city: Some("Berkeley".into()),
+                                region: Some("CA".into()),
+                            }),
+                            user_date: None,
+                            original_date: None,
+                            dimensions: Some(Dimensions(324, 304)),
+                        },
+                    ],
+                    cursor: None,
                 })
             });
-        mock.expect_get_asset_by_id()
-            .with(eq(key2))
-            .returning(move |_| {
-                Ok(Asset {
-                    key: key2.to_owned(),
-                    checksum: digest2.to_owned(),
-                    filename: "dcp_1069.jpg".to_owned(),
-                    byte_length: 80977,
-                    media_type: "image/jpeg".to_owned(),
-                    tags: vec!["mariachi".to_owned()],
-                    import_date: Utc::now(),
-                    caption: Some("mariachi band playing".into()),
-                    location: Some(Location::new("cabo san lucas".into())),
-                    user_date: None,
-                    original_date: None,
-                    dimensions: Some(Dimensions(440, 292)),
-                })
-            });
-        mock.expect_get_asset_by_id()
-            .with(eq(key3))
-            .returning(move |_| {
-                Ok(Asset {
-                    key: key3.to_owned(),
-                    checksum: digest3.to_owned(),
-                    filename: "shirt_small.heic".to_owned(),
-                    byte_length: 4995,
-                    media_type: "image/jpeg".to_owned(),
-                    tags: vec!["coffee".to_owned()],
-                    import_date: Utc::now(),
-                    caption: None,
-                    location: Some(Location {
-                        label: Some("peet's".into()),
-                        city: Some("Berkeley".into()),
-                        region: Some("CA".into()),
-                    }),
-                    user_date: None,
-                    original_date: None,
-                    dimensions: Some(Dimensions(324, 304)),
+        mock.expect_fetch_assets()
+            .withf(|c, _| c.is_some())
+            .returning(|_, _| {
+                Ok(FetchedAssets {
+                    assets: vec![],
+                    cursor: None,
                 })
             });
         // act
@@ -1199,49 +1217,43 @@ mod tests {
     fn test_repo_load_ok() {
         // arrange
         let mut mock = MockEntityDataSource::new();
-        mock.expect_put_asset()
-            .withf(move |asset| asset.key == "dGVzdHMvZml4dHVyZXMvZjF0LmpwZw==")
-            .returning(|asset| {
-                assert_eq!(asset.filename, "f1t.jpg");
-                assert_eq!(asset.byte_length, 841);
-                assert_eq!(asset.location, None);
-                Ok(())
-            });
-        mock.expect_put_asset()
-            .withf(move |asset| asset.key == "dGVzdHMvZml4dHVyZXMvZGNwXzEwNjkuanBn")
-            .returning(|asset| {
-                assert_eq!(asset.filename, "dcp_1069.jpg");
-                assert_eq!(asset.byte_length, 80977);
-                assert_eq!(asset.location, Some(Location::new("cabo san lucas".into())));
-                Ok(())
-            });
-        mock.expect_put_asset()
-            .withf(move |asset| asset.key == "dGVzdHMvZml4dHVyZXMvc2hpcnRfc21hbGwuaGVpYw==")
-            .returning(|asset| {
-                assert_eq!(asset.filename, "shirt_small.heic");
-                assert_eq!(asset.byte_length, 4995);
-                assert_eq!(
-                    asset.location,
-                    Some(Location {
-                        label: Some("peet's".into()),
-                        city: Some("Berkeley".into()),
-                        region: Some("CA".into())
-                    })
-                );
-                Ok(())
-            });
-        mock.expect_put_asset()
-            .withf(move |asset| asset.key == "2eHJndjc4ZzF6bjZ4anN6c2s4Lm1vdg==")
-            .returning(|asset| {
-                assert_eq!(asset.filename, "IMG_6019.MOV");
-                assert_eq!(asset.byte_length, 37190970);
-                assert_eq!(asset.location, Some(Location::new("car".into())));
-                Ok(())
-            });
+        mock.expect_store_assets().returning(|incoming| {
+            let mut found: u32 = 4;
+            for asset in incoming.iter() {
+                if asset.key == "dGVzdHMvZml4dHVyZXMvZjF0LmpwZw==" {
+                    assert_eq!(asset.filename, "f1t.jpg");
+                    assert_eq!(asset.byte_length, 841);
+                    assert_eq!(asset.location, None);
+                } else if asset.key == "dGVzdHMvZml4dHVyZXMvZGNwXzEwNjkuanBn" {
+                    assert_eq!(asset.filename, "dcp_1069.jpg");
+                    assert_eq!(asset.byte_length, 80977);
+                    assert_eq!(asset.location, Some(Location::new("cabo san lucas".into())));
+                } else if asset.key == "dGVzdHMvZml4dHVyZXMvc2hpcnRfc21hbGwuaGVpYw==" {
+                    assert_eq!(asset.filename, "shirt_small.heic");
+                    assert_eq!(asset.byte_length, 4995);
+                    assert_eq!(
+                        asset.location,
+                        Some(Location {
+                            label: Some("peet's".into()),
+                            city: Some("Berkeley".into()),
+                            region: Some("CA".into())
+                        })
+                    );
+                } else if asset.key == "2eHJndjc4ZzF6bjZ4anN6c2s4Lm1vdg==" {
+                    assert_eq!(asset.filename, "IMG_6019.MOV");
+                    assert_eq!(asset.byte_length, 37190970);
+                    assert_eq!(asset.location, Some(Location::new("car".into())));
+                } else {
+                    panic!("found unexpected asset");
+                }
+                found -= 1;
+            }
+            assert_eq!(found, 0);
+            Ok(())
+        });
         // act
         let repo = RecordRepositoryImpl::new(Arc::new(mock));
         let result = repo.load(Path::new("tests/fixtures/dump.json"));
-        println!("result: {:?}", result);
         // assert
         assert!(result.is_ok());
         let count = result.unwrap();
