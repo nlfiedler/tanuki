@@ -48,18 +48,10 @@
 ***** c.f. https://duckdb.org/docs/stable/guides/performance/indexing
 **** TODO ~load~ should use ~Appender API~ via =append_rows()= function to add many rows at a time
 ***** DuckDB can easily handle 10,000 rows at a time
-** TODO Finish SQLite implementation
-*** TODO fix the =query_by_tags()= to use =REGEXP=
-**** can combine multiple =tags REGEXP '\bvalue\b'= with =AND=
-#+begin_src sql
-SELECT COUNT(*) FROM assets WHERE tags REGEXP '\bjoseph\b' AND tags REGEXP '\bchristina\b';
-#+end_src
-*** TODO see what can be done about =query_by_locations()=
-*** TODO consider when to remove orphaned locations
-** TODO bug? why do the 1913 photos not appear when browsing all assets?
-*** could the index be out of date? NO
-*** what is the actual date used for those assets?
-*** is the query only going back 100 years?
+** TODO bug: 1913 photos not appear at the end of home page results
+*** only happens on RocksDB, SQLite is fine
+*** test locally
+*** could be the =query_newborn()= is handling the date incorrectly
 ** Try leptos upgrade again
 *** start from scratch, copying changes from ~upgrade~ branch
 *** see =upgrade= branch; there are many problems
@@ -239,6 +231,8 @@ SELECT COUNT(*) FROM assets WHERE tags REGEXP '\bjoseph\b' AND tags REGEXP '\bch
 ***** when fetching a new page, the page widget would show a progress indicator
 ***** the "dropped" pages would be changed to consist of placeholders to free memory
 **** using carousel style navigation arrows?
+** SQLite
+*** consider when to remove orphaned locations
 ** Hosting externally
 *** consider storage costs (currently under 100 GB)
 *** place basic auth server in front (Azure app gateway maybe?)

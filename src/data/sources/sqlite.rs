@@ -231,22 +231,30 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error> {
+        //
+        // Would like to use "WHERE tags REGEXP '\bterm\b'"" to save a lot of
+        // work manually comparing the tags, but that requires loading an
+        // extension that is not built into the SQLite used by rusqlite.
+        //
         let lowered: Vec<String> = tags.iter().map(|t| t.to_lowercase()).collect();
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
-            "SELECT key, filename, mimetype, tags, label, city, region,
-                best_date(user_date, orig_date, imported) AS bestdate
+            "SELECT key, filename, mimetype, label, city, region,
+                best_date(user_date, orig_date, imported) AS bestdate, tags
             FROM assets
-            LEFT JOIN locations ON assets.location = locations.id",
+            LEFT JOIN locations ON assets.location = locations.id
+            WHERE tags IS NOT NULL",
         )?;
         let iter = stmt.query_map([], |row| {
-            if let Some(row_tags_str) = row.get::<usize, Option<String>>(3)? {
-                let row_tags: Vec<String> = row_tags_str
+            if let Some(row_tags_str) = row.get::<usize, Option<String>>(7)? {
+                let row_tags: HashSet<String> = row_tags_str
                     .split("\t")
                     .map(|t| t.to_lowercase().to_owned())
                     .collect();
                 if lowered.iter().all(|t| row_tags.contains(t)) {
-                    Ok(Some(search_result_from_row_tags(row)))
+                    // using search_result_from_row() will work because all of
+                    // the terms before 'tags' match all of the other queries
+                    Ok(Some(search_result_from_row(row)))
                 } else {
                     // not all tags match
                     Ok(None)
@@ -279,7 +287,7 @@ impl EntityDataSource for EntityDataSourceImpl {
                 .filter_map(|o: Option<String>| o.map(|l| l.to_lowercase()))
                 .collect();
             if lowered.iter().all(|t| row_values.contains(t)) {
-                Ok(Some(search_result_from_row_no_tags(row)))
+                Ok(Some(search_result_from_row(row)))
             } else {
                 // not all tags match
                 Ok(None)
@@ -303,7 +311,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE mimetype = ?1",
         )?;
-        let iter = stmt.query_map([media_type], |row| search_result_from_row_no_tags(row))?;
+        let iter = stmt.query_map([media_type], |row| search_result_from_row(row))?;
         let mut results: Vec<SearchResult> = vec![];
         for result in iter {
             results.push(result?);
@@ -326,7 +334,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE bestdate < ?1",
         )?;
-        let iter = stmt.query_map([before_s], |row| search_result_from_row_no_tags(row))?;
+        let iter = stmt.query_map([before_s], |row| search_result_from_row(row))?;
         let mut results: Vec<SearchResult> = vec![];
         for result in iter {
             results.push(result?);
@@ -349,7 +357,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE bestdate >= ?1",
         )?;
-        let iter = stmt.query_map([after_s], |row| search_result_from_row_no_tags(row))?;
+        let iter = stmt.query_map([after_s], |row| search_result_from_row(row))?;
         let mut results: Vec<SearchResult> = vec![];
         for result in iter {
             results.push(result?);
@@ -377,9 +385,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE bestdate >= ?1 AND bestdate < ?2",
         )?;
-        let iter = stmt.query_map([after_s, before_s], |row| {
-            search_result_from_row_no_tags(row)
-        })?;
+        let iter = stmt.query_map([after_s, before_s], |row| search_result_from_row(row))?;
         let mut results: Vec<SearchResult> = vec![];
         for result in iter {
             results.push(result?);
@@ -396,7 +402,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE imported >= ?1 AND tags IS NULL AND caption IS NULL AND label IS NULL",
         )?;
-        let iter = stmt.query_map([after_s], |row| search_result_from_row_no_tags(row))?;
+        let iter = stmt.query_map([after_s], |row| search_result_from_row(row))?;
         let mut results: Vec<SearchResult> = vec![];
         for result in iter {
             results.push(result?);
@@ -769,41 +775,9 @@ impl<'a> TryFrom<&'a rusqlite::Row<'_>> for Asset {
     }
 }
 
-// create a search result from the row returned by the query_by_tags() function
-fn search_result_from_row_tags(row: &rusqlite::Row) -> Result<SearchResult, rusqlite::Error> {
-    // SELECT key, filename, mimetype, tags, label, city, region, bestdate
-    let key: String = row.get(0)?;
-    let filename: String = row.get(1)?;
-    let mimetype: String = row.get(2)?;
-    let datetime_s: i64 = row.get(7)?;
-    let datetime = DateTime::from_timestamp(datetime_s, 0).unwrap();
-
-    // location is a combination of optional values
-    let label: Option<String> = row.get(4)?;
-    let city: Option<String> = row.get(5)?;
-    let region: Option<String> = row.get(6)?;
-    let location = Location {
-        label,
-        city,
-        region,
-    };
-    let opt_location = if location.has_values() {
-        Some(location)
-    } else {
-        None
-    };
-    Ok(SearchResult {
-        asset_id: key,
-        filename,
-        media_type: mimetype,
-        location: opt_location,
-        datetime,
-    })
-}
-
 // create a search result from the row returned by the query functions that do
 // not include a tags value
-fn search_result_from_row_no_tags(row: &rusqlite::Row) -> Result<SearchResult, rusqlite::Error> {
+fn search_result_from_row(row: &rusqlite::Row) -> Result<SearchResult, rusqlite::Error> {
     // SELECT key, filename, mimetype, label, city, region, bestdate
     let key: String = row.get(0)?;
     let filename: String = row.get(1)?;
