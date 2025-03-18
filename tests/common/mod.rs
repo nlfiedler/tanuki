@@ -159,7 +159,8 @@ pub fn build_minimal_asset(key: &str) -> Asset {
 #[allow(dead_code)]
 pub fn build_recent_asset(key: &str) -> Asset {
     let checksum = compute_key_hash(key);
-    let import_date = Utc::now();
+    let now_s = Utc::now().timestamp();
+    let import_date = DateTime::from_timestamp(now_s, 0).unwrap();
     Asset {
         key: key.to_owned(),
         checksum,
@@ -200,18 +201,18 @@ pub fn build_newborn_asset(key: &str, import_date: DateTime<Utc>) -> Asset {
 /// serde is performed correctly, including maintaining the asset key.
 #[allow(dead_code)]
 pub fn compare_assets(a: &Asset, b: &Asset) {
-    assert_eq!(a.key, b.key);
-    assert_eq!(a.checksum, b.checksum);
-    assert_eq!(a.filename, b.filename);
-    assert_eq!(a.byte_length, b.byte_length);
-    assert_eq!(a.media_type, b.media_type);
-    assert_eq!(a.tags, b.tags);
-    assert_eq!(a.import_date, b.import_date);
-    assert_eq!(a.caption, b.caption);
-    assert_eq!(a.location, b.location);
-    assert_eq!(a.user_date, b.user_date);
-    assert_eq!(a.original_date, b.original_date);
-    assert_eq!(a.dimensions, b.dimensions);
+    assert_eq!(a.key, b.key, "key");
+    assert_eq!(a.checksum, b.checksum, "checksum: {}, {}", a.key, b.key);
+    assert_eq!(a.filename, b.filename, "filename: {}, {}", a.key, b.key);
+    assert_eq!(a.byte_length, b.byte_length, "byte_length: {}, {}", a.key, b.key);
+    assert_eq!(a.media_type, b.media_type, "media_type: {}, {}", a.key, b.key);
+    assert_eq!(a.tags, b.tags, "tags: {}, {}", a.key, b.key);
+    assert_eq!(a.import_date, b.import_date, "import_date: {}, {}", a.key, b.key);
+    assert_eq!(a.caption, b.caption, "caption: {}, {}", a.key, b.key);
+    assert_eq!(a.location, b.location, "location: {}, {}", a.key, b.key);
+    assert_eq!(a.user_date, b.user_date, "user_date: {}, {}", a.key, b.key);
+    assert_eq!(a.original_date, b.original_date, "original_date: {}, {}", a.key, b.key);
+    assert_eq!(a.dimensions, b.dimensions, "dimensions: {}, {}", a.key, b.key);
 }
 
 // generate a sha1-XXX style hash of the given input

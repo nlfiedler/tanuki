@@ -6,6 +6,7 @@ use crate::domain::entities::{Asset, Dimensions, LabeledCount, Location, SearchR
 use crate::domain::repositories::FetchedAssets;
 use anyhow::{anyhow, Error};
 use chrono::{DateTime, Datelike, Utc};
+use rusqlite::types::Value;
 use rusqlite::{Connection, OptionalExtension};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -165,46 +166,10 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn put_asset(&self, asset: &Asset) -> Result<(), Error> {
-        use rusqlite::types::Value;
         let db = self.conn.lock().unwrap();
 
-        // try to find an existing locations row, if any; if none are found, and
-        // this asset location has values, then insert a new row and use that
-        // rowid for this asset
-        let location: Value = if let Some(ref loc) = asset.location {
-            if loc.has_values() {
-                let loc_id = query_location_rowid(loc, &db)?;
-                if loc_id == 0 {
-                    // exact matching location not found, insert one now
-                    db.execute(
-                        "INSERT INTO locations (label, city, region) VALUES (?1, ?2, ?3)",
-                        (
-                            loc.label
-                                .as_ref()
-                                .map(|s| Value::Text(s.to_owned()))
-                                .unwrap_or(Value::Null),
-                            loc.city
-                                .as_ref()
-                                .map(|s| Value::Text(s.to_owned()))
-                                .unwrap_or(Value::Null),
-                            loc.region
-                                .as_ref()
-                                .map(|s| Value::Text(s.to_owned()))
-                                .unwrap_or(Value::Null),
-                        ),
-                    )?;
-                    Value::Integer(db.last_insert_rowid())
-                } else {
-                    Value::Integer(loc_id)
-                }
-            } else {
-                Value::Null
-            }
-        } else {
-            Value::Null
-        };
-
-        // prepare all of the optional values
+        // prepare all of the values needed for either insert or update
+        let location: Value = ensure_location(&db, asset.location.as_ref())?;
         let tags: Value = if asset.tags.is_empty() {
             Value::Null
         } else {
@@ -220,61 +185,42 @@ impl EntityDataSource for EntityDataSourceImpl {
         } else {
             Value::Null
         };
-
-        // check if an asset with the given key already exists
-        let mut stmt = db.prepare("SELECT COUNT(*) FROM assets WHERE key = ?1")?;
-        let count: u64 = stmt.query_row([&asset.key], |row| row.get(0))?;
-        if count == 0 {
-            let imported = asset.import_date.timestamp();
-            let orig_date = if let Some(od) = asset.original_date {
-                Value::Integer(od.timestamp())
-            } else {
-                Value::Null
-            };
-            let (pixel_w, pixel_h): (Value, Value) = if let Some(ref dim) = asset.dimensions {
-                (Value::Integer(dim.0.into()), Value::Integer(dim.1.into()))
-            } else {
-                (Value::Null, Value::Null)
-            };
-            db.execute(
-                "INSERT INTO assets
-                (key, hash, filename, filesize, mimetype, caption, tags, location, imported,
-                user_date, orig_date, pixel_w, pixel_h)
-                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
-                (
-                    &asset.key,
-                    &asset.checksum,
-                    &asset.filename,
-                    asset.byte_length,
-                    &asset.media_type,
-                    caption,
-                    tags,
-                    location,
-                    imported,
-                    user_date,
-                    orig_date,
-                    pixel_w,
-                    pixel_h,
-                ),
-            )?;
+        let imported = asset.import_date.timestamp();
+        let orig_date = if let Some(od) = asset.original_date {
+            Value::Integer(od.timestamp())
         } else {
-            // only certain fields can be changed by the user, whereas replacing
-            // an asset will be treated the same as uploading something new
-            db.execute(
-                "UPDATE assets SET filename = ?2, mimetype = ?3,
-                caption = ?4, tags = ?5, location = ?6, user_date = ?7
-                WHERE key = ?1",
-                (
-                    &asset.key,
-                    &asset.filename,
-                    &asset.media_type,
-                    caption,
-                    tags,
-                    location,
-                    user_date,
-                ),
-            )?;
-        }
+            Value::Null
+        };
+        let (pixel_w, pixel_h): (Value, Value) = if let Some(ref dim) = asset.dimensions {
+            (Value::Integer(dim.0.into()), Value::Integer(dim.1.into()))
+        } else {
+            (Value::Null, Value::Null)
+        };
+
+        // attempt to insert a new row, but on conflict update only certain
+        // fields which can be changed by the update usecase
+        db.execute(
+            "INSERT INTO assets (key, hash, filename, filesize, mimetype, caption,
+                tags, location, imported, user_date, orig_date, pixel_w, pixel_h)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+            ON CONFLICT DO UPDATE SET filename = ?3, mimetype = ?5,
+                caption = ?6, tags = ?7, location = ?8, user_date = ?10",
+            (
+                &asset.key,
+                &asset.checksum,
+                &asset.filename,
+                asset.byte_length,
+                &asset.media_type,
+                caption,
+                tags,
+                location,
+                imported,
+                user_date,
+                orig_date,
+                pixel_w,
+                pixel_h,
+            ),
+        )?;
         Ok(())
     }
 
@@ -657,10 +603,111 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn store_assets(&self, incoming: Vec<Asset>) -> Result<(), Error> {
+        let db = self.conn.lock().unwrap();
+
+        // create or retrieve locations for each asset into a map
+        let mut locations: HashMap<String, Value> = HashMap::new();
         for asset in incoming.iter() {
-            self.put_asset(asset)?;
+            let location: Value = ensure_location(&db, asset.location.as_ref())?;
+            locations.insert(asset.key.to_owned(), location);
+        }
+
+        // Insert or update all incoming assets, replacing all values for any
+        // rows that already exist as this is the intent of loading many assets
+        // into the database in one operation (versus the update usecase that
+        // only modifies certain fields of an asset).
+        for asset in incoming.iter() {
+            let tags: Value = if asset.tags.is_empty() {
+                Value::Null
+            } else {
+                Value::Text(asset.tags.join("\t"))
+            };
+            let caption: Value = if let Some(ref cap) = asset.caption {
+                Value::Text(cap.to_owned())
+            } else {
+                Value::Null
+            };
+            let user_date = if let Some(ud) = asset.user_date {
+                Value::Integer(ud.timestamp())
+            } else {
+                Value::Null
+            };
+            let imported = asset.import_date.timestamp();
+            let orig_date = if let Some(od) = asset.original_date {
+                Value::Integer(od.timestamp())
+            } else {
+                Value::Null
+            };
+            let (pixel_w, pixel_h): (Value, Value) = if let Some(ref dim) = asset.dimensions {
+                (Value::Integer(dim.0.into()), Value::Integer(dim.1.into()))
+            } else {
+                (Value::Null, Value::Null)
+            };
+            let location = locations
+                .remove(&asset.key)
+                .ok_or_else(|| anyhow!("asset without location"))?;
+            db.execute(
+                "INSERT OR REPLACE INTO assets
+                (key, hash, filename, filesize, mimetype, caption, tags, location, imported,
+                user_date, orig_date, pixel_w, pixel_h)
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+                (
+                    &asset.key,
+                    &asset.checksum,
+                    &asset.filename,
+                    asset.byte_length,
+                    &asset.media_type,
+                    caption,
+                    tags,
+                    location,
+                    imported,
+                    user_date,
+                    orig_date,
+                    pixel_w,
+                    pixel_h,
+                ),
+            )?;
         }
         Ok(())
+    }
+}
+
+// Look for an existing row in the locations table that matches the one given.
+// If no such row is found, and this location has values, then insert a new row
+// and return that rowid for the newly inserted location. Otherwise, return null
+// to indicate no location foreign key is needed.
+fn ensure_location(db: &Connection, location: Option<&Location>) -> Result<Value, rusqlite::Error> {
+    if let Some(loc) = location {
+        if loc.has_values() {
+            let loc_id = query_location_rowid(loc, db)?;
+            if loc_id == 0 {
+                // exact matching location not found, insert one now
+                db.execute(
+                    "INSERT INTO locations (label, city, region) VALUES (?1, ?2, ?3)",
+                    (
+                        loc.label
+                            .as_ref()
+                            .map(|s| Value::Text(s.to_owned()))
+                            .unwrap_or(Value::Null),
+                        loc.city
+                            .as_ref()
+                            .map(|s| Value::Text(s.to_owned()))
+                            .unwrap_or(Value::Null),
+                        loc.region
+                            .as_ref()
+                            .map(|s| Value::Text(s.to_owned()))
+                            .unwrap_or(Value::Null),
+                    ),
+                )?;
+                Ok(Value::Integer(db.last_insert_rowid()))
+            } else {
+                Ok(Value::Integer(loc_id))
+            }
+        } else {
+            Ok(Value::Null)
+        }
+    } else {
+        Ok(Value::Null)
     }
 }
 
@@ -790,7 +837,6 @@ fn search_result_from_row_no_tags(row: &rusqlite::Row) -> Result<SearchResult, r
 // Query to find a location rowid that matches the given location. Returns zero
 // if no such row.
 fn query_location_rowid(loc: &Location, db: &Connection) -> Result<i64, rusqlite::Error> {
-    use rusqlite::types::Value;
     let label_is_some = loc.label.is_some();
     let city_is_some = loc.city.is_some();
     let region_is_some = loc.region.is_some();

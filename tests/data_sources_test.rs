@@ -878,6 +878,7 @@ fn test_data_source_store_assets() {
 }
 
 fn do_test_data_source_store_assets(datasource: Box<dyn EntityDataSource>) {
+    // perform an initial load of some assets
     let incoming: Vec<Asset> = vec![
         common::build_basic_asset("aaaaaaa"),
         common::build_basic_asset("bbbbbbb"),
@@ -890,11 +891,67 @@ fn do_test_data_source_store_assets(datasource: Box<dyn EntityDataSource>) {
     ];
     let result = datasource.store_assets(incoming.clone());
     assert!(result.is_ok());
-
     let mut fetched = datasource.fetch_assets(None, 100).unwrap();
     assert_eq!(fetched.assets.len(), incoming.len());
     fetched.assets.sort_unstable_by(|a, b| a.key.cmp(&b.key));
     for pairs in fetched.assets.iter().zip(incoming.iter()) {
+        compare_assets(pairs.0, pairs.1);
+    }
+
+    // perform a second import with changes to some existing entries and some
+    // new ones to test insert/update behavior; note also that two assets have
+    // identical location values
+    let mut round_two: Vec<Asset> = incoming
+        .into_iter()
+        .map(|a| {
+            if a.key == "bbbbbbb" {
+                let mut copy = a.clone();
+                copy.filename = "bbbbbbb.jpg".into();
+                copy.location = Some(Location {
+                    label: Some("beach".into()),
+                    city: Some("Honolulu".into()),
+                    region: Some("Hawaii".into()),
+                });
+                copy
+            } else if a.key == "ddddddd" {
+                let mut copy = a.clone();
+                copy.filename = "ddddddd.jpg".into();
+                copy.location = Some(Location {
+                    label: None,
+                    city: Some("Paris".into()),
+                    region: Some("France".into()),
+                });
+                copy
+            } else if a.key == "fffffff" {
+                let mut copy = a.clone();
+                copy.filename = "fffffff.jpg".into();
+                copy.location = Some(Location::new("Hong Kong"));
+                copy
+            } else if a.key == "hhhhhhh" {
+                let mut copy = a.clone();
+                copy.filename = "hhhhhhh.jpg".into();
+                copy.location = Some(Location {
+                    label: None,
+                    city: Some("Portland".into()),
+                    region: None,
+                });
+                copy
+            } else {
+                a
+            }
+        })
+        .collect();
+    round_two.push(common::build_minimal_asset("basic113"));
+    round_two.push(common::build_recent_asset("newlyborn"));
+    round_two.push(common::build_complete_asset("hawaiiagain"));
+
+    let result = datasource.store_assets(round_two.clone());
+    assert!(result.is_ok());
+    let mut fetched = datasource.fetch_assets(None, 100).unwrap();
+    assert_eq!(fetched.assets.len(), round_two.len());
+    round_two.sort_unstable_by(|a, b| a.key.cmp(&b.key));
+    fetched.assets.sort_unstable_by(|a, b| a.key.cmp(&b.key));
+    for pairs in fetched.assets.iter().zip(round_two.iter()) {
         compare_assets(pairs.0, pairs.1);
     }
 }
