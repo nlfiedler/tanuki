@@ -1,18 +1,16 @@
 * Action Items
 ** Evaluate DuckDB
-*** good: can create an in-memory database for easy testing
-*** good: location values can be consolidated into their own table
 *** good: supports arrays and lists as column types
 *** good: CLI for manually querying and altering database
 *** good: web ui https://duckdb.org/2025/03/12/duckdb-ui.html
 *** concern: needs a lot of memory (minimum 125mb per thread)
 *** concern: designed for SSD and NVMe, writes may be slow on HDD
-*** concern: writes to a single file
 *** concern: designed for bulk updates, not many small transactions
 *** TODO consider how to define indexes for tags, locations
+**** are indexes really necessary? SQLite seems fine without them
 *** TODO find out how to create app-defined functions (for =best_date()=)
-**** is a scalar UDF needed for this?
-**** scalar UDF support was added in Feb/2025
+**** scalar UDF support was added in 1.2.0 Feb 10, 2025
+**** c.f. https://github.com/duckdb/duckdb-rs/pull/429
 **** scalar UDF support is enabled with =vscalar= feature
 **** should be a function called =register_scalar()=
 *** TODO design basic schema
@@ -48,15 +46,12 @@
 ***** c.f. https://duckdb.org/docs/stable/guides/performance/indexing
 **** TODO ~load~ should use ~Appender API~ via =append_rows()= function to add many rows at a time
 ***** DuckDB can easily handle 10,000 rows at a time
-** TODO bug: 1913 photos not appear at the end of home page results
-*** only happens on RocksDB, SQLite is fine
-*** test locally
-*** could be the =query_newborn()= is handling the date incorrectly
+**** TODO add tests for DuckDB in =data_sources_test.rs=
 ** Try leptos upgrade again
 *** start from scratch, copying changes from ~upgrade~ branch
 *** see =upgrade= branch; there are many problems
 *** c.f. https://github.com/leptos-rs/leptos/issues/3354
-** RocksDB vs SQLite
+** Data source comparison
 *** 21,502 assets, disk usage immediately after load, before compaction
 | Metric     | RocksDB    | SQLite     |
 |------------+------------+------------|

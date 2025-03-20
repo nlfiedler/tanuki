@@ -531,69 +531,112 @@ fn test_data_source_query_by_dates() {
 }
 
 fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
-    let date1 = make_date_time(2011, 8, 30, 12, 12, 12);
-    let date2 = make_date_time(2013, 8, 30, 12, 12, 12);
-    let date3 = make_date_time(2015, 8, 30, 12, 12, 12);
-    let date4 = make_date_time(2017, 8, 30, 12, 12, 12);
-    let date5 = make_date_time(2019, 8, 30, 12, 12, 12);
+    let min_utc = DateTime::<Utc>::MIN_UTC;
+    let year_1918 = make_date_time(1918, 8, 30, 12, 12, 12);
+    let year_1940 = make_date_time(1940, 8, 30, 12, 12, 12);
+    let year_1968 = make_date_time(1968, 8, 30, 12, 12, 12);
+    let year_1971 = make_date_time(1971, 8, 30, 12, 12, 12);
+    let year_2011 = make_date_time(2011, 8, 30, 12, 12, 12);
+    let year_2013 = make_date_time(2013, 8, 30, 12, 12, 12);
+    let year_2015 = make_date_time(2015, 8, 30, 12, 12, 12);
+    let year_2016 = make_date_time(2016, 8, 30, 12, 12, 12);
+    let year_2017 = make_date_time(2017, 8, 30, 12, 12, 12);
+    let year_2019 = make_date_time(2019, 8, 30, 12, 12, 12);
+    let year_2020 = make_date_time(2020, 8, 30, 12, 12, 12);
+    let future_date = Utc::now()
+        .checked_add_signed(chrono::TimeDelta::days(28))
+        .unwrap();
+    let max_utc = DateTime::<Utc>::MAX_UTC;
 
     // zero assets
-    assert_eq!(datasource.query_before_date(date1).unwrap().len(), 0);
-    assert_eq!(datasource.query_after_date(date1).unwrap().len(), 0);
-    assert_eq!(datasource.query_date_range(date1, date2).unwrap().len(), 0);
+    assert_eq!(datasource.query_before_date(future_date).unwrap().len(), 0);
+    assert_eq!(datasource.query_after_date(year_1918).unwrap().len(), 0);
+    assert_eq!(datasource.query_date_range(year_1918, future_date).unwrap().len(), 0);
 
     // one asset
-    let asset = common::build_basic_asset("basic113");
+    let asset = common::build_basic_asset("year_2018");
     datasource.put_asset(&asset).unwrap();
-    assert_eq!(datasource.query_before_date(date1).unwrap().len(), 0);
-    assert_eq!(datasource.query_before_date(date5).unwrap().len(), 1);
-    assert_eq!(datasource.query_after_date(date1).unwrap().len(), 1);
-    assert_eq!(datasource.query_after_date(date5).unwrap().len(), 0);
-    assert_eq!(datasource.query_date_range(date1, date5).unwrap().len(), 1);
+    assert_eq!(datasource.query_before_date(year_2011).unwrap().len(), 0);
+    assert_eq!(datasource.query_before_date(year_2019).unwrap().len(), 1);
+    assert_eq!(datasource.query_after_date(year_2011).unwrap().len(), 1);
+    assert_eq!(datasource.query_after_date(year_2019).unwrap().len(), 0);
+    assert_eq!(datasource.query_date_range(year_2011, year_2019).unwrap().len(), 1);
 
     // multiple assets
-    let mut asset = common::build_basic_asset("monday6");
-    asset.filename = "img_2345.jpg".to_owned();
-    asset.user_date = Some(date1);
+    let mut asset = common::build_basic_asset("year_1940");
+    asset.user_date = Some(year_1940);
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset("tuesday7");
-    asset.filename = "img_3456.jpg".to_owned();
-    asset.user_date = Some(date2);
+    let mut asset = common::build_basic_asset("year_2011");
+    asset.user_date = Some(year_2011);
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset("wednesday8");
-    asset.filename = "img_4567.jpg".to_owned();
-    asset.user_date = Some(date3);
+    let mut asset = common::build_basic_asset("year_2013");
+    asset.user_date = Some(year_2013);
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset("thursday9");
-    asset.filename = "img_5678.jpg".to_owned();
-    asset.user_date = Some(date4);
+    let mut asset = common::build_basic_asset("year_2015");
+    asset.user_date = Some(year_2015);
     datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset("friday10");
-    asset.filename = "img_6789.jpg".to_owned();
-    asset.user_date = Some(date5);
+    let mut asset = common::build_basic_asset("year_2017");
+    asset.user_date = Some(year_2017);
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset("year_2019");
+    asset.user_date = Some(year_2019);
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset("future_date");
+    asset.user_date = Some(future_date);
     datasource.put_asset(&asset).unwrap();
 
-    let actual = datasource.query_before_date(date4).unwrap();
-    assert_eq!(actual.len(), 3);
-    assert_eq!(actual[0].asset_id.starts_with("asset/"), false);
-    assert!(actual.iter().any(|l| l.filename == "img_2345.jpg"));
-    assert!(actual.iter().any(|l| l.filename == "img_3456.jpg"));
-    assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
+    let actual = datasource.query_before_date(year_1918).unwrap();
+    assert_eq!(actual.len(), 0);
 
-    let actual = datasource.query_after_date(date3).unwrap();
+    let actual = datasource.query_before_date(max_utc).unwrap();
+    assert_eq!(actual.len(), 8);
+
+    // just before the epoch
+    let actual = datasource.query_before_date(year_1968).unwrap();
+    assert_eq!(actual.len(), 1);
+    assert!(actual[0].asset_id == "year_1940");
+
+    // just after the epoch
+    let actual = datasource.query_before_date(year_1971).unwrap();
+    assert_eq!(actual.len(), 1);
+    assert!(actual[0].asset_id == "year_1940");
+
+    let actual = datasource.query_before_date(year_2017).unwrap();
     assert_eq!(actual.len(), 4);
-    assert_eq!(actual[0].asset_id.starts_with("asset/"), false);
-    assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
-    assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
-    assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
-    assert!(actual.iter().any(|l| l.filename == "img_6789.jpg"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_1940"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2011"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2013"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2015"));
 
-    let actual = datasource.query_date_range(date3, date5).unwrap();
+    let actual = datasource.query_after_date(year_2020).unwrap();
+    assert_eq!(actual.len(), 1);
+    assert!(actual[0].asset_id == "future_date");
+
+    let actual = datasource.query_after_date(year_2016).unwrap();
+    assert_eq!(actual.len(), 4);
+    assert!(actual.iter().any(|l| l.asset_id == "year_2017"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2018"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2019"));
+    assert!(actual.iter().any(|l| l.asset_id == "future_date"));
+
+    let actual = datasource.query_after_date(min_utc).unwrap();
+    assert_eq!(actual.len(), 8);
+    let actual = datasource.query_after_date(year_1918).unwrap();
+    assert_eq!(actual.len(), 8);
+
+    let actual = datasource.query_date_range(year_2015, year_2019).unwrap();
     assert_eq!(actual.len(), 3);
-    assert_eq!(actual[0].asset_id.starts_with("asset/"), false);
-    assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
-    assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
-    assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2015"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2017"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2018"));
+
+    let actual = datasource.query_date_range(year_1918, year_1968).unwrap();
+    assert_eq!(actual.len(), 1);
+    assert!(actual[0].asset_id == "year_1940");
+
+    let actual = datasource.query_date_range(year_1918, year_1971).unwrap();
+    assert_eq!(actual.len(), 1);
+    assert!(actual[0].asset_id == "year_1940");
 }
 
 #[test]

@@ -390,15 +390,51 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
-        let key = encode_datetime(&before);
-        let query_results = self.database.query_less_than("by_date", key)?;
+        let epoch = DateTime::UNIX_EPOCH;
+        let before_key = encode_datetime(&before);
+        let query_results = if epoch > before {
+            // starting with a date that occurs before the epoch
+            let min_utc = DateTime::<Utc>::MIN_UTC;
+            let min_key = encode_datetime(&min_utc);
+            self.database.query_range("by_date", min_key, before_key)?
+        } else {
+            // starting with a date that occurs after the epoch
+            let mut results1 = self.database.query_less_than("by_date", before_key)?;
+            let epoch_minus_key = b32hex_encode_i64(-1 as i64);
+            let min_utc = DateTime::<Utc>::MIN_UTC;
+            let min_key = encode_datetime(&min_utc);
+            let mut results2 = self
+                .database
+                .query_range("by_date", min_key, epoch_minus_key)?;
+            results1.append(&mut results2);
+            results1
+        };
         let search_results = convert_results(query_results);
         Ok(search_results)
     }
 
     fn query_after_date(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
-        let key = encode_datetime(&after);
-        let query_results = self.database.query_greater_than("by_date", key)?;
+        let epoch = DateTime::UNIX_EPOCH;
+        let after_key = encode_datetime(&after);
+        let query_results = if epoch <= after {
+            // after the epoch, query range from then until end of time
+            let max_utc = DateTime::<Utc>::MAX_UTC;
+            let max_key = encode_datetime(&max_utc);
+            self.database.query_range("by_date", after_key, max_key)?
+        } else {
+            // before the epoch, combine range from then until epoch and the
+            // range from the epoch until the end of time
+            let max_utc = DateTime::<Utc>::MAX_UTC;
+            let max_key = encode_datetime(&max_utc);
+            let epoch_minus_key = b32hex_encode_i64(-1 as i64);
+            let mut results1 = self
+                .database
+                .query_range("by_date", after_key, epoch_minus_key)?;
+            let epoch_key = encode_datetime(&epoch);
+            let mut results2 = self.database.query_range("by_date", epoch_key, max_key)?;
+            results1.append(&mut results2);
+            results1
+        };
         let search_results = convert_results(query_results);
         Ok(search_results)
     }
@@ -408,24 +444,34 @@ impl EntityDataSource for EntityDataSourceImpl {
         after: DateTime<Utc>,
         before: DateTime<Utc>,
     ) -> Result<Vec<SearchResult>, Error> {
-        let key_a = encode_datetime(&after);
-        let key_b = encode_datetime(&before);
-        let query_results = self.database.query_range("by_date", key_a, key_b)?;
+        let epoch = DateTime::UNIX_EPOCH;
+        let after_key = encode_datetime(&after);
+        let before_key = encode_datetime(&before);
+        let query_results = if after < epoch && before > epoch {
+            // if the range crosses the epoch, combine two range queries
+            let epoch_minus_key = b32hex_encode_i64(-1 as i64);
+            let mut results1 = self
+                .database
+                .query_range("by_date", after_key, epoch_minus_key)?;
+            let epoch_key = encode_datetime(&epoch);
+            let mut results2 = self
+                .database
+                .query_range("by_date", epoch_key, before_key)?;
+            results1.append(&mut results2);
+            results1
+        } else {
+            // otherwise the simple case
+            self.database
+                .query_range("by_date", after_key, before_key)?
+        };
         let search_results = convert_results(query_results);
         Ok(search_results)
     }
 
     fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
-        let epoch = Utc.timestamp_opt(0, 0).unwrap();
+        let epoch = DateTime::UNIX_EPOCH;
         let key = encode_datetime(&after);
         let query_results = if epoch > after {
-            // A Unix timestamp is encoded as seconds since the epoch using a
-            // two's complement signed integer. Times before the epoch are
-            // larger than times after when encoded with base32hex. The encoded
-            // values for negative numbers get larger as they approach zero.
-            // Thus, to find dates after the pre-epoch date given, first query
-            // for anything larger than that value, then query for anything
-            // between the zero time and now.
             let mut results1 = self.database.query_greater_than("newborn", key)?;
             let epoch_key = encode_datetime(&epoch);
             let now = Utc::now();
@@ -526,8 +572,29 @@ fn convert_results(query_results: Vec<QueryResult>) -> Vec<SearchResult> {
 
 /// Encode the date/time as a BigEndian base32hex encoded value.
 fn encode_datetime(date: &DateTime<Utc>) -> Vec<u8> {
+    //
+    // Base32hex encoded date/time values before the epoch are much larger than
+    // even the maximum UTC time, and their value decreases as it approaches the
+    // minimum UTC time (and likewise increase as they approach the epoch).
+    //
+    // min_utc : [56, 56, 56, 56, 47, 51, 52, 4a, 31, 4e, 4e, 30, 30, 3d, 3d, 3d]
+    // epoch-1s: [56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 55, 3d, 3d, 3d]
+    // epoch   : [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 3d, 3d, 3d]
+    // max_utc : [30, 30, 30, 30, 45, 54, 53, 51, 31, 39, 4c, 4e, 55, 3d, 3d, 3d]
+    //
+    // i64::MIN: -9223372036854775808
+    // min_utc :    -8334601228800000 (milliseconds)
+    // max_utc :     8210266876799999 (milliseconds)
+    // i64::MAX:  9223372036854775807
+    //
     let seconds = date.timestamp();
     let bytes = seconds.to_be_bytes().to_vec();
+    base32::encode(&bytes)
+}
+
+/// Encode the i64 as a BigEndian base32hex encoded value.
+fn b32hex_encode_i64(value: i64) -> Vec<u8> {
+    let bytes = value.to_be_bytes().to_vec();
     base32::encode(&bytes)
 }
 
