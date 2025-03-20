@@ -4,7 +4,7 @@
 use crate::domain::entities::{SortField, SortOrder};
 use crate::preso::leptos::{forms, nav, paging, results};
 use crate::preso::leptos::{BrowseParams, SearchParams, Season, Year};
-use chrono::{Datelike, TimeZone, Utc};
+use chrono::{DateTime, Datelike, TimeZone, Utc};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
 use html::Div;
 use leptos::*;
@@ -18,13 +18,14 @@ struct SearchParamsBuilder {
 
 impl SearchParamsBuilder {
     fn new() -> Self {
-        // default search will show all assets in descending date order
+        // default search will show all assets in descending date order; note
+        // that the query needs at least one attribute to get any results
         Self {
             params: SearchParams {
                 tags: None,
                 locations: None,
                 after: None,
-                before: Some(chrono::Utc::now()),
+                before: Some(DateTime::<Utc>::MAX_UTC),
                 filename: None,
                 media_type: None,
                 sort_field: Some(SortField::Date),
@@ -459,13 +460,13 @@ where
         |_| async move {
             let mut results = super::fetch_years().await;
             if let Ok(data) = results.as_mut() {
-                // sort in reverse chronological order for selection convenience
-                // (most recent years near the top of the dropdown menu)
-                data.sort_by(|a, b| b.value.cmp(&a.value));
                 // inject the current year if not already present so that the
                 // season selection has something to select when year is unset
+                //
+                // do this before sorting since there may be assets marked as
+                // being from the future
                 let current_year = Utc::now().year();
-                if data.len() > 0 && data[0].value != current_year {
+                if !data.iter().any(|v| v.value == current_year) {
                     data.insert(
                         0,
                         Year {
@@ -474,6 +475,9 @@ where
                         },
                     );
                 }
+                // sort in reverse chronological order for selection convenience
+                // (most recent years near the top of the dropdown menu)
+                data.sort_by(|a, b| b.value.cmp(&a.value));
             }
             results
         },
