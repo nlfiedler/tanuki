@@ -236,7 +236,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         // work manually comparing the tags, but that requires loading an
         // extension that is not built into the SQLite used by rusqlite.
         //
-        let lowered: Vec<String> = tags.iter().map(|t| t.to_lowercase()).collect();
+        let lowered: HashSet<String> = tags.iter().map(|t| t.to_lowercase()).collect();
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region,
@@ -247,11 +247,11 @@ impl EntityDataSource for EntityDataSourceImpl {
         )?;
         let iter = stmt.query_map([], |row| {
             if let Some(row_tags_str) = row.get::<usize, Option<String>>(7)? {
-                let row_tags: HashSet<String> = row_tags_str
+                let matched_count = row_tags_str
                     .split("\t")
                     .map(|t| t.to_lowercase().to_owned())
-                    .collect();
-                if lowered.iter().all(|t| row_tags.contains(t)) {
+                    .fold(0, |acc, t| if lowered.contains(&t) { acc + 1 } else { acc });
+                if matched_count == lowered.len() {
                     // using search_result_from_row() will work because all of
                     // the terms before 'tags' match all of the other queries
                     Ok(Some(search_result_from_row(row)))
@@ -273,7 +273,7 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error> {
-        let lowered: Vec<String> = locations.iter().map(|t| t.to_lowercase()).collect();
+        let lowered: HashSet<String> = locations.iter().map(|t| t.to_lowercase()).collect();
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region,
@@ -282,11 +282,11 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id",
         )?;
         let iter = stmt.query_map([], |row| {
-            let row_values: Vec<String> = vec![row.get(3)?, row.get(4)?, row.get(5)?]
+            let matched_count = vec![row.get(3)?, row.get(4)?, row.get(5)?]
                 .into_iter()
                 .filter_map(|o: Option<String>| o.map(|l| l.to_lowercase()))
-                .collect();
-            if lowered.iter().all(|t| row_values.contains(t)) {
+                .fold(0, |acc, l| if lowered.contains(&l) { acc + 1 } else { acc });
+            if matched_count == lowered.len() {
                 Ok(Some(search_result_from_row(row)))
             } else {
                 // not all tags match
