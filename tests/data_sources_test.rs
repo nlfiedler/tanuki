@@ -562,24 +562,26 @@ fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
     assert_eq!(datasource.query_after_date(year_2019).unwrap().len(), 0);
     assert_eq!(datasource.query_date_range(year_2011, year_2019).unwrap().len(), 1);
 
-    // multiple assets
+    // multiple assets; set different date fields to test "best date" logic
     let mut asset = common::build_basic_asset("year_1940");
     asset.user_date = Some(year_1940);
+    asset.import_date = year_2011;
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset("year_2011");
     asset.user_date = Some(year_2011);
+    asset.import_date = year_2019;
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset("year_2013");
     asset.user_date = Some(year_2013);
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset("year_2015");
-    asset.user_date = Some(year_2015);
+    asset.original_date = Some(year_2015);
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset("year_2017");
-    asset.user_date = Some(year_2017);
+    asset.original_date = Some(year_2017);
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset("year_2019");
-    asset.user_date = Some(year_2019);
+    asset.original_date = Some(year_2019);
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset("future_date");
     asset.user_date = Some(future_date);

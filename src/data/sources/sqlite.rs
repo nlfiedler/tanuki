@@ -22,9 +22,6 @@ use std::sync::{Arc, LazyLock, Mutex};
 
 // Configure SQLite, create tables, create indexes.
 fn prepare_database(conn: &Connection) -> rusqlite::Result<()> {
-    use rusqlite::functions::FunctionFlags;
-    use rusqlite::types::ValueRef;
-
     conn.execute("PRAGMA foreign_keys = ON", ())?;
     // setting journal_mode returns "wal" so use query_row()
     conn.query_row("PRAGMA journal_mode = WAL", [], |_| Ok(()))?;
@@ -69,27 +66,8 @@ fn prepare_database(conn: &Connection) -> rusqlite::Result<()> {
         "CREATE UNIQUE INDEX IF NOT EXISTS hashes ON assets (hash)",
         (),
     )?;
-    conn.create_scalar_function(
-        "best_date",
-        3,
-        FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC,
-        move |ctx| {
-            assert_eq!(ctx.len(), 3, "called with unexpected number of arguments");
-            let d = ctx.get_raw(0);
-            if d != ValueRef::Null {
-                Ok(d.as_i64()?)
-            } else {
-                let d = ctx.get_raw(1);
-                if d != ValueRef::Null {
-                    Ok(d.as_i64()?)
-                } else {
-                    Ok(ctx.get_raw(2).as_i64()?)
-                }
-            }
-        },
-    )?;
     conn.execute(
-        "CREATE INDEX IF NOT EXISTS dates ON assets (best_date(user_date, orig_date, imported))",
+        "CREATE INDEX IF NOT EXISTS dates ON assets (coalesce(user_date, orig_date, imported))",
         (),
     )?;
     Ok(())
@@ -240,7 +218,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region,
-                best_date(user_date, orig_date, imported) AS bestdate, tags
+                coalesce(user_date, orig_date, imported), tags
             FROM assets
             LEFT JOIN locations ON assets.location = locations.id
             WHERE tags IS NOT NULL",
@@ -277,7 +255,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region,
-                best_date(user_date, orig_date, imported) AS bestdate
+                coalesce(user_date, orig_date, imported)
             FROM assets
             LEFT JOIN locations ON assets.location = locations.id",
         )?;
@@ -306,7 +284,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region,
-                best_date(user_date, orig_date, imported) AS bestdate
+                coalesce(user_date, orig_date, imported)
             FROM assets
             LEFT JOIN locations ON assets.location = locations.id
             WHERE mimetype = ?1",
@@ -324,12 +302,12 @@ impl EntityDataSource for EntityDataSourceImpl {
         //
         // SQLite "indexes on expressions" stipulates that the expression used
         // to query the table must match the one used to define the index, so be
-        // sure the best_date() invocation matches the index precisely.
+        // sure the coalesce() invocation matches the index precisely.
         //
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region,
-                best_date(user_date, orig_date, imported) AS bestdate
+                coalesce(user_date, orig_date, imported) AS bestdate
             FROM assets
             LEFT JOIN locations ON assets.location = locations.id
             WHERE bestdate < ?1",
@@ -347,12 +325,12 @@ impl EntityDataSource for EntityDataSourceImpl {
         //
         // SQLite "indexes on expressions" stipulates that the expression used
         // to query the table must match the one used to define the index, so be
-        // sure the best_date() invocation matches the index precisely.
+        // sure the coalesce() invocation matches the index precisely.
         //
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region,
-                best_date(user_date, orig_date, imported) AS bestdate
+                coalesce(user_date, orig_date, imported) AS bestdate
             FROM assets
             LEFT JOIN locations ON assets.location = locations.id
             WHERE bestdate >= ?1",
@@ -375,12 +353,12 @@ impl EntityDataSource for EntityDataSourceImpl {
         //
         // SQLite "indexes on expressions" stipulates that the expression used
         // to query the table must match the one used to define the index, so be
-        // sure the best_date() invocation matches the index precisely.
+        // sure the coalesce() invocation matches the index precisely.
         //
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region,
-                best_date(user_date, orig_date, imported) AS bestdate
+                coalesce(user_date, orig_date, imported) AS bestdate
             FROM assets
             LEFT JOIN locations ON assets.location = locations.id
             WHERE bestdate >= ?1 AND bestdate < ?2",
@@ -476,18 +454,9 @@ impl EntityDataSource for EntityDataSourceImpl {
     fn all_years(&self) -> Result<Vec<LabeledCount>, Error> {
         // HACK: full table scan of assets
         let db = self.conn.lock().unwrap();
-        let mut stmt = db.prepare("SELECT user_date, orig_date, imported FROM assets")?;
+        let mut stmt = db.prepare("SELECT coalesce(user_date, orig_date, imported) FROM assets")?;
         let year_iter = stmt.query_map([], |row| {
-            // prefer user_date if available
-            if let Some(value) = row.get::<usize, Option<i64>>(0)? {
-                return Ok(DateTime::from_timestamp(value, 0).unwrap());
-            }
-            // otherwise use original date
-            if let Some(value) = row.get::<usize, Option<i64>>(1)? {
-                return Ok(DateTime::from_timestamp(value, 0).unwrap());
-            }
-            // imported is not null and the last resort
-            let value: i64 = row.get(2)?;
+            let value: i64 = row.get(0)?;
             Ok(DateTime::from_timestamp(value, 0).unwrap())
         })?;
         let mut key_counts: HashMap<i32, usize> = HashMap::new();
