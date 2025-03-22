@@ -6,6 +6,7 @@ use rocksdb::{Options, DB};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
+use tanuki::data::sources::duckdb::drop_database_ref as drop_duckdb;
 use tanuki::data::sources::rocksdb::drop_database_ref as drop_rocksdb;
 use tanuki::data::sources::sqlite::drop_database_ref as drop_sqlite;
 use tanuki::domain::entities::{Asset, Dimensions, Location};
@@ -72,13 +73,20 @@ impl Drop for DBPath {
             let mut lock_path = self.path.to_path_buf();
             lock_path.push("LOCK");
             if std::fs::exists(&lock_path).unwrap() {
-                // RocksDB gets special treatment
+                // RocksDB gets slightly special treatment
                 drop_rocksdb(&self.path);
                 let opts = Options::default();
                 DB::destroy(&opts, &self.path).unwrap();
             } else {
-                drop_sqlite(&self.path);
-                std::fs::remove_dir_all(&self.path).unwrap();
+                let mut db3_path = self.path.to_path_buf();
+                db3_path.push("tanuki.db3");
+                if std::fs::exists(&db3_path).unwrap() {
+                    drop_sqlite(&self.path);
+                    std::fs::remove_dir_all(&self.path).unwrap();
+                } else {
+                    drop_duckdb(&self.path);
+                    std::fs::remove_dir_all(&self.path).unwrap();
+                }
             }
         }
     }
