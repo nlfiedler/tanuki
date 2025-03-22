@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Nathan Fiedler
+// Copyright (c) 2025 Nathan Fiedler
 //
 use crate::domain::entities::{Asset, LabeledCount, Location, SearchResult};
 use crate::domain::repositories::FetchedAssets;
@@ -11,6 +11,7 @@ use std::path::Path;
 use std::str;
 use std::sync::Arc;
 
+pub mod duckdb;
 pub mod rocksdb;
 pub mod sqlite;
 
@@ -115,7 +116,9 @@ pub fn new_datasource_for_path<P: AsRef<Path>>(
     let db_type = std::env::var("DATABASE_TYPE")
         .map(|v| v.to_lowercase())
         .unwrap_or("rocksdb".into());
-    let source: Arc<dyn EntityDataSource> = if db_type == "sqlite" {
+    let source: Arc<dyn EntityDataSource> = if db_type == "duckdb" {
+        Arc::new(duckdb::EntityDataSourceImpl::new(db_path)?)
+    } else if db_type == "sqlite" {
         Arc::new(sqlite::EntityDataSourceImpl::new(db_path)?)
     } else {
         Arc::new(rocksdb::EntityDataSourceImpl::new(db_path)?)

@@ -6,8 +6,8 @@ use crate::domain::entities::{Asset, Dimensions, LabeledCount, Location, SearchR
 use crate::domain::repositories::FetchedAssets;
 use anyhow::{anyhow, Error};
 use chrono::{DateTime, Datelike, Utc};
-use rusqlite::types::Value;
-use rusqlite::{Connection, OptionalExtension};
+use duckdb::types::{TimeUnit, Value};
+use duckdb::{params, Connection, OptionalExt};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, Mutex};
@@ -20,22 +20,19 @@ use std::sync::{Arc, LazyLock, Mutex};
 // WHERE a.location IS NULL;
 //
 
-// Configure SQLite, create tables, create indexes.
-fn prepare_database(conn: &Connection) -> rusqlite::Result<()> {
-    conn.execute("PRAGMA foreign_keys = ON", ())?;
-    // setting journal_mode returns "wal" so use query_row()
-    conn.query_row("PRAGMA journal_mode = WAL", [], |_| Ok(()))?;
+// Configure DuckDB, create tables, create indexes.
+fn prepare_database(conn: &Connection) -> duckdb::Result<()> {
     //
     // The location values are stored as-is.
     //
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS locations (
-            id INTEGER PRIMARY KEY,
-            label TEXT,
-            city TEXT,
-            region TEXT
-        ) STRICT",
-        (),
+    conn.execute_batch(
+        "CREATE SEQUENCE IF NOT EXISTS loc_row_id;
+        CREATE TABLE IF NOT EXISTS locations (
+            id INTEGER PRIMARY KEY DEFAULT NEXTVAL('loc_row_id'),
+            label VARCHAR,
+            city VARCHAR,
+            region VARCHAR
+        );",
     )?;
     //
     // For consistency with other data source implementations, treat certain
@@ -43,38 +40,39 @@ fn prepare_database(conn: &Connection) -> rusqlite::Result<()> {
     //
     // The tags cell consists of the asset tags separated by a tab (0x09).
     //
+    // As of the 1.2.1 release of the duckdb crate, compound types (array, list,
+    // etc) are not supported. If they were, maybe tags could be a VARCHAR[] and
+    // the pixel_w and pixel_h could be combined into a UINTEGER[2], although it
+    // might not make any real difference in terms of disk usage or performance.
+    //
     conn.execute(
         "CREATE TABLE IF NOT EXISTS assets (
-            key TEXT NOT NULL PRIMARY KEY,
-            hash TEXT NOT NULL COLLATE NOCASE,
-            filename TEXT NOT NULL,
-            filesize INTEGER NOT NULL,
-            mimetype TEXT NOT NULL COLLATE NOCASE,
-            caption TEXT,
-            tags TEXT,
+            key VARCHAR NOT NULL PRIMARY KEY,
+            hash VARCHAR NOT NULL UNIQUE COLLATE NOCASE,
+            filename VARCHAR NOT NULL,
+            filesize UBIGINT NOT NULL,
+            mimetype VARCHAR NOT NULL COLLATE NOCASE,
+            caption VARCHAR,
+            tags VARCHAR,
             location INTEGER,
-            imported INTEGER NOT NULL,
-            user_date INTEGER,
-            orig_date INTEGER,
-            pixel_w INTEGER,
-            pixel_h INTEGER,
+            imported TIMESTAMP_S NOT NULL,
+            user_date TIMESTAMP_S,
+            orig_date TIMESTAMP_S,
+            pixel_w UINTEGER,
+            pixel_h UINTEGER,
             FOREIGN KEY (location) REFERENCES locations (id)
-        ) STRICT",
-        (),
-    )?;
-    conn.execute(
-        "CREATE UNIQUE INDEX IF NOT EXISTS hashes ON assets (hash)",
-        (),
+        )",
+        params![],
     )?;
     conn.execute(
         "CREATE INDEX IF NOT EXISTS dates ON assets (coalesce(user_date, orig_date, imported))",
-        (),
+        params![],
     )?;
     Ok(())
 }
 
 // Keep a map of references to shared DB instances mapped by the path to the
-// database files. SQLite itself is thread-safe and the so is rusqlite.
+// database files. DuckDB itself is thread-safe and the so is duckdb.
 static DBASE_REFS: LazyLock<Mutex<HashMap<PathBuf, Arc<Mutex<Connection>>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
@@ -85,8 +83,8 @@ pub fn drop_database_ref<P: AsRef<Path>>(db_path: P) {
     db_refs.remove(db_path.as_ref());
 }
 
-/// Implementation of the entity data source utilizing rusqlite to store records
-/// in an SQLite database.
+/// Implementation of the entity data source utilizing duckdb to store records
+/// in an DuckDB database.
 pub struct EntityDataSourceImpl {
     conn: Arc<Mutex<Connection>>,
 }
@@ -102,8 +100,10 @@ impl EntityDataSourceImpl {
         // is a directory name into which the database should be written
         let mut path: PathBuf = db_path.as_ref().to_path_buf();
         std::fs::create_dir_all(&path)?;
-        path.push("tanuki.db3");
-        let conn = Connection::open(path.as_path())?;
+        path.push("tanuki.duckdb");
+        // restrain DuckDB from using every single CPU core
+        let flags = duckdb::Config::default().threads(4)?;
+        let conn = Connection::open_with_flags(path.as_path(), flags)?;
         prepare_database(&conn)?;
         let arc = Arc::new(Mutex::new(conn));
         let buf = db_path.as_ref().to_path_buf();
@@ -159,18 +159,18 @@ impl EntityDataSource for EntityDataSourceImpl {
             Value::Null
         };
         let user_date = if let Some(ud) = asset.user_date {
-            Value::Integer(ud.timestamp())
+            Value::Timestamp(TimeUnit::Second, ud.timestamp())
         } else {
             Value::Null
         };
-        let imported = asset.import_date.timestamp();
+        let imported = Value::Timestamp(TimeUnit::Second, asset.import_date.timestamp());
         let orig_date = if let Some(od) = asset.original_date {
-            Value::Integer(od.timestamp())
+            Value::Timestamp(TimeUnit::Second, od.timestamp())
         } else {
             Value::Null
         };
         let (pixel_w, pixel_h): (Value, Value) = if let Some(ref dim) = asset.dimensions {
-            (Value::Integer(dim.0.into()), Value::Integer(dim.1.into()))
+            (Value::UInt(dim.0), Value::UInt(dim.1))
         } else {
             (Value::Null, Value::Null)
         };
@@ -181,9 +181,9 @@ impl EntityDataSource for EntityDataSourceImpl {
             "INSERT INTO assets (key, hash, filename, filesize, mimetype, caption,
                 tags, location, imported, user_date, orig_date, pixel_w, pixel_h)
             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
-            ON CONFLICT DO UPDATE SET filename = ?3, mimetype = ?5,
+            ON CONFLICT (key) DO UPDATE SET filename = ?3, mimetype = ?5,
                 caption = ?6, tags = ?7, location = ?8, user_date = ?10",
-            (
+            params![
                 &asset.key,
                 &asset.checksum,
                 &asset.filename,
@@ -197,23 +197,18 @@ impl EntityDataSource for EntityDataSourceImpl {
                 orig_date,
                 pixel_w,
                 pixel_h,
-            ),
+            ],
         )?;
         Ok(())
     }
 
     fn delete_asset(&self, asset_id: &str) -> Result<(), Error> {
         let db = self.conn.lock().unwrap();
-        db.execute("DELETE FROM assets WHERE key = ?1", (asset_id,))?;
+        db.execute("DELETE FROM assets WHERE key = ?1", params![asset_id])?;
         Ok(())
     }
 
     fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error> {
-        //
-        // Would like to use "WHERE tags REGEXP '\bterm\b'"" to save a lot of
-        // work manually comparing the tags, but that requires loading an
-        // extension that is not built into the SQLite used by rusqlite.
-        //
         let lowered: HashSet<String> = tags.iter().map(|t| t.to_lowercase()).collect();
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
@@ -298,12 +293,7 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
-        let before_s = before.timestamp();
-        //
-        // SQLite "indexes on expressions" stipulates that the expression used
-        // to query the table must match the one used to define the index, so be
-        // sure the coalesce() invocation matches the index precisely.
-        //
+        let before_s = Value::Timestamp(TimeUnit::Second, before.timestamp());
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region,
@@ -321,7 +311,7 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_after_date(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
-        let after_s = after.timestamp();
+        let after_s = Value::Timestamp(TimeUnit::Second, after.timestamp());
         //
         // SQLite "indexes on expressions" stipulates that the expression used
         // to query the table must match the one used to define the index, so be
@@ -348,8 +338,8 @@ impl EntityDataSource for EntityDataSourceImpl {
         after: DateTime<Utc>,
         before: DateTime<Utc>,
     ) -> Result<Vec<SearchResult>, Error> {
-        let after_s = after.timestamp();
-        let before_s = before.timestamp();
+        let after_s = Value::Timestamp(TimeUnit::Second, after.timestamp());
+        let before_s = Value::Timestamp(TimeUnit::Second, before.timestamp());
         //
         // SQLite "indexes on expressions" stipulates that the expression used
         // to query the table must match the one used to define the index, so be
@@ -372,7 +362,7 @@ impl EntityDataSource for EntityDataSourceImpl {
     }
 
     fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
-        let after_s = after.timestamp();
+        let after_s = Value::Timestamp(TimeUnit::Second, after.timestamp());
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region, imported
@@ -603,18 +593,18 @@ impl EntityDataSource for EntityDataSourceImpl {
                 Value::Null
             };
             let user_date = if let Some(ud) = asset.user_date {
-                Value::Integer(ud.timestamp())
+                Value::Timestamp(TimeUnit::Second, ud.timestamp())
             } else {
                 Value::Null
             };
-            let imported = asset.import_date.timestamp();
+            let imported = Value::Timestamp(TimeUnit::Second, asset.import_date.timestamp());
             let orig_date = if let Some(od) = asset.original_date {
-                Value::Integer(od.timestamp())
+                Value::Timestamp(TimeUnit::Second, od.timestamp())
             } else {
                 Value::Null
             };
             let (pixel_w, pixel_h): (Value, Value) = if let Some(ref dim) = asset.dimensions {
-                (Value::Integer(dim.0.into()), Value::Integer(dim.1.into()))
+                (Value::UInt(dim.0), Value::UInt(dim.1))
             } else {
                 (Value::Null, Value::Null)
             };
@@ -622,11 +612,13 @@ impl EntityDataSource for EntityDataSourceImpl {
                 .remove(&asset.key)
                 .ok_or_else(|| anyhow!("asset without location"))?;
             db.execute(
-                "INSERT OR REPLACE INTO assets
-                (key, hash, filename, filesize, mimetype, caption, tags, location, imported,
-                user_date, orig_date, pixel_w, pixel_h)
-                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
-                (
+                "INSERT INTO assets
+                    (key, hash, filename, filesize, mimetype, caption, tags, location,
+                    imported, user_date, orig_date, pixel_w, pixel_h)
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+                ON CONFLICT (key) DO UPDATE SET filename = ?3, mimetype = ?5,
+                    caption = ?6, tags = ?7, location = ?8, user_date = ?10",
+                params![
                     &asset.key,
                     &asset.checksum,
                     &asset.filename,
@@ -640,7 +632,7 @@ impl EntityDataSource for EntityDataSourceImpl {
                     orig_date,
                     pixel_w,
                     pixel_h,
-                ),
+                ],
             )?;
         }
         Ok(())
@@ -651,15 +643,15 @@ impl EntityDataSource for EntityDataSourceImpl {
 // If no such row is found, and this location has values, then insert a new row
 // and return that rowid for the newly inserted location. Otherwise, return null
 // to indicate no location foreign key is needed.
-fn ensure_location(db: &Connection, location: Option<&Location>) -> Result<Value, rusqlite::Error> {
+fn ensure_location(db: &Connection, location: Option<&Location>) -> Result<Value, duckdb::Error> {
     if let Some(loc) = location {
         if loc.has_values() {
             let loc_id = query_location_rowid(loc, db)?;
             if loc_id == 0 {
                 // exact matching location not found, insert one now
-                db.execute(
-                    "INSERT INTO locations (label, city, region) VALUES (?1, ?2, ?3)",
-                    (
+                Ok(Value::UBigInt(db.query_row(
+                    "INSERT INTO locations (label, city, region) VALUES (?1, ?2, ?3) RETURNING (id)",
+                    params![
                         loc.label
                             .as_ref()
                             .map(|s| Value::Text(s.to_owned()))
@@ -672,11 +664,11 @@ fn ensure_location(db: &Connection, location: Option<&Location>) -> Result<Value
                             .as_ref()
                             .map(|s| Value::Text(s.to_owned()))
                             .unwrap_or(Value::Null),
-                    ),
-                )?;
-                Ok(Value::Integer(db.last_insert_rowid()))
+                    ],
+                    |row| row.get::<usize, u64>(0)
+                )?))
             } else {
-                Ok(Value::Integer(loc_id))
+                Ok(Value::UBigInt(loc_id))
             }
         } else {
             Ok(Value::Null)
@@ -686,11 +678,11 @@ fn ensure_location(db: &Connection, location: Option<&Location>) -> Result<Value
     }
 }
 
-impl<'a> TryFrom<&'a rusqlite::Row<'_>> for Asset {
-    type Error = rusqlite::Error;
+impl<'a> TryFrom<&'a duckdb::Row<'_>> for Asset {
+    type Error = duckdb::Error;
 
     // for a row in which "SELECT assets.*, locations.*" was queried
-    fn try_from(row: &rusqlite::Row) -> Result<Self, rusqlite::Error> {
+    fn try_from(row: &duckdb::Row) -> Result<Self, duckdb::Error> {
         // all of the not null cells
         let key: String = row.get(0)?;
         let mut asset = Asset::new(key);
@@ -746,7 +738,7 @@ impl<'a> TryFrom<&'a rusqlite::Row<'_>> for Asset {
 
 // create a search result from the row returned by the query functions that do
 // not include a tags value
-fn search_result_from_row(row: &rusqlite::Row) -> Result<SearchResult, rusqlite::Error> {
+fn search_result_from_row(row: &duckdb::Row) -> Result<SearchResult, duckdb::Error> {
     // SELECT key, filename, mimetype, label, city, region, bestdate
     let key: String = row.get(0)?;
     let filename: String = row.get(1)?;
@@ -779,7 +771,7 @@ fn search_result_from_row(row: &rusqlite::Row) -> Result<SearchResult, rusqlite:
 
 // Query to find a location rowid that matches the given location. Returns zero
 // if no such row.
-fn query_location_rowid(loc: &Location, db: &Connection) -> Result<i64, rusqlite::Error> {
+fn query_location_rowid(loc: &Location, db: &Connection) -> Result<u64, duckdb::Error> {
     let label_is_some = loc.label.is_some();
     let city_is_some = loc.city.is_some();
     let region_is_some = loc.region.is_some();

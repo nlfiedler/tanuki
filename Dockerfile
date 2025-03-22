@@ -32,7 +32,7 @@ FROM debian:latest
 ARG SITE_ADDR="0.0.0.0:3000"
 ENV DEBIAN_FRONTEND="noninteractive"
 RUN apt-get -q update && \
-    apt-get -q -y install openssl ca-certificates libsqlite3-0
+    apt-get -q -y install openssl ca-certificates
 WORKDIR /app
 COPY --from=builder /build/target/release/tanuki .
 COPY --from=builder /build/target/site site

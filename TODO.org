@@ -1,81 +1,21 @@
 * Action Items
-** Evaluate DuckDB
-*** good: supports arrays and lists as column types
-*** good: CLI for manually querying and altering database
-*** good: web ui https://duckdb.org/2025/03/12/duckdb-ui.html
-*** concern: needs a lot of memory (minimum 125mb per thread)
-*** concern: designed for SSD and NVMe, writes may be slow on HDD
-*** concern: designed for bulk updates, not many small transactions
-*** TODO design basic schema
-**** assets table
-| name       | description            | type                                   | typical size |
-|------------+------------------------+----------------------------------------+--------------|
-| key        | file path/identifier   | varchar not null primary key           |           64 |
-| hash       | sha256 digest          | varchar not null unique collate nocase |           64 |
-| filename   | original name          | varchar not null                       |           12 |
-| filesize   | byte length            | ubigint not null                       |            8 |
-| mimetype   | media type             | varchar not null collate nocase        |           10 |
-| caption    |                        | varchar                                |            0 |
-| tags       | list of tags           | varchar[]                              |           20 |
-| location   | FK on locations.id     |                                        |              |
-| imported   | datetime of import     | timestamp_s not null                   |           64 |
-| user_date  | user-defined datetime  | timestamp_s                            |           64 |
-| orig_date  | original datetime      | timestamp_s                            |           64 |
-| dimensions | image/video dimensions | uinteger[2]                            |            8 |
-**** locations table
-| name   | type                |
-|--------+---------------------|
-| id     | integer primary key |
-| label  | varchar             |
-| city   | varchar             |
-| region | varchar             |
-*** TODO action plan
-**** TODO create new DuckDB specific module in data/sources
-**** TODO consider restricting =threads= to a small number as it may create many if there are many "cores"
-**** TODO ~load~ usecase should delete indexes, load data, and recreate indexes to avoid poor performance
-***** c.f. https://duckdb.org/docs/stable/guides/performance/indexing
-**** TODO ~load~ should use ~Appender API~ via =append_rows()= function to add many rows at a time
-***** can only be done for new assets, conflicts will fail
-***** DuckDB can easily handle 10,000 rows at a time
-***** c.f. https://duckdb.org/docs/stable/data/appender
-**** TODO add tests for DuckDB in =data_sources_test.rs=
 ** Try leptos upgrade again
 *** start from scratch, copying changes from ~upgrade~ branch
 *** see =upgrade= branch; there are many problems
 *** c.f. https://github.com/leptos-rs/leptos/issues/3354
 ** Data source comparison
-*** 21,502 assets, disk usage immediately after load, before compaction
-| Metric     | RocksDB    | SQLite     |
-|------------+------------+------------|
-| load time  | 4 sec      | 6 min      |
-| disk uage  | 39,298,784 | 13,450,984 |
-| compacted  | 20,857,914 |            |
-| asset size | 967        | 625        |
+*** 21,5xx assets, disk usage immediately after load, before compaction
+| Metric     | RocksDB    | SQLite     | DuckDB     |
+|------------+------------+------------+------------|
+| load time  | 4 sec      | 6 min      | 6m 24s     |
+| disk uage  | 39,298,784 | 13,450,984 | 12,736,628 |
+| asset size | 1827       | 625        | 590        |
 *** SQLite load measurements
 | milestone                          | time   | asset count |
 |------------------------------------+--------+-------------|
 | initial with too many locations    | 5m 48s |       21502 |
 | location dedupe, insert or replace | 4m 30s |       21557 |
 *** stop expanding
-** Rust vs JavaScript
-*** Rust benefits
-- code sharing is convenient
-- remote calls and arguments are validated at compile-time
-*** Rust drawbacks
-- Leptos is still very new and changes drastically
-- memory/thread safety is very tricky
-- some browser features are difficult to use
-*** JavaScript benefits
-- browser features are very easy to use
-- many available packages
-*** JavaScript drawbacks
-- incredibly stupid language (no type safety, easy to make mistakes)
-- must serialize and validate arguments for remote calls
-- some code duplication between client and server
-** Memory leak
-*** it is gradually leaking memory until the OS swaps
-*** simple =HEAD= request on static asset gains 100mb of memory usage every time
-*** consider if different memory allocator would help
 ** Help
 *** write help pages for each of the main pages
 **** location string parsing
@@ -189,7 +129,6 @@
 ** Uploads
 *** theoretically could show the thumbnail of images before uploading
 **** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
-** Search
 ** Edit
 *** hover over asset thumbnail will show larger version as tooltip
 *** allow adding or subtracting a number of days
@@ -218,6 +157,8 @@
 ***** when fetching a new page, the page widget would show a progress indicator
 ***** the "dropped" pages would be changed to consist of placeholders to free memory
 **** using carousel style navigation arrows?
+** DuckDB
+*** consider when to remove orphaned locations
 ** SQLite
 *** consider when to remove orphaned locations
 ** Hosting externally
@@ -237,14 +178,6 @@ assertion failed: actual.is_ok()
 *** screen for showing all tags, locations, years, mediaTypes, with count values
 **** selecting a tag or location offers a rename function
 **** selecting multiple tags/locations offers option to remove from all assets
-** Manage revisions of assets
-*** when uploading a replacement file for an asset, keep the old file
-*** add the old identifier to a new property in the asset record
-*** =Asset= will have a new optional =Vec<String>= of the old identifiers
-*** graphql: query for asset gives previous identifiers
-*** graphql: mutation to swap an old identifier with the current one
-*** graphql: mutation to remove all old identifiers and files
-*** webui: buttons for viewing other revisions, setting current, purging old ones
 ** Deleting assets
 *** create graphql mutation to delete assets with certain tag
 **** boolean argument ~yes~ to actually perform the delete
@@ -337,20 +270,6 @@ include it in the database records.
 ** Bulk Export
 *** Easy selection and export of multiple images
 ** Architecture Review
-*** Consider alternative record stores
-**** DuckDB
-***** https://duckdb.org
-***** https://crates.io/crates/duckdb
-***** column-oriented DBMS with SQL interface
-***** schema change may help with performance (split tags and location fields apart into columns)
-**** SQLite
-***** https://sqlite.org
-***** relational database, would require significant changes
-**** LMDB
-***** https://www.symas.com/mdb
-***** crates last updated 7 years ago
-***** supposedly awesomely fast
-***** does not support column families
 *** Use async throughout
 **** could avoid the need for the =block_on()= function
 **** both =juniper= and =[leptos::server]= are already or support async fns

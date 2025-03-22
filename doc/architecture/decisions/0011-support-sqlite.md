@@ -6,7 +6,7 @@
 
 ## Context
 
-Asset metadata is stored in a database and that has been in [RocksDB](https://rocksdb.org) for several years. In the interest of exploring altnerative databases, support should be added to offer a choice of implementations at deployment time.
+Asset metadata is stored in a database and that has been in [RocksDB](https://rocksdb.org) for several years. In the interest of exploring alternative databases, support should be added to offer a choice of implementations at deployment time.
 
 ## Decision
 
@@ -28,7 +28,7 @@ The initial alternative data store will be SQLite.
 
 ## Consequences
 
-Disk usage is a bit less than RocksDB, but load time of 21,000 assets is 6 minutes versus 4 seconds. This is likely due to the need to normalize the asset and location records, which involves a query to ensure no duplicates are inserted. Similarly, storing an asset record requires first checking if an entry already exists and either performing an `INSERT` or an `UPDATE` as appropriate.
+Disk usage is a bit less than RocksDB, but load time of 21,000 assets is 4.5 minutes versus 4 seconds. This is likely due to the need to normalize the asset and location records, which involves a query to ensure no duplicates are inserted.
 
 ## Links
 

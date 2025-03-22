@@ -6,6 +6,7 @@ mod common;
 use chrono::prelude::*;
 use common::{compare_assets, DBPath};
 use std::str::FromStr;
+use tanuki::data::sources::duckdb::EntityDataSourceImpl as DuckySource;
 use tanuki::data::sources::rocksdb::EntityDataSourceImpl as RockySource;
 use tanuki::data::sources::sqlite::EntityDataSourceImpl as SqliteSource;
 use tanuki::data::sources::EntityDataSource;
@@ -19,6 +20,10 @@ fn test_data_source_get_put_delete_asset() {
 
     let db_path_s = DBPath::new("_test_get_put_asset");
     let datasource = SqliteSource::new(&db_path_s).unwrap();
+    do_test_get_put_delete_asset(Box::new(datasource));
+
+    let db_path_s = DBPath::new("_test_get_put_asset");
+    let datasource = DuckySource::new(&db_path_s).unwrap();
     do_test_get_put_delete_asset(Box::new(datasource));
 }
 
@@ -61,6 +66,10 @@ fn test_data_source_get_asset_by_digest() {
     let db_path_s = DBPath::new("_test_get_asset_by_digest");
     let datasource = SqliteSource::new(&db_path_s).unwrap();
     do_test_get_asset_by_digest(Box::new(datasource));
+
+    let db_path_s = DBPath::new("_test_get_asset_by_digest");
+    let datasource = DuckySource::new(&db_path_s).unwrap();
+    do_test_get_asset_by_digest(Box::new(datasource));
 }
 
 fn do_test_get_asset_by_digest(datasource: Box<dyn EntityDataSource>) {
@@ -98,6 +107,10 @@ fn test_data_source_count_assets() {
     let db_path = DBPath::new("_test_count_assets");
     let datasource = SqliteSource::new(&db_path).unwrap();
     do_test_count_assets(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_count_assets");
+    let datasource = DuckySource::new(&db_path).unwrap();
+    do_test_count_assets(Box::new(datasource));
 }
 
 fn do_test_count_assets(datasource: Box<dyn EntityDataSource>) {
@@ -128,6 +141,10 @@ fn test_data_source_all_locations() {
 
     let db_path = DBPath::new("_test_all_locations");
     let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_all_locations(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_all_locations");
+    let datasource = DuckySource::new(&db_path).unwrap();
     do_test_data_source_all_locations(Box::new(datasource));
 }
 
@@ -173,6 +190,10 @@ fn test_data_source_raw_locations() {
 
     let db_path = DBPath::new("_test_raw_locations");
     let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_raw_locations(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_raw_locations");
+    let datasource = DuckySource::new(&db_path).unwrap();
     do_test_data_source_raw_locations(Box::new(datasource));
 }
 
@@ -252,6 +273,10 @@ fn test_data_source_all_years() {
     let db_path = DBPath::new("_test_all_years");
     let datasource = SqliteSource::new(&db_path).unwrap();
     do_test_data_source_all_years(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_all_years");
+    let datasource = DuckySource::new(&db_path).unwrap();
+    do_test_data_source_all_years(Box::new(datasource));
 }
 
 fn do_test_data_source_all_years(datasource: Box<dyn EntityDataSource>) {
@@ -292,6 +317,10 @@ fn test_data_source_all_tags() {
 
     let db_path = DBPath::new("_test_all_tags");
     let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_all_tags(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_all_tags");
+    let datasource = DuckySource::new(&db_path).unwrap();
     do_test_data_source_all_tags(Box::new(datasource));
 }
 
@@ -336,6 +365,10 @@ fn test_data_source_all_media_types() {
 
     let db_path = DBPath::new("_test_all_media_types");
     let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_all_media_types(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_all_media_types");
+    let datasource = DuckySource::new(&db_path).unwrap();
     do_test_data_source_all_media_types(Box::new(datasource));
 }
 
@@ -384,6 +417,10 @@ fn test_data_source_query_all_assets() {
     let db_path = DBPath::new("_test_query_all_assets");
     let datasource = SqliteSource::new(&db_path).unwrap();
     do_test_data_source_query_all_assets(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_query_all_assets");
+    let datasource = DuckySource::new(&db_path).unwrap();
+    do_test_data_source_query_all_assets(Box::new(datasource));
 }
 
 fn do_test_data_source_query_all_assets(datasource: Box<dyn EntityDataSource>) {
@@ -419,17 +456,21 @@ fn do_test_data_source_query_all_assets(datasource: Box<dyn EntityDataSource>) {
 }
 
 #[test]
-fn test_data_source_query_by_tags() {
+fn test_data_source_query_by_tags_basic() {
     let db_path = DBPath::new("_test_query_by_tags");
     let datasource = RockySource::new(&db_path).unwrap();
-    do_test_data_source_query_by_tags(Box::new(datasource));
+    do_test_data_source_query_by_tags_basic(Box::new(datasource));
 
     let db_path = DBPath::new("_test_query_by_tags");
     let datasource = SqliteSource::new(&db_path).unwrap();
-    do_test_data_source_query_by_tags(Box::new(datasource));
+    do_test_data_source_query_by_tags_basic(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_query_by_tags");
+    let datasource = DuckySource::new(&db_path).unwrap();
+    do_test_data_source_query_by_tags_basic(Box::new(datasource));
 }
 
-fn do_test_data_source_query_by_tags(datasource: Box<dyn EntityDataSource>) {
+fn do_test_data_source_query_by_tags_basic(datasource: Box<dyn EntityDataSource>) {
     // zero assets
     let tags = vec!["cAt".to_owned()];
     let actual = datasource.query_by_tags(tags.clone()).unwrap();
@@ -496,6 +537,10 @@ fn test_data_source_query_by_tags_exact() {
     let db_path = DBPath::new("_test_query_by_tags_exact");
     let datasource = SqliteSource::new(&db_path).unwrap();
     do_test_data_source_query_by_tags_exact(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_query_by_tags_exact");
+    let datasource = DuckySource::new(&db_path).unwrap();
+    do_test_data_source_query_by_tags_exact(Box::new(datasource));
 }
 
 fn do_test_data_source_query_by_tags_exact(datasource: Box<dyn EntityDataSource>) {
@@ -527,6 +572,10 @@ fn test_data_source_query_by_dates() {
 
     let db_path = DBPath::new("_test_query_by_dates");
     let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_query_by_dates(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_query_by_dates");
+    let datasource = DuckySource::new(&db_path).unwrap();
     do_test_data_source_query_by_dates(Box::new(datasource));
 }
 
@@ -650,6 +699,10 @@ fn test_data_source_query_by_locations() {
     let db_path = DBPath::new("_test_query_by_locations");
     let datasource = SqliteSource::new(&db_path).unwrap();
     do_test_data_source_query_by_locations(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_query_by_locations");
+    let datasource = DuckySource::new(&db_path).unwrap();
+    do_test_data_source_query_by_locations(Box::new(datasource));
 }
 
 fn do_test_data_source_query_by_locations(datasource: Box<dyn EntityDataSource>) {
@@ -732,6 +785,10 @@ fn test_data_source_query_by_media_type() {
     let db_path = DBPath::new("_test_query_by_media_type");
     let datasource = SqliteSource::new(&db_path).unwrap();
     do_test_data_source_query_by_media_type(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_query_by_media_type");
+    let datasource = DuckySource::new(&db_path).unwrap();
+    do_test_data_source_query_by_media_type(Box::new(datasource));
 }
 
 fn do_test_data_source_query_by_media_type(datasource: Box<dyn EntityDataSource>) {
@@ -767,17 +824,21 @@ fn do_test_data_source_query_by_media_type(datasource: Box<dyn EntityDataSource>
 }
 
 #[test]
-fn test_data_source_query_newborn() {
+fn test_data_source_query_newborn_basic() {
     let db_path = DBPath::new("_test_query_newborn");
     let datasource = RockySource::new(&db_path).unwrap();
-    do_test_data_source_query_newborn(Box::new(datasource));
+    do_test_data_source_query_newborn_basic(Box::new(datasource));
 
     let db_path = DBPath::new("_test_query_newborn");
     let datasource = SqliteSource::new(&db_path).unwrap();
-    do_test_data_source_query_newborn(Box::new(datasource));
+    do_test_data_source_query_newborn_basic(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_query_newborn");
+    let datasource = DuckySource::new(&db_path).unwrap();
+    do_test_data_source_query_newborn_basic(Box::new(datasource));
 }
 
-fn do_test_data_source_query_newborn(datasource: Box<dyn EntityDataSource>) {
+fn do_test_data_source_query_newborn_basic(datasource: Box<dyn EntityDataSource>) {
     let date1 = make_date_time(2011, 8, 30, 12, 12, 12);
     let date2 = make_date_time(2013, 8, 30, 12, 12, 12);
     let date3 = make_date_time(2015, 8, 30, 12, 12, 12);
@@ -836,6 +897,10 @@ fn test_data_source_query_newborn_old() {
     let db_path = DBPath::new("_test_query_newborn_old");
     let datasource = SqliteSource::new(&db_path).unwrap();
     do_test_data_source_query_newborn_old(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_query_newborn_old");
+    let datasource = DuckySource::new(&db_path).unwrap();
+    do_test_data_source_query_newborn_old(Box::new(datasource));
 }
 
 fn do_test_data_source_query_newborn_old(datasource: Box<dyn EntityDataSource>) {
@@ -879,6 +944,10 @@ fn test_data_source_fetch_assets() {
     let db_path = DBPath::new("_test_fetch_assets");
     let datasource = SqliteSource::new(&db_path).unwrap();
     do_test_data_source_fetch_assets(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_fetch_assets");
+    let datasource = DuckySource::new(&db_path).unwrap();
+    do_test_data_source_fetch_assets(Box::new(datasource));
 }
 
 fn do_test_data_source_fetch_assets(datasource: Box<dyn EntityDataSource>) {
@@ -919,6 +988,10 @@ fn test_data_source_store_assets() {
 
     let db_path = DBPath::new("_test_store_assets");
     let datasource = SqliteSource::new(&db_path).unwrap();
+    do_test_data_source_store_assets(Box::new(datasource));
+
+    let db_path = DBPath::new("_test_store_assets");
+    let datasource = DuckySource::new(&db_path).unwrap();
     do_test_data_source_store_assets(Box::new(datasource));
 }
 
