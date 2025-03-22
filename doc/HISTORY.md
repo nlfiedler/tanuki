@@ -94,4 +94,4 @@ Replicated the advanced text-based query support found in [Perkeep](https://perk
 
 ## March 2025
 
-Added support for [SQLite](https://sqlite.org) as an alternative to RocksDB.
+Added support for [SQLite](https://sqlite.org) and [DuckDB](https://duckdb.org) as alternative data stores.
