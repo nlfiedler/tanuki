@@ -600,7 +600,13 @@ fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
     // zero assets
     assert_eq!(datasource.query_before_date(future_date).unwrap().len(), 0);
     assert_eq!(datasource.query_after_date(year_1918).unwrap().len(), 0);
-    assert_eq!(datasource.query_date_range(year_1918, future_date).unwrap().len(), 0);
+    assert_eq!(
+        datasource
+            .query_date_range(year_1918, future_date)
+            .unwrap()
+            .len(),
+        0
+    );
 
     // one asset
     let asset = common::build_basic_asset("year_2018");
@@ -609,7 +615,13 @@ fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
     assert_eq!(datasource.query_before_date(year_2019).unwrap().len(), 1);
     assert_eq!(datasource.query_after_date(year_2011).unwrap().len(), 1);
     assert_eq!(datasource.query_after_date(year_2019).unwrap().len(), 0);
-    assert_eq!(datasource.query_date_range(year_2011, year_2019).unwrap().len(), 1);
+    assert_eq!(
+        datasource
+            .query_date_range(year_2011, year_2019)
+            .unwrap()
+            .len(),
+        1
+    );
 
     // multiple assets; set different date fields to test "best date" logic
     let mut asset = common::build_basic_asset("year_1940");

@@ -212,15 +212,35 @@ pub fn compare_assets(a: &Asset, b: &Asset) {
     assert_eq!(a.key, b.key, "key");
     assert_eq!(a.checksum, b.checksum, "checksum: {}, {}", a.key, b.key);
     assert_eq!(a.filename, b.filename, "filename: {}, {}", a.key, b.key);
-    assert_eq!(a.byte_length, b.byte_length, "byte_length: {}, {}", a.key, b.key);
-    assert_eq!(a.media_type, b.media_type, "media_type: {}, {}", a.key, b.key);
+    assert_eq!(
+        a.byte_length, b.byte_length,
+        "byte_length: {}, {}",
+        a.key, b.key
+    );
+    assert_eq!(
+        a.media_type, b.media_type,
+        "media_type: {}, {}",
+        a.key, b.key
+    );
     assert_eq!(a.tags, b.tags, "tags: {}, {}", a.key, b.key);
-    assert_eq!(a.import_date, b.import_date, "import_date: {}, {}", a.key, b.key);
+    assert_eq!(
+        a.import_date, b.import_date,
+        "import_date: {}, {}",
+        a.key, b.key
+    );
     assert_eq!(a.caption, b.caption, "caption: {}, {}", a.key, b.key);
     assert_eq!(a.location, b.location, "location: {}, {}", a.key, b.key);
     assert_eq!(a.user_date, b.user_date, "user_date: {}, {}", a.key, b.key);
-    assert_eq!(a.original_date, b.original_date, "original_date: {}, {}", a.key, b.key);
-    assert_eq!(a.dimensions, b.dimensions, "dimensions: {}, {}", a.key, b.key);
+    assert_eq!(
+        a.original_date, b.original_date,
+        "original_date: {}, {}",
+        a.key, b.key
+    );
+    assert_eq!(
+        a.dimensions, b.dimensions,
+        "dimensions: {}, {}",
+        a.key, b.key
+    );
 }
 
 // generate a sha1-XXX style hash of the given input
