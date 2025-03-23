@@ -653,6 +653,8 @@ fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
 
     let actual = datasource.query_before_date(max_utc).unwrap();
     assert_eq!(actual.len(), 8);
+    let actual = datasource.query_before_date(min_utc).unwrap();
+    assert_eq!(actual.len(), 0);
 
     // just before the epoch
     let actual = datasource.query_before_date(year_1968).unwrap();
@@ -684,6 +686,8 @@ fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
 
     let actual = datasource.query_after_date(min_utc).unwrap();
     assert_eq!(actual.len(), 8);
+    let actual = datasource.query_after_date(max_utc).unwrap();
+    assert_eq!(actual.len(), 0);
     let actual = datasource.query_after_date(year_1918).unwrap();
     assert_eq!(actual.len(), 8);
 
@@ -693,6 +697,9 @@ fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
     assert!(actual.iter().any(|l| l.asset_id == "year_2017"));
     assert!(actual.iter().any(|l| l.asset_id == "year_2018"));
 
+    let actual = datasource.query_date_range(min_utc, max_utc).unwrap();
+    assert_eq!(actual.len(), 8);
+
     let actual = datasource.query_date_range(year_1918, year_1968).unwrap();
     assert_eq!(actual.len(), 1);
     assert!(actual[0].asset_id == "year_1940");
@@ -700,6 +707,11 @@ fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
     let actual = datasource.query_date_range(year_1918, year_1971).unwrap();
     assert_eq!(actual.len(), 1);
     assert!(actual[0].asset_id == "year_1940");
+
+    let actual = datasource.query_date_range(year_1940, year_2013).unwrap();
+    assert_eq!(actual.len(), 2);
+    assert!(actual.iter().any(|l| l.asset_id == "year_1940"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2011"));
 }
 
 #[test]
