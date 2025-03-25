@@ -1,20 +1,18 @@
 //
 // Copyright (c) 2024 Nathan Fiedler
 //
-use html::Div;
+use crate::domain::entities::Location;
 use leptos::ev::Event;
-use leptos::html::Input;
-use leptos::*;
+use leptos::html::{Div, Input};
+use leptos::prelude::*;
 use leptos_use::on_click_outside;
 use std::collections::HashSet;
-
-use crate::domain::entities::Location;
 
 /// Show list of selected attributes as tags/chips.
 #[component]
 pub fn TagList<F>(attrs: Signal<HashSet<String>>, rm_attr: F) -> impl IntoView
 where
-    F: Fn(String) + Copy + 'static,
+    F: Fn(String) + Copy + 'static + Send,
 {
     // be sure to access the signal inside the view!
     view! {
@@ -23,7 +21,7 @@ where
                 .get()
                 .into_iter()
                 .map(move |attr| {
-                    let attr = store_value(attr);
+                    let attr = StoredValue::new(attr);
                     view! {
                         <div class="control">
                             <div class="tags has-addons">
@@ -44,10 +42,10 @@ where
 #[component]
 pub fn TagsChooser<F>(add_tag: F) -> impl IntoView
 where
-    F: Fn(String) + Copy + 'static,
+    F: Fn(String) + Copy + 'static + Send,
 {
     // the tags returned from the server are in no particular order
-    let tags = create_resource(
+    let tags = Resource::new(
         || (),
         |_| async move {
             let mut results = super::fetch_tags().await;
@@ -80,10 +78,10 @@ where
                 tags.get()
                     .map(|resp| match resp {
                         Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
+                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_any()
                         }
                         Ok(data) => {
-                            let tags = store_value(data);
+                            let tags = StoredValue::new(data);
                             view! {
                                 <div class="field is-horizontal">
                                     <div class="field-label is-normal">
@@ -115,7 +113,7 @@ where
                                     </div>
                                 </div>
                             }
-                                .into_view()
+                                .into_any()
                         }
                     })
             }}
@@ -126,10 +124,10 @@ where
 #[component]
 pub fn LocationsChooser<F>(add_location: F) -> impl IntoView
 where
-    F: Fn(String) + Copy + 'static,
+    F: Fn(String) + Copy + 'static + Send,
 {
     // the locations returned from the server are in no particular order
-    let locations = create_resource(
+    let locations = Resource::new(
         || (),
         |_| async move {
             let mut results = super::fetch_all_locations().await;
@@ -163,10 +161,10 @@ where
                     .get()
                     .map(|resp| match resp {
                         Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
+                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_any()
                         }
                         Ok(data) => {
-                            let locations = store_value(data);
+                            let locations = StoredValue::new(data);
                             view! {
                                 <div class="field is-horizontal">
                                     <div class="field-label is-normal">
@@ -198,7 +196,7 @@ where
                                     </div>
                                 </div>
                             }
-                                .into_view()
+                                .into_any()
                         }
                     })
             }}
@@ -209,11 +207,11 @@ where
 #[component]
 pub fn FullLocationChooser<F>(set_location: F) -> impl IntoView
 where
-    F: Fn(Location) + Copy + 'static,
+    F: Fn(Location) + Copy + 'static + Send,
 {
     use std::str::FromStr;
     // the locations returned from the server are in no particular order
-    let locations = create_resource(
+    let locations = Resource::new(
         || (),
         |_| async move {
             let mut results = super::fetch_raw_locations().await;
@@ -247,10 +245,10 @@ where
                     .get()
                     .map(|resp| match resp {
                         Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
+                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_any()
                         }
                         Ok(data) => {
-                            let locations = store_value(data);
+                            let locations = StoredValue::new(data);
                             view! {
                                 <div class="field is-horizontal">
                                     <div class="field-label is-normal">
@@ -285,7 +283,7 @@ where
                                     </div>
                                 </div>
                             }
-                                .into_view()
+                                .into_any()
                         }
                     })
             }}
@@ -297,10 +295,10 @@ where
 #[component]
 pub fn TypesChooser<F>(selected_type: Signal<Option<String>>, set_type: F) -> impl IntoView
 where
-    F: Fn(Option<String>) + Copy + 'static,
+    F: Fn(Option<String>) + Copy + 'static + Send,
 {
     // the media types returned from the server are in no particular order
-    let types = create_resource(
+    let types = Resource::new(
         || (),
         |_| async move {
             let mut results = super::fetch_types().await;
@@ -310,8 +308,8 @@ where
             results
         },
     );
-    let dropdown_open = create_rw_signal(false);
-    let dropdown_ref = create_node_ref::<Div>();
+    let dropdown_open = RwSignal::new(false);
+    let dropdown_ref: NodeRef<Div> = NodeRef::new();
     let _ = on_click_outside(dropdown_ref, move |_| dropdown_open.set(false));
 
     view! {
@@ -323,10 +321,10 @@ where
                     .get()
                     .map(|resp| match resp {
                         Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
+                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_any()
                         }
                         Ok(data) => {
-                            let types = store_value(data);
+                            let types = StoredValue::new(data);
                             view! {
                                 <div
                                     class="dropdown"
@@ -365,7 +363,7 @@ where
                                                 let:type_
                                             >
                                                 {move || {
-                                                    let type_ = store_value(type_.clone());
+                                                    let type_ = StoredValue::new(type_.clone());
                                                     view! {
                                                         <a
                                                             class="dropdown-item"
@@ -383,7 +381,7 @@ where
                                     </div>
                                 </div>
                             }
-                                .into_view()
+                                .into_any()
                         }
                     })
             }}

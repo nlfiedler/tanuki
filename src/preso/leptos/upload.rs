@@ -3,9 +3,9 @@
 //
 use crate::preso::leptos::nav;
 use leptos::html::Div;
-use leptos::*;
+use leptos::prelude::*;
 use leptos_use::{use_drop_zone_with_options, UseDropZoneOptions, UseDropZoneReturn};
-use web_sys::wasm_bindgen::JsCast;
+use send_wrapper::SendWrapper;
 
 ///
 /// Import files in the `uploads` directory as if uplaoded via the browser.
@@ -15,6 +15,7 @@ pub async fn ingest() -> Result<u32, ServerFnError> {
     use crate::data::repositories::geo::find_location_repository;
     use crate::domain::usecases::ingest::{IngestAssets, Params};
     use crate::domain::usecases::UseCase;
+    use server_fn::error::ServerFnErrorErr;
     use std::path::PathBuf;
     use std::sync::Arc;
 
@@ -28,16 +29,16 @@ pub async fn ingest() -> Result<u32, ServerFnError> {
     let params = Params::new(uploads_path);
     let count = usecase
         .call(params)
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     Ok(count as u32)
 }
 
 #[component]
 pub fn UploadPage() -> impl IntoView {
     // boolean indicating if user is dragging files over the drop zone
-    let (is_over, set_is_over) = create_signal(false);
+    let (is_over, set_is_over) = signal(false);
     // drop zone element and destructured/renamed fields from the helper
-    let drop_zone_el = create_node_ref::<Div>();
+    let drop_zone_el: NodeRef<Div> = NodeRef::new();
     let UseDropZoneReturn {
         is_over_drop_zone: _ignored,
         files: dropped_files,
@@ -49,20 +50,27 @@ pub fn UploadPage() -> impl IntoView {
             .on_leave(move |_| set_is_over.set(false)),
     );
     // files selected from the file input element
-    let (selected_files, set_selected_files) = create_signal::<Vec<web_sys::File>>(vec![]);
+    //
+    // web_sys::File is not thread-safe and Leptos 0.7+ requires values
+    // to be thread-safe now; using SendWrapper might be an option, briefly
+    // tried and had trouble.
+    //
+    // let (selected_files, set_selected_files) =
+    //     arc_signal::<Vec<web_sys::File>>(vec![]);
     // combination of the dropped files and those from the file selector
-    let all_files = create_memo(move |_| {
-        with!(|dropped_files, selected_files| {
-            let mut copy: Vec<web_sys::File> = dropped_files.iter().cloned().collect();
-            for select in selected_files {
-                copy.push(select.to_owned());
-            }
-            copy.sort_by(|a, b| a.name().cmp(&b.name()));
-            copy.dedup_by(|a, b| a.name() == b.name());
-            copy
-        })
-    });
-    let has_files = move || all_files.get().len() > 0;
+    // let all_files = move || {
+    //     let dropped = dropped_files.read();
+    //     let selected = selected_files.read();
+    //     let mut copy: Vec<web_sys::File> = dropped.iter().map(|v| v.deref()).cloned().collect();
+    //     for select in selected.iter() {
+    //         copy.push(select.to_owned());
+    //     }
+    //     copy.sort_by(|a, b| a.name().cmp(&b.name()));
+    //     copy.dedup_by(|a, b| a.name() == b.name());
+    //     copy
+    // };
+    // let has_files = move || all_files().len() > 0;
+    let has_files = move || dropped_files.get().len() > 0;
     let drop_style = move || {
         format!(
             "border-style: dashed; min-height: 14em; {}",
@@ -74,21 +82,21 @@ pub fn UploadPage() -> impl IntoView {
         )
     };
     // import any files in the 'uploads' directory
-    let import_action = create_action(move |_input: &()| import_files());
+    let import_action = Action::new(move |_input: &()| import_files());
     // indicates number of files uploaded so far as percentage
-    let (progress, set_progress) = create_signal(0);
+    let (progress, set_progress) = signal(0);
     // upload the files asynchronously and update the progress
     let upload_action =
-        create_action(move |_input: &()| upload_files(all_files.get(), set_progress));
+        Action::new_local(move |_input: &()| upload_files(dropped_files.get(), set_progress));
     // merge chosen files with any that were selected previously
-    let files_selected = move |ev| {
-        let mut selected = file_event_to_file_vec(ev);
-        let mut copy = selected_files.get();
-        copy.append(&mut selected);
-        copy.sort_by(|a, b| a.name().cmp(&b.name()));
-        copy.dedup_by(|a, b| a.name() == b.name());
-        set_selected_files.set(copy);
-    };
+    // let files_selected = move |ev| {
+    //     let mut selected = file_event_to_file_vec(ev);
+    //     let mut copy = selected_files.get();
+    //     copy.append(&mut selected);
+    //     copy.sort_by(|a, b| a.name().cmp(&b.name()));
+    //     copy.dedup_by(|a, b| a.name() == b.name());
+    //     set_selected_files.set(copy);
+    // };
 
     view! {
         <nav::NavBar />
@@ -101,7 +109,9 @@ pub fn UploadPage() -> impl IntoView {
                             class="button"
                             class:is-loading=move || import_action.pending().get()
                             disabled=move || import_action.pending().get()
-                            on:click=move |_| import_action.dispatch(())
+                            on:click=move |_| {
+                                import_action.dispatch(());
+                            }
                         >
                             Import
                         </button>
@@ -121,8 +131,9 @@ pub fn UploadPage() -> impl IntoView {
                                     id="file-input"
                                     multiple
                                     name="uploads"
-                                    disabled=move || upload_action.pending().get()
-                                    on:input=files_selected
+                                    // disabled=move || upload_action.pending().get()
+                                    // on:input=files_selected
+                                    disabled=move || { true }
                                 />
                                 <span class="file-cta">
                                     <span class="file-icon">
@@ -136,10 +147,10 @@ pub fn UploadPage() -> impl IntoView {
                     <div class="level-item">
                         <button
                             class="button"
-                            disabled=move || {
-                                has_files() == false || upload_action.pending().get()
+                            disabled=move || has_files() == false || upload_action.pending().get()
+                            on:click=move |_| {
+                                upload_action.dispatch(());
                             }
-                            on:click=move |_| upload_action.dispatch(())
                         >
                             Start Upload
                         </button>
@@ -170,7 +181,7 @@ pub fn UploadPage() -> impl IntoView {
                             </tr>
                         </thead>
                         <tbody>
-                            <For each=move || all_files.get() key=|f| f.name() let:file>
+                            <For each=move || dropped_files.get() key=|f| f.name() let:file>
                                 <tr>
                                     <td>{file.name()}</td>
                                     <td>{file.type_()}</td>
@@ -202,13 +213,13 @@ async fn import_files() {
     }
     // navigate to the pending page for convenience and consistency with the
     // upload button
-    let navigate = leptos_router::use_navigate();
+    let navigate = leptos_router::hooks::use_navigate();
     navigate("/pending", Default::default());
 }
 
 /// Upload the given files, updating the progress for each one. Navigates
 /// to the pending page on completion.
-async fn upload_files(files: Vec<web_sys::File>, set_progress: WriteSignal<i32>) {
+async fn upload_files(files: Vec<SendWrapper<web_sys::File>>, set_progress: WriteSignal<i32>) {
     let num_files = files.len();
     for (idx, file) in files.into_iter().enumerate() {
         let form_data = web_sys::FormData::new().unwrap();
@@ -232,24 +243,25 @@ async fn upload_files(files: Vec<web_sys::File>, set_progress: WriteSignal<i32>)
     }
     // since we are unable to reset the drop zone with the current API, simply
     // send the browser to the pending page immediately
-    let navigate = leptos_router::use_navigate();
+    let navigate = leptos_router::hooks::use_navigate();
     navigate("/pending", Default::default());
 }
 
-/// Convert the FileList from the given event into a Vec<File> type.
-fn file_event_to_file_vec(ev: leptos::ev::Event) -> Vec<web_sys::File> {
-    let files = ev
-        .target()
-        .unwrap()
-        .unchecked_ref::<web_sys::HtmlInputElement>()
-        .files()
-        .unwrap();
-    let mut results: Vec<web_sys::File> = Vec::new();
-    for idx in 0..files.length() {
-        results.push(files.item(idx).unwrap());
-    }
-    results
-}
+// /// Convert the FileList from the given event into a Vec<File> type.
+// fn file_event_to_file_vec(ev: leptos::ev::Event) -> Vec<web_sys::File> {
+//     use web_sys::wasm_bindgen::JsCast;
+//     let files = ev
+//         .target()
+//         .unwrap()
+//         .unchecked_ref::<web_sys::HtmlInputElement>()
+//         .files()
+//         .unwrap();
+//     let mut results: Vec<web_sys::File> = Vec::new();
+//     for idx in 0..files.length() {
+//         results.push(files.item(idx).unwrap());
+//     }
+//     results
+// }
 
 /// Format the JavaScript time to something sensible.
 fn format_time(time: f64) -> String {

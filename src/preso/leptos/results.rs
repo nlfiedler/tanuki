@@ -4,19 +4,25 @@
 use crate::domain::entities::Location;
 use crate::preso::leptos::SearchMeta;
 use chrono::{DateTime, Utc};
-use leptos::*;
+use leptos::prelude::*;
 
 #[component]
 pub fn ResultsDisplay<F>(meta: SearchMeta, onclick: F) -> impl IntoView
 where
-    F: Fn(usize) + Copy + 'static,
+    F: Fn(usize) + Copy + 'static + Send,
 {
     // store the results in the reactive system so the view can be Fn()
-    let results = store_value(meta.results);
+    let results = StoredValue::new(meta.results);
     view! {
         <div class="grid is-col-min-16 padding-2">
             <For
-                each=move || results.get_value().into_iter().enumerate().map(|(i, r)| store_value((i, r)))
+                each=move || {
+                    results
+                        .get_value()
+                        .into_iter()
+                        .enumerate()
+                        .map(|(i, r)| StoredValue::new((i, r)))
+                }
                 key=|r| r.get_value().1.asset_id
                 let:elem
             >
@@ -41,7 +47,7 @@ where
                                                     tag.
                                                 </video>
                                             }
-                                                .into_view()
+                                                .into_any()
                                         } else if asset.media_type.starts_with("audio/") {
                                             let src = format!("/rest/asset/{}", asset.asset_id);
                                             view! {
@@ -50,7 +56,7 @@ where
                                                     <source src=src type=asset.media_type.clone() />
                                                 </audio>
                                             }
-                                                .into_view()
+                                                .into_any()
                                         } else {
                                             let src = format!(
                                                 "/rest/thumbnail/960/960/{}",
@@ -63,7 +69,7 @@ where
                                                     style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
                                                 />
                                             }
-                                                .into_view()
+                                                .into_any()
                                         }
                                     }}
                                 </figure>
@@ -86,8 +92,8 @@ where
 
 #[component]
 fn CardContent(datetime: DateTime<Utc>, location: Option<Location>) -> impl IntoView {
-    let datetime = store_value(datetime);
-    let location = store_value(location);
+    let datetime = StoredValue::new(datetime);
+    let location = StoredValue::new(location);
     view! {
         <div class="content">
             <time>{move || { datetime.get_value().format("%A %B %e, %Y").to_string() }}</time>

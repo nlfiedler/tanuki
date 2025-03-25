@@ -105,13 +105,13 @@ impl super::UseCase<Asset, Params> for ReplaceAsset {
 #[derive(Clone)]
 pub struct Params {
     /// Identifier of the asset to be replaced.
-    asset_id: String,
+    pub asset_id: String,
     /// Path of the new file that will replace the asset.
-    filepath: PathBuf,
+    pub filepath: PathBuf,
     /// Media type for the new file.
-    media_type: mime::Mime,
+    pub media_type: mime::Mime,
     /// Last modified date/time of the file.
-    last_modified: Option<DateTime<Utc>>,
+    pub last_modified: Option<DateTime<Utc>>,
 }
 
 impl Params {

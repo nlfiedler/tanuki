@@ -2,8 +2,8 @@
 // Copyright (c) 2024 Nathan Fiedler
 //
 use crate::preso::leptos::SearchMeta;
-use html::Div;
-use leptos::*;
+use leptos::html::Div;
+use leptos::prelude::*;
 use leptos_use::on_click_outside;
 
 #[component]
@@ -14,8 +14,8 @@ pub fn PageControls(
     page_size: Signal<i32>,
     set_page_size: WriteSignal<i32>,
 ) -> impl IntoView {
-    let dropdown_open = create_rw_signal(false);
-    let dropdown_ref = create_node_ref::<Div>();
+    let dropdown_open = RwSignal::new(false);
+    let dropdown_ref: NodeRef<Div> = NodeRef::new();
     let _ = on_click_outside(dropdown_ref, move |_| dropdown_open.set(false));
 
     view! {
@@ -105,10 +105,8 @@ pub fn PageControls(
                                         "dropdown-item"
                                     }
                                     on:click=move |_| {
-                                        batch(|| {
-                                            set_page_size.set(*size);
-                                            set_selected_page.set(1);
-                                        });
+                                        set_page_size.set(*size);
+                                        set_selected_page.set(1);
                                         dropdown_open.set(false)
                                     }
                                 >

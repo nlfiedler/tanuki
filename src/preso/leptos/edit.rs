@@ -8,7 +8,7 @@ use chrono::{DateTime, Utc};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
 use leptos::ev::Event;
 use leptos::html::Input;
-use leptos::*;
+use leptos::prelude::*;
 use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -28,12 +28,13 @@ pub struct LocationData {
 pub async fn fetch_location_parts() -> Result<LocationData, ServerFnError> {
     use crate::domain::usecases::location::CompleteLocations;
     use crate::domain::usecases::{NoParams, UseCase};
+    use server_fn::error::ServerFnErrorErr;
 
     let repo = super::ssr::db()?;
     let usecase = CompleteLocations::new(Box::new(repo));
     let locations: Vec<Location> = usecase
         .call(NoParams {})
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     let mut data = LocationData {
         labels: vec![],
         cities: vec![],
@@ -62,10 +63,11 @@ pub async fn fetch_location_parts() -> Result<LocationData, ServerFnError> {
 ///
 /// Perform one or more operations on multiple assets.
 ///
-#[leptos::server(BulkEdit, "/api", "Cbor")]
+#[leptos::server(name = BulkEdit, prefix = "/api", input = server_fn::codec::Cbor)]
 pub async fn bulk_edit(ops: BulkEditParams) -> Result<u64, ServerFnError> {
     use crate::domain::usecases::edit::{EditAssets, Params};
     use crate::domain::usecases::UseCase;
+    use server_fn::error::ServerFnErrorErr;
 
     let repo = super::ssr::db()?;
     let cache = super::ssr::cache()?;
@@ -78,7 +80,7 @@ pub async fn bulk_edit(ops: BulkEditParams) -> Result<u64, ServerFnError> {
     };
     let count = usecase
         .call(params)
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     Ok(count)
 }
 
@@ -116,13 +118,11 @@ pub fn EditPage() -> impl IntoView {
     let on_change = move |ev: Event| {
         let input = input_ref.get().unwrap();
         ev.stop_propagation();
-        batch(|| {
-            set_query.set(input.value());
-            set_selected_page.set(1);
-        });
+        set_query.set(input.value());
+        set_selected_page.set(1);
     };
     // search for assets using the given criteria
-    let results = create_resource(
+    let results = Resource::new(
         move || {
             (
                 query.get(),
@@ -144,19 +144,19 @@ pub fn EditPage() -> impl IntoView {
             .await
         },
     );
-    let selected_assets = create_rw_signal::<HashSet<String>>(HashSet::new());
-    let submittable = create_memo(move |_| selected_assets.with(|coll| coll.len() > 0));
-    let (modal_active, set_modal_active) = create_signal(false);
-    let submit = create_action(move |ops: &BulkEditParams| {
+    let selected_assets: RwSignal<HashSet<String>> = RwSignal::new(HashSet::new());
+    let submittable = Memo::new(move |_| selected_assets.with(|coll| coll.len() > 0));
+    let (modal_active, set_modal_active) = signal(false);
+    let submit = Action::new(move |ops: &BulkEditParams| {
         let mut ops = ops.to_owned();
         ops.assets = selected_assets.get().into_iter().collect();
         apply_changes(ops)
     });
-    let select_all = create_action(move |ids: &HashSet<String>| {
+    let select_all = Action::new(move |ids: &HashSet<String>| {
         let owned = ids.to_owned();
         async move { selected_assets.set(owned) }
     });
-    let unselect_all = create_action(move |_input: &()| async move {
+    let unselect_all = Action::new(move |_input: &()| async move {
         selected_assets.set(HashSet::new());
     });
 
@@ -230,7 +230,7 @@ pub fn EditPage() -> impl IntoView {
                                 .map(|result| match result {
                                     Err(err) => {
                                         view! { <span>{move || format!("Error: {}", err)}</span> }
-                                            .into_view()
+                                            .into_any()
                                     }
                                     Ok(meta) => {
                                         view! {
@@ -242,13 +242,18 @@ pub fn EditPage() -> impl IntoView {
                                                 set_page_size
                                             />
                                         }
-                                            .into_view()
+                                            .into_any()
                                     }
                                 })
                         }}
                     </Transition>
                     <div class="level-item">
-                        <button class="button" on:click=move |_| unselect_all.dispatch(())>
+                        <button
+                            class="button"
+                            on:click=move |_| {
+                                unselect_all.dispatch(());
+                            }
+                        >
                             <span class="icon">
                                 <i class="fa-regular fa-square"></i>
                             </span>
@@ -261,9 +266,9 @@ pub fn EditPage() -> impl IntoView {
                             results
                                 .get()
                                 .map(|result| match result {
-                                    Err(_) => view! { <span>ERROR</span> }.into_view(),
+                                    Err(_) => view! { <span>ERROR</span> }.into_any(),
                                     Ok(meta) => {
-                                        let ids = store_value(
+                                        let ids = StoredValue::new(
                                             meta
                                                 .results
                                                 .iter()
@@ -274,7 +279,9 @@ pub fn EditPage() -> impl IntoView {
                                             <div class="level-item">
                                                 <button
                                                     class="button"
-                                                    on:click=move |_| select_all.dispatch(ids.get_value())
+                                                    on:click=move |_| {
+                                                        select_all.dispatch(ids.get_value());
+                                                    }
                                                 >
                                                     <span class="icon">
                                                         <i class="fa-regular fa-square-check"></i>
@@ -282,7 +289,7 @@ pub fn EditPage() -> impl IntoView {
                                                 </button>
                                             </div>
                                         }
-                                            .into_view()
+                                            .into_any()
                                     }
                                 })
                         }}
@@ -315,7 +322,12 @@ pub fn EditPage() -> impl IntoView {
         <div class="modal" class:is-active=move || modal_active.get()>
             <div class="modal-background"></div>
             <div class="modal-card">
-                <EditForm set_modal_active ops_ready=move |ops| submit.dispatch(ops) />
+                <EditForm
+                    set_modal_active
+                    ops_ready=move |ops| {
+                        submit.dispatch(ops);
+                    }
+                />
             </div>
         </div>
 
@@ -327,11 +339,9 @@ pub fn EditPage() -> impl IntoView {
                     .get()
                     .map(|result| match result {
                         Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
+                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_any()
                         }
-                        Ok(meta) => {
-                            view! { <ResultsDisplay meta selected_assets /> }
-                        }
+                        Ok(meta) => view! { <ResultsDisplay meta selected_assets /> }.into_any(),
                     })
             }}
         </Transition>
@@ -344,13 +354,13 @@ where
     F: Fn(BulkEditParams) + Copy + 'static,
 {
     // the locations returned from the server are in no particular order
-    let location_parts = create_resource(|| (), |_| async move { fetch_location_parts().await });
-    let datetime_input_ref: NodeRef<html::Input> = create_node_ref();
-    let location_input_ref: NodeRef<html::Input> = create_node_ref();
-    let city_input_ref: NodeRef<html::Input> = create_node_ref();
-    let region_input_ref: NodeRef<html::Input> = create_node_ref();
-    let del_tags = create_rw_signal::<HashSet<String>>(HashSet::new());
-    let add_tags = create_rw_signal::<HashSet<String>>(HashSet::new());
+    let location_parts = Resource::new(|| (), |_| async move { fetch_location_parts().await });
+    let datetime_input_ref: NodeRef<Input> = NodeRef::new();
+    let location_input_ref: NodeRef<Input> = NodeRef::new();
+    let city_input_ref: NodeRef<Input> = NodeRef::new();
+    let region_input_ref: NodeRef<Input> = NodeRef::new();
+    let del_tags: RwSignal<HashSet<String>> = RwSignal::new(HashSet::new());
+    let add_tags: RwSignal<HashSet<String>> = RwSignal::new(HashSet::new());
     let build_params = move |_| {
         let mut params = BulkEditParams::default();
         // datetime: convert from local to UTC
@@ -467,10 +477,10 @@ where
                             .map(|resp| match resp {
                                 Err(err) => {
                                     view! { <span>{move || format!("Error: {}", err)}</span> }
-                                        .into_view()
+                                        .into_any()
                                 }
                                 Ok(data) => {
-                                    let locations = store_value(data);
+                                    let locations = StoredValue::new(data);
                                     view! {
                                         <label
                                             class="label"
@@ -495,7 +505,7 @@ where
                                                             locations
                                                                 .get_value()
                                                                 .labels
-                                                                .iter()
+                                                                .into_iter()
                                                                 .map(|val| {
                                                                     view! { <option value=val></option> }
                                                                 })
@@ -519,7 +529,7 @@ where
                                                             locations
                                                                 .get_value()
                                                                 .cities
-                                                                .iter()
+                                                                .into_iter()
                                                                 .map(|val| {
                                                                     view! { <option value=val></option> }
                                                                 })
@@ -543,7 +553,7 @@ where
                                                             locations
                                                                 .get_value()
                                                                 .regions
-                                                                .iter()
+                                                                .into_iter()
                                                                 .map(|val| {
                                                                     view! { <option value=val></option> }
                                                                 })
@@ -554,7 +564,7 @@ where
                                             </div>
                                         </div>
                                     }
-                                        .into_view()
+                                        .into_any()
                                 }
                             })
                     }}
@@ -580,7 +590,7 @@ fn TagsEditForm(
     add_tags: RwSignal<HashSet<String>>,
 ) -> impl IntoView {
     // the tags returned from the server are in no particular order
-    let tags = create_resource(
+    let tags = Resource::new(
         || (),
         |_| async move {
             let mut results = super::fetch_tags().await;
@@ -601,10 +611,10 @@ fn TagsEditForm(
                 tags.get()
                     .map(|resp| match resp {
                         Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
+                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_any()
                         }
                         Ok(data) => {
-                            let tags = store_value(data);
+                            let tags = StoredValue::new(data);
                             view! {
                                 <div class="mb-2 field">
                                     <label
@@ -715,7 +725,7 @@ fn TagsEditForm(
                                     </div>
                                 </div>
                             }
-                                .into_view()
+                                .into_any()
                         }
                     })
             }}
@@ -726,7 +736,7 @@ fn TagsEditForm(
 #[component]
 fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) -> impl IntoView {
     // store the results in the reactive system so the view can be Fn()
-    let results = store_value(meta.results);
+    let results = StoredValue::new(meta.results);
     let toggle_asset = move |id: &String| {
         selected_assets.update(|list| {
             if list.contains(id) {
@@ -740,7 +750,7 @@ fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) 
         <div class="grid is-col-min-12 padding-2">
             <For each=move || results.get_value() key=|r| r.asset_id.clone() let:elem>
                 {move || {
-                    let asset = store_value(elem.clone());
+                    let asset = StoredValue::new(elem.clone());
                     view! {
                         <div class="cell">
                             <div
@@ -776,7 +786,7 @@ fn CardFigure(asset: StoredValue<SearchResult>) -> impl IntoView {
     view! {
         <figure class="image">
             {move || {
-                let filename = store_value(asset.get_value().filename.to_owned());
+                let filename = StoredValue::new(asset.get_value().filename.to_owned());
                 if asset.get_value().media_type.starts_with("video/") {
                     let src = format!("/rest/asset/{}", asset.get_value().asset_id);
                     let mut media_type = asset.get_value().media_type.clone();
@@ -791,7 +801,7 @@ fn CardFigure(asset: StoredValue<SearchResult>) -> impl IntoView {
                             tag.
                         </video>
                     }
-                        .into_view()
+                        .into_any()
                 } else if asset.get_value().media_type.starts_with("audio/") {
                     let src = format!("/rest/asset/{}", asset.get_value().asset_id);
                     view! {
@@ -800,7 +810,7 @@ fn CardFigure(asset: StoredValue<SearchResult>) -> impl IntoView {
                             <source src=src type=asset.get_value().media_type.clone() />
                         </audio>
                     }
-                        .into_view()
+                        .into_any()
                 } else {
                     let src = format!("/rest/thumbnail/640/640/{}", asset.get_value().asset_id);
                     view! {
@@ -810,7 +820,7 @@ fn CardFigure(asset: StoredValue<SearchResult>) -> impl IntoView {
                             style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
                         />
                     }
-                        .into_view()
+                        .into_any()
                 }
             }}
         </figure>
@@ -819,8 +829,8 @@ fn CardFigure(asset: StoredValue<SearchResult>) -> impl IntoView {
 
 #[component]
 fn CardContent(datetime: DateTime<Utc>, location: Option<Location>) -> impl IntoView {
-    let datetime = store_value(datetime);
-    let location = store_value(location);
+    let datetime = StoredValue::new(datetime);
+    let location = StoredValue::new(location);
     view! {
         <div class="content">
             <time>{move || { datetime.get_value().format("%A %B %e, %Y").to_string() }}</time>

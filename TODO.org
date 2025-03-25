@@ -1,8 +1,8 @@
 * Action Items
-** Try leptos upgrade again
-*** start from scratch, copying changes from ~upgrade~ branch
-*** see =upgrade= branch; there are many problems
-*** c.f. https://github.com/leptos-rs/leptos/issues/3354
+** Leptos refinements
+*** make the elements in =forms.rs= more concise like in commit =eda66e2=
+*** should be able to refactor code to remove some =StoredValue= usage
+*** maybe use =LocalResource= to streamline some =Transition= that do lots of work
 ** Data source comparison
 *** 21,5xx assets, disk usage immediately after load, before compaction
 | Metric     | RocksDB    | SQLite     | DuckDB     |
@@ -127,6 +127,10 @@
 **** Preview.app will display location information for videos
 *** Show additional file metadata (TIFF, EXIF, JFIF, IPTC)
 ** Uploads
+*** file chooser returns =web_sys::File= which is not thread safe
+**** file chooser disabled until this can be resolved
+**** Leptos 0.7 requires values to be thread-safe
+**** maybe wrap in =send_wrapper::SendWrapper=
 *** theoretically could show the thumbnail of images before uploading
 **** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
 ** Edit
@@ -134,7 +138,17 @@
 *** allow adding or subtracting a number of days
 *** add option to set the caption
 ** Navbar
+*** light/dark mode is broken after Leptos 0.7 upgrade
+**** c.f. https://github.com/Synphonyte/leptos-use/issues/238
 *** light/dark mode: goes light during page load; chrome does not send color-scheme header
+**** c.f. https://github.com/leptos-rs/leptos/discussions/3431
+**** maybe need to use the cookie support in =use_color_mode()=
+#+begin_src rust
+let UseColorModeReturn { mode, set_mode, .. } = use_color_mode_with_options(
+    UseColorModeOptions::default()
+        .cookie_enabled(true),
+);
+#+end_src
 ** Pagination
 *** turn the ~Page n of m~ text into a button to input a page number
 **** clicking the button opens a dropdown with a text input field

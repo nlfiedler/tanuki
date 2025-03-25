@@ -6,8 +6,8 @@ use crate::preso::leptos::SearchMeta;
 use crate::preso::leptos::{forms, nav, paging};
 use chrono::{DateTime, TimeDelta, Utc};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
-use html::Div;
-use leptos::*;
+use leptos::html::{Div, Input};
+use leptos::prelude::*;
 use leptos_use::on_click_outside;
 use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
 use serde::{Deserialize, Serialize};
@@ -36,6 +36,7 @@ pub async fn recent(
     use crate::domain::entities::SearchResult;
     use crate::domain::usecases::recent::{Params, RecentImports};
     use crate::domain::usecases::UseCase;
+    use server_fn::error::ServerFnErrorErr;
 
     let repo = super::ssr::db()?;
     let usecase = RecentImports::new(Box::new(repo));
@@ -46,7 +47,7 @@ pub async fn recent(
     };
     let mut results: Vec<SearchResult> = usecase
         .call(params)
-        .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     let total_count = results.len() as i32;
     let results = super::paginate_vector(&mut results, offset, count);
     let last_page: i32 = if total_count == 0 {
@@ -70,6 +71,7 @@ pub async fn recent(
 pub async fn bulk_update(assets: Vec<AssetInput>) -> Result<i32, ServerFnError> {
     use crate::domain::usecases::update::{Params, UpdateAsset};
     use crate::domain::usecases::UseCase;
+    use server_fn::error::ServerFnErrorErr;
 
     let repo = super::ssr::db()?;
     let cache = super::ssr::cache()?;
@@ -78,7 +80,7 @@ pub async fn bulk_update(assets: Vec<AssetInput>) -> Result<i32, ServerFnError> 
         let params: Params = Params::new(asset.clone().into());
         usecase
             .call(params)
-            .map_err(|e| leptos::ServerFnErrorErr::WrappedServerError(e))?;
+            .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
     }
     Ok(assets.len() as i32)
 }
@@ -249,11 +251,11 @@ pub fn PendingPage() -> impl IntoView {
             .initial_value(SortCombo::default())
             .delay_during_hydration(true),
     );
-    let sortmenu_open = create_rw_signal(false);
-    let sortmenu_ref = create_node_ref::<Div>();
+    let sortmenu_open = RwSignal::new(false);
+    let sortmenu_ref: NodeRef<Div> = NodeRef::new();
     let _ = on_click_outside(sortmenu_ref, move |_| sortmenu_open.set(false));
     // search for recent imports within the given time range
-    let results = create_resource(
+    let results = Resource::new(
         move || {
             (
                 selected_range.get(),
@@ -276,21 +278,19 @@ pub fn PendingPage() -> impl IntoView {
             .await
         },
     );
-    let selected_assets = create_rw_signal::<HashSet<String>>(HashSet::new());
-    let (selected_tags, set_selected_tags) = create_signal::<HashSet<String>>(HashSet::new());
-    let (selected_location, set_selected_location) = create_signal(Location::default());
-    let datetime_input_ref: NodeRef<html::Input> = create_node_ref();
-    let submittable = create_memo(move |_| {
-        with!(|selected_assets, selected_tags, selected_location| {
-            // a location is not really considered "set" unless the label is
-            // defined, as many assets will have geocoded location data at the
-            // time of import
-            (selected_tags.len() > 0 || selected_location.label.is_some())
-                && selected_assets.len() > 0
-        })
+    let selected_assets: RwSignal<HashSet<String>> = RwSignal::new(HashSet::new());
+    let (selected_tags, set_selected_tags) = signal::<HashSet<String>>(HashSet::new());
+    let (selected_location, set_selected_location) = signal(Location::default());
+    let datetime_input_ref: NodeRef<Input> = NodeRef::new();
+    let submittable = Memo::new(move |_| {
+        // a location is not really considered "set" unless the label is
+        // defined, as many assets will have geocoded location data at the
+        // time of import
+        (selected_tags.read().len() > 0 || selected_location.read().label.is_some())
+            && selected_assets.read().len() > 0
     });
     // compile the set of asset inputs and send to the server
-    let save_action = create_action(move |_input: &()| {
+    let save_action = Action::new(move |_input: &()| {
         // datetime: convert from local to UTC
         let local = chrono::offset::Local::now();
         let datetime_str = format!(
@@ -449,7 +449,7 @@ pub fn PendingPage() -> impl IntoView {
                                 .map(|result| match result {
                                     Err(err) => {
                                         view! { <span>{move || format!("Error: {}", err)}</span> }
-                                            .into_view()
+                                            .into_any()
                                     }
                                     Ok(meta) => {
                                         view! {
@@ -461,7 +461,7 @@ pub fn PendingPage() -> impl IntoView {
                                                 set_page_size
                                             />
                                         }
-                                            .into_view()
+                                            .into_any()
                                     }
                                 })
                         }}
@@ -523,7 +523,9 @@ pub fn PendingPage() -> impl IntoView {
                                 class="button"
                                 type="submit"
                                 value="Save"
-                                on:click=move |_| save_action.dispatch(())
+                                on:click=move |_| {
+                                    save_action.dispatch(());
+                                }
                             />
                         </Show>
                     </div>
@@ -553,11 +555,9 @@ pub fn PendingPage() -> impl IntoView {
                     .get()
                     .map(|result| match result {
                         Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
+                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_any()
                         }
-                        Ok(meta) => {
-                            view! { <ResultsDisplay meta selected_assets /> }
-                        }
+                        Ok(meta) => view! { <ResultsDisplay meta selected_assets /> }.into_any(),
                     })
             }}
         </Transition>
@@ -565,9 +565,7 @@ pub fn PendingPage() -> impl IntoView {
 }
 
 #[component]
-fn PendingCount(
-    results: Resource<(RecentRange, i32, i32, SortCombo), Result<SearchMeta, ServerFnError>>,
-) -> impl IntoView {
+fn PendingCount(results: Resource<Result<SearchMeta, ServerFnError>>) -> impl IntoView {
     // must use Suspense or Transition when waiting for a resouce
     view! {
         <Transition fallback=move || {
@@ -578,13 +576,13 @@ fn PendingCount(
                     .get()
                     .map(|result| match result {
                         Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
+                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_any()
                         }
                         Ok(meta) => {
                             view! {
                                 <span>{move || format!("Pending items: {}", meta.count)}</span>
                             }
-                                .into_view()
+                                .into_any()
                         }
                     })
             }}
@@ -597,7 +595,7 @@ fn RangeSelector(
     selected_range: Signal<RecentRange>,
     set_selected_range: WriteSignal<RecentRange>,
 ) -> impl IntoView {
-    let elements = store_value(vec![
+    let elements = StoredValue::new(vec![
         RecentRange::All,
         RecentRange::Year,
         RecentRange::Month,
@@ -641,7 +639,7 @@ fn RangeSelector(
 #[component]
 fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) -> impl IntoView {
     // store the results in the reactive system so the view can be Fn()
-    let results = store_value(meta.results);
+    let results = StoredValue::new(meta.results);
     let toggle_asset = move |id: &String| {
         selected_assets.update(|list| {
             if list.contains(id) {
@@ -651,10 +649,10 @@ fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) 
             }
         })
     };
-    let show_asset = create_action(move |id: &String| {
+    let show_asset = Action::new(move |id: &String| {
         let id = id.to_owned();
         async move {
-            let navigate = leptos_router::use_navigate();
+            let navigate = leptos_router::hooks::use_navigate();
             let url = format!("/asset/{}", id);
             navigate(&url, Default::default());
         }
@@ -664,7 +662,7 @@ fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) 
         <div class="grid is-col-min-16 padding-2">
             <For each=move || results.get_value() key=|r| r.asset_id.clone() let:elem>
                 {move || {
-                    let asset = store_value(elem.clone());
+                    let asset = StoredValue::new(elem.clone());
                     view! {
                         <div class="cell">
                             <div
@@ -681,7 +679,7 @@ fn ResultsDisplay(meta: SearchMeta, selected_assets: RwSignal<HashSet<String>>) 
                                     <button
                                         class="card-header-icon"
                                         on:click=move |_| {
-                                            show_asset.dispatch(asset.get_value().asset_id)
+                                            show_asset.dispatch(asset.get_value().asset_id);
                                         }
                                     >
                                         <span class="icon">
@@ -728,7 +726,7 @@ fn CardFigure(asset: StoredValue<SearchResult>) -> impl IntoView {
                             tag.
                         </video>
                     }
-                        .into_view()
+                        .into_any()
                 } else if asset.get_value().media_type.starts_with("audio/") {
                     let src = format!("/rest/asset/{}", asset.get_value().asset_id);
                     view! {
@@ -737,7 +735,7 @@ fn CardFigure(asset: StoredValue<SearchResult>) -> impl IntoView {
                             <source src=src type=asset.get_value().media_type />
                         </audio>
                     }
-                        .into_view()
+                        .into_any()
                 } else {
                     let src = format!("/rest/thumbnail/960/960/{}", asset.get_value().asset_id);
                     view! {
@@ -747,7 +745,7 @@ fn CardFigure(asset: StoredValue<SearchResult>) -> impl IntoView {
                             style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
                         />
                     }
-                        .into_view()
+                        .into_any()
                 }
             }}
         </figure>

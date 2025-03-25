@@ -7,7 +7,7 @@ use crate::preso::leptos::{nav, paging, results};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
 use leptos::ev::Event;
 use leptos::html::Input;
-use leptos::*;
+use leptos::prelude::*;
 use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
 
 #[component]
@@ -44,13 +44,11 @@ pub fn SearchPage() -> impl IntoView {
     let on_change = move |ev: Event| {
         let input = input_ref.get().unwrap();
         ev.stop_propagation();
-        batch(|| {
-            set_query.set(input.value());
-            set_selected_page.set(1);
-        });
+        set_query.set(input.value());
+        set_selected_page.set(1);
     };
     // search for assets using the given criteria
-    let results = create_resource(
+    let results = Resource::new(
         move || {
             (
                 query.get(),
@@ -74,7 +72,7 @@ pub fn SearchPage() -> impl IntoView {
     );
     // begin browsing assets, starting with the chosen asset; the given index is
     // zero-based within the current page of results
-    let browse_asset = create_action(move |idx: &usize| {
+    let browse_asset = Action::new(move |idx: &usize| {
         let page = selected_page.get_untracked();
         let count = page_size.get_untracked();
         let offset = count * (page - 1);
@@ -161,7 +159,7 @@ pub fn SearchPage() -> impl IntoView {
                                 .map(|result| match result {
                                     Err(err) => {
                                         view! { <span>{move || format!("Error: {}", err)}</span> }
-                                            .into_view()
+                                            .into_any()
                                     }
                                     Ok(meta) => {
                                         view! {
@@ -173,7 +171,7 @@ pub fn SearchPage() -> impl IntoView {
                                                 set_page_size
                                             />
                                         }
-                                            .into_view()
+                                            .into_any()
                                     }
                                 })
                         }}
@@ -190,15 +188,18 @@ pub fn SearchPage() -> impl IntoView {
                     .get()
                     .map(|result| match result {
                         Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
+                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_any()
                         }
                         Ok(meta) => {
                             view! {
                                 <results::ResultsDisplay
                                     meta
-                                    onclick=move |idx| browse_asset.dispatch(idx)
+                                    onclick=move |idx| {
+                                        browse_asset.dispatch(idx);
+                                    }
                                 />
                             }
+                                .into_any()
                         }
                     })
             }}
@@ -216,6 +217,6 @@ async fn begin_browsing(params: BrowseParams) {
             .delay_during_hydration(true),
     );
     set_browse_params.set(params);
-    let navigate = leptos_router::use_navigate();
+    let navigate = leptos_router::hooks::use_navigate();
     navigate("/browse", Default::default());
 }

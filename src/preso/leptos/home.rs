@@ -6,8 +6,8 @@ use crate::preso::leptos::{forms, nav, paging, results};
 use crate::preso::leptos::{BrowseParams, SearchParams, Season, Year};
 use chrono::{DateTime, Datelike, TimeZone, Utc};
 use codee::string::{FromToStringCodec, JsonSerdeCodec};
-use html::Div;
-use leptos::*;
+use leptos::html::Div;
+use leptos::prelude::*;
 use leptos_use::on_click_outside;
 use leptos_use::storage::{use_local_storage_with_options, UseStorageOptions};
 use std::collections::HashSet;
@@ -207,7 +207,6 @@ pub fn HomePage() -> impl IntoView {
                 .delay_during_hydration(true),
         );
     // number of assets to display in a single page of results
-    // let page_size = create_rw_signal(18);
     let (page_size, set_page_size, _) = use_local_storage_with_options::<i32, FromToStringCodec>(
         "page-size",
         UseStorageOptions::default()
@@ -221,7 +220,7 @@ pub fn HomePage() -> impl IntoView {
             .delay_during_hydration(true),
     );
     // search for assets using the given criteria
-    let results = create_resource(
+    let results = Resource::new(
         move || {
             (
                 selected_tags.get(),
@@ -242,7 +241,7 @@ pub fn HomePage() -> impl IntoView {
     );
     // begin browsing assets, starting with the chosen asset; the given index is
     // zero-based within the current page of results
-    let browse_asset = create_action(move |idx: &usize| {
+    let browse_asset = Action::new(move |idx: &usize| {
         let tags = selected_tags.get_untracked();
         let locs = selected_locations.get_untracked();
         let year = selected_year.get_untracked();
@@ -265,24 +264,20 @@ pub fn HomePage() -> impl IntoView {
                 <div class="level-left">
                     <div class="level-item">
                         <forms::TagsChooser add_tag=move |label| {
-                            batch(|| {
-                                set_selected_tags
-                                    .update(|tags| {
-                                        tags.insert(label);
-                                    });
-                                set_selected_page.set(1);
-                            })
+                            set_selected_tags
+                                .update(|tags| {
+                                    tags.insert(label);
+                                });
+                            set_selected_page.set(1);
                         } />
                     </div>
                     <div class="level-item">
                         <forms::LocationsChooser add_location=move |label| {
-                            batch(|| {
-                                set_selected_locations
-                                    .update(|locations| {
-                                        locations.insert(label);
-                                    });
-                                set_selected_page.set(1);
-                            })
+                            set_selected_locations
+                                .update(|locations| {
+                                    locations.insert(label);
+                                });
+                            set_selected_page.set(1);
                         } />
                     </div>
                     <div class="level-item">
@@ -290,10 +285,8 @@ pub fn HomePage() -> impl IntoView {
                             <YearChooser
                                 selected_year
                                 set_year=move |value| {
-                                    batch(|| {
-                                        set_selected_year.set(value);
-                                        set_selected_page.set(1);
-                                    })
+                                    set_selected_year.set(value);
+                                    set_selected_page.set(1);
                                 }
                             />
                         </div>
@@ -303,14 +296,12 @@ pub fn HomePage() -> impl IntoView {
                             <SeasonChooser
                                 selected_season
                                 set_season=move |value| {
-                                    batch(|| {
-                                        if value.is_some() && selected_year.get().is_none() {
-                                            let year = Utc::now().year();
-                                            set_selected_year.set(Some(year));
-                                        }
-                                        set_selected_season.set(value);
-                                        set_selected_page.set(1);
-                                    })
+                                    if value.is_some() && selected_year.get().is_none() {
+                                        let year = Utc::now().year();
+                                        set_selected_year.set(Some(year));
+                                    }
+                                    set_selected_season.set(value);
+                                    set_selected_page.set(1);
                                 }
                             />
                         </div>
@@ -320,10 +311,8 @@ pub fn HomePage() -> impl IntoView {
                             <forms::TypesChooser
                                 selected_type
                                 set_type=move |value| {
-                                    batch(|| {
-                                        set_selected_type.set(value);
-                                        set_selected_page.set(1);
-                                    })
+                                    set_selected_type.set(value);
+                                    set_selected_page.set(1);
                                 }
                             />
                         </div>
@@ -375,7 +364,7 @@ pub fn HomePage() -> impl IntoView {
                                 .map(|result| match result {
                                     Err(err) => {
                                         view! { <span>{move || format!("Error: {}", err)}</span> }
-                                            .into_view()
+                                            .into_any()
                                     }
                                     Ok(meta) => {
                                         view! {
@@ -387,7 +376,7 @@ pub fn HomePage() -> impl IntoView {
                                                 set_page_size
                                             />
                                         }
-                                            .into_view()
+                                            .into_any()
                                     }
                                 })
                         }}
@@ -401,25 +390,21 @@ pub fn HomePage() -> impl IntoView {
                 <forms::TagList
                     attrs=selected_tags
                     rm_attr=move |attr| {
-                        batch(|| {
-                            set_selected_tags
-                                .update(|coll| {
-                                    coll.remove(&attr);
-                                });
-                            set_selected_page.set(1);
-                        })
+                        set_selected_tags
+                            .update(|coll| {
+                                coll.remove(&attr);
+                            });
+                        set_selected_page.set(1);
                     }
                 />
                 <forms::TagList
                     attrs=selected_locations
                     rm_attr=move |attr| {
-                        batch(|| {
-                            set_selected_locations
-                                .update(|coll| {
-                                    coll.remove(&attr);
-                                });
-                            set_selected_page.set(1);
-                        })
+                        set_selected_locations
+                            .update(|coll| {
+                                coll.remove(&attr);
+                            });
+                        set_selected_page.set(1);
                     }
                 />
             </div>
@@ -433,15 +418,18 @@ pub fn HomePage() -> impl IntoView {
                     .get()
                     .map(|result| match result {
                         Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
+                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_any()
                         }
                         Ok(meta) => {
                             view! {
                                 <results::ResultsDisplay
                                     meta
-                                    onclick=move |idx| browse_asset.dispatch(idx)
+                                    onclick=move |idx| {
+                                        browse_asset.dispatch(idx);
+                                    }
                                 />
                             }
+                                .into_any()
                         }
                     })
             }}
@@ -452,10 +440,10 @@ pub fn HomePage() -> impl IntoView {
 #[component]
 fn YearChooser<F>(selected_year: Signal<Option<i32>>, set_year: F) -> impl IntoView
 where
-    F: Fn(Option<i32>) + Copy + 'static,
+    F: Fn(Option<i32>) + Copy + 'static + Send,
 {
     // the years returned from the server are in no particular order
-    let years = create_resource(
+    let years = Resource::new(
         || (),
         |_| async move {
             let mut results = super::fetch_years().await;
@@ -482,8 +470,8 @@ where
             results
         },
     );
-    let dropdown_open = create_rw_signal(false);
-    let dropdown_ref = create_node_ref::<Div>();
+    let dropdown_open = RwSignal::new(false);
+    let dropdown_ref: NodeRef<Div> = NodeRef::new();
     let _ = on_click_outside(dropdown_ref, move |_| dropdown_open.set(false));
 
     view! {
@@ -495,10 +483,10 @@ where
                     .get()
                     .map(|resp| match resp {
                         Err(err) => {
-                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_view()
+                            view! { <span>{move || format!("Error: {}", err)}</span> }.into_any()
                         }
                         Ok(data) => {
-                            let years = store_value(data);
+                            let years = StoredValue::new(data);
                             view! {
                                 <div
                                     class="dropdown"
@@ -550,7 +538,7 @@ where
                                     </div>
                                 </div>
                             }
-                                .into_view()
+                                .into_any()
                         }
                     })
             }}
@@ -563,8 +551,8 @@ fn SeasonChooser<F>(selected_season: Signal<Option<Season>>, set_season: F) -> i
 where
     F: Fn(Option<Season>) + Copy + 'static,
 {
-    let dropdown_open = create_rw_signal(false);
-    let dropdown_ref = create_node_ref::<Div>();
+    let dropdown_open = RwSignal::new(false);
+    let dropdown_ref: NodeRef<Div> = NodeRef::new();
     let _ = on_click_outside(dropdown_ref, move |_| dropdown_open.set(false));
 
     view! {
@@ -644,6 +632,6 @@ async fn begin_browsing(params: BrowseParams) {
             .delay_during_hydration(true),
     );
     set_browse_params.set(params);
-    let navigate = leptos_router::use_navigate();
+    let navigate = leptos_router::hooks::use_navigate();
     navigate("/browse", Default::default());
 }
