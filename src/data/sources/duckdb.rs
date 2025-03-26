@@ -365,7 +365,8 @@ impl EntityDataSource for EntityDataSourceImpl {
         let after_s = Value::Timestamp(TimeUnit::Second, after.timestamp());
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
-            "SELECT key, filename, mimetype, label, city, region, imported
+            "SELECT key, filename, mimetype, label, city, region,
+                coalesce(user_date, orig_date, imported), imported
             FROM assets
             LEFT JOIN locations ON assets.location = locations.id
             WHERE imported >= ?1 AND tags IS NULL AND caption IS NULL AND label IS NULL",

@@ -186,6 +186,9 @@ pub fn build_recent_asset(key: &str) -> Asset {
 }
 
 /// Construct a "newborn" asset instance with the given key and date.
+///
+/// This differs from minimal asset in that the import_date is set to a specific
+/// value that can be queried in the newborn tests.
 #[allow(dead_code)]
 pub fn build_newborn_asset(key: &str, import_date: DateTime<Utc>) -> Asset {
     let checksum = compute_key_hash(key);

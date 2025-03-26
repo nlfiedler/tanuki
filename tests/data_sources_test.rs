@@ -585,11 +585,11 @@ fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
     let year_1940 = make_date_time(1940, 8, 30, 12, 12, 12);
     let year_1968 = make_date_time(1968, 8, 30, 12, 12, 12);
     let year_1971 = make_date_time(1971, 8, 30, 12, 12, 12);
+    let year_1996 = make_date_time(1996, 8, 30, 12, 12, 12);
+    let year_2003 = make_date_time(2003, 8, 30, 12, 12, 12);
+    let year_2008 = make_date_time(2008, 8, 30, 12, 12, 12);
     let year_2011 = make_date_time(2011, 8, 30, 12, 12, 12);
     let year_2013 = make_date_time(2013, 8, 30, 12, 12, 12);
-    let year_2015 = make_date_time(2015, 8, 30, 12, 12, 12);
-    let year_2016 = make_date_time(2016, 8, 30, 12, 12, 12);
-    let year_2017 = make_date_time(2017, 8, 30, 12, 12, 12);
     let year_2019 = make_date_time(2019, 8, 30, 12, 12, 12);
     let year_2020 = make_date_time(2020, 8, 30, 12, 12, 12);
     let future_date = Utc::now()
@@ -628,21 +628,21 @@ fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
     asset.user_date = Some(year_1940);
     asset.import_date = year_2011;
     datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset("year_1996");
+    asset.original_date = Some(year_1996);
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset("year_2003");
+    asset.original_date = Some(year_2003);
+    datasource.put_asset(&asset).unwrap();
+    let mut asset = common::build_basic_asset("year_2008");
+    asset.original_date = Some(year_2008);
+    datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset("year_2011");
     asset.user_date = Some(year_2011);
     asset.import_date = year_2019;
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset("year_2013");
     asset.user_date = Some(year_2013);
-    datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset("year_2015");
-    asset.original_date = Some(year_2015);
-    datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset("year_2017");
-    asset.original_date = Some(year_2017);
-    datasource.put_asset(&asset).unwrap();
-    let mut asset = common::build_basic_asset("year_2019");
-    asset.original_date = Some(year_2019);
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_basic_asset("future_date");
     asset.user_date = Some(future_date);
@@ -666,22 +666,23 @@ fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
     assert_eq!(actual.len(), 1);
     assert!(actual[0].asset_id == "year_1940");
 
-    let actual = datasource.query_before_date(year_2017).unwrap();
+    let actual = datasource.query_before_date(year_2011).unwrap();
     assert_eq!(actual.len(), 4);
     assert!(actual.iter().any(|l| l.asset_id == "year_1940"));
-    assert!(actual.iter().any(|l| l.asset_id == "year_2011"));
-    assert!(actual.iter().any(|l| l.asset_id == "year_2013"));
-    assert!(actual.iter().any(|l| l.asset_id == "year_2015"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_1996"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2003"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2008"));
 
     let actual = datasource.query_after_date(year_2020).unwrap();
     assert_eq!(actual.len(), 1);
     assert!(actual[0].asset_id == "future_date");
 
-    let actual = datasource.query_after_date(year_2016).unwrap();
-    assert_eq!(actual.len(), 4);
-    assert!(actual.iter().any(|l| l.asset_id == "year_2017"));
+    let actual = datasource.query_after_date(year_2008).unwrap();
+    assert_eq!(actual.len(), 5);
+    assert!(actual.iter().any(|l| l.asset_id == "year_2008"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2011"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2013"));
     assert!(actual.iter().any(|l| l.asset_id == "year_2018"));
-    assert!(actual.iter().any(|l| l.asset_id == "year_2019"));
     assert!(actual.iter().any(|l| l.asset_id == "future_date"));
 
     let actual = datasource.query_after_date(min_utc).unwrap();
@@ -691,10 +692,10 @@ fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
     let actual = datasource.query_after_date(year_1918).unwrap();
     assert_eq!(actual.len(), 8);
 
-    let actual = datasource.query_date_range(year_2015, year_2019).unwrap();
+    let actual = datasource.query_date_range(year_2011, year_2019).unwrap();
     assert_eq!(actual.len(), 3);
-    assert!(actual.iter().any(|l| l.asset_id == "year_2015"));
-    assert!(actual.iter().any(|l| l.asset_id == "year_2017"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2011"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2013"));
     assert!(actual.iter().any(|l| l.asset_id == "year_2018"));
 
     let actual = datasource.query_date_range(min_utc, max_utc).unwrap();
@@ -709,8 +710,11 @@ fn do_test_data_source_query_by_dates(datasource: Box<dyn EntityDataSource>) {
     assert!(actual[0].asset_id == "year_1940");
 
     let actual = datasource.query_date_range(year_1940, year_2013).unwrap();
-    assert_eq!(actual.len(), 2);
+    assert_eq!(actual.len(), 5);
     assert!(actual.iter().any(|l| l.asset_id == "year_1940"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_1996"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2003"));
+    assert!(actual.iter().any(|l| l.asset_id == "year_2008"));
     assert!(actual.iter().any(|l| l.asset_id == "year_2011"));
 }
 
@@ -868,6 +872,9 @@ fn do_test_data_source_query_newborn_basic(datasource: Box<dyn EntityDataSource>
     let date3 = make_date_time(2015, 8, 30, 12, 12, 12);
     let date4 = make_date_time(2017, 8, 30, 12, 12, 12);
     let date5 = make_date_time(2019, 8, 30, 12, 12, 12);
+    let future_date = Utc::now()
+        .checked_add_signed(chrono::TimeDelta::days(28))
+        .unwrap();
 
     // zero assets
     assert_eq!(datasource.query_newborn(date1).unwrap().len(), 0);
@@ -876,20 +883,22 @@ fn do_test_data_source_query_newborn_basic(datasource: Box<dyn EntityDataSource>
     let import_date = make_date_time(2018, 5, 31, 21, 10, 11);
     let asset = common::build_newborn_asset("abc123", import_date);
     datasource.put_asset(&asset).unwrap();
-    assert_eq!(datasource.query_newborn(date4).unwrap().len(), 1);
-    assert_eq!(datasource.query_newborn(date5).unwrap().len(), 0);
+    assert_eq!(datasource.query_newborn(future_date).unwrap().len(), 0);
+    assert_eq!(datasource.query_newborn(date1).unwrap().len(), 1);
 
     // multiple assets
     let asset = common::build_newborn_asset("monday6", date1);
     datasource.put_asset(&asset).unwrap();
     let asset = common::build_newborn_asset("tuesday7", date2);
     datasource.put_asset(&asset).unwrap();
-    let asset = common::build_newborn_asset("wednesday8", date3);
+    let mut asset = common::build_newborn_asset("wednesday8", date3);
+    asset.original_date = Some(date2);
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_newborn_asset("sunday0", date3);
     asset.location = Some(Location::new("museum"));
     datasource.put_asset(&asset).unwrap();
     let mut asset = common::build_newborn_asset("thursday9", date4);
+    asset.original_date = Some(date3);
     let portland_maine = Location {
         label: None,
         city: Some("Portland".into()),
@@ -903,13 +912,14 @@ fn do_test_data_source_query_newborn_basic(datasource: Box<dyn EntityDataSource>
     let asset = common::build_recent_asset("rightnow1");
     datasource.put_asset(&asset).unwrap();
 
+    // the search results should have the best date/time for the asset, rather
+    // than simply the import_date on which the newborn query is based
     let actual = datasource.query_newborn(date3).unwrap();
     assert_eq!(actual.len(), 4);
-    assert!(actual.iter().any(|l| l.asset_id == "wednesday8"));
-    assert!(actual.iter().any(|l| l.asset_id == "thursday9"
-        && l.location.as_ref().map_or(false, |v| v == &portland_maine)));
-    assert!(actual.iter().any(|l| l.asset_id == "friday10"));
-    assert!(actual.iter().any(|l| l.asset_id == "abc123"));
+    assert!(actual.iter().any(|l| l.asset_id == "wednesday8" && l.datetime == date2));
+    assert!(actual.iter().any(|l| l.asset_id == "thursday9" && l.datetime == date3));
+    assert!(actual.iter().any(|l| l.asset_id == "friday10" && l.datetime == date5));
+    assert!(actual.iter().any(|l| l.asset_id == "abc123" && l.datetime == import_date));
 }
 
 #[test]
