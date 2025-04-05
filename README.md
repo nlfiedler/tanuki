@@ -14,7 +14,7 @@ An application for collecting, tagging, browsing, and searching assets, primaril
 These commands need to be run one time before building this project:
 
 ```shell
-cargo install cargo-leptos
+cargo install --locked cargo-leptos
 rustup target add wasm32-unknown-unknown
 ```
 

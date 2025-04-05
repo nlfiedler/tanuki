@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2024 Nathan Fiedler
+// Copyright (c) 2025 Nathan Fiedler
 //
 use crate::domain::entities::Asset;
 use crate::domain::repositories::{
@@ -8,6 +8,7 @@ use crate::domain::repositories::{
 use crate::domain::usecases::{checksum_file, get_gps_coordinates, get_original_date};
 use anyhow::Error;
 use chrono::prelude::*;
+use log::error;
 use std::cmp;
 use std::fmt;
 use std::path::PathBuf;
@@ -44,7 +45,13 @@ impl ImportAsset {
         let byte_length = metadata.len();
         let location =
             if let Some(coords) = get_gps_coordinates(&params.media_type, &params.filepath).ok() {
-                super::convert_location(self.geocoder.find_location(&coords).ok())
+                match self.geocoder.find_location(&coords) {
+                    Ok(geoloc) => Some(super::convert_location(geoloc)),
+                    Err(err) => {
+                        error!("import: geocode error: {}", err);
+                        None
+                    }
+                }
             } else {
                 None
             };

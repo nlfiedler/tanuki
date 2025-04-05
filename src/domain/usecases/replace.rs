@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2024 Nathan Fiedler
+// Copyright (c) 2025 Nathan Fiedler
 //
 use crate::domain::entities::Asset;
 use crate::domain::repositories::{BlobRepository, LocationRepository};
@@ -7,6 +7,7 @@ use crate::domain::repositories::{RecordRepository, SearchRepository};
 use crate::domain::usecases::{checksum_file, get_gps_coordinates, get_original_date};
 use anyhow::Error;
 use chrono::prelude::*;
+use log::error;
 use std::cmp;
 use std::fmt;
 use std::path::PathBuf;
@@ -49,8 +50,13 @@ impl ReplaceAsset {
         let metadata = std::fs::metadata(&params.filepath)?;
         asset.byte_length = metadata.len();
         if let Some(coords) = get_gps_coordinates(&params.media_type, &params.filepath).ok() {
-            let converted = super::convert_location(self.geocoder.find_location(&coords).ok());
-            asset.location = super::merge_locations(asset.location.clone(), converted);
+            match self.geocoder.find_location(&coords) {
+                Ok(geoloc) => {
+                    let converted = Some(super::convert_location(geoloc));
+                    asset.location = super::merge_locations(asset.location.clone(), converted);
+                }
+                Err(err) => error!("replace: geocode error: {}", err),
+            }
         }
         if let Some(od) = get_original_date(&params.media_type, &params.filepath).ok() {
             // only overwrite the original date/time if a new one can be

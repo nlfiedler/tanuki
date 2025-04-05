@@ -1,6 +1,7 @@
 //
-// Copyright (c) 2024 Nathan Fiedler
+// Copyright (c) 2025 Nathan Fiedler
 //
+use crate::data::repositories::geo::find_location_repository;
 use crate::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl, SearchRepositoryImpl};
 use crate::data::sources::EntityDataSource;
 use crate::domain::entities::{Asset, LabeledCount, Location};
@@ -11,6 +12,7 @@ use juniper::{
     EmptySubscription, FieldResult, GraphQLEnum, GraphQLScalar, InputValue, ParseScalarResult,
     ParseScalarValue, RootNode, ScalarToken, ScalarValue, Value,
 };
+use log::error;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -424,6 +426,28 @@ impl MutationRoot {
         params.repair = true;
         let results: Vec<Diagnosis> = usecase.call(params)?;
         Ok(results)
+    }
+
+    /// Attempt to fill in the city and region for assets that have GPS
+    /// coordinates available in the file metadata.
+    ///
+    /// If overwrite is true, will replace whatever city and region may already
+    /// be present.
+    fn geocode(#[graphql(ctx)] ctx: &GraphContext, overwrite: bool) -> FieldResult<i32> {
+        use crate::domain::usecases::geocode::{Geocoder, Params};
+        use crate::domain::usecases::UseCase;
+        let repo = RecordRepositoryImpl::new(ctx.datasource.clone());
+        let blobs = BlobRepositoryImpl::new(&ctx.assets_path);
+        let geocoder = find_location_repository();
+        let cache = SearchRepositoryImpl::new();
+        let usecase = Geocoder::new(Box::new(repo), Box::new(blobs), geocoder, Box::new(cache));
+        match usecase.call(Params::new(overwrite)) {
+            Ok(count) => Ok(count as i32),
+            Err(err) => {
+                error!("graphql: geocode error: {}", err);
+                Ok(-1)
+            }
+        }
     }
 
     /// Dump all asset records from the database to the given file path in JSON format.
