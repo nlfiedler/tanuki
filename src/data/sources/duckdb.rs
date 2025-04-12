@@ -312,11 +312,6 @@ impl EntityDataSource for EntityDataSourceImpl {
 
     fn query_after_date(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
         let after_s = Value::Timestamp(TimeUnit::Second, after.timestamp());
-        //
-        // SQLite "indexes on expressions" stipulates that the expression used
-        // to query the table must match the one used to define the index, so be
-        // sure the coalesce() invocation matches the index precisely.
-        //
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region,
@@ -340,11 +335,6 @@ impl EntityDataSource for EntityDataSourceImpl {
     ) -> Result<Vec<SearchResult>, Error> {
         let after_s = Value::Timestamp(TimeUnit::Second, after.timestamp());
         let before_s = Value::Timestamp(TimeUnit::Second, before.timestamp());
-        //
-        // SQLite "indexes on expressions" stipulates that the expression used
-        // to query the table must match the one used to define the index, so be
-        // sure the coalesce() invocation matches the index precisely.
-        //
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region,
@@ -779,8 +769,8 @@ fn query_location_rowid(loc: &Location, db: &Connection) -> Result<u64, duckdb::
 
     //
     // All this redundancy because getting the type compotibility right is
-    // difficult with Rust, and we need to use "IS NULL" in SQLite rather than
-    // "= NULL" since the two expressions are apparently not the same thing.
+    // difficult with Rust, and we need to use "IS NULL" rather than "= NULL"
+    // since the two expressions are seemingly different.
     //
     if label_is_some && city_is_some && region_is_some {
         // 7) 1 1 1

@@ -14,7 +14,9 @@ Asset metadata is stored in a database and that has been in [RocksDB](https://ro
 
 ### Drawbacks
 
-While DuckDB itself supports compound structures for column types, such as fixed-size arrays, variable-length arrays, etc, the Rust API does not (as of 1.2.1) support them. Supposedly DuckDB is slower than an OLTP database when importing a lot of date.
+DuckDB itself supports compound structures for column types, such as fixed-size arrays, variable-length lists, etc. However, the Rust API does not (as of 1.2.1) support these compound types.
+
+Supposedly DuckDB is slower than an OLTP database when importing a lot of date.
 
 ### Advantages
 

@@ -16,7 +16,7 @@ Asset metadata is stored in a database and that has been in [RocksDB](https://ro
 
 Implementing indexes on complex values like a list of strings or a compound structure is not easy (or possible?), but with a small enough number of assets (tens of thousands), this is not an issue that anyone will notice.
 
-SQLite lacks support for date/time and compound values. Representing a lists of strings in a single column requires serializing the list in an application-specific manner (e.g. tab-separated values).
+SQLite lacks support for date/time and compound values. Representing a list of strings in a single column requires serializing the list in an application-specific manner (e.g. tab-separated values).
 
 ### Advantages
 
