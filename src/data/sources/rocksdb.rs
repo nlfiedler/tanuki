@@ -961,7 +961,7 @@ impl Document for Asset {
             };
             let formatted = format!("{}", year);
             let bytes = formatted.as_bytes();
-            emitter.emit(bytes, Some(&idv))?;
+            emitter.emit(bytes, None)?;
         } else if view == "by_date" {
             let best_date = if let Some(ud) = self.user_date.as_ref() {
                 encode_datetime(ud)
