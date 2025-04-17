@@ -10,7 +10,7 @@ take a very long time. Better to use `curl` as in the examples below.
 ```shell
 curl -g -X POST -H "Content-Type: application/json" \
      -d '{"query":"query{analyze { totalAssets missingFiles isAnImage hasExifData hasGpsCoords hasOriginalDatetime hasOriginalTimezone } }"}' \
-     http://192.168.1.2:3000/graphql
+     http://192.168.50.201:3000/graphql
 ```
 
 ## Diagnose
@@ -18,7 +18,7 @@ curl -g -X POST -H "Content-Type: application/json" \
 ```shell
 curl -g -X POST -H "Content-Type: application/json" \
      -d '{"query":"query{diagnose(checksum: null) { assetId errorCode } }"}' \
-     http://192.168.1.2:3000/graphql
+     http://192.168.50.201:3000/graphql
 ```
 
 ## Repair
@@ -26,7 +26,7 @@ curl -g -X POST -H "Content-Type: application/json" \
 ```shell
 curl -g -X POST -H "Content-Type: application/json" \
      -d '{"query":"mutation{repair(checksum: null) { assetId errorCode } }"}' \
-     http://192.168.1.2:3000/graphql
+     http://192.168.50.201:3000/graphql
 ```
 
 ## Geocode
@@ -34,7 +34,7 @@ curl -g -X POST -H "Content-Type: application/json" \
 ```shell
 curl -g -X POST -H "Content-Type: application/json" \
      -d '{"query":"mutation{geocode(overwrite: false)}"}' \
-     http://192.168.1.2:3000/graphql
+     http://192.168.50.201:3000/graphql
 ```
 
 ## Create dump file
@@ -42,7 +42,7 @@ curl -g -X POST -H "Content-Type: application/json" \
 ```shell
 curl -g -X POST -H "Content-Type: application/json" \
      -d '{"query":"mutation{dump(filepath: \"/assets/dump.json\")}"}' \
-     http://192.168.1.2:3000/graphql
+     http://192.168.50.201:3000/graphql
 ```
 
 ## Load from dump file
@@ -50,7 +50,7 @@ curl -g -X POST -H "Content-Type: application/json" \
 ```shell
 curl -g -X POST -H "Content-Type: application/json" \
      -d '{"query":"mutation{load(filepath: \"/assets/dump.json\")}"}' \
-     http://192.168.1.2:3000/graphql
+     http://192.168.50.201:3000/graphql
 ```
 
 ## Finding duplicates
