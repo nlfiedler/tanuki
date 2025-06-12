@@ -170,7 +170,7 @@ fn block_on<F: core::future::Future>(future: F) -> Result<F::Output, Error> {
 mod tests {
     use super::*;
     use crate::domain::entities::{EastWest, GeodeticAngle, GlobalPosition, NorthSouth};
-    use dotenv::dotenv;
+    use dotenvy::dotenv;
     use std::env;
 
     #[test]

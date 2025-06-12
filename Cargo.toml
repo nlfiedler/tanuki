@@ -25,7 +25,7 @@ ciborium = "0.2.2"
 codee = { version = "0.3.0", features = ["json_serde"] }
 console_log = "1.0.0"
 console_error_panic_hook = "0.1.7"
-dotenv = { version = "0.15.0", optional = true }
+dotenvy = { version = "0.15.7", optional = true }
 duckdb = { version = "1.2.1", optional = true, features = ["bundled"] }
 env_logger = { version = "0.11.6", optional = true }
 futures = { version = "0.3.31", optional = true }
@@ -49,7 +49,7 @@ mp4 = { version = "0.13.0", optional = true }
 reqwest = { version = "0.12.12", optional = true }
 riff = { version = "2.0.0", optional = true }
 rocksdb = { version = "0.23.0", optional = true }
-rusqlite = { version = "0.35.0", optional = true, features = ["functions", "bundled"] }
+rusqlite = { version = "0.36.0", optional = true, features = ["functions", "bundled"] }
 send_wrapper = "0.6.0"
 serde = { version = "1.0.217", features = ["derive"] }
 serde_json = "1.0.138"
@@ -90,7 +90,7 @@ ssr = [
     "dep:actix-files",
     "dep:actix-multipart",
     "dep:actix-web",
-    "dep:dotenv",
+    "dep:dotenvy",
     "dep:duckdb",
     "dep:env_logger",
     "dep:futures",

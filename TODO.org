@@ -1,4 +1,5 @@
 * Action Items
+** TODO upgrade to latest Leptos
 ** Leptos refinements
 *** make the elements in =forms.rs= more concise like in commit =eda66e2=
 *** should be able to refactor code to remove some =StoredValue= usage
@@ -10,6 +11,7 @@
 | load time  | 4 sec      | 6 min      | 6m 24s     |
 | disk uage  | 39,298,784 | 13,450,984 | 12,736,628 |
 | asset size | 1827       | 625        | 590        |
+*** with 22,320 assets, compacted DuckDB uses 11,284,480 bytes (505/asset)
 *** SQLite load measurements
 | milestone                          | time   | asset count |
 |------------------------------------+--------+-------------|
@@ -175,6 +177,9 @@ let UseColorModeReturn { mode, set_mode, .. } = use_color_mode_with_options(
 *** consider when to remove orphaned locations
 ** SQLite
 *** consider when to remove orphaned locations
+** Finding/removing duplicates
+*** many assets are very similar to each other, probably differ only in metadata
+*** find a means (histogram?) of detecting near-duplicates
 ** Hosting externally
 *** consider storage costs (currently under 100 GB)
 *** place basic auth server in front (Azure app gateway maybe?)
@@ -196,11 +201,6 @@ assertion failed: actual.is_ok()
 *** create graphql mutation to delete assets with certain tag
 **** boolean argument ~yes~ to actually perform the delete
 **** if ~yes~ argument is false, reports what would be deleted
-** Schema Growth
-*** Add new database records with different key prefixes
-**** =metadata/= for user-provided name/value pairs
-**** =location/= for location details (GPS, etc)
-**** =decoration/= for ML added values (labels, keywords)
 ** Data Format Support
 *** Read =ID3= tags in audio files
 *** Detect time zone offset in EXIF data
@@ -222,6 +222,7 @@ include it in the database records.
 *** Render Markdown as HTML in a scrollable view
 *** Display anything textual in a scrollable text area
 *** HEIC/HEIF images
+**** TODO evaluate https://crates.io/crates/libheif-rs
 **** HEIF is an image file format employing HEVC (h.265) image coding
 **** [[https://aomediacodec.github.io/av1-avif/][AV1]] is the free alternative to encumbered HEVC
 **** image crate supports AVIF but cannot read HEIC files because they lack AVIF "branding"
@@ -299,8 +300,7 @@ include it in the database records.
 ** Scripting support
 *** Enable task automation, like =imagemagick= (rotate, resize, etc)
 *** potential scripting languages
-**** Passerine (https://github.com/vrtbl/passerine) seems dead
-**** vonuvoli-scheme (https://github.com/volution/vonuvoli-scheme)
+**** Janet (https://janet-lang.org) is easily embedded with one .c and .h file
 **** mlua (https://github.com/mlua-rs/mlua) wraps Lua in Rust, supports all versions
 **** hlua (https://github.com/tomaka/hlua) wraps Lua in Rust
 ** Easy publishing to sharing sites (e.g. Google Photos)
