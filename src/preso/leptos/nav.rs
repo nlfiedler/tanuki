@@ -4,25 +4,21 @@
 use crate::preso::leptos::get_count;
 use leptos::html::Div;
 use leptos::prelude::*;
-use leptos_use::on_click_outside;
-// use leptos_use::{
-//     on_click_outside, use_color_mode_with_options, ColorMode, UseColorModeOptions,
-//     UseColorModeReturn,
-// };
+use leptos_use::{
+    on_click_outside, use_color_mode_with_options, ColorMode, UseColorModeOptions,
+    UseColorModeReturn,
+};
 
 #[component]
 pub fn NavBar() -> impl IntoView {
     let dropdown_open = RwSignal::new(false);
     let dropdown_ref: NodeRef<Div> = NodeRef::new();
     let _ = on_click_outside(dropdown_ref, move |_| dropdown_open.set(false));
-    //
-    // c.f. https://github.com/Synphonyte/leptos-use/issues/238
-    //
-    // let UseColorModeReturn { mode, set_mode, .. } = use_color_mode_with_options(
-    //     UseColorModeOptions::default()
-    //         .attribute("data-theme")
-    //         .cookie_enabled(true),
-    // );
+    let UseColorModeReturn { mode, set_mode, .. } = use_color_mode_with_options(
+        UseColorModeOptions::default()
+            .attribute("data-theme")
+            .cookie_enabled(true),
+    );
 
     view! {
         <nav class="navbar" role="navigation" aria-label="main navigation">
@@ -81,7 +77,13 @@ pub fn NavBar() -> impl IntoView {
                                 >
                                     <span class="icon">
                                         <i
-                                            class=move || { "fa-solid fa-moon" }
+                                            class=move || {
+                                                if mode.get() == ColorMode::Dark {
+                                                    "fa-solid fa-moon"
+                                                } else {
+                                                    "fa-solid fa-sun"
+                                                }
+                                            }
                                             aria-hidden="true"
                                         ></i>
                                     </span>
@@ -89,31 +91,55 @@ pub fn NavBar() -> impl IntoView {
                             </div>
                             <div class="dropdown-menu" id="dropdown-menu" role="menu">
                                 <div class="dropdown-content">
-                                    <a class=move || { "dropdown-item" }>
-                                        // on:click=move |_| {
-                                        // set_mode.set(ColorMode::Light);
-                                        // dropdown_open.set(false)
-                                        // }
+                                    <a
+                                        class=move || {
+                                            if mode.get() == ColorMode::Light {
+                                                "dropdown-item is-active"
+                                            } else {
+                                                "dropdown-item"
+                                            }
+                                        }
+                                        on:click=move |_| {
+                                            set_mode.set(ColorMode::Light);
+                                            dropdown_open.set(false)
+                                        }
+                                    >
                                         <span class="icon">
                                             <i class="fa-solid fa-sun" aria-hidden="true"></i>
                                         </span>
                                         <span>Light</span>
                                     </a>
-                                    <a class=move || { "dropdown-item" }>
-                                        // on:click=move |_| {
-                                        // set_mode.set(ColorMode::Dark);
-                                        // dropdown_open.set(false)
-                                        // }
+                                    <a
+                                        class=move || {
+                                            if mode.get() == ColorMode::Dark {
+                                                "dropdown-item is-active"
+                                            } else {
+                                                "dropdown-item"
+                                            }
+                                        }
+                                        on:click=move |_| {
+                                            set_mode.set(ColorMode::Dark);
+                                            dropdown_open.set(false)
+                                        }
+                                    >
                                         <span class="icon">
                                             <i class="fa-solid fa-moon" aria-hidden="true"></i>
                                         </span>
                                         <span>Dark</span>
                                     </a>
-                                    <a class=move || { "dropdown-item" }>
-                                        // on:click=move |_| {
-                                        // set_mode.set(ColorMode::Auto);
-                                        // dropdown_open.set(false)
-                                        // }
+                                    <a
+                                        class=move || {
+                                            if mode.get() == ColorMode::Auto {
+                                                "dropdown-item is-active"
+                                            } else {
+                                                "dropdown-item"
+                                            }
+                                        }
+                                        on:click=move |_| {
+                                            set_mode.set(ColorMode::Auto);
+                                            dropdown_open.set(false)
+                                        }
+                                    >
                                         <span class="icon">
                                             <i class="fa-solid fa-desktop" aria-hidden="true"></i>
                                         </span>

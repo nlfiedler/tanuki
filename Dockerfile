@@ -5,7 +5,7 @@ FROM rust:latest AS builder
 ENV DEBIAN_FRONTEND="noninteractive"
 RUN apt-get -q update && \
     apt-get -q -y install clang
-# use --locked to prevent errors when incompatible crates getting pulled in
+# use --locked to prevent errors when incompatible crates get pulled in
 RUN cargo install --locked cargo-leptos
 RUN rustup target add wasm32-unknown-unknown
 WORKDIR /build

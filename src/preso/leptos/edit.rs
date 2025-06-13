@@ -34,7 +34,7 @@ pub async fn fetch_location_parts() -> Result<LocationData, ServerFnError> {
     let usecase = CompleteLocations::new(Box::new(repo));
     let locations: Vec<Location> = usecase
         .call(NoParams {})
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     let mut data = LocationData {
         labels: vec![],
         cities: vec![],
@@ -80,7 +80,7 @@ pub async fn bulk_edit(ops: BulkEditParams) -> Result<u64, ServerFnError> {
     };
     let count = usecase
         .call(params)
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     Ok(count)
 }
 

@@ -26,6 +26,16 @@ DuckDB, like SQLite, is an in-process relational database engine. Unlike SQLite,
 
 One drawback of DuckDB is that, like SQLite, ingesting many records will be slow when compared to RocksDB.
 
+## Create database backup before upgrade
+
+Rarely is there ever a problem with upgrades, but a backup is a good idea in general.
+
+```shell
+curl -g -X POST -H "Content-Type: application/json" \
+     -d '{"query":"mutation{dump(filepath: \"/assets/dump.json\")}"}' \
+     http://192.168.50.201:3000/graphql
+```
+
 ## Using Docker
 
 The base directory contains a `docker-compose.yml` file which is used to build the application in stages and produce a relatively small final image.

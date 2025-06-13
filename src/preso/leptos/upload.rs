@@ -29,7 +29,7 @@ pub async fn ingest() -> Result<u32, ServerFnError> {
     let params = Params::new(uploads_path);
     let count = usecase
         .call(params)
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     Ok(count as u32)
 }
 

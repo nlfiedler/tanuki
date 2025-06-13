@@ -35,11 +35,13 @@ http = { version = "1.2.0", optional = true }
 image = { version = "0.25.5", optional = true }
 juniper = { version = "0.16.1", optional = true, features = ["chrono"] }
 kamadak-exif = { version = "0.6.1", optional = true }
-leptos = "0.7.8"
-leptos_actix = { version = "0.7.8", optional = true }
-leptos_meta = "0.7.8"
-leptos_router = "0.7.8"
-leptos-use = "0.15.7"
+leptos = "0.8.2"
+leptos_actix = { version = "0.8.2", optional = true }
+leptos_meta = "0.8.2"
+leptos_router = "0.8.2"
+# leptos-use is tightly coupled with leptos and almost certainly needs to be
+# updated whenever leptos is updated
+leptos-use = "0.16.0"
 log = "0.4.25"
 lru = { version = "0.14.0", optional = true }
 mime = { version = "0.3.17", optional = true }
@@ -49,18 +51,21 @@ mp4 = { version = "0.13.0", optional = true }
 reqwest = { version = "0.12.12", optional = true }
 riff = { version = "2.0.0", optional = true }
 rocksdb = { version = "0.23.0", optional = true }
-rusqlite = { version = "0.36.0", optional = true, features = ["functions", "bundled"] }
+rusqlite = { version = "0.36.0", optional = true, features = [
+    "functions",
+    "bundled",
+] }
 send_wrapper = "0.6.0"
 serde = { version = "1.0.217", features = ["derive"] }
 serde_json = "1.0.138"
-server_fn = { version = "0.7.8", features = ["json", "cbor", "multipart", "url"] }
+server_fn = { version = "0.8.2", features = ["cbor", "multipart"] }
 sha2 = { version = "0.10.8", optional = true }
 tokio = { version = "1.43.0", optional = true, features = ["full"] }
 ulid = { version = "1.2.0", optional = true }
 # latest cargo-leptos wants wasm-bindgen 0.2.100 or higher
-wasm-bindgen = "^0.2.100"
+wasm-bindgen = "0.2.100"
 # leptos-use 0.15.7 requires web-sys 0.3.77 or higher
-web-sys = { version = "^0.3.77", features = [
+web-sys = { version = "0.3.77", features = [
     "File",
     "FileList",
     "FileReader",

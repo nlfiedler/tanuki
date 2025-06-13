@@ -47,7 +47,7 @@ pub async fn recent(
     };
     let mut results: Vec<SearchResult> = usecase
         .call(params)
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     let total_count = results.len() as i32;
     let results = super::paginate_vector(&mut results, offset, count);
     let last_page: i32 = if total_count == 0 {
@@ -80,7 +80,7 @@ pub async fn bulk_update(assets: Vec<AssetInput>) -> Result<i32, ServerFnError> 
         let params: Params = Params::new(asset.clone().into());
         usecase
             .call(params)
-            .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+            .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     }
     Ok(assets.len() as i32)
 }

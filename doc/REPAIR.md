@@ -1,11 +1,18 @@
 # Diagnose and Repair
 
+## Database repair
+
+### DuckDB: catalog does not exist
+
+If the app displays an error like `Failure while replaying WAL Catalog ... does not exist` then stop the application and open the database using the `duckdb` client. Hopefully that will process the WAL and sort out whatever was wrong. Then start the application and try loading the home page.
+
+## GraphQL operations
+
 How to diagnose and repair issues via GraphQL.
 
-Using GraphiQL in the browser will likely time out since the request can
-take a very long time. Better to use `curl` as in the examples below.
+Using GraphiQL in the browser will likely time out since the request can take a very long time. Better to use `curl` as in the examples below.
 
-## Analyze
+### Analyze
 
 ```shell
 curl -g -X POST -H "Content-Type: application/json" \
@@ -13,7 +20,7 @@ curl -g -X POST -H "Content-Type: application/json" \
      http://192.168.50.201:3000/graphql
 ```
 
-## Diagnose
+### Diagnose
 
 ```shell
 curl -g -X POST -H "Content-Type: application/json" \
@@ -21,7 +28,7 @@ curl -g -X POST -H "Content-Type: application/json" \
      http://192.168.50.201:3000/graphql
 ```
 
-## Repair
+### Repair
 
 ```shell
 curl -g -X POST -H "Content-Type: application/json" \
@@ -29,7 +36,9 @@ curl -g -X POST -H "Content-Type: application/json" \
      http://192.168.50.201:3000/graphql
 ```
 
-## Geocode
+### Geocode
+
+It was only necessary to run this one time after introducing the reverse-geocoding feature.
 
 ```shell
 curl -g -X POST -H "Content-Type: application/json" \
@@ -37,7 +46,7 @@ curl -g -X POST -H "Content-Type: application/json" \
      http://192.168.50.201:3000/graphql
 ```
 
-## Create dump file
+### Create dump file
 
 ```shell
 curl -g -X POST -H "Content-Type: application/json" \
@@ -45,7 +54,7 @@ curl -g -X POST -H "Content-Type: application/json" \
      http://192.168.50.201:3000/graphql
 ```
 
-## Load from dump file
+### Load from dump file
 
 ```shell
 curl -g -X POST -H "Content-Type: application/json" \
@@ -53,7 +62,7 @@ curl -g -X POST -H "Content-Type: application/json" \
      http://192.168.50.201:3000/graphql
 ```
 
-## Finding duplicates
+### Finding duplicates
 
 How to find entries in the dump file that have duplicate checksums:
 

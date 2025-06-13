@@ -25,7 +25,7 @@ async fn fetch_asset(id: String) -> Result<Asset, ServerFnError> {
     let params = Params::new(id);
     let asset = usecase
         .call(params)
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     Ok(asset)
 }
 
@@ -45,7 +45,7 @@ async fn update_asset(asset: AssetInput) -> Result<Option<Asset>, ServerFnError>
         let params: Params = Params::new(asset.into());
         let result: Asset = usecase
             .call(params)
-            .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+            .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
         Ok(Some(result))
     } else {
         Ok(None)
@@ -90,7 +90,7 @@ pub async fn replace_asset(data: server_fn::codec::MultipartData) -> Result<Stri
             params.asset_id = field
                 .text()
                 .await
-                .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+                .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
         } else if field_name == "file_blob" {
             if let Some(content_type) = field.content_type() {
                 params.media_type = content_type.to_owned();
@@ -105,9 +105,9 @@ pub async fn replace_asset(data: server_fn::codec::MultipartData) -> Result<Stri
             let text = field
                 .text()
                 .await
-                .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+                .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
             let float =
-                f64::from_str(&text).map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+                f64::from_str(&text).map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
             params.last_modified = chrono::Utc.timestamp_millis_opt(float as i64).single();
         }
     }
@@ -120,7 +120,7 @@ pub async fn replace_asset(data: server_fn::codec::MultipartData) -> Result<Stri
     let usecase = ReplaceAsset::new(records, cache, blobs, geocoder);
     let asset = usecase
         .call(params)
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     Ok(asset.key)
 }
 

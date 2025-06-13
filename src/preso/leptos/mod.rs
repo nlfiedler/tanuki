@@ -259,7 +259,7 @@ pub mod ssr {
     ///
     pub fn db() -> Result<RecordRepositoryImpl, ServerFnError> {
         let source = new_datasource_for_path(DB_PATH.as_path())
-            .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+            .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
         let repo = RecordRepositoryImpl::new(source);
         Ok(repo)
     }
@@ -324,7 +324,7 @@ pub async fn get_count() -> Result<u32, ServerFnError> {
     let params = NoParams {};
     let count = usecase
         .call(params)
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     Ok(count as u32)
 }
 
@@ -342,7 +342,7 @@ pub async fn fetch_tags() -> Result<Vec<LabeledCount>, ServerFnError> {
     let params = NoParams {};
     let tags: Vec<LabeledCount> = usecase
         .call(params)
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     Ok(tags)
 }
 
@@ -360,7 +360,7 @@ pub async fn fetch_years() -> Result<Vec<Year>, ServerFnError> {
     let params = NoParams {};
     let str_years: Vec<LabeledCount> = usecase
         .call(params)
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     let years: Vec<Year> = str_years.into_iter().map(|y| y.into()).collect();
     Ok(years)
 }
@@ -380,7 +380,7 @@ pub async fn fetch_all_locations() -> Result<Vec<LabeledCount>, ServerFnError> {
     let params = NoParams {};
     let locations: Vec<LabeledCount> = usecase
         .call(params)
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     Ok(locations)
 }
 
@@ -397,7 +397,7 @@ pub async fn fetch_raw_locations() -> Result<Vec<Location>, ServerFnError> {
     let usecase = CompleteLocations::new(Box::new(repo));
     let locations: Vec<Location> = usecase
         .call(NoParams {})
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     Ok(locations)
 }
 
@@ -415,7 +415,7 @@ pub async fn fetch_types() -> Result<Vec<LabeledCount>, ServerFnError> {
     let params = NoParams {};
     let types: Vec<LabeledCount> = usecase
         .call(params)
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     Ok(types)
 }
 
@@ -447,7 +447,7 @@ pub async fn search(
     };
     let mut results: Vec<SearchResult> = usecase
         .call(params)
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     let total_count = results.len() as i32;
     let results = paginate_vector(&mut results, offset, count);
     let last_page: i32 = if total_count == 0 {
@@ -484,7 +484,7 @@ pub async fn fetch_assets(
     };
     let mut results = usecase
         .call(params)
-        .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?;
+        .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     let total_count = results.len() as i32;
     let results = paginate_vector(&mut results, offset, count);
     let last_page: i32 = if total_count == 0 {
@@ -519,7 +519,7 @@ pub async fn browse(params: BrowseParams) -> Result<BrowseMeta, ServerFnError> {
         };
         usecase
             .call(params)
-            .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?
+            .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?
     } else {
         use crate::domain::entities::SearchParams;
         use crate::domain::usecases::search::SearchAssets;
@@ -535,7 +535,7 @@ pub async fn browse(params: BrowseParams) -> Result<BrowseMeta, ServerFnError> {
         };
         usecase
             .call(params)
-            .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?
+            .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?
     };
 
     // retrieve the desired asset details from among the results
@@ -580,7 +580,7 @@ pub async fn browse_replace(
         };
         usecase
             .call(params)
-            .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?
+            .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?
     } else {
         use crate::domain::entities::SearchParams;
         use crate::domain::usecases::search::SearchAssets;
@@ -596,7 +596,7 @@ pub async fn browse_replace(
         };
         usecase
             .call(params)
-            .map_err(|e| ServerFnErrorErr::WrappedServerError(e))?
+            .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?
     };
 
     Ok(results.iter().position(|r| r.asset_id == asset_id))

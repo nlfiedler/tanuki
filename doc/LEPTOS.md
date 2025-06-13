@@ -20,6 +20,35 @@ Writing code using Rust within a fine-grained reactive framework can be rather t
 * If the error `tempoary value is dropped` occurs, try replacing `iter()` with `into_iter()` to take ownership. This works especially well with signals and stored values since they are always cloned anyway.
 * Do _not_ try to make a memo out of a resource, the console will show warnings/errors regarding components that could not be hydrated properly.
 
+## Troubleshooting
+
+### Attempt to upgrade Leptos results in errors
+
+Example of an error resulting from the upgrade.
+
+```
+error[E0599]: the method `get` exists for struct `Signal<Vec<SendWrapper<File>>>`, but its trait bounds were not satisfied
+   --> src/preso/leptos/upload.rs:73:43
+    |
+73  |     let has_files = move || dropped_files.get().len() > 0;
+    |                                           ^^^ method cannot be called on `Signal<Vec<SendWrapper<File>>>` due to unsatisfied trait bounds
+    |
+   ::: /Users/nfiedler/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reactive_graph-0.1.8/src/wrappers.rs:375:5
+    |
+375 |     pub struct Signal<T, S = SyncStorage>
+    |     ------------------------------------- doesn't satisfy 5 bounds
+    |
+    = note: the following trait bounds were not satisfied:
+[...unimportant details elided...]
+    = help: items from traits can only be used if the trait is in scope
+help: trait `Get` which provides `get` is implemented but not in scope; perhaps you want to import it
+    |
+4   + use reactive_graph::traits::Get;
+    |
+```
+
+There is a mismatch in the versions of the `leptos` crates, likely caused by one of the dependencies. It is probably the `leptos-use` crate that depends on an earlier version of Leptos. Use `cargo tree` to examine the dependencies and see which crate is pulling in an older version of Leptos.
+
 ## Tools
 
 * leptosfmt: https://github.com/bram209/leptosfmt

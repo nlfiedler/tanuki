@@ -11,7 +11,7 @@ An application for collecting, tagging, browsing, and searching assets, primaril
 
 ### Initial Setup
 
-These commands need to be run one time before building this project:
+The following commands need to be run one time before building this project. Note that `cargo-leptos` is installed with the `--locked` option to prevent build errors due to incompatible crates.
 
 ```shell
 cargo install --locked cargo-leptos
@@ -28,6 +28,12 @@ Run both the backend and front-end tests with one command:
 
 ```shell
 cargo leptos test
+```
+
+Run all backend tests:
+
+```shell
+cargo test --features=ssr
 ```
 
 Run a single backend test:
@@ -55,7 +61,7 @@ Use `cargo fmt` to format all of the Rust code.
 Use `leptosfmt` to format the client-side code, like so:
 
 ```shell
-leptosfmt src/preso/leptos/client/**/*.rs
+leptosfmt src/preso/leptos/**/*.rs
 ```
 
 ### Finding Outdated Crates
