@@ -916,10 +916,18 @@ fn do_test_data_source_query_newborn_basic(datasource: Box<dyn EntityDataSource>
     // than simply the import_date on which the newborn query is based
     let actual = datasource.query_newborn(date3).unwrap();
     assert_eq!(actual.len(), 4);
-    assert!(actual.iter().any(|l| l.asset_id == "wednesday8" && l.datetime == date2));
-    assert!(actual.iter().any(|l| l.asset_id == "thursday9" && l.datetime == date3));
-    assert!(actual.iter().any(|l| l.asset_id == "friday10" && l.datetime == date5));
-    assert!(actual.iter().any(|l| l.asset_id == "abc123" && l.datetime == import_date));
+    assert!(actual
+        .iter()
+        .any(|l| l.asset_id == "wednesday8" && l.datetime == date2));
+    assert!(actual
+        .iter()
+        .any(|l| l.asset_id == "thursday9" && l.datetime == date3));
+    assert!(actual
+        .iter()
+        .any(|l| l.asset_id == "friday10" && l.datetime == date5));
+    assert!(actual
+        .iter()
+        .any(|l| l.asset_id == "abc123" && l.datetime == import_date));
 }
 
 #[test]
