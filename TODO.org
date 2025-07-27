@@ -1,22 +1,10 @@
 * Action Items
 ** Leptos refinements
+*** nav bar items should highlight for matching route (e.g. ~Browse~ highlights for =/=)
 *** make the elements in =forms.rs= more concise like in commit =eda66e2=
 *** should be able to refactor code to remove some =StoredValue= usage
 *** maybe use =LocalResource= to streamline some =Transition= that do lots of work
-** Data source comparison
-*** 21,5xx assets, disk usage immediately after load, before compaction
-| Metric     | RocksDB    | SQLite     | DuckDB     |
-|------------+------------+------------+------------|
-| load time  | 4 sec      | 6 min      | 6m 24s     |
-| disk uage  | 39,298,784 | 13,450,984 | 12,736,628 |
-| asset size | 1827       | 625        | 590        |
-*** with 22,320 assets, compacted DuckDB uses 11,284,480 bytes (505/asset)
-*** SQLite load measurements
-| milestone                          | time   | asset count |
-|------------------------------------+--------+-------------|
-| initial with too many locations    | 5m 48s |       21502 |
-| location dedupe, insert or replace | 4m 30s |       21557 |
-*** stop expanding
+*** find all =log:error= that could be handled better
 ** Help
 *** write help pages for each of the main pages
 **** location string parsing
@@ -162,6 +150,8 @@
 ***** the "dropped" pages would be changed to consist of placeholders to free memory
 **** using carousel style navigation arrows?
 ** DuckDB
+*** after restart DuckDB cannot find ~tanuki~ catalog
+**** need to stop app, run =duckdb= and then exit (it cleans up whatever was wrong)
 *** consider when to remove orphaned locations
 ** SQLite
 *** consider when to remove orphaned locations

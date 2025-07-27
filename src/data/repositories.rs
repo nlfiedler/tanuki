@@ -18,7 +18,7 @@ pub mod geo;
 
 // from https://commons.wikimedia.org/wiki/File:Placeholder_view_vector.svg
 // sized to 991x768 pixels
-const PLACEHOLDER: &[u8] = include_bytes!("placeholder.png");
+const PLACEHOLDER: &[u8] = include_bytes!("repositories/placeholder.png");
 
 // Cache of String keys to Vec<u8> image data for caching thumbnails.
 //
