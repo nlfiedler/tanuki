@@ -99,10 +99,12 @@ pub fn PageControls(
                         <div class="dropdown-content">
                             <For each=move || [18, 36, 54, 72].iter() key=|i| *i let:size>
                                 <a
-                                    class=if page_size.get() == *size {
-                                        "dropdown-item is-active"
-                                    } else {
-                                        "dropdown-item"
+                                    class=move || {
+                                        if page_size.get() == *size {
+                                            "dropdown-item is-active"
+                                        } else {
+                                            "dropdown-item"
+                                        }
                                     }
                                     on:click=move |_| {
                                         set_page_size.set(*size);

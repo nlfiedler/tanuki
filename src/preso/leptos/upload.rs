@@ -116,7 +116,9 @@ pub fn UploadPage() -> impl IntoView {
                             Import
                         </button>
                         <div class="block ml-2">
-                            <p class="subtitle is-5">from the <code>uploads</code>directory</p>
+                            <p class="subtitle is-5">
+                                from the <code class="mx-1">uploads</code>directory
+                            </p>
                         </div>
                     </div>
                 </div>

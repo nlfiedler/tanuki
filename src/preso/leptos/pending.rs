@@ -284,8 +284,9 @@ pub fn PendingPage() -> impl IntoView {
     let datetime_input_ref: NodeRef<Input> = NodeRef::new();
     let submittable = Memo::new(move |_| {
         // a location is not really considered "set" unless the label is
-        // defined, as many assets will have geocoded location data at the
-        // time of import
+        // defined, as many assets will have geocoded location data at the time
+        // of import; that is, without either a tag or a user-defined location,
+        // then the asset would still appear to be "pending"
         (selected_tags.read().len() > 0 || selected_location.read().label.is_some())
             && selected_assets.read().len() > 0
     });
