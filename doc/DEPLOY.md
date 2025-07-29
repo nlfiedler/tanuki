@@ -24,7 +24,7 @@ The one drawback is that ingesting tens of thousands of records will take severa
 
 DuckDB, like SQLite, is an in-process relational database engine. Unlike SQLite, DuckDB is suited to an analytical workload rather than transactional (OLAP instead of OLTP). Like SQLite, DuckDB offers a command-line interface and structured data store. Disk usage is also very similar to SQLite.
 
-One drawback of DuckDB is that, like SQLite, ingesting many records will be slow when compared to RocksDB.
+One drawback of DuckDB is that, like SQLite, ingesting many records will be slow compared to RocksDB.
 
 ## Create database backup before upgrade
 
@@ -33,7 +33,7 @@ Rarely is there ever a problem with upgrades, but a backup is a good idea in gen
 ```shell
 curl -g -X POST -H "Content-Type: application/json" \
      -d '{"query":"mutation{dump(filepath: \"/assets/dump.json\")}"}' \
-     http://192.168.50.201:3000/graphql
+     http://192.168.1.4:3000/graphql
 ```
 
 ## Using Docker
@@ -44,9 +44,9 @@ On the build host:
 
 ```shell
 docker compose build --pull
-docker image rm 192.168.50.201:5000/tanuki
-docker image tag tanuki-app 192.168.50.201:5000/tanuki
-docker push 192.168.50.201:5000/tanuki
+docker image rm 192.168.1.4:5000/tanuki
+docker image tag tanuki-app 192.168.1.4:5000/tanuki
+docker push 192.168.1.4:5000/tanuki
 ```
 
 On the server, with a production version of the `docker-compose.yml` file:
