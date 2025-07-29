@@ -21,43 +21,16 @@ use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
 use log::error;
 use std::collections::HashMap;
-use std::env;
 use std::io::Write;
 use std::path::PathBuf;
-use std::sync::{Arc, LazyLock};
+use std::sync::Arc;
 use tanuki::data::repositories::geo::find_location_repository;
 use tanuki::data::repositories::{BlobRepositoryImpl, RecordRepositoryImpl, SearchRepositoryImpl};
 use tanuki::data::sources::new_datasource_for_path;
 use tanuki::domain::repositories::{BlobRepository, RecordRepository};
 use tanuki::domain::usecases::UseCase;
 use tanuki::preso::graphql;
-
-#[cfg(test)]
-static DEFAULT_DB_PATH: &str = "tmp/test/database";
-#[cfg(not(test))]
-static DEFAULT_DB_PATH: &str = "tmp/database";
-
-#[cfg(test)]
-static DEFAULT_ASSETS_PATH: &str = "tmp/test/blobs";
-#[cfg(not(test))]
-static DEFAULT_ASSETS_PATH: &str = "tmp/blobs";
-
-// Path to the database files.
-static DB_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
-    let path = env::var("DATABASE_PATH").unwrap_or_else(|_| DEFAULT_DB_PATH.to_owned());
-    PathBuf::from(path)
-});
-
-// Path for uploaded files.
-static UPLOAD_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
-    let path = env::var("UPLOAD_PATH").unwrap_or_else(|_| "tmp/uploads".to_owned());
-    PathBuf::from(path)
-});
-
-static ASSETS_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
-    let path = env::var("ASSETS_PATH").unwrap_or_else(|_| DEFAULT_ASSETS_PATH.to_owned());
-    PathBuf::from(path)
-});
+use tanuki::{ASSETS_PATH, DB_PATH, UPLOAD_PATH};
 
 // Parameters read from the multipart form for the file upload operations.
 #[derive(Debug, Default)]

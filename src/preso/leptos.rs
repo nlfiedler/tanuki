@@ -222,43 +222,14 @@ pub mod ssr {
     use crate::data::sources::new_datasource_for_path;
     use leptos::server_fn::error::ServerFnErrorErr;
     use leptos::server_fn::ServerFnError;
-    use std::env;
     use std::fs;
     use std::path::PathBuf;
-    use std::sync::LazyLock;
-
-    #[cfg(test)]
-    static DEFAULT_DB_PATH: &str = "tmp/test/database";
-    #[cfg(not(test))]
-    static DEFAULT_DB_PATH: &str = "tmp/database";
-
-    // Path to the database files.
-    static DB_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
-        let path = env::var("DATABASE_PATH").unwrap_or_else(|_| DEFAULT_DB_PATH.to_owned());
-        PathBuf::from(path)
-    });
-
-    // Path for uploaded files.
-    static UPLOAD_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
-        let path = env::var("UPLOAD_PATH").unwrap_or_else(|_| "tmp/uploads".to_owned());
-        PathBuf::from(path)
-    });
-
-    #[cfg(test)]
-    static DEFAULT_ASSETS_PATH: &str = "tmp/test/blobs";
-    #[cfg(not(test))]
-    static DEFAULT_ASSETS_PATH: &str = "tmp/blobs";
-
-    static ASSETS_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
-        let path = env::var("ASSETS_PATH").unwrap_or_else(|_| DEFAULT_ASSETS_PATH.to_owned());
-        PathBuf::from(path)
-    });
 
     ///
     /// Construct a repository implementation for the database.
     ///
     pub fn db() -> Result<RecordRepositoryImpl, ServerFnError> {
-        let source = new_datasource_for_path(DB_PATH.as_path())
+        let source = new_datasource_for_path(crate::DB_PATH.as_path())
             .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
         let repo = RecordRepositoryImpl::new(source);
         Ok(repo)
@@ -273,14 +244,14 @@ pub mod ssr {
     /// Construct a repository implementation for the blob store.
     ///
     pub fn blobs() -> Result<BlobRepositoryImpl, ServerFnError> {
-        Ok(BlobRepositoryImpl::new(ASSETS_PATH.as_path()))
+        Ok(BlobRepositoryImpl::new(crate::ASSETS_PATH.as_path()))
     }
 
     /// Prepare for the upload of an asset, returning a new File.
     pub fn create_upload_file(filename: &str) -> Result<(PathBuf, fs::File), ServerFnError> {
-        let mut filepath = UPLOAD_PATH.clone();
+        let mut filepath = crate::UPLOAD_PATH.clone();
         filepath.push(filename);
-        fs::create_dir_all(UPLOAD_PATH.as_path())?;
+        fs::create_dir_all(crate::UPLOAD_PATH.as_path())?;
         let filepath_copy = filepath.clone();
         Ok((filepath, fs::File::create(filepath_copy)?))
     }
