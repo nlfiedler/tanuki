@@ -77,7 +77,7 @@ pub async fn bulk_update(assets: Vec<AssetInput>) -> Result<i32, ServerFnError> 
     let cache = super::ssr::cache()?;
     let usecase = UpdateAsset::new(Box::new(repo), Box::new(cache));
     for asset in assets.iter() {
-        let params: Params = Params::new(asset.clone().into());
+        let params: Params = Params::new(asset.clone());
         usecase
             .call(params)
             .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
@@ -85,12 +85,13 @@ pub async fn bulk_update(assets: Vec<AssetInput>) -> Result<i32, ServerFnError> 
     Ok(assets.len() as i32)
 }
 
-#[derive(Copy, Clone, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[derive(Copy, Clone, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]
 enum RecentRange {
     Day,
     Week,
     Month,
     Year,
+    #[default]
     All,
 }
 
@@ -98,18 +99,12 @@ impl RecentRange {
     fn as_date(&self) -> Option<DateTime<Utc>> {
         let now = Utc::now();
         match *self {
-            RecentRange::Day => Some(now - TimeDelta::days(1 as i64)),
-            RecentRange::Week => Some(now - TimeDelta::days(7 as i64)),
-            RecentRange::Month => Some(now - TimeDelta::days(30 as i64)),
-            RecentRange::Year => Some(now - TimeDelta::days(365 as i64)),
+            RecentRange::Day => Some(now - TimeDelta::days(1_i64)),
+            RecentRange::Week => Some(now - TimeDelta::days(7_i64)),
+            RecentRange::Month => Some(now - TimeDelta::days(30_i64)),
+            RecentRange::Year => Some(now - TimeDelta::days(365_i64)),
             RecentRange::All => None,
         }
-    }
-}
-
-impl Default for RecentRange {
-    fn default() -> Self {
-        RecentRange::All
     }
 }
 
@@ -125,8 +120,9 @@ impl fmt::Display for RecentRange {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 enum SortCombo {
+    #[default]
     DateAsc,
     DateDesc,
     FileAsc,
@@ -153,15 +149,9 @@ impl SortCombo {
     }
 }
 
-impl Default for SortCombo {
-    fn default() -> Self {
-        SortCombo::DateAsc
-    }
-}
-
-impl Into<SortField> for SortCombo {
-    fn into(self) -> SortField {
-        match self {
+impl From<SortCombo> for SortField {
+    fn from(val: SortCombo) -> Self {
+        match val {
             SortCombo::DateAsc => SortField::Date,
             SortCombo::DateDesc => SortField::Date,
             SortCombo::FileAsc => SortField::Filename,
@@ -170,9 +160,9 @@ impl Into<SortField> for SortCombo {
     }
 }
 
-impl Into<SortOrder> for SortCombo {
-    fn into(self) -> SortOrder {
-        match self {
+impl From<SortCombo> for SortOrder {
+    fn from(val: SortCombo) -> Self {
+        match val {
             SortCombo::DateAsc => SortOrder::Ascending,
             SortCombo::DateDesc => SortOrder::Descending,
             SortCombo::FileAsc => SortOrder::Ascending,
@@ -287,8 +277,8 @@ pub fn PendingPage() -> impl IntoView {
         // defined, as many assets will have geocoded location data at the time
         // of import; that is, without either a tag or a user-defined location,
         // then the asset would still appear to be "pending"
-        (selected_tags.read().len() > 0 || selected_location.read().label.is_some())
-            && selected_assets.read().len() > 0
+        (!selected_tags.read().is_empty() || selected_location.read().label.is_some())
+            && !selected_assets.read().is_empty()
     });
     // compile the set of asset inputs and send to the server
     let save_action = Action::new(move |_input: &()| {
@@ -297,7 +287,7 @@ pub fn PendingPage() -> impl IntoView {
         let datetime_str = format!(
             "{}{}",
             datetime_input_ref.get().unwrap().value(),
-            local.offset().to_string()
+            local.offset()
         );
         let datetime = if datetime_str.len() > 6 {
             // need to be flexible with the date/time format
@@ -606,7 +596,7 @@ fn RangeSelector(
     // be sure to access the signal inside the view!
     view! {
         <div class="field is-grouped">
-            <For each=move || elements.get_value() key=|t| t.clone() let:range>
+            <For each=move || elements.get_value() key=|t| *t let:range>
                 <Show
                     when=move || range == selected_range.get()
                     fallback=move || {

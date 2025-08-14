@@ -44,7 +44,7 @@ impl ImportAsset {
         let metadata = std::fs::metadata(&params.filepath)?;
         let byte_length = metadata.len();
         let location =
-            if let Some(coords) = get_gps_coordinates(&params.media_type, &params.filepath).ok() {
+            match get_gps_coordinates(&params.media_type, &params.filepath) { Ok(coords) => {
                 match self.geocoder.find_location(&coords) {
                     Ok(geoloc) => Some(super::convert_location(geoloc)),
                     Err(err) => {
@@ -52,9 +52,9 @@ impl ImportAsset {
                         None
                     }
                 }
-            } else {
+            } _ => {
                 None
-            };
+            }};
         // some applications will set the file modified time appropriately, so
         // if the asset itself does not have an original date/time, use that
         let original_date = get_original_date(&params.media_type, &params.filepath)

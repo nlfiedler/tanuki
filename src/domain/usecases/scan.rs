@@ -435,22 +435,27 @@ mod query {
 
     /// Convert a keyword and its arguments into a predicate.
     pub fn build_predicate(atom: Vec<String>) -> Result<Box<dyn Predicate>, Error> {
-        let keyword = atom.get(0).ok_or_else(|| anyhow!("missing keyword"))?;
+        let keyword = atom.first().ok_or_else(|| anyhow!("missing keyword"))?;
         if keyword == "after" {
             let arg1 = atom
                 .get(1)
                 .ok_or_else(|| anyhow!("after requires 1 argument"))?;
-            Ok(Box::new(AfterPredicate::new(&arg1)?))
+            Ok(Box::new(AfterPredicate::new(arg1)?))
         } else if keyword == "before" {
             let arg1 = atom
                 .get(1)
                 .ok_or_else(|| anyhow!("before requires 1 argument"))?;
-            Ok(Box::new(BeforePredicate::new(&arg1)?))
+            Ok(Box::new(BeforePredicate::new(arg1)?))
         } else if keyword == "is" {
             let arg1 = atom
                 .get(1)
                 .ok_or_else(|| anyhow!("is requires 1 argument"))?;
             Ok(Box::new(TypePredicate::new(arg1)))
+        } else if keyword == "filename" {
+            let arg1 = atom
+                .get(1)
+                .ok_or_else(|| anyhow!("filename requires 1 argument"))?;
+            Ok(Box::new(FilenamePredicate::new(arg1)))
         } else if keyword == "format" {
             let arg1 = atom
                 .get(1)
@@ -501,6 +506,22 @@ mod query {
                 Constraint::Lambda(pred) => pred.matches(asset),
                 Constraint::Empty => false,
             }
+        }
+    }
+
+    /// Matches if the asset file name matches the value.
+    #[derive(Debug)]
+    pub struct FilenamePredicate(String);
+
+    impl FilenamePredicate {
+        pub fn new<S: Into<String>>(name: S) -> Self {
+            Self(name.into().to_lowercase())
+        }
+    }
+
+    impl Predicate for FilenamePredicate {
+        fn matches(&self, asset: &Asset) -> bool {
+            self.0 == asset.filename.to_lowercase()
         }
     }
 
@@ -793,6 +814,31 @@ mod query {
         }
 
         #[test]
+        fn test_query_filename_predicate() {
+            let pred_t = FilenamePredicate::new("img_1234.jpg");
+            let lambda = Constraint::Lambda(Box::new(pred_t));
+            let asset1 = Asset {
+                key: "abc123".to_owned(),
+                checksum: "cafebabe".to_owned(),
+                filename: "IMG_1234.jpg".to_owned(),
+                byte_length: 1024,
+                media_type: "image/jpeg".to_owned(),
+                tags: vec!["cat".to_owned()],
+                import_date: Utc::now(),
+                caption: None,
+                location: None,
+                user_date: None,
+                original_date: None,
+                dimensions: None,
+            };
+            assert!(lambda.matches(&asset1));
+
+            let pred_t = FilenamePredicate::new("MIV_2326.mov");
+            let lambda = Constraint::Lambda(Box::new(pred_t));
+            assert!(!lambda.matches(&asset1));
+        }
+
+        #[test]
         fn test_query_type_predicate() {
             let pred_t = TypePredicate::new("image");
             let lambda = Constraint::Lambda(Box::new(pred_t));
@@ -814,10 +860,10 @@ mod query {
 
             let pred_t = TypePredicate::new("video");
             let lambda = Constraint::Lambda(Box::new(pred_t));
-            assert_eq!(lambda.matches(&asset1), false);
+            assert!(!lambda.matches(&asset1));
 
             asset1.media_type = "foobar".to_owned();
-            assert_eq!(lambda.matches(&asset1), false);
+            assert!(!lambda.matches(&asset1));
         }
 
         #[test]
@@ -842,10 +888,10 @@ mod query {
 
             let pred_t = SubtypePredicate::new("png");
             let lambda = Constraint::Lambda(Box::new(pred_t));
-            assert_eq!(lambda.matches(&asset1), false);
+            assert!(!lambda.matches(&asset1));
 
             asset1.media_type = "foobar".to_owned();
-            assert_eq!(lambda.matches(&asset1), false);
+            assert!(!lambda.matches(&asset1));
         }
 
         #[test]
@@ -872,7 +918,7 @@ mod query {
             let pred_a = TagPredicate::new("cat");
             let pred_b = TagPredicate::new("rabbit");
             let and_c = Constraint::And(Box::new(pred_a), Box::new(pred_b));
-            assert_eq!(and_c.matches(&asset1), false);
+            assert!(!and_c.matches(&asset1));
         }
 
         #[test]
@@ -899,7 +945,7 @@ mod query {
             let pred_a = TagPredicate::new("mouse");
             let pred_b = TagPredicate::new("rabbit");
             let or_c = Constraint::Or(Box::new(pred_a), Box::new(pred_b));
-            assert_eq!(or_c.matches(&asset1), false);
+            assert!(!or_c.matches(&asset1));
         }
 
         #[test]
@@ -924,7 +970,7 @@ mod query {
 
             let pred_a = TagPredicate::new("cat");
             let not_c = Constraint::Not(Box::new(pred_a));
-            assert_eq!(not_c.matches(&asset1), false);
+            assert!(!not_c.matches(&asset1));
         }
 
         #[test]
@@ -950,7 +996,7 @@ mod query {
             let pred = TagPredicate::new("DOG");
             assert!(pred.matches(&asset1));
             let pred = TagPredicate::new("rabbit");
-            assert_eq!(pred.matches(&asset1), false);
+            assert!(!pred.matches(&asset1));
         }
 
         #[test]
@@ -976,7 +1022,7 @@ mod query {
             let pred = LocationPredicate::with_field(LocationField::Region, "france");
             assert!(pred.matches(&asset1));
             let pred = LocationPredicate::with_field(LocationField::Region, "paris");
-            assert_eq!(pred.matches(&asset1), false);
+            assert!(!pred.matches(&asset1));
             let pred = LocationPredicate::with_field(LocationField::City, "paris");
             assert!(pred.matches(&asset1));
             let pred = LocationPredicate::new("eiffel tower");
@@ -984,7 +1030,7 @@ mod query {
             let pred = LocationPredicate::with_field(LocationField::Label, "eiffel tower");
             assert!(pred.matches(&asset1));
             let pred = LocationPredicate::new("texas");
-            assert_eq!(pred.matches(&asset1), false);
+            assert!(!pred.matches(&asset1));
         }
 
         #[test]
@@ -1010,7 +1056,7 @@ mod query {
             let pred = LocationPredicate::with_field(LocationField::Region, "france");
             assert!(pred.matches(&asset1));
             let pred = LocationPredicate::with_field(LocationField::Region, "paris");
-            assert_eq!(pred.matches(&asset1), false);
+            assert!(!pred.matches(&asset1));
             let pred = LocationPredicate::with_field(LocationField::City, "paris");
             assert!(pred.matches(&asset1));
             let pred = LocationPredicate::new("");
@@ -1018,7 +1064,7 @@ mod query {
             let pred = LocationPredicate::with_field(LocationField::Label, "");
             assert!(pred.matches(&asset1));
             let pred = LocationPredicate::new("texas");
-            assert_eq!(pred.matches(&asset1), false);
+            assert!(!pred.matches(&asset1));
         }
 
         #[test]
@@ -1076,7 +1122,7 @@ mod query {
                 original_date: None,
                 dimensions: None,
             };
-            assert_eq!(pred.matches(&asset1), false);
+            assert!(!pred.matches(&asset1));
             asset1.import_date = later;
             assert!(pred.matches(&asset1));
 
@@ -1108,7 +1154,7 @@ mod query {
                 original_date: None,
                 dimensions: None,
             };
-            assert_eq!(pred.matches(&asset1), false);
+            assert!(!pred.matches(&asset1));
             asset1.import_date = earlier;
             assert!(pred.matches(&asset1));
 
@@ -1141,7 +1187,7 @@ mod parser {
         let result = parser.parse_exp();
         if let Ok(last) = parser.next() {
             parser.drain_lexer();
-            if result.is_ok() && last.typ != TokenType::EOF {
+            if result.is_ok() && last.typ != TokenType::Eof {
                 return Err(anyhow!("trailing tokens: {}", last));
             }
         }
@@ -1187,7 +1233,7 @@ mod parser {
         /// wrapped in parentheses.
         fn parse_exp(&mut self) -> Result<Constraint, Error> {
             if let Ok(p) = self.peek() {
-                if p.typ == TokenType::EOF {
+                if p.typ == TokenType::Eof {
                     return Ok(Constraint::Empty);
                 }
             }
@@ -1199,7 +1245,7 @@ mod parser {
                 } else if p.typ == TokenType::Or {
                     self.next()?;
                     return self.parse_or_rhs(ret);
-                } else if p.typ == TokenType::Close || p.typ == TokenType::EOF {
+                } else if p.typ == TokenType::Close || p.typ == TokenType::Eof {
                     break;
                 }
                 ret = self.parse_and_rhs(ret)?;
@@ -1216,7 +1262,7 @@ mod parser {
             let op = self.peek()?;
             if op.typ == TokenType::Error {
                 return Err(anyhow!("error: {}", op.val));
-            } else if op.typ == TokenType::EOF {
+            } else if op.typ == TokenType::Eof {
                 return Err(anyhow!("error: expected operand, got {}", op.val));
             } else if op.typ == TokenType::Close {
                 return Err(anyhow!("error: found ) without (, got {}", op.val));
@@ -1282,7 +1328,7 @@ mod parser {
                 }
                 break;
             }
-            build_predicate(a).map(|p| Constraint::Lambda(p))
+            build_predicate(a).map(Constraint::Lambda)
         }
 
         /// Current token is expected to be an open paren.
@@ -1312,7 +1358,7 @@ mod parser {
                     self.next()?;
                 } else if p.typ == TokenType::And
                     || p.typ == TokenType::Close
-                    || p.typ == TokenType::EOF
+                    || p.typ == TokenType::Eof
                 {
                     break;
                 }
@@ -1326,7 +1372,7 @@ mod parser {
             let p = self.peek()?;
             if p.typ == TokenType::And {
                 self.next()?;
-            } else if p.typ == TokenType::Or || p.typ == TokenType::Close || p.typ == TokenType::EOF
+            } else if p.typ == TokenType::Or || p.typ == TokenType::Close || p.typ == TokenType::Eof
             {
                 return Ok(ret);
             }
@@ -1479,7 +1525,7 @@ mod lexer {
         Arg,
         Close,
         Colon,
-        EOF,
+        Eof,
         Error,
         Not,
         Open,
@@ -1494,7 +1540,7 @@ mod lexer {
                 TokenType::Arg => write!(f, "Arg"),
                 TokenType::Close => write!(f, "Close"),
                 TokenType::Colon => write!(f, "Colon"),
-                TokenType::EOF => write!(f, "EOF"),
+                TokenType::Eof => write!(f, "EOF"),
                 TokenType::Error => write!(f, "Error"),
                 TokenType::Not => write!(f, "Not"),
                 TokenType::Open => write!(f, "Open"),
@@ -1605,10 +1651,7 @@ mod lexer {
             if self.peeked.is_none() {
                 self.peeked = self.iter.next();
             }
-            match self.peeked {
-                Some((_, ch)) => Some(ch),
-                None => None,
-            }
+            self.peeked.map(|(_, ch)| ch)
         }
 
         /// `ignore` skips over the pending input before this point.
@@ -1692,7 +1735,7 @@ mod lexer {
         let (tx, rx) = mpsc::sync_channel(1);
 
         thread::spawn(move || {
-            let mut lexer = Lexer::new(&*owned, tx);
+            let mut lexer = Lexer::new(&owned, tx);
             // inform the compiler what the type of state _really_ is
             let mut state: fn(&mut Lexer) -> Option<StateFn> = lex_start;
             while let Some(next) = state(&mut lexer) {
@@ -1734,7 +1777,7 @@ mod lexer {
                 }
             }
         } else {
-            l.emit(TokenType::EOF);
+            l.emit(TokenType::Eof);
             None
         }
     }
@@ -1968,18 +2011,18 @@ mod lexer {
             let rx = lex(input);
             for er in expected.iter() {
                 if let Ok(token) = rx.recv() {
-                    assert_eq!(token.typ, er.0, "{}", token.to_string());
-                    assert_eq!(token.val, er.1, "{}", token.to_string());
-                    println!("token ok -> {}", token.to_string());
+                    assert_eq!(token.typ, er.0, "{}", token);
+                    assert_eq!(token.val, er.1, "{}", token);
+                    println!("token ok -> {}", token);
                 } else {
-                    assert!(false, "ran out of tokens");
+                    panic!("ran out of tokens");
                 }
             }
             // make sure we have reached the end of the results
             if let Ok(token) = rx.recv() {
-                assert_eq!(token.typ, TokenType::EOF);
+                assert_eq!(token.typ, TokenType::Eof);
             } else {
-                assert!(false, "should have exhausted tokens");
+                panic!("should have exhausted tokens");
             }
         }
 
@@ -2030,50 +2073,47 @@ mod lexer {
         fn test_lexer_empty_input() {
             let rx = lex("");
             if let Ok(token) = rx.recv() {
-                assert_eq!(token.typ, TokenType::EOF);
+                assert_eq!(token.typ, TokenType::Eof);
             } else {
-                assert!(false);
+                panic!();
             }
             let rx = lex("   \r  \n   \t  ");
             if let Ok(token) = rx.recv() {
-                assert_eq!(token.typ, TokenType::EOF);
+                assert_eq!(token.typ, TokenType::Eof);
             } else {
-                assert!(false);
+                panic!();
             }
         }
 
         #[test]
         fn test_lexer_separators_ignored() {
-            let mut vec = Vec::new();
-            vec.push((TokenType::Open, "("));
-            vec.push((TokenType::Close, ")"));
+            let vec = vec![(TokenType::Open, "("), (TokenType::Close, ")")];
             verify_success("     (\n\t )\r\n", vec);
         }
 
         #[test]
         fn test_lexer_open_close_paren() {
-            let mut vec = Vec::new();
-            vec.push((TokenType::Open, "("));
-            vec.push((TokenType::Close, ")"));
+            let vec = vec![(TokenType::Open, "("), (TokenType::Close, ")")];
             verify_success("()", vec);
         }
 
         #[test]
         fn test_lexer_basic_predicates() {
-            let mut vec = Vec::new();
-            vec.push((TokenType::Predicate, "tag"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "kittens"));
-            vec.push((TokenType::Not, "-"));
-            vec.push((TokenType::Predicate, "tag"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "clouds"));
-            vec.push((TokenType::Predicate, "loc"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "castro valley"));
-            vec.push((TokenType::Predicate, "loc"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "lower manhatten"));
+            let vec = vec![
+                (TokenType::Predicate, "tag"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "kittens"),
+                (TokenType::Not, "-"),
+                (TokenType::Predicate, "tag"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "clouds"),
+                (TokenType::Predicate, "loc"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "castro valley"),
+                (TokenType::Predicate, "loc"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "lower manhatten"),
+            ];
             verify_success(
                 "tag:kittens -tag:clouds loc:'castro valley' loc:\"lower manhatten\"",
                 vec,
@@ -2082,74 +2122,78 @@ mod lexer {
 
         #[test]
         fn test_lexer_complex_predicates() {
-            let mut vec = Vec::new();
-            vec.push((TokenType::Predicate, "loc"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "city"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "london"));
-            vec.push((TokenType::Or, "or"));
-            vec.push((TokenType::Predicate, "loc"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "region"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "japan"));
-            vec.push((TokenType::Predicate, "loc"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "label"));
-            vec.push((TokenType::Colon, ":"));
+            let vec = vec![
+                (TokenType::Predicate, "loc"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "city"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "london"),
+                (TokenType::Or, "or"),
+                (TokenType::Predicate, "loc"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "region"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "japan"),
+                (TokenType::Predicate, "loc"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "label"),
+                (TokenType::Colon, ":"),
+            ];
             verify_success("loc:city:london or loc:region:japan loc:label:", vec);
         }
 
         #[test]
         fn test_lexer_basic_operators() {
-            let mut vec = Vec::new();
-            vec.push((TokenType::Predicate, "tag"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "kittens"));
-            vec.push((TokenType::Or, "or"));
-            vec.push((TokenType::Predicate, "tag"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "clouds"));
-            vec.push((TokenType::And, "and"));
-            vec.push((TokenType::Predicate, "tag"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "rain"));
+            let vec = vec![
+                (TokenType::Predicate, "tag"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "kittens"),
+                (TokenType::Or, "or"),
+                (TokenType::Predicate, "tag"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "clouds"),
+                (TokenType::And, "and"),
+                (TokenType::Predicate, "tag"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "rain"),
+            ];
             verify_success("tag:kittens or tag:clouds and tag:rain", vec);
         }
 
         #[test]
         fn test_lexer_repeated_negation() {
-            let mut vec = Vec::new();
-            vec.push((TokenType::Not, "-"));
-            vec.push((TokenType::Not, "-"));
-            vec.push((TokenType::Predicate, "tag"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "kittens"));
-            vec.push((TokenType::Or, "or"));
-            vec.push((TokenType::Not, "-"));
-            vec.push((TokenType::Predicate, "tag"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "clouds"));
+            let vec = vec![
+                (TokenType::Not, "-"),
+                (TokenType::Not, "-"),
+                (TokenType::Predicate, "tag"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "kittens"),
+                (TokenType::Or, "or"),
+                (TokenType::Not, "-"),
+                (TokenType::Predicate, "tag"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "clouds"),
+            ];
             verify_success("--tag:kittens or - tag:clouds", vec);
         }
 
         #[test]
         fn test_lexer_perkeep_search_example() {
-            let mut vec = Vec::new();
-            vec.push((TokenType::Not, "-"));
-            vec.push((TokenType::Open, "("));
-            vec.push((TokenType::Predicate, "after"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "2010-01-01"));
-            vec.push((TokenType::Predicate, "before"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "2010-03-02T12:33:44"));
-            vec.push((TokenType::Close, ")"));
-            vec.push((TokenType::Or, "or"));
-            vec.push((TokenType::Predicate, "loc"));
-            vec.push((TokenType::Colon, ":"));
-            vec.push((TokenType::Arg, "Amsterdam"));
+            let vec = vec![
+                (TokenType::Not, "-"),
+                (TokenType::Open, "("),
+                (TokenType::Predicate, "after"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "2010-01-01"),
+                (TokenType::Predicate, "before"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "2010-03-02T12:33:44"),
+                (TokenType::Close, ")"),
+                (TokenType::Or, "or"),
+                (TokenType::Predicate, "loc"),
+                (TokenType::Colon, ":"),
+                (TokenType::Arg, "Amsterdam"),
+            ];
             verify_success(
                 "-(after:\"2010-01-01\" before:\"2010-03-02T12:33:44\") or loc:\"Amsterdam\"",
                 vec,

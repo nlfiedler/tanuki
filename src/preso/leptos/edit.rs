@@ -145,7 +145,7 @@ pub fn EditPage() -> impl IntoView {
         },
     );
     let selected_assets: RwSignal<HashSet<String>> = RwSignal::new(HashSet::new());
-    let submittable = Memo::new(move |_| selected_assets.with(|coll| coll.len() > 0));
+    let submittable = Memo::new(move |_| selected_assets.with(|coll| !coll.is_empty()));
     let (modal_active, set_modal_active) = signal(false);
     let submit = Action::new(move |ops: &BulkEditParams| {
         let mut ops = ops.to_owned();
@@ -368,7 +368,7 @@ where
         let datetime_str = format!(
             "{}{}",
             datetime_input_ref.get().unwrap().value(),
-            local.offset().to_string()
+            local.offset()
         );
         if datetime_str.len() > 6 {
             // If not date/time was entered, then the length of the value will
@@ -396,7 +396,7 @@ where
         }
         // location (label, city, region)
         let location_str = location_input_ref.get().unwrap().value();
-        if location_str.len() > 0 {
+        if !location_str.is_empty() {
             // special input value for clearing the corresponding field
             if location_str == "nihil" {
                 params
@@ -409,7 +409,7 @@ where
             }
         }
         let city_str = city_input_ref.get().unwrap().value();
-        if city_str.len() > 0 {
+        if !city_str.is_empty() {
             // special input value for clearing the corresponding field
             if city_str == "nihil" {
                 params
@@ -422,7 +422,7 @@ where
             }
         }
         let region_str = region_input_ref.get().unwrap().value();
-        if region_str.len() > 0 {
+        if !region_str.is_empty() {
             // special input value for clearing the corresponding field
             if region_str == "nihil" {
                 params

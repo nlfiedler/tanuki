@@ -252,5 +252,5 @@ fn compute_key_hash(key: &str) -> String {
     let mut hasher = Sha1::new();
     hasher.update(key.as_bytes());
     let digest = hasher.finalize();
-    return format!("sha1-{:x}", digest);
+    format!("sha1-{:x}", digest)
 }

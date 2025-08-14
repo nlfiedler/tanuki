@@ -121,11 +121,11 @@ impl EntityDataSource for EntityDataSourceImpl {
             WHERE key = ?1",
         )?;
         let mut asset_iter = stmt.query_map([asset_id], |row| Asset::try_from(row))?;
-        if let Some(result) = asset_iter.next() {
+        match asset_iter.next() { Some(result) => {
             Ok(result?)
-        } else {
+        } _ => {
             Err(anyhow!(format!("missing asset {}", asset_id)))
-        }
+        }}
     }
 
     fn get_asset_by_digest(&self, digest: &str) -> Result<Option<Asset>, Error> {
@@ -136,11 +136,11 @@ impl EntityDataSource for EntityDataSourceImpl {
             WHERE hash = ?1",
         )?;
         let mut asset_iter = stmt.query_map([digest], |row| Asset::try_from(row))?;
-        if let Some(result) = asset_iter.next() {
+        match asset_iter.next() { Some(result) => {
             Ok(Some(result?))
-        } else {
+        } _ => {
             Ok(None)
-        }
+        }}
     }
 
     fn put_asset(&self, asset: &Asset) -> Result<(), Error> {
@@ -289,7 +289,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE mimetype = ?1",
         )?;
-        let iter = stmt.query_map([media_type], |row| search_result_from_row(row))?;
+        let iter = stmt.query_map([media_type], search_result_from_row)?;
         let mut results: Vec<SearchResult> = vec![];
         for result in iter {
             results.push(result?);
@@ -312,7 +312,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE bestdate < ?1",
         )?;
-        let iter = stmt.query_map([before_s], |row| search_result_from_row(row))?;
+        let iter = stmt.query_map([before_s], search_result_from_row)?;
         let mut results: Vec<SearchResult> = vec![];
         for result in iter {
             results.push(result?);
@@ -335,7 +335,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE bestdate >= ?1",
         )?;
-        let iter = stmt.query_map([after_s], |row| search_result_from_row(row))?;
+        let iter = stmt.query_map([after_s], search_result_from_row)?;
         let mut results: Vec<SearchResult> = vec![];
         for result in iter {
             results.push(result?);
@@ -363,7 +363,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE bestdate >= ?1 AND bestdate < ?2",
         )?;
-        let iter = stmt.query_map([after_s, before_s], |row| search_result_from_row(row))?;
+        let iter = stmt.query_map([after_s, before_s], search_result_from_row)?;
         let mut results: Vec<SearchResult> = vec![];
         for result in iter {
             results.push(result?);
@@ -381,7 +381,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             LEFT JOIN locations ON assets.location = locations.id
             WHERE imported >= ?1 AND tags IS NULL AND caption IS NULL AND label IS NULL",
         )?;
-        let iter = stmt.query_map([after_s], |row| search_result_from_row(row))?;
+        let iter = stmt.query_map([after_s], search_result_from_row)?;
         let mut results: Vec<SearchResult> = vec![];
         for result in iter {
             results.push(result?);
@@ -687,7 +687,7 @@ fn ensure_location(db: &Connection, location: Option<&Location>) -> Result<Value
     }
 }
 
-impl<'a> TryFrom<&'a rusqlite::Row<'_>> for Asset {
+impl TryFrom<&rusqlite::Row<'_>> for Asset {
     type Error = rusqlite::Error;
 
     // for a row in which "SELECT assets.*, locations.*" was queried

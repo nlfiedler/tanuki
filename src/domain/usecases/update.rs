@@ -619,7 +619,7 @@ mod tests {
             key: "abc123".to_owned(),
             tags: None,
             caption: None,
-            location: Some(Location::new("".into())),
+            location: Some(Location::new("")),
             datetime: None,
             media_type: None,
             filename: None,

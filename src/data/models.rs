@@ -42,7 +42,7 @@ impl<'de> Deserialize<'de> for Location {
     where
         D: Deserializer<'de>,
     {
-        const FIELDS: &'static [&'static str] = &["label", "city", "region"];
+        const FIELDS: &[&str] = &["label", "city", "region"];
         enum Field {
             Label,
             City,

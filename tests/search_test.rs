@@ -95,40 +95,50 @@ fn test_search_tags_and_location() -> Result<(), Error> {
     let usecase = SearchAssets::new(Box::new(repo), Box::new(cache));
 
     // simple search with a single tag and location label
-    let mut params: SearchParams = Default::default();
-    params.tags = vec!["mouse".to_owned()];
-    params.locations = vec!["london".to_owned()];
+    let params = SearchParams {
+        tags: vec!["mouse".to_owned()],
+        locations: vec!["london".to_owned()],
+        ..Default::default()
+    };
     let results: Vec<SearchResult> = usecase.call(params)?;
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].filename, "img_6789.jpg");
 
     // search with a single tag and location city
-    let mut params: SearchParams = Default::default();
-    params.tags = vec!["bird".to_owned()];
-    params.locations = vec!["portland".to_owned()];
+    let params = SearchParams {
+        tags: vec!["bird".to_owned()],
+        locations: vec!["portland".to_owned()],
+        ..Default::default()
+    };
     let results: Vec<SearchResult> = usecase.call(params)?;
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].filename, "img_5678.jpg");
 
     // search with a single tag and location region
-    let mut params: SearchParams = Default::default();
-    params.tags = vec!["bird".to_owned()];
-    params.locations = vec!["oregon".to_owned()];
+    let params = SearchParams {
+        tags: vec!["bird".to_owned()],
+        locations: vec!["oregon".to_owned()],
+        ..Default::default()
+    };
     let results: Vec<SearchResult> = usecase.call(params)?;
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].filename, "img_5678.jpg");
 
     // search by one tag and multiple locations
-    let mut params: SearchParams = Default::default();
-    params.tags = vec!["bird".to_owned()];
-    params.locations = vec!["paris".to_owned(), "france".into()];
+    let params = SearchParams {
+        tags: vec!["bird".to_owned()],
+        locations: vec!["paris".to_owned(), "france".into()],
+        ..Default::default()
+    };
     let results: Vec<SearchResult> = usecase.call(params)?;
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].filename, "DCP12345.jpg");
 
     // search only by multiple locations (no tags)
-    let mut params: SearchParams = Default::default();
-    params.locations = vec!["paris".to_owned(), "texas".into()];
+    let params = SearchParams {
+        locations: vec!["paris".to_owned(), "texas".into()],
+        ..Default::default()
+    };
     let results: Vec<SearchResult> = usecase.call(params)?;
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].filename, "img_7890.jpg");

@@ -50,7 +50,7 @@ impl RecordRepository for RecordRepositoryImpl {
     }
 
     fn get_asset_by_digest(&self, digest: &str) -> Result<Option<Asset>, Error> {
-        self.datasource.get_asset_by_digest(&digest)
+        self.datasource.get_asset_by_digest(digest)
     }
 
     fn put_asset(&self, asset: &Asset) -> Result<(), Error> {
@@ -136,8 +136,8 @@ impl RecordRepository for RecordRepositoryImpl {
             count += batch.assets.len();
             for asset in batch.assets.into_iter() {
                 let text = serde_json::to_string(&asset)?;
-                writer.write(&text.as_bytes())?;
-                writer.write(b"\n")?;
+                writer.write_all(text.as_bytes())?;
+                writer.write_all(b"\n")?;
             }
             cursor = batch.cursor.take();
             if cursor.is_none() {
@@ -310,7 +310,7 @@ fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8
     let mut img = image::ImageReader::open(filepath)?
         .with_guessed_format()?
         .decode()?;
-    if let Ok(orientation) = get_image_orientation(filepath) {
+    match get_image_orientation(filepath) { Ok(orientation) => {
         // c.f. https://magnushoff.com/articles/jpeg-orientation/
         if orientation > 4 {
             // image is sideways, need to swap new width/height
@@ -319,9 +319,9 @@ fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8
             img = img.thumbnail(nwidth, nheight);
         }
         img = correct_orientation(orientation, img);
-    } else {
+    } _ => {
         img = img.thumbnail(nwidth, nheight);
-    }
+    }}
     // The image crate's JpegEncoder will use a quality factor of 75 by default,
     // which yields very good results (e.g. libvips uses the same default).
     img.write_to(&mut cursor, image::ImageFormat::Jpeg)?;
@@ -394,6 +394,12 @@ impl SearchRepository for SearchRepositoryImpl {
         let mut cache = SEARCH_CACHE.lock().unwrap();
         cache.clear();
         Ok(())
+    }
+}
+
+impl Default for SearchRepositoryImpl {
+    fn default() -> Self {
+        SearchRepositoryImpl::new()
     }
 }
 
@@ -1167,7 +1173,7 @@ mod tests {
                             tags: vec!["mariachi".to_owned()],
                             import_date: Utc::now(),
                             caption: Some("mariachi band playing".into()),
-                            location: Some(Location::new("cabo san lucas".into())),
+                            location: Some(Location::new("cabo san lucas")),
                             user_date: None,
                             original_date: None,
                             dimensions: Some(Dimensions(440, 292)),
@@ -1227,7 +1233,7 @@ mod tests {
                 } else if asset.key == "dGVzdHMvZml4dHVyZXMvZGNwXzEwNjkuanBn" {
                     assert_eq!(asset.filename, "dcp_1069.jpg");
                     assert_eq!(asset.byte_length, 80977);
-                    assert_eq!(asset.location, Some(Location::new("cabo san lucas".into())));
+                    assert_eq!(asset.location, Some(Location::new("cabo san lucas")));
                 } else if asset.key == "dGVzdHMvZml4dHVyZXMvc2hpcnRfc21hbGwuaGVpYw==" {
                     assert_eq!(asset.filename, "shirt_small.heic");
                     assert_eq!(asset.byte_length, 4995);
@@ -1242,7 +1248,7 @@ mod tests {
                 } else if asset.key == "2eHJndjc4ZzF6bjZ4anN6c2s4Lm1vdg==" {
                     assert_eq!(asset.filename, "IMG_6019.MOV");
                     assert_eq!(asset.byte_length, 37190970);
-                    assert_eq!(asset.location, Some(Location::new("car".into())));
+                    assert_eq!(asset.location, Some(Location::new("car")));
                 } else {
                     panic!("found unexpected asset");
                 }

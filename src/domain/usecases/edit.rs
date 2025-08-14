@@ -27,7 +27,7 @@ impl super::UseCase<u64, Params> for EditAssets {
     fn call(&self, params: Params) -> Result<u64, Error> {
         let mut fixed_count: u64 = 0;
         for asset_id in params.assets.iter() {
-            let mut asset = self.records.get_asset_by_id(&asset_id)?;
+            let mut asset = self.records.get_asset_by_id(asset_id)?;
             if modifiy_asset(&mut asset, &params) {
                 self.records.put_asset(&asset)?;
                 fixed_count += 1;

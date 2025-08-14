@@ -169,7 +169,7 @@ pub struct Year {
 
 impl From<LabeledCount> for Year {
     fn from(input: LabeledCount) -> Self {
-        let value = i32::from_str_radix(&input.label, 10).unwrap_or(0);
+        let value = input.label.parse::<i32>().unwrap_or(0);
         Self {
             value,
             count: input.count,
@@ -408,8 +408,8 @@ pub async fn search(
     let cache = ssr::cache()?;
     let usecase = SearchAssets::new(Box::new(repo), Box::new(cache));
     let params = SearchParams {
-        tags: params.tags.unwrap_or(vec![]),
-        locations: params.locations.unwrap_or(vec![]),
+        tags: params.tags.unwrap_or_default(),
+        locations: params.locations.unwrap_or_default(),
         after_date: params.after,
         before_date: params.before,
         media_type: params.media_type,
@@ -496,8 +496,8 @@ pub async fn browse(params: BrowseParams) -> Result<BrowseMeta, ServerFnError> {
         use crate::domain::usecases::search::SearchAssets;
         let usecase = SearchAssets::new(Box::new(repo), Box::new(cache));
         let params = SearchParams {
-            tags: params.tags.unwrap_or(vec![]),
-            locations: params.locations.unwrap_or(vec![]),
+            tags: params.tags.unwrap_or_default(),
+            locations: params.locations.unwrap_or_default(),
             after_date: params.after,
             before_date: params.before,
             media_type: params.media_type,
@@ -557,8 +557,8 @@ pub async fn browse_replace(
         use crate::domain::usecases::search::SearchAssets;
         let usecase = SearchAssets::new(Box::new(repo), Box::new(cache));
         let params = SearchParams {
-            tags: params.tags.unwrap_or(vec![]),
-            locations: params.locations.unwrap_or(vec![]),
+            tags: params.tags.unwrap_or_default(),
+            locations: params.locations.unwrap_or_default(),
             after_date: params.after,
             before_date: params.before,
             media_type: params.media_type,

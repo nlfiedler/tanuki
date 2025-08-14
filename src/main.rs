@@ -243,7 +243,7 @@ async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> 
     .await?;
     if let Ok(asset) = result {
         let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
-        if let Ok(filepath) = blobs.blob_path(&asset.key) {
+        match blobs.blob_path(&asset.key) { Ok(filepath) => {
             // the browser uses whatever name is given here, despite the
             // `download` attribute on the a href element
             let file = std::fs::File::open(filepath)?;
@@ -252,9 +252,9 @@ async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> 
             let named_file = NamedFile::from_file(file, asset.filename)?;
             let mime_type: mime::Mime = asset.media_type.parse().unwrap();
             Ok(Either::Left(named_file.set_content_type(mime_type)))
-        } else {
+        } _ => {
             Ok(Either::Right(HttpResponse::InternalServerError().finish()))
-        }
+        }}
     } else {
         Ok(Either::Right(HttpResponse::NotFound().finish()))
     }
@@ -307,8 +307,8 @@ async fn main() -> std::io::Result<()> {
             .service(favicon)
             .service(
                 web::resource("/liveness")
-                    .route(web::get().to(|| HttpResponse::Ok()))
-                    .route(web::head().to(|| HttpResponse::Ok())),
+                    .route(web::get().to(HttpResponse::Ok))
+                    .route(web::head().to(HttpResponse::Ok)),
             )
             // use a different path than /api which Leptos uses by default
             .route("/rest/thumbnail/{w}/{h}/{id}", web::get().to(get_thumbnail))
@@ -382,7 +382,7 @@ mod tests {
         // 1651561047000.0
         // ------WebKitFormBoundary7MA4YWxkTrZu0gW--
         let boundary = "----WebKitFormBoundary0gYa4NfETro6nMot";
-        let mut app =
+        let app =
             test::init_service(App::new().route("/import", web::post().to(import_assets))).await;
         let ct_header = format!("multipart/form-data; boundary={}", boundary);
         let filename = "./tests/fixtures/shirt_small.heic";
@@ -393,7 +393,7 @@ mod tests {
         file_blob.push_str("\r\nContent-Disposition: form-data;");
         file_blob.push_str(r#" name="file_blob"; filename="kittens.jpg""#);
         file_blob.push_str("\r\nContent-Type: image/jpeg\r\n\r\n");
-        payload.write(file_blob.as_bytes()).unwrap();
+        payload.write_all(file_blob.as_bytes()).unwrap();
         std::io::copy(&mut file, &mut payload).unwrap();
 
         let mut modified_time = String::from("\r\n--");
@@ -403,7 +403,7 @@ mod tests {
         modified_time.push_str("\r\n\r\n1651561047000.0\r\n--");
         modified_time.push_str(boundary);
         modified_time.push_str("--\r\n");
-        payload.write(modified_time.as_bytes()).unwrap();
+        payload.write_all(modified_time.as_bytes()).unwrap();
 
         let req = test::TestRequest::with_uri("/import")
             .method(http::Method::POST)
@@ -411,8 +411,7 @@ mod tests {
             .append_header((header::CONTENT_LENGTH, payload.len()))
             .set_payload(payload)
             .to_request();
-        let mut resp: HashMap<String, Vec<String>> =
-            test::call_and_read_body_json(&mut app, req).await;
+        let mut resp: HashMap<String, Vec<String>> = test::call_and_read_body_json(&app, req).await;
         let ids: Vec<String> = resp.remove("ids").unwrap();
         assert_eq!(ids.len(), 1);
         // should be one identifier that is base64 encoded and the path and filename
@@ -443,14 +442,14 @@ mod tests {
         );
         let params = Params::new(filepath, mime::IMAGE_JPEG, None);
         let asset = usecase.call(params).unwrap();
-        let mut app = test::init_service(
+        let app = test::init_service(
             App::new().route("/thumbnail/{w}/{h}/{id}", web::get().to(get_thumbnail)),
         )
         .await;
         // act
         let uri = format!("/thumbnail/128/128/{}", asset.key);
         let req = test::TestRequest::with_uri(&uri).to_request();
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
         // assert
         assert!(resp.status().is_success());
         assert!(resp.headers().contains_key(header::ETAG));
@@ -464,7 +463,7 @@ mod tests {
         let req = test::TestRequest::with_uri(&uri)
             .append_header((header::ETAG, etag.to_str().unwrap()))
             .to_request();
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_success());
     }
 }

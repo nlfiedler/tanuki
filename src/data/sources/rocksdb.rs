@@ -27,6 +27,9 @@ pub fn drop_database_ref<P: AsRef<Path>>(db_path: P) {
     db_refs.remove(db_path.as_ref());
 }
 
+// The raw bytes of the key and value from the underlying database.
+type RawKeyValue = (Box<[u8]>, Box<[u8]>);
+
 ///
 /// An instance of the database for reading and writing records to disk.
 ///
@@ -262,7 +265,7 @@ impl Database {
         prefix: &str,
         cursor: Option<String>,
         count: usize,
-    ) -> Result<Vec<(Box<[u8]>, Box<[u8]>)>, Error> {
+    ) -> Result<Vec<RawKeyValue>, Error> {
         let prefix_bytes = prefix.as_bytes();
         let db = self.db.lock().unwrap();
         let mut iter = db.db().prefix_iterator(prefix_bytes);
@@ -270,7 +273,7 @@ impl Database {
             let from_bytes = from_str.as_bytes();
             iter.set_mode(IteratorMode::From(from_bytes, Direction::Forward));
         }
-        let mut results: Vec<(Box<[u8]>, Box<[u8]>)> = Vec::new();
+        let mut results: Vec<RawKeyValue> = Vec::new();
         for item in iter {
             let (key, value) = item?;
             let pre = &key[..prefix_bytes.len()];
@@ -400,7 +403,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         } else {
             // starting with a date that occurs after the epoch
             let mut results1 = self.database.query_less_than("by_date", before_key)?;
-            let epoch_minus_key = b32hex_encode_i64(-1 as i64);
+            let epoch_minus_key = b32hex_encode_i64(-1_i64);
             let min_utc = DateTime::<Utc>::MIN_UTC;
             let min_key = encode_datetime(&min_utc);
             let mut results2 = self
@@ -426,7 +429,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             // range from the epoch until the end of time
             let max_utc = DateTime::<Utc>::MAX_UTC;
             let max_key = encode_datetime(&max_utc);
-            let epoch_minus_key = b32hex_encode_i64(-1 as i64);
+            let epoch_minus_key = b32hex_encode_i64(-1_i64);
             let mut results1 = self
                 .database
                 .query_range("by_date", after_key, epoch_minus_key)?;
@@ -449,7 +452,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         let before_key = encode_datetime(&before);
         let query_results = if after < epoch && before > epoch {
             // if the range crosses the epoch, combine two range queries
-            let epoch_minus_key = b32hex_encode_i64(-1 as i64);
+            let epoch_minus_key = b32hex_encode_i64(-1_i64);
             let mut results1 = self
                 .database
                 .query_range("by_date", after_key, epoch_minus_key)?;
@@ -720,15 +723,13 @@ impl Document for Asset {
                                 .map_err(|_| anyhow!("c: cbor into_text() error"))?,
                         )
                     };
-                } else if name.as_text() == Some("r") {
-                    if !value.is_null() {
-                        region = Some(
-                            value
-                                .into_text()
-                                .map_err(|_| anyhow!("r: cbor into_text() error"))?,
-                        )
-                    };
-                }
+                } else if name.as_text() == Some("r") && !value.is_null() {
+                    region = Some(
+                        value
+                            .into_text()
+                            .map_err(|_| anyhow!("r: cbor into_text() error"))?,
+                    )
+                };
             }
             Some(Location {
                 label,
@@ -806,42 +807,37 @@ impl Document for Asset {
         let mut encoded: Vec<u8> = Vec::new();
         // Emit everything except the key since that is part of the data store
         // already, and use short names for an overall smaller size.
-        let mut fields: Vec<(Value, Value)> = vec![];
-
-        // checksum
-        fields.push((Value::Text("ch".into()), Value::Text(self.checksum.clone())));
-
-        // filename
-        fields.push((Value::Text("fn".into()), Value::Text(self.filename.clone())));
-
-        // byte_length
-        fields.push((
-            Value::Text("sz".into()),
-            Value::Integer(self.byte_length.into()),
-        ));
-
-        // media_type
-        fields.push((
-            Value::Text("mt".into()),
-            Value::Text(self.media_type.clone()),
-        ));
-
-        // tags
-        fields.push((
-            Value::Text("ta".into()),
-            Value::Array(
-                self.tags
-                    .iter()
-                    .map(|t| Value::Text(t.to_owned()))
-                    .collect(),
+        let mut fields: Vec<(Value, Value)> = vec![
+            // checksum
+            (Value::Text("ch".into()), Value::Text(self.checksum.clone())),
+            // filename
+            (Value::Text("fn".into()), Value::Text(self.filename.clone())),
+            // byte_length
+            (
+                Value::Text("sz".into()),
+                Value::Integer(self.byte_length.into()),
             ),
-        ));
-
-        // import_date
-        fields.push((
-            Value::Text("id".into()),
-            Value::Integer(self.import_date.timestamp().into()),
-        ));
+            // media_type
+            (
+                Value::Text("mt".into()),
+                Value::Text(self.media_type.clone()),
+            ),
+            // tags
+            (
+                Value::Text("ta".into()),
+                Value::Array(
+                    self.tags
+                        .iter()
+                        .map(|t| Value::Text(t.to_owned()))
+                        .collect(),
+                ),
+            ),
+            // import_date
+            (
+                Value::Text("id".into()),
+                Value::Integer(self.import_date.timestamp().into()),
+            ),
+        ];
 
         // caption
         if let Some(ref cp) = self.caption {
@@ -1063,15 +1059,13 @@ impl SearchResult {
                                 .map_err(|_| anyhow!("c: cbor into_text() error"))?,
                         )
                     };
-                } else if name.as_text() == Some("r") {
-                    if !value.is_null() {
-                        region = Some(
-                            value
-                                .into_text()
-                                .map_err(|_| anyhow!("r: cbor into_text() error"))?,
-                        )
-                    };
-                }
+                } else if name.as_text() == Some("r") && !value.is_null() {
+                    region = Some(
+                        value
+                            .into_text()
+                            .map_err(|_| anyhow!("r: cbor into_text() error"))?,
+                    )
+                };
             }
             Some(Location {
                 label,
@@ -1195,7 +1189,7 @@ mod test {
         let mut hasher = Sha1::new();
         hasher.update(key.as_bytes());
         let digest = hasher.finalize();
-        return format!("sha1-{:x}", digest);
+        format!("sha1-{:x}", digest)
     }
 
     /// Construct an asset in which every field is populated.
@@ -1245,14 +1239,14 @@ mod test {
         let asset = build_minimal_asset("minimal");
         let bytes = asset.to_bytes().unwrap();
         let key = "asset/minimal";
-        let actual = Asset::from_bytes(&key.as_bytes(), &bytes).unwrap();
+        let actual = Asset::from_bytes(key.as_bytes(), &bytes).unwrap();
         compare_assets(&asset, &actual);
 
         // test with maximally complete asset
         let asset = build_complete_asset("maximal");
         let bytes = asset.to_bytes().unwrap();
         let key = "asset/maximal";
-        let actual = Asset::from_bytes(&key.as_bytes(), &bytes).unwrap();
+        let actual = Asset::from_bytes(key.as_bytes(), &bytes).unwrap();
         compare_assets(&asset, &actual);
 
         // test with asset that has only location label
@@ -1260,7 +1254,7 @@ mod test {
         asset.location = Some(Location::new("hong kong"));
         let bytes = asset.to_bytes().unwrap();
         let key = "asset/labelonly";
-        let actual = Asset::from_bytes(&key.as_bytes(), &bytes).unwrap();
+        let actual = Asset::from_bytes(key.as_bytes(), &bytes).unwrap();
         compare_assets(&asset, &actual);
 
         // test with asset that has only location city
@@ -1272,7 +1266,7 @@ mod test {
         });
         let bytes = asset.to_bytes().unwrap();
         let key = "asset/cityonly";
-        let actual = Asset::from_bytes(&key.as_bytes(), &bytes).unwrap();
+        let actual = Asset::from_bytes(key.as_bytes(), &bytes).unwrap();
         compare_assets(&asset, &actual);
 
         // test with asset that has only location region
@@ -1284,7 +1278,7 @@ mod test {
         });
         let bytes = asset.to_bytes().unwrap();
         let key = "asset/regiononly";
-        let actual = Asset::from_bytes(&key.as_bytes(), &bytes).unwrap();
+        let actual = Asset::from_bytes(key.as_bytes(), &bytes).unwrap();
         compare_assets(&asset, &actual);
     }
 

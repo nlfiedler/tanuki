@@ -70,7 +70,7 @@ pub fn UploadPage() -> impl IntoView {
     //     copy
     // };
     // let has_files = move || all_files().len() > 0;
-    let has_files = move || dropped_files.get().len() > 0;
+    let has_files = move || !dropped_files.get().is_empty();
     let drop_style = move || {
         format!(
             "border-style: dashed; min-height: 14em; {}",
@@ -149,7 +149,7 @@ pub fn UploadPage() -> impl IntoView {
                     <div class="level-item">
                         <button
                             class="button"
-                            disabled=move || has_files() == false || upload_action.pending().get()
+                            disabled=move || !has_files() || upload_action.pending().get()
                             on:click=move |_| {
                                 upload_action.dispatch(());
                             }
@@ -172,7 +172,7 @@ pub fn UploadPage() -> impl IntoView {
         <section class="section">
             <p>You can drop files into the drop zone below.</p>
             <div node_ref=drop_zone_el class="content" style=drop_style>
-                <Show when=move || has_files() fallback=|| view! {}>
+                <Show when=move || has_files() fallback=|| view! { <p>Drop Zone!</p> }>
                     <table class="table is-fullwidth">
                         <thead>
                             <tr>

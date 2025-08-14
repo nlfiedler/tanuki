@@ -49,7 +49,7 @@ impl ReplaceAsset {
         asset.media_type = params.media_type.to_string();
         let metadata = std::fs::metadata(&params.filepath)?;
         asset.byte_length = metadata.len();
-        if let Some(coords) = get_gps_coordinates(&params.media_type, &params.filepath).ok() {
+        if let Ok(coords) = get_gps_coordinates(&params.media_type, &params.filepath) {
             match self.geocoder.find_location(&coords) {
                 Ok(geoloc) => {
                     let converted = Some(super::convert_location(geoloc));
@@ -58,7 +58,7 @@ impl ReplaceAsset {
                 Err(err) => error!("replace: geocode error: {}", err),
             }
         }
-        if let Some(od) = get_original_date(&params.media_type, &params.filepath).ok() {
+        if let Ok(od) = get_original_date(&params.media_type, &params.filepath) {
             // only overwrite the original date/time if a new one can be
             // extracted from the new asset
             asset.original_date = Some(od);

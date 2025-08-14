@@ -42,7 +42,7 @@ async fn update_asset(asset: AssetInput) -> Result<Option<Asset>, ServerFnError>
         let repo = super::ssr::db()?;
         let cache = super::ssr::cache()?;
         let usecase = UpdateAsset::new(Box::new(repo), Box::new(cache));
-        let params: Params = Params::new(asset.into());
+        let params: Params = Params::new(asset);
         let result: Asset = usecase
             .call(params)
             .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
@@ -398,7 +398,7 @@ where
             .get_value()
             .caption
             .map(|c| c != new_caption)
-            .unwrap_or(new_caption.len() > 0)
+            .unwrap_or(!new_caption.is_empty())
         {
             // new or different value
             input.caption = Some(new_caption);
@@ -432,7 +432,7 @@ where
         let datetime_str = format!(
             "{}{}",
             datetime_input_ref.get().unwrap().value(),
-            local.offset().to_string()
+            local.offset()
         );
         // Despite formatting the asset datetime with seconds into the input
         // field, sometimes the browser does not display or return the seconds,
@@ -458,19 +458,19 @@ where
         // location (label, city, region)
         let mut location = Location::default();
         let location_str = location_input_ref.get().unwrap().value();
-        location.label = if location_str.len() > 0 {
+        location.label = if !location_str.is_empty() {
             Some(location_str)
         } else {
             None
         };
         let city_str = city_input_ref.get().unwrap().value();
-        location.city = if city_str.len() > 0 {
+        location.city = if !city_str.is_empty() {
             Some(city_str)
         } else {
             None
         };
         let region_str = region_input_ref.get().unwrap().value();
-        location.region = if region_str.len() > 0 {
+        location.region = if !region_str.is_empty() {
             Some(region_str)
         } else {
             None
@@ -837,7 +837,7 @@ fn convert_utc_to_local(datetime: DateTime<Utc>) -> NaiveDateTime {
     let local_now = Local::now();
     let naive_utc = datetime.naive_utc();
     let datetime_local =
-        DateTime::<Local>::from_naive_utc_and_offset(naive_utc, local_now.offset().clone());
+        DateTime::<Local>::from_naive_utc_and_offset(naive_utc, *local_now.offset());
     datetime_local.naive_local()
 }
 

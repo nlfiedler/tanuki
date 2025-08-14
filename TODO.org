@@ -24,21 +24,22 @@
 ***** supported operations of the form =predicate:value=
 ****** some predicate support multiple arguments separated by colon
 ****** possible to have an empty argument (trailing only for now), as in =loc:label:=
-| name   | example             | description                    |
-|--------+---------------------+--------------------------------|
-| is     | is:image            | match on the media ~type~      |
-| format | format:jpeg         | match on the media ~subtype~   |
-| tag    | tag:cats            | match on a tag                 |
-| loc    | loc:paris           | match on any location field    |
-| loc    | loc:any:nice        | match on any location field    |
-| loc    | loc:label:beach     | match on location label field  |
-| loc    | loc:city:paris      | match on location city field   |
-| loc    | loc:region:france   | match on location region field |
-| before | before:2017-05-13   | match before a given date      |
-| after  | after:2017-05-13    | match after a given date       |
-| -      | -format:jpeg        | inverse of next operation      |
-| or     | tag:cat or tag:dog  | boolean or operator            |
-| and    | tag:cat and tag:dog | boolean and operator           |
+| name     | example               | description                    |
+|----------+-----------------------+--------------------------------|
+| is       | is:image              | match on the media ~type~      |
+| filename | filename:img_1234.jpg | match on exact filename        |
+| format   | format:jpeg           | match on the media ~subtype~   |
+| tag      | tag:cats              | match on a tag                 |
+| loc      | loc:paris             | match on any location field    |
+| loc      | loc:any:nice          | match on any location field    |
+| loc      | loc:label:beach       | match on location label field  |
+| loc      | loc:city:paris        | match on location city field   |
+| loc      | loc:region:france     | match on location region field |
+| before   | before:2017-05-13     | match before a given date      |
+| after    | after:2017-05-13      | match after a given date       |
+| -        | -format:jpeg          | inverse of next operation      |
+| or       | tag:cat or tag:dog    | boolean or operator            |
+| and      | tag:cat and tag:dog   | boolean and operator           |
 ***** predicate values can be enclosed in single or double quotes
 ***** character escapes within quoted strings will be evaluated
 ***** dates are RFC 3339 formatted (https://datatracker.ietf.org/doc/html/rfc3339)

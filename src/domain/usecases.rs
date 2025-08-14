@@ -133,7 +133,7 @@ fn get_original_date(media_type: &mime::Mime, filepath: &Path) -> Result<DateTim
         if let exif::Value::Ascii(data) = &field.value {
             let value = str::from_utf8(&data[0])?;
             return NaiveDateTime::parse_from_str(value, "%Y:%m:%d %H:%M:%S")
-                .and_then(|e| Ok(e.and_utc()))
+                .map(|e| e.and_utc())
                 .map_err(|_| anyhow!("could not parse data"));
         }
     } else if media_type.type_() == mime::VIDEO {
@@ -230,8 +230,10 @@ fn get_gps_angle(exif: &exif::Exif, tag: exif::Tag) -> Result<GeodeticAngle, Err
 
 // Convert the geocoded location to the domain version.
 fn convert_location(geocoded: GeocodedLocation) -> Location {
-    let mut loc: Location = Default::default();
-    loc.city = geocoded.city.clone();
+    let mut loc: Location = Location {
+        city: geocoded.city.clone(),
+        ..Default::default()
+    };
     if let Some(city) = geocoded.city.as_ref() {
         let city_lower = city.to_lowercase();
         if let Some(region) = geocoded.region.as_ref() {
@@ -634,7 +636,7 @@ mod tests {
     #[test]
     fn test_checksum_file() -> Result<(), io::Error> {
         let infile = Path::new("./tests/fixtures/fighting_kittens.jpg");
-        let sha256 = checksum_file(&infile)?;
+        let sha256 = checksum_file(infile)?;
         assert_eq!(
             sha256,
             "sha256-82084759e4c766e94bb91d8cf9ed9edc1d4480025205f5109ec39a806509ee09"
@@ -909,7 +911,7 @@ mod tests {
         assert_eq!(actual.region.unwrap(), "WA");
 
         // merge input city/region with asset label
-        let asset = Some(Location::new("Chihuly".into()));
+        let asset = Some(Location::new("Chihuly"));
         let input = Some(Location {
             label: None,
             city: Some("Seattle".into()),
@@ -928,7 +930,7 @@ mod tests {
             city: Some("Seattle".into()),
             region: Some("WA".into()),
         });
-        let input = Some(Location::new("Chihuly".into()));
+        let input = Some(Location::new("Chihuly"));
         let result = merge_locations(asset, input);
         assert!(result.is_some());
         let actual = result.unwrap();
@@ -937,7 +939,7 @@ mod tests {
         assert_eq!(actual.region.unwrap(), "WA");
 
         // clear asset label if input label is empty string
-        let asset = Some(Location::new("Chihuly".into()));
+        let asset = Some(Location::new("Chihuly"));
         let input = Some(Location {
             label: Some("".into()),
             city: Some("Seattle".into()),
@@ -1008,7 +1010,7 @@ mod tests {
     #[test]
     fn test_get_file_name() {
         let filepath = Path::new("./tests/fixtures/fighting_kittens.jpg");
-        let actual = get_file_name(&filepath);
+        let actual = get_file_name(filepath);
         assert_eq!(actual, "fighting_kittens.jpg");
     }
 

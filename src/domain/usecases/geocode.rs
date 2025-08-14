@@ -58,11 +58,11 @@ impl super::UseCase<u64, Params> for Geocoder {
                 || asset
                     .location
                     .as_ref()
-                    .map_or(true, |l| l.city.is_none() && l.region.is_none())
+                    .is_none_or(|l| l.city.is_none() && l.region.is_none())
             {
                 if let Ok(media_type) = asset.media_type.parse::<mime::Mime>() {
-                    if let Ok(blob_path) = self.blobs.blob_path(&asset_id) {
-                        if let Some(coords) = get_gps_coordinates(&media_type, &blob_path).ok() {
+                    match self.blobs.blob_path(&asset_id) { Ok(blob_path) => {
+                        if let Ok(coords) = get_gps_coordinates(&media_type, &blob_path) {
                             trace!("asset has GPS coordinates");
                             match self.geocoder.find_location(&coords) {
                                 Ok(geoloc) => {
@@ -92,9 +92,9 @@ impl super::UseCase<u64, Params> for Geocoder {
                                 Err(err) => error!("replace: geocode error: {}", err),
                             }
                         }
-                    } else {
+                    } _ => {
                         warn!("could not get path for asset {}", asset_id);
-                    }
+                    }}
                 } else {
                     warn!("could not parse media type for asset {}", asset_id);
                 }

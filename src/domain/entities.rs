@@ -677,10 +677,10 @@ impl fmt::Display for SearchParams {
             write!(f, " format:{}", parts[1])?;
         }
         if let Some(bd) = self.before_date {
-            write!(f, " before:{}", bd.format("%Y-%m-%d").to_string())?;
+            write!(f, " before:{}", bd.format("%Y-%m-%d"))?;
         }
         if let Some(ad) = self.after_date {
-            write!(f, " after:{}", ad.format("%Y-%m-%d").to_string())?;
+            write!(f, " after:{}", ad.format("%Y-%m-%d"))?;
         }
         write!(f, "")
     }

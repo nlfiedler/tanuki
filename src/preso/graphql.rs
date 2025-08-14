@@ -45,6 +45,7 @@ impl BigInt {
         BigInt(value)
     }
 
+    #[allow(clippy::wrong_self_convention)]
     fn to_output<S: ScalarValue>(&self) -> Value<S> {
         Value::scalar(format!("{}", self.0))
     }

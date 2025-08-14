@@ -121,8 +121,7 @@ mod tests {
             .returning(move |_| Ok(results.clone()));
         // act
         let usecase = RecentImports::new(Box::new(mock));
-        let mut params: Params = Default::default();
-        params.after_date = Some(after);
+        let params: Params = Params { after_date: Some(after), ..Default::default() };
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());

@@ -6,7 +6,7 @@ use crate::domain::repositories::LocationRepository;
 use anyhow::{anyhow, Error};
 use reqwest::Url;
 
-const GOOGLE_MAPS_URI: &'static str = "https://maps.googleapis.com/maps/api/geocode/json";
+const GOOGLE_MAPS_URI: &str = "https://maps.googleapis.com/maps/api/geocode/json";
 
 pub struct GoogleLocationRepository {
     api_key: String,
@@ -110,7 +110,7 @@ fn parse_results(raw_value: &serde_json::Value) -> Result<GeocodedLocation, Erro
         .as_array()
         .ok_or_else(|| anyhow!("invalid results"))?;
     let result_obj = results_arr
-        .get(0)
+        .first()
         .ok_or_else(|| anyhow!("empty results array"))?
         .as_object()
         .ok_or_else(|| anyhow!("invalid results entry"))?;
@@ -152,9 +152,9 @@ fn parse_results(raw_value: &serde_json::Value) -> Result<GeocodedLocation, Erro
 /// Run the given future on a newly created single-threaded runtime if possible,
 /// otherwise raise an error if this thread already has a runtime.
 fn block_on<F: core::future::Future>(future: F) -> Result<F::Output, Error> {
-    if let Ok(_handle) = tokio::runtime::Handle::try_current() {
+    match tokio::runtime::Handle::try_current() { Ok(_handle) => {
         Err(anyhow!("cannot call block_on inside a runtime"))
-    } else {
+    } _ => {
         // Build the simplest and lightest runtime we can, while still enabling
         // us to wait for this future (and everything it spawns) to complete
         // synchronously. Must enable the io and time features otherwise the
@@ -163,7 +163,7 @@ fn block_on<F: core::future::Future>(future: F) -> Result<F::Output, Error> {
             .enable_all()
             .build()?;
         Ok(runtime.block_on(future))
-    }
+    }}
 }
 
 #[cfg(test)]
@@ -346,7 +346,7 @@ mod tests {
    ],
    "status": "OK"
 }"#;
-        let raw_value: serde_json::Value = serde_json::from_str(&raw_text)?;
+        let raw_value: serde_json::Value = serde_json::from_str(raw_text)?;
         let result = parse_results(&raw_value)?;
         assert_eq!(result.city.unwrap(), "Yao");
         assert_eq!(result.region.unwrap(), "Osaka");

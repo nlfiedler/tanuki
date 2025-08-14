@@ -236,7 +236,7 @@ fn do_test_data_source_raw_locations(datasource: Box<dyn EntityDataSource>) {
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.raw_locations().unwrap();
     assert_eq!(actual.len(), 3);
-    assert!(actual.iter().any(|l| l == &Location::new("hawaii".into())));
+    assert!(actual.iter().any(|l| l == &Location::new("hawaii")));
     assert!(actual.iter().any(|l| l
         == &Location {
             label: None,
@@ -516,7 +516,7 @@ fn do_test_data_source_query_by_tags_basic(datasource: Box<dyn EntityDataSource>
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.query_by_tags(tags).unwrap();
     assert_eq!(actual.len(), 3);
-    assert_eq!(actual[0].asset_id.starts_with("asset/"), false);
+    assert!(!actual[0].asset_id.starts_with("asset/"));
     assert!(actual
         .iter()
         .any(|l| l.filename == "img_1234.jpg" && l.datetime.year() == 2018));
@@ -780,7 +780,7 @@ fn do_test_data_source_query_by_locations(datasource: Box<dyn EntityDataSource>)
     let locations = vec!["hawaii".to_owned()];
     let actual = datasource.query_by_locations(locations).unwrap();
     assert_eq!(actual.len(), 2);
-    assert_eq!(actual[0].asset_id.starts_with("asset/"), false);
+    assert!(!actual[0].asset_id.starts_with("asset/"));
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_5678.jpg"));
 
@@ -846,7 +846,7 @@ fn do_test_data_source_query_by_media_type(datasource: Box<dyn EntityDataSource>
     datasource.put_asset(&asset).unwrap();
     let actual = datasource.query_by_media_type("image/JPeg").unwrap();
     assert_eq!(actual.len(), 2);
-    assert_eq!(actual[0].asset_id.starts_with("asset/"), false);
+    assert!(!actual[0].asset_id.starts_with("asset/"));
     assert!(actual.iter().any(|l| l.filename == "img_1234.jpg"));
     assert!(actual.iter().any(|l| l.filename == "img_4567.jpg"));
 }

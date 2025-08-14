@@ -19,6 +19,12 @@ impl DummyLocationRepository {
     }
 }
 
+impl Default for DummyLocationRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LocationRepository for DummyLocationRepository {
     fn find_location(&self, _coords: &GlobalPosition) -> Result<GeocodedLocation, Error> {
         Ok(Default::default())
