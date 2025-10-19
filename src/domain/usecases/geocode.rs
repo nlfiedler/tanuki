@@ -61,40 +61,43 @@ impl super::UseCase<u64, Params> for Geocoder {
                     .is_none_or(|l| l.city.is_none() && l.region.is_none())
             {
                 if let Ok(media_type) = asset.media_type.parse::<mime::Mime>() {
-                    match self.blobs.blob_path(&asset_id) { Ok(blob_path) => {
-                        if let Ok(coords) = get_gps_coordinates(&media_type, &blob_path) {
-                            trace!("asset has GPS coordinates");
-                            match self.geocoder.find_location(&coords) {
-                                Ok(geoloc) => {
-                                    let found_loc = super::convert_location(geoloc);
-                                    // ensure the geocoder returned a meaningful result
-                                    if found_loc.city.is_some() || found_loc.region.is_some() {
-                                        trace!("successfully converted to domain location");
-                                        if let Some(old_loc) = asset.location.as_ref() {
-                                            // fill in city/region as appropriate
-                                            asset.location = Some(Location {
-                                                label: old_loc.label.clone(),
-                                                city: found_loc.city,
-                                                region: found_loc.region,
-                                            });
-                                            self.records.put_asset(&asset)?;
-                                            fixed_count += 1;
-                                            info!("merged existing location values");
-                                        } else {
-                                            // the asset has no location at all, fix it
-                                            asset.location = Some(found_loc);
-                                            self.records.put_asset(&asset)?;
-                                            fixed_count += 1;
-                                            info!("assigned new location values");
+                    match self.blobs.blob_path(&asset_id) {
+                        Ok(blob_path) => {
+                            if let Ok(coords) = get_gps_coordinates(&media_type, &blob_path) {
+                                trace!("asset has GPS coordinates");
+                                match self.geocoder.find_location(&coords) {
+                                    Ok(geoloc) => {
+                                        let found_loc = super::convert_location(geoloc);
+                                        // ensure the geocoder returned a meaningful result
+                                        if found_loc.city.is_some() || found_loc.region.is_some() {
+                                            trace!("successfully converted to domain location");
+                                            if let Some(old_loc) = asset.location.as_ref() {
+                                                // fill in city/region as appropriate
+                                                asset.location = Some(Location {
+                                                    label: old_loc.label.clone(),
+                                                    city: found_loc.city,
+                                                    region: found_loc.region,
+                                                });
+                                                self.records.put_asset(&asset)?;
+                                                fixed_count += 1;
+                                                info!("merged existing location values");
+                                            } else {
+                                                // the asset has no location at all, fix it
+                                                asset.location = Some(found_loc);
+                                                self.records.put_asset(&asset)?;
+                                                fixed_count += 1;
+                                                info!("assigned new location values");
+                                            }
                                         }
                                     }
+                                    Err(err) => error!("replace: geocode error: {}", err),
                                 }
-                                Err(err) => error!("replace: geocode error: {}", err),
                             }
                         }
-                    } _ => {
-                        warn!("could not get path for asset {}", asset_id);
-                    }}
+                        _ => {
+                            warn!("could not get path for asset {}", asset_id);
+                        }
+                    }
                 } else {
                     warn!("could not parse media type for asset {}", asset_id);
                 }

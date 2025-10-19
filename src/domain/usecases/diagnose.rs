@@ -27,261 +27,299 @@ impl Diagnose {
     fn check_asset(&self, asset_id: &str, params: &Params) -> Result<Vec<Diagnosis>, Error> {
         info!("checking asset {}", asset_id);
         let mut diagnoses: Vec<Diagnosis> = vec![];
-        match self.blobs.blob_path(asset_id) { Ok(blob_path) => {
-            if blob_path.exists() {
-                // raise any database errors immediately
-                let asset = self.records.get_asset_by_id(asset_id)?;
-                // check the file size
-                if let Ok(metadata) = fs::metadata(&blob_path) {
-                    if metadata.len() != asset.byte_length {
-                        diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Size));
-                    }
-                } else {
-                    diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Access));
-                }
-                // optionally compare checksum
-                if params.checksum {
-                    if let Ok(digest) = checksum_file(&blob_path) {
-                        if digest != asset.checksum {
-                            diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Digest));
+        match self.blobs.blob_path(asset_id) {
+            Ok(blob_path) => {
+                if blob_path.exists() {
+                    // raise any database errors immediately
+                    let asset = self.records.get_asset_by_id(asset_id)?;
+                    // check the file size
+                    if let Ok(metadata) = fs::metadata(&blob_path) {
+                        if metadata.len() != asset.byte_length {
+                            diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Size));
                         }
                     } else {
                         diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Access));
                     }
-                }
-                if asset.filename.is_empty() {
-                    diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Filename));
-                }
-                // check media_type and original_date
-                if let Ok(mime_type) = asset.media_type.parse::<mime::Mime>() {
-                    if let Ok(original) = get_original_date(&mime_type, &blob_path) {
-                        if let Some(record) = asset.original_date {
-                            if original != record {
+                    // optionally compare checksum
+                    if params.checksum {
+                        if let Ok(digest) = checksum_file(&blob_path) {
+                            if digest != asset.checksum {
+                                diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Digest));
+                            }
+                        } else {
+                            diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Access));
+                        }
+                    }
+                    if asset.filename.is_empty() {
+                        diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Filename));
+                    }
+                    // check media_type and original_date
+                    if let Ok(mime_type) = asset.media_type.parse::<mime::Mime>() {
+                        if let Ok(original) = get_original_date(&mime_type, &blob_path) {
+                            if let Some(record) = asset.original_date {
+                                if original != record {
+                                    diagnoses
+                                        .push(Diagnosis::new(asset_id, ErrorCode::OriginalDate));
+                                }
+                            } else {
                                 diagnoses.push(Diagnosis::new(asset_id, ErrorCode::OriginalDate));
                             }
-                        } else {
-                            diagnoses.push(Diagnosis::new(asset_id, ErrorCode::OriginalDate));
                         }
-                    }
-                    // check if identifier is missing an extension appropriate for the media type
-                    if let Some(extension) = blob_path.extension().and_then(OsStr::to_str) {
-                        if mime_type == mime::APPLICATION_OCTET_STREAM
-                            && mime_type != infer_media_type(extension)
-                        {
-                            // import failed to recognize the media type from
-                            // the extension alone but we know better now
-                            diagnoses.push(Diagnosis::new(asset_id, ErrorCode::MediaType));
-                        } else if let Some(endings) = super::get_all_extensions(&mime_type) {
-                            let match_found = endings.iter().any(|e| e == extension);
-                            if !match_found {
-                                diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Extension));
+                        // check if identifier is missing an extension appropriate for the media type
+                        if let Some(extension) = blob_path.extension().and_then(OsStr::to_str) {
+                            if mime_type == mime::APPLICATION_OCTET_STREAM
+                                && mime_type != infer_media_type(extension)
+                            {
+                                // import failed to recognize the media type from
+                                // the extension alone but we know better now
+                                diagnoses.push(Diagnosis::new(asset_id, ErrorCode::MediaType));
+                            } else if let Some(endings) = super::get_all_extensions(&mime_type) {
+                                let match_found = endings.iter().any(|e| e == extension);
+                                if !match_found {
+                                    diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Extension));
+                                }
                             }
-                        }
-                    } else {
-                        diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Extension));
-                    }
-                } else {
-                    diagnoses.push(Diagnosis::new(asset_id, ErrorCode::MediaType));
-                }
-            } else {
-                // use glob crate to look for file with different extensions
-                let mut path_clone = blob_path.clone();
-                path_clone.set_extension("*");
-                if let Some(pattern) = path_clone.to_str() {
-                    if let Ok(results) = glob::glob(pattern) {
-                        let candidates: Vec<PathBuf> = results.filter_map(|e| e.ok()).collect();
-                        if candidates.is_empty() {
-                            diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Missing));
                         } else {
-                            diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Renamed));
+                            diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Extension));
                         }
                     } else {
-                        warn!("error reading path pattern: {}", asset_id);
+                        diagnoses.push(Diagnosis::new(asset_id, ErrorCode::MediaType));
                     }
                 } else {
-                    warn!("error converting blob path to pattern: {}", asset_id);
+                    // use glob crate to look for file with different extensions
+                    let mut path_clone = blob_path.clone();
+                    path_clone.set_extension("*");
+                    if let Some(pattern) = path_clone.to_str() {
+                        if let Ok(results) = glob::glob(pattern) {
+                            let candidates: Vec<PathBuf> = results.filter_map(|e| e.ok()).collect();
+                            if candidates.is_empty() {
+                                diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Missing));
+                            } else {
+                                diagnoses.push(Diagnosis::new(asset_id, ErrorCode::Renamed));
+                            }
+                        } else {
+                            warn!("error reading path pattern: {}", asset_id);
+                        }
+                    } else {
+                        warn!("error converting blob path to pattern: {}", asset_id);
+                    }
                 }
             }
-        } _ => {
-            // failed to get asset path, either the identifier is not valid
-            // base64 or the encoded value is not valid UTF-8
-            let diagnosis = if general_purpose::STANDARD.decode(asset_id).is_err() {
-                Diagnosis::new(asset_id, ErrorCode::Base64)
-            } else {
-                Diagnosis::new(asset_id, ErrorCode::Utf8)
-            };
-            diagnoses.push(diagnosis);
-        }}
+            _ => {
+                // failed to get asset path, either the identifier is not valid
+                // base64 or the encoded value is not valid UTF-8
+                let diagnosis = if general_purpose::STANDARD.decode(asset_id).is_err() {
+                    Diagnosis::new(asset_id, ErrorCode::Base64)
+                } else {
+                    Diagnosis::new(asset_id, ErrorCode::Utf8)
+                };
+                diagnoses.push(diagnosis);
+            }
+        }
         Ok(diagnoses)
     }
 
     // Replace the incorrect digest value in the asset record.
     fn fix_checksum(&self, asset_id: &str) {
-        match self.blobs.blob_path(asset_id) { Ok(blob_path) => {
-            match self.records.get_asset_by_id(asset_id) { Ok(mut asset) => {
-                if let Ok(digest) = checksum_file(&blob_path) {
-                    asset.checksum = digest;
-                    let _ = self.records.put_asset(&asset);
-                    info!("fixed checksum for asset {}", asset_id);
-                } else {
-                    warn!("error reading file {:?}", blob_path);
+        match self.blobs.blob_path(asset_id) {
+            Ok(blob_path) => match self.records.get_asset_by_id(asset_id) {
+                Ok(mut asset) => {
+                    if let Ok(digest) = checksum_file(&blob_path) {
+                        asset.checksum = digest;
+                        let _ = self.records.put_asset(&asset);
+                        info!("fixed checksum for asset {}", asset_id);
+                    } else {
+                        warn!("error reading file {:?}", blob_path);
+                    }
                 }
-            } _ => {
-                warn!("error reading database record: {}", asset_id);
-            }}
-        } _ => {
-            warn!("error getting blob path: {}", asset_id);
-        }}
+                _ => {
+                    warn!("error reading database record: {}", asset_id);
+                }
+            },
+            _ => {
+                warn!("error getting blob path: {}", asset_id);
+            }
+        }
     }
 
     // Replace the incorrect file size value in the asset record.
     fn fix_byte_length(&self, asset_id: &str) {
-        match self.blobs.blob_path(asset_id) { Ok(blob_path) => {
-            match self.records.get_asset_by_id(asset_id) { Ok(mut asset) => {
-                if let Ok(metadata) = fs::metadata(&blob_path) {
-                    asset.byte_length = metadata.len();
-                    let _ = self.records.put_asset(&asset);
-                    info!("fixed byte length for asset {}", asset_id);
-                } else {
-                    warn!("file not accessible {:?}", blob_path);
+        match self.blobs.blob_path(asset_id) {
+            Ok(blob_path) => match self.records.get_asset_by_id(asset_id) {
+                Ok(mut asset) => {
+                    if let Ok(metadata) = fs::metadata(&blob_path) {
+                        asset.byte_length = metadata.len();
+                        let _ = self.records.put_asset(&asset);
+                        info!("fixed byte length for asset {}", asset_id);
+                    } else {
+                        warn!("file not accessible {:?}", blob_path);
+                    }
                 }
-            } _ => {
-                warn!("error reading database record: {}", asset_id);
-            }}
-        } _ => {
-            warn!("error getting blob path: {}", asset_id);
-        }}
+                _ => {
+                    warn!("error reading database record: {}", asset_id);
+                }
+            },
+            _ => {
+                warn!("error getting blob path: {}", asset_id);
+            }
+        }
     }
 
     // Asset record has wrong identifier for file in blob store.
     //
     // N.B. This changes the identifier of the asset in the database.
     fn fix_renamed(&self, old_asset_id: &str) {
-        match self.blobs.blob_path(old_asset_id) { Ok(mut blob_path) => {
-            if let Ok(old_decoded) = general_purpose::STANDARD.decode(old_asset_id) {
-                if let Ok(old_rel_path) = str::from_utf8(&old_decoded) {
-                    match self.records.get_asset_by_id(old_asset_id) { Ok(old_asset) => {
-                        // use glob crate to look for file with different extensions
-                        blob_path.set_extension("*");
-                        if let Some(pattern) = blob_path.to_str() {
-                            if let Ok(results) = glob::glob(pattern) {
-                                let candidates: Vec<PathBuf> =
-                                    results.filter_map(|e| e.ok()).collect();
-                                if candidates.len() == 1 {
-                                    // asset was found to have a different
-                                    // extension, use that to change the
-                                    // identifier and the media type accordingly
-                                    if let Some(extension) =
-                                        candidates[0].extension().and_then(|e| e.to_str())
-                                    {
-                                        let mut new_asset = old_asset.clone();
-                                        let new_id = replace_extension(old_rel_path, extension);
-                                        new_asset.key = new_id.clone();
-                                        let guessed_mime = infer_media_type(extension);
-                                        new_asset.media_type =
-                                            guessed_mime.essence_str().to_owned();
-                                        if self.records.put_asset(&new_asset).is_ok() {
-                                            let _ = self.records.delete_asset(old_asset_id);
-                                            info!(
+        match self.blobs.blob_path(old_asset_id) {
+            Ok(mut blob_path) => {
+                if let Ok(old_decoded) = general_purpose::STANDARD.decode(old_asset_id) {
+                    if let Ok(old_rel_path) = str::from_utf8(&old_decoded) {
+                        match self.records.get_asset_by_id(old_asset_id) {
+                            Ok(old_asset) => {
+                                // use glob crate to look for file with different extensions
+                                blob_path.set_extension("*");
+                                if let Some(pattern) = blob_path.to_str() {
+                                    if let Ok(results) = glob::glob(pattern) {
+                                        let candidates: Vec<PathBuf> =
+                                            results.filter_map(|e| e.ok()).collect();
+                                        if candidates.len() == 1 {
+                                            // asset was found to have a different
+                                            // extension, use that to change the
+                                            // identifier and the media type accordingly
+                                            if let Some(extension) =
+                                                candidates[0].extension().and_then(|e| e.to_str())
+                                            {
+                                                let mut new_asset = old_asset.clone();
+                                                let new_id =
+                                                    replace_extension(old_rel_path, extension);
+                                                new_asset.key = new_id.clone();
+                                                let guessed_mime = infer_media_type(extension);
+                                                new_asset.media_type =
+                                                    guessed_mime.essence_str().to_owned();
+                                                if self.records.put_asset(&new_asset).is_ok() {
+                                                    let _ = self.records.delete_asset(old_asset_id);
+                                                    info!(
                                                 "fixed identifier and media type for asset {}",
                                                 old_asset_id
                                             );
+                                                } else {
+                                                    warn!("error writing new asset to database");
+                                                }
+                                            } else {
+                                                warn!(
+                                                    "asset filename missing extension: {}",
+                                                    old_asset_id
+                                                );
+                                            }
                                         } else {
-                                            warn!("error writing new asset to database");
+                                            info!(
+                                                "expect exactly 1 file with same identifier: {}",
+                                                old_asset_id
+                                            );
                                         }
                                     } else {
-                                        warn!("asset filename missing extension: {}", old_asset_id);
+                                        warn!("error reading path pattern: {}", old_asset_id);
                                     }
                                 } else {
-                                    info!(
-                                        "expect exactly 1 file with same identifier: {}",
+                                    warn!(
+                                        "error converting blob path to pattern: {}",
                                         old_asset_id
                                     );
                                 }
-                            } else {
-                                warn!("error reading path pattern: {}", old_asset_id);
                             }
-                        } else {
-                            warn!("error converting blob path to pattern: {}", old_asset_id);
+                            _ => {
+                                warn!("error reading database record: {}", old_asset_id);
+                            }
                         }
-                    } _ => {
-                        warn!("error reading database record: {}", old_asset_id);
-                    }}
+                    } else {
+                        warn!("error in utf-8 decode: {:?}", old_decoded);
+                    }
                 } else {
-                    warn!("error in utf-8 decode: {:?}", old_decoded);
+                    warn!("error in base64 decode: {}", old_asset_id);
                 }
-            } else {
-                warn!("error in base64 decode: {}", old_asset_id);
             }
-        } _ => {
-            warn!("error getting blob path: {}", old_asset_id);
-        }}
+            _ => {
+                warn!("error getting blob path: {}", old_asset_id);
+            }
+        }
     }
 
     // Replace the incorrect file name value in the asset record.
     fn fix_filename(&self, asset_id: &str) {
-        match self.records.get_asset_by_id(asset_id) { Ok(mut asset) => {
-            let mut fixed = false;
-            if let Ok(vector) = general_purpose::STANDARD.decode(asset_id) {
-                if let Ok(string) = str::from_utf8(&vector) {
-                    let filepath = Path::new(string);
-                    if let Some(filename) = filepath.file_name() {
-                        asset.filename = filename.to_string_lossy().into();
-                        let _ = self.records.put_asset(&asset);
-                        fixed = true;
-                        info!("fixed filename for asset {}", asset_id);
+        match self.records.get_asset_by_id(asset_id) {
+            Ok(mut asset) => {
+                let mut fixed = false;
+                if let Ok(vector) = general_purpose::STANDARD.decode(asset_id) {
+                    if let Ok(string) = str::from_utf8(&vector) {
+                        let filepath = Path::new(string);
+                        if let Some(filename) = filepath.file_name() {
+                            asset.filename = filename.to_string_lossy().into();
+                            let _ = self.records.put_asset(&asset);
+                            fixed = true;
+                            info!("fixed filename for asset {}", asset_id);
+                        }
                     }
                 }
+                if !fixed {
+                    warn!("could not repair filename: {}", asset_id);
+                }
             }
-            if !fixed {
-                warn!("could not repair filename: {}", asset_id);
+            _ => {
+                warn!("error reading database record: {}", asset_id);
             }
-        } _ => {
-            warn!("error reading database record: {}", asset_id);
-        }}
+        }
     }
 
     // Replace the incorrect media type value in the asset record.
     fn fix_media_type(&self, asset_id: &str) {
-        match self.records.get_asset_by_id(asset_id) { Ok(mut asset) => {
-            // the asset filename property is whatever was originally provided,
-            // so should be safe to use that to get the extession
-            let filename = Path::new(&asset.filename);
-            let extension = filename.extension().and_then(OsStr::to_str);
-            if let Some(ext) = extension {
-                let guessed_mime = infer_media_type(ext);
-                asset.media_type = guessed_mime.essence_str().to_owned();
-                let _ = self.records.put_asset(&asset);
-                info!("fixed media type for asset {}", asset_id);
-            } else {
-                warn!("could not infer media type: {}", asset_id);
+        match self.records.get_asset_by_id(asset_id) {
+            Ok(mut asset) => {
+                // the asset filename property is whatever was originally provided,
+                // so should be safe to use that to get the extession
+                let filename = Path::new(&asset.filename);
+                let extension = filename.extension().and_then(OsStr::to_str);
+                if let Some(ext) = extension {
+                    let guessed_mime = infer_media_type(ext);
+                    asset.media_type = guessed_mime.essence_str().to_owned();
+                    let _ = self.records.put_asset(&asset);
+                    info!("fixed media type for asset {}", asset_id);
+                } else {
+                    warn!("could not infer media type: {}", asset_id);
+                }
             }
-        } _ => {
-            warn!("error reading database record: {}", asset_id);
-        }}
+            _ => {
+                warn!("error reading database record: {}", asset_id);
+            }
+        }
     }
 
     // Replace the incorrect original date value in the asset record.
     fn fix_original_date(&self, asset_id: &str) {
-        match self.blobs.blob_path(asset_id) { Ok(blob_path) => {
-            match self.records.get_asset_by_id(asset_id) { Ok(mut asset) => {
-                if let Ok(mime_type) = asset.media_type.parse::<mime::Mime>() {
-                    match get_original_date(&mime_type, &blob_path) { Ok(original) => {
-                        asset.original_date = Some(original);
-                        let _ = self.records.put_asset(&asset);
-                        info!("fixed original date for asset {}", asset_id);
-                    } _ => {
-                        warn!("error reading original date: {:?}", blob_path);
-                    }}
-                } else {
-                    warn!("error parsing media type: {}", &asset.media_type);
+        match self.blobs.blob_path(asset_id) {
+            Ok(blob_path) => match self.records.get_asset_by_id(asset_id) {
+                Ok(mut asset) => {
+                    if let Ok(mime_type) = asset.media_type.parse::<mime::Mime>() {
+                        match get_original_date(&mime_type, &blob_path) {
+                            Ok(original) => {
+                                asset.original_date = Some(original);
+                                let _ = self.records.put_asset(&asset);
+                                info!("fixed original date for asset {}", asset_id);
+                            }
+                            _ => {
+                                warn!("error reading original date: {:?}", blob_path);
+                            }
+                        }
+                    } else {
+                        warn!("error parsing media type: {}", &asset.media_type);
+                    }
                 }
-            } _ => {
-                warn!("error reading database record: {}", asset_id);
-            }}
-        } _ => {
-            warn!("error getting blob path: {}", asset_id);
-        }}
+                _ => {
+                    warn!("error reading database record: {}", asset_id);
+                }
+            },
+            _ => {
+                warn!("error getting blob path: {}", asset_id);
+            }
+        }
     }
 
     // Append the correct extension to the identifier and blob file name.
@@ -290,32 +328,35 @@ impl Diagnose {
     fn fix_extension(&self, old_asset_id: &str) {
         if let Ok(old_decoded) = general_purpose::STANDARD.decode(old_asset_id) {
             if let Ok(old_path) = str::from_utf8(&old_decoded) {
-                match self.records.get_asset_by_id(old_asset_id) { Ok(old_asset) => {
-                    if let Ok(mime_type) = old_asset.media_type.parse::<mime::Mime>() {
-                        let maybe_mime_extension = super::select_best_extension(&mime_type);
-                        if let Some(mime_ext) = maybe_mime_extension {
-                            let mut new_asset = old_asset.clone();
-                            let new_id = replace_extension(old_path, &mime_ext);
-                            new_asset.key = new_id.clone();
-                            if self.records.put_asset(&new_asset).is_ok() {
-                                if self.blobs.rename_blob(old_asset_id, &new_id).is_ok() {
-                                    let _ = self.records.delete_asset(old_asset_id);
-                                    info!("fixed extension for asset {}", old_asset_id);
+                match self.records.get_asset_by_id(old_asset_id) {
+                    Ok(old_asset) => {
+                        if let Ok(mime_type) = old_asset.media_type.parse::<mime::Mime>() {
+                            let maybe_mime_extension = super::select_best_extension(&mime_type);
+                            if let Some(mime_ext) = maybe_mime_extension {
+                                let mut new_asset = old_asset.clone();
+                                let new_id = replace_extension(old_path, &mime_ext);
+                                new_asset.key = new_id.clone();
+                                if self.records.put_asset(&new_asset).is_ok() {
+                                    if self.blobs.rename_blob(old_asset_id, &new_id).is_ok() {
+                                        let _ = self.records.delete_asset(old_asset_id);
+                                        info!("fixed extension for asset {}", old_asset_id);
+                                    } else {
+                                        let _ = self.records.delete_asset(&new_id);
+                                    }
                                 } else {
-                                    let _ = self.records.delete_asset(&new_id);
+                                    warn!("error writing new asset to database");
                                 }
                             } else {
-                                warn!("error writing new asset to database");
+                                warn!("no new extension to append: {}", mime_type);
                             }
                         } else {
-                            warn!("no new extension to append: {}", mime_type);
+                            warn!("error parsing media type: {}", &old_asset.media_type);
                         }
-                    } else {
-                        warn!("error parsing media type: {}", &old_asset.media_type);
                     }
-                } _ => {
-                    warn!("error reading database record: {}", old_asset_id);
-                }}
+                    _ => {
+                        warn!("error reading database record: {}", old_asset_id);
+                    }
+                }
             } else {
                 warn!("error in utf-8 decode: {:?}", old_decoded);
             }
@@ -634,7 +675,10 @@ mod tests {
 
         // fix the issue(s)
         let usecase = Diagnose::new(Box::new(records), Box::new(blobs));
-        let params: Params = Params { repair: true, ..Default::default() };
+        let params: Params = Params {
+            repair: true,
+            ..Default::default()
+        };
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -730,7 +774,10 @@ mod tests {
 
         // fix the issue(s)
         let usecase = Diagnose::new(Box::new(records), Box::new(blobs));
-        let params: Params = Params { repair: true, ..Default::default() };
+        let params: Params = Params {
+            repair: true,
+            ..Default::default()
+        };
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -827,7 +874,10 @@ mod tests {
 
         // fix the issue(s)
         let usecase = Diagnose::new(Box::new(records), Box::new(blobs));
-        let params: Params = Params { repair: true, ..Default::default() };
+        let params: Params = Params {
+            repair: true,
+            ..Default::default()
+        };
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -911,7 +961,10 @@ mod tests {
 
         // fix the issue(s)
         let usecase = Diagnose::new(Box::new(records), Box::new(blobs));
-        let params: Params = Params { repair: true, ..Default::default() };
+        let params: Params = Params {
+            repair: true,
+            ..Default::default()
+        };
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -957,7 +1010,10 @@ mod tests {
             .returning(|_| Ok(PathBuf::from("tests/fixtures/fighting_kittens.jpg")));
         // act
         let usecase = Diagnose::new(Box::new(records), Box::new(blobs));
-        let params: Params = Params { checksum: true, ..Default::default() };
+        let params: Params = Params {
+            checksum: true,
+            ..Default::default()
+        };
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -996,7 +1052,10 @@ mod tests {
 
         // fix the issue(s)
         let usecase = Diagnose::new(Box::new(records), Box::new(blobs));
-        let params: Params = Params { repair: true, checksum: true };
+        let params: Params = Params {
+            repair: true,
+            checksum: true,
+        };
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -1094,7 +1153,10 @@ mod tests {
 
         // fix the issue(s)
         let usecase = Diagnose::new(Box::new(records), Box::new(blobs));
-        let params: Params = Params { repair: true, ..Default::default() };
+        let params: Params = Params {
+            repair: true,
+            ..Default::default()
+        };
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());
@@ -1200,7 +1262,10 @@ mod tests {
 
         // fix the issue(s)
         let usecase = Diagnose::new(Box::new(records), Box::new(blobs));
-        let params: Params = Params { repair: true, ..Default::default() };
+        let params: Params = Params {
+            repair: true,
+            ..Default::default()
+        };
         let result = usecase.call(params);
         // assert
         assert!(result.is_ok());

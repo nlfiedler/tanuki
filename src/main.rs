@@ -243,18 +243,19 @@ async fn raw_asset(info: web::Path<String>) -> actix_web::Result<AssetResponse> 
     .await?;
     if let Ok(asset) = result {
         let blobs = BlobRepositoryImpl::new(ASSETS_PATH.as_path());
-        match blobs.blob_path(&asset.key) { Ok(filepath) => {
-            // the browser uses whatever name is given here, despite the
-            // `download` attribute on the a href element
-            let file = std::fs::File::open(filepath)?;
-            // n.b. NamedFile will handle the Range header and respond with 206
-            // Partial Content as appropriate, especially for video files
-            let named_file = NamedFile::from_file(file, asset.filename)?;
-            let mime_type: mime::Mime = asset.media_type.parse().unwrap();
-            Ok(Either::Left(named_file.set_content_type(mime_type)))
-        } _ => {
-            Ok(Either::Right(HttpResponse::InternalServerError().finish()))
-        }}
+        match blobs.blob_path(&asset.key) {
+            Ok(filepath) => {
+                // the browser uses whatever name is given here, despite the
+                // `download` attribute on the a href element
+                let file = std::fs::File::open(filepath)?;
+                // n.b. NamedFile will handle the Range header and respond with 206
+                // Partial Content as appropriate, especially for video files
+                let named_file = NamedFile::from_file(file, asset.filename)?;
+                let mime_type: mime::Mime = asset.media_type.parse().unwrap();
+                Ok(Either::Left(named_file.set_content_type(mime_type)))
+            }
+            _ => Ok(Either::Right(HttpResponse::InternalServerError().finish())),
+        }
     } else {
         Ok(Either::Right(HttpResponse::NotFound().finish()))
     }

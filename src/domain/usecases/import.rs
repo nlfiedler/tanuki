@@ -43,18 +43,16 @@ impl ImportAsset {
         let filename = super::get_file_name(&params.filepath);
         let metadata = std::fs::metadata(&params.filepath)?;
         let byte_length = metadata.len();
-        let location =
-            match get_gps_coordinates(&params.media_type, &params.filepath) { Ok(coords) => {
-                match self.geocoder.find_location(&coords) {
-                    Ok(geoloc) => Some(super::convert_location(geoloc)),
-                    Err(err) => {
-                        error!("import: geocode error: {}", err);
-                        None
-                    }
+        let location = match get_gps_coordinates(&params.media_type, &params.filepath) {
+            Ok(coords) => match self.geocoder.find_location(&coords) {
+                Ok(geoloc) => Some(super::convert_location(geoloc)),
+                Err(err) => {
+                    error!("import: geocode error: {}", err);
+                    None
                 }
-            } _ => {
-                None
-            }};
+            },
+            _ => None,
+        };
         // some applications will set the file modified time appropriately, so
         // if the asset itself does not have an original date/time, use that
         let original_date = get_original_date(&params.media_type, &params.filepath)

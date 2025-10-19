@@ -121,11 +121,10 @@ impl EntityDataSource for EntityDataSourceImpl {
             WHERE key = ?1",
         )?;
         let mut asset_iter = stmt.query_map([asset_id], |row| Asset::try_from(row))?;
-        match asset_iter.next() { Some(result) => {
-            Ok(result?)
-        } _ => {
-            Err(anyhow!(format!("missing asset {}", asset_id)))
-        }}
+        match asset_iter.next() {
+            Some(result) => Ok(result?),
+            _ => Err(anyhow!(format!("missing asset {}", asset_id))),
+        }
     }
 
     fn get_asset_by_digest(&self, digest: &str) -> Result<Option<Asset>, Error> {
@@ -136,11 +135,10 @@ impl EntityDataSource for EntityDataSourceImpl {
             WHERE hash = ?1",
         )?;
         let mut asset_iter = stmt.query_map([digest], |row| Asset::try_from(row))?;
-        match asset_iter.next() { Some(result) => {
-            Ok(Some(result?))
-        } _ => {
-            Ok(None)
-        }}
+        match asset_iter.next() {
+            Some(result) => Ok(Some(result?)),
+            _ => Ok(None),
+        }
     }
 
     fn put_asset(&self, asset: &Asset) -> Result<(), Error> {

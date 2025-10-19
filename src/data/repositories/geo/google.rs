@@ -152,18 +152,19 @@ fn parse_results(raw_value: &serde_json::Value) -> Result<GeocodedLocation, Erro
 /// Run the given future on a newly created single-threaded runtime if possible,
 /// otherwise raise an error if this thread already has a runtime.
 fn block_on<F: core::future::Future>(future: F) -> Result<F::Output, Error> {
-    match tokio::runtime::Handle::try_current() { Ok(_handle) => {
-        Err(anyhow!("cannot call block_on inside a runtime"))
-    } _ => {
-        // Build the simplest and lightest runtime we can, while still enabling
-        // us to wait for this future (and everything it spawns) to complete
-        // synchronously. Must enable the io and time features otherwise the
-        // runtime does not really start.
-        let runtime = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()?;
-        Ok(runtime.block_on(future))
-    }}
+    match tokio::runtime::Handle::try_current() {
+        Ok(_handle) => Err(anyhow!("cannot call block_on inside a runtime")),
+        _ => {
+            // Build the simplest and lightest runtime we can, while still enabling
+            // us to wait for this future (and everything it spawns) to complete
+            // synchronously. Must enable the io and time features otherwise the
+            // runtime does not really start.
+            let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()?;
+            Ok(runtime.block_on(future))
+        }
+    }
 }
 
 #[cfg(test)]

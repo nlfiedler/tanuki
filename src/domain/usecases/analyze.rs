@@ -27,16 +27,25 @@ impl Analyze {
         let reader = exif::Reader::new();
         if let Ok(exif) = reader.read_from_container(&mut buffer) {
             counts.has_exif_data += 1;
-            if exif.get_field(exif::Tag::DateTimeOriginal, exif::In::PRIMARY).is_some() {
+            if exif
+                .get_field(exif::Tag::DateTimeOriginal, exif::In::PRIMARY)
+                .is_some()
+            {
                 counts.has_original_datetime += 1;
             }
-            if exif.get_field(exif::Tag::OffsetTimeOriginal, exif::In::PRIMARY).is_some() {
+            if exif
+                .get_field(exif::Tag::OffsetTimeOriginal, exif::In::PRIMARY)
+                .is_some()
+            {
                 counts.has_original_timezone += 1;
             }
             // n.b. not all images have GPSVersionID or the many other GPS
             // related files, but if it is missing the latitude, then it
             // certainly cannot have useful information for our purposes
-            if exif.get_field(exif::Tag::GPSLatitude, exif::In::PRIMARY).is_some() {
+            if exif
+                .get_field(exif::Tag::GPSLatitude, exif::In::PRIMARY)
+                .is_some()
+            {
                 counts.has_gps_coords += 1;
             }
         }

@@ -310,18 +310,21 @@ fn create_thumbnail(filepath: &Path, nwidth: u32, nheight: u32) -> Result<Vec<u8
     let mut img = image::ImageReader::open(filepath)?
         .with_guessed_format()?
         .decode()?;
-    match get_image_orientation(filepath) { Ok(orientation) => {
-        // c.f. https://magnushoff.com/articles/jpeg-orientation/
-        if orientation > 4 {
-            // image is sideways, need to swap new width/height
-            img = img.thumbnail(nheight, nwidth);
-        } else {
+    match get_image_orientation(filepath) {
+        Ok(orientation) => {
+            // c.f. https://magnushoff.com/articles/jpeg-orientation/
+            if orientation > 4 {
+                // image is sideways, need to swap new width/height
+                img = img.thumbnail(nheight, nwidth);
+            } else {
+                img = img.thumbnail(nwidth, nheight);
+            }
+            img = correct_orientation(orientation, img);
+        }
+        _ => {
             img = img.thumbnail(nwidth, nheight);
         }
-        img = correct_orientation(orientation, img);
-    } _ => {
-        img = img.thumbnail(nwidth, nheight);
-    }}
+    }
     // The image crate's JpegEncoder will use a quality factor of 75 by default,
     // which yields very good results (e.g. libvips uses the same default).
     img.write_to(&mut cursor, image::ImageFormat::Jpeg)?;
