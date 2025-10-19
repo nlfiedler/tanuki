@@ -9,8 +9,8 @@ use crate::domain::usecases::analyze::Counts;
 use crate::domain::usecases::diagnose::Diagnosis;
 use chrono::prelude::*;
 use juniper::{
-    EmptySubscription, FieldResult, GraphQLEnum, GraphQLScalar, InputValue, ParseScalarResult,
-    ParseScalarValue, RootNode, ScalarToken, ScalarValue, Value,
+    EmptySubscription, FieldResult, GraphQLEnum, GraphQLScalar, ParseScalarResult,
+    ParseScalarValue, RootNode, ScalarToken, ScalarValue,
 };
 use log::error;
 use std::path::PathBuf;
@@ -46,16 +46,15 @@ impl BigInt {
     }
 
     #[allow(clippy::wrong_self_convention)]
-    fn to_output<S: ScalarValue>(&self) -> Value<S> {
-        Value::scalar(format!("{}", self.0))
+    fn to_output(&self) -> impl std::fmt::Display {
+        format!("{}", self.0)
     }
 
-    fn from_input<S: ScalarValue>(v: &InputValue<S>) -> Result<Self, String> {
-        v.as_scalar_value()
-            .and_then(|v| v.as_str())
-            .and_then(|s| s.parse::<i64>().ok())
+    fn from_input(s: &str) -> Result<Self, String> {
+        s.parse::<i64>()
+            .ok()
             .map(BigInt)
-            .ok_or_else(|| format!("Expected `BigInt`, found: {v}"))
+            .ok_or_else(|| format!("Expected `BigInt`, found: {s}"))
     }
 
     fn parse_token<S: ScalarValue>(value: ScalarToken<'_>) -> ParseScalarResult<S> {
@@ -475,7 +474,7 @@ impl MutationRoot {
     }
 }
 
-pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<GraphContext>>;
+pub type Schema = RootNode<QueryRoot, MutationRoot, EmptySubscription<GraphContext>>;
 
 /// Create the GraphQL schema.
 pub fn create_schema() -> Schema {
@@ -544,32 +543,32 @@ mod tests {
         let object = res.as_object_value().unwrap();
 
         let res = object.get_field_value("id").unwrap();
-        let actual = res.as_scalar_value::<String>().unwrap();
+        let actual = res.as_scalar().unwrap().try_as_str().unwrap();
         assert_eq!(actual, "abc123");
 
         let res = object.get_field_value("filename").unwrap();
-        let actual = res.as_scalar_value::<String>().unwrap();
+        let actual = res.as_scalar().unwrap().try_as_str().unwrap();
         assert_eq!(actual, "img_1234.jpg");
 
         // filesize is a BigInt that is represented as a String
         let res = object.get_field_value("filesize").unwrap();
-        let actual = res.as_scalar_value::<String>().unwrap();
+        let actual = res.as_scalar().unwrap().try_as_str().unwrap();
         assert_eq!(actual, "1048576");
 
         // datetime is a DateTime that is represented as a String
         let res = object.get_field_value("datetime").unwrap();
-        let actual = res.as_scalar_value::<String>().unwrap();
+        let actual = res.as_scalar().unwrap().try_as_str().unwrap();
         assert_eq!(&actual[..19], "2018-05-31T21:10:11");
 
         let res = object.get_field_value("mediaType").unwrap();
-        let actual = res.as_scalar_value::<String>().unwrap();
+        let actual = res.as_scalar().unwrap().try_as_str().unwrap();
         assert_eq!(actual, "image/jpeg");
 
         let res = object.get_field_value("tags").unwrap();
         let list_result = res.as_list_value().unwrap();
         let tags = ["cat", "dog"];
         for (idx, entry) in list_result.iter().enumerate() {
-            let actual = entry.as_scalar_value::<String>().unwrap();
+            let actual = entry.as_scalar().unwrap().try_as_str().unwrap();
             assert_eq!(actual, tags[idx]);
         }
 
@@ -581,7 +580,7 @@ mod tests {
         let res = object.get_field_value("location").unwrap();
         let object = res.as_object_value().unwrap();
         let res = object.get_field_value("label").unwrap();
-        let actual = res.as_scalar_value::<String>().unwrap();
+        let actual = res.as_scalar().unwrap().try_as_str().unwrap();
         assert_eq!(actual, "hawaii");
     }
 
@@ -628,8 +627,8 @@ mod tests {
         // assert
         let res = res.as_object_value().unwrap();
         let res = res.get_field_value("count").unwrap();
-        let actual = res.as_scalar_value::<i32>().unwrap();
-        assert_eq!(*actual, 42);
+        let actual = res.as_scalar().unwrap().try_to_int().unwrap();
+        assert_eq!(actual, 42);
     }
 
     #[test]
@@ -694,11 +693,11 @@ mod tests {
         for (idx, result) in list_result.iter().enumerate() {
             let object = result.as_object_value().unwrap();
             let res = object.get_field_value("label").unwrap();
-            let actual = res.as_scalar_value::<String>().unwrap();
+            let actual = res.as_scalar().unwrap().try_as_str().unwrap();
             assert_eq!(actual, labels[idx]);
             let res = object.get_field_value("count").unwrap();
-            let actual = res.as_scalar_value::<i32>().unwrap();
-            assert_eq!(*actual, counts[idx]);
+            let actual = res.as_scalar().unwrap().try_to_int().unwrap();
+            assert_eq!(actual, counts[idx]);
         }
     }
 
@@ -764,7 +763,7 @@ mod tests {
         let res = res.get_field_value("lookup").unwrap();
         let object = res.as_object_value().unwrap();
         let res = object.get_field_value("id").unwrap();
-        let actual = res.as_scalar_value::<String>().unwrap();
+        let actual = res.as_scalar().unwrap().try_as_str().unwrap();
         assert_eq!(actual, "abc123");
     }
 
@@ -861,11 +860,11 @@ mod tests {
         for (idx, result) in list_result.iter().enumerate() {
             let object = result.as_object_value().unwrap();
             let res = object.get_field_value("label").unwrap();
-            let actual = res.as_scalar_value::<String>().unwrap();
+            let actual = res.as_scalar().unwrap().try_as_str().unwrap();
             assert_eq!(actual, labels[idx]);
             let res = object.get_field_value("count").unwrap();
-            let actual = res.as_scalar_value::<i32>().unwrap();
-            assert_eq!(*actual, counts[idx]);
+            let actual = res.as_scalar().unwrap().try_to_int().unwrap();
+            assert_eq!(actual, counts[idx]);
         }
     }
 
@@ -935,11 +934,11 @@ mod tests {
         for (idx, result) in list_result.iter().enumerate() {
             let object = result.as_object_value().unwrap();
             let res = object.get_field_value("label").unwrap();
-            let actual = res.as_scalar_value::<String>().unwrap();
+            let actual = res.as_scalar().unwrap().try_as_str().unwrap();
             assert_eq!(actual, labels[idx]);
             let res = object.get_field_value("count").unwrap();
-            let actual = res.as_scalar_value::<i32>().unwrap();
-            assert_eq!(*actual, counts[idx]);
+            let actual = res.as_scalar().unwrap().try_to_int().unwrap();
+            assert_eq!(actual, counts[idx]);
         }
     }
 
