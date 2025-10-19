@@ -23,7 +23,7 @@ pub fn PageControls(
             <div class="field">
                 <p class="control">
                     <Show
-                        when=move || (selected_page.get() > 1)
+                        when=move || { selected_page.get() > 1 }
                         fallback=move || {
                             view! {
                                 <button class="button" disabled>
@@ -53,7 +53,7 @@ pub fn PageControls(
             <div class="field">
                 <p class="control">
                     <Show
-                        when=move || (selected_page.get() < meta.last_page)
+                        when=move || { selected_page.get() < meta.last_page }
                         fallback=move || {
                             view! {
                                 <button class="button" disabled>
