@@ -2,7 +2,7 @@
 name = "tanuki"
 version = "1.0.0"
 authors = ["Nathan Fiedler <nathanfiedler@fastmail.fm>"]
-edition = "2021"
+edition = "2024"
 description = "Personal digital asset management system."
 repository = "https://github.com/nlfiedler/tanuki"
 readme = "README.md"
@@ -32,7 +32,7 @@ futures = { version = "0.3.31", optional = true }
 glob = { version = "0.3.2", optional = true }
 gloo = "0.11.0"
 http = { version = "1.2.0", optional = true }
-image = { version = "0.25.5", optional = true }
+image = { version = "0.25.8", optional = true }
 juniper = { version = "0.17.0", optional = true, features = ["chrono"] }
 kamadak-exif = { version = "0.6.1", optional = true }
 leptos = "0.8.2"
@@ -63,7 +63,7 @@ sha2 = { version = "0.10.8", optional = true }
 tokio = { version = "1.43.0", optional = true, features = ["full"] }
 ulid = { version = "1.2.0", optional = true }
 # latest cargo-leptos wants wasm-bindgen 0.2.100 or higher
-wasm-bindgen = "0.2.100"
+wasm-bindgen = "0.2.104"
 # leptos-use 0.15.7 requires web-sys 0.3.77 or higher
 web-sys = { version = "0.3.77", features = [
     "File",

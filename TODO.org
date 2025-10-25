@@ -116,18 +116,18 @@
 *** Find out if =mp4= crate can read GPS coords from videos
 **** Preview.app will display location information for videos
 *** Show additional file metadata (TIFF, EXIF, JFIF, IPTC)
-** Uploads
+** TODO [#A] Uploads
 *** file chooser returns =web_sys::File= which is not thread safe
 **** file chooser disabled until this can be resolved
 **** Leptos 0.7 requires values to be thread-safe
 **** maybe wrap in =send_wrapper::SendWrapper=
+**** c.f. https://www.edinsonjim.idesoft.co/articles/building-a-file-uploader-using-leptos/
 *** theoretically could show the thumbnail of images before uploading
 **** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
 ** Edit
 *** hover over asset thumbnail will show larger version as tooltip
 *** allow adding or subtracting a number of days
 *** add option to set the caption
-** Navbar
 ** Pagination
 *** turn the ~Page n of m~ text into a button to input a page number
 **** clicking the button opens a dropdown with a text input field

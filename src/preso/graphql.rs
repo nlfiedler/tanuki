@@ -46,7 +46,7 @@ impl BigInt {
     }
 
     #[allow(clippy::wrong_self_convention)]
-    fn to_output(&self) -> impl std::fmt::Display {
+    fn to_output(&self) -> impl std::fmt::Display + use<> {
         format!("{}", self.0)
     }
 
