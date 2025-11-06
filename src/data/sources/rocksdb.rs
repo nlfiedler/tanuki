@@ -6,6 +6,7 @@ use crate::domain::entities::{Asset, Dimensions, LabeledCount, Location, SearchR
 use crate::domain::repositories::FetchedAssets;
 use anyhow::{anyhow, Error};
 use chrono::prelude::*;
+use hashed_array_tree::HashedArrayTree;
 use mokuroku::{base32, Document, Emitter, QueryResult};
 use rocksdb::{Direction, IteratorMode, Options};
 use std::collections::HashMap;
@@ -123,7 +124,7 @@ impl Database {
         &self,
         view: &str,
         key: K,
-    ) -> Result<Vec<mokuroku::QueryResult>, Error> {
+    ) -> Result<HashedArrayTree<mokuroku::QueryResult>, Error> {
         let mut db = self.db.lock().unwrap();
         // add the index key separator to get an "exact" match
         let mut exact_key: Vec<u8> = Vec::from(key.as_ref());
@@ -139,7 +140,7 @@ impl Database {
         &self,
         view: &str,
         keys: I,
-    ) -> Result<Vec<mokuroku::QueryResult>, Error>
+    ) -> Result<HashedArrayTree<mokuroku::QueryResult>, Error>
     where
         I: IntoIterator<Item = N>,
         N: AsRef<[u8]>,
@@ -153,7 +154,7 @@ impl Database {
                 exact_key
             })
             .collect();
-        Ok(db.query_all_keys(view, exact_keys)?)
+        Ok(db.query_all_keys_hat(view, exact_keys)?)
     }
 
     ///
@@ -165,7 +166,7 @@ impl Database {
         view: &str,
         key_a: K,
         key_b: K,
-    ) -> Result<Vec<mokuroku::QueryResult>, Error> {
+    ) -> Result<HashedArrayTree<mokuroku::QueryResult>, Error> {
         let mut db = self.db.lock().unwrap();
         let iter = db.query_range(view, key_a, key_b)?;
         Ok(iter.collect())
@@ -179,7 +180,7 @@ impl Database {
         &self,
         view: &str,
         key: K,
-    ) -> Result<Vec<mokuroku::QueryResult>, Error> {
+    ) -> Result<HashedArrayTree<mokuroku::QueryResult>, Error> {
         let mut db = self.db.lock().unwrap();
         let iter = db.query_greater_than(view, key)?;
         Ok(iter.collect())
@@ -193,7 +194,7 @@ impl Database {
         &self,
         view: &str,
         key: K,
-    ) -> Result<Vec<mokuroku::QueryResult>, Error> {
+    ) -> Result<HashedArrayTree<mokuroku::QueryResult>, Error> {
         let mut db = self.db.lock().unwrap();
         let iter = db.query_less_than(view, key)?;
         Ok(iter.collect())
@@ -235,12 +236,12 @@ impl Database {
     ///
     /// Returns the key without the prefix.
     ///
-    pub fn find_prefix(&self, prefix: &str) -> Result<Vec<String>, Error> {
+    pub fn find_prefix(&self, prefix: &str) -> Result<HashedArrayTree<String>, Error> {
         let pre_bytes = prefix.as_bytes();
         // this only gets us started, we then have to check for the end of the range
         let db = self.db.lock().unwrap();
         let iter = db.db().prefix_iterator(pre_bytes);
-        let mut results: Vec<String> = Vec::new();
+        let mut results = HashedArrayTree::<String>::new();
         for item in iter {
             let (key, _value) = item?;
             let pre = &key[..pre_bytes.len()];
@@ -368,7 +369,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         Ok(())
     }
 
-    fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_tags(&self, tags: Vec<String>) -> Result<HashedArrayTree<SearchResult>, Error> {
         // secondary index keys are lowercase
         let tags: Vec<String> = tags.into_iter().map(|v| v.to_lowercase()).collect();
         let query_results = self.database.query_all_keys("by_tags", tags)?;
@@ -376,7 +377,10 @@ impl EntityDataSource for EntityDataSourceImpl {
         Ok(search_results)
     }
 
-    fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_locations(
+        &self,
+        locations: Vec<String>,
+    ) -> Result<HashedArrayTree<SearchResult>, Error> {
         // secondary index keys are lowercase
         let locations: Vec<String> = locations.into_iter().map(|v| v.to_lowercase()).collect();
         let query_results = self.database.query_all_keys("by_location", locations)?;
@@ -384,7 +388,10 @@ impl EntityDataSource for EntityDataSourceImpl {
         Ok(search_results)
     }
 
-    fn query_by_media_type(&self, media_type: &str) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_media_type(
+        &self,
+        media_type: &str,
+    ) -> Result<HashedArrayTree<SearchResult>, Error> {
         // secondary index keys are lowercase
         let media_type = media_type.to_lowercase();
         let query_results = self.database.query_by_key("by_media_type", media_type)?;
@@ -392,7 +399,10 @@ impl EntityDataSource for EntityDataSourceImpl {
         Ok(search_results)
     }
 
-    fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+    fn query_before_date(
+        &self,
+        before: DateTime<Utc>,
+    ) -> Result<HashedArrayTree<SearchResult>, Error> {
         let epoch = DateTime::UNIX_EPOCH;
         let before_key = encode_datetime(&before);
         let query_results = if epoch > before {
@@ -416,7 +426,10 @@ impl EntityDataSource for EntityDataSourceImpl {
         Ok(search_results)
     }
 
-    fn query_after_date(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+    fn query_after_date(
+        &self,
+        after: DateTime<Utc>,
+    ) -> Result<HashedArrayTree<SearchResult>, Error> {
         let epoch = DateTime::UNIX_EPOCH;
         let after_key = encode_datetime(&after);
         let query_results = if epoch <= after {
@@ -446,7 +459,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         &self,
         after: DateTime<Utc>,
         before: DateTime<Utc>,
-    ) -> Result<Vec<SearchResult>, Error> {
+    ) -> Result<HashedArrayTree<SearchResult>, Error> {
         let epoch = DateTime::UNIX_EPOCH;
         let after_key = encode_datetime(&after);
         let before_key = encode_datetime(&before);
@@ -471,7 +484,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         Ok(search_results)
     }
 
-    fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+    fn query_newborn(&self, after: DateTime<Utc>) -> Result<HashedArrayTree<SearchResult>, Error> {
         let epoch = DateTime::UNIX_EPOCH;
         let key = encode_datetime(&after);
         let query_results = if epoch > after {
@@ -515,7 +528,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         self.count_all_keys("by_media_type")
     }
 
-    fn all_assets(&self) -> Result<Vec<String>, Error> {
+    fn all_assets(&self) -> Result<HashedArrayTree<String>, Error> {
         self.database.find_prefix("asset/")
     }
 
@@ -561,8 +574,8 @@ impl EntityDataSource for EntityDataSourceImpl {
 /// Convert the database query results to our search results.
 ///
 /// Silently drops any results that fail to deserialize.
-fn convert_results(query_results: Vec<QueryResult>) -> Vec<SearchResult> {
-    let search_results: Vec<SearchResult> = query_results
+fn convert_results(query_results: HashedArrayTree<QueryResult>) -> HashedArrayTree<SearchResult> {
+    let search_results: HashedArrayTree<SearchResult> = query_results
         .into_iter()
         .filter_map(|r| {
             // ignore any query results that fail to serialize, there is not

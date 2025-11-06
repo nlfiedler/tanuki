@@ -8,6 +8,7 @@ use super::entities::{
 use anyhow::{anyhow, Error};
 use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
+use hashed_array_tree::HashedArrayTree;
 use std::cmp;
 use std::ffi::OsStr;
 use std::fmt;
@@ -543,7 +544,7 @@ fn select_best_extension(media_type: &mime::Mime) -> Option<String> {
 // since it conserves space and the original ordering is not at all important
 // (or known for that matter).
 pub fn sort_results(
-    results: &mut [SearchResult],
+    results: &mut HashedArrayTree<SearchResult>,
     field: Option<SortField>,
     order: Option<SortOrder>,
 ) {

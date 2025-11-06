@@ -494,6 +494,7 @@ mod tests {
     use crate::domain::repositories::MockBlobRepository;
     use crate::domain::repositories::MockRecordRepository;
     use chrono::prelude::*;
+    use hashed_array_tree::{hat, HashedArrayTree};
     use mockall::predicate::*;
     use std::path::PathBuf;
 
@@ -505,7 +506,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         records
             .expect_get_asset_by_id()
             .with(eq(asset1_id))
@@ -548,7 +549,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         records
             .expect_get_asset_by_id()
             .with(eq(asset1_id))
@@ -622,7 +623,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         records
             .expect_get_asset_by_id()
             .with(eq(asset1_id))
@@ -649,7 +650,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         let mut get_asset_count = 0;
         records
             .expect_get_asset_by_id()
@@ -723,7 +724,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         records
             .expect_get_asset_by_id()
             .with(eq(asset1_id))
@@ -748,7 +749,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         let mut get_asset_count = 0;
         records
             .expect_get_asset_by_id()
@@ -808,7 +809,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         records
             .expect_get_asset_by_id()
             .with(eq(asset1_id))
@@ -837,9 +838,9 @@ mod tests {
         records.expect_all_assets().times(2).returning(move || {
             all_assets_count += 1;
             if all_assets_count > 1 {
-                Ok(vec![new_asset_id.to_owned()])
+                Ok(hat![new_asset_id.to_owned()])
             } else {
-                Ok(vec![asset1_id.to_owned()])
+                Ok(hat![asset1_id.to_owned()])
             }
         });
         records
@@ -910,7 +911,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         records
             .expect_get_asset_by_id()
             .with(eq(asset1_id))
@@ -935,7 +936,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         let mut get_asset_count = 0;
         records
             .expect_get_asset_by_id()
@@ -998,7 +999,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         records
             .expect_get_asset_by_id()
             .with(eq(asset1_id))
@@ -1026,7 +1027,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         let mut get_asset_count = 0;
         records
             .expect_get_asset_by_id()
@@ -1102,7 +1103,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         records
             .expect_get_asset_by_id()
             .with(eq(asset1_id))
@@ -1127,7 +1128,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         let mut call_count = 0;
         records
             .expect_get_asset_by_id()
@@ -1202,7 +1203,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         records
             .expect_get_asset_by_id()
             .with(eq(asset1_id))
@@ -1229,9 +1230,9 @@ mod tests {
         records.expect_all_assets().times(2).returning(move || {
             all_assets_count += 1;
             if all_assets_count > 1 {
-                Ok(vec![fixed_assetid.to_owned()])
+                Ok(hat![fixed_assetid.to_owned()])
             } else {
-                Ok(vec![asset1_id.to_owned()])
+                Ok(hat![asset1_id.to_owned()])
             }
         });
         records

@@ -6,6 +6,7 @@ use crate::domain::entities::{Asset, Dimensions, LabeledCount, Location, SearchR
 use crate::domain::repositories::FetchedAssets;
 use anyhow::{anyhow, Error};
 use chrono::{DateTime, Datelike, Utc};
+use hashed_array_tree::HashedArrayTree;
 use rusqlite::types::Value;
 use rusqlite::{Connection, OptionalExtension};
 use std::collections::{HashMap, HashSet};
@@ -206,7 +207,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         Ok(())
     }
 
-    fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_tags(&self, tags: Vec<String>) -> Result<HashedArrayTree<SearchResult>, Error> {
         //
         // Would like to use "WHERE tags REGEXP '\bterm\b'"" to save a lot of
         // work manually comparing the tags, but that requires loading an
@@ -239,7 +240,7 @@ impl EntityDataSource for EntityDataSourceImpl {
                 Ok(None)
             }
         })?;
-        let mut results: Vec<SearchResult> = vec![];
+        let mut results = HashedArrayTree::<SearchResult>::new();
         for result in iter {
             if let Some(value) = result? {
                 results.push(value?);
@@ -248,7 +249,10 @@ impl EntityDataSource for EntityDataSourceImpl {
         Ok(results)
     }
 
-    fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_locations(
+        &self,
+        locations: Vec<String>,
+    ) -> Result<HashedArrayTree<SearchResult>, Error> {
         let lowered: HashSet<String> = locations.iter().map(|t| t.to_lowercase()).collect();
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
@@ -269,7 +273,7 @@ impl EntityDataSource for EntityDataSourceImpl {
                 Ok(None)
             }
         })?;
-        let mut results: Vec<SearchResult> = vec![];
+        let mut results = HashedArrayTree::<SearchResult>::new();
         for result in iter {
             if let Some(value) = result? {
                 results.push(value?);
@@ -278,7 +282,10 @@ impl EntityDataSource for EntityDataSourceImpl {
         Ok(results)
     }
 
-    fn query_by_media_type(&self, media_type: &str) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_media_type(
+        &self,
+        media_type: &str,
+    ) -> Result<HashedArrayTree<SearchResult>, Error> {
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
             "SELECT key, filename, mimetype, label, city, region,
@@ -288,14 +295,17 @@ impl EntityDataSource for EntityDataSourceImpl {
             WHERE mimetype = ?1",
         )?;
         let iter = stmt.query_map([media_type], search_result_from_row)?;
-        let mut results: Vec<SearchResult> = vec![];
+        let mut results = HashedArrayTree::<SearchResult>::new();
         for result in iter {
             results.push(result?);
         }
         Ok(results)
     }
 
-    fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+    fn query_before_date(
+        &self,
+        before: DateTime<Utc>,
+    ) -> Result<HashedArrayTree<SearchResult>, Error> {
         let before_s = before.timestamp();
         //
         // SQLite "indexes on expressions" stipulates that the expression used
@@ -311,14 +321,17 @@ impl EntityDataSource for EntityDataSourceImpl {
             WHERE bestdate < ?1",
         )?;
         let iter = stmt.query_map([before_s], search_result_from_row)?;
-        let mut results: Vec<SearchResult> = vec![];
+        let mut results = HashedArrayTree::<SearchResult>::new();
         for result in iter {
             results.push(result?);
         }
         Ok(results)
     }
 
-    fn query_after_date(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+    fn query_after_date(
+        &self,
+        after: DateTime<Utc>,
+    ) -> Result<HashedArrayTree<SearchResult>, Error> {
         let after_s = after.timestamp();
         //
         // SQLite "indexes on expressions" stipulates that the expression used
@@ -334,7 +347,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             WHERE bestdate >= ?1",
         )?;
         let iter = stmt.query_map([after_s], search_result_from_row)?;
-        let mut results: Vec<SearchResult> = vec![];
+        let mut results = HashedArrayTree::<SearchResult>::new();
         for result in iter {
             results.push(result?);
         }
@@ -345,7 +358,7 @@ impl EntityDataSource for EntityDataSourceImpl {
         &self,
         after: DateTime<Utc>,
         before: DateTime<Utc>,
-    ) -> Result<Vec<SearchResult>, Error> {
+    ) -> Result<HashedArrayTree<SearchResult>, Error> {
         let after_s = after.timestamp();
         let before_s = before.timestamp();
         //
@@ -362,14 +375,14 @@ impl EntityDataSource for EntityDataSourceImpl {
             WHERE bestdate >= ?1 AND bestdate < ?2",
         )?;
         let iter = stmt.query_map([after_s, before_s], search_result_from_row)?;
-        let mut results: Vec<SearchResult> = vec![];
+        let mut results = HashedArrayTree::<SearchResult>::new();
         for result in iter {
             results.push(result?);
         }
         Ok(results)
     }
 
-    fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+    fn query_newborn(&self, after: DateTime<Utc>) -> Result<HashedArrayTree<SearchResult>, Error> {
         let after_s = after.timestamp();
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare(
@@ -380,7 +393,7 @@ impl EntityDataSource for EntityDataSourceImpl {
             WHERE imported >= ?1 AND tags IS NULL AND caption IS NULL AND label IS NULL",
         )?;
         let iter = stmt.query_map([after_s], search_result_from_row)?;
-        let mut results: Vec<SearchResult> = vec![];
+        let mut results = HashedArrayTree::<SearchResult>::new();
         for result in iter {
             results.push(result?);
         }
@@ -536,11 +549,11 @@ impl EntityDataSource for EntityDataSourceImpl {
         Ok(results)
     }
 
-    fn all_assets(&self) -> Result<Vec<String>, Error> {
+    fn all_assets(&self) -> Result<HashedArrayTree<String>, Error> {
         let db = self.conn.lock().unwrap();
         let mut stmt = db.prepare("SELECT key FROM assets")?;
         let key_iter = stmt.query_map([], |row| row.get::<usize, String>(0))?;
-        let mut keys: Vec<String> = vec![];
+        let mut keys = HashedArrayTree::<String>::new();
         for result in key_iter {
             keys.push(result?);
         }

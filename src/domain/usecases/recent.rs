@@ -5,6 +5,7 @@ use crate::domain::entities::{SearchResult, SortField, SortOrder};
 use crate::domain::repositories::RecordRepository;
 use anyhow::Error;
 use chrono::prelude::*;
+use hashed_array_tree::HashedArrayTree;
 use std::cmp;
 use std::fmt;
 
@@ -19,8 +20,8 @@ impl RecentImports {
     }
 }
 
-impl super::UseCase<Vec<SearchResult>, Params> for RecentImports {
-    fn call(&self, params: Params) -> Result<Vec<SearchResult>, Error> {
+impl super::UseCase<HashedArrayTree<SearchResult>, Params> for RecentImports {
+    fn call(&self, params: Params) -> Result<HashedArrayTree<SearchResult>, Error> {
         let after = params.after_date.unwrap_or_else(|| {
             let date = chrono::DateTime::<Utc>::MIN_UTC;
             Utc.with_ymd_and_hms(date.year(), date.month(), date.day(), 0, 0, 0)
@@ -60,6 +61,7 @@ mod tests {
     use super::*;
     use crate::domain::repositories::MockRecordRepository;
     use anyhow::anyhow;
+    use hashed_array_tree::hat;
     use mockall::predicate::*;
 
     #[test]
@@ -79,7 +81,7 @@ mod tests {
     #[test]
     fn test_recent_imports_alltime_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
@@ -104,7 +106,7 @@ mod tests {
     #[test]
     fn test_recent_imports_after_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),

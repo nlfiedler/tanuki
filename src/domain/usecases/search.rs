@@ -4,6 +4,7 @@
 use crate::domain::entities::{SearchParams, SearchResult};
 use crate::domain::repositories::{RecordRepository, SearchRepository};
 use anyhow::Error;
+use hashed_array_tree::HashedArrayTree;
 
 /// Use case to perform queries against the database indices.
 pub struct SearchAssets {
@@ -17,7 +18,10 @@ impl SearchAssets {
     }
 
     // Perform an initial search of the assets.
-    fn query_assets(&self, params: &mut SearchParams) -> Result<Vec<SearchResult>, Error> {
+    fn query_assets(
+        &self,
+        params: &mut SearchParams,
+    ) -> Result<HashedArrayTree<SearchResult>, Error> {
         // Perform the initial query using one of the criteria. Querying by tags
         // is the first choice since the search results do not contain the tags,
         // so a filter on tags would not be possible.
@@ -41,16 +45,16 @@ impl SearchAssets {
             self.repo.query_by_media_type(&media_type)
         } else {
             // did not recognize the query, return nothing
-            Ok(vec![])
+            Ok(HashedArrayTree::<SearchResult>::new())
         }
     }
 }
 
-impl super::UseCase<Vec<SearchResult>, SearchParams> for SearchAssets {
-    fn call(&self, params: SearchParams) -> Result<Vec<SearchResult>, Error> {
+impl super::UseCase<HashedArrayTree<SearchResult>, SearchParams> for SearchAssets {
+    fn call(&self, params: SearchParams) -> Result<HashedArrayTree<SearchResult>, Error> {
         // Check if a similar search was performed earlier, ignoring the sorting
         // parameters; the sorting will be performed again as needed.
-        let mut results: Vec<SearchResult>;
+        let mut results: HashedArrayTree<SearchResult>;
         let cache_key = params.to_string();
         if let Some(cached) = self.cache.get(&cache_key)? {
             results = cached;
@@ -70,7 +74,10 @@ impl super::UseCase<Vec<SearchResult>, SearchParams> for SearchAssets {
 }
 
 // Filter the search results by date range, if specified.
-fn filter_by_date_range(results: Vec<SearchResult>, params: &SearchParams) -> Vec<SearchResult> {
+fn filter_by_date_range(
+    results: HashedArrayTree<SearchResult>,
+    params: &SearchParams,
+) -> HashedArrayTree<SearchResult> {
     if params.after_date.is_some() && params.before_date.is_some() {
         let a = params.after_date.unwrap();
         let b = params.before_date.unwrap();
@@ -95,7 +102,10 @@ fn filter_by_date_range(results: Vec<SearchResult>, params: &SearchParams) -> Ve
 // means that a search for "paris, texas" will turn up results that have both
 // "paris" and "texas" as part of the location entry, and not simply return
 // results that contain either "paris" or "texas".
-fn filter_by_locations(results: Vec<SearchResult>, params: &SearchParams) -> Vec<SearchResult> {
+fn filter_by_locations(
+    results: HashedArrayTree<SearchResult>,
+    params: &SearchParams,
+) -> HashedArrayTree<SearchResult> {
     if params.locations.is_empty() {
         results
     } else {
@@ -116,7 +126,10 @@ fn filter_by_locations(results: Vec<SearchResult>, params: &SearchParams) -> Vec
 }
 
 // Filter the search results by media type, if specified.
-fn filter_by_media_type(results: Vec<SearchResult>, params: &SearchParams) -> Vec<SearchResult> {
+fn filter_by_media_type(
+    results: HashedArrayTree<SearchResult>,
+    params: &SearchParams,
+) -> HashedArrayTree<SearchResult> {
     if let Some(p_media_type) = params.media_type.as_ref() {
         // All filtering comparisons are case-insensitive for now, so both the
         // input and the index values are lowercased.
@@ -141,6 +154,7 @@ mod tests {
     use crate::domain::repositories::{MockRecordRepository, MockSearchRepository};
     use anyhow::anyhow;
     use chrono::prelude::*;
+    use hashed_array_tree::hat;
     use mockall::predicate::*;
 
     fn make_date_time(
@@ -186,7 +200,7 @@ mod tests {
     #[test]
     fn test_search_assets_tags_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
@@ -236,7 +250,7 @@ mod tests {
     #[test]
     fn test_search_assets_after_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
@@ -268,7 +282,7 @@ mod tests {
     #[test]
     fn test_search_assets_before_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
@@ -300,7 +314,7 @@ mod tests {
     #[test]
     fn test_search_assets_range_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
@@ -334,7 +348,7 @@ mod tests {
     #[test]
     fn test_search_assets_locations_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
@@ -364,7 +378,7 @@ mod tests {
     #[test]
     fn test_search_assets_media_type_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/JPEG".to_owned(),
@@ -392,9 +406,9 @@ mod tests {
         assert_eq!(results[0].filename, "img_1234.jpg");
     }
 
-    fn make_search_results() -> Vec<SearchResult> {
+    fn make_search_results() -> HashedArrayTree<SearchResult> {
         // make everything uppercase for lettercase testing
-        vec![
+        hat![
             SearchResult {
                 asset_id: "cafebabe".to_owned(),
                 filename: "IMG_2431.PNG".to_owned(),

@@ -5,6 +5,7 @@ mod common;
 
 use anyhow::Error;
 use common::DBPath;
+use hashed_array_tree::HashedArrayTree;
 use std::sync::Arc;
 use tanuki::data::repositories::{RecordRepositoryImpl, SearchRepositoryImpl};
 use tanuki::data::sources::rocksdb::EntityDataSourceImpl;
@@ -100,7 +101,7 @@ fn test_search_tags_and_location() -> Result<(), Error> {
         locations: vec!["london".to_owned()],
         ..Default::default()
     };
-    let results: Vec<SearchResult> = usecase.call(params)?;
+    let results: HashedArrayTree<SearchResult> = usecase.call(params)?;
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].filename, "img_6789.jpg");
 
@@ -110,7 +111,7 @@ fn test_search_tags_and_location() -> Result<(), Error> {
         locations: vec!["portland".to_owned()],
         ..Default::default()
     };
-    let results: Vec<SearchResult> = usecase.call(params)?;
+    let results: HashedArrayTree<SearchResult> = usecase.call(params)?;
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].filename, "img_5678.jpg");
 
@@ -120,7 +121,7 @@ fn test_search_tags_and_location() -> Result<(), Error> {
         locations: vec!["oregon".to_owned()],
         ..Default::default()
     };
-    let results: Vec<SearchResult> = usecase.call(params)?;
+    let results: HashedArrayTree<SearchResult> = usecase.call(params)?;
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].filename, "img_5678.jpg");
 
@@ -130,7 +131,7 @@ fn test_search_tags_and_location() -> Result<(), Error> {
         locations: vec!["paris".to_owned(), "france".into()],
         ..Default::default()
     };
-    let results: Vec<SearchResult> = usecase.call(params)?;
+    let results: HashedArrayTree<SearchResult> = usecase.call(params)?;
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].filename, "DCP12345.jpg");
 
@@ -139,7 +140,7 @@ fn test_search_tags_and_location() -> Result<(), Error> {
         locations: vec!["paris".to_owned(), "texas".into()],
         ..Default::default()
     };
-    let results: Vec<SearchResult> = usecase.call(params)?;
+    let results: HashedArrayTree<SearchResult> = usecase.call(params)?;
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].filename, "img_7890.jpg");
     Ok(())

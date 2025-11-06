@@ -6,6 +6,8 @@ use crate::domain::entities::{
     SortOrder, TagOperation,
 };
 use chrono::{DateTime, Utc};
+#[cfg(feature = "ssr")]
+use hashed_array_tree::HashedArrayTree;
 use leptos::prelude::*;
 use leptos_meta::*;
 use leptos_router::components::*;
@@ -259,6 +261,7 @@ pub mod ssr {
 
 /// Return the optional value bounded by the given range, or the default value
 /// if `value` is `None`.
+#[cfg(feature = "ssr")]
 fn bounded_int_value(value: Option<i32>, default: i32, minimum: i32, maximum: i32) -> i32 {
     if let Some(v) = value {
         std::cmp::min(std::cmp::max(v, minimum), maximum)
@@ -267,18 +270,24 @@ fn bounded_int_value(value: Option<i32>, default: i32, minimum: i32, maximum: i3
     }
 }
 
-/// Truncate the given vector to yield the desired portion.
+/// Truncate the hashed array tree to yield the desired portion as a vector.
 ///
 /// If offset is None, it defaults to 0, while count defaults to 10. Offset is
 /// bound between zero and the length of the input vector. Count is bound by 1
 /// and 250.
-pub fn paginate_vector<T>(input: &mut Vec<T>, offset: Option<i32>, count: Option<i32>) -> Vec<T> {
+#[cfg(feature = "ssr")]
+pub fn paginate_array<T>(
+    input: &mut HashedArrayTree<T>,
+    offset: Option<i32>,
+    count: Option<i32>,
+) -> Vec<T> {
     let total_count = input.len() as i32;
     let count = bounded_int_value(count, 10, 1, 250) as usize;
     let offset = bounded_int_value(offset, 0, 0, total_count) as usize;
     let mut results = input.split_off(offset);
     results.truncate(count);
-    results
+    let result: Vec<T> = results.into_iter().collect();
+    result
 }
 
 ///
@@ -416,11 +425,11 @@ pub async fn search(
         sort_field: params.sort_field,
         sort_order: params.sort_order,
     };
-    let mut results: Vec<SearchResult> = usecase
+    let mut results: HashedArrayTree<SearchResult> = usecase
         .call(params)
         .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     let total_count = results.len() as i32;
-    let results = paginate_vector(&mut results, offset, count);
+    let results = paginate_array(&mut results, offset, count);
     let last_page: i32 = if total_count == 0 {
         1
     } else {
@@ -457,7 +466,7 @@ pub async fn fetch_assets(
         .call(params)
         .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     let total_count = results.len() as i32;
-    let results = paginate_vector(&mut results, offset, count);
+    let results = paginate_array(&mut results, offset, count);
     let last_page: i32 = if total_count == 0 {
         1
     } else {
@@ -573,9 +582,10 @@ pub async fn browse_replace(
     Ok(results.iter().position(|r| r.asset_id == asset_id))
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "ssr"))]
 mod tests {
     use super::*;
+    use hashed_array_tree::HashedArrayTree;
 
     #[test]
     fn test_bounded_int_value() {
@@ -588,31 +598,31 @@ mod tests {
     #[test]
     fn test_paginate_vector() {
         // sensible "first" page
-        let mut input: Vec<u32> = Vec::new();
+        let mut input: HashedArrayTree<u32> = HashedArrayTree::new();
         for v in 0..102 {
             input.push(v);
         }
-        let actual = paginate_vector(&mut input, Some(0), Some(10));
+        let actual = paginate_array(&mut input, Some(0), Some(10));
         assert_eq!(actual.len(), 10);
         assert_eq!(actual[0], 0);
         assert_eq!(actual[9], 9);
 
         // page somewhere in the middle
-        let mut input: Vec<u32> = Vec::new();
+        let mut input: HashedArrayTree<u32> = HashedArrayTree::new();
         for v in 0..102 {
             input.push(v);
         }
-        let actual = paginate_vector(&mut input, Some(40), Some(20));
+        let actual = paginate_array(&mut input, Some(40), Some(20));
         assert_eq!(actual.len(), 20);
         assert_eq!(actual[0], 40);
         assert_eq!(actual[19], 59);
 
         // last page with over extension
-        let mut input: Vec<u32> = Vec::new();
+        let mut input: HashedArrayTree<u32> = HashedArrayTree::new();
         for v in 0..102 {
             input.push(v);
         }
-        let actual = paginate_vector(&mut input, Some(90), Some(100));
+        let actual = paginate_array(&mut input, Some(90), Some(100));
         assert_eq!(actual.len(), 12);
         assert_eq!(actual[0], 90);
         assert_eq!(actual[11], 101);

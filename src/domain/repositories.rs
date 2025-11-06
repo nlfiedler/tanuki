@@ -6,6 +6,7 @@ use crate::domain::entities::{
 };
 use anyhow::Error;
 use chrono::prelude::*;
+use hashed_array_tree::HashedArrayTree;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
 use std::path::{Path, PathBuf};
@@ -52,7 +53,7 @@ pub trait RecordRepository: Send {
     fn all_media_types(&self) -> Result<Vec<LabeledCount>, Error>;
 
     /// Return all asset identifiers in the database.
-    fn all_assets(&self) -> Result<Vec<String>, Error>;
+    fn all_assets(&self) -> Result<HashedArrayTree<String>, Error>;
 
     /// Return all assets from the database in no specific order.
     ///
@@ -63,23 +64,33 @@ pub trait RecordRepository: Send {
     fn fetch_assets(&self, cursor: Option<String>, count: usize) -> Result<FetchedAssets, Error>;
 
     /// Search for assets that have all of the given tags.
-    fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_tags(&self, tags: Vec<String>) -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Search for assets whose location fields match all of the given values.
     ///
     /// For example, searching for `["paris","france"]` will return assets that
     /// have both `"paris"` and `"france"` in the location column, such as in
     /// the `city` and `region` fields.
-    fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_locations(
+        &self,
+        locations: Vec<String>,
+    ) -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Search for assets whose media type matches the one given.
-    fn query_by_media_type(&self, media_type: &str) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_media_type(&self, media_type: &str)
+        -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Search for asssets whose best date is before the one given.
-    fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
+    fn query_before_date(
+        &self,
+        before: DateTime<Utc>,
+    ) -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Search for asssets whose best date is equal to or after the one given.
-    fn query_after_date(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
+    fn query_after_date(
+        &self,
+        after: DateTime<Utc>,
+    ) -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Search for assets whose best date is between the after and before dates.
     ///
@@ -88,10 +99,10 @@ pub trait RecordRepository: Send {
         &self,
         after: DateTime<Utc>,
         before: DateTime<Utc>,
-    ) -> Result<Vec<SearchResult>, Error>;
+    ) -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Query for assets that lack any tags, caption, and location.
-    fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
+    fn query_newborn(&self, after: DateTime<Utc>) -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Export all of the asset records as JSON to the named file.
     fn dump(&self, filepath: &Path) -> Result<u64, Error>;
@@ -154,10 +165,10 @@ pub trait LocationRepository: Send + Sync {
 #[cfg_attr(test, automock)]
 pub trait SearchRepository: Send + Sync {
     /// Save the search results keyed by a query string.
-    fn put(&self, key: String, val: Vec<SearchResult>) -> Result<(), Error>;
+    fn put(&self, key: String, val: HashedArrayTree<SearchResult>) -> Result<(), Error>;
 
     /// Find the cached search results for the given query, if any.
-    fn get(&self, key: &str) -> Result<Option<Vec<SearchResult>>, Error>;
+    fn get(&self, key: &str) -> Result<Option<HashedArrayTree<SearchResult>>, Error>;
 
     /// Clear all cached search results.
     fn clear(&self) -> Result<(), Error>;

@@ -31,6 +31,7 @@ env_logger = { version = "0.11.6", optional = true }
 futures = { version = "0.3.31", optional = true }
 glob = { version = "0.3.2", optional = true }
 gloo = "0.11.0"
+hashed-array-tree = { version = "1.2.0", optional = true }
 http = { version = "1.2.0", optional = true }
 image = { version = "0.25.8", optional = true }
 juniper = { version = "0.17.0", optional = true, features = ["chrono"] }
@@ -46,7 +47,7 @@ log = "0.4.25"
 lru = { version = "0.16.0", optional = true }
 mime = { version = "0.3.17", optional = true }
 mime_guess = { version = "2.0.5", optional = true }
-mokuroku = { version = "3.6.0", optional = true, features = ["anyhow"] }
+mokuroku = { version = "3.8.2", optional = true, features = ["anyhow", "hat"] }
 mp4 = { version = "0.13.0", optional = true }
 reqwest = { version = "0.12.12", optional = true }
 riff = { version = "2.0.0", optional = true }
@@ -100,6 +101,7 @@ ssr = [
     "dep:env_logger",
     "dep:futures",
     "dep:glob",
+    "dep:hashed-array-tree",
     "dep:image",
     "dep:juniper",
     "dep:kamadak-exif",

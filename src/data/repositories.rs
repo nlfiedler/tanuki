@@ -9,6 +9,7 @@ use crate::domain::repositories::{
 use anyhow::{anyhow, Error};
 use base64::{engine::general_purpose, Engine as _};
 use chrono::prelude::*;
+use hashed_array_tree::{HashedArrayTree};
 use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 use std::str;
@@ -85,7 +86,7 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.all_media_types()
     }
 
-    fn all_assets(&self) -> Result<Vec<String>, Error> {
+    fn all_assets(&self) -> Result<HashedArrayTree<String>, Error> {
         self.datasource.all_assets()
     }
 
@@ -93,23 +94,23 @@ impl RecordRepository for RecordRepositoryImpl {
         self.datasource.fetch_assets(cursor, count)
     }
 
-    fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_tags(&self, tags: Vec<String>) -> Result<HashedArrayTree<SearchResult>, Error> {
         self.datasource.query_by_tags(tags)
     }
 
-    fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_locations(&self, locations: Vec<String>) -> Result<HashedArrayTree<SearchResult>, Error> {
         self.datasource.query_by_locations(locations)
     }
 
-    fn query_by_media_type(&self, media_type: &str) -> Result<Vec<SearchResult>, Error> {
+    fn query_by_media_type(&self, media_type: &str) -> Result<HashedArrayTree<SearchResult>, Error> {
         self.datasource.query_by_media_type(media_type)
     }
 
-    fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+    fn query_before_date(&self, before: DateTime<Utc>) -> Result<HashedArrayTree<SearchResult>, Error> {
         self.datasource.query_before_date(before)
     }
 
-    fn query_after_date(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+    fn query_after_date(&self, after: DateTime<Utc>) -> Result<HashedArrayTree<SearchResult>, Error> {
         self.datasource.query_after_date(after)
     }
 
@@ -117,11 +118,11 @@ impl RecordRepository for RecordRepositoryImpl {
         &self,
         after: DateTime<Utc>,
         before: DateTime<Utc>,
-    ) -> Result<Vec<SearchResult>, Error> {
+    ) -> Result<HashedArrayTree<SearchResult>, Error> {
         self.datasource.query_date_range(after, before)
     }
 
-    fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error> {
+    fn query_newborn(&self, after: DateTime<Utc>) -> Result<HashedArrayTree<SearchResult>, Error> {
         self.datasource.query_newborn(after)
     }
 
@@ -370,7 +371,7 @@ fn correct_orientation(orientation: u16, img: image::DynamicImage) -> image::Dyn
 // Average search result entry will be around 128 bytes. In the worst case, if
 // search results are 256 bytes and the search yields 10,000 results, the space
 // required will be 2.5 MB.
-static SEARCH_CACHE: LazyLock<Mutex<lru::LruCache<String, Vec<SearchResult>>>> =
+static SEARCH_CACHE: LazyLock<Mutex<lru::LruCache<String, HashedArrayTree<SearchResult>>>> =
     LazyLock::new(|| Mutex::new(lru::LruCache::new(NonZeroUsize::new(2).unwrap())));
 
 pub struct SearchRepositoryImpl();
@@ -382,13 +383,13 @@ impl SearchRepositoryImpl {
 }
 
 impl SearchRepository for SearchRepositoryImpl {
-    fn put(&self, key: String, val: Vec<SearchResult>) -> Result<(), Error> {
+    fn put(&self, key: String, val: HashedArrayTree<SearchResult>) -> Result<(), Error> {
         let mut cache = SEARCH_CACHE.lock().unwrap();
         cache.put(key, val);
         Ok(())
     }
 
-    fn get(&self, key: &str) -> Result<Option<Vec<SearchResult>>, Error> {
+    fn get(&self, key: &str) -> Result<Option<HashedArrayTree<SearchResult>>, Error> {
         let mut cache = SEARCH_CACHE.lock().unwrap();
         Ok(cache.get(key).map(|v| v.to_owned()))
     }
@@ -412,6 +413,7 @@ mod tests {
     use crate::data::sources::MockEntityDataSource;
     use crate::domain::entities::{Dimensions, Location};
     use anyhow::anyhow;
+    use hashed_array_tree::hat;
     use mockall::predicate::*;
     use tempfile::tempdir;
 
@@ -826,7 +828,7 @@ mod tests {
     #[test]
     fn test_all_assets_ok() {
         // arrange
-        let expected = vec![
+        let expected = hat![
             "monday1".to_owned(),
             "tuesday2".to_owned(),
             "wednesday3".to_owned(),
@@ -865,7 +867,7 @@ mod tests {
     #[test]
     fn test_query_by_tags_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
@@ -903,7 +905,7 @@ mod tests {
     #[test]
     fn test_query_before_date_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
@@ -943,7 +945,7 @@ mod tests {
     #[test]
     fn test_query_after_date_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
@@ -983,7 +985,7 @@ mod tests {
     #[test]
     fn test_query_date_range_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
@@ -1025,7 +1027,7 @@ mod tests {
     #[test]
     fn test_query_newborn_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
@@ -1065,7 +1067,7 @@ mod tests {
     #[test]
     fn test_query_by_locations_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
@@ -1103,7 +1105,7 @@ mod tests {
     #[test]
     fn test_query_by_media_type_ok() {
         // arrange
-        let results = vec![SearchResult {
+        let results = hat![SearchResult {
             asset_id: "cafebabe".to_owned(),
             filename: "img_1234.jpg".to_owned(),
             media_type: "image/jpeg".to_owned(),
@@ -1625,7 +1627,8 @@ mod tests {
         let value = result.unwrap();
         assert!(value.is_none());
 
-        let results: Vec<SearchResult> = vec![SearchResult::new(&asset1)];
+        let mut results = HashedArrayTree::<SearchResult>::new();
+        results.push(SearchResult::new(&asset1));
         let result = sut.put(cache_key.clone(), results.clone());
         assert!(result.is_ok());
 

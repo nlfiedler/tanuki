@@ -111,6 +111,7 @@ mod tests {
     use crate::domain::repositories::MockBlobRepository;
     use crate::domain::repositories::MockRecordRepository;
     use chrono::prelude::*;
+    use hashed_array_tree::{hat, HashedArrayTree};
     use mockall::predicate::*;
     use std::path::PathBuf;
 
@@ -122,7 +123,7 @@ mod tests {
         let mut records = MockRecordRepository::new();
         records
             .expect_all_assets()
-            .returning(move || Ok(vec![asset1_id.to_owned()]));
+            .returning(move || Ok(hat![asset1_id.to_owned()]));
         records
             .expect_get_asset_by_id()
             .with(eq(asset1_id))
@@ -175,7 +176,7 @@ mod tests {
         let digest3 = "sha256-d020066fd41970c2eebc51b1e712a500de4966cef0daf4890dc238d80cbaebb2";
         let mut records = MockRecordRepository::new();
         records.expect_all_assets().returning(move || {
-            Ok(vec![
+            Ok(hat![
                 asset1_id.to_owned(),
                 asset2_id.to_owned(),
                 asset3_id.to_owned(),

@@ -5,6 +5,7 @@ use crate::domain::entities::{Asset, LabeledCount, Location, SearchResult};
 use crate::domain::repositories::FetchedAssets;
 use anyhow::Error;
 use chrono::prelude::*;
+use hashed_array_tree::HashedArrayTree;
 #[cfg(test)]
 use mockall::automock;
 use std::path::Path;
@@ -32,23 +33,33 @@ pub trait EntityDataSource: Send + Sync {
     fn delete_asset(&self, asset_id: &str) -> Result<(), Error>;
 
     /// Search for assets that have all of the given tags.
-    fn query_by_tags(&self, tags: Vec<String>) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_tags(&self, tags: Vec<String>) -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Search for assets whose location fields match all of the given values.
     ///
     /// For example, searching for `["paris","france"]` will return assets that
     /// have both `"paris"` and `"france"` in the location column, such as in
     /// the `city` and `region` fields.
-    fn query_by_locations(&self, locations: Vec<String>) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_locations(
+        &self,
+        locations: Vec<String>,
+    ) -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Search for assets whose media type matches the one given.
-    fn query_by_media_type(&self, media_type: &str) -> Result<Vec<SearchResult>, Error>;
+    fn query_by_media_type(&self, media_type: &str)
+        -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Search for asssets whose best date is before the one given.
-    fn query_before_date(&self, before: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
+    fn query_before_date(
+        &self,
+        before: DateTime<Utc>,
+    ) -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Search for asssets whose best date is equal to or after the one given.
-    fn query_after_date(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
+    fn query_after_date(
+        &self,
+        after: DateTime<Utc>,
+    ) -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Search for assets whose best date is between the after and before dates.
     ///
@@ -57,10 +68,10 @@ pub trait EntityDataSource: Send + Sync {
         &self,
         after: DateTime<Utc>,
         before: DateTime<Utc>,
-    ) -> Result<Vec<SearchResult>, Error>;
+    ) -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Query for assets that lack any tags, caption, and location.
-    fn query_newborn(&self, after: DateTime<Utc>) -> Result<Vec<SearchResult>, Error>;
+    fn query_newborn(&self, after: DateTime<Utc>) -> Result<HashedArrayTree<SearchResult>, Error>;
 
     /// Return the number of assets stored in the data source.
     fn count_assets(&self) -> Result<u64, Error>;
@@ -85,7 +96,7 @@ pub trait EntityDataSource: Send + Sync {
     fn all_media_types(&self) -> Result<Vec<LabeledCount>, Error>;
 
     /// Return all asset identifiers in the data source.
-    fn all_assets(&self) -> Result<Vec<String>, Error>;
+    fn all_assets(&self) -> Result<HashedArrayTree<String>, Error>;
 
     /// Return all assets from the data source in no specific order.
     ///

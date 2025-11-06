@@ -4,6 +4,7 @@
 use crate::domain::entities::{SearchResult, SortField, SortOrder};
 use crate::domain::repositories::{RecordRepository, SearchRepository};
 use anyhow::Error;
+use hashed_array_tree::HashedArrayTree;
 use log::info;
 use query::Constraint;
 use std::cmp;
@@ -22,11 +23,11 @@ impl ScanAssets {
     }
 }
 
-impl super::UseCase<Vec<SearchResult>, Params> for ScanAssets {
-    fn call(&self, params: Params) -> Result<Vec<SearchResult>, Error> {
+impl super::UseCase<HashedArrayTree<SearchResult>, Params> for ScanAssets {
+    fn call(&self, params: Params) -> Result<HashedArrayTree<SearchResult>, Error> {
         use crate::domain::usecases::scan::query::Predicate;
         let cons = parser::parse_query(&params.query)?;
-        let mut results: Vec<SearchResult> = vec![];
+        let mut results = HashedArrayTree::<SearchResult>::new();
         if matches!(cons, Constraint::Empty) {
             return Ok(results);
         }
@@ -384,7 +385,9 @@ mod test {
         cache.expect_get().returning(move |_| {
             if cache_hit {
                 let assets = make_fetch_assets();
-                Ok(Some(vec![SearchResult::new(&assets[1])]))
+                let mut results = HashedArrayTree::<SearchResult>::new();
+                results.push(SearchResult::new(&assets[1]));
+                Ok(Some(results))
             } else {
                 cache_hit = true;
                 Ok(None)

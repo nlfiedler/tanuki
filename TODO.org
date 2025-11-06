@@ -116,7 +116,7 @@
 *** Find out if =mp4= crate can read GPS coords from videos
 **** Preview.app will display location information for videos
 *** Show additional file metadata (TIFF, EXIF, JFIF, IPTC)
-** TODO [#A] Uploads
+** Uploads
 *** file chooser returns =web_sys::File= which is not thread safe
 **** file chooser disabled until this can be resolved
 **** Leptos 0.7 requires values to be thread-safe

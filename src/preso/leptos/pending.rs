@@ -36,6 +36,7 @@ pub async fn recent(
     use crate::domain::entities::SearchResult;
     use crate::domain::usecases::recent::{Params, RecentImports};
     use crate::domain::usecases::UseCase;
+    use hashed_array_tree::HashedArrayTree;
     use server_fn::error::ServerFnErrorErr;
 
     let repo = super::ssr::db()?;
@@ -45,11 +46,11 @@ pub async fn recent(
         sort_field,
         sort_order,
     };
-    let mut results: Vec<SearchResult> = usecase
+    let mut results: HashedArrayTree<SearchResult> = usecase
         .call(params)
         .map_err(|e| ServerFnErrorErr::ServerError(e.to_string()))?;
     let total_count = results.len() as i32;
-    let results = super::paginate_vector(&mut results, offset, count);
+    let results = super::paginate_array(&mut results, offset, count);
     let last_page: i32 = if total_count == 0 {
         1
     } else {
