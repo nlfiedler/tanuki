@@ -1,0 +1,10 @@
+@use 'assets/bulma/bulma';
+
+body {
+	font-family: sans-serif;
+	text-align: center;
+}
+
+.selected {
+	border: medium solid hsl(217, 71%, 53%);
+}

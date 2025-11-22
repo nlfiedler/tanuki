@@ -1,0 +1,18 @@
+#
+# Define containers used in automated testing.
+#
+name: tanuki-test
+services:
+  couchdb:
+    image: couchdb:latest
+    container_name: tanuki_couchdb
+    environment:
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: admin
+    ports:
+      - "5984:5984"
+    logging:
+      options:
+        max-size: "1m"
+        max-file: "4"
+    restart: always

@@ -1,10 +1,150 @@
 * Action Items
-** Leptos refinements
-*** nav bar items should highlight for matching route (e.g. ~Browse~ highlights for =/=)
-*** make the elements in =forms.rs= more concise like in commit =eda66e2=
-*** should be able to refactor code to remove some =StoredValue= usage
-*** maybe use =LocalResource= to streamline some =Transition= that do lots of work
-*** find all =log:error= that could be handled better
+** Rewrite
+*** commit =230801d= was when old JS code was removed
+*** Action Items
+**** DONE learn what Mango (in CouchDB) offers over design documents
+***** could do most of the heavy lifting
+***** could do the ~all tags~ query using the =$all= operator
+***** use =db.find()= as opposed to =db.search()=
+**** TODO define database views [9/11]
+- [X] by_checksum
+- [X] by_date
+- [X] by_filename
+- [X] by_location
+- [X] by_mimetype
+- [X] by_tag
+- [ ] raw_locations
+- [ ] newborn
+- [X] all_locations
+- [X] all_tags
+- [X] all_years
+**** TODO ingest assets into the database [2/3]
+- [X] ensure temporary uploaded files are removed
+- [X] read original date/time from EXIF
+- [ ] attempt to read created date/time from videos
+**** TODO GraphQL [2/6]
+- [ ] assets count becomes stale (due to caching?)
+- [ ] look for ~GraphQL Code Generator~ to generate TypeScript types from GraphQL schema
+- [ ] consider installing ~Apollo DevTools~ in chrome
+- [X] set up Apollo Server to read from =schema.graphql=
+- [X] update schema to match current code
+- [ ] write tests for =/graphql= endpoint
+**** DONE basic upload page [8/8]
+- [X] allow selecting multiple files
+- [X] show file details in a table
+- [X] error when selecting files
+- [X] make ~Start Upload~ button reactive (show loading state during processing)
+- [X] disable ~Choose Files~ button while uploading
+- [X] get the last modified date/time
+- [X] upload files one-by-one
+- [X] show progress bar during upload process
+**** DONE learn about Web Components (generic HTML, JS, CSS)
+**** TODO implement drop zone on Upload page [0/3]
+- [ ] add drop zone functionality
+- [ ] have drop zone border change color when files hovering
+- [ ] merge dropped and chosen files into one table
+**** TODO learn GraphQL and TypeScript [/]
+- [ ] https://www.apollographql.com/tutorials/intro-typescript/02-graphql-basics
+- [ ] https://docs.nestjs.com/graphql/resolvers
+**** TODO rewrite the GraphQL resolvers using modern TypeScript techniques
+**** TODO browse assets [8/19]
+- [X] CouchDB needs to serde dates as Unix time
+- [X] implement ~queryByTags~ in record repository
+- [X] implement ~queryDateRange~ in record repository
+- [X] implement ~queryBeforeDate~ in record repository
+- [X] implement ~queryAfterDate~ in record repository
+- [X] implement ~queryByLocations~ in record repository
+- [X] implement ~queryByMediaType~ in record repository
+- [X] implement search usecase
+- [ ] add search GraphQL resolver
+- [ ] show page of search results as text
+- [ ] implement REST endpoints for image "thumbnail"
+- [ ] show results with thumbnails
+- [ ] tag selection
+- [ ] location selection
+- [ ] year selection
+- [ ] season selection
+- [ ] sort order
+- [ ] pagination
+- [ ] page size
+**** TODO pending page [0/12]
+- [ ] implement ~newborn~ index
+- [ ] implement ~raw locations~ index
+- [ ] time range buttons
+- [ ] pending items count
+- [ ] tags selection
+- [ ] location selection
+- [ ] date-time input
+- [ ] sort order selection
+- [ ] pagination
+- [ ] page size
+- [ ] selection
+- [ ] save changes
+**** TODO implement search cache repository [0/2]
+- [ ] put and get the results in =SearchAssets=
+- [ ] clear the cache in =ImportAssets.js=
+**** TODO consider how to cache thumbnails
+**** TODO database pagination support
+***** to improve search performance
+***** https://docs.couchdb.org/en/stable/ddocs/views/pagination.html
+**** TODO asset details page [0/7]
+- [ ] clicking search result navigates to details page
+- [ ] show preview of asset
+- [ ] show form with details
+- [ ] ~Save~ button
+- [ ] ~Download~ button
+- [ ] ~Replace~ button
+- [ ] left-right buttons
+**** TODO populate database from dump file
+***** consider how dump/load should be accessed (CLI, REST, webui, GraphQL)
+***** using GraphQL is more work than just =curl= and REST API
+**** TODO check browser console for issues
+**** TODO implement reverse geocoding [0/3]
+- [ ] use exif-reader to find out what GPS coords look like
+- [ ] write =GoogleMaps= data source to use HTTP to get city/region from GPS coords
+- [ ] update =ImportAsset= to make use of geocoding
+**** TODO import operation [0/3]
+- [ ] add =import= GraphQL mutation
+- [ ] have ~Import~ button on Upload page execute GraphQL mutation
+- [ ] make ~Import~ button reactive (show loading state during processing)
+**** TODO search query language
+**** TODO bulk edit support
+**** TODO consider how record repository can implement sorting and pagination
+**** TODO make sure ~helix~ and ~perforce~ do not appear anywhere
+**** TODO linting [0/5]
+- [ ] enable wrapping of long line
+- [ ] add JavaScript plugin
+- [ ] add TypeScript plugin
+- [ ] add =unicorn= plugin
+- [ ] add =eslint-plugin-tsdoc= plugin
+**** TODO test setup on Windows
+**** TODO polish [0/4]
+- [ ] switch light/dark in System Preferences does not cause page theme to change
+- [ ] replace CSS with Bulma
+- [ ] replace favicon
+- [ ] remove unused static files
+**** TODO update deployment [0/7]
+- [ ] ensure =NODE_ENV= is set to =production=
+- [ ] update =.dockerignore= and =.gitignore= files
+- [ ] replace =healthcheck= with something simple
+- [ ] update docker files (if Bun, consider =oven/bun= as base)
+- [ ] open ports for database access in docker
+- [ ] set up volume for CouchDB storage
+- [ ] update provisioning project
+*** Documentation changes
+**** TODO about the =.env= file and how Bun reads that by default, before anything else we do
+***** instead, use =.env.development= so =bun test= will _not_ read that automatically
+**** TODO improve =jsdoc= documentation [0/2]
+- [ ] associate ~global~ functions as belonging to certain source files
+- [ ] file in the huge gaping hole in the ~Home~ page
+**** TODO write new ADR(s)
+- CouchDB provides a web interface
+- JavaScript works well in the browser
+- GraphQL works best with JavaScript server
+**** TODO delete =doc/LEPTOS.md=
+**** TODO update README
+- install node.js
+- npm install
 ** Help
 *** write help pages for each of the main pages
 **** location string parsing
@@ -117,11 +257,7 @@
 **** Preview.app will display location information for videos
 *** Show additional file metadata (TIFF, EXIF, JFIF, IPTC)
 ** Uploads
-*** file chooser returns =web_sys::File= which is not thread safe
-**** file chooser disabled until this can be resolved
-**** Leptos 0.7 requires values to be thread-safe
-**** maybe wrap in =send_wrapper::SendWrapper=
-**** c.f. https://www.edinsonjim.idesoft.co/articles/building-a-file-uploader-using-leptos/
+*** make the uploads form super fancy like https://github.com/Swappea/solid-file-upload
 *** theoretically could show the thumbnail of images before uploading
 **** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
 ** Edit
@@ -150,12 +286,6 @@
 ***** when fetching a new page, the page widget would show a progress indicator
 ***** the "dropped" pages would be changed to consist of placeholders to free memory
 **** using carousel style navigation arrows?
-** DuckDB
-*** after restart DuckDB cannot find ~tanuki~ catalog
-**** need to stop app, run =duckdb= and then exit (it cleans up whatever was wrong)
-*** consider when to remove orphaned locations
-** SQLite
-*** consider when to remove orphaned locations
 ** Finding/removing duplicates
 *** many assets are very similar to each other, probably differ only in metadata
 *** find a means (histogram?) of detecting near-duplicates
@@ -163,15 +293,6 @@
 *** consider storage costs (currently under 100 GB)
 *** place basic auth server in front (Azure app gateway maybe?)
 *** consider deploying in read-only mode (sync would be tricky)
-** Dependencies
-*** latest =mp4= crate has an error with certain test fixture
-**** version =0.13= does not have the problem, but =0.14= does
-**** seems to not like something about the =100_1206.MOV= file
-#+begin_src
-actual: Err(mp4a box contains a box with a larger size than it)
-thread 'domain::usecases::tests::test_get_original_date' panicked at src/domain/usecases/mod.rs:339:9:
-assertion failed: actual.is_ok()
-#+end_src
 ** Attribute management
 *** screen for showing all tags, locations, years, mediaTypes, with count values
 **** selecting a tag or location offers a rename function
@@ -181,6 +302,7 @@ assertion failed: actual.is_ok()
 **** boolean argument ~yes~ to actually perform the delete
 **** if ~yes~ argument is false, reports what would be deleted
 ** Data Format Support
+*** PNG files apparently (can) have EXIF data, including orientation, check if this works
 *** Read =ID3= tags in audio files
 *** Detect time zone offset in EXIF data
 According to Wikipedia the 2.31 version of EXIF will support time-zone
@@ -263,25 +385,6 @@ include it in the database records.
 **** use EXAF similar to how zorigami does its database backup
 ** Bulk Export
 *** Easy selection and export of multiple images
-** Architecture Review
-*** Use async throughout
-**** could avoid the need for the =block_on()= function
-**** both =juniper= and =[leptos::server]= are already or support async fns
-**** all use cases could then be async, and the repos, and so on
-*** Large file upload
-**** split file into chunks, upload one-by-one, showing progress
-***** default to 8MB chunks, most images will be smaller than that
-***** partly this avoids any limitations actix has, but also reverse proxies like nginx
-*** GraphQL server
-**** consider https://github.com/async-graphql/async-graphql as alternative to juniper
-***** handles multipart requests (file uploads)
-***** provides actix-web integration
-** Scripting support
-*** Enable task automation, like =imagemagick= (rotate, resize, etc)
-*** potential scripting languages
-**** Janet (https://janet-lang.org) is easily embedded with one .c and .h file
-**** mlua (https://github.com/mlua-rs/mlua) wraps Lua in Rust, supports all versions
-**** hlua (https://github.com/tomaka/hlua) wraps Lua in Rust
 ** Easy publishing to sharing sites (e.g. Google Photos)
 *** option to auto-orient
 *** option to resize image
@@ -291,19 +394,7 @@ include it in the database records.
 *** option to save in ePub format for iOS
 *** button to open asset in file browser
 ** Easy import from external sites (e.g. google, instagram)
-** Multi-user support
-*** login page
-**** desktop app could use keychain to get access
-*** password reset (via email?)
-*** access restrictions
-*** private sets
-*** comments
-*** favorites
-*** likes
-*** rating levels (e.g. mature)
 * Documentation
-** Known issues
-*** Paletted PNGs are not supported by the =image= crate
 ** Date/Time values
 - Everything is treated as UTC
 - EXIF data may contain timezone data depending on version

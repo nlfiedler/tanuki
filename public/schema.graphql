@@ -1,0 +1,193 @@
+#
+# Copyright (c) 2018-2019 Nathan Fiedler
+#
+
+"""
+A date-time string at UTC, such as 2007-12-03T10:15:30Z, is compliant with the
+date-time format outlined in section 5.6 of the RFC 3339 profile of the ISO
+8601 standard for representation of dates and times using the Gregorian
+calendar. This scalar ignores leap seconds.
+"""
+scalar Date
+
+"Signed integers that are significantly larger than the `Int` type."
+scalar BigInt
+
+"Information regarding a location for an asset."
+type Location {
+  "Descriptive text concerning the location."
+  label: String
+  "Name of the city of which the asset is associated."
+  city: String
+  "Name of the state or province of which the asset is associated."
+  region: String
+}
+
+"""
+An `Asset` defines a single entity in the storage system. This typically
+refers to an image or video, but could by any type of file.
+"""
+type Asset {
+  "The unique asset identifier."
+  id: ID!
+  "Hash digest of the contents of the asset."
+  checksum: String!
+  "The original filename of the asset when it was imported."
+  filename: String!
+  "The size in bytes of the asset."
+  filesize: BigInt!
+  "Relative path of the asset within the asset store."
+  filepath: String!
+  "The date-time that best represents the asset."
+  datetime: Date!
+  "The media type of the asset, such as 'image/jpeg' or 'video/mp4'."
+  mediaType: String!
+  "The list of tags associated with this asset."
+  tags: [String!]!
+  "The date provided by the user."
+  userdate: Date
+  "A caption attributed to the asset."
+  caption: String
+  "Location information for the asset."
+  location: Location
+}
+
+"An attribute name and the number of assets it references."
+type LabeledCount {
+  "Label for an asset attribute, such as a tag or location."
+  label: String!
+  "Number of assets that are associated with this particular label."
+  count: Int!
+}
+
+"`SearchResult` represents a single result from a query."
+type SearchResult {
+  "The identifier of the matching asset."
+  id: ID!
+  "The date-time for the matching asset."
+  datetime: Date!
+  "The filename for the matching asset."
+  filename: String!
+  "The location for the matching asset, if available."
+  location: Location
+  "The media type of the asset, such as 'image/jpeg' or 'video/mp4'."
+  mediaType: String!
+}
+
+"`SearchMeta` is returned from the search query."
+type SearchMeta {
+  "The list of results retrieved via the query."
+  results: [SearchResult!]!
+  "The total number of matching assets in the system, useful for pagination."
+  count: Int!
+  "Last possible page of available assets matching the query."
+  lastPage: Int!
+}
+
+"Field of the search results on which to sort."
+enum SortField {
+  DATE
+  IDENTIFIER
+  FILENAME
+  MEDIATYPE
+}
+
+"""
+Order by which to sort the search results. If not specified in the search
+paramaters, the default is ascending.
+"""
+enum SortOrder {
+  ASCENDING
+  DESCENDING
+}
+
+"`SearchParams` defines the various parameters by which to search for assets."
+input SearchParams {
+  "Tags that an asset should have. All should match."
+  tags: [String]
+  "Locations of an asset. At least one must match."
+  locations: [String]
+  """
+  Date for filtering asset results. Only those assets whose canonical date
+  occurs _after_ this date will be returned.
+  """
+  after: Date
+  """
+  Date for filtering asset results. Only those assets whose canonical date
+  occurs _before_ this date will be returned.
+  """
+  before: Date
+  "Find assets whose filename (e.g. img_3011.jpg) matches the one given."
+  filename: String
+  "Find assets whose media type (e.g. image/jpeg) matches the one given."
+  mediaType: String
+  "The field of the search results on which to sort the list."
+  sortField: SortField
+  "The order in which to arrange the search results."
+  sortOrder: SortOrder
+}
+
+type Query {
+  "Retrieve an asset by its unique identifier."
+  asset(id: ID!): Asset
+  "Look for an asset by the hash digest (SHA256)."
+  lookup(checksum: String!): Asset
+  "Return the total number of assets in the system."
+  count: Int!
+  "Search for assets by the given parameters."
+  search(params: SearchParams!, count: Int = 10, offset: Int = 0): SearchMeta!
+  "Retrieve the list of locations and their associated asset count."
+  locations: [LabeledCount!]!
+  "Retrieve the list of tags and their associated asset count."
+  tags: [LabeledCount!]!
+  "Retrieve the list of years and their associated asset count."
+  years: [LabeledCount!]!
+}
+
+"Information regarding a location for an asset."
+input LocationInput {
+  "Descriptive text concerning the location."
+  label: String
+  "Name of the city of which the asset is associated."
+  city: String
+  "Name of the state or province of which the asset is associated."
+  region: String
+}
+
+"`AssetInput` is used to update the details of an asset."
+input AssetInput {
+  "New set of tags to replace the existing values."
+  tags: [String!]
+  """
+  Any value here overwrites the caption in the asset. If the caption contains
+  any #tags they will be merged with the tags in the asset (or in the input,
+  if given). If the caption contains an @location or @"location" then it will
+  replace the asset location `label`, if it has not been set. That is, the
+  caption only adds, never overwrites.
+  """
+  caption: String
+  """
+  Values defined here overwrite the fields in the location of the asset. This
+  field takes precedence over any @location value in the caption.
+  """
+  location: LocationInput
+  """
+  A date-time that overrides intrinsic values; a null value clears the custom
+  property and reverts back to the intrinsic value.
+  """
+  datetime: Date
+  "New media type, useful for fixing assets where detection guessed wrong."
+  mediaType: String
+  "Any value here overwrites the filename property."
+  filename: String
+}
+
+type Mutation {
+  "Update the asset with the given tags, caption, custom date, etc."
+  update(id: ID!, asset: AssetInput!): Asset!
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}

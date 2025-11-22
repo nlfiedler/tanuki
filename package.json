@@ -1,0 +1,68 @@
+{
+  "name": "tanuki",
+  "description": "Personal digital asset management system.",
+  "private": true,
+  "version": "1.0.0",
+  "author": "Nathan Fiedler",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nlfiedler/tanuki.git"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/nlfiedler/tanuki",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "exports": {
+    "./*": "./*"
+  },
+  "scripts": {
+    "start": "bun server/main.js",
+    "doc": "bun x jsdoc --recurse server",
+    "build": "bunx --bun vite build",
+    "preview": "bunx --bun vite preview"
+  },
+  "dependencies": {
+    "@apollo/client": "^4.0.9",
+    "@apollo/server": "^5.1.0",
+    "@as-integrations/express5": "^1.1.2",
+    "@solid-primitives/graphql": "^2.2.2",
+    "@solidjs/router": "^0.15.4",
+    "awilix": "^12.0.5",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.19",
+    "dotenv": "^17.2.3",
+    "exifreader": "^4.32.0",
+    "express": "^5.1.0",
+    "graphql": "^16.12.0",
+    "graphql-scalars": "^1.25.0",
+    "helmet": "^8.1.0",
+    "mime": "^4.1.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "nano": "^11.0.3",
+    "solid-js": "^1.9.9",
+    "ulid": "^3.0.1",
+    "vite-express": "^0.21.1",
+    "winston": "^3.18.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/bun": "^1.3.2",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-unicorn": "^62.0.0",
+    "jsdoc": "^4.0.5",
+    "sass-embedded": "^1.93.3",
+    "tempy": "^3.1.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.4",
+    "vite": "^7.1.7",
+    "vite-plugin-solid": "^2.11.8"
+  }
+}

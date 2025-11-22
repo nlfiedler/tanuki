@@ -54,6 +54,14 @@ to Apple Photos (see [DESIGN.md](./DESIGN.md)).
 
 Replace frontend Elm code with [ReasonML](https://reasonml.github.io/en/).
 
+## January 2019
+
+Translated some server code to [TypeScript](https://www.typescriptlang.org).
+
+## June 2019
+
+Reverted the [TypeScript](https://www.typescriptlang.org) code back to JavaScript.
+
 ## December 2019
 
 Started to rewrite the Node.js backend in [Rust](https://www.rust-lang.org).

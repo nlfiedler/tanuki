@@ -1,3 +1,36 @@
+# INCOMPLETE NEW CONTENT
+
+## Usage
+
+```bash
+npm install
+```
+
+Learn more on the [Solid Website](https://solidjs.com)
+
+## Available Scripts
+
+In the project directory, you can run:
+
+### `npm run dev`
+
+Runs the app in the development mode. Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+
+### `npm run build`
+
+Builds the app for production to the `dist` folder. It correctly bundles Solid in production mode and optimizes the build for the best performance. The build is minified and the filenames include the hashes. Your app is ready to be deployed!
+
+## Deployment
+
+See [documentation](https://vite.dev/guide/static-deploy.html)
+and [vite-express](https://github.com/szymmis/vite-express)
+
+## References
+
+* https://github.com/szymmis/vite-express -- easy integration of Vite and Express
+
+# OLD CONTENT BELOW
+
 # Tanuki
 
 An application for collecting, tagging, browsing, and searching assets, primarily images and videos. Written in [Rust](https://www.rust-lang.org) with a [Leptos](https://leptos.dev) powered front-end and limited [GraphQL](https://graphql.org) support. Metadata is stored in either [RocksDB](https://rocksdb.org), [DuckDB](https://duckdb.org), or [SQLite](https://sqlite.org) and file content is stored unmodified within a date/time formatted directory structure.

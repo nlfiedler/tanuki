@@ -1,0 +1,333 @@
+//
+// Copyright (c) 2025 Nathan Fiedler
+//
+import assert from 'node:assert';
+import nano from 'nano';
+import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
+import { Location } from 'tanuki/server/domain/entities/Location.ts';
+import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
+import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
+import { type SettingsRepository } from 'tanuki/server/domain/repositories/SettingsRepository.ts';
+import * as views from './couchdb_views.js';
+
+/**
+ * Repository for entity records stored in a CouchDB database.
+ */
+class CouchDBRecordRepository implements RecordRepository {
+  url: string;
+  dbname: string;
+  username: string;
+  password: string;
+  conn: any;
+  database: any;
+
+  constructor({ settingsRepository }: { settingsRepository: SettingsRepository; }) {
+    this.url = settingsRepository.get('DATABASE_URL');
+    assert.ok(this.url, 'missing DATABASE_URL environment variable');
+    this.dbname = settingsRepository.get('DATABASE_NAME');
+    assert.ok(this.dbname, 'missing DATABASE_NAME environment variable');
+    this.username = settingsRepository.get('DATABASE_USER');
+    assert.ok(this.username, 'missing DATABASE_USER environment variable');
+    this.password = settingsRepository.get('DATABASE_PASSWORD');
+    assert.ok(this.password, 'missing DATABASE_PASSWORD environment variable');
+    this.conn = nano(this.url);
+    this.database = null;
+  }
+
+  /**
+   * Destroy and create the database from scratch.
+   *
+   * @throws if `NODE_ENV` is set to 'production'.
+   */
+  async destroyAndCreate(): Promise<void> {
+    assert.notStrictEqual(process.env['NODE_ENV'], 'production', 'destroy() called in production!');
+    await this.conn.auth(this.username, this.password);
+    try {
+      await this.conn.db.destroy(this.dbname);
+    } catch {
+      // ignored
+    }
+    await this.createIfMissing();
+  }
+
+  /**
+   * Create the database if it is missing. This must be called to connect to
+   * the database and authenticate as a valid user before proceeding.
+   */
+  async createIfMissing(): Promise<void> {
+    try {
+      await this.conn.auth(this.username, this.password);
+      await this.conn.db.get(this.dbname);
+      this.database = this.conn.db.use(this.dbname);
+    } catch (err: any) {
+      if (err.statusCode == 404) {
+        await this.conn.db.create(this.dbname);
+        this.database = this.conn.db.use(this.dbname);
+      } else {
+        throw err;
+      }
+    }
+    await this.createIndices(assetsDefinition);
+  }
+
+  /**
+   * Add or update the design document.
+   * 
+   * @param index - complete CouchDB document to be inserted or updated.
+   * @returns true if the indices were created, false if updated.
+   */
+  async createIndices(index: any): Promise<void> {
+    try {
+      const oldDoc = await this.database.get(index._id);
+      if (oldDoc.version === undefined || oldDoc.version < index.version) {
+        // See commit 7f7a57d src/backend.js createIndices() for the old data
+        // migration logic that could be useful again some day; on the other
+        // hand, simply dumping and loading works well enough in most cases.
+        await this.database.insert({ ...index, _rev: oldDoc._rev });
+        // clean up any stale indices from previous versions
+        //
+        // missing from API, see https://github.com/apache/couchdb-nano/issues/25
+        //
+        // await this.database.viewCleanup()
+      }
+    } catch (err: any) {
+      if (err.statusCode === 404) {
+        await this.database.insert(index);
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  /** @inheritDoc */
+  async countAssets(): Promise<number> {
+    // list() returns 'id', 'key', and 'value' which is an object with 'rev'
+    const allDocs = await this.database.list();
+    // Count those documents that have id starting with "_design/" then subtract
+    // that from the total_rows to find the true asset count.
+    const designCount = allDocs.rows.reduce((acc: number, row: any) => {
+      return row.id.startsWith('_design/') ? acc + 1 : acc;
+    }, 0);
+    return allDocs.total_rows - designCount;
+  }
+
+  /** @inheritDoc */
+  async getAssetById(assetId: string): Promise<Asset | null> {
+    const asset = await this.database.get(assetId.toLowerCase());
+    if (asset !== null) {
+      asset.key = assetId;
+      convertDatesOut(asset);
+    }
+    return asset;
+  }
+
+  /** @inheritDoc */
+  async getAssetByDigest(digest: string): Promise<Asset | null> {
+    // should only be 1 result, but limit to 1 anyway
+    const res = await this.database.view('assets', 'by_checksum', {
+      key: digest.toLowerCase(), limit: 1, include_docs: true
+    });
+    if (res.rows.length > 0) {
+      return convertDatesOut({ key: res.rows[0].id, ...res.rows[0].doc });
+    }
+    return null;
+  }
+
+  /** @inheritDoc */
+  async putAsset(asset: Asset): Promise<void> {
+    // strip the `key` property since that will be the _id anyway
+    const { key, ...doc } = asset;
+    convertDatesIn(doc);
+    try {
+      const oldDoc = await this.database.get(key);
+      await this.database.insert({ ...doc, _id: key, _rev: oldDoc._rev });
+    } catch (err: any) {
+      if (err.statusCode === 404) {
+        await this.database.insert(doc, key);
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  /**
+   * Find those search results that have _all_ of the given search keys.
+   *
+   * @param view name of the design document to search.
+   * @param keys set of keys on which to query.
+   * @returns those search results that contain all given keys.
+   */
+  async queryAllKeys(view: string, keys: String[]): Promise<SearchResult[]> {
+    // find all documents that have any one of the given keys
+    const queryResults = await this.database.view('assets', view, {
+      keys: Array.from(keys).map(e => e.toLowerCase()).sort()
+    });
+    // reduce the documents to those that have all of the given keys
+    const keyCounts = queryResults.rows.reduce((acc: any, row: any) => {
+      const docId = row.id;
+      const count = acc.has(docId) ? acc.get(docId) : 0;
+      acc.set(docId, count + 1);
+      return acc;
+    }, new Map());
+    const matchingRows = queryResults.rows.filter((row: any) => {
+      return keyCounts.get(row.id) === keys.length;
+    });
+    // remove duplicate documents by sorting on the primary key
+    const uniqueResults = matchingRows.sort((a: any, b: any) => {
+      return a.id.localeCompare(b.id);
+    }).filter((row: any, idx: any, arr: any) => idx === 0 || row.id !== arr[idx - 1].id);
+    return uniqueResults.map((row: any) => convertViewResult(row));
+  }
+
+  /** @inheritDoc */
+  async queryByTags(tags: String[]): Promise<SearchResult[]> {
+    return this.queryAllKeys('by_tag', tags);
+  }
+
+  /** @inheritDoc */
+  async queryByLocations(locations: string[]): Promise<SearchResult[]> {
+    return this.queryAllKeys('by_location', locations);
+  }
+
+  /** @inheritDoc */
+  async queryByMediaType(media_type: string): Promise<SearchResult[]> {
+    const queryResults = await this.database.view('assets', 'by_mimetype', {
+      key: media_type.toLowerCase()
+    });
+    return queryResults.rows.map((row: any) => convertViewResult(row));
+  }
+
+  /** @inheritDoc */
+  async queryBeforeDate(before: Date): Promise<SearchResult[]> {
+    const queryResults = await this.database.view('assets', 'by_date', {
+      end_key: before.getTime() - 1
+    });
+    return queryResults.rows.map((row: any) => convertViewResult(row));
+  }
+
+  /** @inheritDoc */
+  async queryAfterDate(after: Date): Promise<SearchResult[]> {
+    const queryResults = await this.database.view('assets', 'by_date', {
+      start_key: after.getTime()
+    });
+    return queryResults.rows.map((row: any) => convertViewResult(row));
+  }
+
+  /** @inheritDoc */
+  async queryDateRange(after: Date, before: Date): Promise<SearchResult[]> {
+    const queryResults = await this.database.view('assets', 'by_date', {
+      start_key: after.getTime(),
+      end_key: before.getTime() - 1
+    });
+    return queryResults.rows.map((row: any) => convertViewResult(row));
+  }
+}
+
+/**
+ * CouchDB map/reduce view result.
+ */
+type ViewResult = {
+  id: string,
+  value: [
+    // best date
+    number,
+    // filename
+    string,
+    // location
+    Location | null,
+    // mediaType
+    string
+  ];
+};
+
+// Define the map/reduce query views, whose functions are defined separately to
+// allow writing pure JavaScript without the linters complaining.
+const assetsDefinition = {
+  _id: '_design/assets',
+  // our monotonically increasing version number for tracking schema changes
+  version: 1,
+  views: {
+    by_checksum: {
+      map: views.generateView(views.by_checksum)
+    },
+    by_date: {
+      map: views.generateView(views.by_date)
+    },
+    by_filename: {
+      map: views.generateView(views.by_filename)
+    },
+    by_location: {
+      map: views.generateView(views.by_location)
+    },
+    by_mimetype: {
+      map: views.generateView(views.by_mimetype)
+    },
+    by_tag: {
+      map: views.generateView(views.by_tag)
+    },
+    all_locations: {
+      map: views.generateView(views.all_locations),
+      reduce: '_count'
+    },
+    all_tags: {
+      map: views.generateView(views.all_tags),
+      reduce: '_count'
+    },
+    all_years: {
+      map: views.generateView(views.all_years),
+      reduce: '_count'
+    }
+  }
+};
+
+/**
+ * Convert the date fields in the document (in-place) from Date to number.
+ * 
+ * @param doc - Asset-like record to write to CouchDB, modified in-place.
+ * @returns the object for convenience.
+ */
+function convertDatesIn(doc: any): any {
+  doc.importDate = doc.importDate.getTime();
+  if (doc.userDate !== null) {
+    doc.userDate = doc.userDate.getTime();
+  }
+  if (doc.originalDate !== null) {
+    doc.originalDate = doc.originalDate.getTime();
+  }
+  return doc;
+}
+
+/**
+ * Convert the date fields in the document (in-place) from number to Date.
+ * 
+ * @param doc - database record reader from CouchDB, modified in-place.
+ * @returns the object for convenience.
+ */
+function convertDatesOut(doc: any): any {
+  doc.importDate = new Date(doc.importDate);
+  if (doc.userDate !== null) {
+    doc.userDate = new Date(doc.userDate);
+  }
+  if (doc.originalDate !== null) {
+    doc.originalDate = new Date(doc.originalDate);
+  }
+  return doc;
+}
+
+/**
+ * Convert the map/reduce view result into a SearchResult.
+ *
+ * @param {Object} result - row from the results of a map/reduce query.
+ * @return result as an object.
+ */
+function convertViewResult(result: ViewResult): SearchResult {
+  return new SearchResult(
+    result.id,
+    result.value[1],
+    result.value[3],
+    result.value[2],
+    new Date(result.value[0])
+  );
+}
+
+export { CouchDBRecordRepository };

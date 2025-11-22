@@ -1,0 +1,57 @@
+//
+// Copyright (c) 2025 Nathan Fiedler
+//
+import http from 'node:http';
+import express from 'express';
+import morgan from 'morgan';
+import helmet from "helmet";
+import ViteExpress from 'vite-express';
+import { ApolloServer } from '@apollo/server';
+import { expressMiddleware } from '@as-integrations/express5';
+import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
+import cors from 'cors';
+// load the environment settings before anything else
+import 'tanuki/server/env.ts';
+import logger from 'tanuki/server/logger.ts';
+import container from 'tanuki/server/container.ts';
+import uploadRouter from 'tanuki/server/preso/routes/upload.ts';
+import { typeDefs, resolvers } from 'tanuki/server/preso/graphql/schema.ts';
+
+// (asynchronously) prepare the database
+const database = container.resolve('recordRepository');
+database.createIfMissing().then(() => {
+  logger.info('database initialization complete');
+}).catch((err: any) => {
+  logger.error('database initialization error:', err);
+});
+
+// set up Express.js application
+const app = express();
+app.use(helmet({
+  // allow GraphQL to work properly
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: false,
+}));
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
+} else {
+  app.use(morgan('combined'));
+}
+
+// set up Apollo Server
+const httpServer = http.createServer(app);
+const graphqlServer = new ApolloServer({
+  typeDefs,
+  resolvers,
+  plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+});
+await graphqlServer.start();
+
+app.get('/liveness', (req, res) => {
+  res.status(200).json({ status: 'healthy', uptime: process.uptime() });
+});
+app.use('/graphql', cors(), express.json(), expressMiddleware(graphqlServer));
+app.use('/upload', uploadRouter);
+
+const port = 3000;
+ViteExpress.listen(app, port, () => logger.info(`Server listening at ${port}`));

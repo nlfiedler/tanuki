@@ -1,3 +1,7 @@
 .git
+node_modules
+dist
+dist-ssr
+out
 target
 tmp
