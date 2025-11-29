@@ -19,9 +19,8 @@ dist-ssr
 *.local
 out
 
-# Rust build artifacts
-Cargo.lock
-target
+# build output
+generated
 
 # environment configuration
 .env

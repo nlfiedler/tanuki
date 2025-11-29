@@ -27,26 +27,37 @@ describe('CouchDBRecordRepository', function () {
     const settingsRepository = new EnvSettingsRepository();
     const sut = new CouchDBRecordRepository({ settingsRepository });
     await sut.destroyAndCreate();
-    const doc = new Asset('rabbit');
-    doc.checksum = 'sha1-cafed00d';
+    // use a semi-realistic asset identifier with mixed case
+    const original = new Asset('MjAxMi8wOC8xNS8wMDB4YWw2czQxYWN0YXY5d2V2Z2VtbXZyYS5qcGc=');
+    original.setChecksum('sha1-c0ff89017fb951c58aab5e585364a15d359fa2c2');
+    original.setUserDate(new Date(2003, 7, 30, 12, 0));
     // act
-    await sut.putAsset(doc);
+    await sut.putAsset(original);
     // assert
-    let asset = await sut.getAssetById(doc.key);
-    expect(asset).toBeDefined();
-    expect(asset!.key).toEqual('rabbit');
-    expect(asset!.checksum).toEqual(doc.checksum);
-    expect(asset!.importDate).toEqual(doc.importDate);
+    const fetched = await sut.getAssetById(original.key);
+    expect(fetched).toBeDefined();
+    expect(fetched!.key).toEqual('MjAxMi8wOC8xNS8wMDB4YWw2czQxYWN0YXY5d2V2Z2VtbXZyYS5qcGc=');
+    expect(fetched!.checksum).toEqual('sha1-c0ff89017fb951c58aab5e585364a15d359fa2c2');
+    expect(fetched!.userDate?.getFullYear()).toEqual(2003);
     let count = await sut.countAssets();
     expect(count).toEqual(1);
 
-    // update the document
-    const newdoc = Object.assign({}, doc, { tags: ['rabbit', 'bunny'] });
-    await sut.putAsset(newdoc);
-    asset = await sut.getAssetById(doc.key);
-    expect(asset).toBeDefined();
-    expect(asset!.key).toEqual('rabbit');
-    expect(asset!.checksum).toEqual(doc.checksum);
+    // update the document via the setters on the Asset entity to ensure the
+    // object returned from CouchDB is an Asset entity and not just a plain
+    // JavaScript object with the appropriate properties
+    fetched?.setTags(['bunny', 'rabbit']).setCaption('playing at the zoo').setLocation(Location.parse('Oakland, CA'));
+    await sut.putAsset(fetched!);
+    const updated = await sut.getAssetById(original.key);
+    expect(updated).toBeDefined();
+    expect(updated!.key).toEqual('MjAxMi8wOC8xNS8wMDB4YWw2czQxYWN0YXY5d2V2Z2VtbXZyYS5qcGc=');
+    expect(updated!.checksum).toEqual('sha1-c0ff89017fb951c58aab5e585364a15d359fa2c2');
+    expect(updated!.tags).toHaveLength(2);
+    expect(updated!.tags[0]).toEqual('bunny');
+    expect(updated!.tags[1]).toEqual('rabbit');
+    expect(updated!.caption).toEqual('playing at the zoo');
+    expect(updated!.location).toEqual(Location.parse('Oakland, CA'));
+    // invoke bestDate() to ensure the object returned is really an Asset entity
+    expect(updated!.bestDate().getFullYear()).toEqual(2003);
     count = await sut.countAssets();
     expect(count).toEqual(1);
   });
@@ -66,6 +77,56 @@ describe('CouchDBRecordRepository', function () {
     expect(asset!.key).toEqual('eagle');
     expect(asset!.checksum).toEqual(doc.checksum);
     expect(asset!.importDate).toEqual(doc.importDate);
+  });
+
+  test('should retrieve tags and their counts', async function () {
+    // setup
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new CouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    await sut.putAsset(buildBasicAsset('basic123')); // tags: cat, dog
+    await sut.putAsset(buildBasicAsset('monday6').setTags(['bird', 'dog']));
+    await sut.putAsset(buildBasicAsset('tuesday7').setTags(['CAT', 'mouse']));
+    await sut.putAsset(buildBasicAsset('wednesday8').setTags(['Cat', 'bird']));
+    await sut.putAsset(buildBasicAsset('thursday9').setTags(['dog', 'mouse']));
+    const allTags = await sut.allTags();
+    expect(allTags).toHaveLength(4);
+    expect(allTags[0]?.label).toEqual('bird');
+    expect(allTags[0]?.count).toEqual(2);
+    expect(allTags[1]?.label).toEqual('cat');
+    expect(allTags[1]?.count).toEqual(3);
+    expect(allTags[2]?.label).toEqual('dog');
+    expect(allTags[2]?.count).toEqual(3);
+    expect(allTags[3]?.label).toEqual('mouse');
+    expect(allTags[3]?.count).toEqual(2);
+  });
+
+  test('should retrieve locations and their counts', async function () {
+    // setup
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new CouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    await sut.putAsset(buildBasicAsset('basic123')); // location: hawaii
+    await sut.putAsset(buildBasicAsset('monday6').setLocation(Location.parse('Paris, France')));
+    await sut.putAsset(buildBasicAsset('tuesday7').setLocation(Location.parse('Paris, Texas')));
+    await sut.putAsset(buildBasicAsset('wednesday8').setLocation(Location.parse('Dallas, Texas')));
+    await sut.putAsset(buildBasicAsset('thursday9').setLocation(Location.parse('Oahu, Hawaii')));
+    const allTags = await sut.allLocations();
+    expect(allTags).toHaveLength(6);
+    expect(allTags[0]?.label).toEqual('dallas');
+    expect(allTags[0]?.count).toEqual(1);
+    expect(allTags[1]?.label).toEqual('france');
+    expect(allTags[1]?.count).toEqual(1);
+    expect(allTags[2]?.label).toEqual('hawaii');
+    expect(allTags[2]?.count).toEqual(2);
+    expect(allTags[3]?.label).toEqual('oahu');
+    expect(allTags[3]?.count).toEqual(1);
+    expect(allTags[4]?.label).toEqual('paris');
+    expect(allTags[4]?.count).toEqual(2);
+    expect(allTags[5]?.label).toEqual('texas');
+    expect(allTags[5]?.count).toEqual(2);
   });
 
   test('should retrieve documents by tags', async function () {
@@ -212,6 +273,48 @@ describe('CouchDBRecordRepository', function () {
     expect(between_1940_2013.some((l) => l.assetId == 'year_2011')).toBeTrue();
   });
 
+  test('should retrieve unique location records', async function () {
+    // setup
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new CouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    // zero assets
+    const zero = await sut.rawLocations();
+    expect(zero).toHaveLength(0);
+
+    // one asset
+    await sut.putAsset(buildBasicAsset('basic113'));
+    const one = await sut.rawLocations();
+    expect(one).toHaveLength(1);
+    expect(one[0]?.label == 'hawaii');
+
+    // multiple assets
+    await sut.putAsset(buildBasicAsset('monday6').setFilename('img_2345.jpg').
+      setLocation(Location.parse('Paris, France')));
+    await sut.putAsset(buildBasicAsset('monday8').setFilename('img_6543.jpg').
+      setLocation(Location.parse('Nice, France')));
+    await sut.putAsset(buildBasicAsset('tuesday7').setFilename('img_3456.jpg').
+      setLocation(Location.parse('Paris, France')));
+    await sut.putAsset(buildBasicAsset('wednesday8').setFilename('img_4567.jpg').
+      setLocation(Location.parse('museum; Paris, France')));
+    await sut.putAsset(buildBasicAsset('thursday9').setFilename('img_5678.jpg').
+      setLocation(Location.fromParts('', 'Oahu', 'Hawaii')));
+    await sut.putAsset(buildBasicAsset('friday10').setFilename('img_6789.jpg').
+      setLocation(Location.parse('museum')));
+    await sut.putAsset(buildBasicAsset('friday11').setFilename('img_6879.jpg').
+      setLocation(Location.fromParts('garden', 'Portland', 'OR')));
+    const single = await sut.rawLocations();
+    expect(single).toHaveLength(7);
+    expect(single.some((l) => l.toString() == 'Nice, France')).toBeTrue();
+    expect(single.some((l) => l.toString() == 'Oahu, Hawaii')).toBeTrue();
+    expect(single.some((l) => l.toString() == 'Paris, France')).toBeTrue();
+    expect(single.some((l) => l.toString() == 'garden; Portland, OR')).toBeTrue();
+    expect(single.some((l) => l.toString() == 'hawaii')).toBeTrue();
+    expect(single.some((l) => l.toString() == 'museum')).toBeTrue();
+    expect(single.some((l) => l.toString() == 'museum; Paris, France')).toBeTrue();
+  });
+
   test('should retrieve documents by location', async function () {
     // setup
     const settingsRepository = new EnvSettingsRepository();
@@ -294,6 +397,49 @@ describe('CouchDBRecordRepository', function () {
     expect(multi.some((l) => l.assetId == 'basic113')).toBeTrue();
     expect(multi.some((l) => l.assetId == 'wednesday8')).toBeTrue();
   });
+
+  test('should retrieve pending documents', async function () {
+    // setup
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new CouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    // zero assets
+    expect(await sut.queryNewborn(new Date(1900, 0, 1))).toHaveLength(0);
+
+    // one old asset
+    await sut.putAsset(buildBasicAsset('basic113'));
+    const one = await sut.queryNewborn(new Date(1900, 0, 1));
+    expect(one).toHaveLength(0);
+
+    // multiple assets after 1900
+    await sut.putAsset(buildBabyAsset('personN', new Date(1973, 4, 13)));
+    await sut.putAsset(buildBabyAsset('personA', new Date(1972, 5, 9)));
+    await sut.putAsset(buildBabyAsset('personC', new Date(2005, 9, 14)));
+    await sut.putAsset(buildBabyAsset('personJ', new Date(2009, 3, 26)));
+    await sut.putAsset(buildBasicAsset('monday6'));
+    await sut.putAsset(buildBasicAsset('tuesday7'));
+    await sut.putAsset(buildBasicAsset('wednesday8'));
+    const nineteen = await sut.queryNewborn(new Date(1900, 0, 1));
+    expect(nineteen).toHaveLength(4);
+    expect(nineteen.some((l) => l.assetId == 'personN')).toBeTrue();
+    expect(nineteen.some((l) => l.assetId == 'personA')).toBeTrue();
+    expect(nineteen.some((l) => l.assetId == 'personC')).toBeTrue();
+    expect(nineteen.some((l) => l.assetId == 'personJ')).toBeTrue();
+
+    // multiple assets after 2000
+    await sut.putAsset(buildBabyAsset('personN', new Date(1973, 4, 13)));
+    await sut.putAsset(buildBabyAsset('personA', new Date(1972, 5, 9)));
+    await sut.putAsset(buildBabyAsset('personC', new Date(2005, 9, 14)));
+    await sut.putAsset(buildBabyAsset('personJ', new Date(2009, 3, 26)));
+    await sut.putAsset(buildBasicAsset('monday6'));
+    await sut.putAsset(buildBasicAsset('tuesday7'));
+    await sut.putAsset(buildBasicAsset('wednesday8'));
+    const millenium = await sut.queryNewborn(new Date(2000, 0, 1));
+    expect(millenium).toHaveLength(2);
+    expect(millenium.some((l) => l.assetId == 'personC')).toBeTrue();
+    expect(millenium.some((l) => l.assetId == 'personJ')).toBeTrue();
+  });
 });
 
 /**
@@ -315,6 +461,23 @@ function buildBasicAsset(key: string): Asset {
   asset.importDate = importDate;
   asset.caption = '#cat and #dog @hawaii';
   asset.location = new Location('hawaii');
+  return asset;
+}
+
+/**
+ * Construct an asset that would appear in the newborn results.
+ * 
+ * @param key - unique key for the asset.
+ * @returns newly generated asset.
+ */
+function buildBabyAsset(key: string, importDate: Date): Asset {
+  const checksum = computeKeyHash(key);
+  const asset = new Asset(key);
+  asset.checksum = checksum;
+  asset.filename = 'img_2345.jpg';
+  asset.byteLength = 2048;
+  asset.mediaType = 'image/jpeg';
+  asset.importDate = importDate;
   return asset;
 }
 

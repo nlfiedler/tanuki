@@ -1,12 +1,12 @@
 #
-# Copyright (c) 2018-2019 Nathan Fiedler
+# Copyright (c) 2018 Nathan Fiedler
 #
 
 """
 A date-time string at UTC, such as 2007-12-03T10:15:30Z, is compliant with the
-date-time format outlined in section 5.6 of the RFC 3339 profile of the ISO
-8601 standard for representation of dates and times using the Gregorian
-calendar. This scalar ignores leap seconds.
+date-time format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601
+standard for representation of dates and times using the Gregorian calendar.
+This scalar ignores leap seconds.
 """
 scalar Date
 
@@ -24,8 +24,8 @@ type Location {
 }
 
 """
-An `Asset` defines a single entity in the storage system. This typically
-refers to an image or video, but could by any type of file.
+An `Asset` defines a single entity in the storage system. This typically refers
+to an image or video, but could by any type of file.
 """
 type Asset {
   "The unique asset identifier."
@@ -35,17 +35,13 @@ type Asset {
   "The original filename of the asset when it was imported."
   filename: String!
   "The size in bytes of the asset."
-  filesize: BigInt!
-  "Relative path of the asset within the asset store."
-  filepath: String!
+  byteLength: BigInt!
   "The date-time that best represents the asset."
   datetime: Date!
   "The media type of the asset, such as 'image/jpeg' or 'video/mp4'."
   mediaType: String!
   "The list of tags associated with this asset."
   tags: [String!]!
-  "The date provided by the user."
-  userdate: Date
   "A caption attributed to the asset."
   caption: String
   "Location information for the asset."
@@ -53,7 +49,7 @@ type Asset {
 }
 
 "An attribute name and the number of assets it references."
-type LabeledCount {
+type AttributeCount {
   "Label for an asset attribute, such as a tag or location."
   label: String!
   "Number of assets that are associated with this particular label."
@@ -63,7 +59,7 @@ type LabeledCount {
 "`SearchResult` represents a single result from a query."
 type SearchResult {
   "The identifier of the matching asset."
-  id: ID!
+  assetId: String!
   "The date-time for the matching asset."
   datetime: Date!
   "The filename for the matching asset."
@@ -101,12 +97,22 @@ enum SortOrder {
   DESCENDING
 }
 
+"`PendingParams` defines the parameters by which to find pending assets."
+input PendingParams {
+  "Return pending assets that were imported after this date-time."
+  after: Date
+  "The field of the search results on which to sort the list."
+  sortField: SortField
+  "The order in which to arrange the search results."
+  sortOrder: SortOrder
+}
+
 "`SearchParams` defines the various parameters by which to search for assets."
 input SearchParams {
   "Tags that an asset should have. All should match."
-  tags: [String]
+  tags: [String!]
   "Locations of an asset. At least one must match."
-  locations: [String]
+  locations: [String!]
   """
   Date for filtering asset results. Only those assets whose canonical date
   occurs _after_ this date will be returned.
@@ -134,14 +140,21 @@ type Query {
   lookup(checksum: String!): Asset
   "Return the total number of assets in the system."
   count: Int!
+  "Search for pending assets after a given date-time."
+  pending(params: PendingParams!, offset: Int, limit: Int): SearchMeta!
   "Search for assets by the given parameters."
-  search(params: SearchParams!, count: Int = 10, offset: Int = 0): SearchMeta!
-  "Retrieve the list of locations and their associated asset count."
-  locations: [LabeledCount!]!
+  search(params: SearchParams!, offset: Int, limit: Int): SearchMeta!
+  "Retrieve the full location records with label, city, and region."
+  locationRecords: [Location!]!
+  """
+  Retrieve location parts and their associated asset count. The parts include
+  the location label, city, and region, each emitted separately.
+  """
+  locationParts: [AttributeCount!]!
   "Retrieve the list of tags and their associated asset count."
-  tags: [LabeledCount!]!
+  tags: [AttributeCount!]!
   "Retrieve the list of years and their associated asset count."
-  years: [LabeledCount!]!
+  years: [AttributeCount!]!
 }
 
 "Information regarding a location for an asset."
@@ -160,8 +173,8 @@ input AssetInput {
   tags: [String!]
   """
   Any value here overwrites the caption in the asset. If the caption contains
-  any #tags they will be merged with the tags in the asset (or in the input,
-  if given). If the caption contains an @location or @"location" then it will
+  any #tags they will be merged with the tags in the asset (or in the input, if
+  given). If the caption contains an @location or @"location" then it will
   replace the asset location `label`, if it has not been set. That is, the
   caption only adds, never overwrites.
   """

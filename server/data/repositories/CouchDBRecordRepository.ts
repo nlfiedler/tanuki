@@ -4,6 +4,7 @@
 import assert from 'node:assert';
 import nano from 'nano';
 import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
+import { AttributeCount } from 'tanuki/server/domain/entities/AttributeCount.ts';
 import { Location } from 'tanuki/server/domain/entities/Location.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
@@ -113,12 +114,12 @@ class CouchDBRecordRepository implements RecordRepository {
 
   /** @inheritDoc */
   async getAssetById(assetId: string): Promise<Asset | null> {
-    const asset = await this.database.get(assetId.toLowerCase());
+    const asset = await this.database.get(assetId);
     if (asset !== null) {
       asset.key = assetId;
-      convertDatesOut(asset);
+      return assetFromDocument(asset);
     }
-    return asset;
+    return null;
   }
 
   /** @inheritDoc */
@@ -128,10 +129,42 @@ class CouchDBRecordRepository implements RecordRepository {
       key: digest.toLowerCase(), limit: 1, include_docs: true
     });
     if (res.rows.length > 0) {
-      return convertDatesOut({ key: res.rows[0].id, ...res.rows[0].doc });
+      return assetFromDocument({ key: res.rows[0].id, ...res.rows[0].doc });
     }
     return null;
   }
+
+  /** @inheritDoc */
+  async allTags(): Promise<AttributeCount[]> {
+    const res = await this.database.view('assets', 'all_tags', {
+      group_level: 1
+    });
+    return res.rows.map((row: { key: string, value: number; }) => {
+      return new AttributeCount(row.key, row.value);
+    });
+  }
+
+  /** @inheritDoc */
+  async allLocations(): Promise<AttributeCount[]> {
+    const res = await this.database.view('assets', 'all_locations', {
+      group_level: 1
+    });
+    return res.rows.map((row: { key: string, value: number; }) => {
+      return new AttributeCount(row.key, row.value);
+    });
+  }
+
+  /** @inheritDoc */
+  async rawLocations(): Promise<Location[]> {
+    const res = await this.database.view('assets', 'raw_locations', {
+      group_level: 1
+    });
+    return res.rows.map((row: { key: string, value: number; }) => {
+      const parts = row.key.split('\t');
+      return Location.fromParts(parts[0] || '', parts[1] || '', parts[2] || '');
+    });
+  }
+
 
   /** @inheritDoc */
   async putAsset(asset: Asset): Promise<void> {
@@ -221,6 +254,14 @@ class CouchDBRecordRepository implements RecordRepository {
     });
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
+
+  /** @inheritDoc */
+  async queryNewborn(after: Date): Promise<SearchResult[]> {
+    const queryResults = await this.database.view('assets', 'newborn', {
+      start_key: after.getTime()
+    });
+    return queryResults.rows.map((row: any) => convertViewResult(row));
+  }
 }
 
 /**
@@ -244,8 +285,8 @@ type ViewResult = {
 // allow writing pure JavaScript without the linters complaining.
 const assetsDefinition = {
   _id: '_design/assets',
-  // our monotonically increasing version number for tracking schema changes
-  version: 1,
+  // monotonically increasing version number for tracking schema changes
+  version: 3,
   views: {
     by_checksum: {
       map: views.generateView(views.by_checksum)
@@ -264,6 +305,13 @@ const assetsDefinition = {
     },
     by_tag: {
       map: views.generateView(views.by_tag)
+    },
+    newborn: {
+      map: views.generateView(views.newborn)
+    },
+    raw_locations: {
+      map: views.generateView(views.raw_locations),
+      reduce: '_count'
     },
     all_locations: {
       map: views.generateView(views.all_locations),
@@ -298,20 +346,34 @@ function convertDatesIn(doc: any): any {
 }
 
 /**
- * Convert the date fields in the document (in-place) from number to Date.
+ * Create an Asset entity from the given CouchDB document.
  * 
- * @param doc - database record reader from CouchDB, modified in-place.
- * @returns the object for convenience.
+ * @param doc - database record reader from CouchDB.
+ * @returns converted asset entity.
  */
-function convertDatesOut(doc: any): any {
-  doc.importDate = new Date(doc.importDate);
+function assetFromDocument(doc: any): any {
+  const asset = new Asset(doc.key);
+  asset.setChecksum(doc.checksum);
+  asset.setFilename(doc.filename);
+  asset.setByteLength(doc.byteLength);
+  asset.setMediaType(doc.mediaType);
+  if (doc.tags) {
+    asset.setTags(doc.tags);
+  }
+  asset.setImportDate(new Date(doc.importDate));
+  if (doc.caption) {
+    asset.setCaption(doc.caption);
+  }
+  if (doc.location) {
+    asset.setLocation(doc.location);
+  }
   if (doc.userDate !== null) {
-    doc.userDate = new Date(doc.userDate);
+    asset.setUserDate(new Date(doc.userDate));
   }
   if (doc.originalDate !== null) {
-    doc.originalDate = new Date(doc.originalDate);
+    asset.setOriginalDate(new Date(doc.originalDate));
   }
-  return doc;
+  return asset;
 }
 
 /**

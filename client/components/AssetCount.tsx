@@ -1,22 +1,12 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { createResource, Show, Suspense } from 'solid-js'
+import { createResource, Suspense } from 'solid-js'
 import { type TypedDocumentNode, gql } from '@apollo/client'
-import { useApolloClient } from './ApolloProvider'
+import { useApolloClient } from '../ApolloProvider'
+import { type Query } from 'tanuki/generated/graphql.ts'
 
-type AssetCountQuery = {
-  count: 'Int'
-}
-
-type AssetCountQueryVariables = Record<string, never>
-
-type AssetCountQueryType = TypedDocumentNode<
-  AssetCountQuery,
-  AssetCountQueryVariables
->
-
-const GET_ASSET_COUNT: AssetCountQueryType = gql`
+const GET_ASSET_COUNT: TypedDocumentNode<Query, Record<string, never>> = gql`
   query {
     count
   }

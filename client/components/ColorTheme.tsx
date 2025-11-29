@@ -2,26 +2,22 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import { createSignal, createEffect } from 'solid-js'
-import useClickOutside from './useClickOutside.js'
+import useClickOutside from '../hooks/useClickOutside.js'
 
 function ColorTheme() {
+  const [theme, setTheme] = createSignal('light')
   const [dropdownOpen, setDropdownOpen] = createSignal(false)
   let dropdownRef: HTMLDivElement | undefined
-  const [theme, setTheme] = createSignal('light')
-
-  const setDropdownRef = (el: HTMLDivElement) => (dropdownRef = el)
   useClickOutside(
     () => dropdownRef,
     () => setDropdownOpen(false)
   )
-
   createEffect(() => {
     document.documentElement.dataset.theme = dataForTheme(theme())
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('theme', theme())
     }
   })
-
   if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
     setTheme(localStorage.getItem('theme')!)
   } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -33,7 +29,7 @@ function ColorTheme() {
   return (
     <div
       class="dropdown is-right"
-      ref={setDropdownRef}
+      ref={(el: HTMLDivElement) => (dropdownRef = el)}
       class:is-active={dropdownOpen()}
     >
       <div class="dropdown-trigger">

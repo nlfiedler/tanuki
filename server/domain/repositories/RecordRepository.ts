@@ -2,6 +2,8 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
+import { AttributeCount } from '../entities/AttributeCount.ts';
+import { Location } from 'tanuki/server/domain/entities/Location.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
 
 /**
@@ -33,6 +35,22 @@ interface RecordRepository {
    * @returns asset entity or null if not found.
    */
   getAssetByDigest(digest: string): Promise<Asset | null>;
+
+  /**
+   * Return all of the tags and the number of assets associated with each.
+   */
+  allTags(): Promise<AttributeCount[]>;
+
+  /**
+   * Return all of the location parts and the number of assets associated with
+   * each individual part (label separated from city separated from region).
+   */
+  allLocations(): Promise<AttributeCount[]>;
+
+  /**
+   * Return all of the location records (label, city, and region together).
+   */
+  rawLocations(): Promise<Location[]>;
 
   /**
    * Store the asset record in the database either as a new record or updating
@@ -80,6 +98,12 @@ interface RecordRepository {
    * As with `queryAfterDate()`, the after value is inclusive.
    */
   queryDateRange(after: Date, before: Date): Promise<SearchResult[]>;
+
+  /**
+   * Query for assets that lack any tags, caption, and location that were
+   * imported after a given date-time.
+   */
+  queryNewborn(after: Date): Promise<SearchResult[]>;
 }
 
 export { type RecordRepository };

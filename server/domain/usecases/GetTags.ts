@@ -2,16 +2,17 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import assert from 'node:assert';
+import { AttributeCount } from 'tanuki/server/domain/entities/AttributeCount.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
 
 /**
- * Count the number of records in the record repository.
+ * Return all of the asset tags and their record counts.
  * 
- * @returns number of assets in the database.
+ * @returns tags and the number of occurrences.
  */
 export default ({ recordRepository }: { recordRepository: RecordRepository; }) => {
   assert.ok(recordRepository, 'record repository must be defined');
-  return (): Promise<number> => {
-    return recordRepository.countAssets();
+  return (): Promise<AttributeCount[]> => {
+    return recordRepository.allTags();
   };
 };

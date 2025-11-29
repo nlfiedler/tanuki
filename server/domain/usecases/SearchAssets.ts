@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import assert from 'node:assert';
-import * as helpers from './usecases.ts';
-import { SearchParams, SortOrder, SortField } from 'tanuki/server/domain/entities/SearchParams.ts';
+import * as helpers from './helpers.ts';
+import { SearchParams } from 'tanuki/server/domain/entities/SearchParams.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
 

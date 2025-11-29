@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import ExifReader from 'exifreader';
 import mime from 'mime';
 import { ulid } from 'ulid';
+import { Location } from 'tanuki/server/domain/entities/Location.ts';
 import { SortOrder, SortField } from 'tanuki/server/domain/entities/SearchParams.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
 
@@ -137,7 +138,7 @@ function parseExifDate(value: string): number | null {
  *
  * @param results search results to be sorted.
  * @param field field on which to sort the results.
- * @param order desired sort order.
+ * @param order desired sort order (ascending by default).
  */
 export function sortSearchResults(
   results: SearchResult[],
@@ -172,4 +173,172 @@ export function sortSearchResults(
       results.sort((a, b) => b.mediaType.localeCompare(a.mediaType));
     }
   }
+}
+
+/** Returns the merged location object. */
+export function mergeLocations(asset?: Location | null, input?: Location | null): Location | null | undefined {
+  if (asset) {
+    if (input) {
+      // set or clear the label field
+      if (input.label !== null) {
+        if (input.label.length == 0) {
+          asset.label = null;
+        } else {
+          asset.label = input.label;
+        }
+      }
+      // set or clear the city field
+      if (input.city !== null) {
+        if (input.city.length == 0) {
+          asset.city = null;
+        } else {
+          asset.city = input.city;
+        }
+      }
+      // set or clear the region field
+      if (input.region !== null) {
+        if (input.region.length == 0) {
+          asset.region = null;
+        } else {
+          asset.region = input.region;
+        }
+      }
+      return asset;
+    } else {
+      // input was null, return original value
+      return asset;
+    }
+  }
+  // original value is undefined, return input as-is
+  return input;
+}
+
+export type CaptionParts = {
+  tags: string[];
+  location: Location | null;
+};
+
+/**
+ * Parse the given caption text into a list of tags and a location.
+ * 
+ * @returns object with tags and location values.
+ */
+export function parseCaption(caption: string): CaptionParts {
+  const lexer = new CaptionLexer(caption);
+  let fun: LexerFun = lexStart;
+  while (fun) {
+    fun = fun(lexer);
+  }
+  const location = lexer.location ? Location.parse(lexer.location) : null;
+  return { tags: lexer.tags, location };
+};
+
+class CaptionLexer {
+  input: string;
+  length: number;
+  cursor: number;
+  width: number;
+  tags: string[];
+  location: string | undefined;
+
+  constructor(input: string) {
+    this.input = input;
+    this.length = input.length;
+    this.cursor = 0;
+    this.width = 0;
+    this.tags = [];
+  }
+
+  next(): string | undefined {
+    if (this.cursor >= this.length) {
+      // so backup() does nothing at the end of the input
+      this.width = 0;
+      return undefined;
+    }
+    const ch = this.input[this.cursor];
+    this.cursor++;
+    this.width = 1;
+    return ch;
+  }
+
+  backup() {
+    if (this.cursor > 0) {
+      this.cursor -= this.width;
+    }
+  }
+
+  peek(): string | undefined {
+    return this.input[this.cursor];
+  }
+}
+
+// Defining a recursive type definition in TypeScript seems to work if the
+// recursive reference is after the other possible variants.
+type LexerFun = null | ((l: CaptionLexer) => LexerFun);
+
+function lexStart(l: CaptionLexer): LexerFun {
+  let ch = l.next();
+  while (ch) {
+    if (ch == '#') {
+      return lexTag;
+    } else if (ch == '@') {
+      return lexLocation;
+    }
+    ch = l.next();
+  }
+  return null;
+}
+
+function lexTag(l: CaptionLexer): LexerFun {
+  let tag = acceptIdentifier(l);
+  l.tags.push(tag);
+  return lexStart;
+}
+
+function lexLocation(l: CaptionLexer): LexerFun {
+  let ch = l.peek();
+  if (ch) {
+    if (ch == '"') {
+      // ignore the opening quote
+      l.next();
+      // scan until the next quote is found
+      let ident = '';
+      ch = l.peek();
+      while (ch) {
+        if (ch == '"') {
+          break;
+        } else {
+          ident = ident.concat(ch);
+          l.next();
+        }
+        ch = l.peek();
+      }
+      l.location = ident;
+    } else {
+      let location = acceptIdentifier(l);
+      l.location = location;
+    }
+  }
+  return lexStart;
+}
+
+/** Processes the text as a tag or location. */
+function acceptIdentifier(l: CaptionLexer): string {
+  let ident = '';
+  let ch = l.peek();
+  while (ch) {
+    if (isDelimiter(ch)) {
+      break;
+    } else {
+      ident = ident.concat(ch);
+      l.next();
+    }
+    ch = l.peek();
+  }
+  return ident;
+}
+
+/** Returns true if `ch` is a delimiter character. */
+function isDelimiter(ch: string): boolean {
+  return ch === ' ' || ch === '.' || ch === ',' || ch === ';' || ch === '(' || ch === ')' || ch === '"';
 }

@@ -61,8 +61,7 @@ class Asset {
   }
 
   /**
-   * Relative path of the asset within the asset store. Errors are converted
-   * to a string as they are almost certainly not gonig to happen anyway.
+   * Relative path of the asset within the asset store.
    * 
    * @returns relative path of the asset.
    */

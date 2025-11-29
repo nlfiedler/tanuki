@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import { A } from '@solidjs/router'
-import tanukiPng from './assets/tanuki.png'
-import AssetCount from './AssetCount.jsx'
-import ColorTheme from './ColorTheme.jsx'
+import tanukiPng from '../assets/tanuki.png'
+import AssetCount from './AssetCount.tsx'
+import ColorTheme from './ColorTheme.tsx'
 
 function Navbar() {
   return (

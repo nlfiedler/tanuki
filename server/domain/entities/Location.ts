@@ -29,15 +29,21 @@ class Location {
    */
   static fromParts(label: string, city: string, region: string): Location {
     const ret = new Location(label);
-    if (label.length == 0) {
-      ret.label = null;
-    }
     if (city.length > 0) {
       ret.city = city;
     }
     if (region.length > 0) {
       ret.region = region;
     }
+    return ret;
+  }
+
+  /** Build a Location from exactly the input values without any processing. */
+  static fromRaw(label: string | null, city: string | null, region: string | null): Location {
+    const ret = new Location(label || '');
+    ret.label = label;
+    ret.city = city;
+    ret.region = region;
     return ret;
   }
 
@@ -98,6 +104,28 @@ class Location {
     }
     // everything else is just a label
     return new Location(s);
+  }
+
+  /**
+   * Format a Location field as a string.
+   */
+  toString(): string {
+    if (this.label && this.city && this.region) {
+      return `${this.label}; ${this.city}, ${this.region}`;
+    } else if (this.city && this.region) {
+      return `${this.city}, ${this.region}`;
+    } else if (this.label && this.city) {
+      return `${this.label}; ${this.city}`;
+    } else if (this.label && this.region) {
+      return `${this.label}; ${this.region}`;
+    } else if (this.label) {
+      return this.label;
+    } else if (this.city) {
+      return this.city;
+    } else if (this.region) {
+      return this.region;
+    }
+    return '';
   }
 
   /**

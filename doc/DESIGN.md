@@ -1,6 +1,6 @@
 # Architecture and Design
 
-Assets stored unmodified within a date/time formatted directory structure, metadata stored in a key-value store, an HTTP server backend, and a browser-based frontend. Application is written in [Rust](https://www.rust-lang.org) with [Actix](https://actix.rs) on the backend and [Leptos](https://leptos.dev) on the front-end, data store is [RocksDB](https://rocksdb.org), wire protocol is a combination of REST and [GraphQL](https://graphql.org).
+Assets are stored unmodified within a date-time formatted directory structure and metadata is stored in [CouchDB](https://couchdb.apache.org/). The backend is written in [TypeScript](https://www.typescriptlang.org/) and runs on [Bun](https://bun.com/). The front-end is TypeScript with [SolidJS](https://solidjs.com), which communicates with the backend via a combination of REST and [GraphQL](https://graphql.org).
 
 ## Clean Architecture
 
@@ -11,10 +11,10 @@ The application is designed using the [Clean Architecture](https://blog.cleancod
 When an asset is added to the system, several steps are performed:
 
 1. A hash digest of the file is computed to identify duplicates.
-1. An identifier based on the import date/time, filename extension,
+1. An identifier based on the import date-time, filename extension,
    and [ULID](https://github.com/ulid/spec) is generated.
 1. A minimal document, with checksum and identifier, is stored in the database.
-1. The asset is stored in a directory structure according to import date/time.
+1. The asset is stored in a directory structure according to import date-time.
     - e.g. `2017/05/13/1630/01ce0d526z6cyzgm02ap0jv281.jpg`
     - the minutes are rounded to `:00`, `:15`, `:30`, or `:45`
     - the base filename is the ULID
@@ -25,19 +25,19 @@ In previous versions of the application, assets were stored in a directory struc
 ### Benefits
 
 * Assets are stored in directory structure reflecting time and order of addition
-    - ULID sorts by time, so order of insertion is retained
+    - ULID sorts by time, so order of import is retained
 * Number of directories and files at any particular level is reasonable
     - at most 96 directories per calendar day
     - files per directory limited to what can be processed within 15 minutes
 * Can rebuild some of the metadata from the directory structure and file names
-    - import date/time from file path
+    - import date-time from file path
     - media type from extension
-    - original date/time from file metadata
-* Encoded path as asset ID allows serving asset without database lookup
+    - original date-time from file metadata
+* Encoded path as asset ID allows serving assets without a database lookup
     - base64 encoded asset path happens to be same length as SHA256
 * Avoids filename collisions
-    - names like `IMG_1234.JPG` easily collide with other devices
+    - names like `IMG_1234.JPG` easily collide with files from other sources
 
 ### Drawbacks
 
-The files are renamed, which might be a bother to some people. In many cases, the file names are largely irrelevant, as most are of the form `IMG_1234.JPG`. In other cases, the names are something ridiculous, like `20150419171116-63EK7JXWKEVMDJVV-P1510081.jpg`, which encodes a date/time and some seemingly random sequence of letters and numbers. The good news is the original file name is recorded in the database.
+The files are renamed, which might be a bother to some people. In many cases, the file names are largely irrelevant, as most are of the form `IMG_1234.JPG`. In other cases, the names are something ridiculous, like `20150419171116-63EK7JXWKEVMDJVV-P1510081.jpg`, which encodes a date-time and some seemingly random sequence of letters and numbers. The good news is the original file name is recorded in the database.

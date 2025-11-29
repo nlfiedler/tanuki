@@ -149,7 +149,7 @@ async function uploadFiles(
     formData.append('file_blob', file)
     formData.append('last_modified', file.lastModified.toString())
     try {
-      await fetch('/upload', {
+      await fetch('/assets/upload', {
         method: 'POST',
         body: formData,
       })

@@ -14,7 +14,7 @@
 // bestDate that finds the most suitable date, as that function definition will
 // not be included when defining the view. That would require using the !code
 // macro in CouchDB, which probably requires storing JavaScript code in the
-// vendor directory in CouchDB itself.
+// vendor directory within the CouchDB installation.
 
 /**
  * Convert the given view map function into a string with the "bestdate" code
@@ -43,8 +43,24 @@ export const by_checksum = function (doc) {
   }
 }
 
+export const newborn = function (doc) {
+  const notags = !Array.isArray(doc.tags) || doc.tags.length === 0
+  const nocaption = doc.caption === undefined || doc.caption === null || doc.caption === ''
+  const nolocation = doc.location === null || doc.location.label === undefined || doc.location.label === null || doc.location.label === ''
+  if (notags && nocaption && nolocation) {
+    let bestdate
+    // newborn assets have no caption, tags, or location label (city and region
+    // may be populated by reverse geocoding during import)
+    //
+    // use the import date for newborn as the query is in relation to when the
+    // asset was imported
+    emit(doc.importDate, [bestdate, doc.filename, doc.location, doc.mediaType])
+  }
+}
+
 export const by_tag = function (doc) {
   if (doc.tags && Array.isArray(doc.tags)) {
+    // see generateView() for how bestdate works
     let bestdate
     doc.tags.forEach(function (tag) {
       emit(tag.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
@@ -53,17 +69,20 @@ export const by_tag = function (doc) {
 }
 
 export const by_date = function (doc) {
+  // see generateView() for how bestdate works
   let bestdate
   emit(bestdate, [bestdate, doc.filename, doc.location, doc.mediaType])
 }
 
 export const by_filename = function (doc) {
+  // see generateView() for how bestdate works
   let bestdate
   emit(doc.filename.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
 }
 
 export const by_location = function (doc) {
   if (doc.location) {
+    // see generateView() for how bestdate works
     let bestdate
     // emit only the location fields that have truthy values
     if (doc.location.label) {
@@ -79,8 +98,19 @@ export const by_location = function (doc) {
 }
 
 export const by_mimetype = function (doc) {
+  // see generateView() for how bestdate works
   let bestdate
   emit(doc.mediaType.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
+}
+
+export const raw_locations = function (doc) {
+  if (doc.location) {
+    const l = doc.location.label || ''
+    const c = doc.location.city || ''
+    const r = doc.location.region || ''
+    // a completely empty location will be emitted as two tab characters
+    emit(`${l}\t${c}\t${r}`, 1)
+  }
 }
 
 export const all_locations = function (doc) {

@@ -1,53 +1,31 @@
 * Action Items
 ** Rewrite
 *** commit =230801d= was when old JS code was removed
-*** Action Items
-**** DONE learn what Mango (in CouchDB) offers over design documents
-***** could do most of the heavy lifting
-***** could do the ~all tags~ query using the =$all= operator
-***** use =db.find()= as opposed to =db.search()=
-**** TODO define database views [9/11]
-- [X] by_checksum
-- [X] by_date
-- [X] by_filename
-- [X] by_location
-- [X] by_mimetype
-- [X] by_tag
-- [ ] raw_locations
-- [ ] newborn
-- [X] all_locations
-- [X] all_tags
-- [X] all_years
+*** commit =3263ae7= was last Rust commit
+*** Phase 1 goals [1/7]
+- [ ] browse page complete
+- [ ] pending page complete
+- [ ] upload page complete
+- [ ] dump/load
+- [ ] reverse geocoding
+- [X] original date-time (image)
+- [ ] original creation time (video)
+*** Phase 2 goals [0/5]
+- [ ] search query language
+- [ ] search page
+- [ ] edit page
+- [ ] store selections in local storage
+- [ ] search caching?
+*** Overall action Items
 **** TODO ingest assets into the database [2/3]
 - [X] ensure temporary uploaded files are removed
 - [X] read original date/time from EXIF
 - [ ] attempt to read created date/time from videos
-**** TODO GraphQL [2/6]
-- [ ] assets count becomes stale (due to caching?)
-- [ ] look for ~GraphQL Code Generator~ to generate TypeScript types from GraphQL schema
-- [ ] consider installing ~Apollo DevTools~ in chrome
-- [X] set up Apollo Server to read from =schema.graphql=
-- [X] update schema to match current code
-- [ ] write tests for =/graphql= endpoint
-**** DONE basic upload page [8/8]
-- [X] allow selecting multiple files
-- [X] show file details in a table
-- [X] error when selecting files
-- [X] make ~Start Upload~ button reactive (show loading state during processing)
-- [X] disable ~Choose Files~ button while uploading
-- [X] get the last modified date/time
-- [X] upload files one-by-one
-- [X] show progress bar during upload process
-**** DONE learn about Web Components (generic HTML, JS, CSS)
 **** TODO implement drop zone on Upload page [0/3]
 - [ ] add drop zone functionality
 - [ ] have drop zone border change color when files hovering
 - [ ] merge dropped and chosen files into one table
-**** TODO learn GraphQL and TypeScript [/]
-- [ ] https://www.apollographql.com/tutorials/intro-typescript/02-graphql-basics
-- [ ] https://docs.nestjs.com/graphql/resolvers
-**** TODO rewrite the GraphQL resolvers using modern TypeScript techniques
-**** TODO browse assets [8/19]
+**** TODO browse assets [12/19]
 - [X] CouchDB needs to serde dates as Unix time
 - [X] implement ~queryByTags~ in record repository
 - [X] implement ~queryDateRange~ in record repository
@@ -56,10 +34,10 @@
 - [X] implement ~queryByLocations~ in record repository
 - [X] implement ~queryByMediaType~ in record repository
 - [X] implement search usecase
-- [ ] add search GraphQL resolver
-- [ ] show page of search results as text
-- [ ] implement REST endpoints for image "thumbnail"
-- [ ] show results with thumbnails
+- [X] add search GraphQL resolver
+- [X] show page of search results as text
+- [X] implement REST endpoints for image "thumbnail"
+- [X] show results with thumbnails
 - [ ] tag selection
 - [ ] location selection
 - [ ] year selection
@@ -67,26 +45,29 @@
 - [ ] sort order
 - [ ] pagination
 - [ ] page size
-**** TODO pending page [0/12]
-- [ ] implement ~newborn~ index
-- [ ] implement ~raw locations~ index
-- [ ] time range buttons
-- [ ] pending items count
-- [ ] tags selection
-- [ ] location selection
-- [ ] date-time input
-- [ ] sort order selection
-- [ ] pagination
-- [ ] page size
-- [ ] selection
-- [ ] save changes
-**** TODO implement search cache repository [0/2]
-- [ ] put and get the results in =SearchAssets=
-- [ ] clear the cache in =ImportAssets.js=
-**** TODO consider how to cache thumbnails
-**** TODO database pagination support
-***** to improve search performance
-***** https://docs.couchdb.org/en/stable/ddocs/views/pagination.html
+**** DONE pending page [21/21]
+- [X] implement ~newborn~ index
+- [X] add ~pending assets~ usecase
+- [X] add =pending= GraphQL query
+- [X] implement ~raw locations~ index
+- [X] add ~raw locations~ usecase
+- [X] add ~raw locations~ GraphQL query
+- [X] add ~parse caption~ usecase
+- [X] add ~update asset~ usecase
+- [X] add ~update asset~ GraphQL mutation
+- [X] time range buttons
+- [X] pending items count
+- [X] sort order selection
+- [X] pagination
+- [X] page size
+- [X] tags selection
+- [X] location selection
+- [X] date-time input
+- [X] selection
+- [X] save changes
+- [X] refresh the pending page after Save
+- [X] clicking arrow in card header should navigate to asset details page
+**** TODO make sure =||= is appropriate, or change to =??=
 **** TODO asset details page [0/7]
 - [ ] clicking search result navigates to details page
 - [ ] show preview of asset
@@ -98,7 +79,6 @@
 **** TODO populate database from dump file
 ***** consider how dump/load should be accessed (CLI, REST, webui, GraphQL)
 ***** using GraphQL is more work than just =curl= and REST API
-**** TODO check browser console for issues
 **** TODO implement reverse geocoding [0/3]
 - [ ] use exif-reader to find out what GPS coords look like
 - [ ] write =GoogleMaps= data source to use HTTP to get city/region from GPS coords
@@ -107,12 +87,41 @@
 - [ ] add =import= GraphQL mutation
 - [ ] have ~Import~ button on Upload page execute GraphQL mutation
 - [ ] make ~Import~ button reactive (show loading state during processing)
+**** TODO store various selections in local storage [/]
+- [ ] page size
+- [ ] recent selected page
+- [ ] recent selected range
+- [ ] recent sort field/order
+- [ ] browse parameters
+- [ ] edit query
+- [ ] edit sort order
+- [ ] edit selected page
+- [ ] home selected tags
+- [ ] home selected locations
+- [ ] home selected year
+- [ ] home selected season
+- [ ] home selected type
+- [ ] home selected page
+- [ ] home sort order
+- [ ] search query
+- [ ] search sort order
+- [ ] search selected page
+**** TODO asset count does not refresh; maybe refresh on a timer
 **** TODO search query language
+***** see mujina/src/query.js for a start
+***** maybe lexer can implement =Symbol.iterator= instead of =run()=
 **** TODO bulk edit support
+**** TODO implement search cache repository [0/2]
+- [ ] put and get the results in =SearchAssets=
+- [ ] clear the cache in =ImportAssets.js=
+**** TODO check browser console for issues
+**** TODO go through all of the Rust code and make sure nothing is missing from the TS version
 **** TODO consider how record repository can implement sorting and pagination
+***** objective is to improve search performance
+***** https://docs.couchdb.org/en/stable/ddocs/views/pagination.html
 **** TODO make sure ~helix~ and ~perforce~ do not appear anywhere
 **** TODO linting [0/5]
-- [ ] enable wrapping of long line
+- [ ] enable wrapping of long line (works for JSX/TSX files)
 - [ ] add JavaScript plugin
 - [ ] add TypeScript plugin
 - [ ] add =unicorn= plugin
@@ -123,7 +132,8 @@
 - [ ] replace CSS with Bulma
 - [ ] replace favicon
 - [ ] remove unused static files
-**** TODO update deployment [0/7]
+**** TODO update deployment [0/8]
+- [ ] probably the =build= and =preview= scripts in package.json are not needed
 - [ ] ensure =NODE_ENV= is set to =production=
 - [ ] update =.dockerignore= and =.gitignore= files
 - [ ] replace =healthcheck= with something simple
@@ -207,6 +217,8 @@
 *** display modes: have an option that makes the images really big (single column, huge images)
 *** hovering over asset should show larger version in a large tooltip
 ** Home
+*** adaptive photo layout with flexbox: https://css-tricks.com/adaptive-photo-layout-with-flexbox/
+*** image cards wrapped to window: https://codepen.io/jwjcmw/pen/GMQMPW
 *** make the selectors row sticky when scrolling
 **** allow =nav= element to scroll away
 **** container with selectors and container with tags should be sticky
@@ -220,6 +232,16 @@
 **** grid of 300x300 images with caption info (date, location/filename) (a la PhotoPrism)
 **** wide blocks with thumbnails on left, more details on right (c.f. anilist.co)
 **** responsive grid; images only, scaled to fit in a row and fill horizontally (i.e. ~mujina~)
+***** produce thumbnails of a certain height, width is 'auto'
+***** use flex display row wrap
+#+begin_src html
+      <div style={{
+        display: 'flex',
+        flexFlow: 'row wrap',
+        justifyContent: 'space-around',
+        alignItems: 'center'
+      }}
+#+end_src
 **** grid of just images, maybe 180x180; images cropped to the square (a la Apple Photos)
 **** list of rows, tiny thumbnail (96x96), caption, location, date
 *** navigation rail for filtering assets
@@ -289,7 +311,25 @@
 ** Finding/removing duplicates
 *** many assets are very similar to each other, probably differ only in metadata
 *** find a means (histogram?) of detecting near-duplicates
+** Remote blob store
+*** consider how to support a blob store other than local disk
+*** blob store should serve the assets directly to the client (e.g. S3, SeaweedFS)
+*** repository API would need to be oriented to URLs rather than file paths
+*** repository would generate the full path/URL for the asset to send to the client
+*** local blob repo would need the base URL for serving via web framework
+*** remote blob repo would need the base URL for the remote store
+*** assets likely would be stored very differently
+**** SeaweedFS combines files into volumes (to save space?)
+**** asset ID would no longer be a path for fetching the asset
+*** server needs to generate URLs for the images for the client to reference
+**** client cannot build the URL, server must provide the value
+*** SeaweedFS can scale images to desired width/height (~fit~, ~fill~, etc)
+*** dump/load and import/export would need to consider how to handle blobs
+*** doc: update =doc/DESIGN.md= to reflect changes in storage
 ** Hosting externally
+*** evaluate https://immich.app and what it has to offer
+**** Q: how is it deployed?
+**** Q: how does it store the images?
 *** consider storage costs (currently under 100 GB)
 *** place basic auth server in front (Azure app gateway maybe?)
 *** consider deploying in read-only mode (sync would be tricky)

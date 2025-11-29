@@ -3,7 +3,7 @@
 //
 import assert from 'node:assert';
 import fs from 'node:fs/promises';
-import * as helpers from './usecases.ts';
+import * as helpers from './helpers.ts';
 import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
 import { type BlobRepository } from 'tanuki/server/domain/repositories/BlobRepository.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';

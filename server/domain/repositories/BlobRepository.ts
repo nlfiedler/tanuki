@@ -44,14 +44,14 @@ interface BlobRepository {
   renameBlob(oldId: string, newId: string): Promise<void>;
 
   /**
-   * Produce a thumbnail of the desired size for the asset.
+   * Produce a JPEG formatted thumbnail of the desired size for the asset.
    *
+   * @param assetId - unique asset identifier.
    * @param width - width in pixels for the thumbnail.
    * @param height - height in pixels for the thumbnail.
-   * @param assetId - unique asset identifier.
-   * @returns buffer of raw bytes.
+   * @returns buffer of raw JPEG image data.
    */
-  thumbnail(width: number, height: number, assetId: string): Promise<Buffer>;
+  thumbnail(assetId: string, width: number, height: number): Promise<Buffer>;
 
   /**
    * Clear the thumbnail cache of any entries for the given asset.

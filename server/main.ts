@@ -14,7 +14,7 @@ import cors from 'cors';
 import 'tanuki/server/env.ts';
 import logger from 'tanuki/server/logger.ts';
 import container from 'tanuki/server/container.ts';
-import uploadRouter from 'tanuki/server/preso/routes/upload.ts';
+import assetsRouter from 'tanuki/server/preso/routes/assets.ts';
 import { typeDefs, resolvers } from 'tanuki/server/preso/graphql/schema.ts';
 
 // (asynchronously) prepare the database
@@ -47,11 +47,11 @@ const graphqlServer = new ApolloServer({
 });
 await graphqlServer.start();
 
-app.get('/liveness', (req, res) => {
+app.get('/liveness', (_req, res) => {
   res.status(200).json({ status: 'healthy', uptime: process.uptime() });
 });
 app.use('/graphql', cors(), express.json(), expressMiddleware(graphqlServer));
-app.use('/upload', uploadRouter);
+app.use('/assets', assetsRouter);
 
 const port = 3000;
 ViteExpress.listen(app, port, () => logger.info(`Server listening at ${port}`));

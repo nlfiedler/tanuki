@@ -88,4 +88,34 @@ enum SortOrder {
   Descending,
 }
 
-export { SearchParams, SortField, SortOrder };
+/**
+ * Parameters for finding assets that are pending (no tags, caption, etc).
+ */
+class PendingParams {
+  afterDate: Date | null;
+  sortField: SortField | null;
+  sortOrder: SortOrder | null;
+
+  constructor() {
+    this.afterDate = null;
+    this.sortField = null;
+    this.sortOrder = null;
+  }
+
+  setAfterDate(afterDate: Date): PendingParams {
+    this.afterDate = afterDate;
+    return this;
+  }
+
+  setSortField(sortField: SortField): PendingParams {
+    this.sortField = sortField;
+    return this;
+  }
+
+  setSortOrder(sortOrder: SortOrder): PendingParams {
+    this.sortOrder = sortOrder;
+    return this;
+  }
+}
+
+export { PendingParams, SearchParams, SortField, SortOrder };

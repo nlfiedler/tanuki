@@ -4,16 +4,23 @@
 import { createContext, useContext } from 'solid-js'
 import { HttpLink, ApolloClient, InMemoryCache } from '@apollo/client'
 
-const ApolloContext = createContext<ApolloClient | undefined>(undefined)
-
-const link = new HttpLink({
-  uri: '/graphql',
-})
+const ApolloContext = createContext<ApolloClient | undefined>()
 
 export function ApolloProvider(props: { children: any }) {
   const client = new ApolloClient({
-    link,
+    link: new HttpLink({ uri: '/graphql' }),
+    // a cache is required, but caching can be disabled
     cache: new InMemoryCache(),
+    defaultOptions: {
+      query: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
+      },
+      watchQuery: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
+      },
+    },
   })
   return (
     <ApolloContext.Provider value={client}>
