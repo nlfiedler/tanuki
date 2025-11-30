@@ -29,9 +29,10 @@ import {
 import AttributeChips from '../components/AttributeChips.tsx'
 import Pagination from '../components/Pagination.tsx'
 import TagSelector from '../components/TagSelector.tsx'
-import useClickOutside from '../hooks/useClickOutside.js'
 import * as format from '../helpers/formatting.ts'
 import * as parse from '../helpers/parsing.ts'
+import useClickOutside from '../hooks/useClickOutside.js'
+import useLocalStorage from '../hooks/useLocalStorage.js'
 
 const PENDING_ASSETS: TypedDocumentNode<Query, QueryPendingArgs> = gql`
   query Pending($params: PendingParams!, $offset: Int, $limit: Int) {
@@ -93,10 +94,16 @@ function buildParams({
 
 function Pending() {
   const client = useApolloClient()
-  const [range, setRange] = createSignal(0)
-  const [sortCombo, setSortCombo] = createSignal(sortComboDateAsc)
-  const [selectedPage, setSelectedPage] = createSignal(1)
-  const [pageSize, setPageSize] = createSignal(18)
+  const [range, setRange] = useLocalStorage('pending-selected-range', 0)
+  const [sortCombo, setSortCombo] = useLocalStorage(
+    'pending-sort-combo',
+    sortComboDateAsc
+  )
+  const [selectedPage, setSelectedPage] = useLocalStorage(
+    'pending-selected-page',
+    1
+  )
+  const [pageSize, setPageSize] = useLocalStorage('page-sie', 18)
   const pendingParams = createMemo(() => ({
     range: range(),
     offset: pageSize() * (selectedPage() - 1),

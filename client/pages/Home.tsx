@@ -26,6 +26,7 @@ import CardsGrid from '../components/CardsGrid.tsx'
 import Pagination from '../components/Pagination.tsx'
 import TagSelector from '../components/TagSelector.tsx'
 import useClickOutside from '../hooks/useClickOutside.js'
+import useLocalStorage from '../hooks/useLocalStorage.js'
 
 const SEARCH_ASSETS: TypedDocumentNode<Query, QuerySearchArgs> = gql`
   query Search($params: SearchParams!, $offset: Int, $limit: Int) {
@@ -112,18 +113,34 @@ function buildParams({
 function Home() {
   const navigate = useNavigate()
   const client = useApolloClient()
-  const [selectedTags, setSelectedTags] = createSignal<string[]>([])
-  const [selectedLocations, setSelectedLocations] = createSignal<string[]>([])
-  const [selectedYear, setSelectedYear] = createSignal<number | null>(null)
-  const [selectedSeason, setSelectedSeason] = createSignal<Season | null>(null)
-  const [selectedMediaType, setSelectedMediaType] = createSignal<string | null>(
+  const [selectedTags, setSelectedTags] = useLocalStorage<string[]>(
+    'home-selected-tags',
+    []
+  )
+  const [selectedLocations, setSelectedLocations] = useLocalStorage<string[]>(
+    'home-selected-locations',
+    []
+  )
+  const [selectedYear, setSelectedYear] = useLocalStorage<number | null>(
+    'home-selected-year',
     null
   )
-  const [selectedSortOrder, setSelectedSortOrder] = createSignal<SortOrder>(
+  const [selectedSeason, setSelectedSeason] = useLocalStorage<Season | null>(
+    'home-selected-season',
+    null
+  )
+  const [selectedMediaType, setSelectedMediaType] = useLocalStorage<
+    string | null
+  >('home-selected-mediatype', null)
+  const [selectedSortOrder, setSelectedSortOrder] = useLocalStorage<SortOrder>(
+    'home-sort-order',
     SortOrder.Descending
   )
-  const [selectedPage, setSelectedPage] = createSignal(1)
-  const [pageSize, setPageSize] = createSignal(18)
+  const [selectedPage, setSelectedPage] = useLocalStorage(
+    'home-selected-page',
+    1
+  )
+  const [pageSize, setPageSize] = useLocalStorage('page-size', 18)
   const pendingParams = createMemo(() => ({
     tags: selectedTags(),
     locations: selectedLocations(),
