@@ -21,14 +21,14 @@ interface TagSelectorProps {
 
 function TagSelector(props: TagSelectorProps) {
   const client = useApolloClient()
-  const [data] = createResource(async () => {
+  const [tagsQuery] = createResource(async () => {
     const { data } = await client.query({ query: ALL_TAGS })
     return data
   })
   const sortedTags = () => {
     // the tags returned from the server are in no particular order
     const sorted = new Array()
-    for (let tag of data()?.tags ?? []) {
+    for (let tag of tagsQuery()?.tags ?? []) {
       sorted.push({ label: tag.label, count: tag.count })
     }
     sorted.sort((a, b) => a.label.localeCompare(b.label))

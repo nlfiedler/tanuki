@@ -155,6 +155,8 @@ type Query {
   tags: [AttributeCount!]!
   "Retrieve the list of years and their associated asset count."
   years: [AttributeCount!]!
+  "Retrieve the list of media types and their associated asset count."
+  mediaTypes: [AttributeCount!]!
 }
 
 "Information regarding a location for an asset."

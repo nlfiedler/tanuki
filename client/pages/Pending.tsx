@@ -106,14 +106,14 @@ function Pending() {
   }))
   // query() and createAsync() are neat but they do not automatically run when
   // input signals change, or it is difficult to understand how they work
-  const [assets] = createResource(pendingParams, async (params) => {
+  const [assetsQuery] = createResource(pendingParams, async (params) => {
     const { data } = await client.query({
       query: PENDING_ASSETS,
       variables: buildParams(params),
     })
     return data
   })
-  const lastPage = () => assets()?.pending.lastPage ?? 1
+  const lastPage = () => assetsQuery()?.pending.lastPage ?? 1
   let datetimeRef: HTMLInputElement | undefined
   const [selectedTags, setSelectedTags] = createSignal<string[]>([])
   const [selectedLocation, setSelectedLocation] = createSignal<Location>({
@@ -184,7 +184,7 @@ function Pending() {
               <RecentRange range={range} setRange={setRange} />
             </div>
             <div class="level-item">
-              <PendingCount data={assets} />
+              <PendingCount data={assetsQuery} />
             </div>
           </div>
           <div class="level-right">
@@ -278,7 +278,7 @@ function Pending() {
 
       <Suspense fallback={<button class="button is-loading">...</button>}>
         <PendingAssets
-          results={assets()?.pending.results}
+          results={assetsQuery()?.pending.results}
           selectedAssets={selectedAssets}
           setSelectedAssets={setSelectedAssets}
         />
@@ -356,7 +356,7 @@ interface LocationRecordSelectorProps {
 
 function LocationRecordSelector(props: LocationRecordSelectorProps) {
   const client = useApolloClient()
-  const [locations] = createResource(async () => {
+  const [locationsQuery] = createResource(async () => {
     const { data } = await client.query({ query: LOCATION_RECORDS })
     return data
   })
@@ -405,7 +405,7 @@ function LocationRecordSelector(props: LocationRecordSelectorProps) {
               on:change={onChange}
             />
             <datalist id="location-labels">
-              <For each={locations()?.locationRecords}>
+              <For each={locationsQuery()?.locationRecords}>
                 {(location) => (
                   <option value={format.formatLocation(location)}></option>
                 )}
@@ -419,7 +419,7 @@ function LocationRecordSelector(props: LocationRecordSelectorProps) {
 }
 
 enum SortFieldOrder {
-  DateAsc,
+  DateAsc = 1,
   DateDesc,
   FileAsc,
   FileDesc,

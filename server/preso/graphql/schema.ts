@@ -53,6 +53,16 @@ export const resolvers: Resolvers = {
       return await getLocationRecords();
     },
 
+    async years(_parent: any, _args: any, _context: any, _info: GraphQLResolveInfo) {
+      const getYears = container.resolve('getYears');
+      return getYears();
+    },
+
+    async mediaTypes(_parent: any, _args: any, _context: any, _info: GraphQLResolveInfo) {
+      const getMediaTypes = container.resolve('getMediaTypes');
+      return getMediaTypes();
+    },
+
     async pending(_parent: any, args: QueryPendingArgs, _context: any, _info: GraphQLResolveInfo): Promise<SearchMeta> {
       const params = pendingParamsFromGQL(args.params);
       const findPending = container.resolve('findPending');

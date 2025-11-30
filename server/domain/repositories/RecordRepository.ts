@@ -53,6 +53,17 @@ interface RecordRepository {
   rawLocations(): Promise<Location[]>;
 
   /**
+   * Return all of the years for which their are assests and the number of
+   * assets associated with each year.
+   */
+  allYears(): Promise<AttributeCount[]>;
+
+  /**
+   * Return all of the media types and the number of their associated assets.
+   */
+  allMediaTypes(): Promise<AttributeCount[]>;
+
+  /**
    * Store the asset record in the database either as a new record or updating
    * an existing record, as determined by its unique identifier.
    *

@@ -14,13 +14,13 @@ const GET_ASSET_COUNT: TypedDocumentNode<Query, Record<string, never>> = gql`
 
 function AssetCount() {
   const client = useApolloClient()
-  const [data] = createResource(async () => {
+  const [countQuery] = createResource(async () => {
     const { data } = await client.query({ query: GET_ASSET_COUNT })
     return data
   })
   return (
     <Suspense fallback={<span>...</span>}>
-      <span>{data()?.count} assets</span>
+      <span>{countQuery()?.count} assets</span>
     </Suspense>
   )
 }

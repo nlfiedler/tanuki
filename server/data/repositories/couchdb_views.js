@@ -18,12 +18,12 @@
 
 /**
  * Convert the given view map function into a string with the "bestdate" code
- * inserted.
+ * inserted such that the search results have the most suitable date.
  *
  * @param {Function} func - map function.
  * @returns map function as a string.
  */
-export function generateView(func) {
+export function insertBestDate(func) {
   const s = func.toString()
   const t = s.replace('let bestdate', `let bestdate
     if (doc.userDate) {
@@ -60,7 +60,7 @@ export const newborn = function (doc) {
 
 export const by_tag = function (doc) {
   if (doc.tags && Array.isArray(doc.tags)) {
-    // see generateView() for how bestdate works
+    // see insertBestDate() for how bestdate works
     let bestdate
     doc.tags.forEach(function (tag) {
       emit(tag.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
@@ -69,20 +69,20 @@ export const by_tag = function (doc) {
 }
 
 export const by_date = function (doc) {
-  // see generateView() for how bestdate works
+  // see insertBestDate() for how bestdate works
   let bestdate
   emit(bestdate, [bestdate, doc.filename, doc.location, doc.mediaType])
 }
 
 export const by_filename = function (doc) {
-  // see generateView() for how bestdate works
+  // see insertBestDate() for how bestdate works
   let bestdate
   emit(doc.filename.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
 }
 
 export const by_location = function (doc) {
   if (doc.location) {
-    // see generateView() for how bestdate works
+    // see insertBestDate() for how bestdate works
     let bestdate
     // emit only the location fields that have truthy values
     if (doc.location.label) {
@@ -98,12 +98,12 @@ export const by_location = function (doc) {
 }
 
 export const by_mimetype = function (doc) {
-  // see generateView() for how bestdate works
+  // see insertBestDate() for how bestdate works
   let bestdate
   emit(doc.mediaType.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
 }
 
-export const raw_locations = function (doc) {
+export const all_location_records = function (doc) {
   if (doc.location) {
     const l = doc.location.label || ''
     const c = doc.location.city || ''
@@ -113,7 +113,7 @@ export const raw_locations = function (doc) {
   }
 }
 
-export const all_locations = function (doc) {
+export const all_location_parts = function (doc) {
   if (doc.location.label) {
     emit(doc.location.label.toLowerCase(), 1)
   }
@@ -141,4 +141,8 @@ export const all_years = function (doc) {
   } else {
     emit(new Date(doc.importDate).getFullYear(), 1)
   }
+}
+
+export const all_media_types = function (doc) {
+  emit(doc.mediaType.toLowerCase(), 1)
 }

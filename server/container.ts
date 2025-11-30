@@ -12,7 +12,9 @@ import CountAssets from 'tanuki/server/domain/usecases/CountAssets.ts';
 import FindPending from 'tanuki/server/domain/usecases/FindPending.ts';
 import GetLocationParts from 'tanuki/server/domain/usecases/GetLocationParts.ts';
 import GetLocationRecords from 'tanuki/server/domain/usecases/GetLocationRecords.ts';
+import GetMediaTypes from 'tanuki/server/domain/usecases/GetMediaTypes.ts';
 import GetTags from 'tanuki/server/domain/usecases/GetTags.ts';
+import GetYears from 'tanuki/server/domain/usecases/GetYears.ts';
 import ImportAsset from 'tanuki/server/domain/usecases/ImportAsset.ts';
 import SearchAssets from 'tanuki/server/domain/usecases/SearchAssets.ts';
 import UpdateAsset from 'tanuki/server/domain/usecases/UpdateAsset.ts';
@@ -36,7 +38,9 @@ container.register({
   findPending: asFunction(FindPending),
   getLocationParts: asFunction(GetLocationParts),
   getLocationRecords: asFunction(GetLocationRecords),
+  getMediaTypes: asFunction(GetMediaTypes),
   getTags: asFunction(GetTags),
+  getYears: asFunction(GetYears),
   importAsset: asFunction(ImportAsset),
   searchAssets: asFunction(SearchAssets),
   updateAsset: asFunction(UpdateAsset),

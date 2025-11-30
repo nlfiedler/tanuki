@@ -7,16 +7,16 @@ import * as format from '../helpers/formatting.ts'
 
 interface CardsGridProps {
   results?: SearchResult[]
-  onClick: (index: number) => void
+  onClick: (assetId: string) => void
 }
 
 function CardsGrid(props: CardsGridProps) {
   return (
     <div class="grid is-col-min-16 padding-2">
       <For each={props.results}>
-        {(asset, index) => (
+        {(asset) => (
           <div class="cell">
-            <a onClick={() => props.onClick(index())}>
+            <a onClick={() => props.onClick(asset.assetId)}>
               <div class="card">
                 <div class="card-image">
                   <figure class="image">

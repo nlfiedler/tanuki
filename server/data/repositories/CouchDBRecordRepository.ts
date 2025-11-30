@@ -146,7 +146,7 @@ class CouchDBRecordRepository implements RecordRepository {
 
   /** @inheritDoc */
   async allLocations(): Promise<AttributeCount[]> {
-    const res = await this.database.view('assets', 'all_locations', {
+    const res = await this.database.view('assets', 'all_location_parts', {
       group_level: 1
     });
     return res.rows.map((row: { key: string, value: number; }) => {
@@ -156,7 +156,7 @@ class CouchDBRecordRepository implements RecordRepository {
 
   /** @inheritDoc */
   async rawLocations(): Promise<Location[]> {
-    const res = await this.database.view('assets', 'raw_locations', {
+    const res = await this.database.view('assets', 'all_location_records', {
       group_level: 1
     });
     return res.rows.map((row: { key: string, value: number; }) => {
@@ -165,6 +165,27 @@ class CouchDBRecordRepository implements RecordRepository {
     });
   }
 
+  /** @inheritDoc */
+  async allYears(): Promise<AttributeCount[]> {
+    const res = await this.database.view('assets', 'all_years', {
+      group_level: 1
+    });
+    return res.rows.map((row: { key: string, value: number; }) => {
+      // the view function emits the years as numbers but everything else
+      // expects them to be strings
+      return new AttributeCount(row.key.toString(), row.value);
+    });
+  }
+
+  /** @inheritDoc */
+  async allMediaTypes(): Promise<AttributeCount[]> {
+    const res = await this.database.view('assets', 'all_media_types', {
+      group_level: 1
+    });
+    return res.rows.map((row: { key: string, value: number; }) => {
+      return new AttributeCount(row.key, row.value);
+    });
+  }
 
   /** @inheritDoc */
   async putAsset(asset: Asset): Promise<void> {
@@ -286,43 +307,47 @@ type ViewResult = {
 const assetsDefinition = {
   _id: '_design/assets',
   // monotonically increasing version number for tracking schema changes
-  version: 3,
+  version: 1,
   views: {
     by_checksum: {
-      map: views.generateView(views.by_checksum)
+      map: views.by_checksum.toString()
     },
     by_date: {
-      map: views.generateView(views.by_date)
+      map: views.insertBestDate(views.by_date)
     },
     by_filename: {
-      map: views.generateView(views.by_filename)
+      map: views.insertBestDate(views.by_filename)
     },
     by_location: {
-      map: views.generateView(views.by_location)
+      map: views.insertBestDate(views.by_location)
     },
     by_mimetype: {
-      map: views.generateView(views.by_mimetype)
+      map: views.insertBestDate(views.by_mimetype)
     },
     by_tag: {
-      map: views.generateView(views.by_tag)
+      map: views.insertBestDate(views.by_tag)
     },
     newborn: {
-      map: views.generateView(views.newborn)
+      map: views.insertBestDate(views.newborn)
     },
-    raw_locations: {
-      map: views.generateView(views.raw_locations),
+    all_location_records: {
+      map: views.all_location_records.toString(),
       reduce: '_count'
     },
-    all_locations: {
-      map: views.generateView(views.all_locations),
+    all_location_parts: {
+      map: views.all_location_parts.toString(),
       reduce: '_count'
     },
     all_tags: {
-      map: views.generateView(views.all_tags),
+      map: views.all_tags.toString(),
       reduce: '_count'
     },
     all_years: {
-      map: views.generateView(views.all_years),
+      map: views.all_years.toString(),
+      reduce: '_count'
+    },
+    all_media_types: {
+      map: views.all_media_types.toString(),
       reduce: '_count'
     }
   }
@@ -383,12 +408,15 @@ function assetFromDocument(doc: any): any {
  * @return result as an object.
  */
 function convertViewResult(result: ViewResult): SearchResult {
+  // return Location.fromParts(parts[0] || '', parts[1] || '', parts[2] || '');
+  const lo = result.value[2];
+  const location = Location.fromRaw(lo?.label || null, lo?.city || null, lo?.region || null);
   return new SearchResult(
-    result.id,
-    result.value[1],
-    result.value[3],
-    result.value[2],
-    new Date(result.value[0])
+    result.id, // assetId
+    result.value[1], // filename
+    result.value[3], // mediaType
+    location, // location
+    new Date(result.value[0]) // datetime
   );
 }
 

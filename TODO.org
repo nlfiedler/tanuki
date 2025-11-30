@@ -2,9 +2,9 @@
 ** Rewrite
 *** commit =230801d= was when old JS code was removed
 *** commit =3263ae7= was last Rust commit
-*** Phase 1 goals [1/7]
-- [ ] browse page complete
-- [ ] pending page complete
+*** Phase 1 goals [3/7]
+- [X] browse page complete
+- [X] pending page complete
 - [ ] upload page complete
 - [ ] dump/load
 - [ ] reverse geocoding
@@ -13,7 +13,7 @@
 *** Phase 2 goals [0/5]
 - [ ] search query language
 - [ ] search page
-- [ ] edit page
+- [ ] details/edit page
 - [ ] store selections in local storage
 - [ ] search caching?
 *** Overall action Items
@@ -25,48 +25,8 @@
 - [ ] add drop zone functionality
 - [ ] have drop zone border change color when files hovering
 - [ ] merge dropped and chosen files into one table
-**** TODO browse assets [12/19]
-- [X] CouchDB needs to serde dates as Unix time
-- [X] implement ~queryByTags~ in record repository
-- [X] implement ~queryDateRange~ in record repository
-- [X] implement ~queryBeforeDate~ in record repository
-- [X] implement ~queryAfterDate~ in record repository
-- [X] implement ~queryByLocations~ in record repository
-- [X] implement ~queryByMediaType~ in record repository
-- [X] implement search usecase
-- [X] add search GraphQL resolver
-- [X] show page of search results as text
-- [X] implement REST endpoints for image "thumbnail"
-- [X] show results with thumbnails
-- [ ] tag selection
-- [ ] location selection
-- [ ] year selection
-- [ ] season selection
-- [ ] sort order
-- [ ] pagination
-- [ ] page size
-**** DONE pending page [21/21]
-- [X] implement ~newborn~ index
-- [X] add ~pending assets~ usecase
-- [X] add =pending= GraphQL query
-- [X] implement ~raw locations~ index
-- [X] add ~raw locations~ usecase
-- [X] add ~raw locations~ GraphQL query
-- [X] add ~parse caption~ usecase
-- [X] add ~update asset~ usecase
-- [X] add ~update asset~ GraphQL mutation
-- [X] time range buttons
-- [X] pending items count
-- [X] sort order selection
-- [X] pagination
-- [X] page size
-- [X] tags selection
-- [X] location selection
-- [X] date-time input
-- [X] selection
-- [X] save changes
-- [X] refresh the pending page after Save
-- [X] clicking arrow in card header should navigate to asset details page
+**** DONE browse page
+**** DONE pending page
 **** TODO make sure =||= is appropriate, or change to =??=
 **** TODO asset details page [0/7]
 - [ ] clicking search result navigates to details page
@@ -126,6 +86,8 @@
 - [ ] add TypeScript plugin
 - [ ] add =unicorn= plugin
 - [ ] add =eslint-plugin-tsdoc= plugin
+**** TODO bugs [/]
+- [ ] saving changes to pending assets sometimes does not apply to all
 **** TODO test setup on Windows
 **** TODO polish [0/4]
 - [ ] switch light/dark in System Preferences does not cause page theme to change

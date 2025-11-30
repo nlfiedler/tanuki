@@ -129,6 +129,46 @@ describe('CouchDBRecordRepository', function () {
     expect(allTags[5]?.count).toEqual(2);
   });
 
+  test('should retrieve years and their counts', async function () {
+    // setup
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new CouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    await sut.putAsset(buildBasicAsset('basic113')); // 2018
+    await sut.putAsset(buildBasicAsset('monday6').setUserDate(new Date(2010, 1, 1, 0, 0)));
+    await sut.putAsset(buildBasicAsset('tuesday7').setUserDate(new Date(2012, 1, 1, 0, 0)));
+    await sut.putAsset(buildBasicAsset('wednesday8').setUserDate(new Date(2012, 1, 1, 0, 0)));
+    const allYears = await sut.allYears();
+    expect(allYears).toHaveLength(3);
+    expect(allYears[0]?.label).toEqual('2010');
+    expect(allYears[0]?.count).toEqual(1);
+    expect(allYears[1]?.label).toEqual('2012');
+    expect(allYears[1]?.count).toEqual(2);
+    expect(allYears[2]?.label).toEqual('2018');
+    expect(allYears[2]?.count).toEqual(1);
+  });
+
+  test('should retrieve media types and their counts', async function () {
+    // setup
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new CouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    await sut.putAsset(buildBasicAsset('basic113'));
+    await sut.putAsset(buildBasicAsset('monday6').setFilename('img_2345.jpg').setMediaType('image/png'));
+    await sut.putAsset(buildBasicAsset('tuesday7').setFilename('img_3456.jpg').setMediaType('video/mpeg'));
+    await sut.putAsset(buildBasicAsset('wednesday8').setFilename('img_4567.jpg').setMediaType('IMAGE/JPEG'));
+    const allTypes = await sut.allMediaTypes();
+    expect(allTypes).toHaveLength(3);
+    expect(allTypes[0]?.label).toEqual('image/jpeg');
+    expect(allTypes[0]?.count).toEqual(2);
+    expect(allTypes[1]?.label).toEqual('image/png');
+    expect(allTypes[1]?.count).toEqual(1);
+    expect(allTypes[2]?.label).toEqual('video/mpeg');
+    expect(allTypes[2]?.count).toEqual(1);
+  });
+
   test('should retrieve documents by tags', async function () {
     // setup
     const settingsRepository = new EnvSettingsRepository();
@@ -344,11 +384,11 @@ describe('CouchDBRecordRepository', function () {
     await sut.putAsset(buildBasicAsset('wednesday8').setFilename('img_4567.jpg').
       setLocation(new Location('seoul')));
     await sut.putAsset(buildBasicAsset('thursday9').setFilename('img_5678.jpg').
-      setLocation(Location.fromParts('', 'oahu', 'hawaii')));
+      setLocation(Location.fromParts('', 'Oahu', 'Hawaii')));
     await sut.putAsset(buildBasicAsset('friday10').setFilename('img_6789.jpg').
       setLocation(new Location('paris')));
     await sut.putAsset(buildBasicAsset('friday11').setFilename('img_6879.jpg').
-      setLocation(Location.fromParts('city center', 'portland', 'OR')));
+      setLocation(Location.fromParts('city center', 'Portland', 'Oregon')));
 
     // searching with a single location
     const single = await sut.queryByLocations(['hawaii']);
@@ -356,10 +396,13 @@ describe('CouchDBRecordRepository', function () {
     expect(single.some((l) => l.assetId == 'basic113')).toBeTrue();
     expect(single.some((l) => l.assetId == 'thursday9')).toBeTrue();
 
-    // searching with multiple locations
+    // searching with multiple locations; test the result's location field to
+    // ensure it is a Location entity with the appropriate member functions
     const multiple = await sut.queryByLocations(['hawaii', 'oahu']);
     expect(multiple).toHaveLength(1);
     expect(multiple[0]?.assetId).toEqual('thursday9');
+    expect(multiple[0]?.location).toEqual(Location.parse('Oahu, Hawaii'));
+    expect(multiple[0]?.location?.partialMatch('hawaii')).toBeTrue();
 
     // searching location term split from commas
     const france = await sut.queryByLocations(['france']);
@@ -368,9 +411,11 @@ describe('CouchDBRecordRepository', function () {
     expect(france.some((l) => l.assetId == 'monday8')).toBeTrue();
 
     // searching location term from region field
-    const oregon = await sut.queryByLocations(['or']);
+    const oregon = await sut.queryByLocations(['oregon']);
     expect(oregon).toHaveLength(1);
     expect(oregon[0]?.assetId).toEqual('friday11');
+    expect(oregon[0]?.location).toEqual(Location.parse('city center; Portland, Oregon'));
+    expect(oregon[0]?.location?.partialMatch('portland')).toBeTrue();
   });
 
   test('should retrieve documents by media type', async function () {
@@ -426,6 +471,10 @@ describe('CouchDBRecordRepository', function () {
     expect(nineteen.some((l) => l.assetId == 'personA')).toBeTrue();
     expect(nineteen.some((l) => l.assetId == 'personC')).toBeTrue();
     expect(nineteen.some((l) => l.assetId == 'personJ')).toBeTrue();
+    expect(nineteen[0]?.datetime.getFullYear()).toBeGreaterThan(1970);
+    expect(nineteen[1]?.datetime.getFullYear()).toBeGreaterThan(1970);
+    expect(nineteen[2]?.datetime.getFullYear()).toBeGreaterThan(1970);
+    expect(nineteen[3]?.datetime.getFullYear()).toBeGreaterThan(1970);
 
     // multiple assets after 2000
     await sut.putAsset(buildBabyAsset('personN', new Date(1973, 4, 13)));
