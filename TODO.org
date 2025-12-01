@@ -16,15 +16,9 @@
 - [ ] details/edit page
 - [ ] store selections in local storage
 - [ ] search caching?
+*** Phase 3 goals [0/1]
+- [ ] read video creation time (https://kevinnadro.com/blog/parsing-creation-time-from-mp4-metadata-in-javascript)
 *** Overall action Items
-**** TODO ingest assets into the database [2/3]
-- [X] ensure temporary uploaded files are removed
-- [X] read original date/time from EXIF
-- [ ] attempt to read created date/time from videos
-**** TODO implement drop zone on Upload page [0/3]
-- [ ] add drop zone functionality
-- [ ] have drop zone border change color when files hovering
-- [ ] merge dropped and chosen files into one table
 **** TODO asset details page [0/7]
 - [ ] clicking search result navigates to details page
 - [ ] show preview of asset
@@ -64,7 +58,6 @@
 - [ ] search query
 - [ ] search sort order
 - [ ] search selected page
-**** TODO asset count does not refresh; maybe refresh on a timer
 **** TODO search query language
 ***** see mujina/src/query.js for a start
 ***** maybe lexer can implement =Symbol.iterator= instead of =run()=
@@ -78,14 +71,14 @@
 ***** objective is to improve search performance
 ***** https://docs.couchdb.org/en/stable/ddocs/views/pagination.html
 **** TODO make sure ~helix~ and ~perforce~ do not appear anywhere
+**** TODO saving changes to pending assets sometimes does not refresh
+***** updates are successful, page simply doesn't refresh
 **** TODO linting [0/5]
 - [ ] enable wrapping of long line (works for JSX/TSX files)
 - [ ] add JavaScript plugin
 - [ ] add TypeScript plugin
 - [ ] add =unicorn= plugin
 - [ ] add =eslint-plugin-tsdoc= plugin
-**** TODO bugs [/]
-- [ ] saving changes to pending assets sometimes does not apply to all
 **** TODO test setup on Windows
 **** TODO polish [0/4]
 - [ ] switch light/dark in System Preferences does not cause page theme to change

@@ -13,22 +13,24 @@ import { action, redirect, useAction, useSubmission } from '@solidjs/router'
 
 function Upload() {
   const datefmt = new Intl.DateTimeFormat()
-  const [selected, setSelected] = createSignal<Array<File>>([])
-  const filesSeleced: JSX.EventHandlerWithOptionsUnion<
+  const [selectedFiles, setSelectedFiles] = createSignal<Array<File>>([])
+  const [droppedFiles, setDroppedFiles] = createSignal<Array<File>>([])
+  const filesSelected: JSX.EventHandlerWithOptionsUnion<
     HTMLInputElement,
     Event,
     JSX.ChangeEventHandler<HTMLInputElement, Event>
   > = (event) => {
     // event.target.files is a FileList, not an Array
-    setSelected(Array.from<File>(event.target.files!))
+    setSelectedFiles(Array.from<File>(event.target.files!))
   }
   const hasFiles = createMemo(() => {
-    return selected().length > 0
+    return selectedFiles().length > 0 || droppedFiles().length > 0
   })
   // indicates number of files uploaded so far as percentage
   const [progress, setProgress] = createSignal(0)
   const startUploadAction = action(async (): Promise<void> => {
-    await uploadFiles(selected(), setProgress)
+    const allFiles = selectedFiles().concat(droppedFiles())
+    await uploadFiles(allFiles, setProgress)
     throw redirect('/pending')
   })
   const startUpload = useAction(startUploadAction)
@@ -62,7 +64,7 @@ function Upload() {
                         type="file"
                         multiple
                         name="uploads"
-                        on:change={filesSeleced}
+                        on:change={filesSelected}
                         disabled={uploadSubmission.pending}
                       />
                       <span class="file-cta">
@@ -98,44 +100,96 @@ function Upload() {
         </Show>
       </div>
 
-      <section class="section">
-        <p>You can drop files into the drop zone below.</p>
-        <div class="content" style="border-style: dashed; min-height: 14em;">
-          <Show when={hasFiles()} fallback={<></>}>
-            <table class="table is-fullwidth">
-              <thead>
-                <tr>
-                  <th>File</th>
-                  <th>Type</th>
-                  <th>Size</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                <Index each={selected()}>
-                  {(file) => (
-                    <tr>
-                      <td>{file().name}</td>
-                      <td>{file().type}</td>
-                      <td>{file().size}</td>
-                      <td>{datefmt.format(file().lastModified)}</td>
-                    </tr>
-                  )}
-                </Index>
-              </tbody>
-              <tfoot>
-                <tr>
-                  <th>File</th>
-                  <th>Type</th>
-                  <th>Size</th>
-                  <th>Date</th>
-                </tr>
-              </tfoot>
-            </table>
-          </Show>
-        </div>
-      </section>
+      <DropZone setDroppedFiles={setDroppedFiles}>
+        <Show when={hasFiles()} fallback={<></>}>
+          <table class="table is-fullwidth">
+            <thead>
+              <tr>
+                <th>File</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <Index each={selectedFiles()}>
+                {(file) => (
+                  <tr>
+                    <td>{file().name}</td>
+                    <td>{file().type}</td>
+                    <td>{file().size}</td>
+                    <td>{datefmt.format(file().lastModified)}</td>
+                  </tr>
+                )}
+              </Index>
+              <Index each={droppedFiles()}>
+                {(file) => (
+                  <tr>
+                    <td>{file().name}</td>
+                    <td>{file().type}</td>
+                    <td>{file().size}</td>
+                    <td>{datefmt.format(file().lastModified)}</td>
+                  </tr>
+                )}
+              </Index>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th>File</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Date</th>
+              </tr>
+            </tfoot>
+          </table>
+        </Show>
+      </DropZone>
     </>
+  )
+}
+
+interface DropZoneProps {
+  setDroppedFiles: Setter<Array<File>>
+  children: any
+}
+
+function DropZone(props: DropZoneProps) {
+  const [isDragOver, setIsDragOver] = createSignal(false)
+
+  const handleDragOver: JSX.EventHandler<HTMLDivElement, DragEvent> = (
+    event
+  ) => {
+    event.preventDefault()
+    setIsDragOver(true)
+  }
+
+  const handleDragLeave = () => {
+    setIsDragOver(false)
+  }
+
+  const handleDrop: JSX.EventHandler<HTMLDivElement, DragEvent> = (event) => {
+    event.preventDefault()
+    setIsDragOver(false)
+    props.setDroppedFiles(Array.from(event.dataTransfer?.files ?? []))
+  }
+
+  return (
+    <section class="section">
+      <p>You can drop files into the drop zone below.</p>
+      <div
+        class="content"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        style={{
+          'border-style': 'dashed',
+          'min-height': '14em',
+          'border-color': isDragOver() ? 'green' : 'white',
+        }}
+      >
+        {props.children}
+      </div>
+    </section>
   )
 }
 
