@@ -19,7 +19,9 @@ import ImportAsset from 'tanuki/server/domain/usecases/ImportAsset.ts';
 import SearchAssets from 'tanuki/server/domain/usecases/SearchAssets.ts';
 import UpdateAsset from 'tanuki/server/domain/usecases/UpdateAsset.ts';
 import { CouchDBRecordRepository } from 'tanuki/server/data/repositories/CouchDBRecordRepository.ts';
+import { DummyLocationRepository } from 'tanuki/server/data/repositories/DummyLocationRepository.ts';
 import { EnvSettingsRepository } from 'tanuki/server/data/repositories/EnvSettingsRepository.ts';
+import { GoogleLocationRepository } from 'tanuki/server/data/repositories/GoogleLocationRepository.ts';
 import { LocalBlobRepository } from 'tanuki/server/data/repositories/LocalBlobRepository.ts';
 
 // create the injection container
@@ -27,11 +29,17 @@ const container = createContainer({
   injectionMode: InjectionMode.PROXY
 });
 
+let LocationRepository: any = DummyLocationRepository;
+if ('GOOGLE_MAPS_API_KEY' in process.env) {
+  LocationRepository = GoogleLocationRepository;
+}
+
 container.register({
   // register the data repositories as classes
   settingsRepository: asClass(EnvSettingsRepository, { lifetime: Lifetime.SINGLETON }),
   recordRepository: asClass(CouchDBRecordRepository, { lifetime: Lifetime.SINGLETON }),
   blobRepository: asClass(LocalBlobRepository, { lifetime: Lifetime.SINGLETON }),
+  locationRepository: asClass(LocationRepository, { lifetime: Lifetime.SINGLETON }),
 
   // register the use cases as functions
   countAssets: asFunction(CountAssets),

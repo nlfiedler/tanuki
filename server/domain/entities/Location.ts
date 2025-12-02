@@ -159,4 +159,99 @@ class Location {
   }
 }
 
-export { Location };
+type LatitudeRef = 'N' | 'S';
+type LongitudeRef = 'E' | 'W';
+
+/**
+ * GPS coordinates as read from an image or other sources.
+ */
+class Coordinates {
+  latitudeRef: LatitudeRef;
+  latitude: [number, number, number];
+  longitudeRef: LongitudeRef;
+  longitude: [number, number, number];
+
+  constructor(
+    latitudeRef: LatitudeRef,
+    latitude: [number, number, number],
+    longitudeRef: LongitudeRef,
+    longitude: [number, number, number]
+  ) {
+    this.latitudeRef = latitudeRef;
+    this.latitude = latitude;
+    this.longitudeRef = longitudeRef;
+    this.longitude = longitude;
+  }
+
+  /**
+   * Return the coordinates as a pair of signed decimals, as expected by some
+   * reverse geocoding sytems.
+   */
+  intoDecimals(): [number, number] {
+    const lat = this.latitude[0] + this.latitude[1] / 60 + this.latitude[2] / 3600;
+    const long = this.longitude[0] + this.longitude[1] / 60 + this.longitude[2] / 3600;
+    const latSign = this.latitudeRef === 'N' ? 1 : -1;
+    const longSign = this.longitudeRef === 'E' ? 1 : -1;
+    return [latSign * lat, longSign * long];
+  }
+
+  setLatitudeRef(latitudeRef: LatitudeRef): Coordinates {
+    this.latitudeRef = latitudeRef;
+    return this;
+  }
+
+  setLatitudeDegrees(degrees: number): Coordinates {
+    this.latitude[0] = degrees;
+    return this;
+  }
+
+  setLatitudeMinutes(minutes: number): Coordinates {
+    this.latitude[1] = minutes;
+    return this;
+  }
+
+  setLatitudeSeconds(seconds: number): Coordinates {
+    this.latitude[2] = seconds;
+    return this;
+  }
+
+  setLongitudeRef(longitudeRef: LongitudeRef): Coordinates {
+    this.longitudeRef = longitudeRef;
+    return this;
+  }
+
+  setLongitudeDegrees(degrees: number): Coordinates {
+    this.longitude[0] = degrees;
+    return this;
+  }
+
+  setLongitudeMinutes(minutes: number): Coordinates {
+    this.longitude[1] = minutes;
+    return this;
+  }
+
+  setLongitudeSeconds(seconds: number): Coordinates {
+    this.longitude[2] = seconds;
+    return this;
+  }
+}
+
+/**
+ * Location information returned from a reverse geocoding service.
+ */
+class Geocoded {
+  /** Name of the city (locality). */
+  city: string | null;
+  /** Name of the region (administrative_area_level_1). */
+  region: string | null;
+  /** Name of the country (country). */
+  country: string | null;
+
+  constructor(city: string | null, region: string | null, country: string | null) {
+    this.city = city;
+    this.region = region;
+    this.country = country;
+  }
+}
+
+export { Coordinates, Geocoded, Location };

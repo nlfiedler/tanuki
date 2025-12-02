@@ -2,23 +2,27 @@
 ** Rewrite
 *** commit =230801d= was when old JS code was removed
 *** commit =3263ae7= was last Rust commit
-*** Phase 1 goals [3/7]
+*** Phase 1 goals [5/6]
 - [X] browse page complete
 - [X] pending page complete
-- [ ] upload page complete
+- [X] upload page complete
 - [ ] dump/load
-- [ ] reverse geocoding
+- [X] reverse geocoding
 - [X] original date-time (image)
-- [ ] original creation time (video)
 *** Phase 2 goals [0/5]
+- [ ] details/edit page
+- [ ] ~import~ usecase and button on uploads page
 - [ ] search query language
 - [ ] search page
-- [ ] details/edit page
-- [ ] store selections in local storage
 - [ ] search caching?
-*** Phase 3 goals [0/1]
-- [ ] read video creation time (https://kevinnadro.com/blog/parsing-creation-time-from-mp4-metadata-in-javascript)
+*** Phase 3 goals [0/3]
+- [ ] read creation time from mpeg files
+- [ ] read date from RIFF/AVI files
+- [ ] look for HEIC support
 *** Overall action Items
+**** TODO populate database from dump file
+***** consider how dump/load should be accessed (CLI, REST, webui, GraphQL)
+***** using GraphQL is more work than just =curl= and REST API
 **** TODO asset details page [0/7]
 - [ ] clicking search result navigates to details page
 - [ ] show preview of asset
@@ -27,13 +31,6 @@
 - [ ] ~Download~ button
 - [ ] ~Replace~ button
 - [ ] left-right buttons
-**** TODO populate database from dump file
-***** consider how dump/load should be accessed (CLI, REST, webui, GraphQL)
-***** using GraphQL is more work than just =curl= and REST API
-**** TODO implement reverse geocoding [0/3]
-- [ ] use exif-reader to find out what GPS coords look like
-- [ ] write =GoogleMaps= data source to use HTTP to get city/region from GPS coords
-- [ ] update =ImportAsset= to make use of geocoding
 **** TODO import operation [0/3]
 - [ ] add =import= GraphQL mutation
 - [ ] have ~Import~ button on Upload page execute GraphQL mutation
@@ -62,17 +59,13 @@
 ***** see mujina/src/query.js for a start
 ***** maybe lexer can implement =Symbol.iterator= instead of =run()=
 **** TODO bulk edit support
-**** TODO implement search cache repository [0/2]
-- [ ] put and get the results in =SearchAssets=
-- [ ] clear the cache in =ImportAssets.js=
 **** TODO check browser console for issues
-**** TODO go through all of the Rust code and make sure nothing is missing from the TS version
 **** TODO consider how record repository can implement sorting and pagination
 ***** objective is to improve search performance
 ***** https://docs.couchdb.org/en/stable/ddocs/views/pagination.html
 **** TODO make sure ~helix~ and ~perforce~ do not appear anywhere
 **** TODO saving changes to pending assets sometimes does not refresh
-***** updates are successful, page simply doesn't refresh
+***** updates are successful, page quietly fails to refresh
 **** TODO linting [0/5]
 - [ ] enable wrapping of long line (works for JSX/TSX files)
 - [ ] add JavaScript plugin
@@ -94,6 +87,9 @@
 - [ ] open ports for database access in docker
 - [ ] set up volume for CouchDB storage
 - [ ] update provisioning project
+**** TODO read original date-time from videos
+***** https://kevinnadro.com/blog/parsing-creation-time-from-mp4-metadata-in-javascript
+***** RIFF/AVI code exists in Rust code =src/domain/usecases.rs=
 *** Documentation changes
 **** TODO about the =.env= file and how Bun reads that by default, before anything else we do
 ***** instead, use =.env.development= so =bun test= will _not_ read that automatically

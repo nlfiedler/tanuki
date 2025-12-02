@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import { describe, expect, test } from "bun:test";
-import { Location } from 'tanuki/server/domain/entities/Location.ts';
+import { Coordinates, Location } from 'tanuki/server/domain/entities/Location.ts';
 
 describe('Location entity', function () {
   test('should indicate if it has values or not', function () {
@@ -71,5 +71,15 @@ describe('Location entity', function () {
     const oregon = Location.fromParts('', '', 'Oregon');
     expect(oregon.partialMatch('oregon')).toBeTrue();
     expect(oregon.partialMatch('OREGON')).toBeFalse();
+  });
+});
+
+describe('Coordinates entity', function () {
+  test('should return decimals from coordinates', function () {
+    const nw = new Coordinates('N', [34, 37, 17], 'W', [135, 35, 21]);
+    expect(nw.intoDecimals()).toEqual([34.62138888888889, -135.58916666666667]);
+
+    const se = new Coordinates('S', [34, 37, 17], 'E', [135, 35, 21]);
+    expect(se.intoDecimals()).toEqual([-34.62138888888889, 135.58916666666667]);
   });
 });

@@ -4,9 +4,10 @@
 import { mock } from "bun:test";
 import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
 import { AttributeCount } from 'tanuki/server/domain/entities/AttributeCount.ts';
-import { Location } from 'tanuki/server/domain/entities/Location.ts';
+import { Coordinates, Geocoded, Location } from 'tanuki/server/domain/entities/Location.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
 import { type BlobRepository } from 'tanuki/server/domain/repositories/BlobRepository.ts';
+import { type LocationRepository } from 'tanuki/server/domain/repositories/LocationRepository.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
 
 /**
@@ -14,13 +15,15 @@ import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordR
  * functions will return null, empty string, zero, etc.
  */
 export function recordRepositoryMock(
-  { countAssets = undefined,
+  {
+    countAssets = undefined,
     getAssetById = undefined,
     getAssetByDigest = undefined,
     allTags = undefined,
     allLocations = undefined,
     rawLocations = undefined,
     allYears = undefined,
+    allMediaTypes = undefined,
     putAsset = undefined,
     queryByTags = undefined,
     queryByLocations = undefined,
@@ -29,24 +32,24 @@ export function recordRepositoryMock(
     queryAfterDate = undefined,
     queryDateRange = undefined,
     queryNewborn = undefined,
-  }:
-    {
-      countAssets?: () => Promise<number>,
-      getAssetById?: (assetId: string) => Promise<Asset | null>,
-      getAssetByDigest?: (digest: string) => Promise<Asset | null>,
-      allTags?: () => Promise<AttributeCount[]>,
-      allLocations?: () => Promise<AttributeCount[]>,
-      rawLocations?: () => Promise<Location[]>,
-      allYears?: () => Promise<AttributeCount[]>,
-      putAsset?: (asset: Asset) => Promise<void>,
-      queryByTags?: (tags: String[]) => Promise<SearchResult[]>,
-      queryByLocations?: (locations: string[]) => Promise<SearchResult[]>,
-      queryByMediaType?: (media_type: string) => Promise<SearchResult[]>,
-      queryBeforeDate?: (before: Date) => Promise<SearchResult[]>,
-      queryAfterDate?: (after: Date) => Promise<SearchResult[]>,
-      queryDateRange?: (after: Date, before: Date) => Promise<SearchResult[]>,
-      queryNewborn?: (after: Date) => Promise<SearchResult[]>;
-    }
+  }: {
+    countAssets?: () => Promise<number>,
+    getAssetById?: (assetId: string) => Promise<Asset | null>,
+    getAssetByDigest?: (digest: string) => Promise<Asset | null>,
+    allTags?: () => Promise<AttributeCount[]>,
+    allLocations?: () => Promise<AttributeCount[]>,
+    rawLocations?: () => Promise<Location[]>,
+    allYears?: () => Promise<AttributeCount[]>,
+    allMediaTypes?: () => Promise<AttributeCount[]>,
+    putAsset?: (asset: Asset) => Promise<void>,
+    queryByTags?: (tags: String[]) => Promise<SearchResult[]>,
+    queryByLocations?: (locations: string[]) => Promise<SearchResult[]>,
+    queryByMediaType?: (media_type: string) => Promise<SearchResult[]>,
+    queryBeforeDate?: (before: Date) => Promise<SearchResult[]>,
+    queryAfterDate?: (after: Date) => Promise<SearchResult[]>,
+    queryDateRange?: (after: Date, before: Date) => Promise<SearchResult[]>,
+    queryNewborn?: (after: Date) => Promise<SearchResult[]>;
+  }
 ): RecordRepository {
   const mockRecordRepository: RecordRepository = {
     countAssets: countAssets || mock(() => Promise.resolve(0)),
@@ -56,6 +59,7 @@ export function recordRepositoryMock(
     allLocations: allLocations || mock(() => Promise.resolve([])),
     rawLocations: rawLocations || mock(() => Promise.resolve([])),
     allYears: allYears || mock(() => Promise.resolve([])),
+    allMediaTypes: allMediaTypes || mock(() => Promise.resolve([])),
     putAsset: putAsset || mock(() => Promise.resolve()),
     queryByTags: queryByTags || mock(() => Promise.resolve([])),
     queryByLocations: queryByLocations || mock(() => Promise.resolve([])),
@@ -80,15 +84,14 @@ export function blobRepositoryMock(
     renameBlob = undefined,
     thumbnail = undefined,
     clearCache = undefined,
-  }:
-    {
-      storeBlob?: (filepath: string, asset: Asset) => Promise<void>,
-      replaceBlob?: (filepath: string, asset: Asset) => Promise<void>,
-      blobPath?: (assetId: string) => string,
-      renameBlob?: (oldId: string, newId: string) => Promise<void>,
-      thumbnail?: (assetId: string, width: number, height: number) => Promise<Buffer>,
-      clearCache?: (assetId: string) => Promise<void>,
-    }
+  }: {
+    storeBlob?: (filepath: string, asset: Asset) => Promise<void>,
+    replaceBlob?: (filepath: string, asset: Asset) => Promise<void>,
+    blobPath?: (assetId: string) => string,
+    renameBlob?: (oldId: string, newId: string) => Promise<void>,
+    thumbnail?: (assetId: string, width: number, height: number) => Promise<Buffer>,
+    clearCache?: (assetId: string) => Promise<void>,
+  }
 ): BlobRepository {
   const mockBlobRepository: BlobRepository = {
     storeBlob: storeBlob || mock(() => Promise.resolve()),
@@ -99,4 +102,21 @@ export function blobRepositoryMock(
     clearCache: clearCache || mock(() => Promise.resolve()),
   };
   return mockBlobRepository;
+}
+
+/**
+ * Helper for producing a mock location repository implementation. Any undefined
+ * functions will return null, empty string, zero, etc.
+ */
+export function locationRepositoryMock(
+  {
+    findLocation = undefined,
+  }: {
+    findLocation?: (coords: Coordinates) => Promise<Geocoded | null>,
+  }
+): LocationRepository {
+  const mockLocationRepository: LocationRepository = {
+    findLocation: findLocation || mock(() => Promise.resolve(null)),
+  };
+  return mockLocationRepository;
 }

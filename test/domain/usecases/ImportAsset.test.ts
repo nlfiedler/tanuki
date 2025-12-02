@@ -3,18 +3,24 @@
 //
 import { describe, expect, mock, test } from "bun:test";
 import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
+import { Geocoded } from 'tanuki/server/domain/entities/Location.ts';
 import ImportAsset from 'tanuki/server/domain/usecases/ImportAsset.ts';
-import { blobRepositoryMock, recordRepositoryMock } from './mocking.ts';
+import { blobRepositoryMock, locationRepositoryMock, recordRepositoryMock } from './mocking.ts';
 
 describe('ImportAsset use case', function () {
   test('should import a new asset', async function () {
     // arrange
     const mockRecordRepository = recordRepositoryMock({});
     const mockBlobRepository = blobRepositoryMock({});
+    const mockLocationRepository = locationRepositoryMock({});
     const filepath = './test/fixtures/dcp_1069.jpg';
     const mimetype = 'image/jpeg';
     const modified = new Date();
-    const usecase = ImportAsset({ recordRepository: mockRecordRepository, blobRepository: mockBlobRepository });
+    const usecase = ImportAsset({
+      recordRepository: mockRecordRepository,
+      blobRepository: mockBlobRepository,
+      locationRepository: mockLocationRepository,
+    });
     // act
     const actual = await usecase(filepath, 'dcp_1069.jpg', mimetype, modified);
     // assert
@@ -40,10 +46,15 @@ describe('ImportAsset use case', function () {
       getAssetByDigest: mock(() => Promise.resolve(asset))
     });
     const mockBlobRepository = blobRepositoryMock({});
+    const mockLocationRepository = locationRepositoryMock({});
     const filepath = './test/fixtures/dcp_1069.jpg';
     const mimetype = 'image/jpeg';
     const modified = new Date();
-    const usecase = ImportAsset({ recordRepository: mockRecordRepository, blobRepository: mockBlobRepository });
+    const usecase = ImportAsset({
+      recordRepository: mockRecordRepository,
+      blobRepository: mockBlobRepository,
+      locationRepository: mockLocationRepository,
+    });
     // act
     const actual = await usecase(filepath, 'dcp_1069.jpg', mimetype, modified);
     // assert
@@ -56,5 +67,37 @@ describe('ImportAsset use case', function () {
     mock.clearAllMocks();
   });
 
-  // TODO: test with call to reverse geocoder
+  test('should import an asset with GPS coordinates', async function () {
+    // arrange
+    const mockRecordRepository = recordRepositoryMock({});
+    const mockBlobRepository = blobRepositoryMock({});
+    const mockLocationRepository = locationRepositoryMock({
+      findLocation: mock(() => Promise.resolve(new Geocoded('Portland', 'Oregon', 'USA')))
+    });
+    // file needs GPS coordinates for the location repository to be invoked
+    const filepath = './test/fixtures/IMG_0385.JPG';
+    const mimetype = 'image/jpeg';
+    const modified = new Date();
+    const usecase = ImportAsset({
+      recordRepository: mockRecordRepository,
+      blobRepository: mockBlobRepository,
+      locationRepository: mockLocationRepository,
+    });
+    // act
+    const actual = await usecase(filepath, 'IMG_0385.JPG', mimetype, modified);
+    // assert
+    expect(actual.checksum).toEqual('sha256-d020066fd41970c2eebc51b1e712a500de4966cef0daf4890dc238d80cbaebb2');
+    expect(actual.byteLength).toEqual(59908);
+    expect(actual.mediaType).toEqual('image/jpeg');
+    expect(actual.originalDate?.getFullYear()).toEqual(2024);
+    expect(actual.originalDate?.getMonth()).toEqual(1); // zero-based
+    expect(actual.originalDate?.getDate()).toEqual(9);
+    expect(actual.location?.city).toEqual('Portland');
+    expect(actual.location?.region).toEqual('Oregon');
+    expect(mockRecordRepository.getAssetByDigest).toHaveBeenCalledTimes(1);
+    expect(mockBlobRepository.storeBlob).toHaveBeenCalledTimes(1);
+    expect(mockRecordRepository.putAsset).toHaveBeenCalledTimes(1);
+    expect(mockLocationRepository.findLocation).toHaveBeenCalledTimes(1);
+    mock.clearAllMocks();
+  });
 });

@@ -8,7 +8,7 @@ import dayjs from 'dayjs';
 import ExifReader from 'exifreader';
 import mime from 'mime';
 import { ulid } from 'ulid';
-import { Location } from 'tanuki/server/domain/entities/Location.ts';
+import { Coordinates, Geocoded, Location } from 'tanuki/server/domain/entities/Location.ts';
 import { SortOrder, SortField } from 'tanuki/server/domain/entities/SearchParams.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
 
@@ -133,6 +133,80 @@ function parseExifDate(value: string): number | null {
   );
 }
 
+// help TypeScript check the type of the latitude/longitude data
+type ExifNumberPairs = [[number, number], [number, number], [number, number]];
+
+/**
+ * Extract the GPS coordinates from the asset, if any.
+ *
+ * @param mimetype - the mime type of the file.
+ * @param filepath - path to file to be examined.
+ * @returns GPS coordinates if any, null otherwise.
+ */
+export async function getCoordinates(mimetype: string, filepath: string): Promise<Coordinates | null> {
+  try {
+    if (mimetype.startsWith('image/')) {
+      const tags = await ExifReader.load(filepath);
+      if (Array.isArray(tags.GPSLatitudeRef?.value)) {
+        const coords = new Coordinates('N', [0, 0, 0], 'E', [0, 0, 0]);
+        if (tags.GPSLatitudeRef.value[0] === 'S') {
+          coords.setLatitudeRef('S');
+        }
+        if (Array.isArray(tags.GPSLatitude?.value)) {
+          let numbers = tags.GPSLatitude?.value as ExifNumberPairs;
+          coords.setLatitudeDegrees(numbers[0][0] / numbers[0][1]);
+          coords.setLatitudeMinutes(numbers[1][0] / numbers[1][1]);
+          coords.setLatitudeSeconds(numbers[2][0] / numbers[2][1]);
+        }
+        if (Array.isArray(tags.GPSLongitudeRef?.value)) {
+          if (tags.GPSLongitudeRef.value[0] === 'W') {
+            coords.setLongitudeRef('W');
+          }
+          if (Array.isArray(tags.GPSLongitude?.value)) {
+            let numbers = tags.GPSLongitude?.value as ExifNumberPairs;
+            coords.setLongitudeDegrees(numbers[0][0] / numbers[0][1]);
+            coords.setLongitudeMinutes(numbers[1][0] / numbers[1][1]);
+            coords.setLongitudeSeconds(numbers[2][0] / numbers[2][1]);
+          }
+        }
+        return coords;
+      }
+    }
+  } catch (err) {
+    // failed to read file/data for whatever reason
+    return null;
+  }
+  return null;
+}
+
+//
+// Example of EXIF coordinates from image file:
+//
+//  GPSLatitudeRef: {
+//     id: 1,
+//     value: [ "N" ],
+//     description: "North latitude",
+//   },
+//   GPSLatitude: {
+//     id: 2,
+//     value: [
+//       [ 37, 1 ], [ 42, 1 ], [ 3193, 100 ]
+//     ],
+//     description: 37.708869444444446,
+//   },
+//   GPSLongitudeRef: {
+//     id: 3,
+//     value: [ "W" ],
+//     description: "West longitude",
+//   },
+//   GPSLongitude: {
+//     id: 4,
+//     value: [
+//       [ 122, 1 ], [ 3, 1 ], [ 4772, 100 ]
+//     ],
+//     description: 122.06325555555556,
+//   },
+
 /**
  * Sort the search results if the field is specified, in the order given.
  *
@@ -211,6 +285,32 @@ export function mergeLocations(asset?: Location | null, input?: Location | null)
   }
   // original value is undefined, return input as-is
   return input;
+}
+
+/**
+ * Convert the geocoded location to the domain version.
+ * 
+ * @param geocoded - result from reverse geocoding, city must not be null.
+ * @returns Location entity with appropriate city and region.
+ */
+export function locationFromGeocoded(geocoded: Geocoded): Location {
+  const loc = Location.fromRaw(null, geocoded.city!, null);
+  if (geocoded.city && geocoded.region) {
+    const city = geocoded.city.toLocaleLowerCase();
+    const region = geocoded.region.toLocaleLowerCase();
+    // replace region with country if it is largely redundant
+    if (city == region || region.startsWith(city) || region.endsWith(city)) {
+      loc.region = geocoded.country;
+    } else {
+      loc.region = geocoded.region;
+    }
+  } else if (geocoded.region) {
+    // no city but has region and possibly country, promote the values since the
+    // domain entity does not have a country
+    loc.city = geocoded.region;
+    loc.region = geocoded.country;
+  }
+  return loc;
 }
 
 export type CaptionParts = {

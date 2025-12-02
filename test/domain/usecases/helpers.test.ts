@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import { describe, expect, test } from "bun:test";
-import { Location } from 'tanuki/server/domain/entities/Location.ts';
+import { Geocoded, Location } from 'tanuki/server/domain/entities/Location.ts';
 import * as helpers from 'tanuki/server/domain/usecases/helpers.ts';
 
 describe('File checksum helper', function () {
@@ -48,7 +48,7 @@ describe('Generate identifier helper', function () {
   //     assert!(as_string.ends_with(".jpeg"));
 });
 
-describe('EXIF data helper', function () {
+describe('EXIF original date-time', function () {
   test('should read EXIF original date/time from JPEG', async function () {
     // arrange
     const mimetype = 'image/jpeg';
@@ -134,6 +134,25 @@ describe('EXIF data helper', function () {
   //     assert!(actual.is_err());
 });
 
+describe('EXIF GPS coordinates', function () {
+  test('should read GPS coords', async function () {
+    // arrange
+    const mimetype = 'image/jpeg';
+    const filepath = "test/fixtures/IMG_0385.JPG";
+    // act
+    const actual = await helpers.getCoordinates(mimetype, filepath);
+    // assert
+    expect(actual?.latitudeRef).toEqual('N');
+    expect(actual?.latitude[0]).toEqual(37);
+    expect(actual?.latitude[1]).toEqual(42);
+    expect(actual?.latitude[2]).toEqual(31.93);
+    expect(actual?.longitudeRef).toEqual('W');
+    expect(actual?.longitude[0]).toEqual(122);
+    expect(actual?.longitude[1]).toEqual(3);
+    expect(actual?.longitude[2]).toEqual(47.72);
+  });
+});
+
 describe('Merge locations helper', function () {
   test('should merge various location objects', async function () {
     // both are none, result is none
@@ -191,6 +210,53 @@ describe('Merge locations helper', function () {
     expect(result).toEqual(input);
   });
 });
+
+describe('Geocode location converter', function () {
+  test('should convert various geocoded locations', async function () {
+    // city is none but region and country are defined
+    let input = new Geocoded(null, 'New Territories', 'Hong Kong');
+    let actual = helpers.locationFromGeocoded(input);
+    expect(actual.city).toEqual('New Territories');
+    expect(actual.region).toEqual('Hong Kong');
+
+    // country is not needed
+    input = new Geocoded('Portland', 'Oregon', 'United States');
+    actual = helpers.locationFromGeocoded(input);
+    expect(actual.city).toEqual('Portland');
+    expect(actual.region).toEqual('Oregon');
+
+    // city equals region
+    input = new Geocoded('Nara', 'Nara', 'Japan');
+    actual = helpers.locationFromGeocoded(input);
+    expect(actual.city).toEqual('Nara');
+    expect(actual.region).toEqual('Japan');
+
+    // region has city as prefix
+    input = new Geocoded('Jerusalem', 'Jerusalem District', 'Israel');
+    actual = helpers.locationFromGeocoded(input);
+    expect(actual.city).toEqual('Jerusalem');
+    expect(actual.region).toEqual('Israel');
+
+    // region has city as suffix
+    input = new Geocoded('São Paulo', 'State of São Paulo', 'Brazil');
+    actual = helpers.locationFromGeocoded(input);
+    expect(actual.city).toEqual('São Paulo');
+    expect(actual.region).toEqual('Brazil');
+
+    // all blank fields
+    input = new Geocoded(null, null, null);
+    actual = helpers.locationFromGeocoded(input);
+    expect(actual.city).toBeNull();
+    expect(actual.region).toBeNull();
+
+    // no city or region
+    input = new Geocoded('Portland', null, null);
+    actual = helpers.locationFromGeocoded(input);
+    expect(actual.city).toEqual('Portland');
+    expect(actual.region).toBeNull();
+  });
+});
+
 
 describe('parseCaption helper', function () {
   test('should return nothing if caption is plain text', async function () {
