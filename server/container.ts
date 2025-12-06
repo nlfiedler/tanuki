@@ -9,12 +9,14 @@ import {
   Lifetime
 } from 'awilix';
 import CountAssets from 'tanuki/server/domain/usecases/CountAssets.ts';
+import DumpAssets from 'tanuki/server/domain/usecases/DumpAssets.ts';
 import FindPending from 'tanuki/server/domain/usecases/FindPending.ts';
 import GetLocationParts from 'tanuki/server/domain/usecases/GetLocationParts.ts';
 import GetLocationRecords from 'tanuki/server/domain/usecases/GetLocationRecords.ts';
 import GetMediaTypes from 'tanuki/server/domain/usecases/GetMediaTypes.ts';
 import GetTags from 'tanuki/server/domain/usecases/GetTags.ts';
 import GetYears from 'tanuki/server/domain/usecases/GetYears.ts';
+import LoadAssets from 'tanuki/server/domain/usecases/LoadAssets.ts';
 import ImportAsset from 'tanuki/server/domain/usecases/ImportAsset.ts';
 import SearchAssets from 'tanuki/server/domain/usecases/SearchAssets.ts';
 import UpdateAsset from 'tanuki/server/domain/usecases/UpdateAsset.ts';
@@ -43,6 +45,7 @@ container.register({
 
   // register the use cases as functions
   countAssets: asFunction(CountAssets),
+  dumpAssets: asFunction(DumpAssets),
   findPending: asFunction(FindPending),
   getLocationParts: asFunction(GetLocationParts),
   getLocationRecords: asFunction(GetLocationRecords),
@@ -50,6 +53,7 @@ container.register({
   getTags: asFunction(GetTags),
   getYears: asFunction(GetYears),
   importAsset: asFunction(ImportAsset),
+  loadAssets: asFunction(LoadAssets),
   searchAssets: asFunction(SearchAssets),
   updateAsset: asFunction(UpdateAsset),
 });

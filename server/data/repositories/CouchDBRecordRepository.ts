@@ -254,7 +254,7 @@ class CouchDBRecordRepository implements RecordRepository {
   /** @inheritDoc */
   async queryBeforeDate(before: Date): Promise<SearchResult[]> {
     const queryResults = await this.database.view('assets', 'by_date', {
-      end_key: before.getTime() - 1
+      endkey: before.getTime() - 1
     });
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
@@ -262,7 +262,7 @@ class CouchDBRecordRepository implements RecordRepository {
   /** @inheritDoc */
   async queryAfterDate(after: Date): Promise<SearchResult[]> {
     const queryResults = await this.database.view('assets', 'by_date', {
-      start_key: after.getTime()
+      startkey: after.getTime()
     });
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
@@ -270,8 +270,8 @@ class CouchDBRecordRepository implements RecordRepository {
   /** @inheritDoc */
   async queryDateRange(after: Date, before: Date): Promise<SearchResult[]> {
     const queryResults = await this.database.view('assets', 'by_date', {
-      start_key: after.getTime(),
-      end_key: before.getTime() - 1
+      startkey: after.getTime(),
+      endkey: before.getTime() - 1
     });
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
@@ -279,9 +279,51 @@ class CouchDBRecordRepository implements RecordRepository {
   /** @inheritDoc */
   async queryNewborn(after: Date): Promise<SearchResult[]> {
     const queryResults = await this.database.view('assets', 'newborn', {
-      start_key: after.getTime()
+      startkey: after.getTime()
     });
     return queryResults.rows.map((row: any) => convertViewResult(row));
+  }
+
+  /** @inheritDoc */
+  async fetchAssets(cursor: any, limit: number): Promise<[Asset[], any]> {
+    // The cursor is either null, a document identifier, or 'done'. By using a
+    // document identifier as the start key, CouchDB will begin retrieving
+    // documents from that document. Thanks to CouchDB storing the records in a
+    // B-tree, it will return the documents in natural order, making for easy
+    // traversal of the entire collection.
+    if (cursor === 'done') {
+      return [[], cursor];
+    }
+    // add one to the limit to get the next key to return as the cursor
+    limit++;
+    // inexplicably, using undefined for startkey is literally passed as the
+    // string 'undefined' to the CouchDB REST API
+    const res = await this.database.list(cursor ? {
+      startkey: cursor, limit, include_docs: true
+    } : { limit, include_docs: true });
+    if (res.rows.length === limit) {
+      // there are more rows than requested, get the last one and use its
+      // identifier as the cursor from which to start scanning next time
+      cursor = res.rows.pop().id;
+    } else {
+      // there are fewer rows than requested, return a 'done' cursor
+      cursor = 'done';
+    }
+    const assets = res.rows.reduce((acc: Array<Asset>, row: any) => {
+      if (row.id !== '_design/assets') {
+        acc.push(assetFromDocument({ key: row.id, ...row.doc }));
+      }
+      return acc;
+    }, new Array());
+    return [assets, cursor];
+  }
+
+  /** @inheritDoc */
+  async storeAssets(incoming: Asset[]): Promise<void> {
+    // db.bulk() requires both _id and _rev in order to update existing records
+    for (const record of incoming) {
+      await this.putAsset(record);
+    }
   }
 }
 

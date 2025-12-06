@@ -489,6 +489,125 @@ describe('CouchDBRecordRepository', function () {
     expect(millenium.some((l) => l.assetId == 'personC')).toBeTrue();
     expect(millenium.some((l) => l.assetId == 'personJ')).toBeTrue();
   });
+
+  test('should fetch nothing when database is empty', async function () {
+    // setup
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new CouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    const [assets, cursor] = await sut.fetchAssets(null, 100);
+    expect(assets).toHaveLength(0);
+    expect(cursor).toBeDefined();
+  });
+
+  test('should fetch assets in a single batch', async function () {
+    // setup
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new CouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    await sut.putAsset(buildBasicAsset('antonia'));
+    await sut.putAsset(buildBasicAsset('christina'));
+    await sut.putAsset(buildBasicAsset('joseph'));
+    await sut.putAsset(buildBasicAsset('nathan'));
+
+    const [batch1, cursor1] = await sut.fetchAssets(null, 10);
+    expect(batch1).toHaveLength(4);
+    expect(cursor1).toBeDefined();
+    expect(batch1[0]?.key).toEqual('antonia');
+    expect(batch1[3]?.key).toEqual('nathan');
+
+    const [batch2, cursor2] = await sut.fetchAssets(cursor1, 10);
+    expect(batch2).toHaveLength(0);
+  });
+
+  test('should fetch assets in batches', async function () {
+    // setup
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new CouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    await sut.putAsset(buildBasicAsset('andy'));
+    await sut.putAsset(buildBasicAsset('angela'));
+    await sut.putAsset(buildBasicAsset('antonia'));
+    await sut.putAsset(buildBasicAsset('chachamaru'));
+    await sut.putAsset(buildBasicAsset('christina'));
+    await sut.putAsset(buildBasicAsset('dickson'));
+    await sut.putAsset(buildBasicAsset('eunice'));
+    await sut.putAsset(buildBasicAsset('gabriel'));
+    await sut.putAsset(buildBasicAsset('gerald'));
+    await sut.putAsset(buildBasicAsset('harry'));
+    await sut.putAsset(buildBasicAsset('janet'));
+    await sut.putAsset(buildBasicAsset('joseph'));
+    await sut.putAsset(buildBasicAsset('mittens'));
+    await sut.putAsset(buildBasicAsset('nathan'));
+    await sut.putAsset(buildBasicAsset('smiley'));
+    await sut.putAsset(buildBasicAsset('sonya'));
+    await sut.putAsset(buildBasicAsset('stormy'));
+    await sut.putAsset(buildBasicAsset('wingtim'));
+
+    const [batch1, cursor1] = await sut.fetchAssets(null, 10);
+    // get less than 10 thanks to the _design document taking up space
+    expect(batch1).toHaveLength(9);
+    expect(cursor1).toBeDefined();
+    expect(batch1[0]?.key).toEqual('andy');
+    expect(batch1[8]?.key).toEqual('gerald');
+
+    const [batch2, cursor2] = await sut.fetchAssets(cursor1, 10);
+    expect(batch2).toHaveLength(9);
+    expect(batch2[0]?.key).toEqual('harry');
+    expect(batch2[8]?.key).toEqual('wingtim');
+
+    const [batch3, _cursor3] = await sut.fetchAssets(cursor2, 10);
+    expect(batch3).toHaveLength(0);
+  });
+
+  test('should store assets in bulk', async function () {
+    // setup
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new CouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    const countBefore = await sut.countAssets();
+    expect(countBefore).toBe(0);
+
+    const inputs = [
+      buildBasicAsset('andy'),
+      buildBasicAsset('angela'),
+      buildBasicAsset('antonia'),
+      buildBasicAsset('chachamaru'),
+      buildBasicAsset('christina'),
+      buildBasicAsset('dickson'),
+      buildBasicAsset('eunice'),
+      buildBasicAsset('gabriel'),
+      buildBasicAsset('gerald'),
+      buildBasicAsset('harry'),
+      buildBasicAsset('janet'),
+      buildBasicAsset('joseph'),
+      buildBasicAsset('mittens'),
+      buildBasicAsset('nathan'),
+      buildBasicAsset('smiley'),
+      buildBasicAsset('sonya'),
+      buildBasicAsset('stormy'),
+      buildBasicAsset('wingtim'),
+    ];
+    await sut.storeAssets(inputs);
+    const countAfter = await sut.countAssets();
+    expect(countAfter).toBe(18);
+
+    // spot check some assets
+    const andy = await sut.getAssetById('andy');
+    expect(andy?.key).toEqual('andy');
+    const chachamaru = await sut.getAssetById('chachamaru');
+    expect(chachamaru?.key).toEqual('chachamaru');
+    const mittens = await sut.getAssetById('mittens');
+    expect(mittens?.key).toEqual('mittens');
+    const stormy = await sut.getAssetById('stormy');
+    expect(stormy?.key).toEqual('stormy');
+    const wingtim = await sut.getAssetById('wingtim');
+    expect(wingtim?.key).toEqual('wingtim');
+  });
 });
 
 /**

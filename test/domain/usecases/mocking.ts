@@ -32,6 +32,8 @@ export function recordRepositoryMock(
     queryAfterDate = undefined,
     queryDateRange = undefined,
     queryNewborn = undefined,
+    fetchAssets = undefined,
+    storeAssets = undefined,
   }: {
     countAssets?: () => Promise<number>,
     getAssetById?: (assetId: string) => Promise<Asset | null>,
@@ -48,7 +50,9 @@ export function recordRepositoryMock(
     queryBeforeDate?: (before: Date) => Promise<SearchResult[]>,
     queryAfterDate?: (after: Date) => Promise<SearchResult[]>,
     queryDateRange?: (after: Date, before: Date) => Promise<SearchResult[]>,
-    queryNewborn?: (after: Date) => Promise<SearchResult[]>;
+    queryNewborn?: (after: Date) => Promise<SearchResult[]>,
+    fetchAssets?: (cursor: any, limit: number) => Promise<[Asset[], any]>,
+    storeAssets?: (incoming: Asset[]) => Promise<void>;
   }
 ): RecordRepository {
   const mockRecordRepository: RecordRepository = {
@@ -68,6 +72,8 @@ export function recordRepositoryMock(
     queryAfterDate: queryAfterDate || mock(() => Promise.resolve([])),
     queryDateRange: queryDateRange || mock(() => Promise.resolve([])),
     queryNewborn: queryNewborn || mock(() => Promise.resolve([])),
+    fetchAssets: fetchAssets || mock(() => Promise.resolve([new Array<Asset>(), 'done'] as [Asset[], any])),
+    storeAssets: storeAssets || mock(() => Promise.resolve()),
   };
   return mockRecordRepository;
 }

@@ -115,6 +115,33 @@ interface RecordRepository {
    * imported after a given date-time.
    */
   queryNewborn(after: Date): Promise<SearchResult[]>;
+
+  /**
+   * Return all assets from the data source in no specific order.
+   *
+   * The `cursor` should start as `null` to begin the retrieval from the "first"
+   * asset in the data source. On the next call, the `cursor` should be the
+   * value returned along with the assets in order to continue the scan through
+   * the data source.
+   * 
+   * May return fewer assets than the given `limit`.
+   *
+   * Returns an empty list when nothing is left to be retrieved.
+   *
+   * @param cursor - opaque value understood by this repository implementation.
+   * @param limit - maximum number of documents to be returned in each call.
+   * @returns array of documents and a cursor to continue fetching documents.
+   */
+  fetchAssets(cursor: any, limit: number): Promise<[Asset[], any]>;
+
+  /**
+   * Store multiple assets into the data source.
+   *
+   * Repositories are free to implement this in whatever manner helps with
+   * performance and/or data integrity. For some, this may mean nothing more
+   * than simply iterating over the set and invoking `putAsset()`.
+   */
+  storeAssets(incoming: Asset[]): Promise<void>;
 }
 
 export { type RecordRepository };
