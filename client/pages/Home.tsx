@@ -70,27 +70,29 @@ function buildParams({
   let before = undefined
   let after = undefined
   if (year && season) {
+    // JavaScript months are zero-based
     switch (season) {
       case Season.Winter:
-        after = new Date(year, 1, 1, 0, 0)
-        before = new Date(year, 4, 1, 0, 0)
+        after = new Date(year, 0, 1, 0, 0)
+        before = new Date(year, 3, 1, 0, 0)
         break
       case Season.Spring:
-        after = new Date(year, 4, 1, 0, 0)
-        before = new Date(year, 7, 1, 0, 0)
+        after = new Date(year, 3, 1, 0, 0)
+        before = new Date(year, 6, 1, 0, 0)
         break
       case Season.Summer:
-        after = new Date(year, 7, 1, 0, 0)
-        before = new Date(year, 10, 1, 0, 0)
+        after = new Date(year, 6, 1, 0, 0)
+        before = new Date(year, 9, 1, 0, 0)
         break
       case Season.Fall:
-        after = new Date(year, 10, 1, 0, 0)
-        before = new Date(year + 1, 1, 1, 0, 0)
+        after = new Date(year, 9, 1, 0, 0)
+        before = new Date(year + 1, 0, 1, 0, 0)
         break
     }
   } else if (year) {
-    after = new Date(year, 1, 1, 0, 0)
-    before = new Date(year + 1, 1, 1, 0, 0)
+    // JavaScript months are zero-based
+    after = new Date(year, 0, 1, 0, 0)
+    before = new Date(year + 1, 0, 1, 0, 0)
   } else if (tags.length === 0 && locations.length === 0) {
     // if not searching by tags or locations, then show all assets
     before = new Date(275760, 8, 12)
