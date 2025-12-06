@@ -21,8 +21,6 @@
     "prestart": "bun run codegen",
     "start": "bun server/main.js",
     "doc": "bunx jsdoc --recurse server",
-    "build": "bunx --bun vite build",
-    "preview": "bunx --bun vite preview",
     "codegen": "graphql-codegen --config codegen.ts"
   },
   "dependencies": {

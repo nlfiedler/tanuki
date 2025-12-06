@@ -1,67 +1,61 @@
 # Diagnose and Repair
 
-## Database repair
+## Database dump/load
 
-### DuckDB: catalog does not exist
-
-If the app displays an error like `Failure while replaying WAL Catalog ... does not exist` then stop the application and open the database using the `duckdb` client. Hopefully that will process the WAL and sort out whatever was wrong. Then start the application and try loading the home page.
-
-## GraphQL operations
-
-How to diagnose and repair issues via GraphQL.
-
-Using GraphiQL in the browser will likely time out since the request can take a very long time. Better to use `curl` as in the examples below.
-
-### Analyze
-
-```shell
-curl -g -X POST -H "Content-Type: application/json" \
-     -d '{"query":"query{analyze { totalAssets missingFiles isAnImage hasExifData hasGpsCoords hasOriginalDatetime hasOriginalTimezone } }"}' \
-     http://192.168.1.4:3000/graphql
-```
-
-### Diagnose
-
-```shell
-curl -g -X POST -H "Content-Type: application/json" \
-     -d '{"query":"query{diagnose(checksum: null) { assetId errorCode } }"}' \
-     http://192.168.1.4:3000/graphql
-```
-
-### Repair
-
-```shell
-curl -g -X POST -H "Content-Type: application/json" \
-     -d '{"query":"mutation{repair(checksum: null) { assetId errorCode } }"}' \
-     http://192.168.1.4:3000/graphql
-```
-
-### Geocode
-
-It was only necessary to run this one time after introducing the reverse-geocoding feature.
-
-```shell
-curl -g -X POST -H "Content-Type: application/json" \
-     -d '{"query":"mutation{geocode(overwrite: false)}"}' \
-     http://192.168.1.4:3000/graphql
-```
+How to diagnose and repair issues via GraphQL. Using GraphiQL in the browser will likely time out since the request can take a very long time. Better to use `curl` as in the examples below.
 
 ### Create dump file
 
 Dump the entire database in [JSON Lines](https://jsonlines.org) text format.
 
 ```shell
-curl -g -X POST -H "Content-Type: application/json" \
-     -d '{"query":"mutation{dump(filepath: \"/assets/dump.json\")}"}' \
-     http://192.168.1.4:3000/graphql
+curl -o dump.json http://192.168.1.4:3000/records/dump
 ```
 
 ### Load from dump file
 
 ```shell
+curl -F dump=@dump.json http://192.168.1.4:3000/records/load
+```
+
+### Fetching Tags
+
+```shell
 curl -g -X POST -H "Content-Type: application/json" \
-     -d '{"query":"mutation{load(filepath: \"/assets/dump.json\")}"}' \
-     http://192.168.1.4:3000/graphql
+     -d '{"query":"query { tags { label count } }"}' \
+     http://192.168.1.4:3000/graphql > tags.json
+
+jq -r '.data.tags | sort_by(.label) | .[] | "\(.label),\(.count)"' tags.json > sorted-tags.csv
+```
+
+### Fetching Media Types
+
+```shell
+curl -g -X POST -H "Content-Type: application/json" \
+     -d '{"query":"query { mediaTypes { label count } }"}' \
+     http://192.168.1.4:3000/graphql > mediaTypes.json
+
+jq -r '.data.mediaTypes | sort_by(.label) | .[] | "\(.label),\(.count)"' mediaTypes.json > sorted-mediaTypes.csv
+```
+
+### Fetching Years
+
+```shell
+curl -g -X POST -H "Content-Type: application/json" \
+     -d '{"query":"query { years { label count } }"}' \
+     http://192.168.1.4:3000/graphql > years.json
+
+jq -r '.data.years | sort_by(.label) | .[] | "\(.label),\(.count)"' years.json > sorted-years.csv
+```
+
+### Fetching Locations
+
+```shell
+curl -g -X POST -H "Content-Type: application/json" \
+     -d '{"query":"query { locationRecords { label city region } }"}' \
+     http://192.168.1.4:3000/graphql > locations.json
+
+jq -r '.data.locationRecords.[] | "\(.label);\(.city),\(.region)"' locations.json | sort > sorted-locations.csv
 ```
 
 ### Finding duplicates

@@ -2,13 +2,6 @@
 ** Rewrite
 *** commit =230801d= was when old JS code was removed
 *** commit =3263ae7= was last Rust commit
-*** Phase 1 goals [5/6]
-- [X] browse page complete
-- [X] pending page complete
-- [X] upload page complete
-- [ ] dump/load
-- [X] reverse geocoding
-- [X] original date-time (image)
 *** Phase 2 goals [0/5]
 - [ ] details/edit page
 - [ ] ~import~ usecase and button on uploads page
@@ -20,9 +13,21 @@
 - [ ] read date from RIFF/AVI files
 - [ ] look for HEIC support
 *** Overall action Items
-**** TODO populate database from dump file
-***** consider how dump/load should be accessed (CLI, REST, webui, GraphQL)
-***** using GraphQL is more work than just =curl= and REST API
+**** TODO fix ~Error: You are not authorized to access this db.~ when invoking =/records/dump=
+***** happens after leaving it alone for 3 hours or less
+***** stop/start the container to restore the connection
+***** default session timeout is 600 seconds
+***** CouchDB repository needs to reconnect if too much time has elapsed
+***** wip code
+#+begin_src javascript
+  async ensureConnected() {
+    // TODO: add a new property 'lastRequestTime' that records the last time this function was called
+    // TODO: check if new Date().getTime() - lastRequestTime > COUCHDB_SESSION_TIMEOUT * 1000
+    // TODO: if the elapsed time exceeds the configured timeout, reconnect
+    // TODO: update lastRequestTime to new Date().getTime()
+  }
+#+end_src
+**** TODO put the usecase jsdoc comments on the actual function
 **** TODO asset details page [0/7]
 - [ ] clicking search result navigates to details page
 - [ ] show preview of asset
@@ -63,9 +68,9 @@
 **** TODO consider how record repository can implement sorting and pagination
 ***** objective is to improve search performance
 ***** https://docs.couchdb.org/en/stable/ddocs/views/pagination.html
-**** TODO make sure ~helix~ and ~perforce~ do not appear anywhere
 **** TODO saving changes to pending assets sometimes does not refresh
 ***** updates are successful, page quietly fails to refresh
+**** TODO catch and log GraphQL errors (at least for ~count~)
 **** TODO linting [0/5]
 - [ ] enable wrapping of long line (works for JSX/TSX files)
 - [ ] add JavaScript plugin
@@ -73,23 +78,11 @@
 - [ ] add =unicorn= plugin
 - [ ] add =eslint-plugin-tsdoc= plugin
 **** TODO test setup on Windows
-**** TODO polish [0/4]
-- [ ] switch light/dark in System Preferences does not cause page theme to change
-- [ ] replace CSS with Bulma
-- [ ] replace favicon
-- [ ] remove unused static files
-**** TODO update deployment [0/8]
-- [ ] probably the =build= and =preview= scripts in package.json are not needed
-- [ ] ensure =NODE_ENV= is set to =production=
-- [ ] update =.dockerignore= and =.gitignore= files
-- [ ] replace =healthcheck= with something simple
-- [ ] update docker files (if Bun, consider =oven/bun= as base)
-- [ ] open ports for database access in docker
-- [ ] set up volume for CouchDB storage
-- [ ] update provisioning project
+**** TODO changing light/dark in System Preferences does not cause page theme to change
 **** TODO read original date-time from videos
 ***** https://kevinnadro.com/blog/parsing-creation-time-from-mp4-metadata-in-javascript
 ***** RIFF/AVI code exists in Rust code =src/domain/usecases.rs=
+**** TODO fix the cross-origin errors in the browser console
 *** Documentation changes
 **** TODO about the =.env= file and how Bun reads that by default, before anything else we do
 ***** instead, use =.env.development= so =bun test= will _not_ read that automatically
@@ -100,7 +93,8 @@
 - CouchDB provides a web interface
 - JavaScript works well in the browser
 - GraphQL works best with JavaScript server
-**** TODO delete =doc/LEPTOS.md=
+**** TODO update =doc/DEPLOY.md=
+**** DONE delete =doc/LEPTOS.md=
 **** TODO update README
 - install node.js
 - npm install
@@ -265,16 +259,25 @@
 *** blob store should serve the assets directly to the client (e.g. S3, SeaweedFS)
 *** repository API would need to be oriented to URLs rather than file paths
 *** repository would generate the full path/URL for the asset to send to the client
+*** GraphQL resolver would inject the thumbnail/preview/raw URLs into search results, assets
 *** local blob repo would need the base URL for serving via web framework
 *** remote blob repo would need the base URL for the remote store
 *** assets likely would be stored very differently
 **** SeaweedFS combines files into volumes (to save space?)
 **** asset ID would no longer be a path for fetching the asset
+**** asset ID is still useful (includes time of import, file extension; guaranteed unique)
 *** server needs to generate URLs for the images for the client to reference
 **** client cannot build the URL, server must provide the value
+**** server could redirect the client to the blob store
 *** SeaweedFS can scale images to desired width/height (~fit~, ~fill~, etc)
 *** dump/load and import/export would need to consider how to handle blobs
 *** doc: update =doc/DESIGN.md= to reflect changes in storage
+** Relational record store
+*** offering an alternative like SQLite would guarantee app design stays generic
+*** CouchDB is neat, but growing increasingly dependent on that may eventually prove too limiting
+** GraphQL landing page
+*** eventually do away with the need for the landing page in production
+**** will need to improve the web interface enough to offer everything that is needed
 ** Hosting externally
 *** evaluate https://immich.app and what it has to offer
 **** Q: how is it deployed?
@@ -283,6 +286,8 @@
 *** place basic auth server in front (Azure app gateway maybe?)
 *** consider deploying in read-only mode (sync would be tricky)
 ** Attribute management
+*** search query to find assets that have no tags (>1,000)
+*** search query to find assets that have no location (~2,000)
 *** screen for showing all tags, locations, years, mediaTypes, with count values
 **** selecting a tag or location offers a rename function
 **** selecting multiple tags/locations offers option to remove from all assets

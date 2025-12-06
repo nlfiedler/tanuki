@@ -28,7 +28,7 @@ import type {
 } from 'tanuki/generated/graphql.ts';
 
 // The GraphQL schema
-const schemaPath = path.join('public', 'schema.graphql');
+const schemaPath = path.join(__dirname, 'schema.graphql');
 export const typeDefs = await fs.readFile(schemaPath, 'utf8');
 
 export const resolvers: Resolvers = {

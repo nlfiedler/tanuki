@@ -1,54 +1,54 @@
 #
-# build the application binaries
+# Build the application container in stages.
 #
-FROM rust:latest AS builder
+# c.f. https://bun.com/docs/guides/ecosystem/docker
+#
+FROM oven/bun:latest AS base
+WORKDIR /home/bun/app
+
+FROM base AS install
+# prepare development dependencies in a temporary directory
+RUN mkdir -p /temp/dev
+COPY package.json bun.lock /temp/dev/
+RUN cd /temp/dev && bun install --frozen-lockfile
+# install production dependencies in another directory for a later stage
+RUN mkdir -p /temp/prod
+COPY package.json bun.lock /temp/prod/
+RUN cd /temp/prod && bun install --frozen-lockfile --production
+
+# build the front-end using the development dependencies
+FROM base AS prerelease
+COPY --from=install /temp/dev/node_modules node_modules
+COPY client client
+COPY public public
+COPY server server
+COPY codegen.ts codegen.ts
+COPY index.html index.html
+COPY package.json package.json
+# COPY tsconfig.json tsconfig.json
+COPY vite.config.ts vite.config.ts
+ENV NODE_ENV=production
+RUN bun run codegen
+RUN bunx --bun vite build
+
+FROM base AS release
+# ensure SSL and CA certificates are available for HTTPS clients
 ENV DEBIAN_FRONTEND="noninteractive"
 RUN apt-get -q update && \
-    apt-get -q -y install clang
-# use --locked to prevent errors when incompatible crates get pulled in
-RUN cargo install --locked cargo-leptos
-RUN rustup target add wasm32-unknown-unknown
-WORKDIR /build
-COPY assets assets/
-COPY Cargo.toml .
-COPY src src/
-COPY style style/
-RUN cargo leptos build --release
+    apt-get -q -y install curl openssl ca-certificates
+# copy production dependencies, server code, and compiled front-end into the final image
+COPY --from=install /temp/prod/node_modules node_modules
+COPY --from=prerelease /home/bun/app/dist dist
+COPY --from=prerelease /home/bun/app/generated generated
+# COPY --from=prerelease /home/bun/app/public public
+COPY --from=prerelease /home/bun/app/server server
+# COPY --from=prerelease /home/bun/app/dist/index.html .
+COPY --from=prerelease /home/bun/app/package.json .
 
-#
-# build the healthcheck binary
-#
-FROM rust:latest AS healthy
-WORKDIR /build
-COPY healthcheck/Cargo.toml .
-COPY healthcheck/src src/
-RUN cargo build --release
-
-#
-# build the final image
-#
-# ensure SSL and CA certificates are available for HTTPS client
-#
-FROM debian:latest
-ARG SITE_ADDR="0.0.0.0:3000"
-ENV DEBIAN_FRONTEND="noninteractive"
-RUN apt-get -q update && \
-    apt-get -q -y install openssl ca-certificates
-WORKDIR /app
-COPY --from=builder /build/target/release/tanuki .
-COPY --from=builder /build/target/site site
-COPY --from=builder /build/Cargo.toml .
-COPY --from=healthy /build/target/release/healthcheck .
+# run the app
+USER bun
 VOLUME /assets
-VOLUME /database
-ENV DATABASE_PATH="/database"
-ENV DATABASE_TYPE="rocksdb"
-ENV UPLOAD_PATH="/assets/uploads"
-ENV ASSETS_PATH="/assets/blobstore"
-ENV HEALTHCHECK_PATH="/liveness"
-ENV LEPTOS_SITE_ADDR="${SITE_ADDR}"
-ENV LEPTOS_SITE_ROOT="site"
-ENV RUST_LOG="info"
+ENV PORT=3000
 EXPOSE ${PORT}
-HEALTHCHECK CMD ./healthcheck
-ENTRYPOINT ["./tanuki"]
+HEALTHCHECK CMD curl --fail --silent --head http://localhost:${PORT}/liveness || exit 1
+ENTRYPOINT [ "bun", "server/main.ts" ]
