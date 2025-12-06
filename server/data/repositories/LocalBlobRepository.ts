@@ -57,7 +57,7 @@ class LocalBlobRepository implements BlobRepository {
   /** @inheritdoc */
   async thumbnail(assetId: string, width: number, height: number): Promise<Buffer> {
     // fit the image into a box of the given size, convert to jpeg
-    return sharp(this.blobPath(assetId))
+    return sharp(this.blobPath(assetId), { autoOrient: true })
       .resize({
         width,
         height,
