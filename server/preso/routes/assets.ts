@@ -48,13 +48,13 @@ router.get('/thumbnail/:w/:h/:id', async function (req, res, _next) {
     }
   } catch (err: any) {
     logger.error(err);
-    res.redirect('/public/placeholder.svg');
+    res.redirect('/placeholder.svg');
   }
 });
 
 router.get('/raw/:id', async function (req, res, next) {
   const assetId = req.params.id;
-  const filepath = blobs.assetPath(assetId);
+  const filepath = blobs.blobPath(assetId);
   const asset = await records.getAssetById(assetId);
   const mimetype = asset.mediaType ? asset.mediaType : 'application/octet-stream';
   // sendFile() handles Content-Length, ETag, and range requests
