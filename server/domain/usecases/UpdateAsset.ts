@@ -7,13 +7,13 @@ import { AssetInput } from 'tanuki/server/domain/entities/AssetInput.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
 import * as helpers from './helpers.ts';
 
-/**
- * Return all of the unique locations in the record repository.
- * 
- * @returns list of unique location records.
- */
 export default ({ recordRepository }: { recordRepository: RecordRepository; }) => {
   assert.ok(recordRepository, 'record repository must be defined');
+  /**
+   * Return all of the unique locations in the record repository.
+   * 
+   * @returns list of unique location records.
+   */
   return async (assetInput: AssetInput): Promise<Asset> => {
     // fetch existing record to merge with incoming values
     const asset = await recordRepository.getAssetById(assetInput.key);

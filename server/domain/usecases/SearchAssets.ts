@@ -7,16 +7,16 @@ import { SearchParams } from 'tanuki/server/domain/entities/SearchParams.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
 
-/**
- * Use case to perform queries against the database indices.
- * 
- * If not specified, the sort order will be _ascending_ by default.
- * 
- * @param params - search parameters.
- * @returns array of results containing selected fields from asset records.
- */
 export default ({ recordRepository }: { recordRepository: RecordRepository; }) => {
   assert.ok(recordRepository, 'record repository must be defined');
+  /**
+   * Use case to perform queries against the database indices.
+   * 
+   * If not specified, the sort order will be _ascending_ by default.
+   * 
+   * @param params - search parameters.
+   * @returns array of results containing selected fields from asset records.
+   */
   return async (params: SearchParams): Promise<SearchResult[]> => {
     let results = await queryAssets(recordRepository, params);
     results = filterByDateRange(results, params);

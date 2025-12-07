@@ -9,15 +9,6 @@ import { type BlobRepository } from 'tanuki/server/domain/repositories/BlobRepos
 import { type LocationRepository } from 'tanuki/server/domain/repositories/LocationRepository.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
 
-/**
- * Count the number of records in the record repository.
- *
- * @param filepath - path of file to be imported.
- * @param originalname - name of the file that was uploaded.
- * @param mimetype - media type of the file.
- * @param modified - date/time when file was last modified.
- * @returns asset entity.
- */
 export default (
   {
     recordRepository,
@@ -32,7 +23,15 @@ export default (
   assert.ok(recordRepository, 'record repository must be defined');
   assert.ok(blobRepository, 'blob repository must be defined');
   assert.ok(locationRepository, 'location repository must be defined');
-  // eslint-disable-next-line no-unused-vars
+  /**
+   * Count the number of records in the record repository.
+   *
+   * @param filepath - path of file to be imported.
+   * @param originalname - name of the file that was uploaded.
+   * @param mimetype - media type of the file.
+   * @param modified - date/time when file was last modified.
+   * @returns asset entity.
+   */
   return async (filepath: string, originalname: string, mimetype: string, modified: Date): Promise<Asset> => {
     const digest = await helpers.checksumFile(filepath);
     let asset = await recordRepository.getAssetByDigest(digest);

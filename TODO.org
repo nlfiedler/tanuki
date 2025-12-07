@@ -13,7 +13,6 @@
 - [ ] read date from RIFF/AVI files
 - [ ] look for HEIC support
 *** Overall action Items
-**** TODO put the usecase jsdoc comments on the actual function
 **** TODO asset details page [0/7]
 - [ ] clicking search result navigates to details page
 - [ ] show preview of asset

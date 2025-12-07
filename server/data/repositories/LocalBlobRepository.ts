@@ -9,8 +9,6 @@ import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
 import { type BlobRepository } from 'tanuki/server/domain/repositories/BlobRepository.ts';
 import { type SettingsRepository } from 'tanuki/server/domain/repositories/SettingsRepository.ts';
 
-/* eslint-disable no-unused-vars */
-
 /**
  * Blob repository that stores assets in attached disk storage.
  */
