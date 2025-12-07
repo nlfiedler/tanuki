@@ -16,11 +16,13 @@
 
 ## Present Limitations
 
+The implementation in early 2025 that was based on Rust and Leptos had several issues.
+
 * Mixing asynchronous and synchronous code can be troublesome
 * Rust on the frontend is verbose and thread safety makes it cumbersome
 * Rust/Leptos use of Web APIs can be difficult for some functionality (WASM integration is still lacking)
-* Leptos: slow builds, beta quality, buggy libraries
-* mp4: 0.14 broke support for some existing video files
+* Leptos builds are very slow, overall beta quality at the time, some libraries were buggy
+* The `mp4` crate's 0.14 release broke support for some existing video files
 
 ## Candidates
 
@@ -32,7 +34,7 @@
 
 ### Backend
 
-* Node.js
+* Node.js or similar
 * Erlang
 
 ### Frontend
@@ -97,7 +99,7 @@ For an application that wants to use CouchDB, GraphQL, good image libraries, and
 * image: https://github.com/lovell/sharp
 * mime: https://github.com/broofa/mime
 * ulid: https://github.com/ulid/javascript
-* base64: Node.js Buffer
+* base64: Node.js `Buffer`
 * sha2: node:crypto
 * in-memory cache: https://github.com/sindresorhus/quick-lru
 * dotenv: https://github.com/motdotla/dotenv

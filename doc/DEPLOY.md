@@ -2,7 +2,7 @@
 
 ## Database
 
-TODO:
+[CouchDB](https://couchdb.apache.org) can be deployed easily with [Docker](https://www.docker.com), just be sure to mount `/opt/couchdb/data` to a path on the host for persistent storage.
 
 ## Create database backup before upgrade
 
@@ -14,7 +14,7 @@ curl -o dump.json http://192.168.1.4:3000/records/dump
 
 ## Using Docker
 
-The base directory contains a `docker-compose.yml` file which is used to build the application in stages and produce a relatively small final image.
+The base directory contains a `Dockerfile` file which is used to build the application in stages and produce a relatively small final image.
 
 On the build host:
 
@@ -25,7 +25,7 @@ docker image tag tanuki-app 192.168.1.4:5000/tanuki
 docker push 192.168.1.4:5000/tanuki
 ```
 
-On the server, with a production version of the `docker-compose.yml` file:
+On the server, with a production version of a `docker-compose.yml` file that includes CouchDB as a sibling service:
 
 ```shell
 docker compose down

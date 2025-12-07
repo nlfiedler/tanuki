@@ -1,105 +1,52 @@
-# INCOMPLETE NEW CONTENT
-
-## Usage
-
-```bash
-npm install
-```
-
-Learn more on the [Solid Website](https://solidjs.com)
-
-## Available Scripts
-
-In the project directory, you can run:
-
-### `npm run dev`
-
-Runs the app in the development mode. Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-### `npm run build`
-
-Builds the app for production to the `dist` folder. It correctly bundles Solid in production mode and optimizes the build for the best performance. The build is minified and the filenames include the hashes. Your app is ready to be deployed!
-
-## Deployment
-
-See [documentation](https://vite.dev/guide/static-deploy.html)
-and [vite-express](https://github.com/szymmis/vite-express)
-
-## References
-
-* https://github.com/szymmis/vite-express -- easy integration of Vite and Express
-
-# OLD CONTENT BELOW
-
 # Tanuki
 
-An application for collecting, tagging, browsing, and searching assets, primarily images and videos. Written in [Rust](https://www.rust-lang.org) with a [Leptos](https://leptos.dev) powered front-end and limited [GraphQL](https://graphql.org) support. Metadata is stored in either [RocksDB](https://rocksdb.org), [DuckDB](https://duckdb.org), or [SQLite](https://sqlite.org) and file content is stored unmodified within a date/time formatted directory structure.
+An application for organizing assets, primarily images and videos. Written in [TypeScript](https://www.typescriptlang.org) with a [SolidJS](https://www.solidjs.com) powered front-end, connected via [GraphQL](https://graphql.org) and REST. Metadata is stored in [CouchDB](https://couchdb.apache.org) and file content is stored unmodified within a date/time formatted directory structure.
 
-## Building and Testing
+## Requirements
 
-### Prerequisites
+* [Bun](https://bun.com)
+* [CouchDB](https://couchdb.apache.org)
 
-* [Rust](https://www.rust-lang.org) stable (2021 edition)
-* [Clang](https://clang.llvm.org) (version 5.0 or higher, as dictated by [rust-bindgen](https://github.com/rust-lang/rust-bindgen))
+## Initial Setup
 
-### Initial Setup
-
-The following commands need to be run one time before building this project. Note that `cargo-leptos` is installed with the `--locked` option to prevent build errors due to incompatible crates.
-
-```shell
-cargo install --locked cargo-leptos
-rustup target add wasm32-unknown-unknown
+```bash
+bun install
 ```
 
-#### Windows
+## Testing and Running
 
-Download the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) and select the `MSVC ... build tools` (latest version with appropriate architecture) and `Windows 11 SDK` (or `10` if using Windows 10).
+Use `bun test` to run the test suite.
 
-### Testing
+Use `bun start` to run the server locally, listening for HTTP connections on port `3000` by default. The GraphQL web interface will be available at `/graphql`.
 
-Run both the backend and front-end tests with one command:
+## Configuration
 
-```shell
-cargo leptos test
-```
+The application is configured using environment variables.
 
-Run all backend tests:
+* **ASSETS_PATH**
+    - Base path for asset storage.
+* **DATABASE_URL**
+    - URL for the CouchDB instance.
+* **DATABASE_NAME**
+    - Name of the CouchDB database to use for record storage.
+* **DATABASE_USER**
+    - Name of the CouchDB user with sufficient privileges for creating the database named in `DATABASE_NAME`.
+* **DATABASE_PASSWORD**
+    - Password for the CouchDB user named in `DATABASE_USER`.
+* **DATABASE_HEARTBEAT_MS**
+    - Frequency in milliseconds for requesting latest chagnes from the database in order to keep the connection alive. Default is `60000` (60 seconds).
+* **GOOGLE_MAPS_API_KEY**'
+    - If defined, enables reverse geocoding using the Google Maps API.
+* **LOG_LEVEL**
+    - One of the Winston [logging levels](https://github.com/winstonjs/winston?tab=readme-ov-file#logging-levels)
+* **NODE_ENV**
+    - If set to `production`, changes the logging format. Other 3rd party modules may also change slightly.
+* **PORT**
+    - Port number on which to listen for HTTP connection, defaults to `3000`.
 
-```shell
-cargo test --features=ssr
-```
+The application can be configured with a `.env` file thanks to Bun and [dotenv](https://github.com/motdotla/dotenv). Note, however, that during development, Bun will read this file before considering anything else, and thus it may interfere with the automated tests, which need to have tight control of the environment in order to set up mocks and spies.
 
-Run a single backend test:
-
-```shell
-cargo test --features=ssr test_location_from_str
-```
-
-### Starting the server locally
-
-```shell
-cargo leptos watch
-```
-
-The server will be listening at `http://localhost:3000`
-
-The GraphiQL interface is available at `http://localhost:3000/graphiql`
-
-## Tools
-
-### Formatting
-
-Use `cargo fmt` to format all of the Rust code.
-
-Use `leptosfmt` to format the client-side code, like so:
-
-```shell
-leptosfmt src/preso/leptos/**/*.rs
-```
-
-### Finding Outdated Crates
-
-Use https://github.com/kbknapp/cargo-outdated and run `cargo outdated -R`
+As such, it is preferable to create a `.env.development` file which Bun will _not_ read when running the unit tests.
 
 ## Origin of the name
 

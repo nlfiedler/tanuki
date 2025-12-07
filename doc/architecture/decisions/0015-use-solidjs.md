@@ -14,7 +14,7 @@ In the last few years, it has become undeniable that this application relies hea
 
 [SolidJS](https://www.solidjs.com) is the front-end web framework on which the design of Leptos is largely based. It makes use of signals, actions, resources, and memos to create a fine-grained reactive web framework. It offers many more features than Leptos does as of 2025, and JavaScript works perfectly with this paradigm.
 
-With regard to the language, [TypeScript](https://www.typescriptlang.org) works well and is easy to set up with Vite. SolidJS itself is written in TypeScript and hence it makes sense to use it for the application.
+With regard to the language, [TypeScript](https://www.typescriptlang.org) works well and is easy to set up with [Vite](https://vite.dev). SolidJS itself is written in TypeScript and hence it makes sense to use it for the application.
 
 ## Decision
 
