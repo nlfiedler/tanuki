@@ -13,20 +13,6 @@
 - [ ] read date from RIFF/AVI files
 - [ ] look for HEIC support
 *** Overall action Items
-**** TODO fix ~Error: You are not authorized to access this db.~ when invoking =/records/dump=
-***** happens after leaving it alone for 3 hours or less
-***** stop/start the container to restore the connection
-***** default session timeout is 600 seconds
-***** CouchDB repository needs to reconnect if too much time has elapsed
-***** wip code
-#+begin_src javascript
-  async ensureConnected() {
-    // TODO: add a new property 'lastRequestTime' that records the last time this function was called
-    // TODO: check if new Date().getTime() - lastRequestTime > COUCHDB_SESSION_TIMEOUT * 1000
-    // TODO: if the elapsed time exceeds the configured timeout, reconnect
-    // TODO: update lastRequestTime to new Date().getTime()
-  }
-#+end_src
 **** TODO put the usecase jsdoc comments on the actual function
 **** TODO asset details page [0/7]
 - [ ] clicking search result navigates to details page
@@ -84,20 +70,14 @@
 ***** RIFF/AVI code exists in Rust code =src/domain/usecases.rs=
 **** TODO fix the cross-origin errors in the browser console
 *** Documentation changes
-**** TODO about the =.env= file and how Bun reads that by default, before anything else we do
-***** instead, use =.env.development= so =bun test= will _not_ read that automatically
+**** DONE about the =.env= file and how Bun reads that by default
 **** TODO improve =jsdoc= documentation [0/2]
 - [ ] associate ~global~ functions as belonging to certain source files
-- [ ] file in the huge gaping hole in the ~Home~ page
-**** TODO write new ADR(s)
-- CouchDB provides a web interface
-- JavaScript works well in the browser
-- GraphQL works best with JavaScript server
-**** TODO update =doc/DEPLOY.md=
+- [ ] fill in the huge gaping hole in the ~Home~ page
+**** DONE write new ADR(s)
+**** DONE update =doc/DEPLOY.md=
 **** DONE delete =doc/LEPTOS.md=
-**** TODO update README
-- install node.js
-- npm install
+**** DONE update README
 ** Help
 *** write help pages for each of the main pages
 **** location string parsing

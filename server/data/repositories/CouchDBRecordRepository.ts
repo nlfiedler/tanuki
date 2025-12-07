@@ -21,6 +21,7 @@ class CouchDBRecordRepository implements RecordRepository {
   password: string;
   conn: any;
   database: any;
+  heartbeat: number;
 
   constructor({ settingsRepository }: { settingsRepository: SettingsRepository; }) {
     this.url = settingsRepository.get('DATABASE_URL');
@@ -31,6 +32,7 @@ class CouchDBRecordRepository implements RecordRepository {
     assert.ok(this.username, 'missing DATABASE_USER environment variable');
     this.password = settingsRepository.get('DATABASE_PASSWORD');
     assert.ok(this.password, 'missing DATABASE_PASSWORD environment variable');
+    this.heartbeat = settingsRepository.getInt('DATABASE_HEARTBEAT_MS', 60000);
     this.conn = nano(this.url);
     this.database = null;
   }
@@ -69,6 +71,7 @@ class CouchDBRecordRepository implements RecordRepository {
       }
     }
     await this.createIndices(assetsDefinition);
+    this.stayAlive();
   }
 
   /**
@@ -98,6 +101,15 @@ class CouchDBRecordRepository implements RecordRepository {
         throw err;
       }
     }
+  }
+
+  // Use the database "changes" feed to keep the connection alive indefinitely.
+  stayAlive() {
+    // CPU activity is negligible with this approach, while the 'continous' mode
+    // keeps the CPU busy on both this system and the host running CouchDB.
+    setInterval(async () => {
+      await this.database.changes(this.dbname, { since: 'now', limit: 1 });
+    }, this.heartbeat);
   }
 
   /** @inheritDoc */
