@@ -3,7 +3,8 @@
 #
 # c.f. https://bun.com/docs/guides/ecosystem/docker
 #
-FROM oven/bun:latest AS base
+# use 1.3.3 for now, 1.3.4 resulted in "error: module not found"
+FROM oven/bun:1.3.3 AS base
 WORKDIR /home/bun/app
 
 FROM base AS install
@@ -25,7 +26,6 @@ COPY server server
 COPY codegen.ts codegen.ts
 COPY index.html index.html
 COPY package.json package.json
-# COPY tsconfig.json tsconfig.json
 COPY vite.config.ts vite.config.ts
 ENV NODE_ENV=production
 RUN bun run codegen
@@ -40,9 +40,7 @@ RUN apt-get -q update && \
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /home/bun/app/dist dist
 COPY --from=prerelease /home/bun/app/generated generated
-# COPY --from=prerelease /home/bun/app/public public
 COPY --from=prerelease /home/bun/app/server server
-# COPY --from=prerelease /home/bun/app/dist/index.html .
 COPY --from=prerelease /home/bun/app/package.json .
 
 # run the app
