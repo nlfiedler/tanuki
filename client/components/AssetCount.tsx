@@ -24,7 +24,7 @@ function AssetCount() {
   createEffect(() => refetch(location.pathname))
   return (
     <Suspense fallback={<span>...</span>}>
-      <span>{countQuery()?.count} assets</span>
+      <span>{countQuery.latest?.count} assets</span>
     </Suspense>
   )
 }
