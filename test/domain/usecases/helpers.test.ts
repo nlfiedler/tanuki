@@ -31,21 +31,6 @@ describe('Generate identifier helper', function () {
     expect(decoded.endsWith('.jpg')).toBeTrue();
     expect(decoded).toHaveLength(46);
   });
-
-  // TODO: newAssetId with incorrect file extension
-  //     // test with an image/jpeg asset with an incorrect extension
-  //     let filename = "fighting_kittens.foo";
-  //     let actual = new_asset_id(import_date, Path::new(filename), &mt);
-  //     let decoded = general_purpose::STANDARD.decode(&actual).unwrap();
-  //     let as_string = std::str::from_utf8(&decoded).unwrap();
-  //     assert!(as_string.ends_with(".foo.jpeg"));
-
-  // TODO: newAssetId with an image/jpeg asset with _no_ extension
-  //     let filename = "fighting_kittens";
-  //     let actual = new_asset_id(import_date, Path::new(filename), &mt);
-  //     let decoded = general_purpose::STANDARD.decode(&actual).unwrap();
-  //     let as_string = std::str::from_utf8(&decoded).unwrap();
-  //     assert!(as_string.ends_with(".jpeg"));
 });
 
 describe('EXIF original date-time', function () {
@@ -166,48 +151,56 @@ describe('Merge locations helper', function () {
     input = null;
     result = helpers.mergeLocations(asset, input);
     expect(result).toEqual(asset);
+    expect(result?.hasValues()).toBeTrue();
 
     // asset is none, input is returned
     asset = null;
     input = Location.parse('Seattle, WA');
     result = helpers.mergeLocations(asset, input);
     expect(result).toEqual(input);
+    expect(result?.hasValues()).toBeTrue();
 
     // merge input city/region with asset label
     asset = new Location("Chihuly");
     input = Location.parse('Seattle, WA');
     result = helpers.mergeLocations(asset, input);
     expect(result).toEqual(Location.parse('Chihuly; Seattle, WA'));
+    expect(result?.hasValues()).toBeTrue();
 
     // merge input label with asset city/region
     asset = Location.parse('Seattle, WA');
     input = new Location("Chihuly");
     result = helpers.mergeLocations(asset, input);
     expect(result).toEqual(Location.parse('Chihuly; Seattle, WA'));
+    expect(result?.hasValues()).toBeTrue();
 
-    // clear asset label if input label is empty string
+    // clear asset label if input label is empty string or null
     asset = new Location("Chihuly");
     input = Location.fromRaw('', 'Seattle', 'WA');
     result = helpers.mergeLocations(asset, input);
     expect(result).toEqual(Location.parse('Seattle, WA'));
+    expect(result?.hasValues()).toBeTrue();
 
     // clear asset city if input city is empty string
     asset = Location.parse('museum; Seattle, WA');
     input = Location.fromRaw(null, '', null);
     result = helpers.mergeLocations(asset, input);
     expect(result).toEqual(Location.fromRaw('museum', null, 'WA'));
+    expect(result?.hasValues()).toBeTrue();
 
     // clear asset region if input region is empty string
     asset = Location.parse('museum; Seattle, WA');
     input = Location.fromRaw(null, null, '');
     result = helpers.mergeLocations(asset, input);
     expect(result).toEqual(Location.fromRaw('museum', 'Seattle', null));
+    expect(result?.hasValues()).toBeTrue();
 
     // input with everything replaces everything in asset
     asset = Location.parse('Chihuly; Seattle, WA');
     input = Location.parse('Classical Garden; Portland, Oregon');
     result = helpers.mergeLocations(asset, input);
     expect(result).toEqual(input);
+    expect(result?.hasValues()).toBeTrue();
   });
 });
 

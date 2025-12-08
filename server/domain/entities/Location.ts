@@ -129,12 +129,14 @@ class Location {
   }
 
   /**
-   * Determine if any of the fields has a value.
+   * Determine if any of the fields has a non-null and non-empty value.
    *
    * @returns true if any of the fields have a value.
    */
   hasValues(): boolean {
-    return this.label !== null || this.city !== null || this.region !== null;
+    return (this.label !== null && this.label.length > 0) ||
+      (this.city !== null && this.city.length > 0) ||
+      (this.region !== null && this.region.length > 0);
   }
 
   /**

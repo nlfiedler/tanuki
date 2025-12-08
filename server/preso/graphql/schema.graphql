@@ -34,6 +34,8 @@ type Asset {
   checksum: String!
   "The original filename of the asset when it was imported."
   filename: String!
+  "Full path of the asset within the storage system."
+  filepath: String!
   "The size in bytes of the asset."
   byteLength: BigInt!
   "The date-time that best represents the asset."
@@ -175,10 +177,9 @@ input AssetInput {
   tags: [String!]
   """
   Any value here overwrites the caption in the asset. If the caption contains
-  any #tags they will be merged with the tags in the asset (or in the input, if
-  given). If the caption contains an @location or @"location" then it will
-  replace the asset location `label`, if it has not been set. That is, the
-  caption only adds, never overwrites.
+  any #tags they will be merged with the tags in the asset and this input. If
+  the caption contains an @location or @"location" then it will replace the
+  asset location, if it has not been set.
   """
   caption: String
   """

@@ -20,6 +20,7 @@ import type {
   AssetInput as GQLAssetInput,
   MutationUpdateArgs,
   Resolvers,
+  QueryAssetArgs,
   QueryPendingArgs,
   QuerySearchArgs,
   SearchMeta,
@@ -33,6 +34,12 @@ export const typeDefs = await fs.readFile(schemaPath, 'utf8');
 
 export const resolvers: Resolvers = {
   Query: {
+    async asset(_parent: any, args: QueryAssetArgs, _context: any, _info: GraphQLResolveInfo): Promise<GQLAsset> {
+      const getAsset = container.resolve('getAsset');
+      const output = await getAsset(args.id);
+      return assetToGQL(output);
+    },
+
     async count(_parent: any, _args: any, _context: any, _info: GraphQLResolveInfo) {
       const countAssets = container.resolve('countAssets');
       return countAssets();
@@ -184,10 +191,12 @@ function assetInputFromGQL(assetId: string, incoming: GQLAssetInput): AssetInput
     outgoing.setCaption(incoming.caption);
   }
   if (incoming.location !== null) {
+    // retain any blank fields on the input in order to allow clearing the
+    // corresponding fields on the asset entity
     const location = Location.fromRaw(
-      incoming.location?.label || null,
-      incoming.location?.city || null,
-      incoming.location?.region || null
+      incoming.location?.label ?? null,
+      incoming.location?.city ?? null,
+      incoming.location?.region ?? null
     );
     outgoing.setLocation(location);
   }
@@ -209,6 +218,7 @@ function assetToGQL(entity: Asset): GQLAsset {
     id: entity.key,
     checksum: entity.checksum,
     filename: entity.filename,
+    filepath: entity.filepath(),
     byteLength: entity.byteLength,
     datetime: entity.bestDate(),
     mediaType: entity.mediaType,

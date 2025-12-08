@@ -105,7 +105,7 @@ class CouchDBRecordRepository implements RecordRepository {
 
   // Use the database "changes" feed to keep the connection alive indefinitely.
   stayAlive() {
-    // CPU activity is negligible with this approach, while the 'continous' mode
+    // CPU activity is negligible with this approach, while the 'continuous' mode
     // keeps the CPU busy on both this system and the host running CouchDB.
     setInterval(async () => {
       await this.database.changes(this.dbname, { since: 'now', limit: 1 });
@@ -427,7 +427,7 @@ function convertDatesIn(doc: any): any {
 /**
  * Create an Asset entity from the given CouchDB document.
  * 
- * @param doc - database record reader from CouchDB.
+ * @param doc - database record as read from CouchDB.
  * @returns converted asset entity.
  */
 function assetFromDocument(doc: any): any {
@@ -444,7 +444,8 @@ function assetFromDocument(doc: any): any {
     asset.setCaption(doc.caption);
   }
   if (doc.location) {
-    asset.setLocation(doc.location);
+    const location = Location.fromRaw(doc.location.label, doc.location.city, doc.location.region);
+    asset.setLocation(location);
   }
   if (doc.userDate !== null) {
     asset.setUserDate(new Date(doc.userDate));
@@ -462,15 +463,14 @@ function assetFromDocument(doc: any): any {
  * @return result as an object.
  */
 function convertViewResult(result: ViewResult): SearchResult {
-  // return Location.fromParts(parts[0] || '', parts[1] || '', parts[2] || '');
-  const lo = result.value[2];
+  const lo = result.value[2]; // 2: location
   const location = Location.fromRaw(lo?.label || null, lo?.city || null, lo?.region || null);
   return new SearchResult(
     result.id, // assetId
-    result.value[1], // filename
-    result.value[3], // mediaType
-    location, // location
-    new Date(result.value[0]) // datetime
+    result.value[1], // 1: filename
+    result.value[3], // 3: mediaType
+    location,
+    new Date(result.value[0]) // 0: datetime
   );
 }
 

@@ -174,6 +174,7 @@ describe('UpdateAsset use case', function () {
     expect(updated.tags).toHaveLength(2);
     expect(updated.tags[0]).toEqual('kittens');
     expect(updated.tags[1]).toEqual('puppies');
+    expect(updated.caption).toEqual('#kittens fighting #kittens');
     expect(mockRecordRepository.getAssetById).toHaveBeenCalledTimes(1);
     expect(mockRecordRepository.putAsset).toHaveBeenCalledTimes(1);
     mock.clearAllMocks();
@@ -248,6 +249,7 @@ describe('UpdateAsset use case', function () {
     expect(updated.tags[1]).toEqual('playing');
     expect(updated.tags[2]).toEqual('puppies');
     expect(updated.location).toEqual(Location.parse('mini town; Pleasanton, CA'));
+    expect(updated.caption).toEqual('#kittens and #puppies #playing @beach');
     expect(mockRecordRepository.getAssetById).toHaveBeenCalledTimes(1);
     expect(mockRecordRepository.putAsset).toHaveBeenCalledTimes(1);
     mock.clearAllMocks();

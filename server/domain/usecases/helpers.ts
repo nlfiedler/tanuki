@@ -249,35 +249,43 @@ export function sortSearchResults(
   }
 }
 
-/** Returns the merged location object. */
-export function mergeLocations(asset?: Location | null, input?: Location | null): Location | null | undefined {
+/**
+ * Returns the merged location object. Blank input fields will clear the asset
+ * fields. If the input is null, the asset value is returned, and vice versa.
+ *
+ * @param asset - location from the asset entity.
+ * @param input - location with new values.
+ * @returns location entity with merged fields.
+ */
+export function mergeLocations(asset?: Readonly<Location> | null, input?: Location | null): Location | null | undefined {
   if (asset) {
     if (input) {
+      const outgoing = Location.fromRaw(asset.label, asset.city, asset.region);
       // set or clear the label field
       if (input.label !== null) {
         if (input.label.length == 0) {
-          asset.label = null;
+          outgoing.label = null;
         } else {
-          asset.label = input.label;
+          outgoing.label = input.label;
         }
       }
       // set or clear the city field
       if (input.city !== null) {
         if (input.city.length == 0) {
-          asset.city = null;
+          outgoing.city = null;
         } else {
-          asset.city = input.city;
+          outgoing.city = input.city;
         }
       }
       // set or clear the region field
       if (input.region !== null) {
         if (input.region.length == 0) {
-          asset.region = null;
+          outgoing.region = null;
         } else {
-          asset.region = input.region;
+          outgoing.region = input.region;
         }
       }
-      return asset;
+      return outgoing;
     } else {
       // input was null, return original value
       return asset;

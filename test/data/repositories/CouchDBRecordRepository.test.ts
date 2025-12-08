@@ -39,6 +39,7 @@ describe('CouchDBRecordRepository', function () {
     expect(fetched!.key).toEqual('MjAxMi8wOC8xNS8wMDB4YWw2czQxYWN0YXY5d2V2Z2VtbXZyYS5qcGc=');
     expect(fetched!.checksum).toEqual('sha1-c0ff89017fb951c58aab5e585364a15d359fa2c2');
     expect(fetched!.userDate?.getFullYear()).toEqual(2003);
+    expect(fetched!.location).toBeNull();
     let count = await sut.countAssets();
     expect(count).toEqual(1);
 
@@ -58,6 +59,7 @@ describe('CouchDBRecordRepository', function () {
     expect(updated!.location).toEqual(Location.parse('Oakland, CA'));
     // invoke bestDate() to ensure the object returned is really an Asset entity
     expect(updated!.bestDate().getFullYear()).toEqual(2003);
+    expect(fetched!.location?.hasValues()).toBeTrue();
     count = await sut.countAssets();
     expect(count).toEqual(1);
   });

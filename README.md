@@ -24,7 +24,7 @@ Use `bun start` to run the server locally, listening for HTTP connections on por
 The application is configured using environment variables.
 
 * **ASSETS_PATH**
-    - Base path for asset storage.
+    - Full path to the base directory of the asset storage.
 * **DATABASE_URL**
     - URL for the CouchDB instance.
 * **DATABASE_NAME**

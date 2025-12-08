@@ -13,12 +13,15 @@
 - [ ] read date from RIFF/AVI files
 - [ ] look for HEIC support
 *** Overall action Items
-**** TODO asset details page [0/7]
-- [ ] clicking search result navigates to details page
-- [ ] show preview of asset
-- [ ] show form with details
-- [ ] ~Save~ button
-- [ ] ~Download~ button
+**** TODO asset details page [8/10]
+- [X] clicking search result navigates to details page
+- [X] show preview of asset
+- [X] ~Download~ button
+- [X] ~GetAsset~ usecase
+- [X] =asset()= GraphQL resolver
+- [X] fetch asset via GraphQL
+- [X] show form with details
+- [X] ~Save~ button
 - [ ] ~Replace~ button
 - [ ] left-right buttons
 **** TODO import operation [0/3]

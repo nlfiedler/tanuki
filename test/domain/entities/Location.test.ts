@@ -22,6 +22,26 @@ describe('Location entity', function () {
     expect(hasRegion.hasValues()).toBeTrue();
   });
 
+  test('should construct from raw values', function () {
+    const allNulls = Location.fromRaw(null, null, null);
+    expect(allNulls.hasValues()).toBeFalse();
+
+    const allBlanks = Location.fromRaw('', '', '');
+    expect(allBlanks.hasValues()).toBeFalse();
+
+    const hasLabel = Location.fromRaw('label', null, null);
+    expect(hasLabel.hasValues()).toBeTrue();
+
+    const hasCity = Location.fromRaw(null, 'city', null);
+    expect(hasCity.hasValues()).toBeTrue();
+
+    const hasRegion = Location.fromRaw(null, null, 'region');
+    expect(hasRegion.hasValues()).toBeTrue();
+
+    const hasAll = Location.fromRaw('label', 'city', 'region');
+    expect(hasAll.hasValues()).toBeTrue();
+  });
+
   test('should parse a string into a Location', function () {
     // emtpy string
     expect(Location.parse('').label).toBeNull();

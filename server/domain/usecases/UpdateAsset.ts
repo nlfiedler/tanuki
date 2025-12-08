@@ -41,11 +41,12 @@ function mergeAssetInput(asset: Asset, assetInput: AssetInput) {
   }
   // merge the existing and new location, if any, and save if changed
   let location = helpers.mergeLocations(asset.location, assetInput.location);
-  if (location?.hasValues()) {
+  if (location) {
     asset.location = location;
   }
   // parse the caption to glean location and additional tags
   if (assetInput.caption) {
+    asset.caption = assetInput.caption;
     const { tags, location } = helpers.parseCaption(assetInput.caption);
     // tags in the caption are merged with the asset/input tags
     const alltags = asset.tags.concat(tags);

@@ -11,6 +11,7 @@ import {
 import CountAssets from 'tanuki/server/domain/usecases/CountAssets.ts';
 import DumpAssets from 'tanuki/server/domain/usecases/DumpAssets.ts';
 import FindPending from 'tanuki/server/domain/usecases/FindPending.ts';
+import GetAsset from 'tanuki/server/domain/usecases/GetAsset.ts';
 import GetLocationParts from 'tanuki/server/domain/usecases/GetLocationParts.ts';
 import GetLocationRecords from 'tanuki/server/domain/usecases/GetLocationRecords.ts';
 import GetMediaTypes from 'tanuki/server/domain/usecases/GetMediaTypes.ts';
@@ -47,6 +48,7 @@ container.register({
   countAssets: asFunction(CountAssets),
   dumpAssets: asFunction(DumpAssets),
   findPending: asFunction(FindPending),
+  getAsset: asFunction(GetAsset),
   getLocationParts: asFunction(GetLocationParts),
   getLocationRecords: asFunction(GetLocationRecords),
   getMediaTypes: asFunction(GetMediaTypes),
