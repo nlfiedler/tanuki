@@ -19,6 +19,7 @@ import GetTags from 'tanuki/server/domain/usecases/GetTags.ts';
 import GetYears from 'tanuki/server/domain/usecases/GetYears.ts';
 import LoadAssets from 'tanuki/server/domain/usecases/LoadAssets.ts';
 import ImportAsset from 'tanuki/server/domain/usecases/ImportAsset.ts';
+import ImportUploads from 'tanuki/server/domain/usecases/ImportUploads.ts';
 import SearchAssets from 'tanuki/server/domain/usecases/SearchAssets.ts';
 import UpdateAsset from 'tanuki/server/domain/usecases/UpdateAsset.ts';
 import { CouchDBRecordRepository } from 'tanuki/server/data/repositories/CouchDBRecordRepository.ts';
@@ -55,6 +56,7 @@ container.register({
   getTags: asFunction(GetTags),
   getYears: asFunction(GetYears),
   importAsset: asFunction(ImportAsset),
+  importUploads: asFunction(ImportUploads),
   loadAssets: asFunction(LoadAssets),
   searchAssets: asFunction(SearchAssets),
   updateAsset: asFunction(UpdateAsset),

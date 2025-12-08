@@ -199,6 +199,11 @@ input AssetInput {
 }
 
 type Mutation {
+  """
+  Import the files found in the `uploads` directory and return the number of
+  files successfully imported into the system.
+  """
+  import: Int!
   "Update the asset with the given tags, caption, custom date, etc."
   update(id: ID!, asset: AssetInput!): Asset!
 }

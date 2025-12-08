@@ -28,6 +28,8 @@ import type {
   SearchParams as GQLSearchParams
 } from 'tanuki/generated/graphql.ts';
 
+const settings = container.resolve('settingsRepository');
+
 // The GraphQL schema
 const schemaPath = path.join(__dirname, 'schema.graphql');
 export const typeDefs = await fs.readFile(schemaPath, 'utf8');
@@ -86,6 +88,12 @@ export const resolvers: Resolvers = {
   },
 
   Mutation: {
+    async import(_parent: any, args: any, _context: any, _info: GraphQLResolveInfo): Promise<number> {
+      const uploadsPath = settings.get('UPLOAD_PATH');
+      const importUploads = container.resolve('importUploads');
+      return await importUploads(uploadsPath);
+    },
+
     async update(_parent: any, args: MutationUpdateArgs, _context: any, _info: GraphQLResolveInfo): Promise<GQLAsset> {
       const updateAsset = container.resolve('updateAsset');
       const input = assetInputFromGQL(args.id, args.asset);

@@ -24,7 +24,8 @@ export default (
   assert.ok(blobRepository, 'blob repository must be defined');
   assert.ok(locationRepository, 'location repository must be defined');
   /**
-   * Count the number of records in the record repository.
+   * Import the given file into the system as a new asset, moving the file into
+   * the blob storage and creating a new record in the repository.
    *
    * @param filepath - path of file to be imported.
    * @param originalname - name of the file that was uploaded.

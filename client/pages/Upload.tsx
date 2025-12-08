@@ -10,8 +10,18 @@ import {
   Show,
 } from 'solid-js'
 import { action, redirect, useAction, useSubmission } from '@solidjs/router'
+import { type TypedDocumentNode, gql } from '@apollo/client'
+import { type Mutation } from 'tanuki/generated/graphql.ts'
+import { useApolloClient } from '../ApolloProvider'
+
+const IMPORT_ASSETS: TypedDocumentNode<Mutation, void> = gql`
+  mutation {
+    import
+  }
+`
 
 function Upload() {
+  const client = useApolloClient()
   const datefmt = new Intl.DateTimeFormat()
   const [selectedFiles, setSelectedFiles] = createSignal<Array<File>>([])
   const [droppedFiles, setDroppedFiles] = createSignal<Array<File>>([])
@@ -35,6 +45,19 @@ function Upload() {
   })
   const startUpload = useAction(startUploadAction)
   const uploadSubmission = useSubmission(startUploadAction)
+  const importAction = action(async (): Promise<any> => {
+    try {
+      await client.mutate({ mutation: IMPORT_ASSETS })
+    } catch (err) {
+      console.error('asset update failed:', err)
+      // force an early exit so the user has a chance to look at the browser
+      // console to see the error message
+      return { ok: false }
+    }
+    throw redirect('/pending')
+  }, 'updateAssets')
+  const startImport = useAction(importAction)
+  const importSubmission = useSubmission(importAction)
 
   return (
     <>
@@ -42,7 +65,12 @@ function Upload() {
         <nav class="level">
           <div class="level-left">
             <div class="level-item">
-              <button class="button" disabled>
+              <button
+                class="button"
+                class:is-loading={importSubmission.pending}
+                disabled={importSubmission.pending}
+                on:click={(_) => startImport()}
+              >
                 Import
               </button>
               <div class="block ml-2">
