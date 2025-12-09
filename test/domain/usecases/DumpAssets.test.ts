@@ -100,7 +100,7 @@ describe('DumpAssets use case', function () {
     expect(results).toHaveLength(3);
     expect(results[0]?.key).toEqual('monday1');
     expect(results[1]?.key).toEqual('monday2');
-    let location: unknown = results[1]?.location;
+    const location: unknown = results[1]?.location;
     expect(location as string).toEqual('beach');
     expect(results[2]?.key).toEqual('tuesday2');
     expect(mockRecordRepository.fetchAssets).toHaveBeenCalledTimes(3);

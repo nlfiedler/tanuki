@@ -149,7 +149,7 @@ function Pending() {
     const tags = selectedTags() || null
     const location = selectedLocation()?.label ? selectedLocation() : null
     const datetime = datetimeRef?.value ? new Date(datetimeRef?.value) : null
-    for (let assetId of selectedAssets()) {
+    for (const assetId of selectedAssets()) {
       try {
         await client.mutate({
           mutation: UPDATE_ASSET,

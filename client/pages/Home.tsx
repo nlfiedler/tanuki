@@ -305,8 +305,8 @@ function LocationSelector(props: LocationSelectorProps) {
   })
   const sortedLocations = () => {
     // the locations returned from the server are in no particular order
-    const sorted = new Array()
-    for (let location of locationsQuery()?.locationParts ?? []) {
+    const sorted = []
+    for (const location of locationsQuery()?.locationParts ?? []) {
       sorted.push({ label: location.label, count: location.count })
     }
     sorted.sort((a, b) => a.label.localeCompare(b.label))
@@ -409,7 +409,7 @@ function YearSelector(props: YearSelectorProps) {
   const sortedYears = () => {
     // the years returned from the server are in no particular order
     const sorted = new Array<YearAttribute>()
-    for (let year of yearsQuery()?.years ?? []) {
+    for (const year of yearsQuery()?.years ?? []) {
       sorted.push(new YearAttribute(year.label, year.count))
     }
     // inject the current year if not already present so that the season
@@ -608,8 +608,8 @@ function MediaTypeSelector(props: MediaTypeSelectorProps) {
   })
   const sortedMediaTypes = () => {
     // the media types returned from the server are in no particular order
-    const sorted = new Array()
-    for (let mediaType of mediaTypesQuery()?.mediaTypes ?? []) {
+    const sorted = []
+    for (const mediaType of mediaTypesQuery()?.mediaTypes ?? []) {
       sorted.push({ label: mediaType.label, count: mediaType.count })
     }
     sorted.sort((a, b) => a.label.localeCompare(b.label))

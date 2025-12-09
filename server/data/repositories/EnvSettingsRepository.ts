@@ -19,7 +19,7 @@ class EnvSettingsRepository implements SettingsRepository {
    * 
    * @returns iterator of name/value pairs.
    */
-  entries(): Object {
+  entries(): object {
     return this._props.entries();
   }
 

@@ -77,7 +77,7 @@ interface RecordRepository {
    * @param tags - set of tags on which to query.
    * @returns list of search results.
    */
-  queryByTags(tags: String[]): Promise<SearchResult[]>;
+  queryByTags(tags: string[]): Promise<SearchResult[]>;
 
   /**
    * Search for assets whose location fields match all of the given values.

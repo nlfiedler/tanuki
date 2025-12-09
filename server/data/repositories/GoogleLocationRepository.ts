@@ -55,8 +55,8 @@ class GoogleLocationRepository implements LocationRepository {
         // the first entry in the results array is the most specific and the
         // remaining entries increase in scope, we only want the first one
         const location = new Geocoded(null, null, null);
-        for (let component of result.results[0].address_components) {
-          for (let type_ of component.types) {
+        for (const component of result.results[0].address_components) {
+          for (const type_ of component.types) {
             if (type_ === 'locality') {
               location.city = component.long_name;
             } else if (type_ === 'administrative_area_level_1') {

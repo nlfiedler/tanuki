@@ -223,7 +223,7 @@ class CouchDBRecordRepository implements RecordRepository {
    * @param keys set of keys on which to query.
    * @returns those search results that contain all given keys.
    */
-  async queryAllKeys(view: string, keys: String[]): Promise<SearchResult[]> {
+  async queryAllKeys(view: string, keys: string[]): Promise<SearchResult[]> {
     // find all documents that have any one of the given keys
     const queryResults = await this.database.view('assets', view, {
       keys: Array.from(keys).map(e => e.toLowerCase()).sort()
@@ -246,7 +246,7 @@ class CouchDBRecordRepository implements RecordRepository {
   }
 
   /** @inheritDoc */
-  async queryByTags(tags: String[]): Promise<SearchResult[]> {
+  async queryByTags(tags: string[]): Promise<SearchResult[]> {
     return this.queryAllKeys('by_tag', tags);
   }
 
@@ -326,7 +326,7 @@ class CouchDBRecordRepository implements RecordRepository {
         acc.push(assetFromDocument({ key: row.id, ...row.doc }));
       }
       return acc;
-    }, new Array());
+    }, []);
     return [assets, cursor];
   }
 

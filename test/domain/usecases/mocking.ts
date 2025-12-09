@@ -44,7 +44,7 @@ export function recordRepositoryMock(
     allYears?: () => Promise<AttributeCount[]>,
     allMediaTypes?: () => Promise<AttributeCount[]>,
     putAsset?: (asset: Asset) => Promise<void>,
-    queryByTags?: (tags: String[]) => Promise<SearchResult[]>,
+    queryByTags?: (tags: string[]) => Promise<SearchResult[]>,
     queryByLocations?: (locations: string[]) => Promise<SearchResult[]>,
     queryByMediaType?: (media_type: string) => Promise<SearchResult[]>,
     queryBeforeDate?: (before: Date) => Promise<SearchResult[]>,

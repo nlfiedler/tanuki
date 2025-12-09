@@ -1,21 +1,13 @@
 * Action Items
-** Rewrite
+** Rewrite 2025
 *** commit =230801d= was when old JS code was removed
 *** commit =3263ae7= was last Rust commit
-*** Phase 2 goals [2/5]
-- [X] basic details/edit page
-- [X] ~import~ usecase and button on uploads page
-- [ ] search query language
-- [ ] search page
-- [ ] search caching?
-*** Phase 3 goals [0/5]
-- [ ] asset browsing with left/right buttons
-- [ ] ~Replace~ button on details page
-- [ ] read creation time from mpeg files
-- [ ] read date from RIFF/AVI files
-- [ ] look for HEIC support
-*** Overall action Items
-**** TODO store various selections in local storage [12/19]
+*** TODO set up Prettier to format .ts and .tsx files
+*** TODO search query language
+**** see mujina/src/query.js for a start
+**** maybe lexer can implement =Symbol.iterator= instead of =run()=
+*** TODO bulk edit support
+*** TODO store various selections in local storage [12/19]
 - [X] (recent) page size
 - [X] recent selected page
 - [X] recent selected range
@@ -35,38 +27,23 @@
 - [ ] search query
 - [ ] search sort order
 - [ ] search selected page
-**** TODO search query language
-***** see mujina/src/query.js for a start
-***** maybe lexer can implement =Symbol.iterator= instead of =run()=
-**** TODO bulk edit support
-**** TODO check browser console for issues
-**** TODO consider how record repository can implement sorting and pagination
-***** objective is to improve search performance
-***** https://docs.couchdb.org/en/stable/ddocs/views/pagination.html
-**** TODO saving changes to pending assets sometimes does not refresh
-***** updates are successful, page quietly fails to refresh
-**** TODO catch and log GraphQL errors (at least for ~count~)
-**** TODO linting [0/5]
-- [ ] enable wrapping of long line (works for JSX/TSX files)
-- [ ] add JavaScript plugin
-- [ ] add TypeScript plugin
-- [ ] add =unicorn= plugin
-- [ ] add =eslint-plugin-tsdoc= plugin
-**** TODO test setup on Windows
-**** TODO changing light/dark in System Preferences does not cause page theme to change
-**** TODO read original date-time from videos
-***** https://kevinnadro.com/blog/parsing-creation-time-from-mp4-metadata-in-javascript
-***** RIFF/AVI code exists in Rust code =src/domain/usecases.rs=
-**** TODO fix the cross-origin errors in the browser console
-*** Documentation changes
-**** DONE about the =.env= file and how Bun reads that by default
-**** TODO improve =jsdoc= documentation [0/2]
+*** TODO ~Replace~ button on details page
+*** TODO asset browsing with left/right buttons
+*** TODO check browser console for issues
+*** TODO consider how record repository can implement sorting and pagination
+**** objective would be to improve search performance if necessary
+**** https://docs.couchdb.org/en/stable/ddocs/views/pagination.html
+*** TODO saving changes to pending assets sometimes does not refresh
+**** updates are successful
+**** could be the database view takes a second to update
+*** TODO test setup on Windows
+*** TODO changing light/dark in System Preferences does not cause page theme to change
+*** TODO fix the cross-origin errors in the browser console
+*** TODO improve =jsdoc= documentation [0/2]
 - [ ] associate ~global~ functions as belonging to certain source files
 - [ ] fill in the huge gaping hole in the ~Home~ page
-**** DONE write new ADR(s)
-**** DONE update =doc/DEPLOY.md=
-**** DONE delete =doc/LEPTOS.md=
-**** DONE update README
+*** TODO bun docker 1.3.4 ~module not found~ error
+**** check file/directory permissions
 ** Help
 *** write help pages for each of the main pages
 **** location string parsing
@@ -129,6 +106,7 @@
 *** display modes: have an option that makes the images really big (single column, huge images)
 *** hovering over asset should show larger version in a large tooltip
 ** Home
+*** hover button: download raw asset
 *** adaptive photo layout with flexbox: https://css-tricks.com/adaptive-photo-layout-with-flexbox/
 *** image cards wrapped to window: https://codepen.io/jwjcmw/pen/GMQMPW
 *** make the selectors row sticky when scrolling
@@ -174,7 +152,6 @@
 ** Details
 *** completion for tags (like bulk edit form)
 *** completion for location fields (like bulk edit form)
-*** clearing a location field is impossible (backend merges all values)
 *** add ~copy~ button next to asset path
 *** Read timezone info from Exif tags when displaying asset details
 **** everything is assuming that the date/time is UTC, which is almost always wrong
@@ -187,10 +164,12 @@
 - for =testing= account: =AIzaSyAI73udKC3KVk6aIBqOjSqSv6PEQ0qd638=
 **** [[https://mariusandra.github.io/pigeon-maps/][Pigeon Maps]]
 - Uses data from OpenStreetMap, Wikimedia for the tiles
-*** Find out if =mp4= crate can read GPS coords from videos
+*** Find out if we can read GPS coordinates from videos
 **** Preview.app will display location information for videos
 *** Show additional file metadata (TIFF, EXIF, JFIF, IPTC)
 ** Uploads
+*** some times temporary files are left behind in =uploads= folder
+**** they are all 10,430,846 bytes long
 *** make the uploads form super fancy like https://github.com/Swappea/solid-file-upload
 *** theoretically could show the thumbnail of images before uploading
 **** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
@@ -202,24 +181,6 @@
 *** turn the ~Page n of m~ text into a button to input a page number
 **** clicking the button opens a dropdown with a text input field
 **** pressing ~Enter~ or clicking ~Go~ button will dismiss dropdown and go to that page
-*** paging alternatives
-**** spring-loaded next-page navigation
-***** scroll to the bottom and keep trying to scroll
-***** show some indication (e.g. a spinner) that holding will fetch the next page
-***** after two seconds or so, navigate to the next page
-**** consider other ways of showing lots of results w/o paging
-***** look at some examples and packages for ideas on design and implementation
-****** handles scrolling and waiting for data: https://pub.dev/packages/pagination_view
-****** has dots: https://pub.dev/packages/dot_pagination_swiper
-****** can show an error message: https://pub.dev/packages/flutter_pagination_helper
-****** infinite with limited caching: https://pub.dev/packages/infinite_pagination
-****** supports various views: https://pub.dev/packages/flutter_paginator
-**** consider how to display pages continuously (a la infinite list)
-***** would keep several pages in the widget tree at one time
-***** scrolling would drop a page widget from the tree, and add a new one
-***** when fetching a new page, the page widget would show a progress indicator
-***** the "dropped" pages would be changed to consist of placeholders to free memory
-**** using carousel style navigation arrows?
 ** Finding/removing duplicates
 *** many assets are very similar to each other, probably differ only in metadata
 *** find a means (histogram?) of detecting near-duplicates
@@ -263,8 +224,10 @@
 ** Deleting assets
 *** create graphql mutation to delete assets with certain tag
 **** boolean argument ~yes~ to actually perform the delete
-**** if ~yes~ argument is false, reports what would be deleted
+**** if ~yes~ is not truthy, reports what would be deleted
 ** Data Format Support
+*** read original date-time from MP4 videos
+**** https://kevinnadro.com/blog/parsing-creation-time-from-mp4-metadata-in-javascript
 *** PNG files apparently (can) have EXIF data, including orientation, check if this works
 *** Read =ID3= tags in audio files
 *** Detect time zone offset in EXIF data
@@ -277,33 +240,21 @@ include it in the database records.
 : been introduced recently by Exif version 2.31 (July 2016). Related tags are:
 : "OffsetTime", "OffsetTimeOriginal" and "OffsetTimeDigitized".
 
-*** Support more video formats
-**** OGG (=.ogg=), find out what it is and how to play it
-*** Support PDF files
-**** Display thumbnail of first page
-**** c.f. https://github.com/pdf-rs/pdf_render
-**** Display available metadata
 *** Render Markdown as HTML in a scrollable view
 *** Display anything textual in a scrollable text area
-*** HEIC/HEIF images
-**** TODO evaluate https://crates.io/crates/libheif-rs
+*** HEIC/HEIF thumbnails, metadata
 **** HEIF is an image file format employing HEVC (h.265) image coding
 **** [[https://aomediacodec.github.io/av1-avif/][AV1]] is the free alternative to encumbered HEVC
-**** image crate supports AVIF but cannot read HEIC files because they lack AVIF "branding"
-***** unclear where the error is coming from, but ultimately cannot read HEIC files at all
+*** read original date-time from RIFF/AVI files
+**** easier to just convert them to MOV/MP4 using QuickTime player
+**** RIFF/AVI code exists in Rust code =src/domain/usecases.rs=
 ** Machine learning
-*** facial recognition
+*** ML to identify objects, people, etc in photos
+**** could use OpenCV for face recognition
 **** evaluate how other tools make this easier
 ***** do they simply show the faces and have the user enter names?
-*** https://cetra3.github.io/blog/face-detection-with-tensorflow-rust/
-*** TensorFlow Hub: https://tfhub.dev
-*** https://developers.google.com/machine-learning/crash-course/
-*** PhotoPrism applies a bunch of keywords to assets, but only one "label"
-**** e.g. a "Sheep" label with keywords "animal, grass, grasslands, green"
-*** ML to identify objects, people, etc in photos
 **** ML recognizes the subject (dog, cat, person, etc)
 **** PhotoPrism supports "automated tagging based on Google TensorFlow"
-**** could use OpenCV for face recognition
 *** ML to rank photos on various qualities
 **** c.f. https://simonwillison.net/2020/May/21/dogsheep-photos/
 **** ML assigns scores on aesthetics, interest, etc
@@ -327,25 +278,16 @@ include it in the database records.
 *** Add a GraphQL mutation that will delete and rebuild all indices
 *** Guard against concurrent modifications
 **** consider how to manage multiple users making changes
-**** e.g. two people trying to update the same set of recent imports
-**** e.g. two people trying to edit the same asset
 **** this is known as the ~lost update~ problem
 **** usually managed with a revision number on the record
+***** asset entity could contain a ~revision~ field (from CouchDB), updates would need to match that
 ***** updates must include the revision number; if mismatch, raise error
 ***** HTTP uses the =ETag= value and the =If-Match= header for this purpose
-**** maybe keep an edit history or revision number in separate records
-*** Expose data integrity checks in frontend
-**** consider if using GraphQL subscriptions would make sense
-***** would return each asset id and success bool or list of error codes
-***** results would be returned one at a time for the frontend to show progress
-***** the error codes would be encoded as GraphQL enums
-**** add an option to purge bad records
-***** errors of type base64, utf8, missing are not recoverable
-**** find files for which there are no documents
-*** Should have automated backups of the database
+*** Find files for which there are no documents
+*** Manage automated backups of the database
 **** every M operations or T minutes/hours/days
 **** retain N copies of the backup
-**** use EXAF similar to how zorigami does its database backup
+**** use EXAF to backup the database
 ** Bulk Export
 *** Easy selection and export of multiple images
 ** Easy publishing to sharing sites (e.g. Google Photos)

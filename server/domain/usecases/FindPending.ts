@@ -16,7 +16,7 @@ export default ({ recordRepository }: { recordRepository: RecordRepository; }) =
    * @returns array of results containing selected fields from asset records.
    */
   return async (params: PendingParams): Promise<SearchResult[]> => {
-    let results = await recordRepository.queryNewborn(params.afterDate || new Date(-271821, 3, 20));
+    const results = await recordRepository.queryNewborn(params.afterDate || new Date(-271821, 3, 20));
     helpers.sortSearchResults(results, params.sortField, params.sortOrder);
     return results;
   };

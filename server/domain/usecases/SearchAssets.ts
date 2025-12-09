@@ -100,7 +100,7 @@ function filterByLocations(
   if (params.locations.length > 0) {
     // All filtering comparisons are case-insensitive for now, so both the input
     // and the index values are lowercased.
-    let locations = params.locations.map((v) => v.toLowerCase());
+    const locations = params.locations.map((v) => v.toLowerCase());
     return results
       .filter((r) => {
         if (r.location) {

@@ -27,8 +27,8 @@ function TagSelector(props: TagSelectorProps) {
   })
   const sortedTags = () => {
     // the tags returned from the server are in no particular order
-    const sorted = new Array()
-    for (let tag of tagsQuery()?.tags ?? []) {
+    const sorted = []
+    for (const tag of tagsQuery()?.tags ?? []) {
       sorted.push({ label: tag.label, count: tag.count })
     }
     sorted.sort((a, b) => a.label.localeCompare(b.label))

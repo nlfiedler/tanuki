@@ -153,7 +153,7 @@ export async function getCoordinates(mimetype: string, filepath: string): Promis
           coords.setLatitudeRef('S');
         }
         if (Array.isArray(tags.GPSLatitude?.value)) {
-          let numbers = tags.GPSLatitude?.value as ExifNumberPairs;
+          const numbers = tags.GPSLatitude?.value as ExifNumberPairs;
           coords.setLatitudeDegrees(numbers[0][0] / numbers[0][1]);
           coords.setLatitudeMinutes(numbers[1][0] / numbers[1][1]);
           coords.setLatitudeSeconds(numbers[2][0] / numbers[2][1]);
@@ -163,7 +163,7 @@ export async function getCoordinates(mimetype: string, filepath: string): Promis
             coords.setLongitudeRef('W');
           }
           if (Array.isArray(tags.GPSLongitude?.value)) {
-            let numbers = tags.GPSLongitude?.value as ExifNumberPairs;
+            const numbers = tags.GPSLongitude?.value as ExifNumberPairs;
             coords.setLongitudeDegrees(numbers[0][0] / numbers[0][1]);
             coords.setLongitudeMinutes(numbers[1][0] / numbers[1][1]);
             coords.setLongitudeSeconds(numbers[2][0] / numbers[2][1]);
@@ -398,7 +398,7 @@ function lexStart(l: CaptionLexer): LexerFun {
 }
 
 function lexTag(l: CaptionLexer): LexerFun {
-  let tag = acceptIdentifier(l);
+  const tag = acceptIdentifier(l);
   l.tags.push(tag);
   return lexStart;
 }
@@ -423,7 +423,7 @@ function lexLocation(l: CaptionLexer): LexerFun {
       }
       l.location = ident;
     } else {
-      let location = acceptIdentifier(l);
+      const location = acceptIdentifier(l);
       l.location = location;
     }
   }

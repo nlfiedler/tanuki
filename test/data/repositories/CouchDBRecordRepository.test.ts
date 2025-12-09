@@ -74,7 +74,7 @@ describe('CouchDBRecordRepository', function () {
     // act
     await sut.putAsset(doc);
     // assert
-    let asset = await sut.getAssetByDigest(doc.checksum);
+    const asset = await sut.getAssetByDigest(doc.checksum);
     expect(asset).toBeDefined();
     expect(asset!.key).toEqual('eagle');
     expect(asset!.checksum).toEqual(doc.checksum);

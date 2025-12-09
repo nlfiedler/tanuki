@@ -40,7 +40,7 @@ function mergeAssetInput(asset: Asset, assetInput: AssetInput) {
     asset.filename = assetInput.filename;
   }
   // merge the existing and new location, if any, and save if changed
-  let location = helpers.mergeLocations(asset.location, assetInput.location);
+  const location = helpers.mergeLocations(asset.location, assetInput.location);
   if (location) {
     asset.location = location;
   }
