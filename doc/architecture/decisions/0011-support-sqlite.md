@@ -1,8 +1,8 @@
 # Use RocksDB
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2025-03-13
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2025-03-13
 
 ## Context
 
@@ -32,5 +32,5 @@ Disk usage is a bit less than RocksDB, but load time of 21,000 assets is 4.5 min
 
 ## Links
 
-* SQLite [website](https://sqlite.org)
-* rusqlite [GitHub](https://github.com/rusqlite/rusqlite)
+- SQLite [website](https://sqlite.org)
+- rusqlite [GitHub](https://github.com/rusqlite/rusqlite)

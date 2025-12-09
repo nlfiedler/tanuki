@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from 'bun:test';
 import { EnvSettingsRepository } from 'tanuki/server/data/repositories/EnvSettingsRepository.ts';
 
 describe('EnvSettingsRepository', function () {

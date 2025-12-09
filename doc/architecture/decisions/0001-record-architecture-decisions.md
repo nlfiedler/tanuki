@@ -1,8 +1,8 @@
 # Record Architecture Decisions
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2020-08-20
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2020-08-20
 
 ## Context
 
@@ -64,7 +64,7 @@ The motivation behind previous decisions is visible for everyone, present and fu
 
 ## Links
 
-* Original text: [Documenting Architecture Decisions](http://thinkrelevance.com/blog/2011/11/15/documenting-architecture-decisions)
-* ADR overview [GitHub](https://github.com/joelparkerhenderson/architecture_decision_record)
-* Markdown format: [Markdown Architectural Decision Records](https://adr.github.io/madr/)
-* Christopher Alexander: [Wikipedia entry](https://en.wikipedia.org/wiki/Christopher_Alexander)
+- Original text: [Documenting Architecture Decisions](http://thinkrelevance.com/blog/2011/11/15/documenting-architecture-decisions)
+- ADR overview [GitHub](https://github.com/joelparkerhenderson/architecture_decision_record)
+- Markdown format: [Markdown Architectural Decision Records](https://adr.github.io/madr/)
+- Christopher Alexander: [Wikipedia entry](https://en.wikipedia.org/wiki/Christopher_Alexander)

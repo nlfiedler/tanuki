@@ -40,10 +40,18 @@ if ('GOOGLE_MAPS_API_KEY' in process.env) {
 
 container.register({
   // register the data repositories as classes
-  settingsRepository: asClass(EnvSettingsRepository, { lifetime: Lifetime.SINGLETON }),
-  recordRepository: asClass(CouchDBRecordRepository, { lifetime: Lifetime.SINGLETON }),
-  blobRepository: asClass(LocalBlobRepository, { lifetime: Lifetime.SINGLETON }),
-  locationRepository: asClass(LocationRepository, { lifetime: Lifetime.SINGLETON }),
+  settingsRepository: asClass(EnvSettingsRepository, {
+    lifetime: Lifetime.SINGLETON
+  }),
+  recordRepository: asClass(CouchDBRecordRepository, {
+    lifetime: Lifetime.SINGLETON
+  }),
+  blobRepository: asClass(LocalBlobRepository, {
+    lifetime: Lifetime.SINGLETON
+  }),
+  locationRepository: asClass(LocationRepository, {
+    lifetime: Lifetime.SINGLETON
+  }),
 
   // register the use cases as functions
   countAssets: asFunction(CountAssets),
@@ -59,7 +67,7 @@ container.register({
   importUploads: asFunction(ImportUploads),
   loadAssets: asFunction(LoadAssets),
   searchAssets: asFunction(SearchAssets),
-  updateAsset: asFunction(UpdateAsset),
+  updateAsset: asFunction(UpdateAsset)
 });
 
 export default container;

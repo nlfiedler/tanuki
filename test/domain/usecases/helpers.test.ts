@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from 'bun:test';
 import { Geocoded, Location } from 'tanuki/server/domain/entities/Location.ts';
 import * as helpers from 'tanuki/server/domain/usecases/helpers.ts';
 
@@ -9,7 +9,8 @@ describe('File checksum helper', function () {
   test('should compute checksum of a file', async function () {
     // arrange
     const filepath = 'test/fixtures/dcp_1069.jpg';
-    const expected = 'sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07';
+    const expected =
+      'sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07';
     // act
     const actual = await helpers.checksumFile(filepath);
     // assert
@@ -123,7 +124,7 @@ describe('EXIF GPS coordinates', function () {
   test('should read GPS coords', async function () {
     // arrange
     const mimetype = 'image/jpeg';
-    const filepath = "test/fixtures/IMG_0385.JPG";
+    const filepath = 'test/fixtures/IMG_0385.JPG';
     // act
     const actual = await helpers.getCoordinates(mimetype, filepath);
     // assert
@@ -147,7 +148,7 @@ describe('Merge locations helper', function () {
     expect(result).toBeNull();
 
     // asset is some, input is none, result is asset
-    asset = Location.fromParts("beach", "Monterey", "California");
+    asset = Location.fromParts('beach', 'Monterey', 'California');
     input = null;
     result = helpers.mergeLocations(asset, input);
     expect(result).toEqual(asset);
@@ -161,7 +162,7 @@ describe('Merge locations helper', function () {
     expect(result?.hasValues()).toBeTrue();
 
     // merge input city/region with asset label
-    asset = new Location("Chihuly");
+    asset = new Location('Chihuly');
     input = Location.parse('Seattle, WA');
     result = helpers.mergeLocations(asset, input);
     expect(result).toEqual(Location.parse('Chihuly; Seattle, WA'));
@@ -169,13 +170,13 @@ describe('Merge locations helper', function () {
 
     // merge input label with asset city/region
     asset = Location.parse('Seattle, WA');
-    input = new Location("Chihuly");
+    input = new Location('Chihuly');
     result = helpers.mergeLocations(asset, input);
     expect(result).toEqual(Location.parse('Chihuly; Seattle, WA'));
     expect(result?.hasValues()).toBeTrue();
 
     // clear asset label if input label is empty string or null
-    asset = new Location("Chihuly");
+    asset = new Location('Chihuly');
     input = Location.fromRaw('', 'Seattle', 'WA');
     result = helpers.mergeLocations(asset, input);
     expect(result).toEqual(Location.parse('Seattle, WA'));
@@ -250,22 +251,27 @@ describe('Geocode location converter', function () {
   });
 });
 
-
 describe('parseCaption helper', function () {
   test('should return nothing if caption is plain text', async function () {
-    const results = helpers.parseCaption('this is plain text without any markup');
+    const results = helpers.parseCaption(
+      'this is plain text without any markup'
+    );
     expect(results.tags).toBeEmpty();
     expect(results.location).toBeNull();
   });
 
   test('should return simple location label', async function () {
-    const results = helpers.parseCaption('on the beach @hawaii, fun in the sun');
+    const results = helpers.parseCaption(
+      'on the beach @hawaii, fun in the sun'
+    );
     expect(results.tags).toBeEmpty();
     expect(results.location?.label).toEqual('hawaii');
   });
 
   test('should return complex location value', async function () {
-    const results = helpers.parseCaption('fun in the sun @"beach; Oahu, Hawaii"');
+    const results = helpers.parseCaption(
+      'fun in the sun @"beach; Oahu, Hawaii"'
+    );
     expect(results.tags).toBeEmpty();
     expect(results.location?.label).toEqual('beach');
     expect(results.location?.city).toEqual('Oahu');
@@ -291,7 +297,9 @@ describe('parseCaption helper', function () {
   });
 
   test('should find tags surrounded by separators', async function () {
-    const results = helpers.parseCaption('#cat. #dog, #bird #mouse; #house(#car)');
+    const results = helpers.parseCaption(
+      '#cat. #dog, #bird #mouse; #house(#car)'
+    );
     expect(results.tags).toHaveLength(6);
     expect(results.tags[0]).toEqual('cat');
     expect(results.tags[1]).toEqual('dog');

@@ -1,8 +1,11 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { describe, expect, test } from "bun:test";
-import { Coordinates, Location } from 'tanuki/server/domain/entities/Location.ts';
+import { describe, expect, test } from 'bun:test';
+import {
+  Coordinates,
+  Location
+} from 'tanuki/server/domain/entities/Location.ts';
 
 describe('Location entity', function () {
   test('should indicate if it has values or not', function () {
@@ -47,7 +50,9 @@ describe('Location entity', function () {
     expect(Location.parse('').label).toBeNull();
 
     // no separators
-    expect(Location.parse('classical garden').label).toEqual('classical garden');
+    expect(Location.parse('classical garden').label).toEqual(
+      'classical garden'
+    );
 
     // all 3 parts
     const cgpo = Location.parse('classical garden ; Portland , Oregon');
@@ -68,13 +73,19 @@ describe('Location entity', function () {
     expect(kkh.region).toEqual('Hawaii');
 
     // multiple semi-colons is invalid, converts to label only
-    expect(Location.parse('too ; many ; parts').label).toEqual('too ; many ; parts');
+    expect(Location.parse('too ; many ; parts').label).toEqual(
+      'too ; many ; parts'
+    );
 
     // multiple commas is invalid, converts to label only
-    expect(Location.parse('too , many , parts').label).toEqual('too , many , parts');
+    expect(Location.parse('too , many , parts').label).toEqual(
+      'too , many , parts'
+    );
 
     // one semicolon but multiple commas is also invalid
-    expect(Location.parse('label; too, many, parts').label).toEqual('label; too, many, parts');
+    expect(Location.parse('label; too, many, parts').label).toEqual(
+      'label; too, many, parts'
+    );
   });
 
   test('should match query to location parts', function () {

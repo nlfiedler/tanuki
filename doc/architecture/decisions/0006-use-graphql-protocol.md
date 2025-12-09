@@ -1,8 +1,8 @@
 # Use GraphQL protocol
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2020-08-20
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2020-08-20
 
 ## Context
 
@@ -22,5 +22,5 @@ The application has been using GraphQL for a long time now, and it has been very
 
 ## Links
 
-* GraphQL [website](https://graphql.org)
-* RESTful API [Wikipedia](https://en.wikipedia.org/wiki/Representational_state_transfer)
+- GraphQL [website](https://graphql.org)
+- RESTful API [Wikipedia](https://en.wikipedia.org/wiki/Representational_state_transfer)

@@ -7,57 +7,57 @@ import {
   Index,
   type JSX,
   type Setter,
-  Show,
-} from 'solid-js'
-import { action, redirect, useAction, useSubmission } from '@solidjs/router'
-import { type TypedDocumentNode, gql } from '@apollo/client'
-import { type Mutation } from 'tanuki/generated/graphql.ts'
-import { useApolloClient } from '../ApolloProvider'
+  Show
+} from 'solid-js';
+import { action, redirect, useAction, useSubmission } from '@solidjs/router';
+import { type TypedDocumentNode, gql } from '@apollo/client';
+import { type Mutation } from 'tanuki/generated/graphql.ts';
+import { useApolloClient } from '../ApolloProvider';
 
 const IMPORT_ASSETS: TypedDocumentNode<Mutation, void> = gql`
   mutation {
     import
   }
-`
+`;
 
 function Upload() {
-  const client = useApolloClient()
-  const datefmt = new Intl.DateTimeFormat()
-  const [selectedFiles, setSelectedFiles] = createSignal<Array<File>>([])
-  const [droppedFiles, setDroppedFiles] = createSignal<Array<File>>([])
+  const client = useApolloClient();
+  const datefmt = new Intl.DateTimeFormat();
+  const [selectedFiles, setSelectedFiles] = createSignal<Array<File>>([]);
+  const [droppedFiles, setDroppedFiles] = createSignal<Array<File>>([]);
   const filesSelected: JSX.EventHandlerWithOptionsUnion<
     HTMLInputElement,
     Event,
     JSX.ChangeEventHandler<HTMLInputElement, Event>
   > = (event) => {
     // event.target.files is a FileList, not an Array
-    setSelectedFiles(Array.from<File>(event.target.files!))
-  }
+    setSelectedFiles(Array.from<File>(event.target.files!));
+  };
   const hasFiles = createMemo(() => {
-    return selectedFiles().length > 0 || droppedFiles().length > 0
-  })
+    return selectedFiles().length > 0 || droppedFiles().length > 0;
+  });
   // indicates number of files uploaded so far as percentage
-  const [progress, setProgress] = createSignal(0)
+  const [progress, setProgress] = createSignal(0);
   const startUploadAction = action(async (): Promise<void> => {
-    const allFiles = selectedFiles().concat(droppedFiles())
-    await uploadFiles(allFiles, setProgress)
-    throw redirect('/pending')
-  })
-  const startUpload = useAction(startUploadAction)
-  const uploadSubmission = useSubmission(startUploadAction)
+    const allFiles = selectedFiles().concat(droppedFiles());
+    await uploadFiles(allFiles, setProgress);
+    throw redirect('/pending');
+  });
+  const startUpload = useAction(startUploadAction);
+  const uploadSubmission = useSubmission(startUploadAction);
   const importAction = action(async (): Promise<any> => {
     try {
-      await client.mutate({ mutation: IMPORT_ASSETS })
+      await client.mutate({ mutation: IMPORT_ASSETS });
     } catch (err) {
-      console.error('asset update failed:', err)
+      console.error('asset update failed:', err);
       // force an early exit so the user has a chance to look at the browser
       // console to see the error message
-      return { ok: false }
+      return { ok: false };
     }
-    throw redirect('/pending')
-  }, 'updateAssets')
-  const startImport = useAction(importAction)
-  const importSubmission = useSubmission(importAction)
+    throw redirect('/pending');
+  }, 'updateAssets');
+  const startImport = useAction(importAction);
+  const importSubmission = useSubmission(importAction);
 
   return (
     <>
@@ -173,33 +173,33 @@ function Upload() {
         </Show>
       </DropZone>
     </>
-  )
+  );
 }
 
 interface DropZoneProps {
-  setDroppedFiles: Setter<Array<File>>
-  children: any
+  setDroppedFiles: Setter<Array<File>>;
+  children: any;
 }
 
 function DropZone(props: DropZoneProps) {
-  const [isDragOver, setIsDragOver] = createSignal(false)
+  const [isDragOver, setIsDragOver] = createSignal(false);
 
   const handleDragOver: JSX.EventHandler<HTMLDivElement, DragEvent> = (
     event
   ) => {
-    event.preventDefault()
-    setIsDragOver(true)
-  }
+    event.preventDefault();
+    setIsDragOver(true);
+  };
 
   const handleDragLeave = () => {
-    setIsDragOver(false)
-  }
+    setIsDragOver(false);
+  };
 
   const handleDrop: JSX.EventHandler<HTMLDivElement, DragEvent> = (event) => {
-    event.preventDefault()
-    setIsDragOver(false)
-    props.setDroppedFiles(Array.from(event.dataTransfer?.files ?? []))
-  }
+    event.preventDefault();
+    setIsDragOver(false);
+    props.setDroppedFiles(Array.from(event.dataTransfer?.files ?? []));
+  };
 
   return (
     <section class="section">
@@ -212,13 +212,13 @@ function DropZone(props: DropZoneProps) {
         style={{
           'border-style': 'dashed',
           'min-height': '14em',
-          'border-color': isDragOver() ? 'green' : 'white',
+          'border-color': isDragOver() ? 'green' : 'white'
         }}
       >
         {props.children}
       </div>
     </section>
-  )
+  );
 }
 
 async function uploadFiles(
@@ -226,20 +226,20 @@ async function uploadFiles(
   setProgress: Setter<number>
 ) {
   for (const [index, file] of selectedFiles.entries()) {
-    const formData = new FormData()
+    const formData = new FormData();
     // appending a File will include its filename
-    formData.append('file_blob', file)
-    formData.append('last_modified', file.lastModified.toString())
+    formData.append('file_blob', file);
+    formData.append('last_modified', file.lastModified.toString());
     try {
       await fetch('/assets/upload', {
         method: 'POST',
-        body: formData,
-      })
+        body: formData
+      });
     } catch (error) {
-      console.error('Error uploading files:', error)
+      console.error('Error uploading files:', error);
     }
-    setProgress(((index + 1) * 100) / selectedFiles.length)
+    setProgress(((index + 1) * 100) / selectedFiles.length);
   }
 }
 
-export default Upload
+export default Upload;

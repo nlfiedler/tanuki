@@ -1,29 +1,29 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { createSignal, createEffect } from 'solid-js'
-import useClickOutside from '../hooks/useClickOutside.js'
+import { createSignal, createEffect } from 'solid-js';
+import useClickOutside from '../hooks/useClickOutside.js';
 
 function ColorTheme() {
-  const [theme, setTheme] = createSignal('light')
-  const [dropdownOpen, setDropdownOpen] = createSignal(false)
-  let dropdownRef: HTMLDivElement | undefined
+  const [theme, setTheme] = createSignal('light');
+  const [dropdownOpen, setDropdownOpen] = createSignal(false);
+  let dropdownRef: HTMLDivElement | undefined;
   useClickOutside(
     () => dropdownRef,
     () => setDropdownOpen(false)
-  )
+  );
   createEffect(() => {
-    document.documentElement.dataset.theme = dataForTheme(theme())
+    document.documentElement.dataset.theme = dataForTheme(theme());
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('theme', theme())
+      localStorage.setItem('theme', theme());
     }
-  })
+  });
   if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
-    setTheme(localStorage.getItem('theme')!)
+    setTheme(localStorage.getItem('theme')!);
   } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    setTheme('dark')
+    setTheme('dark');
   } else {
-    setTheme('light')
+    setTheme('light');
   }
 
   return (
@@ -51,8 +51,8 @@ function ColorTheme() {
               theme() == 'light' ? 'dropdown-item is-active' : 'dropdown-item'
             }
             on:click={() => {
-              setTheme('light')
-              setDropdownOpen(false)
+              setTheme('light');
+              setDropdownOpen(false);
             }}
           >
             <span class="icon">
@@ -65,8 +65,8 @@ function ColorTheme() {
               theme() == 'dark' ? 'dropdown-item is-active' : 'dropdown-item'
             }
             on:click={() => {
-              setTheme('dark')
-              setDropdownOpen(false)
+              setTheme('dark');
+              setDropdownOpen(false);
             }}
           >
             <span class="icon">
@@ -79,8 +79,8 @@ function ColorTheme() {
               theme() == 'auto' ? 'dropdown-item is-active' : 'dropdown-item'
             }
             on:click={() => {
-              setTheme('auto')
-              setDropdownOpen(false)
+              setTheme('auto');
+              setDropdownOpen(false);
             }}
           >
             <span class="icon">
@@ -91,32 +91,32 @@ function ColorTheme() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Return the appropriate icon CSS class for the current color theme.
 function classForTheme(theme: string) {
   switch (theme) {
     case 'dark':
-      return 'fa-solid fa-moon'
+      return 'fa-solid fa-moon';
     case 'light':
-      return 'fa-solid fa-sun'
+      return 'fa-solid fa-sun';
     default:
-      return 'fa-solid fa-desktop'
+      return 'fa-solid fa-desktop';
   }
 }
 
 // Return the appropriate data-theme value for the given color theme.
 function dataForTheme(theme: string) {
   if (theme === 'light') {
-    return 'light'
+    return 'light';
   } else if (theme === 'dark') {
-    return 'dark'
+    return 'dark';
   }
   if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return 'dark'
+    return 'dark';
   }
-  return 'light'
+  return 'light';
 }
 
-export default ColorTheme
+export default ColorTheme;

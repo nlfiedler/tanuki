@@ -7,9 +7,14 @@ import path from 'node:path';
 import mime from 'mime';
 import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
 
-type ImportAssetFn = (filepath: string, originalname: string, mimetype: string, modified: Date) => Promise<Asset>;
+type ImportAssetFn = (
+  filepath: string,
+  originalname: string,
+  mimetype: string,
+  modified: Date
+) => Promise<Asset>;
 
-export default ({ importAsset, }: { importAsset: ImportAssetFn; }) => {
+export default ({ importAsset }: { importAsset: ImportAssetFn }) => {
   assert.ok(importAsset, 'importAsset usecase must be defined');
   /**
    * Import all of the files in the uploads directory.

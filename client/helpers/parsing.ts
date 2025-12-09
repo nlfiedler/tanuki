@@ -27,7 +27,7 @@ export function parseLocation(s: string): Location {
           return {
             label: label_tail[0]?.trim() || null,
             city: city_region[0]?.trim() || null,
-            region: city_region[1]?.trim() || null,
+            region: city_region[1]?.trim() || null
           };
         }
       } else {
@@ -35,7 +35,7 @@ export function parseLocation(s: string): Location {
         return {
           label: label_tail[0]?.trim() || null,
           city: label_tail[1]?.trim() || null,
-          region: null,
+          region: null
         };
       }
     }
@@ -46,7 +46,7 @@ export function parseLocation(s: string): Location {
       return {
         label: null,
         city: city_region[0]?.trim() || null,
-        region: city_region[1]?.trim() || null,
+        region: city_region[1]?.trim() || null
       };
     }
   }

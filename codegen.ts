@@ -8,7 +8,7 @@ const config: CodegenConfig = {
       config: {
         // typescript-resolvers plugin: Adds an index signature to any generated resolver(?)
         useIndexSignature: true,
-        // typescript plugin: Will use import type {} rather than import {} when importing only types. 
+        // typescript plugin: Will use import type {} rather than import {} when importing only types.
         useTypeImports: true
       },
       plugins: ['typescript', 'typescript-resolvers']

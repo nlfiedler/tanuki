@@ -3,19 +3,23 @@
 //
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from 'bun:test';
 import { temporaryDirectory } from 'tempy';
 // prepare the test environment as early as possible
 import 'tanuki/test/env.ts';
 import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
 import { EnvSettingsRepository } from 'tanuki/server/data/repositories/EnvSettingsRepository.ts';
-import { LocalBlobRepository, accessible } from 'tanuki/server/data/repositories/LocalBlobRepository.ts';
+import {
+  LocalBlobRepository,
+  accessible
+} from 'tanuki/server/data/repositories/LocalBlobRepository.ts';
 
 describe('LocalBlobRepository', function () {
   test('should decode the asset key into a path', async function () {
     // arrange
     const expected = 'foo/2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg';
-    const encoded = 'MjAxOC8wNS8zMS8yMTAwLzAxYng1enprYmthY3Rhdjl3ZXZnZW1tdnJ6LmpwZw==';
+    const encoded =
+      'MjAxOC8wNS8zMS8yMTAwLzAxYng1enprYmthY3Rhdjl3ZXZnZW1tdnJ6LmpwZw==';
     const settingsRepository = new EnvSettingsRepository();
     settingsRepository.set('ASSETS_PATH', 'foo');
     const sut = new LocalBlobRepository({ settingsRepository });

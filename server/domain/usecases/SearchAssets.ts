@@ -7,13 +7,17 @@ import { SearchParams } from 'tanuki/server/domain/entities/SearchParams.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
 
-export default ({ recordRepository }: { recordRepository: RecordRepository; }) => {
+export default ({
+  recordRepository
+}: {
+  recordRepository: RecordRepository;
+}) => {
   assert.ok(recordRepository, 'record repository must be defined');
   /**
    * Use case to perform queries against the database indices.
-   * 
+   *
    * If not specified, the sort order will be _ascending_ by default.
-   * 
+   *
    * @param params - search parameters.
    * @returns array of results containing selected fields from asset records.
    */
@@ -28,7 +32,10 @@ export default ({ recordRepository }: { recordRepository: RecordRepository; }) =
 };
 
 /** Perform an initial search of the assets. */
-async function queryAssets(recordRepository: RecordRepository, params: SearchParams): Promise<SearchResult[]> {
+async function queryAssets(
+  recordRepository: RecordRepository,
+  params: SearchParams
+): Promise<SearchResult[]> {
   // Perform the initial query using one of the criteria. Querying by tags is
   // the first choice since the search results do not contain the tags, so a
   // filter on tags is not possible.
@@ -68,13 +75,12 @@ async function queryAssets(recordRepository: RecordRepository, params: SearchPar
 /** Filter the search results by date range, if specified by the parameters. */
 function filterByDateRange(
   results: SearchResult[],
-  params: SearchParams,
+  params: SearchParams
 ): SearchResult[] {
   if (params.afterDate && params.beforeDate) {
     const a = params.afterDate;
     const b = params.beforeDate;
-    return results
-      .filter((r) => r.datetime > a && r.datetime < b);
+    return results.filter((r) => r.datetime > a && r.datetime < b);
   } else if (params.beforeDate) {
     const b = params.beforeDate;
     return results.filter((r) => r.datetime < b);
@@ -95,21 +101,20 @@ function filterByDateRange(
  */
 function filterByLocations(
   results: SearchResult[],
-  params: SearchParams,
+  params: SearchParams
 ): SearchResult[] {
   if (params.locations.length > 0) {
     // All filtering comparisons are case-insensitive for now, so both the input
     // and the index values are lowercased.
     const locations = params.locations.map((v) => v.toLowerCase());
-    return results
-      .filter((r) => {
-        if (r.location) {
-          // every given location search term must match some part of the asset
-          // location (such as ["paris", "france"] versus ["paris", "texas"])
-          return locations.every((l) => r.location?.partialMatch(l));
-        }
-        return false;
-      });
+    return results.filter((r) => {
+      if (r.location) {
+        // every given location search term must match some part of the asset
+        // location (such as ["paris", "france"] versus ["paris", "texas"])
+        return locations.every((l) => r.location?.partialMatch(l));
+      }
+      return false;
+    });
   }
   return results;
 }
@@ -117,7 +122,7 @@ function filterByLocations(
 /** Filter the search results by media type, if specified. */
 function filterByMediaType(
   results: SearchResult[],
-  params: SearchParams,
+  params: SearchParams
 ): SearchResult[] {
   if (params.mediaType) {
     // All filtering comparisons are case-insensitive for now, so both the

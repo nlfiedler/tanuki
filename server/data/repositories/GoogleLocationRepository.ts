@@ -2,7 +2,10 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import assert from 'node:assert';
-import { Coordinates, Geocoded } from 'tanuki/server/domain/entities/Location.ts';
+import {
+  Coordinates,
+  Geocoded
+} from 'tanuki/server/domain/entities/Location.ts';
 import { type LocationRepository } from 'tanuki/server/domain/repositories/LocationRepository.ts';
 import { type SettingsRepository } from 'tanuki/server/domain/repositories/SettingsRepository.ts';
 
@@ -14,7 +17,11 @@ const GOOGLE_MAPS_URI = 'https://maps.googleapis.com/maps/api/geocode/json';
 class GoogleLocationRepository implements LocationRepository {
   apiKey: string;
 
-  constructor({ settingsRepository }: { settingsRepository: SettingsRepository; }) {
+  constructor({
+    settingsRepository
+  }: {
+    settingsRepository: SettingsRepository;
+  }) {
     this.apiKey = settingsRepository.get('GOOGLE_MAPS_API_KEY');
     assert.ok(this.apiKey, 'missing GOOGLE_MAPS_API_KEY environment variable');
   }
@@ -32,7 +39,10 @@ class GoogleLocationRepository implements LocationRepository {
     url.searchParams.append('key', this.apiKey);
     const [lat, long] = coords.intoDecimals();
     url.searchParams.append('latlng', `${lat},${long}`);
-    url.searchParams.append('result_type', 'country|administrative_area_level_1|locality');
+    url.searchParams.append(
+      'result_type',
+      'country|administrative_area_level_1|locality'
+    );
 
     let retries = 0;
     while (retries < 10) {
@@ -74,7 +84,7 @@ class GoogleLocationRepository implements LocationRepository {
 }
 
 function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export { GoogleLocationRepository };

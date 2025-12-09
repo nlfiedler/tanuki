@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from 'bun:test';
 import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
 
 describe('Asset entity', function () {

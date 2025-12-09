@@ -6,11 +6,15 @@ import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
 import { Location } from 'tanuki/server/domain/entities/Location.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
 
-export default ({ recordRepository }: { recordRepository: RecordRepository; }) => {
+export default ({
+  recordRepository
+}: {
+  recordRepository: RecordRepository;
+}) => {
   assert.ok(recordRepository, 'record repository must be defined');
   /**
    * Store the given assets (formatted as "dump" records) into the repository.
-   * 
+   *
    * @param incoming - assets in "dump" format.
    */
   return async (incoming: Array<any>) => {
@@ -30,7 +34,9 @@ export default ({ recordRepository }: { recordRepository: RecordRepository; }) =
         if (typeof r.location === 'string') {
           asset.setLocation(new Location(r.location));
         } else {
-          asset.setLocation(Location.fromRaw(r.location.l, r.location.c, r.location.r));
+          asset.setLocation(
+            Location.fromRaw(r.location.l, r.location.c, r.location.r)
+          );
         }
       }
       if (r.user_date) {

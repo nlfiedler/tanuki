@@ -6,7 +6,9 @@ import type { Location } from 'tanuki/generated/graphql.ts';
 /**
  * Format the given date-time as a date string using `toDateString()`.
  */
-export function formatDatetime(datetime: string | Date | null | undefined): string {
+export function formatDatetime(
+  datetime: string | Date | null | undefined
+): string {
   if (typeof datetime === 'string') {
     return new Date(datetime).toDateString();
   } else if (datetime) {

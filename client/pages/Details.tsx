@@ -11,19 +11,19 @@ import {
   type Signal,
   Show,
   Suspense,
-  Switch,
-} from 'solid-js'
-import { useParams } from '@solidjs/router'
-import { action, useAction, useSubmission } from '@solidjs/router'
-import { type TypedDocumentNode, gql } from '@apollo/client'
-import { useApolloClient } from '../ApolloProvider'
+  Switch
+} from 'solid-js';
+import { useParams } from '@solidjs/router';
+import { action, useAction, useSubmission } from '@solidjs/router';
+import { type TypedDocumentNode, gql } from '@apollo/client';
+import { useApolloClient } from '../ApolloProvider';
 import type {
   Asset,
   Mutation,
   MutationUpdateArgs,
   QueryAssetArgs,
-  Query,
-} from 'tanuki/generated/graphql.ts'
+  Query
+} from 'tanuki/generated/graphql.ts';
 
 const GET_ASSET: TypedDocumentNode<Query, QueryAssetArgs> = gql`
   query Asset($id: ID!) {
@@ -44,7 +44,7 @@ const GET_ASSET: TypedDocumentNode<Query, QueryAssetArgs> = gql`
       }
     }
   }
-`
+`;
 
 const UPDATE_ASSET: TypedDocumentNode<Mutation, MutationUpdateArgs> = gql`
   mutation Update($id: ID!, $asset: AssetInput!) {
@@ -52,18 +52,18 @@ const UPDATE_ASSET: TypedDocumentNode<Mutation, MutationUpdateArgs> = gql`
       id
     }
   }
-`
+`;
 
 function AssetDetails() {
-  const params = useParams()
-  const client = useApolloClient()
+  const params = useParams();
+  const client = useApolloClient();
   const [assetQuery] = createResource(params, async (params) => {
     const { data } = await client.query({
       query: GET_ASSET,
-      variables: { id: params.id! },
-    })
-    return data
-  })
+      variables: { id: params.id! }
+    });
+    return data;
+  });
 
   return (
     <Suspense fallback={<button class="button is-loading">...</button>}>
@@ -74,11 +74,11 @@ function AssetDetails() {
         </Show>
       </div>
     </Suspense>
-  )
+  );
 }
 
 interface AssetFigureProps {
-  asset: Asset
+  asset: Asset;
 }
 
 function AssetFigure(props: AssetFigureProps) {
@@ -93,11 +93,11 @@ function AssetFigure(props: AssetFigureProps) {
         </Match>
       </Switch>
     </figure>
-  )
+  );
 }
 
 interface ImageThumbnailProps {
-  asset: Asset
+  asset: Asset;
 }
 
 function ImageThumbnail(props: ImageThumbnailProps) {
@@ -107,17 +107,17 @@ function ImageThumbnail(props: ImageThumbnailProps) {
       alt={props.asset.filename}
       style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
     />
-  )
+  );
 }
 
 interface VideoThumbnailProps {
-  asset: Asset
+  asset: Asset;
 }
 
 function VideoThumbnail(props: VideoThumbnailProps) {
-  let media_type = props.asset.mediaType
+  let media_type = props.asset.mediaType;
   if (media_type == 'video/quicktime') {
-    media_type = 'video/mp4'
+    media_type = 'video/mp4';
   }
   return (
     <video controls>
@@ -126,11 +126,11 @@ function VideoThumbnail(props: VideoThumbnailProps) {
       <code>video</code>
       tag.
     </video>
-  )
+  );
 }
 
 interface AudioThumbnailProps {
-  asset: Asset
+  asset: Asset;
 }
 
 function AudioThumbnail(props: AudioThumbnailProps) {
@@ -144,20 +144,20 @@ function AudioThumbnail(props: AudioThumbnailProps) {
         />
       </audio>
     </>
-  )
+  );
 }
 
 interface AssetFormProps {
-  asset: Asset
+  asset: Asset;
 }
 
 // define a directive to make text input handling more concise
 function textField(element: HTMLInputElement, value: Accessor<Signal<string>>) {
-  const [field, setField] = value()
-  createRenderEffect(() => (element.value = field()))
+  const [field, setField] = value();
+  createRenderEffect(() => (element.value = field()));
   element.addEventListener('input', ({ target }) =>
     setField((target as HTMLInputElement).value)
-  )
+  );
 }
 
 // define a directive to make date-time input handling more concise
@@ -167,14 +167,14 @@ function datetimeField(
   element: HTMLInputElement,
   value: Accessor<Signal<string>>
 ) {
-  const [field, setField] = value()
+  const [field, setField] = value();
   createRenderEffect(() => {
     // datetime-local input needs the value in a specific format
-    element.value = new Date(field()).toISOString().slice(0, 16)
-  })
+    element.value = new Date(field()).toISOString().slice(0, 16);
+  });
   element.addEventListener('input', ({ target }) =>
     setField((target as HTMLInputElement).value)
-  )
+  );
 }
 
 // define a directive to make text input (for tags) handling more concise
@@ -182,52 +182,52 @@ function tagsField(
   element: HTMLInputElement,
   value: Accessor<Signal<string[]>>
 ) {
-  const [field, setField] = value()
-  createRenderEffect(() => (element.value = field().join(', ')))
+  const [field, setField] = value();
+  createRenderEffect(() => (element.value = field().join(', ')));
   element.addEventListener('input', ({ target }) => {
-    const value = (target as HTMLInputElement).value
+    const value = (target as HTMLInputElement).value;
     const tags = value
       .split(',')
       .map((e: string) => e.trim())
-      .filter((e: string) => e.length > 0)
-    setField(tags)
-  })
+      .filter((e: string) => e.length > 0);
+    setField(tags);
+  });
 }
 
 // Patch in the types for the custom directives to satisfy TypeScript.
 declare module 'solid-js' {
   namespace JSX {
     interface DirectiveFunctions {
-      datetimeField: typeof datetimeField
-      tagsField: typeof tagsField
-      textField: typeof textField
+      datetimeField: typeof datetimeField;
+      tagsField: typeof tagsField;
+      textField: typeof textField;
     }
   }
 }
 
 function AssetForm(props: AssetFormProps) {
-  const client = useApolloClient()
-  const [datetime, setDatetime] = createSignal(props.asset.datetime)
-  const [filename, setFilename] = createSignal(props.asset.filename)
-  const [caption, setCaption] = createSignal(props.asset.caption ?? '')
-  const [tags, setTags] = createSignal(props.asset.tags)
+  const client = useApolloClient();
+  const [datetime, setDatetime] = createSignal(props.asset.datetime);
+  const [filename, setFilename] = createSignal(props.asset.filename);
+  const [caption, setCaption] = createSignal(props.asset.caption ?? '');
+  const [tags, setTags] = createSignal(props.asset.tags);
   const [locationLabel, setLocationLabel] = createSignal(
     props.asset.location?.label ?? ''
-  )
+  );
   const [locationCity, setLocationCity] = createSignal(
     props.asset.location?.city ?? ''
-  )
+  );
   const [locationRegion, setLocationRegion] = createSignal(
     props.asset.location?.region ?? ''
-  )
-  const [mediaType, setMediaType] = createSignal(props.asset.mediaType)
+  );
+  const [mediaType, setMediaType] = createSignal(props.asset.mediaType);
   const updateAction = action(async (): Promise<{ ok: boolean }> => {
     const location = {
       label: locationLabel(),
       city: locationCity(),
-      region: locationRegion(),
-    }
-    const datetimeDate = datetime() ? new Date(datetime()) : null
+      region: locationRegion()
+    };
+    const datetimeDate = datetime() ? new Date(datetime()) : null;
     try {
       await client.mutate({
         mutation: UPDATE_ASSET,
@@ -239,28 +239,28 @@ function AssetForm(props: AssetFormProps) {
             caption: caption(),
             location,
             mediaType: mediaType(),
-            filename: filename(),
-          },
-        },
-      })
+            filename: filename()
+          }
+        }
+      });
     } catch (err) {
-      console.error('asset update failed:', err)
-      return { ok: false }
+      console.error('asset update failed:', err);
+      return { ok: false };
     }
-    return { ok: true }
-  }, 'updateAssets')
-  const startUpdate = useAction(updateAction)
-  const updateSubmission = useSubmission(updateAction)
+    return { ok: true };
+  }, 'updateAssets');
+  const startUpdate = useAction(updateAction);
+  const updateSubmission = useSubmission(updateAction);
   const saveButtonClass = createMemo(() => {
     if (updateSubmission.pending) {
-      return 'button is-loading'
+      return 'button is-loading';
     } else if (updateSubmission.result?.ok == false) {
-      return 'button is-danger'
+      return 'button is-danger';
     } else if (updateSubmission.result?.ok) {
-      return 'button is-success'
+      return 'button is-success';
     }
-    return 'button is-primary'
-  })
+    return 'button is-primary';
+  });
 
   // TODO: make Replace a separate component that takes the assetId as a prop
   // TODO: add the notification when replacing the asset and it is unchanged
@@ -520,7 +520,7 @@ function AssetForm(props: AssetFormProps) {
         </div>
       </div>
     </>
-  )
+  );
 }
 
-export default AssetDetails
+export default AssetDetails;

@@ -7,11 +7,15 @@ import { AssetInput } from 'tanuki/server/domain/entities/AssetInput.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
 import * as helpers from './helpers.ts';
 
-export default ({ recordRepository }: { recordRepository: RecordRepository; }) => {
+export default ({
+  recordRepository
+}: {
+  recordRepository: RecordRepository;
+}) => {
   assert.ok(recordRepository, 'record repository must be defined');
   /**
    * Return all of the unique locations in the record repository.
-   * 
+   *
    * @returns list of unique location records.
    */
   return async (assetInput: AssetInput): Promise<Asset> => {
@@ -33,7 +37,9 @@ export default ({ recordRepository }: { recordRepository: RecordRepository; }) =
 function mergeAssetInput(asset: Asset, assetInput: AssetInput) {
   if (Array.isArray(assetInput.tags)) {
     // incoming tags replace existing tags, even if the are none
-    const nonEmpty = assetInput.tags.map((e: string) => e.trim()).filter((e: string) => e.length > 0);
+    const nonEmpty = assetInput.tags
+      .map((e: string) => e.trim())
+      .filter((e: string) => e.length > 0);
     asset.tags = Array.from<string>(new Set(nonEmpty)).sort();
   }
   if (assetInput.filename && assetInput.filename.length > 0) {

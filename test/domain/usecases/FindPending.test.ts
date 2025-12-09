@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, test } from 'bun:test';
 import { Location } from 'tanuki/server/domain/entities/Location.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
 import { PendingParams } from 'tanuki/server/domain/entities/SearchParams.ts';
@@ -28,14 +28,44 @@ describe('FindPending use case', function () {
     //
     // arrange
     const results = [
-      new SearchResult('monday1', 'img_1234.jpg', 'image/jpeg', Location.parse('Oahu, Hawaii'), new Date(2000, 1, 1, 0, 0)),
-      new SearchResult('monday2', 'img_1234.jpg', 'image/jpeg', Location.parse('Oahu, Hawaii'), new Date(2001, 1, 1, 0, 0)),
-      new SearchResult('monday3', 'img_1234.jpg', 'image/jpeg', Location.parse('Oahu, Hawaii'), new Date(2002, 1, 1, 0, 0)),
-      new SearchResult('monday4', 'img_1234.jpg', 'image/jpeg', Location.parse('Oahu, Hawaii'), new Date(2003, 1, 1, 0, 0)),
-      new SearchResult('monday5', 'img_1234.jpg', 'image/jpeg', Location.parse('Oahu, Hawaii'), new Date(2004, 1, 1, 0, 0)),
+      new SearchResult(
+        'monday1',
+        'img_1234.jpg',
+        'image/jpeg',
+        Location.parse('Oahu, Hawaii'),
+        new Date(2000, 1, 1, 0, 0)
+      ),
+      new SearchResult(
+        'monday2',
+        'img_1234.jpg',
+        'image/jpeg',
+        Location.parse('Oahu, Hawaii'),
+        new Date(2001, 1, 1, 0, 0)
+      ),
+      new SearchResult(
+        'monday3',
+        'img_1234.jpg',
+        'image/jpeg',
+        Location.parse('Oahu, Hawaii'),
+        new Date(2002, 1, 1, 0, 0)
+      ),
+      new SearchResult(
+        'monday4',
+        'img_1234.jpg',
+        'image/jpeg',
+        Location.parse('Oahu, Hawaii'),
+        new Date(2003, 1, 1, 0, 0)
+      ),
+      new SearchResult(
+        'monday5',
+        'img_1234.jpg',
+        'image/jpeg',
+        Location.parse('Oahu, Hawaii'),
+        new Date(2004, 1, 1, 0, 0)
+      )
     ];
     const mockRecordRepository = recordRepositoryMock({
-      queryNewborn: mock(() => Promise.resolve(results)),
+      queryNewborn: mock(() => Promise.resolve(results))
     });
     const usecase = FindPending({ recordRepository: mockRecordRepository });
     // act
@@ -57,12 +87,30 @@ describe('FindPending use case', function () {
     //
     // arrange
     const results = [
-      new SearchResult('monday3', 'img_1234.jpg', 'image/jpeg', Location.parse('Oahu, Hawaii'), new Date(2002, 1, 1, 0, 0)),
-      new SearchResult('monday4', 'img_1234.jpg', 'image/jpeg', Location.parse('Oahu, Hawaii'), new Date(2003, 1, 1, 0, 0)),
-      new SearchResult('monday5', 'img_1234.jpg', 'image/jpeg', Location.parse('Oahu, Hawaii'), new Date(2004, 1, 1, 0, 0)),
+      new SearchResult(
+        'monday3',
+        'img_1234.jpg',
+        'image/jpeg',
+        Location.parse('Oahu, Hawaii'),
+        new Date(2002, 1, 1, 0, 0)
+      ),
+      new SearchResult(
+        'monday4',
+        'img_1234.jpg',
+        'image/jpeg',
+        Location.parse('Oahu, Hawaii'),
+        new Date(2003, 1, 1, 0, 0)
+      ),
+      new SearchResult(
+        'monday5',
+        'img_1234.jpg',
+        'image/jpeg',
+        Location.parse('Oahu, Hawaii'),
+        new Date(2004, 1, 1, 0, 0)
+      )
     ];
     const mockRecordRepository = recordRepositoryMock({
-      queryNewborn: mock(() => Promise.resolve(results)),
+      queryNewborn: mock(() => Promise.resolve(results))
     });
     const usecase = FindPending({ recordRepository: mockRecordRepository });
     // act

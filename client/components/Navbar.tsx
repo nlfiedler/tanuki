@@ -1,10 +1,10 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { A } from '@solidjs/router'
-import tanukiPng from '../assets/tanuki.png'
-import AssetCount from './AssetCount.tsx'
-import ColorTheme from './ColorTheme.tsx'
+import { A } from '@solidjs/router';
+import tanukiPng from '../assets/tanuki.png';
+import AssetCount from './AssetCount.tsx';
+import ColorTheme from './ColorTheme.tsx';
 
 function Navbar() {
   return (
@@ -58,7 +58,7 @@ function Navbar() {
         </div>
       </div>
     </nav>
-  )
+  );
 }
 
-export default Navbar
+export default Navbar;

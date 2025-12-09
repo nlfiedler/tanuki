@@ -4,11 +4,15 @@
 import assert from 'node:assert';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
 
-export default ({ recordRepository }: { recordRepository: RecordRepository; }) => {
+export default ({
+  recordRepository
+}: {
+  recordRepository: RecordRepository;
+}) => {
   assert.ok(recordRepository, 'record repository must be defined');
   /**
    * Count the number of records in the record repository.
-   * 
+   *
    * @returns number of assets in the database.
    */
   return (): Promise<number> => {

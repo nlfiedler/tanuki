@@ -9,17 +9,15 @@ import { type BlobRepository } from 'tanuki/server/domain/repositories/BlobRepos
 import { type LocationRepository } from 'tanuki/server/domain/repositories/LocationRepository.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
 
-export default (
-  {
-    recordRepository,
-    blobRepository,
-    locationRepository
-  }: {
-    recordRepository: RecordRepository,
-    blobRepository: BlobRepository,
-    locationRepository: LocationRepository,
-  }
-) => {
+export default ({
+  recordRepository,
+  blobRepository,
+  locationRepository
+}: {
+  recordRepository: RecordRepository;
+  blobRepository: BlobRepository;
+  locationRepository: LocationRepository;
+}) => {
   assert.ok(recordRepository, 'record repository must be defined');
   assert.ok(blobRepository, 'blob repository must be defined');
   assert.ok(locationRepository, 'location repository must be defined');
@@ -33,7 +31,12 @@ export default (
    * @param modified - date/time when file was last modified.
    * @returns asset entity.
    */
-  return async (filepath: string, originalname: string, mimetype: string, modified: Date): Promise<Asset> => {
+  return async (
+    filepath: string,
+    originalname: string,
+    mimetype: string,
+    modified: Date
+  ): Promise<Asset> => {
     const digest = await helpers.checksumFile(filepath);
     let asset = await recordRepository.getAssetByDigest(digest);
     if (asset === null) {

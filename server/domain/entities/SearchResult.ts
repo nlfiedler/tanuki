@@ -15,7 +15,13 @@ class SearchResult {
   /** Best date/time for the indexed asset. */
   datetime: Date;
 
-  constructor(assetId: string, filename: string, mediaType: string, location: Location | null, datetime: Date) {
+  constructor(
+    assetId: string,
+    filename: string,
+    mediaType: string,
+    location: Location | null,
+    datetime: Date
+  ) {
     this.assetId = assetId;
     this.filename = filename;
     this.mediaType = mediaType;

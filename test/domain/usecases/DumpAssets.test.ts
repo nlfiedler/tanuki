@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, test } from 'bun:test';
 import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
 import { Location } from 'tanuki/server/domain/entities/Location.ts';
 import DumpAssets from 'tanuki/server/domain/usecases/DumpAssets.ts';
@@ -11,7 +11,9 @@ describe('DumpAssets use case', function () {
   test('should return nothing for empty database', async function () {
     // arrange
     const mockRecordRepository = recordRepositoryMock({
-      fetchAssets: mock(() => Promise.resolve([[], 'done'] as [Array<Asset>, any])),
+      fetchAssets: mock(() =>
+        Promise.resolve([[], 'done'] as [Array<Asset>, any])
+      )
     });
     const usecase = DumpAssets({
       recordRepository: mockRecordRepository
@@ -30,15 +32,21 @@ describe('DumpAssets use case', function () {
   test('should return the one record in the database', async function () {
     // arrange
     const assets = [
-      new Asset('monday1').setChecksum('sha1-cafebabe').setFilename('img_1234.jpg').setByteLength(1024)
-        .setMediaType('image/jpeg').setTags(['cat', 'dog']).setImportDate(new Date(2018, 4, 31, 21, 10, 11))
-        .setCaption('#cat and #dog @hawaii').setLocation(Location.parse('Oahu, Hawaii'))
+      new Asset('monday1')
+        .setChecksum('sha1-cafebabe')
+        .setFilename('img_1234.jpg')
+        .setByteLength(1024)
+        .setMediaType('image/jpeg')
+        .setTags(['cat', 'dog'])
+        .setImportDate(new Date(2018, 4, 31, 21, 10, 11))
+        .setCaption('#cat and #dog @hawaii')
+        .setLocation(Location.parse('Oahu, Hawaii'))
     ];
     const mockFn = mock();
     mockFn.mockImplementationOnce(() => Promise.resolve([assets, 'done']));
     mockFn.mockImplementation(() => Promise.resolve([[], 'done']));
     const mockRecordRepository = recordRepositoryMock({
-      fetchAssets: mockFn,
+      fetchAssets: mockFn
     });
     const usecase = DumpAssets({
       recordRepository: mockRecordRepository
@@ -69,24 +77,42 @@ describe('DumpAssets use case', function () {
   test('should loop mulitple times to get all records', async function () {
     // arrange
     const assets1 = [
-      new Asset('monday1').setChecksum('sha1-cafebabe').setFilename('img_1234.jpg').setByteLength(1024)
-        .setMediaType('image/jpeg').setTags(['cat', 'dog']).setImportDate(new Date(2018, 4, 31, 21, 10, 11))
-        .setCaption('#cat and #dog @hawaii').setLocation(Location.parse('Oahu, Hawaii')),
-      new Asset('monday2').setChecksum('sha1-cafed00d').setFilename('img_1001.jpg').setByteLength(2048)
-        .setMediaType('image/jpeg').setTags(['cat', 'mouse']).setImportDate(new Date(2015, 8, 1, 21, 10, 11))
-        .setCaption('playing in the sun').setLocation(Location.parse('beach'))
+      new Asset('monday1')
+        .setChecksum('sha1-cafebabe')
+        .setFilename('img_1234.jpg')
+        .setByteLength(1024)
+        .setMediaType('image/jpeg')
+        .setTags(['cat', 'dog'])
+        .setImportDate(new Date(2018, 4, 31, 21, 10, 11))
+        .setCaption('#cat and #dog @hawaii')
+        .setLocation(Location.parse('Oahu, Hawaii')),
+      new Asset('monday2')
+        .setChecksum('sha1-cafed00d')
+        .setFilename('img_1001.jpg')
+        .setByteLength(2048)
+        .setMediaType('image/jpeg')
+        .setTags(['cat', 'mouse'])
+        .setImportDate(new Date(2015, 8, 1, 21, 10, 11))
+        .setCaption('playing in the sun')
+        .setLocation(Location.parse('beach'))
     ];
     const assets2 = [
-      new Asset('tuesday2').setChecksum('sha1-babecafe').setFilename('img_2345.jpg').setByteLength(1024)
-        .setMediaType('image/jpeg').setTags(['bird', 'dog']).setImportDate(new Date(2003, 7, 30, 21, 10, 11))
-        .setCaption('#bird and #dog outside').setLocation(Location.parse('Paris, Texas'))
+      new Asset('tuesday2')
+        .setChecksum('sha1-babecafe')
+        .setFilename('img_2345.jpg')
+        .setByteLength(1024)
+        .setMediaType('image/jpeg')
+        .setTags(['bird', 'dog'])
+        .setImportDate(new Date(2003, 7, 30, 21, 10, 11))
+        .setCaption('#bird and #dog outside')
+        .setLocation(Location.parse('Paris, Texas'))
     ];
     const mockFn = mock();
     mockFn.mockImplementationOnce(() => Promise.resolve([assets1, 'yay']));
     mockFn.mockImplementationOnce(() => Promise.resolve([assets2, 'done']));
     mockFn.mockImplementation(() => Promise.resolve([[], 'done']));
     const mockRecordRepository = recordRepositoryMock({
-      fetchAssets: mockFn,
+      fetchAssets: mockFn
     });
     const usecase = DumpAssets({
       recordRepository: mockRecordRepository

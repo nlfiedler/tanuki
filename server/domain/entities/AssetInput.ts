@@ -40,14 +40,20 @@ class AssetInput {
     this.caption = null;
     this.location = null;
     this.datetime = null;
-    this.mediaType = "";
-    this.filename = "";
+    this.mediaType = '';
+    this.filename = '';
   }
 
   /** Return `true` if any of the fields have a value. */
   hasValues(): boolean {
-    return (this.tags !== null && this.tags.length > 0) || this.caption !== null ||
-      this.location !== null || this.datetime !== null || this.mediaType !== null || this.filename !== null;
+    return (
+      (this.tags !== null && this.tags.length > 0) ||
+      this.caption !== null ||
+      this.location !== null ||
+      this.datetime !== null ||
+      this.mediaType !== null ||
+      this.filename !== null
+    );
   }
 
   setFilename(filename: string): AssetInput {

@@ -23,7 +23,11 @@ class CouchDBRecordRepository implements RecordRepository {
   database: any;
   heartbeat: number;
 
-  constructor({ settingsRepository }: { settingsRepository: SettingsRepository; }) {
+  constructor({
+    settingsRepository
+  }: {
+    settingsRepository: SettingsRepository;
+  }) {
     this.url = settingsRepository.get('DATABASE_URL');
     assert.ok(this.url, 'missing DATABASE_URL environment variable');
     this.dbname = settingsRepository.get('DATABASE_NAME');
@@ -43,7 +47,11 @@ class CouchDBRecordRepository implements RecordRepository {
    * @throws if `NODE_ENV` is set to 'production'.
    */
   async destroyAndCreate(): Promise<void> {
-    assert.notStrictEqual(process.env['NODE_ENV'], 'production', 'destroy() called in production!');
+    assert.notStrictEqual(
+      process.env['NODE_ENV'],
+      'production',
+      'destroy() called in production!'
+    );
     await this.conn.auth(this.username, this.password);
     try {
       await this.conn.db.destroy(this.dbname);
@@ -76,7 +84,7 @@ class CouchDBRecordRepository implements RecordRepository {
 
   /**
    * Add or update the design document.
-   * 
+   *
    * @param index - complete CouchDB document to be inserted or updated.
    * @returns true if the indices were created, false if updated.
    */
@@ -138,7 +146,9 @@ class CouchDBRecordRepository implements RecordRepository {
   async getAssetByDigest(digest: string): Promise<Asset | null> {
     // should only be 1 result, but limit to 1 anyway
     const res = await this.database.view('assets', 'by_checksum', {
-      key: digest.toLowerCase(), limit: 1, include_docs: true
+      key: digest.toLowerCase(),
+      limit: 1,
+      include_docs: true
     });
     if (res.rows.length > 0) {
       return assetFromDocument({ key: res.rows[0].id, ...res.rows[0].doc });
@@ -151,7 +161,7 @@ class CouchDBRecordRepository implements RecordRepository {
     const res = await this.database.view('assets', 'all_tags', {
       group_level: 1
     });
-    return res.rows.map((row: { key: string, value: number; }) => {
+    return res.rows.map((row: { key: string; value: number }) => {
       return new AttributeCount(row.key, row.value);
     });
   }
@@ -161,7 +171,7 @@ class CouchDBRecordRepository implements RecordRepository {
     const res = await this.database.view('assets', 'all_location_parts', {
       group_level: 1
     });
-    return res.rows.map((row: { key: string, value: number; }) => {
+    return res.rows.map((row: { key: string; value: number }) => {
       return new AttributeCount(row.key, row.value);
     });
   }
@@ -171,7 +181,7 @@ class CouchDBRecordRepository implements RecordRepository {
     const res = await this.database.view('assets', 'all_location_records', {
       group_level: 1
     });
-    return res.rows.map((row: { key: string, value: number; }) => {
+    return res.rows.map((row: { key: string; value: number }) => {
       const parts = row.key.split('\t');
       return Location.fromParts(parts[0] || '', parts[1] || '', parts[2] || '');
     });
@@ -182,7 +192,7 @@ class CouchDBRecordRepository implements RecordRepository {
     const res = await this.database.view('assets', 'all_years', {
       group_level: 1
     });
-    return res.rows.map((row: { key: string, value: number; }) => {
+    return res.rows.map((row: { key: string; value: number }) => {
       // the view function emits the years as numbers but everything else
       // expects them to be strings
       return new AttributeCount(row.key.toString(), row.value);
@@ -194,7 +204,7 @@ class CouchDBRecordRepository implements RecordRepository {
     const res = await this.database.view('assets', 'all_media_types', {
       group_level: 1
     });
-    return res.rows.map((row: { key: string, value: number; }) => {
+    return res.rows.map((row: { key: string; value: number }) => {
       return new AttributeCount(row.key, row.value);
     });
   }
@@ -226,7 +236,9 @@ class CouchDBRecordRepository implements RecordRepository {
   async queryAllKeys(view: string, keys: string[]): Promise<SearchResult[]> {
     // find all documents that have any one of the given keys
     const queryResults = await this.database.view('assets', view, {
-      keys: Array.from(keys).map(e => e.toLowerCase()).sort()
+      keys: Array.from(keys)
+        .map((e) => e.toLowerCase())
+        .sort()
     });
     // reduce the documents to those that have all of the given keys
     const keyCounts = queryResults.rows.reduce((acc: any, row: any) => {
@@ -239,9 +251,14 @@ class CouchDBRecordRepository implements RecordRepository {
       return keyCounts.get(row.id) === keys.length;
     });
     // remove duplicate documents by sorting on the primary key
-    const uniqueResults = matchingRows.sort((a: any, b: any) => {
-      return a.id.localeCompare(b.id);
-    }).filter((row: any, idx: any, arr: any) => idx === 0 || row.id !== arr[idx - 1].id);
+    const uniqueResults = matchingRows
+      .sort((a: any, b: any) => {
+        return a.id.localeCompare(b.id);
+      })
+      .filter(
+        (row: any, idx: any, arr: any) =>
+          idx === 0 || row.id !== arr[idx - 1].id
+      );
     return uniqueResults.map((row: any) => convertViewResult(row));
   }
 
@@ -310,9 +327,15 @@ class CouchDBRecordRepository implements RecordRepository {
     limit++;
     // inexplicably, using undefined for startkey is literally passed as the
     // string 'undefined' to the CouchDB REST API
-    const res = await this.database.list(cursor ? {
-      startkey: cursor, limit, include_docs: true
-    } : { limit, include_docs: true });
+    const res = await this.database.list(
+      cursor
+        ? {
+            startkey: cursor,
+            limit,
+            include_docs: true
+          }
+        : { limit, include_docs: true }
+    );
     if (res.rows.length === limit) {
       // there are more rows than requested, get the last one and use its
       // identifier as the cursor from which to start scanning next time
@@ -343,7 +366,7 @@ class CouchDBRecordRepository implements RecordRepository {
  * CouchDB map/reduce view result.
  */
 type ViewResult = {
-  id: string,
+  id: string;
   value: [
     // best date
     number,
@@ -409,7 +432,7 @@ const assetsDefinition = {
 
 /**
  * Convert the date fields in the document (in-place) from Date to number.
- * 
+ *
  * @param doc - Asset-like record to write to CouchDB, modified in-place.
  * @returns the object for convenience.
  */
@@ -426,7 +449,7 @@ function convertDatesIn(doc: any): any {
 
 /**
  * Create an Asset entity from the given CouchDB document.
- * 
+ *
  * @param doc - database record as read from CouchDB.
  * @returns converted asset entity.
  */
@@ -444,7 +467,11 @@ function assetFromDocument(doc: any): any {
     asset.setCaption(doc.caption);
   }
   if (doc.location) {
-    const location = Location.fromRaw(doc.location.label, doc.location.city, doc.location.region);
+    const location = Location.fromRaw(
+      doc.location.label,
+      doc.location.city,
+      doc.location.region
+    );
     asset.setLocation(location);
   }
   if (doc.userDate !== null) {
@@ -464,7 +491,11 @@ function assetFromDocument(doc: any): any {
  */
 function convertViewResult(result: ViewResult): SearchResult {
   const lo = result.value[2]; // 2: location
-  const location = Location.fromRaw(lo?.label || null, lo?.city || null, lo?.region || null);
+  const location = Location.fromRaw(
+    lo?.label || null,
+    lo?.city || null,
+    lo?.region || null
+  );
   return new SearchResult(
     result.id, // assetId
     result.value[1], // 1: filename

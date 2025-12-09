@@ -1,8 +1,8 @@
 # Use Clean Architecture
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2020-08-20
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2020-08-20
 
 ## Context
 
@@ -24,4 +24,4 @@ This design has been used not only in this application, but also in another, and
 
 ## Links
 
-* Clean Architecture [cleancoder.com](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- Clean Architecture [cleancoder.com](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)

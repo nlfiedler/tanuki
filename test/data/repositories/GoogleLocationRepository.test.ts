@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from 'bun:test';
 // prepare the test environment as early as possible
 import 'tanuki/test/env.ts';
 import { Coordinates } from 'tanuki/server/domain/entities/Location.ts';

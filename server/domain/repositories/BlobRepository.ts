@@ -7,7 +7,6 @@ import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
  * Repository for managing the asset file content.
  */
 interface BlobRepository {
-
   /**
    * Move the given file into the blob store. Existing blobs will not be
    * overwritten.
@@ -29,7 +28,7 @@ interface BlobRepository {
 
   /**
    * Return the full path to the asset in blob storage.
-   * 
+   *
    * @param assetId - unique asset identifier.
    * @returns path to the file.
    */
@@ -55,7 +54,7 @@ interface BlobRepository {
 
   /**
    * Clear the thumbnail cache of any entries for the given asset.
-   * 
+   *
    * @param assetId - unique asset identifier.
    */
   clearCache(assetId: string): Promise<void>;

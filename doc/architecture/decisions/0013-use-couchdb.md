@@ -1,8 +1,8 @@
 # Use CouchDB
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2025-11-08
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2025-11-08
 
 ## Context
 
@@ -22,5 +22,5 @@ Given that CouchDB was the database used from 2014 to 2017, it is a known and tr
 
 ## Links
 
-* CouchDB [website](https://couchdb.apache.org/)
-* couchdb-nano [GitHub](https://github.com/apache/couchdb-nano)
+- CouchDB [website](https://couchdb.apache.org/)
+- couchdb-nano [GitHub](https://github.com/apache/couchdb-nano)

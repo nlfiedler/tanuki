@@ -7,7 +7,6 @@
  * name/value pairs. The names are strings and values may be structured data.
  */
 interface SettingsRepository {
-
   /**
    * Return the value of the named setting, possibly undefined.
    *
@@ -35,7 +34,7 @@ interface SettingsRepository {
 
   /**
    * Return true if the settings repository contains the named setting.
-   * 
+   *
    * @param name - name of property to locate.
    * @returns true if property if found, otherwise false.
    */
@@ -43,7 +42,7 @@ interface SettingsRepository {
 
   /**
    * Set the value for the named setting.
-   * 
+   *
    * @param name - name of property to define.
    * @param value - value for the named property.
    */

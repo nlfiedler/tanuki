@@ -1,10 +1,10 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { createResource, For, Suspense, type JSX } from 'solid-js'
-import { type TypedDocumentNode, gql } from '@apollo/client'
-import { useApolloClient } from '../ApolloProvider'
-import { type Query } from 'tanuki/generated/graphql.ts'
+import { createResource, For, Suspense, type JSX } from 'solid-js';
+import { type TypedDocumentNode, gql } from '@apollo/client';
+import { useApolloClient } from '../ApolloProvider';
+import { type Query } from 'tanuki/generated/graphql.ts';
 
 const ALL_TAGS: TypedDocumentNode<Query, Record<string, never>> = gql`
   query {
@@ -13,27 +13,27 @@ const ALL_TAGS: TypedDocumentNode<Query, Record<string, never>> = gql`
       count
     }
   }
-`
+`;
 
 interface TagSelectorProps {
-  addfun: (value: string) => void
+  addfun: (value: string) => void;
 }
 
 function TagSelector(props: TagSelectorProps) {
-  const client = useApolloClient()
+  const client = useApolloClient();
   const [tagsQuery] = createResource(async () => {
-    const { data } = await client.query({ query: ALL_TAGS })
-    return data
-  })
+    const { data } = await client.query({ query: ALL_TAGS });
+    return data;
+  });
   const sortedTags = () => {
     // the tags returned from the server are in no particular order
-    const sorted = []
+    const sorted = [];
     for (const tag of tagsQuery()?.tags ?? []) {
-      sorted.push({ label: tag.label, count: tag.count })
+      sorted.push({ label: tag.label, count: tag.count });
     }
-    sorted.sort((a, b) => a.label.localeCompare(b.label))
-    return sorted
-  }
+    sorted.sort((a, b) => a.label.localeCompare(b.label));
+    return sorted;
+  };
   //
   // n.b. on:input is called for every single keystroke, while on:change is
   // called under several conditions:
@@ -47,16 +47,16 @@ function TagSelector(props: TagSelectorProps) {
     Event,
     JSX.ChangeEventHandler<HTMLInputElement, Event>
   > = (event) => {
-    const target = event.currentTarget
+    const target = event.currentTarget;
     if (target) {
-      const value = target.value
+      const value = target.value;
       if (value) {
-        props.addfun(value)
-        target.value = ''
+        props.addfun(value);
+        target.value = '';
       }
-      event.stopPropagation()
+      event.stopPropagation();
     }
-  }
+  };
 
   return (
     <Suspense fallback={'...'}>
@@ -85,7 +85,7 @@ function TagSelector(props: TagSelectorProps) {
         </div>
       </div>
     </Suspense>
-  )
+  );
 }
 
-export default TagSelector
+export default TagSelector;

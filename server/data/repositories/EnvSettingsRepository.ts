@@ -16,7 +16,7 @@ class EnvSettingsRepository implements SettingsRepository {
 
   /**
    * Return a Map-based iterator of all name/value pairs.
-   * 
+   *
    * @returns iterator of name/value pairs.
    */
   entries(): object {
@@ -35,7 +35,7 @@ class EnvSettingsRepository implements SettingsRepository {
 
   /** @inheritdoc */
   getBool(name: string): boolean {
-    return (/true/i).test(this.get(name));
+    return /true/i.test(this.get(name));
   }
 
   /** @inheritdoc */

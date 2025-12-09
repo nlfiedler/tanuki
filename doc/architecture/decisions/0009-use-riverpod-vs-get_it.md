@@ -1,8 +1,8 @@
 # Use Riverpod for Service Location
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2021-01-02
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2021-01-02
 
 ## Context
 
@@ -44,5 +44,5 @@ compiles, then it works.
 
 ## Links
 
-* Riverpod [website](https://riverpod.dev/)
-* bloc [website](https://bloclibrary.dev/)
+- Riverpod [website](https://riverpod.dev/)
+- bloc [website](https://bloclibrary.dev/)

@@ -1,8 +1,8 @@
 # Use JavaScript for the backend
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2025-11-14
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2025-11-14
 
 ## Context
 
@@ -24,5 +24,5 @@ TBD
 
 ## Links
 
-* Bun [website](https://bun.com)
-* TypeScript [website](https://www.typescriptlang.org)
+- Bun [website](https://bun.com)
+- TypeScript [website](https://www.typescriptlang.org)

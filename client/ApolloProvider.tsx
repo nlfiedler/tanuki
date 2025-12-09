@@ -1,10 +1,10 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { createContext, useContext } from 'solid-js'
-import { HttpLink, ApolloClient, InMemoryCache } from '@apollo/client'
+import { createContext, useContext } from 'solid-js';
+import { HttpLink, ApolloClient, InMemoryCache } from '@apollo/client';
 
-const ApolloContext = createContext<ApolloClient | undefined>()
+const ApolloContext = createContext<ApolloClient | undefined>();
 
 export function ApolloProvider(props: { children: any }) {
   const client = new ApolloClient({
@@ -14,25 +14,25 @@ export function ApolloProvider(props: { children: any }) {
     defaultOptions: {
       query: {
         fetchPolicy: 'no-cache',
-        errorPolicy: 'all',
+        errorPolicy: 'all'
       },
       watchQuery: {
         fetchPolicy: 'no-cache',
-        errorPolicy: 'all',
-      },
-    },
-  })
+        errorPolicy: 'all'
+      }
+    }
+  });
   return (
     <ApolloContext.Provider value={client}>
       {props.children}
     </ApolloContext.Provider>
-  )
+  );
 }
 
 export function useApolloClient() {
-  const client = useContext(ApolloContext)
+  const client = useContext(ApolloContext);
   if (!client) {
-    throw new Error('useApolloClient must be used within an ApolloProvider')
+    throw new Error('useApolloClient must be used within an ApolloProvider');
   }
-  return client
+  return client;
 }

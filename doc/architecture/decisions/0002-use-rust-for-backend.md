@@ -1,8 +1,8 @@
 # Use Rust for Backend
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2020-08-20
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2020-08-20
 
 ## Context
 
@@ -28,5 +28,5 @@ Since April of 2020, the application backend has been written in Rust. In that t
 
 ## Links
 
-* Rust [website](https://www.rust-lang.org)
-* Stack Overflow [2021 survey](https://insights.stackoverflow.com/survey/2021)
+- Rust [website](https://www.rust-lang.org)
+- Stack Overflow [2021 survey](https://insights.stackoverflow.com/survey/2021)

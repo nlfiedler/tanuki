@@ -1,26 +1,26 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import type { Accessor, Setter } from 'solid-js'
-import { For } from 'solid-js'
-import { createSignal } from 'solid-js'
-import useClickOutside from '../hooks/useClickOutside.js'
+import type { Accessor, Setter } from 'solid-js';
+import { For } from 'solid-js';
+import { createSignal } from 'solid-js';
+import useClickOutside from '../hooks/useClickOutside.js';
 
 interface PaginationProps {
-  lastPage: Accessor<number>
-  selectedPage: Accessor<number>
-  setSelectedPage: Setter<number>
-  pageSize: Accessor<number>
-  setPageSize: Setter<number>
+  lastPage: Accessor<number>;
+  selectedPage: Accessor<number>;
+  setSelectedPage: Setter<number>;
+  pageSize: Accessor<number>;
+  setPageSize: Setter<number>;
 }
 
 function Pagination(props: PaginationProps) {
-  const [dropdownOpen, setDropdownOpen] = createSignal(false)
-  let dropdownRef: HTMLDivElement | undefined
+  const [dropdownOpen, setDropdownOpen] = createSignal(false);
+  let dropdownRef: HTMLDivElement | undefined;
   useClickOutside(
     () => dropdownRef,
     () => setDropdownOpen(false)
-  )
+  );
 
   return (
     <>
@@ -87,9 +87,9 @@ function Pagination(props: PaginationProps) {
                           : 'dropdown-item'
                       }
                       on:click={(_) => {
-                        props.setPageSize(size)
-                        props.setSelectedPage(1)
-                        setDropdownOpen(false)
+                        props.setPageSize(size);
+                        props.setSelectedPage(1);
+                        setDropdownOpen(false);
                       }}
                     >
                       {size.toString()}
@@ -102,7 +102,7 @@ function Pagination(props: PaginationProps) {
         </div>
       </div>
     </>
-  )
+  );
 }
 
-export default Pagination
+export default Pagination;

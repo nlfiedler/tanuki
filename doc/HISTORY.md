@@ -86,9 +86,9 @@ Finally have an easy-to-use method for assigning tags and locations to new asset
 
 ## February 2024
 
-* Location property is now a record with label, city, and region. Populated automatically on import by reverse geocoding the GPS coordinates in the asset, if any.
-* Dump and load for simple backup/restore and data migration during schema changes.
-* GraphQL-only bulk edit operation to perform various changes across matching assets.
+- Location property is now a record with label, city, and region. Populated automatically on import by reverse geocoding the GPS coordinates in the asset, if any.
+- Dump and load for simple backup/restore and data migration during schema changes.
+- GraphQL-only bulk edit operation to perform various changes across matching assets.
 
 ## October 2024
 

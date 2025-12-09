@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import type { Accessor, Setter } from 'solid-js'
+import type { Accessor, Setter } from 'solid-js';
 import {
   createMemo,
   createResource,
@@ -11,11 +11,11 @@ import {
   Match,
   Show,
   Suspense,
-  Switch,
-} from 'solid-js'
-import { A, action, useAction, useSubmission } from '@solidjs/router'
-import { type TypedDocumentNode, gql } from '@apollo/client'
-import { useApolloClient } from '../ApolloProvider'
+  Switch
+} from 'solid-js';
+import { A, action, useAction, useSubmission } from '@solidjs/router';
+import { type TypedDocumentNode, gql } from '@apollo/client';
+import { useApolloClient } from '../ApolloProvider';
 import {
   type Location,
   type MutationUpdateArgs,
@@ -24,15 +24,15 @@ import {
   type Query,
   type SearchResult,
   SortField as GQLSortField,
-  SortOrder as GQLSortOrder,
-} from 'tanuki/generated/graphql.ts'
-import AttributeChips from '../components/AttributeChips.tsx'
-import Pagination from '../components/Pagination.tsx'
-import TagSelector from '../components/TagSelector.tsx'
-import * as format from '../helpers/formatting.ts'
-import * as parse from '../helpers/parsing.ts'
-import useClickOutside from '../hooks/useClickOutside.js'
-import useLocalStorage from '../hooks/useLocalStorage.js'
+  SortOrder as GQLSortOrder
+} from 'tanuki/generated/graphql.ts';
+import AttributeChips from '../components/AttributeChips.tsx';
+import Pagination from '../components/Pagination.tsx';
+import TagSelector from '../components/TagSelector.tsx';
+import * as format from '../helpers/formatting.ts';
+import * as parse from '../helpers/parsing.ts';
+import useClickOutside from '../hooks/useClickOutside.js';
+import useLocalStorage from '../hooks/useLocalStorage.js';
 
 const PENDING_ASSETS: TypedDocumentNode<Query, QueryPendingArgs> = gql`
   query Pending($params: PendingParams!, $offset: Int, $limit: Int) {
@@ -52,7 +52,7 @@ const PENDING_ASSETS: TypedDocumentNode<Query, QueryPendingArgs> = gql`
       lastPage
     }
   }
-`
+`;
 
 const UPDATE_ASSET: TypedDocumentNode<Mutation, MutationUpdateArgs> = gql`
   mutation Update($id: ID!, $asset: AssetInput!) {
@@ -60,81 +60,81 @@ const UPDATE_ASSET: TypedDocumentNode<Mutation, MutationUpdateArgs> = gql`
       id
     }
   }
-`
+`;
 
 function buildParams({
   range,
   offset,
   limit,
   sortField,
-  sortOrder,
+  sortOrder
 }: {
-  range: number
-  offset: number
-  limit: number
-  sortField: GQLSortField
-  sortOrder: GQLSortOrder
+  range: number;
+  offset: number;
+  limit: number;
+  sortField: GQLSortField;
+  sortOrder: GQLSortOrder;
 }): QueryPendingArgs {
-  let afterDate: Date | null = new Date()
+  let afterDate: Date | null = new Date();
   if (range === 0) {
-    afterDate = null
+    afterDate = null;
   } else {
-    afterDate.setDate(afterDate.getDate() - range)
+    afterDate.setDate(afterDate.getDate() - range);
   }
   return {
     params: {
       after: afterDate,
       sortField,
-      sortOrder,
+      sortOrder
     },
     offset,
-    limit,
-  }
+    limit
+  };
 }
 
 function Pending() {
-  const client = useApolloClient()
-  const [range, setRange] = useLocalStorage('pending-selected-range', 0)
+  const client = useApolloClient();
+  const [range, setRange] = useLocalStorage('pending-selected-range', 0);
   const [sortCombo, setSortCombo] = useLocalStorage(
     'pending-sort-combo',
     sortComboDateAsc
-  )
+  );
   const [selectedPage, setSelectedPage] = useLocalStorage(
     'pending-selected-page',
     1
-  )
-  const [pageSize, setPageSize] = useLocalStorage('page-sie', 18)
+  );
+  const [pageSize, setPageSize] = useLocalStorage('page-sie', 18);
   const pendingParams = createMemo(() => ({
     range: range(),
     offset: pageSize() * (selectedPage() - 1),
     limit: pageSize(),
     sortField: sortCombo().sortField,
-    sortOrder: sortCombo().sortOrder,
-  }))
+    sortOrder: sortCombo().sortOrder
+  }));
   // query() and createAsync() are neat but they do not automatically run when
   // input signals change, or it is difficult to understand how they work
   const [assetsQuery] = createResource(pendingParams, async (params) => {
     const { data } = await client.query({
       query: PENDING_ASSETS,
-      variables: buildParams(params),
-    })
-    return data
-  })
-  const lastPage = () => assetsQuery()?.pending.lastPage ?? 1
-  let datetimeRef: HTMLInputElement | undefined
-  const [selectedTags, setSelectedTags] = createSignal<string[]>([])
+      variables: buildParams(params)
+    });
+    return data;
+  });
+  const lastPage = () => assetsQuery()?.pending.lastPage ?? 1;
+  let datetimeRef: HTMLInputElement | undefined;
+  const [selectedTags, setSelectedTags] = createSignal<string[]>([]);
   const [selectedLocation, setSelectedLocation] = createSignal<Location>({
     label: null,
     city: null,
-    region: null,
-  })
+    region: null
+  });
   const [selectedAssets, setSelectedAssets] = createSignal<Set<string>>(
     new Set(),
     {
       // avoid having to create a new set in order for SolidJS to notice
-      equals: (prev, next) => prev.size !== next.size,
+      equals: (prev, next) => prev.size !== next.size
     }
-  )
+  );
   const submittable = createMemo(() => {
     // a location is not really considered set by the user unless the label is
     // defined, as many assets will have geocoded city and region data at the
@@ -143,44 +143,44 @@ function Pending() {
     return (
       (selectedTags().length > 0 || selectedLocation()?.label) &&
       selectedAssets().size > 0
-    )
-  })
+    );
+  });
   const updateAction = action(async (): Promise<any> => {
-    const tags = selectedTags() || null
-    const location = selectedLocation()?.label ? selectedLocation() : null
-    const datetime = datetimeRef?.value ? new Date(datetimeRef?.value) : null
+    const tags = selectedTags() || null;
+    const location = selectedLocation()?.label ? selectedLocation() : null;
+    const datetime = datetimeRef?.value ? new Date(datetimeRef?.value) : null;
     for (const assetId of selectedAssets()) {
       try {
         await client.mutate({
           mutation: UPDATE_ASSET,
           variables: {
             id: assetId,
-            asset: { tags, location, datetime },
-          },
-        })
+            asset: { tags, location, datetime }
+          }
+        });
       } catch (err) {
-        console.error('asset update failed:', err)
+        console.error('asset update failed:', err);
         // force an early exit so the user has a chance to look at the browser
         // console to see the error message
-        return { ok: false }
+        return { ok: false };
       }
     }
     // SolidJS router is _supposed_ to revalidate the queries on this page, but
     // nothing makes any difference, even calling revalidate() or reload()
     // explicitly does nothing, so just force the page to reload instead.
-    window.location.reload()
-    return { ok: true }
-  }, 'updateAssets')
-  const startUpdate = useAction(updateAction)
-  const updateSubmission = useSubmission(updateAction)
+    window.location.reload();
+    return { ok: true };
+  }, 'updateAssets');
+  const startUpdate = useAction(updateAction);
+  const updateSubmission = useSubmission(updateAction);
   const saveButtonClass = createMemo(() => {
     if (updateSubmission.pending) {
-      return 'button is-loading'
+      return 'button is-loading';
     } else if (submittable()) {
-      return 'button is-primary'
+      return 'button is-primary';
     }
-    return 'button'
-  })
+    return 'button';
+  });
 
   return (
     <>
@@ -220,17 +220,17 @@ function Pending() {
                   setSelectedTags((tags) => {
                     if (tags.indexOf(value) < 0) {
                       // return a new array so SolidJS will take note
-                      return [...tags, value]
+                      return [...tags, value];
                     }
-                    return tags
-                  })
+                    return tags;
+                  });
                 }}
               />
             </div>
             <div class="level-item">
               <LocationRecordSelector
                 setLocation={(value) => {
-                  setSelectedLocation(value)
+                  setSelectedLocation(value);
                 }}
               />
             </div>
@@ -276,8 +276,8 @@ function Pending() {
             rmfun={(attr) => {
               setSelectedTags((tags) => {
                 // return a new array so SolidJS will take note
-                return tags.filter((t) => t !== attr)
-              })
+                return tags.filter((t) => t !== attr);
+              });
             }}
           />
         </div>
@@ -291,12 +291,12 @@ function Pending() {
         />
       </Suspense>
     </>
-  )
+  );
 }
 
 interface RecentRangeProps {
-  range: Accessor<number>
-  setRange: Setter<number>
+  range: Accessor<number>;
+  setRange: Setter<number>;
 }
 
 const rangeValues = [
@@ -304,8 +304,8 @@ const rangeValues = [
   { label: 'Year', value: 365 },
   { label: 'Month', value: 30 },
   { label: 'Week', value: 7 },
-  { label: 'Day', value: 1 },
-]
+  { label: 'Day', value: 1 }
+];
 
 function RecentRange(props: RecentRangeProps) {
   return (
@@ -332,11 +332,11 @@ function RecentRange(props: RecentRangeProps) {
         )}
       </For>
     </div>
-  )
+  );
 }
 
 interface PendingCountProps {
-  data: Accessor<Query | undefined>
+  data: Accessor<Query | undefined>;
 }
 
 function PendingCount(props: PendingCountProps) {
@@ -344,7 +344,7 @@ function PendingCount(props: PendingCountProps) {
     <Suspense fallback={'...'}>
       <span>{`Pending items: ${props.data()?.pending.count}`}</span>
     </Suspense>
-  )
+  );
 }
 
 const LOCATION_RECORDS: TypedDocumentNode<Query, Record<string, never>> = gql`
@@ -355,18 +355,18 @@ const LOCATION_RECORDS: TypedDocumentNode<Query, Record<string, never>> = gql`
       region
     }
   }
-`
+`;
 
 interface LocationRecordSelectorProps {
-  setLocation: (location: Location) => void
+  setLocation: (location: Location) => void;
 }
 
 function LocationRecordSelector(props: LocationRecordSelectorProps) {
-  const client = useApolloClient()
+  const client = useApolloClient();
   const [locationsQuery] = createResource(async () => {
-    const { data } = await client.query({ query: LOCATION_RECORDS })
-    return data
-  })
+    const { data } = await client.query({ query: LOCATION_RECORDS });
+    return data;
+  });
 
   //
   // n.b. on:input is called for every single keystroke, while on:change is
@@ -381,17 +381,17 @@ function LocationRecordSelector(props: LocationRecordSelectorProps) {
     Event,
     JSX.ChangeEventHandler<HTMLInputElement, Event>
   > = (event) => {
-    const target = event.currentTarget
+    const target = event.currentTarget;
     if (target) {
-      const value = target.value
+      const value = target.value;
       if (value) {
-        props.setLocation(parse.parseLocation(value))
+        props.setLocation(parse.parseLocation(value));
       } else {
-        props.setLocation({ label: null, city: null, region: null })
+        props.setLocation({ label: null, city: null, region: null });
       }
-      event.stopPropagation()
+      event.stopPropagation();
     }
-  }
+  };
 
   return (
     <Suspense fallback={'...'}>
@@ -422,33 +422,33 @@ function LocationRecordSelector(props: LocationRecordSelectorProps) {
         </div>
       </div>
     </Suspense>
-  )
+  );
 }
 
 enum SortFieldOrder {
   DateAsc = 1,
   DateDesc,
   FileAsc,
-  FileDesc,
+  FileDesc
 }
 
 class SortCombo {
-  value: SortFieldOrder
+  value: SortFieldOrder;
 
   constructor(value: SortFieldOrder) {
-    this.value = value
+    this.value = value;
   }
 
   get iconClass(): string {
     switch (this.value) {
       case SortFieldOrder.DateAsc:
-        return 'fa-solid fa-arrow-down-1-9'
+        return 'fa-solid fa-arrow-down-1-9';
       case SortFieldOrder.DateDesc:
-        return 'fa-solid fa-arrow-up-9-1'
+        return 'fa-solid fa-arrow-up-9-1';
       case SortFieldOrder.FileAsc:
-        return 'fa-solid fa-arrow-down-a-z'
+        return 'fa-solid fa-arrow-down-a-z';
       case SortFieldOrder.FileDesc:
-        return 'fa-solid fa-arrow-up-z-a'
+        return 'fa-solid fa-arrow-up-z-a';
     }
   }
 
@@ -456,10 +456,10 @@ class SortCombo {
     switch (this.value) {
       case SortFieldOrder.DateAsc:
       case SortFieldOrder.DateDesc:
-        return 'Date'
+        return 'Date';
       case SortFieldOrder.FileAsc:
       case SortFieldOrder.FileDesc:
-        return 'Filename'
+        return 'Filename';
     }
   }
 
@@ -467,10 +467,10 @@ class SortCombo {
     switch (this.value) {
       case SortFieldOrder.DateAsc:
       case SortFieldOrder.DateDesc:
-        return GQLSortField.Date
+        return GQLSortField.Date;
       case SortFieldOrder.FileAsc:
       case SortFieldOrder.FileDesc:
-        return GQLSortField.Filename
+        return GQLSortField.Filename;
     }
   }
 
@@ -478,31 +478,31 @@ class SortCombo {
     switch (this.value) {
       case SortFieldOrder.DateAsc:
       case SortFieldOrder.FileAsc:
-        return GQLSortOrder.Ascending
+        return GQLSortOrder.Ascending;
       case SortFieldOrder.DateDesc:
       case SortFieldOrder.FileDesc:
-        return GQLSortOrder.Descending
+        return GQLSortOrder.Descending;
     }
   }
 }
 
-const sortComboDateAsc = new SortCombo(SortFieldOrder.DateAsc)
-const sortComboDateDesc = new SortCombo(SortFieldOrder.DateDesc)
-const sortComboFileAsc = new SortCombo(SortFieldOrder.FileAsc)
-const sortComboFileDesc = new SortCombo(SortFieldOrder.FileDesc)
+const sortComboDateAsc = new SortCombo(SortFieldOrder.DateAsc);
+const sortComboDateDesc = new SortCombo(SortFieldOrder.DateDesc);
+const sortComboFileAsc = new SortCombo(SortFieldOrder.FileAsc);
+const sortComboFileDesc = new SortCombo(SortFieldOrder.FileDesc);
 
 interface SortOrderProps {
-  sortCombo: Accessor<SortCombo>
-  setSortCombo: Setter<SortCombo>
+  sortCombo: Accessor<SortCombo>;
+  setSortCombo: Setter<SortCombo>;
 }
 
 function SortOrder(props: SortOrderProps) {
-  const [dropdownOpen, setDropdownOpen] = createSignal(false)
-  let dropdownRef: HTMLDivElement | undefined
+  const [dropdownOpen, setDropdownOpen] = createSignal(false);
+  let dropdownRef: HTMLDivElement | undefined;
   useClickOutside(
     () => dropdownRef,
     () => setDropdownOpen(false)
-  )
+  );
 
   return (
     <div
@@ -533,8 +533,8 @@ function SortOrder(props: SortOrderProps) {
                 : 'dropdown-item'
             }
             on:click={(_) => {
-              props.setSortCombo(sortComboDateAsc)
-              setDropdownOpen(false)
+              props.setSortCombo(sortComboDateAsc);
+              setDropdownOpen(false);
             }}
           >
             <span>Date</span>
@@ -549,8 +549,8 @@ function SortOrder(props: SortOrderProps) {
                 : 'dropdown-item'
             }
             on:click={(_) => {
-              props.setSortCombo(sortComboDateDesc)
-              setDropdownOpen(false)
+              props.setSortCombo(sortComboDateDesc);
+              setDropdownOpen(false);
             }}
           >
             <span>Date</span>
@@ -565,8 +565,8 @@ function SortOrder(props: SortOrderProps) {
                 : 'dropdown-item'
             }
             on:click={(_) => {
-              props.setSortCombo(sortComboFileAsc)
-              setDropdownOpen(false)
+              props.setSortCombo(sortComboFileAsc);
+              setDropdownOpen(false);
             }}
           >
             <span>Filename</span>
@@ -581,8 +581,8 @@ function SortOrder(props: SortOrderProps) {
                 : 'dropdown-item'
             }
             on:click={(_) => {
-              props.setSortCombo(sortComboFileDesc)
-              setDropdownOpen(false)
+              props.setSortCombo(sortComboFileDesc);
+              setDropdownOpen(false);
             }}
           >
             <span>Filename</span>
@@ -593,13 +593,13 @@ function SortOrder(props: SortOrderProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 interface PendingAssetsProps {
-  results?: SearchResult[]
-  selectedAssets: Accessor<Set<string>>
-  setSelectedAssets: Setter<Set<string>>
+  results?: SearchResult[];
+  selectedAssets: Accessor<Set<string>>;
+  setSelectedAssets: Setter<Set<string>>;
 }
 
 function PendingAssets(props: PendingAssetsProps) {
@@ -608,16 +608,16 @@ function PendingAssets(props: PendingAssetsProps) {
   const toggleAsset = (id: string) => {
     props.setSelectedAssets((s) => {
       if (s.has(id)) {
-        s.delete(id)
+        s.delete(id);
       } else {
-        s.add(id)
+        s.add(id);
       }
-      return s
-    })
-  }
+      return s;
+    });
+  };
   const cardClass = (id: string): string => {
-    return props.selectedAssets().has(id) ? 'card selected' : 'card'
-  }
+    return props.selectedAssets().has(id) ? 'card selected' : 'card';
+  };
 
   return (
     <div class="grid is-col-min-16 padding-2">
@@ -662,11 +662,11 @@ function PendingAssets(props: PendingAssetsProps) {
         )}
       </For>
     </div>
-  )
+  );
 }
 
 interface ImageThumbnailProps {
-  asset: SearchResult
+  asset: SearchResult;
 }
 
 function ImageThumbnail(props: ImageThumbnailProps) {
@@ -676,17 +676,17 @@ function ImageThumbnail(props: ImageThumbnailProps) {
       alt={props.asset.filename}
       style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
     />
-  )
+  );
 }
 
 interface VideoThumbnailProps {
-  asset: SearchResult
+  asset: SearchResult;
 }
 
 function VideoThumbnail(props: VideoThumbnailProps) {
-  let media_type = props.asset.mediaType
+  let media_type = props.asset.mediaType;
   if (media_type == 'video/quicktime') {
-    media_type = 'video/mp4'
+    media_type = 'video/mp4';
   }
   return (
     <video controls>
@@ -695,11 +695,11 @@ function VideoThumbnail(props: VideoThumbnailProps) {
       <code>video</code>
       tag.
     </video>
-  )
+  );
 }
 
 interface AudioThumbnailProps {
-  asset: SearchResult
+  asset: SearchResult;
 }
 
 function AudioThumbnail(props: AudioThumbnailProps) {
@@ -713,12 +713,12 @@ function AudioThumbnail(props: AudioThumbnailProps) {
         />
       </audio>
     </>
-  )
+  );
 }
 
 interface CardContentProps {
-  datetime: Date
-  location: Location | null | undefined
+  datetime: Date;
+  location: Location | null | undefined;
 }
 
 function CardContent(props: CardContentProps) {
@@ -730,7 +730,7 @@ function CardContent(props: CardContentProps) {
         <span>{format.formatLocation(props.location!)}</span>
       </Show>
     </div>
-  )
+  );
 }
 
-export default Pending
+export default Pending;

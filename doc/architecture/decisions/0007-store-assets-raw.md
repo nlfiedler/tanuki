@@ -1,8 +1,8 @@
 # Store Assets in the Raw
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2020-08-20
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2020-08-20
 
 ## Context
 

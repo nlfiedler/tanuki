@@ -4,9 +4,9 @@ import solid from 'vite-plugin-solid';
 export default defineConfig({
   plugins: [solid()],
   resolve: {
-    dedupe: ['solid-js'],
+    dedupe: ['solid-js']
   },
   build: {
-    target: 'esnext',
-  },
+    target: 'esnext'
+  }
 });

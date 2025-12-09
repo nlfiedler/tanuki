@@ -1,8 +1,8 @@
 # Use Application State Management
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2020-08-20
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2020-08-20
 
 ## Context
 
@@ -20,4 +20,4 @@ BLoC has been in use with another application and has proven to be very suitable
 
 ## Links
 
-* BLoC library [website](https://bloclibrary.dev/)
+- BLoC library [website](https://bloclibrary.dev/)

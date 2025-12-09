@@ -39,7 +39,11 @@ class Location {
   }
 
   /** Build a Location from exactly the input values without any processing. */
-  static fromRaw(label: string | null, city: string | null, region: string | null): Location {
+  static fromRaw(
+    label: string | null,
+    city: string | null,
+    region: string | null
+  ): Location {
     const ret = new Location(label || '');
     ret.label = label;
     ret.city = city;
@@ -54,7 +58,7 @@ class Location {
    * before city and region. If there is a semicolon but no comma, then the
    * second part is treated as the city. If there are too many semicolons or
    * commas, the input is treated as a label.
-   * 
+   *
    * @param s - string input to be parsed.
    * @returns Location with fields appropriately populated.
    */
@@ -79,7 +83,7 @@ class Location {
             return Location.fromParts(
               label_tail[0]?.trim() || '',
               city_region[0]?.trim() || '',
-              city_region[1]?.trim() || '',
+              city_region[1]?.trim() || ''
             );
           }
         } else {
@@ -87,7 +91,7 @@ class Location {
           return Location.fromParts(
             label_tail[0]?.trim() || '',
             label_tail[1]?.trim() || '',
-            '',
+            ''
           );
         }
       }
@@ -98,7 +102,7 @@ class Location {
         return Location.fromParts(
           '',
           city_region[0]?.trim() || '',
-          city_region[1]?.trim() || '',
+          city_region[1]?.trim() || ''
         );
       }
     }
@@ -134,9 +138,11 @@ class Location {
    * @returns true if any of the fields have a value.
    */
   hasValues(): boolean {
-    return (this.label !== null && this.label.length > 0) ||
+    return (
+      (this.label !== null && this.label.length > 0) ||
       (this.city !== null && this.city.length > 0) ||
-      (this.region !== null && this.region.length > 0);
+      (this.region !== null && this.region.length > 0)
+    );
   }
 
   /**
@@ -190,8 +196,10 @@ class Coordinates {
    * reverse geocoding sytems.
    */
   intoDecimals(): [number, number] {
-    const lat = this.latitude[0] + this.latitude[1] / 60 + this.latitude[2] / 3600;
-    const long = this.longitude[0] + this.longitude[1] / 60 + this.longitude[2] / 3600;
+    const lat =
+      this.latitude[0] + this.latitude[1] / 60 + this.latitude[2] / 3600;
+    const long =
+      this.longitude[0] + this.longitude[1] / 60 + this.longitude[2] / 3600;
     const latSign = this.latitudeRef === 'N' ? 1 : -1;
     const longSign = this.longitudeRef === 'E' ? 1 : -1;
     return [latSign * lat, longSign * long];
@@ -249,7 +257,11 @@ class Geocoded {
   /** Name of the country (country). */
   country: string | null;
 
-  constructor(city: string | null, region: string | null, country: string | null) {
+  constructor(
+    city: string | null,
+    region: string | null,
+    country: string | null
+  ) {
     this.city = city;
     this.region = region;
     this.country = country;

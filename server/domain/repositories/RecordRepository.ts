@@ -10,7 +10,6 @@ import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
  * Repository for entity records.
  */
 interface RecordRepository {
-
   /**
    * Return the number of asset records stored in the database.
    *
@@ -73,7 +72,7 @@ interface RecordRepository {
 
   /**
    * Search for assets that have all of the given tags.
-   * 
+   *
    * @param tags - set of tags on which to query.
    * @returns list of search results.
    */
@@ -123,7 +122,7 @@ interface RecordRepository {
    * asset in the data source. On the next call, the `cursor` should be the
    * value returned along with the assets in order to continue the scan through
    * the data source.
-   * 
+   *
    * May return fewer assets than the given `limit`.
    *
    * Returns an empty list when nothing is left to be retrieved.

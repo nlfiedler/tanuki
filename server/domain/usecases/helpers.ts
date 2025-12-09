@@ -8,14 +8,21 @@ import dayjs from 'dayjs';
 import ExifReader from 'exifreader';
 import mime from 'mime';
 import { ulid } from 'ulid';
-import { Coordinates, Geocoded, Location } from 'tanuki/server/domain/entities/Location.ts';
-import { SortOrder, SortField } from 'tanuki/server/domain/entities/SearchParams.ts';
+import {
+  Coordinates,
+  Geocoded,
+  Location
+} from 'tanuki/server/domain/entities/Location.ts';
+import {
+  SortOrder,
+  SortField
+} from 'tanuki/server/domain/entities/SearchParams.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
 
 /**
  * Compute the hash digest of the file at the given path. The value will have
  * the algorithm prefixed with a hyphen separator (e.g. sha256-xxx).
- * 
+ *
  * @param filepath - path of file for which to generate hash digest.
  * @return hash digest of file.
  */
@@ -68,7 +75,7 @@ export function newAssetId(datetime: Date, mimetype: string): string {
 
 /**
  * Return the guessed media type based on the extension.
- * 
+ *
  * @param extension - filename extension for guessing media type.
  * @returns guessed media type.
  */
@@ -92,7 +99,10 @@ export function inferMediaType(extension: string): string {
  * @param filepath - path to file to be examined.
  * @returns Milliseconds since epoch if successful, null otherwise.
  */
-export async function getOriginalDate(mimetype: string, filepath: string): Promise<number | null> {
+export async function getOriginalDate(
+  mimetype: string,
+  filepath: string
+): Promise<number | null> {
   try {
     if (mimetype.startsWith('image/')) {
       const tags = await ExifReader.load(filepath);
@@ -143,7 +153,10 @@ type ExifNumberPairs = [[number, number], [number, number], [number, number]];
  * @param filepath - path to file to be examined.
  * @returns GPS coordinates if any, null otherwise.
  */
-export async function getCoordinates(mimetype: string, filepath: string): Promise<Coordinates | null> {
+export async function getCoordinates(
+  mimetype: string,
+  filepath: string
+): Promise<Coordinates | null> {
   try {
     if (mimetype.startsWith('image/')) {
       const tags = await ExifReader.load(filepath);
@@ -257,7 +270,10 @@ export function sortSearchResults(
  * @param input - location with new values.
  * @returns location entity with merged fields.
  */
-export function mergeLocations(asset?: Readonly<Location> | null, input?: Location | null): Location | null | undefined {
+export function mergeLocations(
+  asset?: Readonly<Location> | null,
+  input?: Location | null
+): Location | null | undefined {
   if (asset) {
     if (input) {
       const outgoing = Location.fromRaw(asset.label, asset.city, asset.region);
@@ -297,7 +313,7 @@ export function mergeLocations(asset?: Readonly<Location> | null, input?: Locati
 
 /**
  * Convert the geocoded location to the domain version.
- * 
+ *
  * @param geocoded - result from reverse geocoding, city must not be null.
  * @returns Location entity with appropriate city and region.
  */
@@ -328,7 +344,7 @@ export type CaptionParts = {
 
 /**
  * Parse the given caption text into a list of tags and a location.
- * 
+ *
  * @returns object with tags and location values.
  */
 export function parseCaption(caption: string): CaptionParts {
@@ -339,7 +355,7 @@ export function parseCaption(caption: string): CaptionParts {
   }
   const location = lexer.location ? Location.parse(lexer.location) : null;
   return { tags: lexer.tags, location };
-};
+}
 
 class CaptionLexer {
   input: string;
@@ -448,5 +464,13 @@ function acceptIdentifier(l: CaptionLexer): string {
 
 /** Returns true if `ch` is a delimiter character. */
 function isDelimiter(ch: string): boolean {
-  return ch === ' ' || ch === '.' || ch === ',' || ch === ';' || ch === '(' || ch === ')' || ch === '"';
+  return (
+    ch === ' ' ||
+    ch === '.' ||
+    ch === ',' ||
+    ch === ';' ||
+    ch === '(' ||
+    ch === ')' ||
+    ch === '"'
+  );
 }

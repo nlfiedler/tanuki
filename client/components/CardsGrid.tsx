@@ -1,13 +1,13 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { For, Match, Show, Switch } from 'solid-js'
-import type { Location, SearchResult } from 'tanuki/generated/graphql.ts'
-import * as format from '../helpers/formatting.ts'
+import { For, Match, Show, Switch } from 'solid-js';
+import type { Location, SearchResult } from 'tanuki/generated/graphql.ts';
+import * as format from '../helpers/formatting.ts';
 
 interface CardsGridProps {
-  results?: SearchResult[]
-  onClick: (assetId: string) => void
+  results?: SearchResult[];
+  onClick: (assetId: string) => void;
 }
 
 function CardsGrid(props: CardsGridProps) {
@@ -44,11 +44,11 @@ function CardsGrid(props: CardsGridProps) {
         )}
       </For>
     </div>
-  )
+  );
 }
 
 interface ImageThumbnailProps {
-  asset: SearchResult
+  asset: SearchResult;
 }
 
 function ImageThumbnail(props: ImageThumbnailProps) {
@@ -58,17 +58,17 @@ function ImageThumbnail(props: ImageThumbnailProps) {
       alt={props.asset.filename}
       style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
     />
-  )
+  );
 }
 
 interface VideoThumbnailProps {
-  asset: SearchResult
+  asset: SearchResult;
 }
 
 function VideoThumbnail(props: VideoThumbnailProps) {
-  let media_type = props.asset.mediaType
+  let media_type = props.asset.mediaType;
   if (media_type == 'video/quicktime') {
-    media_type = 'video/mp4'
+    media_type = 'video/mp4';
   }
   return (
     <video controls>
@@ -77,11 +77,11 @@ function VideoThumbnail(props: VideoThumbnailProps) {
       <code>video</code>
       tag.
     </video>
-  )
+  );
 }
 
 interface AudioThumbnailProps {
-  asset: SearchResult
+  asset: SearchResult;
 }
 
 function AudioThumbnail(props: AudioThumbnailProps) {
@@ -95,12 +95,12 @@ function AudioThumbnail(props: AudioThumbnailProps) {
         />
       </audio>
     </>
-  )
+  );
 }
 
 interface CardContentProps {
-  datetime: Date
-  location: Location | null | undefined
+  datetime: Date;
+  location: Location | null | undefined;
 }
 
 function CardContent(props: CardContentProps) {
@@ -112,7 +112,7 @@ function CardContent(props: CardContentProps) {
         <span>{format.formatLocation(props.location!)}</span>
       </Show>
     </div>
-  )
+  );
 }
 
-export default CardsGrid
+export default CardsGrid;

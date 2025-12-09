@@ -1,8 +1,8 @@
 # Use Leptos for Frontend
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2024-10-17
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2024-10-17
 
 ## Context
 
@@ -32,4 +32,4 @@ An immediate difference between Flutter and Leptos is that Leptos is very fast. 
 
 ## Links
 
-* Leptos [website](https://leptos.dev)
+- Leptos [website](https://leptos.dev)

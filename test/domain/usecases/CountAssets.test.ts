@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, test } from 'bun:test';
 import CountAssets from 'tanuki/server/domain/usecases/CountAssets.ts';
 import { recordRepositoryMock } from './mocking.ts';
 
@@ -9,7 +9,7 @@ describe('CountAssets use case', function () {
   test('should return number of assets', async function () {
     // arrange
     const mockRecordRepository = recordRepositoryMock({
-      countAssets: mock(() => Promise.resolve(101)),
+      countAssets: mock(() => Promise.resolve(101))
     });
     const usecase = CountAssets({
       recordRepository: mockRecordRepository

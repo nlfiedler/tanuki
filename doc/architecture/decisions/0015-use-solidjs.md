@@ -1,8 +1,8 @@
 # Use SolidJS for the client
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2025-11-14
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2025-11-14
 
 ## Context
 
@@ -26,5 +26,5 @@ TBD
 
 ## Links
 
-* SolidJS [website](https://www.solidjs.com)
-* TypeScript [website](https://www.typescriptlang.org)
+- SolidJS [website](https://www.solidjs.com)
+- TypeScript [website](https://www.typescriptlang.org)

@@ -1,12 +1,12 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import type { Accessor } from 'solid-js'
-import { For } from 'solid-js'
+import type { Accessor } from 'solid-js';
+import { For } from 'solid-js';
 
 interface AttributeChipsProps {
-  attrs: Accessor<string[]>
-  rmfun: (name: string) => void
+  attrs: Accessor<string[]>;
+  rmfun: (name: string) => void;
 }
 
 function AttributeChips(props: AttributeChipsProps) {
@@ -21,7 +21,7 @@ function AttributeChips(props: AttributeChipsProps) {
         </div>
       )}
     </For>
-  )
+  );
 }
 
-export default AttributeChips
+export default AttributeChips;

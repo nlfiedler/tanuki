@@ -77,7 +77,7 @@ enum SortField {
   Date,
   Identifier,
   Filename,
-  MediaType,
+  MediaType
 }
 
 /**
@@ -85,7 +85,7 @@ enum SortField {
  */
 enum SortOrder {
   Ascending,
-  Descending,
+  Descending
 }
 
 /**

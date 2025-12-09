@@ -1,8 +1,8 @@
 # Use Flutter for Frontend
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2020-08-20
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2020-08-20
 
 ## Context
 
@@ -26,5 +26,5 @@ While not yet complete for this application, another application has had its fro
 
 ## Links
 
-* Flutter [website](https://flutter.dev)
-* Dart [website](https://dart.dev)
+- Flutter [website](https://flutter.dev)
+- Dart [website](https://dart.dev)

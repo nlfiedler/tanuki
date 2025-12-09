@@ -1,8 +1,8 @@
 # Use RocksDB
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2020-08-20
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2020-08-20
 
 ## Context
 
@@ -20,5 +20,5 @@ RocksDB has been used by this application and another for several months. It has
 
 ## Links
 
-* RocksDB [website](https://rocksdb.org)
-* rust-rocksdb [GitHub](https://github.com/rust-rocksdb/rust-rocksdb)
+- RocksDB [website](https://rocksdb.org)
+- rust-rocksdb [GitHub](https://github.com/rust-rocksdb/rust-rocksdb)

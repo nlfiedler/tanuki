@@ -4,7 +4,7 @@
 import http from 'node:http';
 import express from 'express';
 import morgan from 'morgan';
-import helmet from "helmet";
+import helmet from 'helmet';
 import ViteExpress from 'vite-express';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express5';
@@ -21,25 +21,30 @@ import { typeDefs, resolvers } from 'tanuki/server/preso/graphql/schema.ts';
 
 // (asynchronously) prepare the database
 const database = container.resolve('recordRepository');
-database.createIfMissing().then(() => {
-  logger.info('database initialization complete');
-}).catch((err: any) => {
-  logger.error('database initialization error:', err);
-});
+database
+  .createIfMissing()
+  .then(() => {
+    logger.info('database initialization complete');
+  })
+  .catch((err: any) => {
+    logger.error('database initialization error:', err);
+  });
 
 // set up Express.js application
 const app = express();
-app.use(helmet({
-  // allow GraphQL to work properly
-  crossOriginEmbedderPolicy: false,
-  contentSecurityPolicy: false,
-}));
+app.use(
+  helmet({
+    // allow GraphQL to work properly
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: false
+  })
+);
 // configure for development or production
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 } else {
   app.use(morgan('combined'));
-  ViteExpress.config({ mode: "production" });
+  ViteExpress.config({ mode: 'production' });
 }
 
 // set up Apollo Server
@@ -53,7 +58,7 @@ const graphqlServer = new ApolloServer({
     ApolloServerPluginLandingPageLocalDefault()
   ],
   // allow introspection even in production
-  introspection: true,
+  introspection: true
 });
 await graphqlServer.start();
 

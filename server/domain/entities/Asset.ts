@@ -32,10 +32,10 @@ class Asset {
 
   constructor(key: string) {
     this.key = key;
-    this.checksum = "";
-    this.filename = "";
+    this.checksum = '';
+    this.filename = '';
     this.byteLength = 0;
-    this.mediaType = "";
+    this.mediaType = '';
     this.tags = [];
     this.importDate = new Date();
     this.caption = null;
@@ -62,7 +62,7 @@ class Asset {
 
   /**
    * Relative path of the asset within the asset store.
-   * 
+   *
    * @returns relative path of the asset.
    */
   filepath(): string {

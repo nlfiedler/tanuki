@@ -10,23 +10,23 @@ import {
   type JSX,
   Match,
   Suspense,
-  Switch,
-} from 'solid-js'
-import { useNavigate } from '@solidjs/router'
-import { type TypedDocumentNode, gql } from '@apollo/client'
-import { useApolloClient } from '../ApolloProvider'
+  Switch
+} from 'solid-js';
+import { useNavigate } from '@solidjs/router';
+import { type TypedDocumentNode, gql } from '@apollo/client';
+import { useApolloClient } from '../ApolloProvider';
 import {
   type QuerySearchArgs,
   type Query,
   SortField,
-  SortOrder,
-} from 'tanuki/generated/graphql.ts'
-import AttributeChips from '../components/AttributeChips.tsx'
-import CardsGrid from '../components/CardsGrid.tsx'
-import Pagination from '../components/Pagination.tsx'
-import TagSelector from '../components/TagSelector.tsx'
-import useClickOutside from '../hooks/useClickOutside.js'
-import useLocalStorage from '../hooks/useLocalStorage.js'
+  SortOrder
+} from 'tanuki/generated/graphql.ts';
+import AttributeChips from '../components/AttributeChips.tsx';
+import CardsGrid from '../components/CardsGrid.tsx';
+import Pagination from '../components/Pagination.tsx';
+import TagSelector from '../components/TagSelector.tsx';
+import useClickOutside from '../hooks/useClickOutside.js';
+import useLocalStorage from '../hooks/useLocalStorage.js';
 
 const SEARCH_ASSETS: TypedDocumentNode<Query, QuerySearchArgs> = gql`
   query Search($params: SearchParams!, $offset: Int, $limit: Int) {
@@ -46,7 +46,7 @@ const SEARCH_ASSETS: TypedDocumentNode<Query, QuerySearchArgs> = gql`
       lastPage
     }
   }
-`
+`;
 
 function buildParams({
   tags,
@@ -56,46 +56,46 @@ function buildParams({
   mediaType,
   offset,
   limit,
-  sortOrder,
+  sortOrder
 }: {
-  tags: string[]
-  locations: string[]
-  year: number | null
-  season: Season | null
-  mediaType: string | null
-  offset: number
-  limit: number
-  sortOrder: SortOrder
+  tags: string[];
+  locations: string[];
+  year: number | null;
+  season: Season | null;
+  mediaType: string | null;
+  offset: number;
+  limit: number;
+  sortOrder: SortOrder;
 }): QuerySearchArgs {
-  let before = undefined
-  let after = undefined
+  let before = undefined;
+  let after = undefined;
   if (year && season) {
     // JavaScript months are zero-based
     switch (season) {
       case Season.Winter:
-        after = new Date(year, 0, 1, 0, 0)
-        before = new Date(year, 3, 1, 0, 0)
-        break
+        after = new Date(year, 0, 1, 0, 0);
+        before = new Date(year, 3, 1, 0, 0);
+        break;
       case Season.Spring:
-        after = new Date(year, 3, 1, 0, 0)
-        before = new Date(year, 6, 1, 0, 0)
-        break
+        after = new Date(year, 3, 1, 0, 0);
+        before = new Date(year, 6, 1, 0, 0);
+        break;
       case Season.Summer:
-        after = new Date(year, 6, 1, 0, 0)
-        before = new Date(year, 9, 1, 0, 0)
-        break
+        after = new Date(year, 6, 1, 0, 0);
+        before = new Date(year, 9, 1, 0, 0);
+        break;
       case Season.Fall:
-        after = new Date(year, 9, 1, 0, 0)
-        before = new Date(year + 1, 0, 1, 0, 0)
-        break
+        after = new Date(year, 9, 1, 0, 0);
+        before = new Date(year + 1, 0, 1, 0, 0);
+        break;
     }
   } else if (year) {
     // JavaScript months are zero-based
-    after = new Date(year, 0, 1, 0, 0)
-    before = new Date(year + 1, 0, 1, 0, 0)
+    after = new Date(year, 0, 1, 0, 0);
+    before = new Date(year + 1, 0, 1, 0, 0);
   } else if (tags.length === 0 && locations.length === 0) {
     // if not searching by tags or locations, then show all assets
-    before = new Date(275760, 8, 12)
+    before = new Date(275760, 8, 12);
   }
   return {
     params: {
@@ -105,44 +105,44 @@ function buildParams({
       after,
       mediaType,
       sortField: SortField.Date,
-      sortOrder,
+      sortOrder
     },
     offset,
-    limit,
-  }
+    limit
+  };
 }
 
 function Home() {
-  const navigate = useNavigate()
-  const client = useApolloClient()
+  const navigate = useNavigate();
+  const client = useApolloClient();
   const [selectedTags, setSelectedTags] = useLocalStorage<string[]>(
     'home-selected-tags',
     []
-  )
+  );
   const [selectedLocations, setSelectedLocations] = useLocalStorage<string[]>(
     'home-selected-locations',
     []
-  )
+  );
   const [selectedYear, setSelectedYear] = useLocalStorage<number | null>(
     'home-selected-year',
     null
-  )
+  );
   const [selectedSeason, setSelectedSeason] = useLocalStorage<Season | null>(
     'home-selected-season',
     null
-  )
+  );
   const [selectedMediaType, setSelectedMediaType] = useLocalStorage<
     string | null
-  >('home-selected-mediatype', null)
+  >('home-selected-mediatype', null);
   const [selectedSortOrder, setSelectedSortOrder] = useLocalStorage<SortOrder>(
     'home-sort-order',
     SortOrder.Descending
-  )
+  );
   const [selectedPage, setSelectedPage] = useLocalStorage(
     'home-selected-page',
     1
-  )
-  const [pageSize, setPageSize] = useLocalStorage('page-size', 18)
+  );
+  const [pageSize, setPageSize] = useLocalStorage('page-size', 18);
   const pendingParams = createMemo(() => ({
     tags: selectedTags(),
     locations: selectedLocations(),
@@ -151,16 +151,16 @@ function Home() {
     mediaType: selectedMediaType(),
     offset: pageSize() * (selectedPage() - 1),
     limit: pageSize(),
-    sortOrder: selectedSortOrder(),
-  }))
+    sortOrder: selectedSortOrder()
+  }));
   const [assetsQuery] = createResource(pendingParams, async (params) => {
     const { data } = await client.query({
       query: SEARCH_ASSETS,
-      variables: buildParams(params),
-    })
-    return data
-  })
-  const lastPage = () => assetsQuery()?.search.lastPage ?? 1
+      variables: buildParams(params)
+    });
+    return data;
+  });
+  const lastPage = () => assetsQuery()?.search.lastPage ?? 1;
 
   return (
     <>
@@ -173,11 +173,11 @@ function Home() {
                   setSelectedTags((tags) => {
                     if (tags.indexOf(value) < 0) {
                       // return a new array so SolidJS will take note
-                      return [...tags, value]
+                      return [...tags, value];
                     }
-                    return tags
-                  })
-                  setSelectedPage(1)
+                    return tags;
+                  });
+                  setSelectedPage(1);
                 }}
               />
             </div>
@@ -187,11 +187,11 @@ function Home() {
                   setSelectedLocations((locations) => {
                     if (locations.indexOf(value) < 0) {
                       // return a new array so SolidJS will take note
-                      return [...locations, value]
+                      return [...locations, value];
                     }
-                    return locations
-                  })
-                  setSelectedPage(1)
+                    return locations;
+                  });
+                  setSelectedPage(1);
                 }}
               />
             </div>
@@ -199,8 +199,8 @@ function Home() {
               <YearSelector
                 selectedYear={selectedYear}
                 setyear={(year) => {
-                  setSelectedYear(year)
-                  setSelectedPage(1)
+                  setSelectedYear(year);
+                  setSelectedPage(1);
                 }}
               />
             </div>
@@ -209,10 +209,10 @@ function Home() {
                 selectedSeason={selectedSeason}
                 setSeason={(season) => {
                   if (selectedYear() === null) {
-                    setSelectedYear(new Date().getFullYear())
+                    setSelectedYear(new Date().getFullYear());
                   }
-                  setSelectedSeason(season)
-                  setSelectedPage(1)
+                  setSelectedSeason(season);
+                  setSelectedPage(1);
                 }}
               />
             </div>
@@ -220,8 +220,8 @@ function Home() {
               <MediaTypeSelector
                 selectedMediaType={selectedMediaType}
                 setMediaType={(mediaType) => {
-                  setSelectedMediaType(mediaType)
-                  setSelectedPage(1)
+                  setSelectedMediaType(mediaType);
+                  setSelectedPage(1);
                 }}
               />
             </div>
@@ -258,8 +258,8 @@ function Home() {
             rmfun={(attr) => {
               setSelectedTags((tags) => {
                 // return a new array so SolidJS will take note
-                return tags.filter((t) => t !== attr)
-              })
+                return tags.filter((t) => t !== attr);
+              });
             }}
           />
           <AttributeChips
@@ -267,8 +267,8 @@ function Home() {
             rmfun={(attr) => {
               setSelectedLocations((locations) => {
                 // return a new array so SolidJS will take note
-                return locations.filter((l) => l !== attr)
-              })
+                return locations.filter((l) => l !== attr);
+              });
             }}
           />
         </div>
@@ -281,7 +281,7 @@ function Home() {
         />
       </Suspense>
     </>
-  )
+  );
 }
 
 const ALL_LOCATION_PARTS: TypedDocumentNode<Query, Record<string, never>> = gql`
@@ -291,27 +291,27 @@ const ALL_LOCATION_PARTS: TypedDocumentNode<Query, Record<string, never>> = gql`
       count
     }
   }
-`
+`;
 
 interface LocationSelectorProps {
-  addfun: (value: string) => void
+  addfun: (value: string) => void;
 }
 
 function LocationSelector(props: LocationSelectorProps) {
-  const client = useApolloClient()
+  const client = useApolloClient();
   const [locationsQuery] = createResource(async () => {
-    const { data } = await client.query({ query: ALL_LOCATION_PARTS })
-    return data
-  })
+    const { data } = await client.query({ query: ALL_LOCATION_PARTS });
+    return data;
+  });
   const sortedLocations = () => {
     // the locations returned from the server are in no particular order
-    const sorted = []
+    const sorted = [];
     for (const location of locationsQuery()?.locationParts ?? []) {
-      sorted.push({ label: location.label, count: location.count })
+      sorted.push({ label: location.label, count: location.count });
     }
-    sorted.sort((a, b) => a.label.localeCompare(b.label))
-    return sorted
-  }
+    sorted.sort((a, b) => a.label.localeCompare(b.label));
+    return sorted;
+  };
   //
   // n.b. on:input is called for every single keystroke, while on:change is
   // called under several conditions:
@@ -325,16 +325,16 @@ function LocationSelector(props: LocationSelectorProps) {
     Event,
     JSX.ChangeEventHandler<HTMLInputElement, Event>
   > = (event) => {
-    const target = event.currentTarget
+    const target = event.currentTarget;
     if (target) {
-      const value = target.value
+      const value = target.value;
       if (value) {
-        props.addfun(value)
-        target.value = ''
+        props.addfun(value);
+        target.value = '';
       }
-      event.stopPropagation()
+      event.stopPropagation();
     }
-  }
+  };
 
   return (
     <Suspense fallback={'...'}>
@@ -363,7 +363,7 @@ function LocationSelector(props: LocationSelectorProps) {
         </div>
       </div>
     </Suspense>
-  )
+  );
 }
 
 const ALL_YEARS: TypedDocumentNode<Query, Record<string, never>> = gql`
@@ -373,60 +373,60 @@ const ALL_YEARS: TypedDocumentNode<Query, Record<string, never>> = gql`
       count
     }
   }
-`
+`;
 
 class YearAttribute {
-  year: number
-  count: number
+  year: number;
+  count: number;
 
   constructor(year: number | string, count: number) {
     if (typeof year === 'string') {
-      this.year = parseInt(year) || -1
+      this.year = parseInt(year) || -1;
     } else {
-      this.year = year
+      this.year = year;
     }
-    this.count = count
+    this.count = count;
   }
 }
 
 interface YearSelectorProps {
-  selectedYear: Accessor<number | null>
-  setyear: (value: number | null) => void
+  selectedYear: Accessor<number | null>;
+  setyear: (value: number | null) => void;
 }
 
 function YearSelector(props: YearSelectorProps) {
-  const [dropdownOpen, setDropdownOpen] = createSignal(false)
-  let dropdownRef: HTMLDivElement | undefined
+  const [dropdownOpen, setDropdownOpen] = createSignal(false);
+  let dropdownRef: HTMLDivElement | undefined;
   useClickOutside(
     () => dropdownRef,
     () => setDropdownOpen(false)
-  )
-  const client = useApolloClient()
+  );
+  const client = useApolloClient();
   const [yearsQuery] = createResource(async () => {
-    const { data } = await client.query({ query: ALL_YEARS })
-    return data
-  })
+    const { data } = await client.query({ query: ALL_YEARS });
+    return data;
+  });
   const sortedYears = () => {
     // the years returned from the server are in no particular order
-    const sorted = new Array<YearAttribute>()
+    const sorted = new Array<YearAttribute>();
     for (const year of yearsQuery()?.years ?? []) {
-      sorted.push(new YearAttribute(year.label, year.count))
+      sorted.push(new YearAttribute(year.label, year.count));
     }
     // inject the current year if not already present so that the season
     // selection has something to select when year is unset
     //
     // do this before sorting since there may be assets marked as being from the
     // future
-    const currentYear = new Date().getFullYear()
-    const hasCurrentYear = sorted.some((entry) => entry.year === currentYear)
+    const currentYear = new Date().getFullYear();
+    const hasCurrentYear = sorted.some((entry) => entry.year === currentYear);
     if (!hasCurrentYear) {
-      sorted.push(new YearAttribute(currentYear, 0))
+      sorted.push(new YearAttribute(currentYear, 0));
     }
     // sort in reverse chronological order for selection convenience (most
     // recent years near the top of the dropdown menu)
-    sorted.sort((a, b) => b.year - a.year)
-    return sorted
-  }
+    sorted.sort((a, b) => b.year - a.year);
+    return sorted;
+  };
 
   return (
     <Suspense fallback={'...'}>
@@ -450,8 +450,8 @@ function YearSelector(props: YearSelectorProps) {
             <a
               class="dropdown-item"
               on:click={(_) => {
-                props.setyear(null)
-                setDropdownOpen(false)
+                props.setyear(null);
+                setDropdownOpen(false);
               }}
             >
               Any
@@ -461,8 +461,8 @@ function YearSelector(props: YearSelectorProps) {
                 <a
                   class="dropdown-item"
                   on:click={(_) => {
-                    props.setyear(year.year)
-                    setDropdownOpen(false)
+                    props.setyear(year.year);
+                    setDropdownOpen(false);
                   }}
                 >
                   {year.year.toString()}
@@ -473,43 +473,43 @@ function YearSelector(props: YearSelectorProps) {
         </div>
       </div>
     </Suspense>
-  )
+  );
 }
 
 enum Season {
   Winter = 1,
   Spring,
   Summer,
-  Fall,
+  Fall
 }
 
 function labelForSeason(season: Season | null): string {
   switch (season) {
     case Season.Winter:
-      return 'Jan-Mar'
+      return 'Jan-Mar';
     case Season.Spring:
-      return 'Apr-Jun'
+      return 'Apr-Jun';
     case Season.Summer:
-      return 'Jul-Sep'
+      return 'Jul-Sep';
     case Season.Fall:
-      return 'Oct-Dec'
+      return 'Oct-Dec';
     default:
-      return 'Season'
+      return 'Season';
   }
 }
 
 interface SeasonSelectorProps {
-  selectedSeason: Accessor<Season | null>
-  setSeason: (value: Season | null) => void
+  selectedSeason: Accessor<Season | null>;
+  setSeason: (value: Season | null) => void;
 }
 
 function SeasonSelector(props: SeasonSelectorProps) {
-  const [dropdownOpen, setDropdownOpen] = createSignal(false)
-  let dropdownRef: HTMLDivElement | undefined
+  const [dropdownOpen, setDropdownOpen] = createSignal(false);
+  let dropdownRef: HTMLDivElement | undefined;
   useClickOutside(
     () => dropdownRef,
     () => setDropdownOpen(false)
-  )
+  );
 
   return (
     <div
@@ -532,8 +532,8 @@ function SeasonSelector(props: SeasonSelectorProps) {
           <a
             class="dropdown-item"
             on:click={(_) => {
-              props.setSeason(null)
-              setDropdownOpen(false)
+              props.setSeason(null);
+              setDropdownOpen(false);
             }}
           >
             Any
@@ -541,8 +541,8 @@ function SeasonSelector(props: SeasonSelectorProps) {
           <a
             class="dropdown-item"
             on:click={(_) => {
-              props.setSeason(Season.Winter)
-              setDropdownOpen(false)
+              props.setSeason(Season.Winter);
+              setDropdownOpen(false);
             }}
           >
             {labelForSeason(Season.Winter)}
@@ -550,8 +550,8 @@ function SeasonSelector(props: SeasonSelectorProps) {
           <a
             class="dropdown-item"
             on:click={(_) => {
-              props.setSeason(Season.Spring)
-              setDropdownOpen(false)
+              props.setSeason(Season.Spring);
+              setDropdownOpen(false);
             }}
           >
             {labelForSeason(Season.Spring)}
@@ -559,8 +559,8 @@ function SeasonSelector(props: SeasonSelectorProps) {
           <a
             class="dropdown-item"
             on:click={(_) => {
-              props.setSeason(Season.Summer)
-              setDropdownOpen(false)
+              props.setSeason(Season.Summer);
+              setDropdownOpen(false);
             }}
           >
             {labelForSeason(Season.Summer)}
@@ -568,8 +568,8 @@ function SeasonSelector(props: SeasonSelectorProps) {
           <a
             class="dropdown-item"
             on:click={(_) => {
-              props.setSeason(Season.Fall)
-              setDropdownOpen(false)
+              props.setSeason(Season.Fall);
+              setDropdownOpen(false);
             }}
           >
             {labelForSeason(Season.Fall)}
@@ -577,7 +577,7 @@ function SeasonSelector(props: SeasonSelectorProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 const ALL_MEDIA_TYPES: TypedDocumentNode<Query, Record<string, never>> = gql`
@@ -587,34 +587,34 @@ const ALL_MEDIA_TYPES: TypedDocumentNode<Query, Record<string, never>> = gql`
       count
     }
   }
-`
+`;
 
 interface MediaTypeSelectorProps {
-  selectedMediaType: Accessor<string | null>
-  setMediaType: (value: string | null) => void
+  selectedMediaType: Accessor<string | null>;
+  setMediaType: (value: string | null) => void;
 }
 
 function MediaTypeSelector(props: MediaTypeSelectorProps) {
-  const [dropdownOpen, setDropdownOpen] = createSignal(false)
-  let dropdownRef: HTMLDivElement | undefined
+  const [dropdownOpen, setDropdownOpen] = createSignal(false);
+  let dropdownRef: HTMLDivElement | undefined;
   useClickOutside(
     () => dropdownRef,
     () => setDropdownOpen(false)
-  )
-  const client = useApolloClient()
+  );
+  const client = useApolloClient();
   const [mediaTypesQuery] = createResource(async () => {
-    const { data } = await client.query({ query: ALL_MEDIA_TYPES })
-    return data
-  })
+    const { data } = await client.query({ query: ALL_MEDIA_TYPES });
+    return data;
+  });
   const sortedMediaTypes = () => {
     // the media types returned from the server are in no particular order
-    const sorted = []
+    const sorted = [];
     for (const mediaType of mediaTypesQuery()?.mediaTypes ?? []) {
-      sorted.push({ label: mediaType.label, count: mediaType.count })
+      sorted.push({ label: mediaType.label, count: mediaType.count });
     }
-    sorted.sort((a, b) => a.label.localeCompare(b.label))
-    return sorted
-  }
+    sorted.sort((a, b) => a.label.localeCompare(b.label));
+    return sorted;
+  };
 
   return (
     <Suspense fallback={'...'}>
@@ -638,8 +638,8 @@ function MediaTypeSelector(props: MediaTypeSelectorProps) {
             <a
               class="dropdown-item"
               on:click={(_) => {
-                props.setMediaType(null)
-                setDropdownOpen(false)
+                props.setMediaType(null);
+                setDropdownOpen(false);
               }}
             >
               Any
@@ -649,8 +649,8 @@ function MediaTypeSelector(props: MediaTypeSelectorProps) {
                 <a
                   class="dropdown-item"
                   on:click={(_) => {
-                    props.setMediaType(mediaType.label)
-                    setDropdownOpen(false)
+                    props.setMediaType(mediaType.label);
+                    setDropdownOpen(false);
                   }}
                 >
                   {mediaType.label}
@@ -661,12 +661,12 @@ function MediaTypeSelector(props: MediaTypeSelectorProps) {
         </div>
       </div>
     </Suspense>
-  )
+  );
 }
 
 interface SortOrderSelectorProps {
-  selectedSortOrder: Accessor<SortOrder>
-  setSortOrder: (order: SortOrder) => void
+  selectedSortOrder: Accessor<SortOrder>;
+  setSortOrder: (order: SortOrder) => void;
 }
 
 function SortOrderSelector(props: SortOrderSelectorProps) {
@@ -676,7 +676,7 @@ function SortOrderSelector(props: SortOrderSelectorProps) {
         <button
           class="button"
           on:click={(_) => {
-            props.setSortOrder(SortOrder.Ascending)
+            props.setSortOrder(SortOrder.Ascending);
           }}
         >
           <span class="icon">
@@ -688,7 +688,7 @@ function SortOrderSelector(props: SortOrderSelectorProps) {
         <button
           class="button"
           on:click={(_) => {
-            props.setSortOrder(SortOrder.Descending)
+            props.setSortOrder(SortOrder.Descending);
           }}
         >
           <span class="icon">
@@ -697,7 +697,7 @@ function SortOrderSelector(props: SortOrderSelectorProps) {
         </button>
       </Match>
     </Switch>
-  )
+  );
 }
 
-export default Home
+export default Home;

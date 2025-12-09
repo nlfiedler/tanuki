@@ -1,8 +1,8 @@
 # Use RocksDB
 
-* Status: accepted
-* Deciders: Nathan Fiedler
-* Date: 2025-03-21
+- Status: accepted
+- Deciders: Nathan Fiedler
+- Date: 2025-03-21
 
 ## Context
 
@@ -32,5 +32,5 @@ Disk usage is a bit less than RocksDB, but load time of 21,500 assets is 6 minut
 
 ## Links
 
-* DuckDB [website](https://duckdb.org)
-* duckdb-rs [GitHub](https://github.com/duckdb/duckdb-rs)
+- DuckDB [website](https://duckdb.org)
+- duckdb-rs [GitHub](https://github.com/duckdb/duckdb-rs)

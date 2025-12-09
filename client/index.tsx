@@ -2,15 +2,15 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 /* @refresh reload */
-import { render } from 'solid-js/web'
-import { Router, Route } from '@solidjs/router'
-import './assets/main.scss'
-import { ApolloProvider } from './ApolloProvider.tsx'
-import Navbar from './components/Navbar.tsx'
-import AssetDetails from './pages/Details.tsx'
-import Home from './pages/Home.tsx'
-import Pending from './pages/Pending.tsx'
-import Upload from './pages/Upload.tsx'
+import { render } from 'solid-js/web';
+import { Router, Route } from '@solidjs/router';
+import './assets/main.scss';
+import { ApolloProvider } from './ApolloProvider.tsx';
+import Navbar from './components/Navbar.tsx';
+import AssetDetails from './pages/Details.tsx';
+import Home from './pages/Home.tsx';
+import Pending from './pages/Pending.tsx';
+import Upload from './pages/Upload.tsx';
 
 function App(props: any) {
   return (
@@ -18,7 +18,7 @@ function App(props: any) {
       <Navbar />
       {props.children}
     </>
-  )
+  );
 }
 
 render(
@@ -34,7 +34,7 @@ render(
     </ApolloProvider>
   ),
   document.getElementById('root')!
-)
+);
 
 function NotFound() {
   return (
@@ -45,5 +45,5 @@ function NotFound() {
         <p>Try using the navigation options above.</p>
       </div>
     </section>
-  )
+  );
 }

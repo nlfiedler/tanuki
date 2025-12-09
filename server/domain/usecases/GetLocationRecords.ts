@@ -5,7 +5,11 @@ import assert from 'node:assert';
 import { Location } from 'tanuki/server/domain/entities/Location.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
 
-export default ({ recordRepository }: { recordRepository: RecordRepository; }) => {
+export default ({
+  recordRepository
+}: {
+  recordRepository: RecordRepository;
+}) => {
   assert.ok(recordRepository, 'record repository must be defined');
   /**
    * Return all of the location records in the record repository. A location

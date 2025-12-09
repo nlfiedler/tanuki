@@ -1,9 +1,18 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { type Accessor, type Setter, createSignal, createEffect, onCleanup } from 'solid-js';
+import {
+  type Accessor,
+  type Setter,
+  createSignal,
+  createEffect,
+  onCleanup
+} from 'solid-js';
 
-function useLocalStorage<T>(key: string, initialValue: T): [Accessor<T>, Setter<T>] {
+function useLocalStorage<T>(
+  key: string,
+  initialValue: T
+): [Accessor<T>, Setter<T>] {
   const readValue = () => {
     try {
       const item = window.localStorage.getItem(key);

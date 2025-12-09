@@ -2,7 +2,6 @@
 ** Rewrite 2025
 *** commit =230801d= was when old JS code was removed
 *** commit =3263ae7= was last Rust commit
-*** TODO set up Prettier to format .ts and .tsx files
 *** TODO search query language
 **** see mujina/src/query.js for a start
 **** maybe lexer can implement =Symbol.iterator= instead of =run()=

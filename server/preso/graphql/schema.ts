@@ -37,13 +37,23 @@ export const typeDefs = await fs.readFile(schemaPath, 'utf8');
 
 export const resolvers: Resolvers = {
   Query: {
-    async asset(_parent: any, args: QueryAssetArgs, _context: any, _info: GraphQLResolveInfo): Promise<GQLAsset> {
+    async asset(
+      _parent: any,
+      args: QueryAssetArgs,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<GQLAsset> {
       const getAsset = container.resolve('getAsset');
       const output = await getAsset(args.id);
       return assetToGQL(output);
     },
 
-    async count(_parent: any, _args: any, _context: any, _info: GraphQLResolveInfo) {
+    async count(
+      _parent: any,
+      _args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ) {
       const countAssets = container.resolve('countAssets');
       try {
         return countAssets();
@@ -52,54 +62,99 @@ export const resolvers: Resolvers = {
       }
     },
 
-    async tags(_parent: any, _args: any, _context: any, _info: GraphQLResolveInfo) {
+    async tags(
+      _parent: any,
+      _args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ) {
       const getTags = container.resolve('getTags');
       return getTags();
     },
 
-    async locationParts(_parent: any, _args: any, _context: any, _info: GraphQLResolveInfo) {
+    async locationParts(
+      _parent: any,
+      _args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ) {
       const getLocationParts = container.resolve('getLocationParts');
       return getLocationParts();
     },
 
-    async locationRecords(_parent: any, args: any, _context: any, _info: GraphQLResolveInfo): Promise<Location[]> {
+    async locationRecords(
+      _parent: any,
+      args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<Location[]> {
       const getLocationRecords = container.resolve('getLocationRecords');
       return await getLocationRecords();
     },
 
-    async years(_parent: any, _args: any, _context: any, _info: GraphQLResolveInfo) {
+    async years(
+      _parent: any,
+      _args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ) {
       const getYears = container.resolve('getYears');
       return getYears();
     },
 
-    async mediaTypes(_parent: any, _args: any, _context: any, _info: GraphQLResolveInfo) {
+    async mediaTypes(
+      _parent: any,
+      _args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ) {
       const getMediaTypes = container.resolve('getMediaTypes');
       return getMediaTypes();
     },
 
-    async pending(_parent: any, args: QueryPendingArgs, _context: any, _info: GraphQLResolveInfo): Promise<SearchMeta> {
+    async pending(
+      _parent: any,
+      args: QueryPendingArgs,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<SearchMeta> {
       const params = pendingParamsFromGQL(args.params);
       const findPending = container.resolve('findPending');
       const results = await findPending(params);
       return paginateResults(results, args.offset, args.limit);
     },
 
-    async search(_parent: any, args: QuerySearchArgs, _context: any, _info: GraphQLResolveInfo): Promise<SearchMeta> {
+    async search(
+      _parent: any,
+      args: QuerySearchArgs,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<SearchMeta> {
       const params = searchParamsFromGQL(args.params);
       const searchAssets = container.resolve('searchAssets');
       const results = await searchAssets(params);
       return paginateResults(results, args.offset, args.limit);
-    },
+    }
   },
 
   Mutation: {
-    async import(_parent: any, args: any, _context: any, _info: GraphQLResolveInfo): Promise<number> {
+    async import(
+      _parent: any,
+      args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<number> {
       const uploadsPath = settings.get('UPLOAD_PATH');
       const importUploads = container.resolve('importUploads');
       return await importUploads(uploadsPath);
     },
 
-    async update(_parent: any, args: MutationUpdateArgs, _context: any, _info: GraphQLResolveInfo): Promise<GQLAsset> {
+    async update(
+      _parent: any,
+      args: MutationUpdateArgs,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<GQLAsset> {
       const updateAsset = container.resolve('updateAsset');
       const input = assetInputFromGQL(args.id, args.asset);
       const output = await updateAsset(input);
@@ -108,7 +163,11 @@ export const resolvers: Resolvers = {
   }
 };
 
-function paginateResults(results: SearchResult[], offset?: number | null, limit?: number | null): SearchMeta {
+function paginateResults(
+  results: SearchResult[],
+  offset?: number | null,
+  limit?: number | null
+): SearchMeta {
   const count = results.length;
   const off = boundedIntValue(offset, 0, 0, count);
   const lim = boundedIntValue(limit, 16, 1, 256);
@@ -195,7 +254,10 @@ function boundedIntValue(
   return Math.min(Math.max(isNaN(v) ? fallback : v, minimum), maximum);
 }
 
-function assetInputFromGQL(assetId: string, incoming: GQLAssetInput): AssetInput {
+function assetInputFromGQL(
+  assetId: string,
+  incoming: GQLAssetInput
+): AssetInput {
   const outgoing = new AssetInput(assetId);
   if (Array.isArray(incoming.tags)) {
     outgoing.setTags(incoming.tags);
@@ -237,6 +299,6 @@ function assetToGQL(entity: Asset): GQLAsset {
     mediaType: entity.mediaType,
     tags: entity.tags,
     caption: entity.caption,
-    location: entity.location,
+    location: entity.location
   };
 }

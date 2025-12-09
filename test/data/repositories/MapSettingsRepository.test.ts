@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from 'bun:test';
 import { MapSettingsRepository } from 'tanuki/server/data/repositories/MapSettingsRepository.ts';
 
 describe('MapSettingsRepository', function () {

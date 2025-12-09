@@ -15,7 +15,11 @@ import { type SettingsRepository } from 'tanuki/server/domain/repositories/Setti
 class LocalBlobRepository implements BlobRepository {
   basepath: string;
 
-  constructor({ settingsRepository }: { settingsRepository: SettingsRepository; }) {
+  constructor({
+    settingsRepository
+  }: {
+    settingsRepository: SettingsRepository;
+  }) {
     this.basepath = settingsRepository.get('ASSETS_PATH');
     assert.ok(this.basepath, 'missing ASSETS_PATH environment variable');
   }
@@ -53,7 +57,11 @@ class LocalBlobRepository implements BlobRepository {
   }
 
   /** @inheritdoc */
-  async thumbnail(assetId: string, width: number, height: number): Promise<Buffer> {
+  async thumbnail(
+    assetId: string,
+    width: number,
+    height: number
+  ): Promise<Buffer> {
     // fit the image into a box of the given size, convert to jpeg
     return sharp(this.blobPath(assetId), { autoOrient: true })
       .resize({
