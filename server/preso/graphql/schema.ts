@@ -27,6 +27,7 @@ import type {
   PendingParams as GQLPendingParams,
   SearchParams as GQLSearchParams
 } from 'tanuki/generated/graphql.ts';
+import logger from 'tanuki/server/logger.ts';
 
 const settings = container.resolve('settingsRepository');
 
@@ -44,7 +45,11 @@ export const resolvers: Resolvers = {
 
     async count(_parent: any, _args: any, _context: any, _info: GraphQLResolveInfo) {
       const countAssets = container.resolve('countAssets');
-      return countAssets();
+      try {
+        return countAssets();
+      } catch (err: any) {
+        logger.error('record count failed: %o', err);
+      }
     },
 
     async tags(_parent: any, _args: any, _context: any, _info: GraphQLResolveInfo) {
