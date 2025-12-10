@@ -30,7 +30,7 @@ router.post(
     // "last modified" date-time in Unix time as a string in 'last_modified'
     const modified =
       'last_modified' in req.body
-        ? new Date(parseInt(req.body.last_modified))
+        ? new Date(Number.parseInt(req.body.last_modified))
         : new Date();
     const file = req.file!;
     const asset = await importAsset(
@@ -45,8 +45,8 @@ router.post(
 );
 
 router.get('/thumbnail/:w/:h/:id', async function (req, res, _next) {
-  const width = parseInt(req.params.w);
-  const height = parseInt(req.params.h);
+  const width = Number.parseInt(req.params.w);
+  const height = Number.parseInt(req.params.h);
   const id = req.params.id;
   try {
     const result = await blobs.thumbnail(id, width, height);
@@ -58,8 +58,8 @@ router.get('/thumbnail/:w/:h/:id', async function (req, res, _next) {
       // send() handles Content-Length and ETag support
       res.send(result);
     }
-  } catch (err: any) {
-    logger.error(err);
+  } catch (error: any) {
+    logger.error(error);
     res.redirect('/placeholder.svg');
   }
 });
@@ -68,9 +68,7 @@ router.get('/raw/:id', async function (req, res, next) {
   const assetId = req.params.id;
   const filepath = blobs.blobPath(assetId);
   const asset = await records.getAssetById(assetId);
-  const mimetype = asset.mediaType
-    ? asset.mediaType
-    : 'application/octet-stream';
+  const mimetype = asset.mediaType ?? 'application/octet-stream';
   // sendFile() handles Content-Length, ETag, and range requests
   res.sendFile(
     filepath,

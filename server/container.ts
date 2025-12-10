@@ -8,25 +8,25 @@ import {
   InjectionMode,
   Lifetime
 } from 'awilix';
-import CountAssets from 'tanuki/server/domain/usecases/CountAssets.ts';
-import DumpAssets from 'tanuki/server/domain/usecases/DumpAssets.ts';
-import FindPending from 'tanuki/server/domain/usecases/FindPending.ts';
-import GetAsset from 'tanuki/server/domain/usecases/GetAsset.ts';
-import GetLocationParts from 'tanuki/server/domain/usecases/GetLocationParts.ts';
-import GetLocationRecords from 'tanuki/server/domain/usecases/GetLocationRecords.ts';
-import GetMediaTypes from 'tanuki/server/domain/usecases/GetMediaTypes.ts';
-import GetTags from 'tanuki/server/domain/usecases/GetTags.ts';
-import GetYears from 'tanuki/server/domain/usecases/GetYears.ts';
-import LoadAssets from 'tanuki/server/domain/usecases/LoadAssets.ts';
-import ImportAsset from 'tanuki/server/domain/usecases/ImportAsset.ts';
-import ImportUploads from 'tanuki/server/domain/usecases/ImportUploads.ts';
-import SearchAssets from 'tanuki/server/domain/usecases/SearchAssets.ts';
-import UpdateAsset from 'tanuki/server/domain/usecases/UpdateAsset.ts';
-import { CouchDBRecordRepository } from 'tanuki/server/data/repositories/CouchDBRecordRepository.ts';
-import { DummyLocationRepository } from 'tanuki/server/data/repositories/DummyLocationRepository.ts';
-import { EnvSettingsRepository } from 'tanuki/server/data/repositories/EnvSettingsRepository.ts';
-import { GoogleLocationRepository } from 'tanuki/server/data/repositories/GoogleLocationRepository.ts';
-import { LocalBlobRepository } from 'tanuki/server/data/repositories/LocalBlobRepository.ts';
+import CountAssets from 'tanuki/server/domain/usecases/count-assets.ts';
+import DumpAssets from 'tanuki/server/domain/usecases/dump-assets.ts';
+import FindPending from 'tanuki/server/domain/usecases/find-pending.ts';
+import GetAsset from 'tanuki/server/domain/usecases/get-asset.ts';
+import GetLocationParts from 'tanuki/server/domain/usecases/get-location-parts.ts';
+import GetLocationRecords from 'tanuki/server/domain/usecases/get-location-records.ts';
+import GetMediaTypes from 'tanuki/server/domain/usecases/get-media-types.ts';
+import GetTags from 'tanuki/server/domain/usecases/get-tags.ts';
+import GetYears from 'tanuki/server/domain/usecases/get-years.ts';
+import LoadAssets from 'tanuki/server/domain/usecases/load-assets.ts';
+import ImportAsset from 'tanuki/server/domain/usecases/import-asset.ts';
+import ImportUploads from 'tanuki/server/domain/usecases/import-uploads.ts';
+import SearchAssets from 'tanuki/server/domain/usecases/search-assets.ts';
+import UpdateAsset from 'tanuki/server/domain/usecases/update-asset.ts';
+import { CouchDBRecordRepository } from 'tanuki/server/data/repositories/couchdb-record-repository.ts';
+import { DummyLocationRepository } from 'tanuki/server/data/repositories/dummy-location-repository.ts';
+import { EnvSettingsRepository } from 'tanuki/server/data/repositories/env-settings-repository.ts';
+import { GoogleLocationRepository } from 'tanuki/server/data/repositories/google-location-repository.ts';
+import { LocalBlobRepository } from 'tanuki/server/data/repositories/local-bob-repository.ts';
 
 // create the injection container
 const container = createContainer({

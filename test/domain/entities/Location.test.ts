@@ -5,7 +5,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   Coordinates,
   Location
-} from 'tanuki/server/domain/entities/Location.ts';
+} from 'tanuki/server/domain/entities/location.ts';
 
 describe('Location entity', function () {
   test('should indicate if it has values or not', function () {
@@ -108,9 +108,9 @@ describe('Location entity', function () {
 describe('Coordinates entity', function () {
   test('should return decimals from coordinates', function () {
     const nw = new Coordinates('N', [34, 37, 17], 'W', [135, 35, 21]);
-    expect(nw.intoDecimals()).toEqual([34.62138888888889, -135.58916666666667]);
+    expect(nw.intoDecimals()).toEqual([34.621_388_888_888_89, -135.589_166_666_666_67]);
 
     const se = new Coordinates('S', [34, 37, 17], 'E', [135, 35, 21]);
-    expect(se.intoDecimals()).toEqual([-34.62138888888889, 135.58916666666667]);
+    expect(se.intoDecimals()).toEqual([-34.621_388_888_888_89, 135.589_166_666_666_67]);
   });
 });

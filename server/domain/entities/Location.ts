@@ -150,15 +150,11 @@ class Location {
    * location will be lowercased and compared to the query as-is.
    */
   partialMatch(query: string): boolean {
-    if (this.label) {
-      if (this.label.toLowerCase() == query) {
-        return true;
-      }
+    if (this.label && this.label.toLowerCase() == query) {
+      return true;
     }
-    if (this.city) {
-      if (this.city.toLowerCase() == query) {
-        return true;
-      }
+    if (this.city && this.city.toLowerCase() == query) {
+      return true;
     }
     if (this.region) {
       return this.region.toLowerCase() == query;

@@ -16,7 +16,7 @@ import {
 import { useParams } from '@solidjs/router';
 import { action, useAction, useSubmission } from '@solidjs/router';
 import { type TypedDocumentNode, gql } from '@apollo/client';
-import { useApolloClient } from '../ApolloProvider';
+import { useApolloClient } from '../apollo-provider';
 import type {
   Asset,
   Mutation,
@@ -243,8 +243,8 @@ function AssetForm(props: AssetFormProps) {
           }
         }
       });
-    } catch (err) {
-      console.error('asset update failed:', err);
+    } catch (error) {
+      console.error('asset update failed:', error);
       return { ok: false };
     }
     return { ok: true };

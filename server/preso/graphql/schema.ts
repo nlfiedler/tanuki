@@ -5,16 +5,16 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { GraphQLResolveInfo } from 'graphql';
 import container from 'tanuki/server/container.ts';
-import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
-import { AssetInput } from 'tanuki/server/domain/entities/AssetInput.ts';
-import { Location } from 'tanuki/server/domain/entities/Location.ts';
+import { Asset } from 'tanuki/server/domain/entities/asset.ts';
+import { AssetInput } from 'tanuki/server/domain/entities/asset.ts';
+import { Location } from 'tanuki/server/domain/entities/location.ts';
 import {
   PendingParams,
   SearchParams,
   SortField,
-  SortOrder
-} from 'tanuki/server/domain/entities/SearchParams.ts';
-import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
+  SortOrder,
+  SearchResult
+} from 'tanuki/server/domain/entities/search.ts';
 import type {
   Asset as GQLAsset,
   AssetInput as GQLAssetInput,
@@ -32,7 +32,7 @@ import logger from 'tanuki/server/logger.ts';
 const settings = container.resolve('settingsRepository');
 
 // The GraphQL schema
-const schemaPath = path.join(__dirname, 'schema.graphql');
+const schemaPath = path.join(import.meta.dirname, 'schema.graphql');
 export const typeDefs = await fs.readFile(schemaPath, 'utf8');
 
 export const resolvers: Resolvers = {
@@ -57,8 +57,8 @@ export const resolvers: Resolvers = {
       const countAssets = container.resolve('countAssets');
       try {
         return countAssets();
-      } catch (err: any) {
-        logger.error('record count failed: %o', err);
+      } catch (error: any) {
+        logger.error('record count failed: %o', error);
       }
     },
 
@@ -250,8 +250,8 @@ function boundedIntValue(
   minimum: number,
   maximum: number
 ): number {
-  const v: number = value ? value : fallback;
-  return Math.min(Math.max(isNaN(v) ? fallback : v, minimum), maximum);
+  const v: number = value ?? fallback;
+  return Math.min(Math.max(Number.isNaN(v) ? fallback : v, minimum), maximum);
 }
 
 function assetInputFromGQL(

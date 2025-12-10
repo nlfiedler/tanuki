@@ -12,7 +12,7 @@ import {
 import { action, redirect, useAction, useSubmission } from '@solidjs/router';
 import { type TypedDocumentNode, gql } from '@apollo/client';
 import { type Mutation } from 'tanuki/generated/graphql.ts';
-import { useApolloClient } from '../ApolloProvider';
+import { useApolloClient } from '../apollo-provider';
 
 const IMPORT_ASSETS: TypedDocumentNode<Mutation, void> = gql`
   mutation {
@@ -48,8 +48,8 @@ function Upload() {
   const importAction = action(async (): Promise<any> => {
     try {
       await client.mutate({ mutation: IMPORT_ASSETS });
-    } catch (err) {
-      console.error('asset update failed:', err);
+    } catch (error) {
+      console.error('asset update failed:', error);
       // force an early exit so the user has a chance to look at the browser
       // console to see the error message
       return { ok: false };

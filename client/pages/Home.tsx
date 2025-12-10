@@ -14,19 +14,19 @@ import {
 } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { type TypedDocumentNode, gql } from '@apollo/client';
-import { useApolloClient } from '../ApolloProvider';
+import { useApolloClient } from '../apollo-provider.tsx';
 import {
   type QuerySearchArgs,
   type Query,
   SortField,
   SortOrder
 } from 'tanuki/generated/graphql.ts';
-import AttributeChips from '../components/AttributeChips.tsx';
-import CardsGrid from '../components/CardsGrid.tsx';
-import Pagination from '../components/Pagination.tsx';
-import TagSelector from '../components/TagSelector.tsx';
-import useClickOutside from '../hooks/useClickOutside.js';
-import useLocalStorage from '../hooks/useLocalStorage.js';
+import AttributeChips from '../components/attribute-chips.tsx';
+import CardsGrid from '../components/cards-grid.tsx';
+import Pagination from '../components/pagination.tsx';
+import TagSelector from '../components/tag-selector.tsx';
+import useClickOutside from '../hooks/use-click-outside.ts';
+import useLocalStorage from '../hooks/use-local-storage.ts';
 
 const SEARCH_ASSETS: TypedDocumentNode<Query, QuerySearchArgs> = gql`
   query Search($params: SearchParams!, $offset: Int, $limit: Int) {
@@ -72,22 +72,26 @@ function buildParams({
   if (year && season) {
     // JavaScript months are zero-based
     switch (season) {
-      case Season.Winter:
+      case Season.Winter: {
         after = new Date(year, 0, 1, 0, 0);
         before = new Date(year, 3, 1, 0, 0);
         break;
-      case Season.Spring:
+      }
+      case Season.Spring: {
         after = new Date(year, 3, 1, 0, 0);
         before = new Date(year, 6, 1, 0, 0);
         break;
-      case Season.Summer:
+      }
+      case Season.Summer: {
         after = new Date(year, 6, 1, 0, 0);
         before = new Date(year, 9, 1, 0, 0);
         break;
-      case Season.Fall:
+      }
+      case Season.Fall: {
         after = new Date(year, 9, 1, 0, 0);
         before = new Date(year + 1, 0, 1, 0, 0);
         break;
+      }
     }
   } else if (year) {
     // JavaScript months are zero-based
@@ -95,7 +99,7 @@ function buildParams({
     before = new Date(year + 1, 0, 1, 0, 0);
   } else if (tags.length === 0 && locations.length === 0) {
     // if not searching by tags or locations, then show all assets
-    before = new Date(275760, 8, 12);
+    before = new Date(275_760, 8, 12);
   }
   return {
     params: {
@@ -171,7 +175,7 @@ function Home() {
               <TagSelector
                 addfun={(value) => {
                   setSelectedTags((tags) => {
-                    if (tags.indexOf(value) < 0) {
+                    if (!tags.includes(value)) {
                       // return a new array so SolidJS will take note
                       return [...tags, value];
                     }
@@ -185,7 +189,7 @@ function Home() {
               <LocationSelector
                 addfun={(value) => {
                   setSelectedLocations((locations) => {
-                    if (locations.indexOf(value) < 0) {
+                    if (!locations.includes(value)) {
                       // return a new array so SolidJS will take note
                       return [...locations, value];
                     }
@@ -380,11 +384,7 @@ class YearAttribute {
   count: number;
 
   constructor(year: number | string, count: number) {
-    if (typeof year === 'string') {
-      this.year = parseInt(year) || -1;
-    } else {
-      this.year = year;
-    }
+    this.year = typeof year === 'string' ? Number.parseInt(year) || -1 : year;
     this.count = count;
   }
 }
@@ -485,16 +485,21 @@ enum Season {
 
 function labelForSeason(season: Season | null): string {
   switch (season) {
-    case Season.Winter:
+    case Season.Winter: {
       return 'Jan-Mar';
-    case Season.Spring:
+    }
+    case Season.Spring: {
       return 'Apr-Jun';
-    case Season.Summer:
+    }
+    case Season.Summer: {
       return 'Jul-Sep';
-    case Season.Fall:
+    }
+    case Season.Fall: {
       return 'Oct-Dec';
-    default:
+    }
+    default: {
       return 'Season';
+    }
   }
 }
 

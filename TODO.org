@@ -28,6 +28,8 @@
 - [ ] search selected page
 *** TODO ~Replace~ button on details page
 *** TODO asset browsing with left/right buttons
+**** would be neat if they appeared over the image on hover, like a carousel
+**** c.f. https://buefy.org/documentation/carousel
 *** TODO check browser console for issues
 *** TODO consider how record repository can implement sorting and pagination
 **** objective would be to improve search performance if necessary
@@ -106,6 +108,11 @@
 *** hovering over asset should show larger version in a large tooltip
 ** Home
 *** hover button: download raw asset
+**** https://stackoverflow.com/questions/56640043/make-a-button-appear-when-hover-over-a-image
+**** https://www.w3schools.com/howto/howto_css_image_overlay_icon.asp
+**** https://codepen.io/veronicadev/pen/WJyOwG
+**** https://dev.to/sanchithasr/how-to-overlay-icons-on-top-of-images-with-css-1kb9
+**** https://www.tutorialspoint.com/how-to-create-image-overlay-icon-effect-on-hover-with-css
 *** adaptive photo layout with flexbox: https://css-tricks.com/adaptive-photo-layout-with-flexbox/
 *** image cards wrapped to window: https://codepen.io/jwjcmw/pen/GMQMPW
 *** make the selectors row sticky when scrolling

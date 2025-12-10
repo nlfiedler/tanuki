@@ -26,8 +26,9 @@ database
   .then(() => {
     logger.info('database initialization complete');
   })
-  .catch((err: any) => {
-    logger.error('database initialization error:', err);
+  // eslint-disable-next-line unicorn/prefer-top-level-await
+  .catch((error: any) => {
+    logger.error('database initialization error:', error);
   });
 
 // set up Express.js application
@@ -40,11 +41,11 @@ app.use(
   })
 );
 // configure for development or production
-if (process.env.NODE_ENV !== 'production') {
-  app.use(morgan('dev'));
-} else {
+if (process.env.NODE_ENV === 'production') {
   app.use(morgan('combined'));
   ViteExpress.config({ mode: 'production' });
+} else {
+  app.use(morgan('dev'));
 }
 
 // set up Apollo Server
@@ -69,7 +70,7 @@ app.use('/graphql', cors(), express.json(), expressMiddleware(graphqlServer));
 app.use('/assets', assetsRouter);
 app.use('/records', recordsRouter);
 
-const port = parseInt(process.env['PORT'] || '3000');
+const port = Number.parseInt(process.env['PORT'] || '3000');
 ViteExpress.listen(app, port, () => logger.info(`Server listening at ${port}`));
 
 // n.b. when running in production, vite-express will run in "viteless" mode and

@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import { describe, expect, test } from 'bun:test';
-import { Geocoded, Location } from 'tanuki/server/domain/entities/Location.ts';
+import { Geocoded, Location } from 'tanuki/server/domain/entities/location.ts';
 import * as helpers from 'tanuki/server/domain/usecases/helpers.ts';
 
 describe('File checksum helper', function () {

@@ -25,7 +25,7 @@ const router = express.Router();
 router.post('/load', upload.single('dump'), async function (req, res, _next) {
   if (req.is('multipart/form-data')) {
     const file = req.file!;
-    const raw = await fs.readFile(file.path, { encoding: 'utf-8' });
+    const raw = await fs.readFile(file.path, { encoding: 'utf8' });
     const lines = raw.split(/\r?\n/).filter((ln) => ln.length > 0);
     const inputs = lines.map((ln) => JSON.parse(ln));
     await loadAssets(inputs);

@@ -5,12 +5,12 @@
 import { render } from 'solid-js/web';
 import { Router, Route } from '@solidjs/router';
 import './assets/main.scss';
-import { ApolloProvider } from './ApolloProvider.tsx';
-import Navbar from './components/Navbar.tsx';
-import AssetDetails from './pages/Details.tsx';
-import Home from './pages/Home.tsx';
-import Pending from './pages/Pending.tsx';
-import Upload from './pages/Upload.tsx';
+import { ApolloProvider } from './apollo-provider.tsx';
+import Navbar from './components/navbar.tsx';
+import AssetDetails from './pages/details.tsx';
+import Home from './pages/home.tsx';
+import Pending from './pages/pending.tsx';
+import Upload from './pages/upload.tsx';
 
 function App(props: any) {
   return (
@@ -33,7 +33,7 @@ render(
       </Router>
     </ApolloProvider>
   ),
-  document.getElementById('root')!
+  document.querySelector('#root')!
 );
 
 function NotFound() {

@@ -15,7 +15,7 @@ import {
 } from 'solid-js';
 import { A, action, useAction, useSubmission } from '@solidjs/router';
 import { type TypedDocumentNode, gql } from '@apollo/client';
-import { useApolloClient } from '../ApolloProvider';
+import { useApolloClient } from '../apollo-provider.tsx';
 import {
   type Location,
   type MutationUpdateArgs,
@@ -26,13 +26,13 @@ import {
   SortField as GQLSortField,
   SortOrder as GQLSortOrder
 } from 'tanuki/generated/graphql.ts';
-import AttributeChips from '../components/AttributeChips.tsx';
-import Pagination from '../components/Pagination.tsx';
-import TagSelector from '../components/TagSelector.tsx';
+import AttributeChips from '../components/attribute-chips.tsx';
+import Pagination from '../components/pagination.tsx';
+import TagSelector from '../components/tag-selector.tsx';
 import * as format from '../helpers/formatting.ts';
 import * as parse from '../helpers/parsing.ts';
-import useClickOutside from '../hooks/useClickOutside.js';
-import useLocalStorage from '../hooks/useLocalStorage.js';
+import useClickOutside from '../hooks/use-click-outside.ts';
+import useLocalStorage from '../hooks/use-local-storage.ts';
 
 const PENDING_ASSETS: TypedDocumentNode<Query, QueryPendingArgs> = gql`
   query Pending($params: PendingParams!, $offset: Int, $limit: Int) {
@@ -158,8 +158,8 @@ function Pending() {
             asset: { tags, location, datetime }
           }
         });
-      } catch (err) {
-        console.error('asset update failed:', err);
+      } catch (error) {
+        console.error('asset update failed:', error);
         // force an early exit so the user has a chance to look at the browser
         // console to see the error message
         return { ok: false };
@@ -218,7 +218,7 @@ function Pending() {
               <TagSelector
                 addfun={(value) => {
                   setSelectedTags((tags) => {
-                    if (tags.indexOf(value) < 0) {
+                    if (!tags.includes(value)) {
                       // return a new array so SolidJS will take note
                       return [...tags, value];
                     }
@@ -441,47 +441,57 @@ class SortCombo {
 
   get iconClass(): string {
     switch (this.value) {
-      case SortFieldOrder.DateAsc:
+      case SortFieldOrder.DateAsc: {
         return 'fa-solid fa-arrow-down-1-9';
-      case SortFieldOrder.DateDesc:
+      }
+      case SortFieldOrder.DateDesc: {
         return 'fa-solid fa-arrow-up-9-1';
-      case SortFieldOrder.FileAsc:
+      }
+      case SortFieldOrder.FileAsc: {
         return 'fa-solid fa-arrow-down-a-z';
-      case SortFieldOrder.FileDesc:
+      }
+      case SortFieldOrder.FileDesc: {
         return 'fa-solid fa-arrow-up-z-a';
+      }
     }
   }
 
   get label(): string {
     switch (this.value) {
       case SortFieldOrder.DateAsc:
-      case SortFieldOrder.DateDesc:
+      case SortFieldOrder.DateDesc: {
         return 'Date';
+      }
       case SortFieldOrder.FileAsc:
-      case SortFieldOrder.FileDesc:
+      case SortFieldOrder.FileDesc: {
         return 'Filename';
+      }
     }
   }
 
   get sortField(): GQLSortField {
     switch (this.value) {
       case SortFieldOrder.DateAsc:
-      case SortFieldOrder.DateDesc:
+      case SortFieldOrder.DateDesc: {
         return GQLSortField.Date;
+      }
       case SortFieldOrder.FileAsc:
-      case SortFieldOrder.FileDesc:
+      case SortFieldOrder.FileDesc: {
         return GQLSortField.Filename;
+      }
     }
   }
 
   get sortOrder(): GQLSortOrder {
     switch (this.value) {
       case SortFieldOrder.DateAsc:
-      case SortFieldOrder.FileAsc:
+      case SortFieldOrder.FileAsc: {
         return GQLSortOrder.Ascending;
+      }
       case SortFieldOrder.DateDesc:
-      case SortFieldOrder.FileDesc:
+      case SortFieldOrder.FileDesc: {
         return GQLSortOrder.Descending;
+      }
     }
   }
 }

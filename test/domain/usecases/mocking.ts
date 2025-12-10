@@ -2,17 +2,17 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import { mock } from 'bun:test';
-import { Asset } from 'tanuki/server/domain/entities/Asset.ts';
-import { AttributeCount } from 'tanuki/server/domain/entities/AttributeCount.ts';
+import { Asset } from 'tanuki/server/domain/entities/asset.ts';
+import { AttributeCount } from 'tanuki/server/domain/entities/attributes.ts';
 import {
   Coordinates,
   Geocoded,
   Location
-} from 'tanuki/server/domain/entities/Location.ts';
-import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
-import { type BlobRepository } from 'tanuki/server/domain/repositories/BlobRepository.ts';
-import { type LocationRepository } from 'tanuki/server/domain/repositories/LocationRepository.ts';
-import { type RecordRepository } from 'tanuki/server/domain/repositories/RecordRepository.ts';
+} from 'tanuki/server/domain/entities/location.ts';
+import { SearchResult } from 'tanuki/server/domain/entities/search.ts';
+import { type BlobRepository } from 'tanuki/server/domain/repositories/blob-repository.ts';
+import { type LocationRepository } from 'tanuki/server/domain/repositories/location-repository.ts';
+import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
 
 /**
  * Helper for producing a mock record repository implementation. Any undefined

@@ -12,12 +12,9 @@ import {
   Coordinates,
   Geocoded,
   Location
-} from 'tanuki/server/domain/entities/Location.ts';
-import {
-  SortOrder,
-  SortField
-} from 'tanuki/server/domain/entities/SearchParams.ts';
-import { SearchResult } from 'tanuki/server/domain/entities/SearchResult.ts';
+} from 'tanuki/server/domain/entities/location.ts';
+import { SortOrder, SortField } from 'tanuki/server/domain/entities/search.ts';
+import { SearchResult } from 'tanuki/server/domain/entities/search.ts';
 
 /**
  * Compute the hash digest of the file at the given path. The value will have
@@ -112,7 +109,7 @@ export async function getOriginalDate(
       // } else if (mimetype.startsWith('video/')) {
       //   return getCreationTime(filepath);
     }
-  } catch (err) {
+  } catch {
     // failed to read file/data for whatever reason
     return null;
   }
@@ -122,7 +119,7 @@ export async function getOriginalDate(
 const DATE_REGEXP = new RegExp(
   // https://www.media.mit.edu/pia/Research/deepview/exif.html -- DateTime
   //  yyyy  :    MM  :    dd       HH  :    mm  :    ss
-  '^(\\d{4}):(\\d{2}):(\\d{2}) (\\d{2}):(\\d{2}):(\\d{2})'
+  String.raw`^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})`
 );
 
 /**
@@ -135,11 +132,11 @@ function parseExifDate(value: string): number | null {
     return null;
   }
   return Date.UTC(
-    parseInt(m[1] || '0'),
-    parseInt(m[2] || '0') - 1, // Date uses zero-based month
-    parseInt(m[3] || '0'),
-    parseInt(m[4] || '0'),
-    parseInt(m[5] || '0')
+    Number.parseInt(m[1] || '0'),
+    Number.parseInt(m[2] || '0') - 1, // Date uses zero-based month
+    Number.parseInt(m[3] || '0'),
+    Number.parseInt(m[4] || '0'),
+    Number.parseInt(m[5] || '0')
   );
 }
 
@@ -185,7 +182,7 @@ export async function getCoordinates(
         return coords;
       }
     }
-  } catch (err) {
+  } catch {
     // failed to read file/data for whatever reason
     return null;
   }
@@ -235,30 +232,44 @@ export function sortSearchResults(
   if (order === null) {
     order = SortOrder.Ascending;
   }
-  if (field === SortField.Date) {
-    if (order === SortOrder.Ascending) {
-      results.sort((a, b) => a.datetime.getTime() - b.datetime.getTime());
-    } else {
-      results.sort((a, b) => b.datetime.getTime() - a.datetime.getTime());
+  switch (field) {
+    case SortField.Date: {
+      if (order === SortOrder.Ascending) {
+        results.sort((a, b) => a.datetime.getTime() - b.datetime.getTime());
+      } else {
+        results.sort((a, b) => b.datetime.getTime() - a.datetime.getTime());
+      }
+
+      break;
     }
-  } else if (field === SortField.Identifier) {
-    if (order === SortOrder.Ascending) {
-      results.sort((a, b) => a.assetId.localeCompare(b.assetId));
-    } else {
-      results.sort((a, b) => b.assetId.localeCompare(a.assetId));
+    case SortField.Identifier: {
+      if (order === SortOrder.Ascending) {
+        results.sort((a, b) => a.assetId.localeCompare(b.assetId));
+      } else {
+        results.sort((a, b) => b.assetId.localeCompare(a.assetId));
+      }
+
+      break;
     }
-  } else if (field === SortField.Filename) {
-    if (order === SortOrder.Ascending) {
-      results.sort((a, b) => a.filename.localeCompare(b.filename));
-    } else {
-      results.sort((a, b) => b.filename.localeCompare(a.filename));
+    case SortField.Filename: {
+      if (order === SortOrder.Ascending) {
+        results.sort((a, b) => a.filename.localeCompare(b.filename));
+      } else {
+        results.sort((a, b) => b.filename.localeCompare(a.filename));
+      }
+
+      break;
     }
-  } else if (field === SortField.MediaType) {
-    if (order === SortOrder.Ascending) {
-      results.sort((a, b) => a.mediaType.localeCompare(b.mediaType));
-    } else {
-      results.sort((a, b) => b.mediaType.localeCompare(a.mediaType));
+    case SortField.MediaType: {
+      if (order === SortOrder.Ascending) {
+        results.sort((a, b) => a.mediaType.localeCompare(b.mediaType));
+      } else {
+        results.sort((a, b) => b.mediaType.localeCompare(a.mediaType));
+      }
+
+      break;
     }
+    // No default
   }
 }
 
@@ -279,7 +290,7 @@ export function mergeLocations(
       const outgoing = Location.fromRaw(asset.label, asset.city, asset.region);
       // set or clear the label field
       if (input.label !== null) {
-        if (input.label.length == 0) {
+        if (input.label.length === 0) {
           outgoing.label = null;
         } else {
           outgoing.label = input.label;
@@ -287,7 +298,7 @@ export function mergeLocations(
       }
       // set or clear the city field
       if (input.city !== null) {
-        if (input.city.length == 0) {
+        if (input.city.length === 0) {
           outgoing.city = null;
         } else {
           outgoing.city = input.city;
@@ -295,7 +306,7 @@ export function mergeLocations(
       }
       // set or clear the region field
       if (input.region !== null) {
-        if (input.region.length == 0) {
+        if (input.region.length === 0) {
           outgoing.region = null;
         } else {
           outgoing.region = input.region;
