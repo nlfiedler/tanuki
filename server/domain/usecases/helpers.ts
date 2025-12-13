@@ -443,7 +443,7 @@ function lexLocation(l: CaptionLexer): LexerFun {
         if (ch == '"') {
           break;
         } else {
-          ident = ident.concat(ch);
+          ident += ch;
           l.next();
         }
         ch = l.peek();
@@ -465,7 +465,7 @@ function acceptIdentifier(l: CaptionLexer): string {
     if (isDelimiter(ch)) {
       break;
     } else {
-      ident = ident.concat(ch);
+      ident += ch;
       l.next();
     }
     ch = l.peek();
