@@ -10,6 +10,7 @@ import Navbar from './components/navbar.tsx';
 import AssetDetails from './pages/details.tsx';
 import Home from './pages/home.tsx';
 import Pending from './pages/pending.tsx';
+import Search from './pages/search.tsx';
 import Upload from './pages/upload.tsx';
 
 function App(props: any) {
@@ -27,6 +28,7 @@ render(
       <Router root={App}>
         <Route path="" component={Home} />
         <Route path="/pending" component={Pending} />
+        <Route path="/search" component={Search} />
         <Route path="/upload" component={Upload} />
         <Route path="/asset/:id" component={AssetDetails} />
         <Route path="*paramName" component={NotFound} />

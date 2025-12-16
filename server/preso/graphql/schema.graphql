@@ -146,6 +146,8 @@ type Query {
   pending(params: PendingParams!, offset: Int, limit: Int): SearchMeta!
   "Search for assets by the given parameters."
   search(params: SearchParams!, offset: Int, limit: Int): SearchMeta!
+  "Scan all assets and compare to the given query string."
+  scan(query: String!, sortField: SortField, sortOrder: SortOrder, offset: Int, limit: Int): SearchMeta!
   "Retrieve the full location records with label, city, and region."
   locationRecords: [Location!]!
   """

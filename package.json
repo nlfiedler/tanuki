@@ -46,6 +46,7 @@
     "solid-js": "^1.9.9",
     "ulid": "^3.0.1",
     "vite-express": "^0.21.1",
+    "whatwg-mimetype": "^4.0.0",
     "winston": "^3.18.3"
   },
   "devDependencies": {
@@ -59,6 +60,7 @@
     "@types/morgan": "^1.9.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.10.1",
+    "@types/whatwg-mimetype": "^3.0.2",
     "@typescript-eslint/eslint-plugin": "^8.49.0",
     "@typescript-eslint/parser": "^8.49.0",
     "eslint": "^9.39.1",

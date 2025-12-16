@@ -22,6 +22,7 @@ import type {
   Resolvers,
   QueryAssetArgs,
   QueryPendingArgs,
+  QueryScanArgs,
   QuerySearchArgs,
   SearchMeta,
   PendingParams as GQLPendingParams,
@@ -133,6 +134,20 @@ export const resolvers: Resolvers = {
       const params = searchParamsFromGQL(args.params);
       const searchAssets = container.resolve('searchAssets');
       const results = await searchAssets(params);
+      return paginateResults(results, args.offset, args.limit);
+    },
+
+    async scan(
+      _parent: any,
+      args: QueryScanArgs,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<SearchMeta> {
+      const query = args.query;
+      const sortField = sortFieldFromGQL(args.sortField);
+      const sortOrder = sortOrderFromGQL(args.sortOrder);
+      const scanAssets = container.resolve('scanAssets');
+      const results = await scanAssets(query, sortField, sortOrder);
       return paginateResults(results, args.offset, args.limit);
     }
   },

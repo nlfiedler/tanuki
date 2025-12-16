@@ -1,6 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
+import { Asset } from './asset.ts';
 import { Location } from './location.ts';
 
 /**
@@ -140,6 +141,17 @@ class SearchResult {
     this.mediaType = mediaType;
     this.location = location;
     this.datetime = datetime;
+  }
+
+  /** Construct a search result from the given asset. */
+  static fromAsset(asset: Asset): SearchResult {
+    return new SearchResult(
+      asset.key,
+      asset.filename,
+      asset.mediaType,
+      asset.location,
+      asset.bestDate()
+    );
   }
 }
 

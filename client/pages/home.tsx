@@ -147,7 +147,7 @@ function Home() {
     1
   );
   const [pageSize, setPageSize] = useLocalStorage('page-size', 18);
-  const pendingParams = createMemo(() => ({
+  const browseParams = createMemo(() => ({
     tags: selectedTags(),
     locations: selectedLocations(),
     year: selectedYear(),
@@ -157,7 +157,7 @@ function Home() {
     limit: pageSize(),
     sortOrder: selectedSortOrder()
   }));
-  const [assetsQuery] = createResource(pendingParams, async (params) => {
+  const [assetsQuery] = createResource(browseParams, async (params) => {
     const { data } = await client.query({
       query: SEARCH_ASSETS,
       variables: buildParams(params)

@@ -147,10 +147,6 @@ function AudioThumbnail(props: AudioThumbnailProps) {
   );
 }
 
-interface AssetFormProps {
-  asset: Asset;
-}
-
 // define a directive to make text input handling more concise
 function textField(element: HTMLInputElement, value: Accessor<Signal<string>>) {
   const [field, setField] = value();
@@ -203,6 +199,10 @@ declare module 'solid-js' {
       textField: typeof textField;
     }
   }
+}
+
+interface AssetFormProps {
+  asset: Asset;
 }
 
 function AssetForm(props: AssetFormProps) {
