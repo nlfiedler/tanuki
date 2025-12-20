@@ -7,6 +7,7 @@ import type { GraphQLResolveInfo } from 'graphql';
 import container from 'tanuki/server/container.ts';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { AssetInput } from 'tanuki/server/domain/entities/asset.ts';
+import * as ops from 'tanuki/server/domain/entities/edit.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import {
   PendingParams,
@@ -17,7 +18,10 @@ import {
 } from 'tanuki/server/domain/entities/search.ts';
 import type {
   Asset as GQLAsset,
+  AssetEdit,
   AssetInput as GQLAssetInput,
+  LocationValues,
+  MutationEditArgs,
   MutationUpdateArgs,
   Resolvers,
   QueryAssetArgs,
@@ -91,6 +95,16 @@ export const resolvers: Resolvers = {
     ): Promise<Location[]> {
       const getLocationRecords = container.resolve('getLocationRecords');
       return await getLocationRecords();
+    },
+
+    async locationValues(
+      _parent: any,
+      args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<LocationValues> {
+      const getLocationValues = container.resolve('getLocationValues');
+      return await getLocationValues();
     },
 
     async years(
@@ -174,6 +188,17 @@ export const resolvers: Resolvers = {
       const input = assetInputFromGQL(args.id, args.asset);
       const output = await updateAsset(input);
       return assetToGQL(output);
+    },
+
+    async edit(
+      _parent: any,
+      args: MutationEditArgs,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<number> {
+      const editAssets = container.resolve('editAssets');
+      const operations = operationsFromGQL(args.operations);
+      return editAssets(args.assetIds, operations);
     }
   }
 };
@@ -301,6 +326,52 @@ function assetInputFromGQL(
     outgoing.setFilename(incoming.filename);
   }
   return outgoing;
+}
+
+function locationFieldFromGQL(
+  field: string | null | undefined
+): ops.LocationField {
+  if (field === 'LABEL') {
+    return ops.LocationField.Label;
+  }
+  if (field === 'CITY') {
+    return ops.LocationField.City;
+  }
+  return ops.LocationField.Region;
+}
+
+function operationsFromGQL(edits: AssetEdit[]): ops.Operation[] {
+  const operations: ops.Operation[] = [];
+  for (const edit of edits) {
+    if (edit.addTags) {
+      for (const name of edit.addTags) {
+        operations.push(new ops.TagAdd(name));
+      }
+    }
+    if (edit.removeTags) {
+      for (const name of edit.removeTags) {
+        operations.push(new ops.TagRemove(name));
+      }
+    }
+    if (edit.setLocation) {
+      for (const le of edit.setLocation) {
+        const field = locationFieldFromGQL(le.field);
+        if (le.value) {
+          operations.push(new ops.LocationSetField(field, le.value));
+        } else {
+          operations.push(new ops.LocationClearField(field));
+        }
+      }
+    }
+    if (edit.setDate) {
+      operations.push(new ops.DatetimeSet(new Date(edit.setDate)));
+    } else if (edit.addDays) {
+      operations.push(new ops.DatetimeAddDays(edit.addDays));
+    } else if (edit.subtractDays) {
+      operations.push(new ops.DatetimeSubDays(edit.subtractDays));
+    }
+  }
+  return operations;
 }
 
 function assetToGQL(entity: Asset): GQLAsset {

@@ -23,6 +23,16 @@ type Location {
   region: String
 }
 
+"Unique values for location labels, cities, and regions."
+type LocationValues {
+  "All known location lobels."
+  labels: [String!]!
+  "All known location cities."
+  cities: [String!]!
+  "All known location regions."
+  regions: [String!]!
+}
+
 """
 An `Asset` defines a single entity in the storage system. This typically refers
 to an image or video, but could by any type of file.
@@ -147,7 +157,13 @@ type Query {
   "Search for assets by the given parameters."
   search(params: SearchParams!, offset: Int, limit: Int): SearchMeta!
   "Scan all assets and compare to the given query string."
-  scan(query: String!, sortField: SortField, sortOrder: SortOrder, offset: Int, limit: Int): SearchMeta!
+  scan(
+    query: String!
+    sortField: SortField
+    sortOrder: SortOrder
+    offset: Int
+    limit: Int
+  ): SearchMeta!
   "Retrieve the full location records with label, city, and region."
   locationRecords: [Location!]!
   """
@@ -155,6 +171,8 @@ type Query {
   the location label, city, and region, each emitted separately.
   """
   locationParts: [AttributeCount!]!
+  "Returns all unique location labels, cities, and regions."
+  locationValues: LocationValues!
   "Retrieve the list of tags and their associated asset count."
   tags: [AttributeCount!]!
   "Retrieve the list of years and their associated asset count."
@@ -200,14 +218,47 @@ input AssetInput {
   filename: String
 }
 
+"Specify the field of the location"
+enum LocationField {
+  LABEL
+  CITY
+  REGION
+}
+
+"Represents a change to a location field."
+input LocationSet {
+  "Field of location to be set or cleared."
+  field: LocationField!
+  "If value is null, will clear the location field."
+  value: String
+}
+
+"A set of changes to make to an asset."
+input AssetEdit {
+  "Adds the given tags."
+  addTags: [String!]
+  "Removes matching tags."
+  removeTags: [String!]
+  "Sets or clears one or more location fields."
+  setLocation: [LocationSet!]
+  "Sets the custom date-time field, or clears if value is null."
+  setDate: Date
+  "Set the custom date-time field by adding days to the best date-time."
+  addDays: Int!
+  "Set the custom date-time field by subtracting days from the best date-time."
+  subtractDays: Int!
+}
+
 type Mutation {
   """
   Import the files found in the `uploads` directory and return the number of
   files successfully imported into the system.
   """
   import: Int!
-  "Update the asset with the given tags, caption, custom date, etc."
+  "Update a single asset with the given tags, caption, custom date, etc."
   update(id: ID!, asset: AssetInput!): Asset!
+  "Modify multiple assets based on their current properties."
+  edit(assetIds: [String!]!, operations: [AssetEdit!]!): Int!
 }
 
 schema {

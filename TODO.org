@@ -2,13 +2,16 @@
 ** Rewrite 2025
 *** commit =230801d= was when old JS code was removed
 *** commit =3263ae7= was last Rust commit
-*** DONE search query language
-*** TODO bulk edit support [0/3]
-- [ ] add a query that returns all unique location label, city, region values as separate lists
-- [ ] add use case that performs modifications to assets (add tags, remove tags, etc)
-- [ ] add resolver mutation to invoke the use case
+*** TODO bulk edit support [3/7]
+- [X] add a query that returns all unique location label, city, region values as separate lists
+- [X] add use case that performs modifications to assets (add tags, remove tags, etc)
+- [X] add resolver mutation to invoke the use case
+- [ ] add edit page with form for making changes
+- [ ] add query text field for finding assets
+- [ ] allow selection of multiple assets
+- [ ] enable ~Commit~ button when selections and form inputs are valid
 *** TODO search cache for =scan-assets= usecase
-*** TODO rename proper-cased file names in git (~/rename-files.sh)
+**** clear the cache in update, edit use cases
 *** TODO store various selections in local storage [15/19]
 - [X] (recent) page size
 - [X] recent selected page
@@ -29,12 +32,16 @@
 - [X] search query
 - [X] search sort order
 - [X] search selected page
+*** TODO asset edit form needs to allow easier editing of tags
+**** currently the signal accessor/setter interfere with editing
 *** TODO ~Replace~ button on details page
 *** TODO asset browsing with left/right buttons
 **** TODO browse page
 **** TODO search page
 **** would be neat if the buttons appeared over the image on hover, like a carousel
 **** c.f. https://buefy.org/documentation/carousel
+*** TODO drop zone on upload page needs to use appropriate color depending on color mode
+**** in light mode, the dotted rectangle is invisible
 *** TODO check browser console for issues
 *** TODO consider how record repository can implement sorting and pagination
 **** objective would be to improve search performance if necessary
@@ -42,6 +49,7 @@
 *** TODO saving changes to pending assets sometimes does not refresh
 **** updates are successful
 **** could be the database view takes a second to update
+**** change CouchDB repo to wait a second on ~pending~ call if changes were made, reset flag once pending finishes
 *** TODO test setup on Windows
 *** TODO changing light/dark in System Preferences does not cause page theme to change
 *** TODO fix the cross-origin errors in the browser console
@@ -179,6 +187,7 @@
 *** Find out if we can read GPS coordinates from videos
 **** Preview.app will display location information for videos
 *** Show additional file metadata (TIFF, EXIF, JFIF, IPTC)
+**** use =details= and =summary= HTML tags to create expandable sections
 ** Uploads
 *** some times temporary files are left behind in =uploads= folder
 **** they are all 10,430,846 bytes long

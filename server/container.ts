@@ -10,10 +10,12 @@ import {
 } from 'awilix';
 import CountAssets from 'tanuki/server/domain/usecases/count-assets.ts';
 import DumpAssets from 'tanuki/server/domain/usecases/dump-assets.ts';
+import EditAssets from 'tanuki/server/domain/usecases/edit-assets.ts';
 import FindPending from 'tanuki/server/domain/usecases/find-pending.ts';
 import GetAsset from 'tanuki/server/domain/usecases/get-asset.ts';
 import GetLocationParts from 'tanuki/server/domain/usecases/get-location-parts.ts';
 import GetLocationRecords from 'tanuki/server/domain/usecases/get-location-records.ts';
+import GetLocationValues from 'tanuki/server/domain/usecases/get-location-values.ts';
 import GetMediaTypes from 'tanuki/server/domain/usecases/get-media-types.ts';
 import GetTags from 'tanuki/server/domain/usecases/get-tags.ts';
 import GetYears from 'tanuki/server/domain/usecases/get-years.ts';
@@ -57,10 +59,12 @@ container.register({
   // register the use cases as functions
   countAssets: asFunction(CountAssets),
   dumpAssets: asFunction(DumpAssets),
+  editAssets: asFunction(EditAssets),
   findPending: asFunction(FindPending),
   getAsset: asFunction(GetAsset),
   getLocationParts: asFunction(GetLocationParts),
   getLocationRecords: asFunction(GetLocationRecords),
+  getLocationValues: asFunction(GetLocationValues),
   getMediaTypes: asFunction(GetMediaTypes),
   getTags: asFunction(GetTags),
   getYears: asFunction(GetYears),
