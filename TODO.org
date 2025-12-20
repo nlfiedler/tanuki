@@ -32,8 +32,6 @@
 - [X] search query
 - [X] search sort order
 - [X] search selected page
-*** TODO asset edit form needs to allow easier editing of tags
-**** currently the signal accessor/setter interfere with editing
 *** TODO ~Replace~ button on details page
 *** TODO asset browsing with left/right buttons
 **** TODO browse page

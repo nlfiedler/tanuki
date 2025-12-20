@@ -168,8 +168,10 @@ function datetimeField(
     // datetime-local input needs the value in a specific format
     element.value = new Date(field()).toISOString().slice(0, 16);
   });
-  element.addEventListener('input', ({ target }) =>
-    setField((target as HTMLInputElement).value)
+  element.addEventListener('change', ({ target }) =>
+    // add a trailing Z to force the string to be interpreted as UTC, otherwise
+    // the value is interpreted as local time and converted to UTC
+    setField((target as HTMLInputElement).value + 'Z')
   );
 }
 
@@ -180,7 +182,10 @@ function tagsField(
 ) {
   const [field, setField] = value();
   createRenderEffect(() => (element.value = field().join(', ')));
-  element.addEventListener('input', ({ target }) => {
+  // Use 'change' event for tags to allow the user to properly modify the field;
+  // listening for 'input' event results in the logic for joining and splitting
+  // being invoked with every keypress and it becomes difficult to edit.
+  element.addEventListener('change', ({ target }) => {
     const value = (target as HTMLInputElement).value;
     const tags = value
       .split(',')
