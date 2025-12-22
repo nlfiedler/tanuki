@@ -136,6 +136,7 @@ export const resolvers: Resolvers = {
       const params = pendingParamsFromGQL(args.params);
       const findPending = container.resolve('findPending');
       const results = await findPending(params);
+      logger.info('found %d pending assets', results.length);
       return paginateResults(results, args.offset, args.limit);
     },
 

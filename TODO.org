@@ -41,13 +41,12 @@
 *** TODO drop zone on upload page needs to use appropriate color depending on color mode
 **** in light mode, the dotted rectangle is invisible
 *** TODO check browser console for issues
-*** TODO consider how record repository can implement sorting and pagination
-**** objective would be to improve search performance if necessary
-**** https://docs.couchdb.org/en/stable/ddocs/views/pagination.html
 *** TODO saving changes to pending assets sometimes does not refresh
-**** updates are successful
-**** could be the database view takes a second to update
-**** change CouchDB repo to wait a second on ~pending~ call if changes were made, reset flag once pending finishes
+**** updates are successful, the page is not caching
+**** database view is stale, seems to need to be queried twice
+**** tried =stable=false&update=true= explicitly, no change
+**** tried running query at the end of =putAsset()=, no change
+**** change CouchDB repo to query ~pending~ twice if =putAsset= was called, reset flag once pending finishes
 *** TODO test setup on Windows
 *** TODO changing light/dark in System Preferences does not cause page theme to change
 *** TODO fix the cross-origin errors in the browser console
@@ -200,6 +199,10 @@
 *** turn the ~Page n of m~ text into a button to input a page number
 **** clicking the button opens a dropdown with a text input field
 **** pressing ~Enter~ or clicking ~Go~ button will dismiss dropdown and go to that page
+*** consider how record repository can implement sorting and pagination
+**** objective would be to improve search performance if necessary
+**** https://docs.couchdb.org/en/stable/ddocs/views/pagination.html
+**** CoubhDB: use =skip= and =limit= parameters on view query
 ** Finding/removing duplicates
 *** many assets are very similar to each other, probably differ only in metadata
 *** find a means (histogram?) of detecting near-duplicates
