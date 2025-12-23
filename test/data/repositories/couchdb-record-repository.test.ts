@@ -698,16 +698,16 @@ describe('CouchDBRecordRepository', function () {
     await sut.putAsset(buildBasicAsset('wingtim'));
 
     const [batch1, cursor1] = await sut.fetchAssets(null, 10);
-    // get less than 10 thanks to the _design document taking up space
-    expect(batch1).toHaveLength(9);
+    // get less than 10 thanks to the _design document(s) taking up space
+    expect(batch1).toHaveLength(8);
     expect(cursor1).toBeDefined();
     expect(batch1[0]?.key).toEqual('andy');
-    expect(batch1[8]?.key).toEqual('gerald');
+    expect(batch1[7]?.key).toEqual('gabriel');
 
     const [batch2, cursor2] = await sut.fetchAssets(cursor1, 10);
-    expect(batch2).toHaveLength(9);
-    expect(batch2[0]?.key).toEqual('harry');
-    expect(batch2[8]?.key).toEqual('wingtim');
+    expect(batch2).toHaveLength(10);
+    expect(batch2[0]?.key).toEqual('gerald');
+    expect(batch2[9]?.key).toEqual('wingtim');
 
     const [batch3, _cursor3] = await sut.fetchAssets(cursor2, 10);
     expect(batch3).toHaveLength(0);

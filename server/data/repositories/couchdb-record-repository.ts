@@ -79,6 +79,7 @@ class CouchDBRecordRepository implements RecordRepository {
       }
     }
     await this.createIndices(assetsDefinition);
+    await this.createIndices(newbornsDefinition);
     this.stayAlive();
   }
 
@@ -307,7 +308,7 @@ class CouchDBRecordRepository implements RecordRepository {
 
   /** @inheritDoc */
   async queryNewborn(after: Date): Promise<SearchResult[]> {
-    const queryResults = await this.database.view('assets', 'newborn', {
+    const queryResults = await this.database.view('newborns', 'newborn', {
       startkey: after.getTime()
     });
     return queryResults.rows.map((row: any) => convertViewResult(row));
@@ -345,7 +346,7 @@ class CouchDBRecordRepository implements RecordRepository {
       cursor = 'done';
     }
     const assets = res.rows.reduce((acc: Array<Asset>, row: any) => {
-      if (row.id !== '_design/assets') {
+      if (!row.id.startsWith('_design')) {
         acc.push(assetFromDocument({ key: row.id, ...row.doc }));
       }
       return acc;
@@ -381,31 +382,33 @@ type ViewResult = {
 
 // Define the map/reduce query views, whose functions are defined separately to
 // allow writing pure JavaScript without the linters complaining.
+//
+// Some other views are defined in a separate design document for performance.
 const assetsDefinition = {
   _id: '_design/assets',
   // monotonically increasing version number for tracking schema changes
-  version: 1,
+  version: 2,
   views: {
     by_checksum: {
-      map: views.by_checksum.toString()
+      map: views.by_checksum.toString(),
+      options: { collation: 'raw' }
     },
     by_date: {
       map: views.insertBestDate(views.by_date)
     },
     by_filename: {
-      map: views.insertBestDate(views.by_filename)
+      map: views.insertBestDate(views.by_filename),
+      options: { collation: 'raw' }
     },
     by_location: {
       map: views.insertBestDate(views.by_location)
     },
     by_mimetype: {
-      map: views.insertBestDate(views.by_mimetype)
+      map: views.insertBestDate(views.by_mimetype),
+      options: { collation: 'raw' }
     },
     by_tag: {
       map: views.insertBestDate(views.by_tag)
-    },
-    newborn: {
-      map: views.insertBestDate(views.newborn)
     },
     all_location_records: {
       map: views.all_location_records.toString(),
@@ -426,6 +429,22 @@ const assetsDefinition = {
     all_media_types: {
       map: views.all_media_types.toString(),
       reduce: '_count'
+    }
+  }
+};
+
+// Define the view for finding pending assets (those without tags, caption, or
+// location label) in a separate design document in the hopes that this will
+// shorten the time it takes for the updated view to be available. This view has
+// more conditional logic than the others and should be run in its own
+// (lightweight) process.
+const newbornsDefinition = {
+  _id: '_design/newborns',
+  // monotonically increasing version number for tracking schema changes
+  version: 1,
+  views: {
+    newborn: {
+      map: views.insertBestDate(views.newborn)
     }
   }
 };
