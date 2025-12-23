@@ -1,6 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
+import path from 'node:path';
 import { describe, expect, test } from 'bun:test';
 import { Geocoded, Location } from 'tanuki/server/domain/entities/location.ts';
 import * as helpers from 'tanuki/server/domain/usecases/helpers.ts';
@@ -28,7 +29,8 @@ describe('Generate identifier helper', function () {
     // assert
     const buf = Buffer.from(actual, 'base64');
     const decoded = buf.toString('utf8');
-    expect(decoded.startsWith('2018/05/31/2100/')).toBeTrue();
+    const prefix = path.normalize('2018/05/31/2100/');
+    expect(decoded.startsWith(prefix)).toBeTrue();
     expect(decoded.endsWith('.jpg')).toBeTrue();
     expect(decoded).toHaveLength(46);
   });

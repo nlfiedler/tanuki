@@ -17,7 +17,7 @@ import {
 describe('LocalBlobRepository', function () {
   test('should decode the asset key into a path', async function () {
     // arrange
-    const expected = 'foo/2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg';
+    const expected = path.normalize('foo/2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg');
     const encoded =
       'MjAxOC8wNS8zMS8yMTAwLzAxYng1enprYmthY3Rhdjl3ZXZnZW1tdnJ6LmpwZw==';
     const settingsRepository = new EnvSettingsRepository();
