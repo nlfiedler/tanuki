@@ -12,6 +12,8 @@ CouchDB offers several nice features, such as a built-in web interface and multi
 
 While CouchDB is not an embedded (in-process) database, with the change in overall architecture, that is no longer a concern. Deploying CouchDB is as simple as invoking a docker command and it offers a stand-alone, resilient data store that is not dependent on the application.
 
+Regarding alternatives to CouchDB, the JavaScript version named [PouchDB](https://pouchdb.com/) has not had a release since May of 2024. It was based on [LevelDB](https://github.com/google/leveldb) and offered a very similar API to CouchDB. It was used by this project from late 2017 to early 2020 at which point it was replaced by [RocksDB](https://rocksdb.org/) and [mokuroku](https://github.com/nlfiedler/mokuroku).
+
 ## Decision
 
 Use **CouchDB** because it is hard to beat.
