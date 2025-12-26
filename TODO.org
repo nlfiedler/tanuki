@@ -227,6 +227,7 @@
 ** Relational record store
 *** offering an alternative like SQLite would guarantee app design stays generic
 *** CouchDB is neat, but growing increasingly dependent on that may eventually prove too limiting
+*** TODO rename =createIfMissing()= in record repository to =initialize()=
 ** GraphQL landing page
 *** eventually do away with the need for the landing page in production
 **** will need to improve the web interface enough to offer everything that is needed

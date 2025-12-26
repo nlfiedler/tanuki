@@ -26,6 +26,7 @@ import ScanAssets from 'tanuki/server/domain/usecases/scan-assets.ts';
 import SearchAssets from 'tanuki/server/domain/usecases/search-assets.ts';
 import UpdateAsset from 'tanuki/server/domain/usecases/update-asset.ts';
 import { CouchDBRecordRepository } from 'tanuki/server/data/repositories/couchdb-record-repository.ts';
+import { SqliteRecordRepository } from 'tanuki/server/data/repositories/sqlite-record-repository.ts';
 import { DummyLocationRepository } from 'tanuki/server/data/repositories/dummy-location-repository.ts';
 import { EnvSettingsRepository } from 'tanuki/server/data/repositories/env-settings-repository.ts';
 import { GoogleLocationRepository } from 'tanuki/server/data/repositories/google-location-repository.ts';
@@ -41,12 +42,18 @@ if ('GOOGLE_MAPS_API_KEY' in process.env) {
   LocationRepository = GoogleLocationRepository;
 }
 
+// assume CouchDB unless specified otherwise
+let RecordRepository: any = CouchDBRecordRepository;
+if ('SQLITE_DBPATH' in process.env) {
+  RecordRepository = SqliteRecordRepository;
+}
+
 container.register({
   // register the data repositories as classes
   settingsRepository: asClass(EnvSettingsRepository, {
     lifetime: Lifetime.SINGLETON
   }),
-  recordRepository: asClass(CouchDBRecordRepository, {
+  recordRepository: asClass(RecordRepository, {
     lifetime: Lifetime.SINGLETON
   }),
   blobRepository: asClass(LocalBlobRepository, {

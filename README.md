@@ -45,6 +45,8 @@ The application is configured using environment variables.
   - If set to `production`, changes the logging format. Some 3rd party modules may change slightly.
 - **PORT**
   - Port number on which to listen for HTTP connections, defaults to `3000`.
+- **SQLITE_DBPATH**
+  - Directory in which `tanuki.sqlite` will be created, if set. Setting this will switch the application from using CouchDB to using SQLite for the database (all `DATABASE_*` settings will be ignored).
 
 The application can be configured with a `.env` file thanks to Bun and [dotenv](https://github.com/motdotla/dotenv). Note, however, that during development, Bun will read this file before considering anything else, and thus it may interfere with the automated tests, which need to have tight control of the environment in order to set up mocks and spies.
 

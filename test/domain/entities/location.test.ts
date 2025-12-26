@@ -54,6 +54,9 @@ describe('Location entity', function () {
       'classical garden'
     );
 
+    // only separators
+    expect(Location.parse(';,').label).toBeNull();
+
     // all 3 parts
     const cgpo = Location.parse('classical garden ; Portland , Oregon');
     expect(cgpo.label).toEqual('classical garden');

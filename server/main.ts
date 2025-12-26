@@ -22,7 +22,7 @@ import { typeDefs, resolvers } from 'tanuki/server/preso/graphql/schema.ts';
 // (asynchronously) prepare the database
 const database = container.resolve('recordRepository');
 database
-  .createIfMissing()
+  .initialize()
   .then(() => {
     logger.info('database initialization complete');
   })

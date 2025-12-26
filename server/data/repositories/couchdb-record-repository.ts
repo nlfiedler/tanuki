@@ -58,14 +58,14 @@ class CouchDBRecordRepository implements RecordRepository {
     } catch {
       // ignored
     }
-    await this.createIfMissing();
+    await this.initialize();
   }
 
   /**
    * Create the database if it is missing. This must be called to connect to
    * the database and authenticate as a valid user before proceeding.
    */
-  async createIfMissing(): Promise<void> {
+  async initialize(): Promise<void> {
     try {
       await this.conn.auth(this.username, this.password);
       await this.conn.db.get(this.dbname);
