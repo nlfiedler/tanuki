@@ -135,12 +135,16 @@ class CouchDBRecordRepository implements RecordRepository {
 
   /** @inheritDoc */
   async getAssetById(assetId: string): Promise<Asset | null> {
-    const asset = await this.database.get(assetId);
-    if (asset !== null) {
+    try {
+      const asset = await this.database.get(assetId);
       asset.key = assetId;
       return assetFromDocument(asset);
+    } catch (error: any) {
+      if (error.statusCode === 404) {
+        return null;
+      }
+      throw error;
     }
-    return null;
   }
 
   /** @inheritDoc */

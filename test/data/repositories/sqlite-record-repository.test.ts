@@ -26,6 +26,13 @@ describe('SqliteRecordRepository', function () {
     expect(count).toEqual(0);
   });
 
+  test('should return null if record cannot be found', async function () {
+    const fetchedById = await sut.getAssetById('foobar');
+    expect(fetchedById).toBeNull();
+    const fetchedByHash = await sut.getAssetByDigest('cafebabe');
+    expect(fetchedByHash).toBeNull();
+  });
+
   test('should store a new document, update, and count', async function () {
     // arrange
     // use a semi-realistic asset identifier with mixed case

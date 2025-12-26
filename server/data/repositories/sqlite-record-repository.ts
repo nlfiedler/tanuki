@@ -138,14 +138,14 @@ class SqliteRecordRepository implements RecordRepository {
   async getAssetById(assetId: string): Promise<Asset | null> {
     const query = this.database!.query('SELECT * FROM assets WHERE key = ?;');
     const row = query.get(assetId);
-    return assetFromRow(row);
+    return row ? assetFromRow(row) : null;
   }
 
   /** @inheritDoc */
   async getAssetByDigest(digest: string): Promise<Asset | null> {
     const query = this.database!.query('SELECT * FROM assets WHERE hash = ?;');
     const row = query.get(digest);
-    return assetFromRow(row);
+    return row ? assetFromRow(row) : null;
   }
 
   /** @inheritDoc */
