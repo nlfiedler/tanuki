@@ -1,6 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
+import fs from 'node:fs/promises';
 import express from 'express';
 import multer from 'multer';
 import container from 'tanuki/server/container.ts';
@@ -12,6 +13,7 @@ const blobs = container.resolve('blobRepository');
 const records = container.resolve('recordRepository');
 
 const uploads = settings.get('UPLOAD_PATH');
+await fs.mkdir(uploads, { recursive: true });
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploads);
