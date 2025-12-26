@@ -27,6 +27,8 @@ The application is configured using environment variables.
 
 - **ASSETS_PATH**
   - Full path to the base directory of the asset storage.
+- **UPLOAD_PATH**
+  - Full path to the directory into which uploaded files will be temporarily stored.
 - **DATABASE_URL**
   - URL for the CouchDB instance.
 - **DATABASE_NAME**

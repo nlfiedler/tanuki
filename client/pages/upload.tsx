@@ -212,7 +212,7 @@ function DropZone(props: DropZoneProps) {
         style={{
           'border-style': 'dashed',
           'min-height': '14em',
-          'border-color': isDragOver() ? 'green' : 'white'
+          'border-color': isDragOver() ? 'var(--bulma-primary)' : 'inherit'
         }}
       >
         {props.children}

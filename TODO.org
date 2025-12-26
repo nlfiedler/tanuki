@@ -38,8 +38,6 @@
 **** TODO search page
 **** would be neat if the buttons appeared over the image on hover, like a carousel
 **** c.f. https://buefy.org/documentation/carousel
-*** TODO drop zone on upload page needs to use appropriate color depending on color mode
-**** in light mode, the dotted rectangle is invisible
 *** TODO check browser console for issues
 *** TODO saving changes to pending assets sometimes does not refresh
 **** updates are successful, the page is not caching
@@ -224,10 +222,6 @@
 *** SeaweedFS can scale images to desired width/height (~fit~, ~fill~, etc)
 *** dump/load and import/export would need to consider how to handle blobs
 *** doc: update =doc/DESIGN.md= to reflect changes in storage
-** Relational record store
-*** offering an alternative like SQLite would guarantee app design stays generic
-*** CouchDB is neat, but growing increasingly dependent on that may eventually prove too limiting
-*** TODO rename =createIfMissing()= in record repository to =initialize()=
 ** GraphQL landing page
 *** eventually do away with the need for the landing page in production
 **** will need to improve the web interface enough to offer everything that is needed
