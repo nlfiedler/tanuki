@@ -45,7 +45,6 @@
 **** tried =stable=false&update=true= explicitly, no change
 **** tried running query at the end of =putAsset()=, no change
 **** change CouchDB repo to query ~pending~ twice if =putAsset= was called, reset flag once pending finishes
-*** TODO test setup on Windows
 *** TODO changing light/dark in System Preferences does not cause page theme to change
 *** TODO fix the cross-origin errors in the browser console
 *** TODO document the supported date-time formats in query (anything JavaScript can parse)

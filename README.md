@@ -1,11 +1,11 @@
 # Tanuki
 
-An application for organizing assets, primarily images and videos. Written in [TypeScript](https://www.typescriptlang.org) with a [SolidJS](https://www.solidjs.com) powered front-end, connected via [GraphQL](https://graphql.org) and REST. Metadata is stored in [CouchDB](https://couchdb.apache.org) and file content is stored unmodified within a date/time formatted directory structure.
+An application for organizing assets, primarily images and videos. Written in [TypeScript](https://www.typescriptlang.org) with a [SolidJS](https://www.solidjs.com) powered front-end, connected via [GraphQL](https://graphql.org) and REST. Metadata is stored in [CouchDB](https://couchdb.apache.org) or [SQLite](https://sqlite.org/) and file content is stored unmodified within a date/time formatted directory structure.
 
 ## Requirements
 
 - [Bun](https://bun.com)
-- [CouchDB](https://couchdb.apache.org)
+- [CouchDB](https://couchdb.apache.org) unless using SQLite
 
 ## Initial Setup
 
