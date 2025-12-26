@@ -136,18 +136,16 @@ function Pending() {
     }
   );
   const submittable = createMemo(() => {
-    // a location is not really considered set by the user unless the label is
-    // defined, as many assets will have geocoded city and region data at the
-    // time of import; that is, without either a tag or a user-defined location
-    // label, the asset would still appear to be "pending"
     return (
-      (selectedTags().length > 0 || selectedLocation()?.label) &&
+      (selectedTags().length > 0 || locationHasValues(selectedLocation())) &&
       selectedAssets().size > 0
     );
   });
   const updateAction = action(async (): Promise<any> => {
     const tags = selectedTags() || null;
-    const location = selectedLocation()?.label ? selectedLocation() : null;
+    const location = locationHasValues(selectedLocation())
+      ? selectedLocation()
+      : null;
     const datetime = datetimeRef?.value ? new Date(datetimeRef?.value) : null;
     for (const assetId of selectedAssets()) {
       try {
@@ -168,7 +166,7 @@ function Pending() {
     // SolidJS router is _supposed_ to revalidate the queries on this page, but
     // nothing makes any difference, even calling revalidate() or reload()
     // explicitly does nothing, so just force the page to reload instead.
-    window.location.reload();
+    // window.location.reload();
     return { ok: true };
   }, 'updateAssets');
   const startUpdate = useAction(updateAction);
@@ -291,6 +289,14 @@ function Pending() {
         />
       </Suspense>
     </>
+  );
+}
+
+function locationHasValues(location: Location): boolean {
+  return (
+    location.label !== null ||
+    location.city !== null ||
+    location.region !== null
   );
 }
 
