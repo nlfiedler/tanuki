@@ -32,7 +32,11 @@
 - [X] search query
 - [X] search sort order
 - [X] search selected page
-*** TODO ~Replace~ button on details page
+*** TODO ~Replace~ button on details page [0/4]
+- [ ] fetch existing record
+- [ ] merge with new asset details
+- [ ] store new record, delete old one
+- [ ] use case invokes blob repo ~store~ and ~delete~ (no ~rename~ or ~replace~)
 *** TODO asset browsing with left/right buttons
 **** TODO browse page
 **** TODO search page
@@ -205,21 +209,33 @@
 *** find a means (histogram?) of detecting near-duplicates
 ** Remote blob store
 *** consider how to support a blob store other than local disk
-*** blob store should serve the assets directly to the client (e.g. S3, SeaweedFS)
+*** remote blob store would serve assets directly to client (e.g. S3)
 *** repository API would need to be oriented to URLs rather than file paths
 *** repository would generate the full path/URL for the asset to send to the client
-*** GraphQL resolver would inject the thumbnail/preview/raw URLs into search results, assets
+*** GraphQL resolver would inject the thumbnail/asset URLs into results
 *** local blob repo would need the base URL for serving via web framework
 *** remote blob repo would need the base URL for the remote store
-*** assets likely would be stored very differently
-**** SeaweedFS combines files into volumes (to save space?)
-**** asset ID would no longer be a path for fetching the asset
-**** asset ID is still useful (includes time of import, file extension; guaranteed unique)
-*** server needs to generate URLs for the images for the client to reference
-**** client cannot build the URL, server must provide the value
-**** server could redirect the client to the blob store
-*** SeaweedFS can scale images to desired width/height (~fit~, ~fill~, etc)
-*** dump/load and import/export would need to consider how to handle blobs
+*** avoid SeaweedFS, it stores files in 32gb volumes
+*** TODO build something new in Rust (namazu)
+**** build using =actix-web= and =image= crates
+**** assets are immutable, can only post new assets and delete old ones
+**** asset identifier is effectively the tag for that unique asset forever
+**** use base64 encoded paths for assets to serve existing content w/o migration
+**** start with Rust tanuki =main.rs=, add in thumbnail code
+**** support PUT, GET, DELETE for assets on =/assets= endpoint
+**** =PUT= to existing path results in a 409, success returns 201
+**** write integration tests
+**** support thumbnails via query parameters (like SeaweedFS)
+#+begin_src
+http://localhost:8080/3/01637037d6.jpg?height=200&width=200
+http://localhost:8080/3/01637037d6.jpg?height=200&width=200&mode=fit
+http://localhost:8080/3/01637037d6.jpg?height=200&width=200&mode=fill
+#+end_src
+**** support ETag and Cache-Control headers
+***** ETag should be a unique value for the asset and the query parameters
+***** should be safe to use just the ULID filename instead of the entire asset id
+***** =Cache-Control: public, max-age=31536000=
+**** use actix =NamedFile= to handle =Range= requests
 *** doc: update =doc/DESIGN.md= to reflect changes in storage
 ** GraphQL landing page
 *** eventually do away with the need for the landing page in production
