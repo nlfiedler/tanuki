@@ -11,8 +11,7 @@ The application is designed using the [Clean Architecture](https://blog.cleancod
 When an asset is added to the system, several steps are performed:
 
 1. A hash digest of the file is computed to identify duplicates.
-1. An identifier based on the import date-time, filename extension,
-   and [ULID](https://github.com/ulid/spec) is generated.
+1. An identifier based on the import date-time, media type, and a [ULID](https://github.com/ulid/spec) is generated.
 1. A minimal document, with checksum and identifier, is stored in the database.
 1. The asset is stored in a directory structure according to import date-time.
    - e.g. `2017/05/13/1630/01ce0d526z6cyzgm02ap0jv281.jpg`
@@ -24,7 +23,7 @@ In previous versions of the application, assets were stored in a directory struc
 
 ### Benefits
 
-- Thumbnails can be served without reading from the database since the identifier is the path.
+- Thumbnails can be served without reading from the database since the identifier is the path to the file.
 - Assets are stored in directory structure reflecting time and order of addition
   - ULID sorts by time, so order of import is retained
 - Number of directories and files at any particular level is reasonable
@@ -33,9 +32,6 @@ In previous versions of the application, assets were stored in a directory struc
 - Can rebuild some of the metadata from the directory structure and file names
   - import date-time from file path
   - media type from extension
-  - original date-time from file metadata
-- Encoded path as asset ID allows serving assets without a database lookup
-  - base64 encoded asset path happens to be same length as SHA256
 - Avoids filename collisions
   - names like `IMG_1234.JPG` easily collide with files from other sources
 

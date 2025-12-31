@@ -4,7 +4,6 @@
 import assert from 'node:assert';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import sharp from 'sharp';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { type BlobRepository } from 'tanuki/server/domain/repositories/blob-repository.ts';
 import { type SettingsRepository } from 'tanuki/server/domain/repositories/settings-repository.ts';
@@ -24,6 +23,13 @@ class LocalBlobRepository implements BlobRepository {
     assert.ok(this.basepath, 'missing ASSETS_PATH environment variable');
   }
 
+  /** Convert the asset identifier to the full path of the asset. */
+  blobPath(assetId: string): string {
+    const buf = Buffer.from(assetId, 'base64');
+    const relpath = buf.toString('utf8');
+    return path.join(this.basepath, relpath);
+  }
+
   /** @inheritdoc */
   async storeBlob(filepath: string, asset: Asset) {
     const destpath = this.blobPath(asset.key);
@@ -40,43 +46,15 @@ class LocalBlobRepository implements BlobRepository {
   }
 
   /** @inheritdoc */
-  replaceBlob(filepath: string, asset: Asset) {
-    return Promise.reject(new Error('not implemented'));
+  assetUrl(assetId: string): string {
+    // served by an endpoint defined in preso/routes/assets.ts
+    return `/assets/raw/${assetId}`;
   }
 
   /** @inheritdoc */
-  blobPath(assetId: string) {
-    const buf = Buffer.from(assetId, 'base64');
-    const relpath = buf.toString('utf8');
-    return path.join(this.basepath, relpath);
-  }
-
-  /** @inheritdoc */
-  renameBlob(oldId: string, newId: string) {
-    return Promise.reject(new Error('not implemented'));
-  }
-
-  /** @inheritdoc */
-  async thumbnail(
-    assetId: string,
-    width: number,
-    height: number
-  ): Promise<Buffer> {
-    // fit the image into a box of the given size, convert to jpeg
-    return sharp(this.blobPath(assetId), { autoOrient: true })
-      .resize({
-        width,
-        height,
-        fit: 'inside',
-        withoutEnlargement: true
-      })
-      .toFormat('jpeg')
-      .toBuffer();
-  }
-
-  /** @inheritdoc */
-  clearCache(assetId: string) {
-    return Promise.reject(new Error('not implemented'));
+  thumbnailUrl(assetId: string, width: number, height: number): string {
+    // served by an endpoint defined in preso/routes/assets.ts
+    return `/assets/thumbnail/${width}/${height}/${assetId}`;
   }
 }
 

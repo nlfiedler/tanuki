@@ -18,46 +18,22 @@ interface BlobRepository {
   storeBlob(filepath: string, asset: Asset): Promise<void>;
 
   /**
-   * Move the given file into the blob store, replacing whatever is already
-   * there. Used when an asset is to be replaced by a different version.
-   *
-   * @param filepath - path to the incoming asset.
-   * @param asset - asset entity.
-   */
-  replaceBlob(filepath: string, asset: Asset): Promise<void>;
-
-  /**
-   * Return the full path to the asset in blob storage.
+   * Return the URL for fetching the asset.
    *
    * @param assetId - unique asset identifier.
-   * @returns path to the file.
+   * @returns URL from which to GET the asset.
    */
-  blobPath(assetId: string): string;
+  assetUrl(assetId: string): string;
 
   /**
-   * Change the identity of the asset in blob storage.
-   *
-   * @param oldId - old asset identifier.
-   * @param newId - new asset identifier.
-   */
-  renameBlob(oldId: string, newId: string): Promise<void>;
-
-  /**
-   * Produce a JPEG formatted thumbnail of the desired size for the asset.
+   * Return a URL for producing a thumbnail of the asset.
    *
    * @param assetId - unique asset identifier.
    * @param width - width in pixels for the thumbnail.
    * @param height - height in pixels for the thumbnail.
-   * @returns buffer of raw JPEG image data.
+   * @returns URL from which to GET the thumbnail.
    */
-  thumbnail(assetId: string, width: number, height: number): Promise<Buffer>;
-
-  /**
-   * Clear the thumbnail cache of any entries for the given asset.
-   *
-   * @param assetId - unique asset identifier.
-   */
-  clearCache(assetId: string): Promise<void>;
+  thumbnailUrl(assetId: string, width: number, height: number): string;
 }
 
 export { type BlobRepository };

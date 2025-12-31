@@ -12,19 +12,33 @@ import { EnvSettingsRepository } from 'tanuki/server/data/repositories/env-setti
 import {
   LocalBlobRepository,
   accessible
-} from 'tanuki/server/data/repositories/local-bob-repository.ts';
+} from 'tanuki/server/data/repositories/local-blob-repository.ts';
 
 describe('LocalBlobRepository', function () {
-  test('should decode the asset key into a path', async function () {
+  test('should produce a URL for the full asset', async function () {
     // arrange
-    const expected = path.normalize('foo/2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg');
-    const encoded =
+    const assetId =
       'MjAxOC8wNS8zMS8yMTAwLzAxYng1enprYmthY3Rhdjl3ZXZnZW1tdnJ6LmpwZw==';
+    const expected = path.normalize('/assets/raw/' + assetId);
     const settingsRepository = new EnvSettingsRepository();
-    settingsRepository.set('ASSETS_PATH', 'foo');
+    settingsRepository.set('ASSETS_PATH', 'ignored');
     const sut = new LocalBlobRepository({ settingsRepository });
     // act
-    const actual = sut.blobPath(encoded);
+    const actual = sut.assetUrl(assetId);
+    // assert
+    expect(actual).toEqual(expected);
+  });
+
+  test('should produce a URL for the thumbnail', async function () {
+    // arrange
+    const assetId =
+      'MjAxOC8wNS8zMS8yMTAwLzAxYng1enprYmthY3Rhdjl3ZXZnZW1tdnJ6LmpwZw==';
+    const expected = path.normalize('/assets/thumbnail/480/320/' + assetId);
+    const settingsRepository = new EnvSettingsRepository();
+    settingsRepository.set('ASSETS_PATH', 'ignored');
+    const sut = new LocalBlobRepository({ settingsRepository });
+    // act
+    const actual = sut.thumbnailUrl(assetId, 480, 320);
     // assert
     expect(actual).toEqual(expected);
   });

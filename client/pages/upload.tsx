@@ -38,13 +38,13 @@ function Upload() {
   });
   // indicates number of files uploaded so far as percentage
   const [progress, setProgress] = createSignal(0);
-  const startUploadAction = action(async (): Promise<void> => {
+  const uploadAction = action(async (): Promise<void> => {
     const allFiles = selectedFiles().concat(droppedFiles());
     await uploadFiles(allFiles, setProgress);
     throw redirect('/pending');
   });
-  const startUpload = useAction(startUploadAction);
-  const uploadSubmission = useSubmission(startUploadAction);
+  const startUpload = useAction(uploadAction);
+  const uploadSubmission = useSubmission(uploadAction);
   const importAction = action(async (): Promise<any> => {
     try {
       await client.mutate({ mutation: IMPORT_ASSETS });
@@ -228,7 +228,7 @@ async function uploadFiles(
   for (const [index, file] of selectedFiles.entries()) {
     const formData = new FormData();
     // appending a File will include its filename
-    formData.append('file_blob', file);
+    formData.append('content', file);
     formData.append('last_modified', file.lastModified.toString());
     try {
       await fetch('/assets/upload', {

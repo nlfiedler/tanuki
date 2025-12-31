@@ -30,6 +30,8 @@ The choice is **Leptos** with **Bulma**.
 
 An immediate difference between Flutter and Leptos is that Leptos is very fast. For instance, if you search for assets that yield several pages of results, then flip through the pages, the paging is nearly instantaneous. Also, the build output is half the size of the Flutter web build artifact. According to the Chrome browser, the Leptos-based front-end uses much less memory than the Flutter application ever did (~80 MB versus ~300 MB).
 
+Leptos, at least the pre-1.0 version, is somewhat difficult to use and very time-consuming. SolidJS is much easier.
+
 ## Links
 
 - Leptos [website](https://leptos.dev)

@@ -58,6 +58,8 @@ type Asset {
   caption: String
   "Location information for the asset."
   location: Location
+  # URL for retrieving the raw asset.
+  assetUrl: String!
 }
 
 "An attribute name and the number of assets it references."
@@ -80,6 +82,10 @@ type SearchResult {
   location: Location
   "The media type of the asset, such as 'image/jpeg' or 'video/mp4'."
   mediaType: String!
+  # URL for retrieving a thumbnail version of the asset.
+  thumbnailUrl: String!
+  # URL for retrieving the raw asset (mainly for videos).
+  assetUrl: String!
 }
 
 "`SearchMeta` is returned from the search query."

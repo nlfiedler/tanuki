@@ -26,7 +26,7 @@ Use `bun start` to run the server locally, listening for HTTP connections on por
 The application is configured using environment variables.
 
 - **ASSETS_PATH**
-  - Full path to the base directory of the asset storage.
+  - Full path to the base directory of the asset storage, unless `NAMAZU_URL` is set.
 - **UPLOAD_PATH**
   - Full path to the directory into which uploaded files will be temporarily stored.
 - **DATABASE_URL**
@@ -43,6 +43,8 @@ The application is configured using environment variables.
   - If defined, enables reverse geocoding using the Google Maps API.
 - **LOG_LEVEL**
   - One of the Winston [logging levels](https://github.com/winstonjs/winston?tab=readme-ov-file#logging-levels)
+- **NAMAZU_URL**
+  - URL for the [namazu](https://github.com/nlfiedler/namazu) blob store. If not set, assets will be stored in `ASSETS_PATH`.
 - **NODE_ENV**
   - If set to `production`, changes the logging format. Some 3rd party modules may change slightly.
 - **PORT**

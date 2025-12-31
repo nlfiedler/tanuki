@@ -42,6 +42,7 @@ const GET_ASSET: TypedDocumentNode<Query, QueryAssetArgs> = gql`
         city
         region
       }
+      assetUrl
     }
   }
 `;
@@ -103,7 +104,7 @@ interface ImageThumbnailProps {
 function ImageThumbnail(props: ImageThumbnailProps) {
   return (
     <img
-      src={`/assets/raw/${props.asset.id}`}
+      src={props.asset.assetUrl}
       alt={props.asset.filename}
       style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
     />
@@ -121,7 +122,7 @@ function VideoThumbnail(props: VideoThumbnailProps) {
   }
   return (
     <video controls>
-      <source src={`/assets/raw/${props.asset.id}`} type={media_type} />
+      <source src={props.asset.assetUrl} type={media_type} />
       Bummer, your browser does not support the HTML5
       <code>video</code>
       tag.
@@ -138,10 +139,7 @@ function AudioThumbnail(props: AudioThumbnailProps) {
     <>
       <figcaption>{props.asset.filename}</figcaption>
       <audio controls>
-        <source
-          src={`/assets/raw/${props.asset.id}`}
-          type={props.asset.mediaType}
-        />
+        <source src={props.asset.assetUrl} type={props.asset.mediaType} />
       </audio>
     </>
   );
@@ -281,7 +279,7 @@ function AssetForm(props: AssetFormProps) {
                   class="file-input"
                   type="file"
                   id="file-input"
-                  name="file_blob"
+                  name="content"
                   multiple={false}
                   disabled={true}
                 />
@@ -295,10 +293,7 @@ function AssetForm(props: AssetFormProps) {
             </div>
           </div>
           <div class="level-item">
-            <a
-              href={`/assets/raw/${props.asset.id}`}
-              download={props.asset.filename}
-            >
+            <a href={props.asset.assetUrl} download={props.asset.filename}>
               <button class="button">
                 <span class="icon">
                   <i class="fa-solid fa-download"></i>

@@ -6,7 +6,7 @@
 
 ## Context
 
-The application consists of two parts, the server-side backend and the client-side frontend. With regards to the frontend, the programming language and runtime are generally determined by the target environment. For the web, the choice is either JavaScript, or something that compiles to JavaScript. For macOS, this is likely Swift or Objective-C, and for Windows and Linux, C++. However, there are desktop application frameworks that work at a level slighty above the native layer, and often cross-compile to different platforms.
+The application consists of two parts, the server-side backend and the client-side frontend. With regards to the frontend, the programming language and runtime are generally determined by the target environment. For the web, the choice is either JavaScript, or something that compiles to JavaScript. For macOS, this is likely Swift or Objective-C, and for Windows and Linux, C++. However, there are desktop application frameworks that work at a level slightly above the native layer, and often cross-compile to different platforms.
 
 In terms of those application frameworks, several choices are available that stay well above the native layer while still offering adequate integration with the underlying platform. The most popular choice at this time is [Electron](https://www.electronjs.org) which leverages V8, Node.js, and the Chromium library. Using Electron means writing the application in HTML, CSS, and JavaScript. Another option that is rapidly gaining traction in web and desktop development is [Flutter](https://flutter.dev), for which application code is written in [Dart](https://dart.dev).
 
@@ -23,6 +23,8 @@ The choice is **Flutter**.
 ## Consequences
 
 While not yet complete for this application, another application has had its frontend written in Dart/Flutter, and that has worked out very well. It compiles quickly, produces a decent sized binary, and works without any issues. The tooling and platform are updated frequently, and everything is generally getting better each time. Compare with ReasonML which has been stuck in neutral for a long time.
+
+Ultimately replaced with Leptos in 2024 and then with TypeScript/SolidJS a year later. Flutter is very appealing for mobile applications but not well suited to writing web applications.
 
 ## Links
 

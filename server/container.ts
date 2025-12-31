@@ -30,12 +30,19 @@ import { SqliteRecordRepository } from 'tanuki/server/data/repositories/sqlite-r
 import { DummyLocationRepository } from 'tanuki/server/data/repositories/dummy-location-repository.ts';
 import { EnvSettingsRepository } from 'tanuki/server/data/repositories/env-settings-repository.ts';
 import { GoogleLocationRepository } from 'tanuki/server/data/repositories/google-location-repository.ts';
-import { LocalBlobRepository } from 'tanuki/server/data/repositories/local-bob-repository.ts';
+import { LocalBlobRepository } from './data/repositories/local-blob-repository';
+import { NamazuBlobRepository } from './data/repositories/namazu-blob-repository';
 
 // create the injection container
 const container = createContainer({
   injectionMode: InjectionMode.PROXY
 });
+
+// assume local blob repository unless specified otherwise
+let BlobRepository: any = LocalBlobRepository;
+if ('NAMAZU_URL' in process.env) {
+  BlobRepository = NamazuBlobRepository;
+}
 
 let LocationRepository: any = DummyLocationRepository;
 if ('GOOGLE_MAPS_API_KEY' in process.env) {
@@ -56,7 +63,7 @@ container.register({
   recordRepository: asClass(RecordRepository, {
     lifetime: Lifetime.SINGLETON
   }),
-  blobRepository: asClass(LocalBlobRepository, {
+  blobRepository: asClass(BlobRepository, {
     lifetime: Lifetime.SINGLETON
   }),
   locationRepository: asClass(LocationRepository, {

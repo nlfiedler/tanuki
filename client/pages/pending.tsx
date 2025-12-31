@@ -47,6 +47,8 @@ const PENDING_ASSETS: TypedDocumentNode<Query, QueryPendingArgs> = gql`
           region
         }
         mediaType
+        thumbnailUrl
+        assetUrl
       }
       count
       lastPage
@@ -688,7 +690,7 @@ interface ImageThumbnailProps {
 function ImageThumbnail(props: ImageThumbnailProps) {
   return (
     <img
-      src={`/assets/thumbnail/960/960/${props.asset.assetId}`}
+      src={props.asset.thumbnailUrl}
       alt={props.asset.filename}
       style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
     />
@@ -706,7 +708,7 @@ function VideoThumbnail(props: VideoThumbnailProps) {
   }
   return (
     <video controls>
-      <source src={`/assets/raw/${props.asset.assetId}`} type={media_type} />
+      <source src={props.asset.assetUrl} type={media_type} />
       Bummer, your browser does not support the HTML5
       <code>video</code>
       tag.
@@ -723,10 +725,7 @@ function AudioThumbnail(props: AudioThumbnailProps) {
     <>
       <figcaption>{props.asset.filename}</figcaption>
       <audio controls>
-        <source
-          src={`/assets/raw/${props.asset.assetId}`}
-          type={props.asset.mediaType}
-        />
+        <source src={props.asset.assetUrl} type={props.asset.mediaType} />
       </audio>
     </>
   );

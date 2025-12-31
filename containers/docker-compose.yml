@@ -16,3 +16,22 @@ services:
         max-size: "1m"
         max-file: "4"
     restart: always
+  namazu:
+    image: namazu-app:latest
+    container_name: tanuki_namazu
+    environment:
+      ASSETS_PATH: /assets
+      HOST: 0.0.0.0
+      PORT: 3001
+      RUST_LOG: info
+    ports:
+      - "3001:3001"
+    logging:
+      options:
+        max-size: "1m"
+        max-file: "4"
+    volumes:
+      - type: bind
+        source: ${NAMAZU_ASSETS_PATH}
+        target: /assets
+    restart: always

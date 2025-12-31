@@ -18,6 +18,8 @@ The choice is **RocksDB**. It is resilient to data-loss, fast, and space efficie
 
 RocksDB has been used by this application and another for several months. It has been working well without any issues whatsoever.
 
+RocksDB support was dropped with the major (TypeScript/Bun) rewrite at the end of 2025. A good run of five years.
+
 ## Links
 
 - RocksDB [website](https://rocksdb.org)

@@ -35,6 +35,7 @@ import type {
 import logger from 'tanuki/server/logger.ts';
 
 const settings = container.resolve('settingsRepository');
+const blobs = container.resolve('blobRepository');
 
 // The GraphQL schema
 const schemaPath = path.join(import.meta.dirname, 'schema.graphql');
@@ -212,7 +213,12 @@ function paginateResults(
   const count = results.length;
   const off = boundedIntValue(offset, 0, 0, count);
   const lim = boundedIntValue(limit, 16, 1, 256);
-  const pageRows = results.slice(off, off + lim);
+  const pageRows = results.slice(off, off + lim).map((r) => {
+    return Object.assign({}, r, {
+      thumbnailUrl: blobs.thumbnailUrl(r.assetId, 960, 960),
+      assetUrl: blobs.assetUrl(r.assetId)
+    });
+  });
   const lastPage = count == 0 ? 1 : Math.ceil(count / lim);
   return {
     results: pageRows,
@@ -386,6 +392,7 @@ function assetToGQL(entity: Asset): GQLAsset {
     mediaType: entity.mediaType,
     tags: entity.tags,
     caption: entity.caption,
-    location: entity.location
+    location: entity.location,
+    assetUrl: blobs.assetUrl(entity.key)
   };
 }
