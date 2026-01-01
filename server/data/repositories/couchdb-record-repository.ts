@@ -312,7 +312,26 @@ class CouchDBRecordRepository implements RecordRepository {
 
   /** @inheritDoc */
   async queryNewborn(after: Date): Promise<SearchResult[]> {
+    // Trying to wait for the view to update, but still not successful.
+    while (true) {
+      // If the view is currently being updated, wait until it finishes. CouchDB
+      // is supposed to do this by default but it is not working as advertised.
+      const info = await this.conn.request({
+        db: this.dbname,
+        path: '_design/newborns/_info',
+        method: 'GET'
+      });
+      // Tried waiting on waiting_commit to be false but that caused the tests
+      // to timeout and fail.
+      if (info.view_index.updater_running) {
+        await Bun.sleep(250);
+      } else {
+        break;
+      }
+    }
     const queryResults = await this.database.view('newborns', 'newborn', {
+      // Tried the various stale and stable options here but that also did not
+      // help -- the default is _supposed_ to wait for the update.
       startkey: after.getTime()
     });
     return queryResults.rows.map((row: any) => convertViewResult(row));
