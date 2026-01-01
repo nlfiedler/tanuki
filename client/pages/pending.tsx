@@ -168,7 +168,7 @@ function Pending() {
     // SolidJS router is _supposed_ to revalidate the queries on this page, but
     // nothing makes any difference, even calling revalidate() or reload()
     // explicitly does nothing, so just force the page to reload instead.
-    // window.location.reload();
+    window.location.reload();
     return { ok: true };
   }, 'updateAssets');
   const startUpdate = useAction(updateAction);
