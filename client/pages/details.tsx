@@ -293,7 +293,10 @@ function AssetForm(props: AssetFormProps) {
             </div>
           </div>
           <div class="level-item">
-            <a href={props.asset.assetUrl} download={props.asset.filename}>
+            <a
+              href={`${props.asset.assetUrl}?attachment=yes`}
+              download={props.asset.filename}
+            >
               <button class="button">
                 <span class="icon">
                   <i class="fa-solid fa-download"></i>
