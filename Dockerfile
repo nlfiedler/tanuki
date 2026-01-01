@@ -35,18 +35,20 @@ FROM base AS release
 # ensure SSL and CA certificates are available for HTTPS clients
 ENV DEBIAN_FRONTEND="noninteractive"
 RUN apt-get -q update && \
-    apt-get -q -y install curl openssl ca-certificates
+    apt-get -q -y install openssl ca-certificates
 # copy production dependencies, server code, and compiled front-end into the final image
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /home/bun/app/dist dist
 COPY --from=prerelease /home/bun/app/generated generated
 COPY --from=prerelease /home/bun/app/server server
 COPY --from=prerelease /home/bun/app/package.json .
+COPY containers/healthcheck.ts healthcheck.ts
 
 # run the app
 USER bun
 VOLUME /assets
 ENV PORT=3000
+ENV HEALTHCHECK_PATH="/liveness"
 EXPOSE ${PORT}
-HEALTHCHECK CMD curl --fail --silent --head http://localhost:${PORT}/liveness || exit 1
+HEALTHCHECK CMD ["bun", "run", "healthcheck.ts"]
 ENTRYPOINT [ "bun", "server/main.ts" ]

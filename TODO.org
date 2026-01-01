@@ -249,6 +249,9 @@ include it in the database records.
 *** HEIC/HEIF thumbnails, metadata
 **** HEIF is an image file format employing HEVC (h.265) image coding
 **** [[https://aomediacodec.github.io/av1-avif/][AV1]] is the free alternative to encumbered HEVC
+**** https://github.com/catdad-experiments/libheif-js
+**** https://github.com/catdad-experiments/heic-convert
+**** https://github.com/catdad-experiments/heic-decode
 *** read original date-time from RIFF/AVI files
 **** easier to just convert them to MOV/MP4 using QuickTime player
 **** RIFF/AVI code exists in Rust code =src/domain/usecases.rs=

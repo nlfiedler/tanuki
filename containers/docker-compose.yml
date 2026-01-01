@@ -16,6 +16,8 @@ services:
         max-size: "1m"
         max-file: "4"
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:5984"]
   namazu:
     image: namazu-app:latest
     container_name: tanuki_namazu
