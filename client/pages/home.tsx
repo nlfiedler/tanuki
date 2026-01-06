@@ -148,6 +148,7 @@ function Home() {
     'home-selected-page',
     1
   );
+  const [selectedAssets] = createSignal(new Set<string>());
   const [pageSize, setPageSize] = useLocalStorage('page-size', 18);
   const browseParams = createMemo(() => ({
     tags: selectedTags(),
@@ -283,6 +284,7 @@ function Home() {
       <Suspense fallback={<button class="button is-loading">...</button>}>
         <CardsGrid
           results={assetsQuery()?.search.results}
+          selectedAssets={selectedAssets}
           onClick={(assetId) => navigate(`/asset/${assetId}`)}
         />
       </Suspense>

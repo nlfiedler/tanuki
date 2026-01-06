@@ -162,7 +162,10 @@ export class DatetimeSet {
   }
 }
 
-/** Adds a number of days to the user date-time field of an asset. */
+/**
+ * Adds a number of days to the user date-time field of an asset. The value may
+ * be negative which will subtract days from the date-time.
+ */
 export class DatetimeAddDays {
   value: number;
 
@@ -173,22 +176,6 @@ export class DatetimeAddDays {
   perform(asset: Asset): boolean {
     const newDate = asset.bestDate();
     newDate.setDate(newDate.getDate() + this.value);
-    asset.userDate = newDate;
-    return true;
-  }
-}
-
-/** Subtracts a number of days from the user date-time field of an asset. */
-export class DatetimeSubDays {
-  value: number;
-
-  constructor(value: number) {
-    this.value = value;
-  }
-
-  perform(asset: Asset): boolean {
-    const newDate = asset.bestDate();
-    newDate.setDate(newDate.getDate() - this.value);
     asset.userDate = newDate;
     return true;
   }

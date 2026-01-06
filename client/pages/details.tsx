@@ -8,13 +8,12 @@ import {
   createSignal,
   type Accessor,
   Match,
-  type Signal,
   Show,
+  type Signal,
   Suspense,
   Switch
 } from 'solid-js';
-import { useParams } from '@solidjs/router';
-import { action, useAction, useSubmission } from '@solidjs/router';
+import { action, useAction, useParams, useSubmission } from '@solidjs/router';
 import { type TypedDocumentNode, gql } from '@apollo/client';
 import { useApolloClient } from '../apollo-provider';
 import type {
@@ -103,11 +102,13 @@ interface ImageThumbnailProps {
 
 function ImageThumbnail(props: ImageThumbnailProps) {
   return (
-    <img
-      src={props.asset.assetUrl}
-      alt={props.asset.filename}
-      style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
-    />
+    <a href={props.asset.assetUrl} download={props.asset.filename}>
+      <img
+        src={props.asset.assetUrl}
+        alt={props.asset.filename}
+        style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
+      />
+    </a>
   );
 }
 
@@ -146,7 +147,10 @@ function AudioThumbnail(props: AudioThumbnailProps) {
 }
 
 // define a directive to make text input handling more concise
-function textField(element: HTMLInputElement, value: Accessor<Signal<string>>) {
+export function textField(
+  element: HTMLInputElement,
+  value: Accessor<Signal<string>>
+) {
   const [field, setField] = value();
   createRenderEffect(() => (element.value = field()));
   element.addEventListener('input', ({ target }) =>
@@ -157,7 +161,7 @@ function textField(element: HTMLInputElement, value: Accessor<Signal<string>>) {
 // define a directive to make date-time input handling more concise
 //
 // n.b. the datetime from the Asset type in GraphQL is a string
-function datetimeField(
+export function datetimeField(
   element: HTMLInputElement,
   value: Accessor<Signal<string>>
 ) {
@@ -174,7 +178,7 @@ function datetimeField(
 }
 
 // define a directive to make text input (for tags) handling more concise
-function tagsField(
+export function tagsField(
   element: HTMLInputElement,
   value: Accessor<Signal<string[]>>
 ) {
@@ -193,7 +197,7 @@ function tagsField(
   });
 }
 
-// Patch in the types for the custom directives to satisfy TypeScript.
+// Patch in the field types for the custom directives to satisfy TypeScript.
 declare module 'solid-js' {
   namespace JSX {
     interface DirectiveFunctions {

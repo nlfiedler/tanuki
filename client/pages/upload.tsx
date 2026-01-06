@@ -108,8 +108,11 @@ function Upload() {
             </div>
             <div class="level-item">
               <button
-                class="button"
-                class:is-loading={uploadSubmission.pending}
+                classList={{
+                  button: true,
+                  'is-primary': hasFiles(),
+                  'is-loading': uploadSubmission.pending
+                }}
                 onClick={() => startUpload()}
                 disabled={!hasFiles() || uploadSubmission.pending}
               >

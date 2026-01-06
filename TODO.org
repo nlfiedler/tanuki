@@ -2,25 +2,21 @@
 ** Rewrite 2025
 *** commit =230801d= was when old JS code was removed
 *** commit =3263ae7= was last Rust commit
-*** TODO bulk edit support [3/7]
-- [X] add a query that returns all unique location label, city, region values as separate lists
-- [X] add use case that performs modifications to assets (add tags, remove tags, etc)
-- [X] add resolver mutation to invoke the use case
-- [ ] add edit page with form for making changes
-- [ ] add query text field for finding assets
-- [ ] allow selection of multiple assets
-- [ ] enable ~Commit~ button when selections and form inputs are valid
-*** TODO search cache for =scan-assets= usecase
-**** clear the cache in update, edit use cases
-*** TODO store various selections in local storage [15/19]
+*** TODO pending page sort order has no default selection, shows an empty button
+**** maybe related to the useLocalStorage() hook
+*** TODO GraphQL resolvers should log operations and abbreviated set of arguments
+**** currently only getting lines like =POST /graphql 200 22.297 ms - 1356= which means nothing
+*** TODO the =max-width: 300%;= hack on the query input field needs a better solution
+**** TODO replace the use of ~level~ with a simple flex row
+*** TODO store various selections in local storage [18/19]
 - [X] (recent) page size
 - [X] recent selected page
 - [X] recent selected range
 - [X] recent sort field/order
 - [ ] browse parameters
-- [ ] edit query
-- [ ] edit sort order
-- [ ] edit selected page
+- [X] edit query
+- [X] edit sort order
+- [X] edit selected page
 - [X] (home) page size
 - [X] home selected tags
 - [X] home selected locations
@@ -48,15 +44,12 @@
 **** database view is stale, seems to need to be queried twice
 **** tried =stable=false&update=true= explicitly, no change
 **** tried running query at the end of =putAsset()=, no change
-**** change CouchDB repo to query ~pending~ twice if =putAsset= was called, reset flag once pending finishes
 *** TODO changing light/dark in System Preferences does not cause page theme to change
 *** TODO fix the cross-origin errors in the browser console
 *** TODO document the supported date-time formats in query (anything JavaScript can parse)
 *** TODO improve =jsdoc= documentation [0/2]
 - [ ] associate ~global~ functions as belonging to certain source files
 - [ ] fill in the huge gaping hole in the ~Home~ page
-*** TODO bun docker 1.3.4 ~module not found~ error
-**** check file/directory permissions
 ** Help
 *** write help pages for each of the main pages
 **** location string parsing
@@ -112,9 +105,6 @@
 - supports advanced query strings
 **** uploads page
 - asset importer ignores hidden files and directories
-** Styles
-*** the =max-width: 300%;= hack on the query input field needs a better solution
-**** replace the use of ~level~ with a simple flex row
 ** Pending
 *** display modes: have an option that makes the images really big (single column, huge images)
 *** hovering over asset should show larger version in a large tooltip
@@ -200,12 +190,17 @@
 *** turn the ~Page n of m~ text into a button to input a page number
 **** clicking the button opens a dropdown with a text input field
 **** pressing ~Enter~ or clicking ~Go~ button will dismiss dropdown and go to that page
+** Database performance
+*** search/edit should use Mango queries
+**** search is slow because it is retrieving all of the records
+**** should convert the input into a Mango query
+**** however, Mango is for CouchDB exclusively, need a way for the repo to perform the scan
 *** consider how record repository can implement sorting and pagination
 **** objective would be to improve search performance if necessary
 **** https://docs.couchdb.org/en/stable/ddocs/views/pagination.html
 **** CoubhDB: use =skip= and =limit= parameters on view query
 ** Finding/removing duplicates
-*** many assets are very similar to each other, probably differ only in metadata
+*** many assets are very similar to each other, probably differ only in metadata (HEIC->JPG conversion?)
 *** find a means (histogram?) of detecting near-duplicates
 ** GraphQL landing page
 *** eventually do away with the need for the landing page in production
@@ -217,6 +212,9 @@
 *** consider storage costs (currently under 100 GB)
 *** place basic auth server in front (Azure app gateway maybe?)
 *** consider deploying in read-only mode (sync would be tricky)
+** Additional blob stores
+*** any store that accomodates asset identifiers will work (S3-like)
+*** thumbnails can be generated locally and cached if necessary
 ** Attribute management
 *** search query to find assets that have no tags (>1,000)
 *** search query to find assets that have no location (~2,000)

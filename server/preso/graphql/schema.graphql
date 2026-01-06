@@ -170,6 +170,11 @@ type Query {
     offset: Int
     limit: Int
   ): SearchMeta!
+  """
+  Retrieve the union of tags for the given assets. The count for each tag
+  indicates how many of the selected assets have that tag.
+  """
+  tagsForAssets(assets: [String!]!): [AttributeCount!]!
   "Retrieve the full location records with label, city, and region."
   locationRecords: [Location!]!
   """
@@ -247,12 +252,16 @@ input AssetEdit {
   removeTags: [String!]
   "Sets or clears one or more location fields."
   setLocation: [LocationSet!]
-  "Sets the custom date-time field, or clears if value is null."
+  """
+  Sets the custom date-time field to the given value. This field takes
+  precedence over the addDays field, if both are given non-null values.
+  """
   setDate: Date
-  "Set the custom date-time field by adding days to the best date-time."
+  """
+  Set the custom date-time field by adding days to the best date-time. If the
+  value is negative, then that many days will be subtracted from the date-time.
+  """
   addDays: Int!
-  "Set the custom date-time field by subtracting days from the best date-time."
-  subtractDays: Int!
 }
 
 type Mutation {
@@ -264,7 +273,7 @@ type Mutation {
   "Update a single asset with the given tags, caption, custom date, etc."
   update(id: ID!, asset: AssetInput!): Asset!
   "Modify multiple assets based on their current properties."
-  edit(assetIds: [String!]!, operations: [AssetEdit!]!): Int!
+  edit(assetIds: [String!]!, operations: AssetEdit!): Int!
 }
 
 schema {

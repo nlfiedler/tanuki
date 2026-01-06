@@ -59,7 +59,9 @@ describe('Asset operations', function () {
 
   test('should clear location label of an asset', function () {
     // arrange
-    const asset = new Asset('abc123').setLocation(Location.parse('beach; Oahu, Hawaii'));
+    const asset = new Asset('abc123').setLocation(
+      Location.parse('beach; Oahu, Hawaii')
+    );
     const op = new ops.LocationClearField(ops.LocationField.Label);
     // act
     const modded = op.perform(asset);
@@ -72,7 +74,9 @@ describe('Asset operations', function () {
 
   test('should clear location city of an asset', function () {
     // arrange
-    const asset = new Asset('abc123').setLocation(Location.parse('beach; Oahu, Hawaii'));
+    const asset = new Asset('abc123').setLocation(
+      Location.parse('beach; Oahu, Hawaii')
+    );
     const op = new ops.LocationClearField(ops.LocationField.City);
     // act
     const modded = op.perform(asset);
@@ -85,7 +89,9 @@ describe('Asset operations', function () {
 
   test('should clear location region of an asset', function () {
     // arrange
-    const asset = new Asset('abc123').setLocation(Location.parse('beach; Oahu, Hawaii'));
+    const asset = new Asset('abc123').setLocation(
+      Location.parse('beach; Oahu, Hawaii')
+    );
     const op = new ops.LocationClearField(ops.LocationField.Region);
     // act
     const modded = op.perform(asset);
@@ -98,7 +104,9 @@ describe('Asset operations', function () {
 
   test('should set location label of an asset', function () {
     // arrange
-    const asset = new Asset('abc123').setLocation(Location.parse('beach; Oahu, Hawaii'));
+    const asset = new Asset('abc123').setLocation(
+      Location.parse('beach; Oahu, Hawaii')
+    );
     const op = new ops.LocationSetField(ops.LocationField.Label, 'lagoon');
     // act
     const modded = op.perform(asset);
@@ -111,7 +119,9 @@ describe('Asset operations', function () {
 
   test('should set location city of an asset', function () {
     // arrange
-    const asset = new Asset('abc123').setLocation(Location.parse('beach; Oahu, Hawaii'));
+    const asset = new Asset('abc123').setLocation(
+      Location.parse('beach; Oahu, Hawaii')
+    );
     const op = new ops.LocationSetField(ops.LocationField.City, 'Honolulu');
     // act
     const modded = op.perform(asset);
@@ -124,7 +134,9 @@ describe('Asset operations', function () {
 
   test('should set location region of an asset', function () {
     // arrange
-    const asset = new Asset('abc123').setLocation(Location.parse('beach; Oahu, Hawaii'));
+    const asset = new Asset('abc123').setLocation(
+      Location.parse('beach; Oahu, Hawaii')
+    );
     const op = new ops.LocationSetField(ops.LocationField.Region, 'HI');
     // act
     const modded = op.perform(asset);
@@ -173,7 +185,7 @@ describe('Asset operations', function () {
   test('should subtract days from date-time of an asset', function () {
     // arrange
     const asset = new Asset('abc123').setUserDate(new Date(2018, 5, 9, 12, 0));
-    const op = new ops.DatetimeSubDays(5);
+    const op = new ops.DatetimeAddDays(-5);
     // act
     const modded = op.perform(asset);
     // assert
@@ -199,7 +211,7 @@ describe('Asset operations', function () {
   test('should subtract many days from date-time of an asset', function () {
     // arrange
     const asset = new Asset('abc123').setUserDate(new Date(2018, 5, 9, 12, 0));
-    const op = new ops.DatetimeSubDays(365);
+    const op = new ops.DatetimeAddDays(-365);
     // act
     const modded = op.perform(asset);
     // assert

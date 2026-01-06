@@ -4,6 +4,7 @@
 import {
   createMemo,
   createResource,
+  createSignal,
   type Accessor,
   type JSX,
   Match,
@@ -118,6 +119,7 @@ function Search() {
       event.stopPropagation();
     }
   };
+  const [selectedAssets] = createSignal(new Set<string>());
 
   return (
     <>
@@ -175,6 +177,7 @@ function Search() {
       <Suspense fallback={<button class="button is-loading">...</button>}>
         <CardsGrid
           results={assetsQuery()?.scan.results}
+          selectedAssets={selectedAssets}
           onClick={(assetId) => navigate(`/asset/${assetId}`)}
         />
       </Suspense>

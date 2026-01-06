@@ -1,23 +1,28 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { For, Match, Show, Switch } from 'solid-js';
+import { type Accessor, For, Match, Show, Switch } from 'solid-js';
 import type { Location, SearchResult } from 'tanuki/generated/graphql.ts';
 import * as format from '../helpers/formatting.ts';
 
 interface CardsGridProps {
   results?: SearchResult[];
+  selectedAssets: Accessor<Set<string>>;
   onClick: (assetId: string) => void;
 }
 
 function CardsGrid(props: CardsGridProps) {
+  const cardClass = (id: string): string => {
+    return props.selectedAssets().has(id) ? 'card selected' : 'card';
+  };
+
   return (
     <div class="grid is-col-min-16 padding-2">
       <For each={props.results}>
         {(asset) => (
           <div class="cell">
             <a onClick={() => props.onClick(asset.assetId)}>
-              <div class="card">
+              <div class={cardClass(asset.assetId)}>
                 <div class="card-image">
                   <figure class="image">
                     <Switch fallback={<ImageThumbnail asset={asset} />}>

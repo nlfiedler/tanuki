@@ -8,6 +8,7 @@ import './assets/main.scss';
 import { ApolloProvider } from './apollo-provider.tsx';
 import Navbar from './components/navbar.tsx';
 import AssetDetails from './pages/details.tsx';
+import Edit from './pages/edit.tsx';
 import Home from './pages/home.tsx';
 import Pending from './pages/pending.tsx';
 import Search from './pages/search.tsx';
@@ -31,6 +32,7 @@ render(
         <Route path="/search" component={Search} />
         <Route path="/upload" component={Upload} />
         <Route path="/asset/:id" component={AssetDetails} />
+        <Route path="/edit" component={Edit} />
         <Route path="*paramName" component={NotFound} />
       </Router>
     </ApolloProvider>

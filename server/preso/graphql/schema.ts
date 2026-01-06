@@ -20,6 +20,7 @@ import type {
   Asset as GQLAsset,
   AssetEdit,
   AssetInput as GQLAssetInput,
+  AttributeCount,
   LocationValues,
   MutationEditArgs,
   MutationUpdateArgs,
@@ -28,6 +29,7 @@ import type {
   QueryPendingArgs,
   QueryScanArgs,
   QuerySearchArgs,
+  QueryTagsForAssetsArgs,
   SearchMeta,
   PendingParams as GQLPendingParams,
   SearchParams as GQLSearchParams
@@ -59,13 +61,14 @@ export const resolvers: Resolvers = {
       _args: any,
       _context: any,
       _info: GraphQLResolveInfo
-    ) {
+    ): Promise<number> {
       const countAssets = container.resolve('countAssets');
       try {
         return countAssets();
       } catch (error: any) {
         logger.error('record count failed: %o', error);
       }
+      return 0;
     },
 
     async tags(
@@ -73,7 +76,7 @@ export const resolvers: Resolvers = {
       _args: any,
       _context: any,
       _info: GraphQLResolveInfo
-    ) {
+    ): Promise<AttributeCount[]> {
       const getTags = container.resolve('getTags');
       return getTags();
     },
@@ -83,7 +86,7 @@ export const resolvers: Resolvers = {
       _args: any,
       _context: any,
       _info: GraphQLResolveInfo
-    ) {
+    ): Promise<AttributeCount[]> {
       const getLocationParts = container.resolve('getLocationParts');
       return getLocationParts();
     },
@@ -113,7 +116,7 @@ export const resolvers: Resolvers = {
       _args: any,
       _context: any,
       _info: GraphQLResolveInfo
-    ) {
+    ): Promise<AttributeCount[]> {
       const getYears = container.resolve('getYears');
       return getYears();
     },
@@ -123,7 +126,7 @@ export const resolvers: Resolvers = {
       _args: any,
       _context: any,
       _info: GraphQLResolveInfo
-    ) {
+    ): Promise<AttributeCount[]> {
       const getMediaTypes = container.resolve('getMediaTypes');
       return getMediaTypes();
     },
@@ -165,6 +168,16 @@ export const resolvers: Resolvers = {
       const scanAssets = container.resolve('scanAssets');
       const results = await scanAssets(query, sortField, sortOrder);
       return paginateResults(results, args.offset, args.limit);
+    },
+
+    async tagsForAssets(
+      _parent: any,
+      args: QueryTagsForAssetsArgs,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<AttributeCount[]> {
+      const getAssetTags = container.resolve('getAssetTags');
+      return getAssetTags(args.assets);
     }
   },
 
@@ -347,36 +360,33 @@ function locationFieldFromGQL(
   return ops.LocationField.Region;
 }
 
-function operationsFromGQL(edits: AssetEdit[]): ops.Operation[] {
+function operationsFromGQL(edits: AssetEdit): ops.Operation[] {
   const operations: ops.Operation[] = [];
-  for (const edit of edits) {
-    if (edit.addTags) {
-      for (const name of edit.addTags) {
-        operations.push(new ops.TagAdd(name));
+  if (edits.addTags) {
+    for (const name of edits.addTags) {
+      operations.push(new ops.TagAdd(name));
+    }
+  }
+  if (edits.removeTags) {
+    for (const name of edits.removeTags) {
+      operations.push(new ops.TagRemove(name));
+    }
+  }
+  if (edits.setLocation) {
+    for (const le of edits.setLocation) {
+      const field = locationFieldFromGQL(le.field);
+      if (le.value) {
+        operations.push(new ops.LocationSetField(field, le.value));
+      } else {
+        operations.push(new ops.LocationClearField(field));
       }
     }
-    if (edit.removeTags) {
-      for (const name of edit.removeTags) {
-        operations.push(new ops.TagRemove(name));
-      }
-    }
-    if (edit.setLocation) {
-      for (const le of edit.setLocation) {
-        const field = locationFieldFromGQL(le.field);
-        if (le.value) {
-          operations.push(new ops.LocationSetField(field, le.value));
-        } else {
-          operations.push(new ops.LocationClearField(field));
-        }
-      }
-    }
-    if (edit.setDate) {
-      operations.push(new ops.DatetimeSet(new Date(edit.setDate)));
-    } else if (edit.addDays) {
-      operations.push(new ops.DatetimeAddDays(edit.addDays));
-    } else if (edit.subtractDays) {
-      operations.push(new ops.DatetimeSubDays(edit.subtractDays));
-    }
+  }
+  if (edits.setDate) {
+    operations.push(new ops.DatetimeSet(new Date(edits.setDate)));
+  } else if (edits.addDays != 0) {
+    // both adds and subtracts according to the sign of the value
+    operations.push(new ops.DatetimeAddDays(edits.addDays));
   }
   return operations;
 }
