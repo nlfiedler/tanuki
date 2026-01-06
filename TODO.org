@@ -2,8 +2,6 @@
 ** Rewrite 2025
 *** commit =230801d= was when old JS code was removed
 *** commit =3263ae7= was last Rust commit
-*** TODO pending page sort order has no default selection, shows an empty button
-**** maybe related to the useLocalStorage() hook
 *** TODO GraphQL resolvers should log operations and abbreviated set of arguments
 **** currently only getting lines like =POST /graphql 200 22.297 ms - 1356= which means nothing
 *** TODO the =max-width: 300%;= hack on the query input field needs a better solution

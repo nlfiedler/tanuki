@@ -99,19 +99,19 @@ function Pending() {
   const [range, setRange] = useLocalStorage('pending-selected-range', 0);
   const [sortCombo, setSortCombo] = useLocalStorage(
     'pending-sort-combo',
-    sortComboDateAsc
+    'DateAsc'
   );
   const [selectedPage, setSelectedPage] = useLocalStorage(
     'pending-selected-page',
     1
   );
-  const [pageSize, setPageSize] = useLocalStorage('page-sie', 18);
+  const [pageSize, setPageSize] = useLocalStorage('page-size', 18);
   const pendingParams = createMemo(() => ({
     range: range(),
     offset: pageSize() * (selectedPage() - 1),
     limit: pageSize(),
-    sortField: sortCombo().sortField,
-    sortOrder: sortCombo().sortOrder
+    sortField: sortComboField(sortCombo()),
+    sortOrder: sortComboOrder(sortCombo())
   }));
   // query() and createAsync() are neat but they do not automatically run when
   // input signals change, or it is difficult to understand how they work
@@ -433,85 +433,73 @@ function LocationRecordSelector(props: LocationRecordSelectorProps) {
   );
 }
 
-enum SortFieldOrder {
-  DateAsc = 1,
-  DateDesc,
-  FileAsc,
-  FileDesc
+function sortComboIcon(value: string): string {
+  switch (value) {
+    case 'DateAsc': {
+      return 'fa-solid fa-arrow-down-1-9';
+    }
+    case 'DateDesc': {
+      return 'fa-solid fa-arrow-up-9-1';
+    }
+    case 'FileAsc': {
+      return 'fa-solid fa-arrow-down-a-z';
+    }
+    case 'FileDesc': {
+      return 'fa-solid fa-arrow-up-z-a';
+    }
+  }
+  // return the default if nothing else
+  return 'fa-solid fa-arrow-down-1-9';
 }
 
-class SortCombo {
-  value: SortFieldOrder;
-
-  constructor(value: SortFieldOrder) {
-    this.value = value;
-  }
-
-  get iconClass(): string {
-    switch (this.value) {
-      case SortFieldOrder.DateAsc: {
-        return 'fa-solid fa-arrow-down-1-9';
-      }
-      case SortFieldOrder.DateDesc: {
-        return 'fa-solid fa-arrow-up-9-1';
-      }
-      case SortFieldOrder.FileAsc: {
-        return 'fa-solid fa-arrow-down-a-z';
-      }
-      case SortFieldOrder.FileDesc: {
-        return 'fa-solid fa-arrow-up-z-a';
-      }
+function sortComboLabel(value: string): string {
+  switch (value) {
+    case 'DateAsc':
+    case 'DateDesc': {
+      return 'Date';
+    }
+    case 'FileAsc':
+    case 'FileDesc': {
+      return 'Filename';
     }
   }
-
-  get label(): string {
-    switch (this.value) {
-      case SortFieldOrder.DateAsc:
-      case SortFieldOrder.DateDesc: {
-        return 'Date';
-      }
-      case SortFieldOrder.FileAsc:
-      case SortFieldOrder.FileDesc: {
-        return 'Filename';
-      }
-    }
-  }
-
-  get sortField(): GQLSortField {
-    switch (this.value) {
-      case SortFieldOrder.DateAsc:
-      case SortFieldOrder.DateDesc: {
-        return GQLSortField.Date;
-      }
-      case SortFieldOrder.FileAsc:
-      case SortFieldOrder.FileDesc: {
-        return GQLSortField.Filename;
-      }
-    }
-  }
-
-  get sortOrder(): GQLSortOrder {
-    switch (this.value) {
-      case SortFieldOrder.DateAsc:
-      case SortFieldOrder.FileAsc: {
-        return GQLSortOrder.Ascending;
-      }
-      case SortFieldOrder.DateDesc:
-      case SortFieldOrder.FileDesc: {
-        return GQLSortOrder.Descending;
-      }
-    }
-  }
+  // return the default if nothing else
+  return 'Date';
 }
 
-const sortComboDateAsc = new SortCombo(SortFieldOrder.DateAsc);
-const sortComboDateDesc = new SortCombo(SortFieldOrder.DateDesc);
-const sortComboFileAsc = new SortCombo(SortFieldOrder.FileAsc);
-const sortComboFileDesc = new SortCombo(SortFieldOrder.FileDesc);
+function sortComboField(value: string): GQLSortField {
+  switch (value) {
+    case 'DateAsc':
+    case 'DateDesc': {
+      return GQLSortField.Date;
+    }
+    case 'FileAsc':
+    case 'FileDesc': {
+      return GQLSortField.Filename;
+    }
+  }
+  // return the default if nothing else
+  return GQLSortField.Date;
+}
+
+function sortComboOrder(value: string): GQLSortOrder {
+  switch (value) {
+    case 'DateAsc':
+    case 'FileAsc': {
+      return GQLSortOrder.Ascending;
+    }
+    case 'DateDesc':
+    case 'FileDesc': {
+      return GQLSortOrder.Descending;
+    }
+  }
+  // return the default if nothing else
+  return GQLSortOrder.Ascending;
+}
 
 interface SortOrderProps {
-  sortCombo: Accessor<SortCombo>;
-  setSortCombo: Setter<SortCombo>;
+  sortCombo: Accessor<string>;
+  setSortCombo: Setter<string>;
 }
 
 function SortOrder(props: SortOrderProps) {
@@ -535,9 +523,9 @@ function SortOrder(props: SortOrderProps) {
           aria-haspopup="true"
           aria-controls="sort-menu"
         >
-          <span>{props.sortCombo().label}</span>
+          <span>{sortComboLabel(props.sortCombo())}</span>
           <span class="icon">
-            <i class={props.sortCombo().iconClass} aria-hidden="true"></i>
+            <i class={sortComboIcon(props.sortCombo())} aria-hidden="true"></i>
           </span>
         </button>
       </div>
@@ -546,12 +534,12 @@ function SortOrder(props: SortOrderProps) {
         <div class="dropdown-content">
           <a
             class={
-              props.sortCombo().value === SortFieldOrder.DateAsc
+              props.sortCombo() === 'DateAsc'
                 ? 'dropdown-item is-active'
                 : 'dropdown-item'
             }
             on:click={(_) => {
-              props.setSortCombo(sortComboDateAsc);
+              props.setSortCombo('DateAsc');
               setDropdownOpen(false);
             }}
           >
@@ -562,12 +550,12 @@ function SortOrder(props: SortOrderProps) {
           </a>
           <a
             class={
-              props.sortCombo().value === SortFieldOrder.DateDesc
+              props.sortCombo() === 'DateDesc'
                 ? 'dropdown-item is-active'
                 : 'dropdown-item'
             }
             on:click={(_) => {
-              props.setSortCombo(sortComboDateDesc);
+              props.setSortCombo('DateDesc');
               setDropdownOpen(false);
             }}
           >
@@ -578,12 +566,12 @@ function SortOrder(props: SortOrderProps) {
           </a>
           <a
             class={
-              props.sortCombo().value === SortFieldOrder.FileAsc
+              props.sortCombo() === 'FileAsc'
                 ? 'dropdown-item is-active'
                 : 'dropdown-item'
             }
             on:click={(_) => {
-              props.setSortCombo(sortComboFileAsc);
+              props.setSortCombo('FileAsc');
               setDropdownOpen(false);
             }}
           >
@@ -594,12 +582,12 @@ function SortOrder(props: SortOrderProps) {
           </a>
           <a
             class={
-              props.sortCombo().value == SortFieldOrder.FileDesc
+              props.sortCombo() === 'FileDesc'
                 ? 'dropdown-item is-active'
                 : 'dropdown-item'
             }
             on:click={(_) => {
-              props.setSortCombo(sortComboFileDesc);
+              props.setSortCombo('FileDesc');
               setDropdownOpen(false);
             }}
           >
