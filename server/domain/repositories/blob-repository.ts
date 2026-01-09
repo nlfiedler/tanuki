@@ -18,6 +18,13 @@ interface BlobRepository {
   storeBlob(filepath: string, asset: Asset): Promise<void>;
 
   /**
+   * Delete the blob associated with the given asset identifier.
+   *
+   * @param assetId - asset identifier.
+   */
+  deleteBlob(assetId: string): Promise<void>;
+
+  /**
    * Return the URL for fetching the asset.
    *
    * @param assetId - unique asset identifier.

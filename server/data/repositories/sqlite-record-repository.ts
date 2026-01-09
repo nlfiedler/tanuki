@@ -232,6 +232,12 @@ class SqliteRecordRepository implements RecordRepository {
   }
 
   /** @inheritDoc */
+  async deleteAsset(assetId: string): Promise<void> {
+    const rm = this.database!.query('DELETE FROM assets WHERE key = ?');
+    rm.run(assetId);
+  }
+
+  /** @inheritDoc */
   async queryByTags(tags: string[]): Promise<SearchResult[]> {
     const query = this.database!.query(
       `SELECT key, filename, mimetype, loc_label, loc_city, loc_region,

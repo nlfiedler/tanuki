@@ -63,6 +63,16 @@ class NamazuBlobRepository implements BlobRepository {
   }
 
   /** @inheritdoc */
+  async deleteBlob(assetId: string) {
+    const url = this.makeAssetUrl(assetId);
+    const request = new Request(url, { method: 'DELETE' });
+    const response = await fetch(request);
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+  }
+
+  /** @inheritdoc */
   assetUrl(assetId: string): string {
     return this.makeAssetUrl(assetId);
   }

@@ -28,6 +28,7 @@ export function recordRepositoryMock({
   allYears = undefined,
   allMediaTypes = undefined,
   putAsset = undefined,
+  deleteAsset = undefined,
   queryByTags = undefined,
   queryByLocations = undefined,
   queryByMediaType = undefined,
@@ -47,6 +48,7 @@ export function recordRepositoryMock({
   allYears?: () => Promise<AttributeCount[]>;
   allMediaTypes?: () => Promise<AttributeCount[]>;
   putAsset?: (asset: Asset) => Promise<void>;
+  deleteAsset?: (assetId: string) => Promise<void>;
   queryByTags?: (tags: string[]) => Promise<SearchResult[]>;
   queryByLocations?: (locations: string[]) => Promise<SearchResult[]>;
   queryByMediaType?: (media_type: string) => Promise<SearchResult[]>;
@@ -67,6 +69,7 @@ export function recordRepositoryMock({
     allYears: allYears || mock(() => Promise.resolve([])),
     allMediaTypes: allMediaTypes || mock(() => Promise.resolve([])),
     putAsset: putAsset || mock(() => Promise.resolve()),
+    deleteAsset: deleteAsset || mock(() => Promise.resolve()),
     queryByTags: queryByTags || mock(() => Promise.resolve([])),
     queryByLocations: queryByLocations || mock(() => Promise.resolve([])),
     queryByMediaType: queryByMediaType || mock(() => Promise.resolve([])),
@@ -90,30 +93,20 @@ export function recordRepositoryMock({
  */
 export function blobRepositoryMock({
   storeBlob = undefined,
-  replaceBlob = undefined,
-  blobPath = undefined,
-  renameBlob = undefined,
-  thumbnail = undefined,
-  clearCache = undefined
+  deleteBlob = undefined,
+  assetUrl = undefined,
+  thumbnailUrl = undefined
 }: {
   storeBlob?: (filepath: string, asset: Asset) => Promise<void>;
-  replaceBlob?: (filepath: string, asset: Asset) => Promise<void>;
-  blobPath?: (assetId: string) => string;
-  renameBlob?: (oldId: string, newId: string) => Promise<void>;
-  thumbnail?: (
-    assetId: string,
-    width: number,
-    height: number
-  ) => Promise<Buffer>;
-  clearCache?: (assetId: string) => Promise<void>;
+  deleteBlob?: (assetId: string) => Promise<void>;
+  assetUrl?: (assetId: string) => string;
+  thumbnailUrl?: (assetId: string, width: number, height: number) => string;
 }): BlobRepository {
   const mockBlobRepository: BlobRepository = {
     storeBlob: storeBlob || mock(() => Promise.resolve()),
-    replaceBlob: replaceBlob || mock(() => Promise.resolve()),
-    blobPath: blobPath || mock(() => ''),
-    renameBlob: renameBlob || mock(() => Promise.resolve()),
-    thumbnail: thumbnail || mock(() => Promise.resolve(Buffer.from(''))),
-    clearCache: clearCache || mock(() => Promise.resolve())
+    deleteBlob: deleteBlob || mock(() => Promise.resolve()),
+    assetUrl: assetUrl || mock(() => ''),
+    thumbnailUrl: thumbnailUrl || mock(() => '')
   };
   return mockBlobRepository;
 }

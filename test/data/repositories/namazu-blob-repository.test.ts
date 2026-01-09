@@ -106,4 +106,26 @@ describe('NamazuBlobRepository', function () {
     const sut = new NamazuBlobRepository({ settingsRepository });
     await sut.storeBlob(incoming, asset);
   });
+
+  test('should delete file and get a 200 response', async function () {
+    const relpath = '2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg';
+    const buf = Buffer.from(relpath, 'utf8');
+    const key = buf.toString('base64');
+
+    mockFetch(
+      {
+        url: `http://example.com/assets/${key}`,
+        method: 'DELETE'
+      },
+      new Response('', {
+        status: 200,
+        statusText: 'OK'
+      })
+    );
+
+    const settingsRepository = new EnvSettingsRepository();
+    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    const sut = new NamazuBlobRepository({ settingsRepository });
+    await sut.deleteBlob(key);
+  });
 });

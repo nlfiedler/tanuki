@@ -15,7 +15,7 @@ export default ({
   /**
    * Return all of the unique locations in the record repository.
    *
-   * @returns list of unique location records.
+   * @returns the updated asset entity.
    */
   return async (assetInput: AssetInput): Promise<Asset> => {
     // fetch existing record to merge with incoming values

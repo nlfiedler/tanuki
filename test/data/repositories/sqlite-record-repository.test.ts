@@ -88,6 +88,21 @@ describe('SqliteRecordRepository', function () {
     expect(count).toEqual(1);
   });
 
+  test('should store and delete document', async function () {
+    // arrange
+    const original = new Asset(
+      'MjAxMi8wOC8xNS8wMDB4YWw2czQxYWN0YXY5d2V2Z2VtbXZyYS5qcGc='
+    );
+    original.setChecksum('sha1-c0ff89017fb951c58aab5e585364a15d359fa2c2');
+    // act, assert
+    await sut.putAsset(original);
+    const fetched = await sut.getAssetById(original.key);
+    expect(fetched).toBeDefined();
+    await sut.deleteAsset(original.key);
+    const gone = await sut.getAssetById(original.key);
+    expect(gone).toBeNull();
+  });
+
   test('should retrieve document by checksum', async function () {
     // arrange
     const doc = new Asset('eagle');

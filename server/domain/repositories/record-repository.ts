@@ -71,6 +71,13 @@ interface RecordRepository {
   putAsset(asset: Asset): Promise<void>;
 
   /**
+   * Remove the record for the asset with the given identifier.
+   *
+   * @param assetId - asset identifier.
+   */
+  deleteAsset(assetId: string): Promise<void>;
+
+  /**
    * Search for assets that have all of the given tags.
    *
    * @param tags - set of tags on which to query.

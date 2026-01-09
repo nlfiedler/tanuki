@@ -50,7 +50,7 @@ router.post(
       modified
     );
     logger.info(`asset ${file.originalname} imported as ${asset.key}`);
-    res.redirect('/');
+    res.json({ ok: true, assetId: asset.key });
   }
 );
 

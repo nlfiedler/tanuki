@@ -274,6 +274,11 @@ type Mutation {
   update(id: ID!, asset: AssetInput!): Asset!
   "Modify multiple assets based on their current properties."
   edit(assetIds: [String!]!, operations: AssetEdit!): Int!
+  """
+  Copy the tags, caption, and location from the old asset to the new one.
+  Deletes the old asset from the database and the corresponding blob.
+  """
+  replace(oldAssetId: String!, newAssetId: String!): Asset!
 }
 
 schema {

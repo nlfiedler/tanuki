@@ -231,6 +231,12 @@ class CouchDBRecordRepository implements RecordRepository {
     }
   }
 
+  /** @inheritDoc */
+  async deleteAsset(assetId: string): Promise<void> {
+    const asset = await this.database.get(assetId);
+    await this.database.destroy(assetId, asset._rev);
+  }
+
   /**
    * Find those search results that have _all_ of the given search keys.
    *

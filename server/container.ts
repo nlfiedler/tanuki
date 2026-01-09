@@ -23,6 +23,7 @@ import GetYears from 'tanuki/server/domain/usecases/get-years.ts';
 import LoadAssets from 'tanuki/server/domain/usecases/load-assets.ts';
 import ImportAsset from 'tanuki/server/domain/usecases/import-asset.ts';
 import ImportUploads from 'tanuki/server/domain/usecases/import-uploads.ts';
+import ReplaceAsset from 'tanuki/server/domain/usecases/replace-asset.ts';
 import ScanAssets from 'tanuki/server/domain/usecases/scan-assets.ts';
 import SearchAssets from 'tanuki/server/domain/usecases/search-assets.ts';
 import UpdateAsset from 'tanuki/server/domain/usecases/update-asset.ts';
@@ -87,6 +88,7 @@ container.register({
   importAsset: asFunction(ImportAsset),
   importUploads: asFunction(ImportUploads),
   loadAssets: asFunction(LoadAssets),
+  replaceAsset: asFunction(ReplaceAsset),
   scanAssets: asFunction(ScanAssets),
   searchAssets: asFunction(SearchAssets),
   updateAsset: asFunction(UpdateAsset)

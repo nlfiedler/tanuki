@@ -1,7 +1,9 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import fs from 'node:fs/promises';
+import { unlink } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { createInterface } from 'node:readline';
 import express from 'express';
 import multer from 'multer';
 import container from 'tanuki/server/container.ts';
@@ -25,19 +27,39 @@ const router = express.Router();
 router.post('/load', upload.single('dump'), async function (req, res, _next) {
   if (req.is('multipart/form-data')) {
     const file = req.file!;
-    const raw = await fs.readFile(file.path, { encoding: 'utf8' });
-    const lines = raw.split(/\r?\n/).filter((ln) => ln.length > 0);
-    const inputs = lines.map((ln) => JSON.parse(ln));
-    await loadAssets(inputs);
-    await fs.unlink(file.path);
-    logger.info('loaded %d records', inputs.length);
-    res.send({ ok: true, count: inputs.length });
+    // process the input line-by-line, loading entries in chunks
+    let recordCount = 0;
+    const fileStream = createReadStream(file.path);
+    const rl = createInterface({
+      input: fileStream,
+      crlfDelay: Infinity
+    });
+    let inputs: any[] = [];
+    for await (const line of rl) {
+      if (line.trim().length > 0) {
+        inputs.push(JSON.parse(line));
+        if (inputs.length >= 1024) {
+          await loadAssets(inputs);
+          recordCount += inputs.length;
+          inputs = [];
+        }
+      }
+    }
+    // process any remaining entries in the queue
+    if (inputs.length >= 0) {
+      await loadAssets(inputs);
+      recordCount += inputs.length;
+    }
+    await unlink(file.path);
+    logger.info('loaded %d records', recordCount);
+    res.send({ ok: true, count: recordCount });
   } else {
     logger.error(`content-type not valid: ${req.get('Content-Type')}`);
     res.status(400).send('Content-Type must be multipart/form-data');
   }
 });
 
+// curl -o dump.json http://localhost:3000/records/dump
 router.get('/dump', async function (req, res, next) {
   res.setHeader('Content-Type', 'application/json');
   //

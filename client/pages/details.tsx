@@ -7,18 +7,26 @@ import {
   createResource,
   createSignal,
   type Accessor,
+  type JSX,
   Match,
   Show,
   type Signal,
   Suspense,
   Switch
 } from 'solid-js';
-import { action, useAction, useParams, useSubmission } from '@solidjs/router';
+import {
+  action,
+  redirect,
+  useAction,
+  useParams,
+  useSubmission
+} from '@solidjs/router';
 import { type TypedDocumentNode, gql } from '@apollo/client';
 import { useApolloClient } from '../apollo-provider';
 import type {
   Asset,
   Mutation,
+  MutationReplaceArgs,
   MutationUpdateArgs,
   QueryAssetArgs,
   Query
@@ -54,7 +62,17 @@ const UPDATE_ASSET: TypedDocumentNode<Mutation, MutationUpdateArgs> = gql`
   }
 `;
 
+const REPLACE_ASSET: TypedDocumentNode<Mutation, MutationReplaceArgs> = gql`
+  mutation Replace($oldAssetId: String!, $newAssetId: String!) {
+    replace(oldAssetId: $oldAssetId, newAssetId: $newAssetId) {
+      id
+    }
+  }
+`;
+
 function AssetDetails() {
+  // BUG: useParams() and createResource() fail to refresh when the id path
+  // parameter changes, but createEffect() will show that a change occurs
   const params = useParams();
   const client = useApolloClient();
   const [assetQuery] = createResource(params, async (params) => {
@@ -228,6 +246,8 @@ function AssetForm(props: AssetFormProps) {
     props.asset.location?.region ?? ''
   );
   const [mediaType, setMediaType] = createSignal(props.asset.mediaType);
+
+  // update asset details
   const updateAction = action(async (): Promise<{ ok: boolean }> => {
     const location = {
       label: locationLabel(),
@@ -269,8 +289,67 @@ function AssetForm(props: AssetFormProps) {
     return 'button is-primary';
   });
 
-  // TODO: make Replace a separate component that takes the assetId as a prop
-  // TODO: add the notification when replacing the asset and it is unchanged
+  // replace asset
+  const [showUnchanged, setShowUnchanged] = createSignal(false);
+  const uploadAction = action(async (file: File): Promise<any> => {
+    const formData = new FormData();
+    // appending a File will include its filename
+    formData.append('content', file);
+    formData.append('last_modified', file.lastModified.toString());
+    let newId;
+    try {
+      const response = await fetch('/assets/upload', {
+        method: 'POST',
+        body: formData
+      });
+      if (response.ok) {
+        const result: { ok: boolean; assetId: string } = await response.json();
+        if (result.ok) {
+          if (result.assetId === props.asset.id) {
+            // loaded asset matches current asset, no change
+            setShowUnchanged(true);
+            setTimeout(() => setShowUnchanged(false), 5000);
+          } else {
+            try {
+              await client.mutate({
+                mutation: REPLACE_ASSET,
+                variables: {
+                  oldAssetId: props.asset.id,
+                  newAssetId: result.assetId
+                }
+              });
+              // signal the throw redirect _outside_ of any try/catch
+              newId = result.assetId;
+            } catch (error) {
+              console.error('Error replacing asset:', error);
+            }
+          }
+        } else {
+          console.error('Error uploading file:', result);
+        }
+      } else {
+        console.error('Error uploading file:', response);
+      }
+    } catch (error) {
+      console.error('Error uploading files:', error);
+    }
+    if (newId) {
+      throw redirect(`/asset/${newId}`);
+    }
+  });
+  const startUpload = useAction(uploadAction);
+  const uploadSubmission = useSubmission(uploadAction);
+  const fileSelected: JSX.EventHandlerWithOptionsUnion<
+    HTMLInputElement,
+    Event,
+    JSX.ChangeEventHandler<HTMLInputElement, Event>
+  > = (event) => {
+    event.preventDefault();
+    // n.b. event.target.files is a FileList, not an Array
+    if (event.target.files && event.target.files.length > 0) {
+      startUpload(event.target.files![0]!);
+    }
+  };
 
   return (
     <>
@@ -285,7 +364,8 @@ function AssetForm(props: AssetFormProps) {
                   id="file-input"
                   name="content"
                   multiple={false}
-                  disabled={true}
+                  on:input={fileSelected}
+                  disabled={uploadSubmission.pending}
                 />
                 <span class="file-cta">
                   <span class="file-icon">
@@ -327,6 +407,16 @@ function AssetForm(props: AssetFormProps) {
           </div>
         </div>
       </nav>
+
+      <div class="notification is-warning" class:is-hidden={!showUnchanged()}>
+        <button
+          class="delete"
+          on:click={(_) => setShowUnchanged(false)}
+        ></button>
+        The replacement asset is identical to the original, please choose a
+        different file.
+      </div>
+
       <div class="m-4">
         <div class="mb-2 field is-horizontal">
           <div class="field-label is-normal">

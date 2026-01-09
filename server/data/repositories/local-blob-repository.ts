@@ -46,6 +46,12 @@ class LocalBlobRepository implements BlobRepository {
   }
 
   /** @inheritdoc */
+  async deleteBlob(assetId: string) {
+    const filepath = this.blobPath(assetId);
+    await fs.rm(filepath);
+  }
+
+  /** @inheritdoc */
   assetUrl(assetId: string): string {
     // served by an endpoint defined in preso/routes/assets.ts
     return `/assets/raw/${assetId}`;

@@ -23,6 +23,7 @@ import type {
   AttributeCount,
   LocationValues,
   MutationEditArgs,
+  MutationReplaceArgs,
   MutationUpdateArgs,
   Resolvers,
   QueryAssetArgs,
@@ -103,7 +104,7 @@ export const resolvers: Resolvers = {
     ): Promise<Location[]> {
       logger.info('getLocationRecords');
       const getLocationRecords = container.resolve('getLocationRecords');
-      return await getLocationRecords();
+      return getLocationRecords();
     },
 
     async locationValues(
@@ -114,7 +115,7 @@ export const resolvers: Resolvers = {
     ): Promise<LocationValues> {
       logger.info('getLocationValues');
       const getLocationValues = container.resolve('getLocationValues');
-      return await getLocationValues();
+      return getLocationValues();
     },
 
     async years(
@@ -203,7 +204,7 @@ export const resolvers: Resolvers = {
       logger.info('importUploads');
       const uploadsPath = settings.get('UPLOAD_PATH');
       const importUploads = container.resolve('importUploads');
-      return await importUploads(uploadsPath);
+      return importUploads(uploadsPath);
     },
 
     async update(
@@ -229,6 +230,18 @@ export const resolvers: Resolvers = {
       const editAssets = container.resolve('editAssets');
       const operations = operationsFromGQL(args.operations);
       return editAssets(args.assetIds, operations);
+    },
+
+    async replace(
+      _parent: any,
+      args: MutationReplaceArgs,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<GQLAsset> {
+      logger.info('replaceAsset');
+      const replaceAsset = container.resolve('replaceAsset');
+      const output = await replaceAsset(args.oldAssetId, args.newAssetId);
+      return assetToGQL(output);
     }
   }
 };
