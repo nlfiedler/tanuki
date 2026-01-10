@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2025 Nathan Fiedler
+// Copyright (c) 2026 Nathan Fiedler
 //
 import assert from 'node:assert';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';

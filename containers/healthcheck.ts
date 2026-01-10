@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2025 Nathan Fiedler
+// Copyright (c) 2026 Nathan Fiedler
 //
 const port = process.env.APPLICATION_PORT || 3000;
 const path = process.env.HEALTHCHECK_PATH || '/';

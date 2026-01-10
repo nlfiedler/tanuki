@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2025 Nathan Fiedler
+// Copyright (c) 2026 Nathan Fiedler
 //
 import { describe, expect, mock, test } from 'bun:test';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
