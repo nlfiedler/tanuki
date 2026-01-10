@@ -24,10 +24,10 @@ services:
     environment:
       ASSETS_PATH: /assets
       HOST: 0.0.0.0
-      PORT: 3001
+      PORT: 4104
       RUST_LOG: info
     ports:
-      - "3001:3001"
+      - "4104:4104"
     logging:
       options:
         max-size: "1m"
