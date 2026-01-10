@@ -12,7 +12,7 @@ When an asset is added to the system, several steps are performed:
 
 1. A hash digest of the file is computed to identify duplicates.
 1. An identifier based on the import date-time, media type, and a [ULID](https://github.com/ulid/spec) is generated.
-1. A minimal document, with checksum and identifier, is stored in the database.
+1. A document, including basic file properties and the checksum, is stored in the database.
 1. The asset is stored in a directory structure according to import date-time.
    - e.g. `2017/05/13/1630/01ce0d526z6cyzgm02ap0jv281.jpg`
    - the minutes are rounded to `:00`, `:15`, `:30`, or `:45`
@@ -24,6 +24,7 @@ In previous versions of the application, assets were stored in a directory struc
 ### Benefits
 
 - Thumbnails can be served without reading from the database since the identifier is the path to the file.
+  - Entries within the secondary indices provide the asset identifier.
 - Assets are stored in directory structure reflecting time and order of addition
   - ULID sorts by time, so order of import is retained
 - Number of directories and files at any particular level is reasonable
@@ -34,6 +35,7 @@ In previous versions of the application, assets were stored in a directory struc
   - media type from extension
 - Avoids filename collisions
   - names like `IMG_1234.JPG` easily collide with files from other sources
+- Assets are not chunked or packed, reducing the risk of data loss
 
 ### Drawbacks
 

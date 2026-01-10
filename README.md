@@ -1,6 +1,8 @@
 # Tanuki
 
-An application for organizing assets, primarily images and videos. Written in [TypeScript](https://www.typescriptlang.org) with a [SolidJS](https://www.solidjs.com) powered front-end, connected via [GraphQL](https://graphql.org) and REST. Metadata is stored in [CouchDB](https://couchdb.apache.org) or [SQLite](https://sqlite.org/) and file content is stored unmodified within a date/time formatted directory structure.
+An application for organizing assets, primarily images and videos. Written in [TypeScript](https://www.typescriptlang.org) and running on [Bun](https://bun.com), with a [SolidJS](https://www.solidjs.com)-powered front-end, connected via [GraphQL](https://graphql.org) and REST. Metadata is stored in [CouchDB](https://couchdb.apache.org) or [SQLite](https://sqlite.org/) and file content is stored unmodified within a date-time formatted directory structure, either on local disk or remotely via [namazu](https://github.com/nlfiedler/namazu).
+
+Originally inspired by [perkeep](https://perkeep.org) as a means of organizing personal photos and videos. A key aspect of this application is that it stores all of the assets in unmodified form (no chunking or packing) in a logical directory structure. The database is used to associate tags and additional location information with assets to enable searching. The import process discards duplicates by computing a checksum and checking the database for a match. The batch editing feature allows for adding and removing tags, changing the location labels, and assigning a date-time to multiple assets.
 
 ## Requirements
 
