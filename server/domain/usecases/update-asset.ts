@@ -26,8 +26,7 @@ export default ({
     // merge the incoming values with the existing record
     mergeAssetInput(asset, assetInput);
     // store the updated record in the repository
-    recordRepository.putAsset(asset);
-    // self.cache.clear()?;
+    await recordRepository.putAsset(asset);
     return asset;
   };
 };
