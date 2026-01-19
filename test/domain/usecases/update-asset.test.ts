@@ -5,7 +5,7 @@ import { describe, expect, mock, test } from 'bun:test';
 import { Asset, AssetInput } from 'tanuki/server/domain/entities/asset.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import UpdateAsset from 'tanuki/server/domain/usecases/update-asset.ts';
-import { recordRepositoryMock } from './mocking.ts';
+import { recordRepositoryMock, searchRepositoryMock } from './mocking.ts';
 
 describe('UpdateAsset use case', function () {
   test('should do nothing with empty inputs', async function () {
@@ -19,8 +19,10 @@ describe('UpdateAsset use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       getAssetById: mock((_assetId: string) => Promise.resolve(asset))
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = UpdateAsset({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const updated = await usecase(new AssetInput('kittens1'));
@@ -49,8 +51,10 @@ describe('UpdateAsset use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       getAssetById: mock((_assetId: string) => Promise.resolve(asset))
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = UpdateAsset({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const updated = await usecase(new AssetInput('kittens1').setTags([]));
@@ -72,8 +76,10 @@ describe('UpdateAsset use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       getAssetById: mock((_assetId: string) => Promise.resolve(asset))
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = UpdateAsset({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const updated = await usecase(
@@ -105,8 +111,10 @@ describe('UpdateAsset use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       getAssetById: mock((_assetId: string) => Promise.resolve(asset))
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = UpdateAsset({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const updated = await usecase(
@@ -135,8 +143,10 @@ describe('UpdateAsset use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       getAssetById: mock((_assetId: string) => Promise.resolve(asset))
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = UpdateAsset({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const updated = await usecase(
@@ -162,8 +172,10 @@ describe('UpdateAsset use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       getAssetById: mock((_assetId: string) => Promise.resolve(asset))
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = UpdateAsset({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const updated = await usecase(new AssetInput('kittens1').addTag('furry'));
@@ -186,8 +198,10 @@ describe('UpdateAsset use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       getAssetById: mock((_assetId: string) => Promise.resolve(asset))
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = UpdateAsset({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const updated = await usecase(
@@ -216,8 +230,10 @@ describe('UpdateAsset use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       getAssetById: mock((_assetId: string) => Promise.resolve(asset))
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = UpdateAsset({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const updated = await usecase(
@@ -242,8 +258,10 @@ describe('UpdateAsset use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       getAssetById: mock((_assetId: string) => Promise.resolve(asset))
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = UpdateAsset({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const inputLocation = Location.parse('Pleasanton, CA');
@@ -270,8 +288,10 @@ describe('UpdateAsset use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       getAssetById: mock((_assetId: string) => Promise.resolve(asset))
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = UpdateAsset({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const updated = await usecase(

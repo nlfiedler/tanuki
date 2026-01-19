@@ -10,8 +10,8 @@ import {
   type JSX,
   Match,
   Show,
+  type Setter,
   type Signal,
-  Suspense,
   Switch
 } from 'solid-js';
 import {
@@ -23,12 +23,15 @@ import {
 } from '@solidjs/router';
 import { type TypedDocumentNode, gql } from '@apollo/client';
 import { useApolloClient } from '../apollo-provider';
+import useLocalStorage from '../hooks/use-local-storage.ts';
 import type {
   Asset,
   Mutation,
   MutationReplaceArgs,
   MutationUpdateArgs,
   QueryAssetArgs,
+  QueryScanFetchArgs,
+  QuerySearchFetchArgs,
   Query
 } from 'tanuki/generated/graphql.ts';
 
@@ -70,7 +73,7 @@ const REPLACE_ASSET: TypedDocumentNode<Mutation, MutationReplaceArgs> = gql`
   }
 `;
 
-function AssetDetails() {
+export function AssetDetails() {
   // BUG: useParams() and createResource() fail to refresh when the id path
   // parameter changes, but createEffect() will show that a change occurs
   const params = useParams();
@@ -84,14 +87,176 @@ function AssetDetails() {
   });
 
   return (
-    <Suspense fallback={<button class="button is-loading">...</button>}>
-      <div>
-        <Show when={assetQuery()} fallback="Loading...">
-          <AssetFigure asset={assetQuery()?.asset!} />
-          <AssetForm asset={assetQuery()?.asset!} />
-        </Show>
-      </div>
-    </Suspense>
+    <div>
+      <Show when={assetQuery()} fallback="Loading...">
+        <AssetFigure asset={assetQuery()?.asset!} />
+        <AssetForm asset={assetQuery()?.asset!} />
+      </Show>
+    </div>
+  );
+}
+
+const SEARCH_FETCH: TypedDocumentNode<Query, QuerySearchFetchArgs> = gql`
+  query SearchFetch($params: SearchParams!, $offset: Int!) {
+    searchFetch(params: $params, offset: $offset) {
+      asset {
+        id
+        checksum
+        filename
+        filepath
+        byteLength
+        datetime
+        mediaType
+        tags
+        caption
+        location {
+          label
+          city
+          region
+        }
+        assetUrl
+      }
+      lastOffset
+    }
+  }
+`;
+
+const SCAN_FETCH: TypedDocumentNode<Query, QueryScanFetchArgs> = gql`
+  query ScanFetch(
+    $query: String!
+    $field: SortField
+    $order: SortOrder
+    $offset: Int!
+  ) {
+    scanFetch(
+      query: $query
+      sortField: $field
+      sortOrder: $order
+      offset: $offset
+    ) {
+      asset {
+        id
+        checksum
+        filename
+        filepath
+        byteLength
+        datetime
+        mediaType
+        tags
+        caption
+        location {
+          label
+          city
+          region
+        }
+        assetUrl
+      }
+      lastOffset
+    }
+  }
+`;
+
+export function Browse() {
+  const [browseParams, setBrowseParams] = useLocalStorage('browse-params', {});
+  const client = useApolloClient();
+  const [assetQuery] = createResource(browseParams, async (args: any) => {
+    if ('query' in args) {
+      const { data } = await client.query({
+        query: SCAN_FETCH,
+        variables: {
+          query: args.query,
+          sortField: args.sortField,
+          sortOrder: args.sortOrder,
+          offset: args.offset
+        }
+      });
+      return data!.scanFetch;
+    }
+    const { offset, ...params } = args;
+    const { data } = await client.query({
+      query: SEARCH_FETCH,
+      variables: { params, offset }
+    });
+    return data!.searchFetch;
+  });
+
+  return (
+    <div class="container">
+      <Show when={assetQuery()} fallback="Loading...">
+        <div class="columns">
+          <div
+            class="px-0 column is-narrow"
+            style="display: flex; min-height: 90vh; max-height: 90vh; align-items: center;"
+          >
+            <PreviousAssetButton
+              browseParams={browseParams}
+              setBrowseParams={setBrowseParams}
+            />
+          </div>
+          <div class="column">
+            <AssetFigure asset={assetQuery()?.asset!} />
+            <AssetForm asset={assetQuery()?.asset!} />
+          </div>
+          <div
+            class="px-0 column is-narrow"
+            style="display: flex; min-height: 90vh; max-height: 90vh; align-items: center;"
+          >
+            <NextAssetButton
+              lastOffset={assetQuery()?.lastOffset!}
+              browseParams={browseParams}
+              setBrowseParams={setBrowseParams}
+            />
+          </div>
+        </div>
+      </Show>
+    </div>
+  );
+}
+
+interface PreviousAssetButtonProps {
+  browseParams: Accessor<any>;
+  setBrowseParams: Setter<any>;
+}
+
+function PreviousAssetButton(props: PreviousAssetButtonProps) {
+  return (
+    <button
+      class="button"
+      disabled={props.browseParams().offset == 0}
+      on:click={() => {
+        props.setBrowseParams((p: any) => {
+          return Object.assign({}, p, { offset: p.offset - 1 });
+        });
+      }}
+    >
+      <span class="icon">
+        <i class="fa-solid fa-arrow-left"></i>
+      </span>
+    </button>
+  );
+}
+
+interface NextAssetButtonProps {
+  lastOffset: number;
+  browseParams: Accessor<any>;
+  setBrowseParams: Setter<any>;
+}
+
+function NextAssetButton(props: NextAssetButtonProps) {
+  return (
+    <button
+      class="button"
+      disabled={props.browseParams().offset == props.lastOffset}
+      on:click={() => {
+        props.setBrowseParams((p: any) => {
+          return Object.assign({}, p, { offset: p.offset + 1 });
+        });
+      }}
+    >
+      <span class="icon">
+        <i class="fa-solid fa-arrow-right"></i>
+      </span>
+    </button>
   );
 }
 
@@ -306,7 +471,7 @@ function AssetForm(props: AssetFormProps) {
         const result: { ok: boolean; assetId: string } = await response.json();
         if (result.ok) {
           if (result.assetId === props.asset.id) {
-            // loaded asset matches current asset, no change
+            // uploaded asset matches current asset, no change
             setShowUnchanged(true);
             setTimeout(() => setShowUnchanged(false), 5000);
           } else {

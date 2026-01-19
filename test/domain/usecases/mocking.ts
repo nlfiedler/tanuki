@@ -13,6 +13,9 @@ import { SearchResult } from 'tanuki/server/domain/entities/search.ts';
 import { type BlobRepository } from 'tanuki/server/domain/repositories/blob-repository.ts';
 import { type LocationRepository } from 'tanuki/server/domain/repositories/location-repository.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
+import { type SearchRepository } from 'tanuki/server/domain/repositories/search-repository.ts';
+
+/* eslint-disable unicorn/no-useless-undefined */
 
 /**
  * Helper for producing a mock record repository implementation. Any undefined
@@ -124,4 +127,25 @@ export function locationRepositoryMock({
     findLocation: findLocation || mock(() => Promise.resolve(null))
   };
   return mockLocationRepository;
+}
+
+/**
+ * Helper for producing a mock search repository implementation. Any undefined
+ * functions will return null, empty string, zero, etc.
+ */
+export function searchRepositoryMock({
+  put = undefined,
+  get = undefined,
+  clear = undefined
+}: {
+  put?: (key: string, results: SearchResult[]) => Promise<void>;
+  get?: (key: string) => Promise<SearchResult[] | undefined>;
+  clear?: () => Promise<void>;
+}): SearchRepository {
+  const mockSearchRepository: SearchRepository = {
+    put: put || mock(() => Promise.resolve()),
+    get: get || mock(() => Promise.resolve(undefined)),
+    clear: clear || mock(() => Promise.resolve())
+  };
+  return mockSearchRepository;
 }

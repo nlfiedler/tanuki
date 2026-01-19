@@ -4,14 +4,18 @@
 import assert from 'node:assert';
 import { Asset, AssetInput } from 'tanuki/server/domain/entities/asset.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
+import { type SearchRepository } from 'tanuki/server/domain/repositories/search-repository.ts';
 import * as helpers from './helpers.ts';
 
 export default ({
-  recordRepository
+  recordRepository,
+  searchRepository
 }: {
   recordRepository: RecordRepository;
+  searchRepository: SearchRepository;
 }) => {
   assert.ok(recordRepository, 'record repository must be defined');
+  assert.ok(searchRepository, 'search repository must be defined');
   /**
    * Return all of the unique locations in the record repository.
    *
@@ -27,6 +31,7 @@ export default ({
     mergeAssetInput(asset, assetInput);
     // store the updated record in the repository
     await recordRepository.putAsset(asset);
+    await searchRepository.clear();
     return asset;
   };
 };

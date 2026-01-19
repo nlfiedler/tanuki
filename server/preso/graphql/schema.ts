@@ -21,12 +21,15 @@ import type {
   AssetEdit,
   AssetInput as GQLAssetInput,
   AttributeCount,
+  BrowseMeta,
   LocationValues,
   MutationEditArgs,
   MutationReplaceArgs,
   MutationUpdateArgs,
   Resolvers,
   QueryAssetArgs,
+  QueryScanFetchArgs,
+  QuerySearchFetchArgs,
   QueryPendingArgs,
   QueryScanArgs,
   QuerySearchArgs,
@@ -191,6 +194,34 @@ export const resolvers: Resolvers = {
       logger.info('getAssetTags');
       const getAssetTags = container.resolve('getAssetTags');
       return getAssetTags(args.assets);
+    },
+
+    async scanFetch(
+      _parent: any,
+      args: QueryScanFetchArgs,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<BrowseMeta> {
+      const query = args.query;
+      const sortField = sortFieldFromGQL(args.sortField);
+      const sortOrder = sortOrderFromGQL(args.sortOrder);
+      const scanAssets = container.resolve('scanAssets');
+      const results = await scanAssets(query, sortField, sortOrder);
+      logger.info('scanFetch yielded %d results', results.length);
+      return fetchResult(results, args.offset);
+    },
+
+    async searchFetch(
+      _parent: any,
+      args: QuerySearchFetchArgs,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<BrowseMeta> {
+      const params = searchParamsFromGQL(args.params);
+      const searchAssets = container.resolve('searchAssets');
+      const results = await searchAssets(params);
+      logger.info('searchFetch yielded %d results', results.length);
+      return fetchResult(results, args.offset);
     }
   },
 
@@ -265,6 +296,24 @@ function paginateResults(
     results: pageRows,
     count,
     lastPage
+  };
+}
+
+async function fetchResult(
+  results: SearchResult[],
+  offset: number
+): Promise<BrowseMeta> {
+  if (results.length > offset) {
+    const getAsset = container.resolve('getAsset');
+    const asset = await getAsset(results[offset]!.assetId);
+    return {
+      asset: assetToGQL(asset),
+      lastOffset: results.length - 1
+    };
+  }
+  return {
+    asset: null,
+    lastOffset: results.length === 0 ? 0 : results.length - 1
   };
 }
 

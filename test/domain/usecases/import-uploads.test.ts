@@ -8,7 +8,8 @@ import ImportUploads from 'tanuki/server/domain/usecases/import-uploads.ts';
 import {
   blobRepositoryMock,
   locationRepositoryMock,
-  recordRepositoryMock
+  recordRepositoryMock,
+  searchRepositoryMock
 } from './mocking.ts';
 
 describe('ImportUploads use case', function () {
@@ -71,10 +72,12 @@ describe('ImportUploads use case', function () {
     });
     const mockBlobRepository = blobRepositoryMock({});
     const mockLocationRepository = locationRepositoryMock({});
+    const mockSearchRepository = searchRepositoryMock({});
     const importAsset = ImportAsset({
       recordRepository: mockRecordRepository,
       blobRepository: mockBlobRepository,
-      locationRepository: mockLocationRepository
+      locationRepository: mockLocationRepository,
+      searchRepository: mockSearchRepository
     });
     const usecase = ImportUploads({ importAsset });
     // act

@@ -70,6 +70,27 @@ class SearchParams {
     this.sortOrder = sortOrder;
     return this;
   }
+
+  toString(): string {
+    // format the search parameters similarly to the scan query string for
+    // the sake of generating a key for the cached search repository
+    //
+    // for the sake of caching, ignore the sort field and sort order
+    const tags = this.tags.map((t) => `tag:${t}`).join(' ');
+    const locations = this.locations.map((l) => `loc:${l}`).join(' ');
+    let result = locations ? `${tags} ${locations}` : tags;
+    if (this.mediaType) {
+      const [main, sub] = this.mediaType.split('/');
+      result = result + ` is:${main} format:${sub}`;
+    }
+    if (this.beforeDate) {
+      result = result + ' before:' + this.beforeDate.toISOString().slice(0, 16);
+    }
+    if (this.afterDate) {
+      result = result + ' after:' + this.afterDate.toISOString().slice(0, 16);
+    }
+    return result.trim();
+  }
 }
 
 /**

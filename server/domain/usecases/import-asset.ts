@@ -8,19 +8,23 @@ import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { type BlobRepository } from 'tanuki/server/domain/repositories/blob-repository.ts';
 import { type LocationRepository } from 'tanuki/server/domain/repositories/location-repository.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
+import { type SearchRepository } from 'tanuki/server/domain/repositories/search-repository.ts';
 
 export default ({
   recordRepository,
   blobRepository,
-  locationRepository
+  locationRepository,
+  searchRepository
 }: {
   recordRepository: RecordRepository;
   blobRepository: BlobRepository;
   locationRepository: LocationRepository;
+  searchRepository: SearchRepository;
 }) => {
   assert.ok(recordRepository, 'record repository must be defined');
   assert.ok(blobRepository, 'blob repository must be defined');
   assert.ok(locationRepository, 'location repository must be defined');
+  assert.ok(searchRepository, 'search repository must be defined');
   /**
    * Import the given file into the system as a new asset, moving the file into
    * the blob storage and creating a new record in the repository.
@@ -68,6 +72,7 @@ export default ({
         }
       }
       await recordRepository.putAsset(asset);
+      await searchRepository.clear();
     }
     // blob repo will ensure the temporary file is (re)moved
     await blobRepository.storeBlob(filepath, asset);

@@ -4,16 +4,21 @@
 import { describe, expect, mock, test } from 'bun:test';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
+import { SearchResult } from 'tanuki/server/domain/entities/search.ts';
 import ScanAssets from 'tanuki/server/domain/usecases/scan-assets.ts';
-import { recordRepositoryMock } from './mocking.ts';
+import { recordRepositoryMock, searchRepositoryMock } from './mocking.ts';
 
 describe('ScanAssets use case', function () {
   test('should do nothing when empty query', async function () {
     // arrange
     const mockRecordRepository = recordRepositoryMock({});
-    const usecase = ScanAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = ScanAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
-    const actual = await usecase('');
+    const actual = await usecase('   ');
     // assert
     expect(actual).toHaveLength(0);
     expect(mockRecordRepository.fetchAssets).toHaveBeenCalledTimes(0);
@@ -23,7 +28,11 @@ describe('ScanAssets use case', function () {
   test('should find nothing when zero assets', async function () {
     // arrange
     const mockRecordRepository = recordRepositoryMock({});
-    const usecase = ScanAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = ScanAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const actual = await usecase('tag:kitten');
     // assert
@@ -51,7 +60,11 @@ describe('ScanAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       fetchAssets: mockFn
     });
-    const usecase = ScanAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = ScanAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const actual = await usecase('tag:kitten');
     // assert
@@ -100,7 +113,11 @@ describe('ScanAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       fetchAssets: mockFn
     });
-    const usecase = ScanAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = ScanAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const actual = await usecase('tag:cat');
     // assert
@@ -108,6 +125,38 @@ describe('ScanAssets use case', function () {
     expect(actual[0]?.assetId).toEqual('monday1');
     expect(actual[1]?.assetId).toEqual('monday2');
     expect(mockRecordRepository.fetchAssets).toHaveBeenCalledTimes(3);
+    expect(mockSearchRepository.get).toHaveBeenCalledTimes(1);
+    expect(mockSearchRepository.put).toHaveBeenCalledTimes(1);
+    mock.clearAllMocks();
+  });
+
+  test('should retrieve cached search results', async function () {
+    // arrange
+    const results = [
+      new SearchResult(
+        'monday2',
+        'img_1234.jpg',
+        'image/jpeg',
+        Location.parse('Oahu, Hawaii'),
+        new Date()
+      )
+    ];
+    const mockRecordRepository = recordRepositoryMock({});
+    const mockSearchRepository = searchRepositoryMock({
+      get: mock((key: string) => Promise.resolve(results))
+    });
+    const usecase = ScanAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
+    // act
+    const actual = await usecase('tag:cat');
+    // assert
+    expect(actual).toHaveLength(1);
+    expect(actual[0]?.assetId).toEqual('monday2');
+    expect(mockRecordRepository.fetchAssets).toHaveBeenCalledTimes(0);
+    expect(mockSearchRepository.get).toHaveBeenCalledTimes(1);
+    expect(mockSearchRepository.put).toHaveBeenCalledTimes(0);
     mock.clearAllMocks();
   });
 });

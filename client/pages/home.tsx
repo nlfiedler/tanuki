@@ -148,6 +148,7 @@ function Home() {
     'home-selected-page',
     1
   );
+  const [_, setParams] = useLocalStorage('browse-params', {});
   const [selectedAssets] = createSignal(new Set<string>());
   const [pageSize, setPageSize] = useLocalStorage('page-size', 18);
   const browseParams = createMemo(() => ({
@@ -168,6 +169,23 @@ function Home() {
     return data;
   });
   const lastPage = () => assetsQuery()?.search.lastPage ?? 1;
+  const beginBrowsing = (index: number) => {
+    const args = buildParams(browseParams());
+    const page = selectedPage();
+    const count = pageSize();
+    const offset = index + count * (page - 1);
+    setParams({
+      tags: args.params.tags,
+      locations: args.params.locations,
+      before: args.params.before,
+      after: args.params.after,
+      mediaType: args.params.mediaType,
+      sortField: args.params.sortField,
+      sortOrder: args.params.sortOrder,
+      offset
+    });
+    navigate('/browse');
+  };
 
   return (
     <>
@@ -285,7 +303,7 @@ function Home() {
         <CardsGrid
           results={assetsQuery()?.search.results}
           selectedAssets={selectedAssets}
-          onClick={(assetId) => navigate(`/asset/${assetId}`)}
+          onClick={(_, index) => beginBrowsing(index)}
         />
       </Suspense>
     </>

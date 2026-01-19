@@ -7,7 +7,7 @@ import { Router, Route } from '@solidjs/router';
 import './assets/main.scss';
 import { ApolloProvider } from './apollo-provider.tsx';
 import Navbar from './components/navbar.tsx';
-import AssetDetails from './pages/details.tsx';
+import { AssetDetails, Browse } from './pages/details.tsx';
 import Edit from './pages/edit.tsx';
 import Home from './pages/home.tsx';
 import Pending from './pages/pending.tsx';
@@ -31,6 +31,7 @@ render(
         <Route path="/pending" component={Pending} />
         <Route path="/search" component={Search} />
         <Route path="/upload" component={Upload} />
+        <Route path="/browse" component={Browse} />
         <Route path="/asset/:id" component={AssetDetails} />
         <Route path="/edit" component={Edit} />
         <Route path="*paramName" component={NotFound} />

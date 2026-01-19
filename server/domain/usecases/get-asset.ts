@@ -17,6 +17,6 @@ export default ({
    * @returns asset entity, or null if not found.
    */
   return async (assetId: string): Promise<Asset | null> => {
-    return await recordRepository.getAssetById(assetId);
+    return recordRepository.getAssetById(assetId);
   };
 };

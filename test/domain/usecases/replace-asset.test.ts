@@ -5,7 +5,11 @@ import { describe, expect, mock, test } from 'bun:test';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import ReplaceAsset from 'tanuki/server/domain/usecases/replace-asset.ts';
-import { blobRepositoryMock, recordRepositoryMock } from './mocking.ts';
+import {
+  blobRepositoryMock,
+  recordRepositoryMock,
+  searchRepositoryMock
+} from './mocking.ts';
 
 describe('ReplaceAsset use case', function () {
   test('should merge old values into new and remove old assets', async function () {
@@ -34,15 +38,19 @@ describe('ReplaceAsset use case', function () {
         return Promise.reject('wrong');
       })
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = ReplaceAsset({
       blobRepository: mockBlobRepository,
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const updated = await usecase('kittens1', 'kitties2');
     // assert
     expect(updated.key).toEqual('kitties2');
-    expect(updated.checksum).toEqual('sha1-10846411651c5442be373f4d402c476ebcb3f644');
+    expect(updated.checksum).toEqual(
+      'sha1-10846411651c5442be373f4d402c476ebcb3f644'
+    );
     expect(updated.byteLength).toEqual(160_797);
     expect(updated.tags).toHaveLength(2);
     expect(updated.tags[0]).toEqual('kittens');

@@ -3,15 +3,22 @@
 //
 import assert from 'node:assert';
 import * as helpers from './helpers.ts';
-import { SearchParams, SearchResult } from 'tanuki/server/domain/entities/search.ts';
+import {
+  SearchParams,
+  SearchResult
+} from 'tanuki/server/domain/entities/search.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
+import { type SearchRepository } from 'tanuki/server/domain/repositories/search-repository.ts';
 
 export default ({
-  recordRepository
+  recordRepository,
+  searchRepository
 }: {
   recordRepository: RecordRepository;
+  searchRepository: SearchRepository;
 }) => {
   assert.ok(recordRepository, 'record repository must be defined');
+  assert.ok(searchRepository, 'search repository must be defined');
   /**
    * Use case to perform queries against the database indices.
    *
@@ -21,10 +28,18 @@ export default ({
    * @returns array of results containing selected fields from asset records.
    */
   return async (params: SearchParams): Promise<SearchResult[]> => {
-    let results = await queryAssets(recordRepository, params);
-    results = filterByDateRange(results, params);
-    results = filterByLocations(results, params);
-    results = filterByMediaType(results, params);
+    let results: SearchResult[];
+    const key = params.toString();
+    const cached = await searchRepository.get(key);
+    if (cached) {
+      results = cached;
+    } else {
+      results = await queryAssets(recordRepository, params);
+      results = filterByDateRange(results, params);
+      results = filterByLocations(results, params);
+      results = filterByMediaType(results, params);
+      await searchRepository.put(key, results);
+    }
     helpers.sortSearchResults(results, params.sortField, params.sortOrder);
     return results;
   };

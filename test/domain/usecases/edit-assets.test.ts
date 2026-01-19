@@ -5,14 +5,16 @@ import { describe, expect, mock, test } from 'bun:test';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import EditAssets from 'tanuki/server/domain/usecases/edit-assets.ts';
 import * as ops from 'tanuki/server/domain/entities/edit.ts';
-import { recordRepositoryMock } from './mocking.ts';
+import { recordRepositoryMock, searchRepositoryMock } from './mocking.ts';
 
 describe('EditAssets use case', function () {
   test('should do nothing when no inputs', async function () {
     // arrange
     const mockRecordRepository = recordRepositoryMock({});
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = EditAssets({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const mods = [new ops.TagAdd('dog')];
@@ -41,8 +43,10 @@ describe('EditAssets use case', function () {
         return Promise.resolve();
       })
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = EditAssets({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const mods = [new ops.TagAdd('dog')];

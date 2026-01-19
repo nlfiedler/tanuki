@@ -5,16 +5,20 @@ import assert from 'node:assert';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { type BlobRepository } from 'tanuki/server/domain/repositories/blob-repository.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
+import { type SearchRepository } from 'tanuki/server/domain/repositories/search-repository.ts';
 
 export default ({
   recordRepository,
-  blobRepository
+  blobRepository,
+  searchRepository,
 }: {
   recordRepository: RecordRepository;
   blobRepository: BlobRepository;
+  searchRepository: SearchRepository;
 }) => {
   assert.ok(recordRepository, 'record repository must be defined');
   assert.ok(blobRepository, 'blob repository must be defined');
+  assert.ok(searchRepository, 'search repository must be defined');
   /**
    * Read certain properties (tags, caption, location) from the old asset record
    * and copy to the new record, then delete the old record and the old blob.
@@ -38,6 +42,7 @@ export default ({
     await recordRepository.putAsset(newAsset);
     await recordRepository.deleteAsset(oldAssetId);
     await blobRepository.deleteBlob(oldAssetId);
+    await searchRepository.clear();
     return newAsset;
   };
 };

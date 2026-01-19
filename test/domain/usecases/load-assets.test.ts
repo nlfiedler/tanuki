@@ -6,7 +6,7 @@ import { describe, expect, mock, test } from 'bun:test';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import LoadAssets from 'tanuki/server/domain/usecases/load-assets.ts';
-import { recordRepositoryMock } from './mocking.ts';
+import { recordRepositoryMock, searchRepositoryMock } from './mocking.ts';
 
 describe('LoadAssets use case', function () {
   test('should insert nothing for empty inputs', async function () {
@@ -14,8 +14,10 @@ describe('LoadAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       storeAssets: mock(() => Promise.resolve())
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = LoadAssets({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const inputs = new Array<any>();
@@ -36,8 +38,10 @@ describe('LoadAssets use case', function () {
         return Promise.resolve();
       })
     });
+    const mockSearchRepository = searchRepositoryMock({});
     const usecase = LoadAssets({
-      recordRepository: mockRecordRepository
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const raw = await fs.readFile('test/fixtures/dump.json', {

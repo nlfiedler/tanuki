@@ -8,7 +8,7 @@ import * as format from '../helpers/formatting.ts';
 interface CardsGridProps {
   results?: SearchResult[];
   selectedAssets: Accessor<Set<string>>;
-  onClick: (assetId: string) => void;
+  onClick: (assetId: string, index: number) => void;
 }
 
 function CardsGrid(props: CardsGridProps) {
@@ -19,9 +19,9 @@ function CardsGrid(props: CardsGridProps) {
   return (
     <div class="grid is-col-min-16 padding-2">
       <For each={props.results}>
-        {(asset) => (
+        {(asset, index) => (
           <div class="cell">
-            <a onClick={() => props.onClick(asset.assetId)}>
+            <a onClick={() => props.onClick(asset.assetId, index())}>
               <div class={cardClass(asset.assetId)}>
                 <div class="card-image">
                   <figure class="image">

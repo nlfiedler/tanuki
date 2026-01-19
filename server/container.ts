@@ -32,6 +32,7 @@ import { SqliteRecordRepository } from 'tanuki/server/data/repositories/sqlite-r
 import { DummyLocationRepository } from 'tanuki/server/data/repositories/dummy-location-repository.ts';
 import { EnvSettingsRepository } from 'tanuki/server/data/repositories/env-settings-repository.ts';
 import { GoogleLocationRepository } from 'tanuki/server/data/repositories/google-location-repository.ts';
+import { MemorySearchRepository } from 'tanuki/server/data/repositories/memory-search-repository.ts';
 import { LocalBlobRepository } from './data/repositories/local-blob-repository';
 import { NamazuBlobRepository } from './data/repositories/namazu-blob-repository';
 
@@ -69,6 +70,9 @@ container.register({
     lifetime: Lifetime.SINGLETON
   }),
   locationRepository: asClass(LocationRepository, {
+    lifetime: Lifetime.SINGLETON
+  }),
+  searchRepository: asClass(MemorySearchRepository, {
     lifetime: Lifetime.SINGLETON
   }),
 

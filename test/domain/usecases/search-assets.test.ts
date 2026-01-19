@@ -10,13 +10,17 @@ import {
   SearchResult
 } from 'tanuki/server/domain/entities/search.ts';
 import SearchAssets from 'tanuki/server/domain/usecases/search-assets.ts';
-import { recordRepositoryMock } from './mocking.ts';
+import { recordRepositoryMock, searchRepositoryMock } from './mocking.ts';
 
 describe('SearchAssets use case', function () {
   test('should do nothing when empty search params', async function () {
     // arrange
     const mockRecordRepository = recordRepositoryMock({});
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const params = new SearchParams();
     const actual = await usecase(params);
@@ -34,7 +38,11 @@ describe('SearchAssets use case', function () {
   test('should find nothing when zero assets', async function () {
     // arrange
     const mockRecordRepository = recordRepositoryMock({});
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const params = new SearchParams().addTag('cat');
     const actual = await usecase(params);
@@ -58,7 +66,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const params = new SearchParams().addTag('cat');
     const actual = await usecase(params);
@@ -71,6 +83,44 @@ describe('SearchAssets use case', function () {
     expect(mockRecordRepository.queryBeforeDate).toHaveBeenCalledTimes(0);
     expect(mockRecordRepository.queryAfterDate).toHaveBeenCalledTimes(0);
     expect(mockRecordRepository.queryDateRange).toHaveBeenCalledTimes(0);
+    expect(mockSearchRepository.get).toHaveBeenCalledTimes(1);
+    expect(mockSearchRepository.put).toHaveBeenCalledTimes(1);
+    mock.clearAllMocks();
+  });
+
+  test('should retrieve cached search results', async function () {
+    // arrange
+    const results = [
+      new SearchResult(
+        'monday2',
+        'img_1234.jpg',
+        'image/jpeg',
+        Location.parse('Oahu, Hawaii'),
+        new Date()
+      )
+    ];
+    const mockRecordRepository = recordRepositoryMock({});
+    const mockSearchRepository = searchRepositoryMock({
+      get: mock((key: string) => Promise.resolve(results))
+    });
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
+    // act
+    const params = new SearchParams().addTag('cat');
+    const actual = await usecase(params);
+    // assert
+    expect(actual).toHaveLength(1);
+    expect(actual[0]?.assetId).toEqual('monday2');
+    expect(mockRecordRepository.queryByTags).toHaveBeenCalledTimes(0);
+    expect(mockRecordRepository.queryByLocations).toHaveBeenCalledTimes(0);
+    expect(mockRecordRepository.queryByMediaType).toHaveBeenCalledTimes(0);
+    expect(mockRecordRepository.queryBeforeDate).toHaveBeenCalledTimes(0);
+    expect(mockRecordRepository.queryAfterDate).toHaveBeenCalledTimes(0);
+    expect(mockRecordRepository.queryDateRange).toHaveBeenCalledTimes(0);
+    expect(mockSearchRepository.get).toHaveBeenCalledTimes(1);
+    expect(mockSearchRepository.put).toHaveBeenCalledTimes(0);
     mock.clearAllMocks();
   });
 
@@ -88,7 +138,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryDateRange: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const params = new SearchParams()
       .setBeforeDate(new Date(2008, 5, 1, 0, 0))
@@ -120,7 +174,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryBeforeDate: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const params = new SearchParams().setBeforeDate(new Date(2008, 5, 1, 0, 0));
     const actual = await usecase(params);
@@ -150,7 +208,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryAfterDate: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const params = new SearchParams().setAfterDate(new Date(2008, 4, 1, 0, 0));
     const actual = await usecase(params);
@@ -180,7 +242,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByLocations: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const params = new SearchParams().addLocation('paris');
     const actual = await usecase(params);
@@ -210,7 +276,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByMediaType: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const params = new SearchParams().setMediaType('image/jpeg');
     const actual = await usecase(params);
@@ -268,7 +338,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const params = new SearchParams()
       .addTag('cat')
@@ -325,7 +399,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const params = new SearchParams()
       .addTag('cat')
@@ -381,7 +459,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const params = new SearchParams()
       .addTag('cat')
@@ -437,7 +519,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const single = await usecase(
       new SearchParams().addTag('cat').addLocation('paris')
@@ -501,7 +587,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const actual = await usecase(
       new SearchParams().addTag('cat').setMediaType('image/jpeg')
@@ -554,7 +644,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const actual = await usecase(
       new SearchParams().addTag('cat').setSortField(SortField.Date)
@@ -610,7 +704,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const actual = await usecase(
       new SearchParams()
@@ -669,7 +767,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const actual = await usecase(
       new SearchParams().addTag('cat').setSortField(SortField.Identifier)
@@ -725,7 +827,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const actual = await usecase(
       new SearchParams()
@@ -784,7 +890,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const actual = await usecase(
       new SearchParams().addTag('cat').setSortField(SortField.Filename)
@@ -840,7 +950,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const actual = await usecase(
       new SearchParams()
@@ -899,7 +1013,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const actual = await usecase(
       new SearchParams().addTag('cat').setSortField(SortField.MediaType)
@@ -955,7 +1073,11 @@ describe('SearchAssets use case', function () {
     const mockRecordRepository = recordRepositoryMock({
       queryByTags: mock(() => Promise.resolve(results))
     });
-    const usecase = SearchAssets({ recordRepository: mockRecordRepository });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = SearchAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
     // act
     const actual = await usecase(
       new SearchParams()

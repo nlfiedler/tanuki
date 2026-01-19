@@ -8,7 +8,8 @@ import ImportAsset from 'tanuki/server/domain/usecases/import-asset.ts';
 import {
   blobRepositoryMock,
   locationRepositoryMock,
-  recordRepositoryMock
+  recordRepositoryMock,
+  searchRepositoryMock
 } from './mocking.ts';
 
 describe('ImportAsset use case', function () {
@@ -17,13 +18,15 @@ describe('ImportAsset use case', function () {
     const mockRecordRepository = recordRepositoryMock({});
     const mockBlobRepository = blobRepositoryMock({});
     const mockLocationRepository = locationRepositoryMock({});
+    const mockSearchRepository = searchRepositoryMock({});
     const filepath = './test/fixtures/dcp_1069.jpg';
     const mimetype = 'image/jpeg';
     const modified = new Date();
     const usecase = ImportAsset({
       recordRepository: mockRecordRepository,
       blobRepository: mockBlobRepository,
-      locationRepository: mockLocationRepository
+      locationRepository: mockLocationRepository,
+      searchRepository: mockSearchRepository,
     });
     // act
     const actual = await usecase(filepath, 'dcp_1069.jpg', mimetype, modified);
@@ -54,13 +57,15 @@ describe('ImportAsset use case', function () {
     });
     const mockBlobRepository = blobRepositoryMock({});
     const mockLocationRepository = locationRepositoryMock({});
+    const mockSearchRepository = searchRepositoryMock({});
     const filepath = './test/fixtures/dcp_1069.jpg';
     const mimetype = 'image/jpeg';
     const modified = new Date();
     const usecase = ImportAsset({
       recordRepository: mockRecordRepository,
       blobRepository: mockBlobRepository,
-      locationRepository: mockLocationRepository
+      locationRepository: mockLocationRepository,
+      searchRepository: mockSearchRepository,
     });
     // act
     const actual = await usecase(filepath, 'dcp_1069.jpg', mimetype, modified);
@@ -85,6 +90,7 @@ describe('ImportAsset use case', function () {
         Promise.resolve(new Geocoded('Portland', 'Oregon', 'USA'))
       )
     });
+    const mockSearchRepository = searchRepositoryMock({});
     // file needs GPS coordinates for the location repository to be invoked
     const filepath = './test/fixtures/IMG_0385.JPG';
     const mimetype = 'image/jpeg';
@@ -92,7 +98,8 @@ describe('ImportAsset use case', function () {
     const usecase = ImportAsset({
       recordRepository: mockRecordRepository,
       blobRepository: mockBlobRepository,
-      locationRepository: mockLocationRepository
+      locationRepository: mockLocationRepository,
+      searchRepository: mockSearchRepository,
     });
     // act
     const actual = await usecase(filepath, 'IMG_0385.JPG', mimetype, modified);

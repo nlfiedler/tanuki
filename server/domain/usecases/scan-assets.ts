@@ -3,6 +3,7 @@
 //
 import assert from 'node:assert';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
+import { type SearchRepository } from 'tanuki/server/domain/repositories/search-repository.ts';
 import {
   SearchResult,
   SortField,
@@ -12,11 +13,14 @@ import { parse } from './query.ts';
 import * as helpers from './helpers.ts';
 
 export default ({
-  recordRepository
+  recordRepository,
+  searchRepository
 }: {
   recordRepository: RecordRepository;
+  searchRepository: SearchRepository;
 }) => {
   assert.ok(recordRepository, 'record repository must be defined');
+  assert.ok(searchRepository, 'search repository must be defined');
   /**
    * Scan all assets in the database matching each record against multiple
    * criteria with optional boolean operators and grouping.
@@ -31,23 +35,29 @@ export default ({
     sortField?: SortField,
     sortOrder?: SortOrder
   ): Promise<SearchResult[]> => {
-    if (query.length === 0) {
+    if (query.trim().length === 0) {
       return [];
     }
-    const cons = await parse(query);
-    let cursor = null;
-    const results: SearchResult[] = [];
-    while (true) {
-      const [assets, next] = await recordRepository.fetchAssets(cursor, 1024);
-      for (const entry of assets) {
-        if (cons.matches(entry)) {
-          results.push(SearchResult.fromAsset(entry));
+    let results: SearchResult[] = [];
+    const cached = await searchRepository.get(query);
+    if (cached) {
+      results = cached;
+    } else {
+      const cons = await parse(query);
+      let cursor = null;
+      while (true) {
+        const [assets, next] = await recordRepository.fetchAssets(cursor, 1024);
+        for (const entry of assets) {
+          if (cons.matches(entry)) {
+            results.push(SearchResult.fromAsset(entry));
+          }
         }
+        if (assets.length === 0) {
+          break;
+        }
+        cursor = next;
       }
-      if (assets.length === 0) {
-        break;
-      }
-      cursor = next;
+      await searchRepository.put(query, results);
     }
     helpers.sortSearchResults(results, sortField ?? null, sortOrder ?? null);
     return results;

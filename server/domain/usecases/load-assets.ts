@@ -5,13 +5,17 @@ import assert from 'node:assert';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
+import { type SearchRepository } from 'tanuki/server/domain/repositories/search-repository.ts';
 
 export default ({
-  recordRepository
+  recordRepository,
+  searchRepository
 }: {
   recordRepository: RecordRepository;
+  searchRepository: SearchRepository;
 }) => {
   assert.ok(recordRepository, 'record repository must be defined');
+  assert.ok(searchRepository, 'search repository must be defined');
   /**
    * Store the given assets (formatted as "dump" records) into the repository.
    *
@@ -49,6 +53,7 @@ export default ({
     });
     if (assets.length > 0) {
       await recordRepository.storeAssets(assets);
+      await searchRepository.clear();
     }
   };
 };

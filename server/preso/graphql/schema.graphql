@@ -58,7 +58,7 @@ type Asset {
   caption: String
   "Location information for the asset."
   location: Location
-  # URL for retrieving the raw asset.
+  "URL for retrieving the raw asset."
   assetUrl: String!
 }
 
@@ -82,9 +82,9 @@ type SearchResult {
   location: Location
   "The media type of the asset, such as 'image/jpeg' or 'video/mp4'."
   mediaType: String!
-  # URL for retrieving a thumbnail version of the asset.
+  "URL for retrieving a thumbnail version of the asset."
   thumbnailUrl: String!
-  # URL for retrieving the raw asset (mainly for videos).
+  "URL for retrieving the raw asset (mainly for videos)."
   assetUrl: String!
 }
 
@@ -96,6 +96,14 @@ type SearchMeta {
   count: Int!
   "Last possible page of available assets matching the query."
   lastPage: Int!
+}
+
+"Used in the browse feature in which a single asset is returned from a request."
+type BrowseMeta {
+  "An asset, if any are available."
+  asset: Asset
+  "Offset of the last search result."
+  lastOffset: Int!
 }
 
 "Field of the search results on which to sort."
@@ -170,6 +178,15 @@ type Query {
     offset: Int
     limit: Int
   ): SearchMeta!
+  "Search and retrieve the details for the result at the given offset."
+  searchFetch(params: SearchParams!, offset: Int!): BrowseMeta!
+  "Scan and retrieve the details for the result at the given offset."
+  scanFetch(
+    query: String!
+    sortField: SortField
+    sortOrder: SortOrder
+    offset: Int!
+  ): BrowseMeta!
   """
   Retrieve the union of tags for the given assets. The count for each tag
   indicates how many of the selected assets have that tag.

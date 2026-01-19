@@ -100,6 +100,7 @@ function Search() {
     limit: pageSize(),
     sortOrder: selectedSortOrder()
   }));
+  const [_, setParams] = useLocalStorage('browse-params', {});
   const [assetsQuery] = createResource(scanParams, async (params) => {
     const { data } = await client.query({
       query: SCAN_ASSETS,
@@ -120,6 +121,19 @@ function Search() {
     }
   };
   const [selectedAssets] = createSignal(new Set<string>());
+  const beginBrowsing = (index: number) => {
+    const args = buildParams(scanParams());
+    const page = selectedPage();
+    const count = pageSize();
+    const offset = index + count * (page - 1);
+    setParams({
+      query: args.query,
+      sortField: args.sortField,
+      sortOrder: args.sortOrder,
+      offset
+    });
+    navigate('/browse');
+  };
 
   return (
     <>
@@ -178,7 +192,7 @@ function Search() {
         <CardsGrid
           results={assetsQuery()?.scan.results}
           selectedAssets={selectedAssets}
-          onClick={(assetId) => navigate(`/asset/${assetId}`)}
+          onClick={(_, index) => beginBrowsing(index)}
         />
       </Suspense>
     </>

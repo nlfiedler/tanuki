@@ -4,13 +4,17 @@
 import assert from 'node:assert';
 import { type Operation } from 'tanuki/server/domain/entities/edit.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
+import { type SearchRepository } from 'tanuki/server/domain/repositories/search-repository.ts';
 
 export default ({
-  recordRepository
+  recordRepository,
+  searchRepository
 }: {
   recordRepository: RecordRepository;
+  searchRepository: SearchRepository;
 }) => {
   assert.ok(recordRepository, 'record repository must be defined');
+  assert.ok(searchRepository, 'search repository must be defined');
   /**
    * Makes changes to multiple assets at one time. The inputs include the set of
    * asset identifiers and a list of operations to be performed on those assets.
@@ -31,13 +35,13 @@ export default ({
         }
       }
       if (modded) {
-        recordRepository.putAsset(asset);
+        await recordRepository.putAsset(asset);
         fixedCount++;
       }
     }
-    // if (fixedCount > 0) {
-    //   searchRepository.clear();
-    // }
+    if (fixedCount > 0) {
+      await searchRepository.clear();
+    }
     return fixedCount;
   };
 };
