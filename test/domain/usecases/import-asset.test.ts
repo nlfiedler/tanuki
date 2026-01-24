@@ -1,7 +1,10 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { describe, expect, mock, test } from 'bun:test';
+import { temporaryDirectory } from 'tempy';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { Geocoded } from 'tanuki/server/domain/entities/location.ts';
 import ImportAsset from 'tanuki/server/domain/usecases/import-asset.ts';
@@ -26,7 +29,7 @@ describe('ImportAsset use case', function () {
       recordRepository: mockRecordRepository,
       blobRepository: mockBlobRepository,
       locationRepository: mockLocationRepository,
-      searchRepository: mockSearchRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const actual = await usecase(filepath, 'dcp_1069.jpg', mimetype, modified);
@@ -58,17 +61,20 @@ describe('ImportAsset use case', function () {
     const mockBlobRepository = blobRepositoryMock({});
     const mockLocationRepository = locationRepositoryMock({});
     const mockSearchRepository = searchRepositoryMock({});
-    const filepath = './test/fixtures/dcp_1069.jpg';
     const mimetype = 'image/jpeg';
     const modified = new Date();
     const usecase = ImportAsset({
       recordRepository: mockRecordRepository,
       blobRepository: mockBlobRepository,
       locationRepository: mockLocationRepository,
-      searchRepository: mockSearchRepository,
+      searchRepository: mockSearchRepository
     });
+    // copy test file to temporary path as it will be (re)moved
+    const tmpdir = temporaryDirectory();
+    const incoming = path.join(tmpdir, 'fighting_kittens.jpg');
+    await fs.copyFile('./test/fixtures/fighting_kittens.jpg', incoming);
     // act
-    const actual = await usecase(filepath, 'dcp_1069.jpg', mimetype, modified);
+    const actual = await usecase(incoming, 'dcp_1069.jpg', mimetype, modified);
     // assert
     expect(actual.checksum).toEqual(
       'sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07'
@@ -76,7 +82,7 @@ describe('ImportAsset use case', function () {
     expect(actual.byteLength).toEqual(80_977);
     expect(actual.mediaType).toEqual('image/jpeg');
     expect(mockRecordRepository.getAssetByDigest).toHaveBeenCalledTimes(1);
-    expect(mockBlobRepository.storeBlob).toHaveBeenCalledTimes(1);
+    expect(mockBlobRepository.storeBlob).toHaveBeenCalledTimes(0);
     expect(mockRecordRepository.putAsset).toHaveBeenCalledTimes(0);
     mock.clearAllMocks();
   });
@@ -99,7 +105,7 @@ describe('ImportAsset use case', function () {
       recordRepository: mockRecordRepository,
       blobRepository: mockBlobRepository,
       locationRepository: mockLocationRepository,
-      searchRepository: mockSearchRepository,
+      searchRepository: mockSearchRepository
     });
     // act
     const actual = await usecase(filepath, 'IMG_0385.JPG', mimetype, modified);

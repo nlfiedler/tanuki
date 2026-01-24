@@ -72,10 +72,13 @@ export default ({
         }
       }
       await recordRepository.putAsset(asset);
+      // blob repository will ensure the temporary file is (re)moved
+      await blobRepository.storeBlob(filepath, asset);
       await searchRepository.clear();
+    } else {
+      // remove the temporary file
+      await fs.rm(filepath);
     }
-    // blob repo will ensure the temporary file is (re)moved
-    await blobRepository.storeBlob(filepath, asset);
     return asset;
   };
 };

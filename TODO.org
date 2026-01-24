@@ -1,7 +1,5 @@
 * Action Items
 ** Rewrite 2025
-*** TODO namazu blob repo should not upload existing file again
-**** local blob repo detects this already, but namazu does not
 *** TODO identical location string appears twice on pending page (e.g. ~lake tahoe; California~)
 *** TODO check browser console for issues
 *** TODO changing light/dark in System Preferences does not cause page theme to change
