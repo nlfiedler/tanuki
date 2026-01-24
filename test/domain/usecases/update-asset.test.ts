@@ -219,6 +219,34 @@ describe('UpdateAsset use case', function () {
     mock.clearAllMocks();
   });
 
+  test('should allow clearing the caption', async function () {
+    // arrange
+    const asset = new Asset('kittens1');
+    asset.checksum =
+      'sha256-dd8c97c05721b0e24f2d4589e17bfaa1bf2a6f833c490c54bc9f4fdae4231b07';
+    asset.byteLength = 80_977;
+    asset.mediaType = 'image/jpeg';
+    asset.caption = 'some text';
+    asset.tags = ['cute'];
+    const mockRecordRepository = recordRepositoryMock({
+      getAssetById: mock((_assetId: string) => Promise.resolve(asset))
+    });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = UpdateAsset({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
+    // act
+    const updated = await usecase(new AssetInput('kittens1').setCaption(''));
+    // assert
+    expect(updated.tags).toHaveLength(1);
+    expect(updated.tags[0]).toEqual('cute');
+    expect(updated.caption).toEqual('');
+    expect(mockRecordRepository.getAssetById).toHaveBeenCalledTimes(1);
+    expect(mockRecordRepository.putAsset).toHaveBeenCalledTimes(1);
+    mock.clearAllMocks();
+  });
+
   test('should update preferred date-time', async function () {
     // arrange
     const asset = new Asset('kittens1');

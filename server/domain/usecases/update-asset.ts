@@ -54,8 +54,8 @@ function mergeAssetInput(asset: Asset, assetInput: AssetInput) {
     asset.location = location;
   }
   // parse the caption to glean location and additional tags
+  asset.caption = assetInput.caption;
   if (assetInput.caption) {
-    asset.caption = assetInput.caption;
     const { tags, location } = helpers.parseCaption(assetInput.caption);
     // tags in the caption are merged with the asset/input tags
     const alltags = asset.tags.concat(tags);
