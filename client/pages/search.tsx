@@ -116,6 +116,7 @@ function Search() {
   > = (event) => {
     const target = event.currentTarget;
     if (target) {
+      setSelectedPage(1);
       setQueryString(target.value);
       event.stopPropagation();
     }

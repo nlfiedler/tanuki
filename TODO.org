@@ -1,10 +1,4 @@
 * Action Items
-** Rewrite 2025
-*** TODO identical location string appears twice on pending page (e.g. ~lake tahoe; California~)
-*** TODO check browser console for issues
-*** TODO changing light/dark in System Preferences does not cause page theme to change
-*** TODO fix the cross-origin errors in the browser console
-**** these happen seemingly at random, redeploying fixes it temporarily(?)
 ** Help
 *** write help pages for each of the main pages
 **** location string parsing
@@ -67,6 +61,7 @@
 *** display modes: have an option that makes the images really big (single column, huge images)
 *** hovering over asset should show larger version in a large tooltip
 ** Home
+*** changing light/dark in System Preferences does not cause page theme to change
 *** look into making the ~Year~ selector scrollable, list is getting longer than the screen
 *** hover button: download raw asset
 **** https://dev.to/sanchithasr/how-to-overlay-icons-on-top-of-images-with-css-1kb9
