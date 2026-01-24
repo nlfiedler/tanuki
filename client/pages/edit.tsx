@@ -35,15 +35,15 @@ import useLocalStorage from '../hooks/use-local-storage.ts';
 const SCAN_ASSETS: TypedDocumentNode<Query, QueryScanArgs> = gql`
   query Scan(
     $query: String!
-    $field: SortField
-    $order: SortOrder
+    $sortField: SortField
+    $sortOrder: SortOrder
     $offset: Int
     $limit: Int
   ) {
     scan(
       query: $query
-      sortField: $field
-      sortOrder: $order
+      sortField: $sortField
+      sortOrder: $sortOrder
       offset: $offset
       limit: $limit
     ) {

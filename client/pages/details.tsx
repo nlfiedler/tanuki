@@ -2,10 +2,12 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import {
+  createEffect,
   createMemo,
   createRenderEffect,
   createResource,
   createSignal,
+  on,
   type Accessor,
   type JSX,
   Match,
@@ -30,8 +32,10 @@ import type {
   MutationReplaceArgs,
   MutationUpdateArgs,
   QueryAssetArgs,
-  QueryScanFetchArgs,
-  QuerySearchFetchArgs,
+  QueryScanFetchByIdArgs,
+  QueryScanFetchOffsetArgs,
+  QuerySearchFetchByIdArgs,
+  QuerySearchFetchOffsetArgs,
   Query
 } from 'tanuki/generated/graphql.ts';
 
@@ -78,27 +82,40 @@ export function AssetDetails() {
   // parameter changes, but createEffect() will show that a change occurs
   const params = useParams();
   const client = useApolloClient();
-  const [assetQuery] = createResource(params, async (params) => {
-    const { data } = await client.query({
-      query: GET_ASSET,
-      variables: { id: params.id! }
-    });
-    return data;
+  const [assetQuery] = createResource(
+    () => params.id,
+    async (assetId) => {
+      const { data } = await client.query({
+        query: GET_ASSET,
+        variables: { id: assetId }
+      });
+      return data;
+    }
+  );
+  const assetChanged = action(async (newId: string) => {
+    throw redirect(`/asset/${newId}`);
   });
+  const changedAction = useAction(assetChanged);
 
   return (
     <div>
       <Show when={assetQuery()} fallback="Loading...">
         <AssetFigure asset={assetQuery()?.asset!} />
-        <AssetForm asset={assetQuery()?.asset!} />
+        <AssetForm
+          asset={assetQuery()?.asset!}
+          changed={(newId) => changedAction(newId)}
+        />
       </Show>
     </div>
   );
 }
 
-const SEARCH_FETCH: TypedDocumentNode<Query, QuerySearchFetchArgs> = gql`
-  query SearchFetch($params: SearchParams!, $offset: Int!) {
-    searchFetch(params: $params, offset: $offset) {
+const SEARCH_FETCH_OFFSET: TypedDocumentNode<
+  Query,
+  QuerySearchFetchOffsetArgs
+> = gql`
+  query SearchFetchOffset($params: SearchParams!, $offset: Int!) {
+    searchFetchOffset(params: $params, offset: $offset) {
       asset {
         id
         checksum
@@ -121,18 +138,81 @@ const SEARCH_FETCH: TypedDocumentNode<Query, QuerySearchFetchArgs> = gql`
   }
 `;
 
-const SCAN_FETCH: TypedDocumentNode<Query, QueryScanFetchArgs> = gql`
-  query ScanFetch(
+const SCAN_FETCH_OFFSET: TypedDocumentNode<Query, QueryScanFetchOffsetArgs> =
+  gql`
+    query ScanFetchOffset(
+      $query: String!
+      $sortField: SortField
+      $sortOrder: SortOrder
+      $offset: Int!
+    ) {
+      scanFetchOffset(
+        query: $query
+        sortField: $sortField
+        sortOrder: $sortOrder
+        offset: $offset
+      ) {
+        asset {
+          id
+          checksum
+          filename
+          filepath
+          byteLength
+          datetime
+          mediaType
+          tags
+          caption
+          location {
+            label
+            city
+            region
+          }
+          assetUrl
+        }
+        lastOffset
+      }
+    }
+  `;
+
+const SEARCH_FETCH_BY_ID: TypedDocumentNode<Query, QuerySearchFetchByIdArgs> =
+  gql`
+    query SearchFetchById($params: SearchParams!, $id: ID!) {
+      searchFetchById(params: $params, id: $id) {
+        asset {
+          id
+          checksum
+          filename
+          filepath
+          byteLength
+          datetime
+          mediaType
+          tags
+          caption
+          location {
+            label
+            city
+            region
+          }
+          assetUrl
+        }
+        offset
+        lastOffset
+      }
+    }
+  `;
+
+const SCAN_FETCH_BY_ID: TypedDocumentNode<Query, QueryScanFetchByIdArgs> = gql`
+  query ScanFetchById(
     $query: String!
-    $field: SortField
-    $order: SortOrder
-    $offset: Int!
+    $sortField: SortField
+    $sortOrder: SortOrder
+    $id: ID!
   ) {
-    scanFetch(
+    scanFetchOffset(
       query: $query
-      sortField: $field
-      sortOrder: $order
-      offset: $offset
+      sortField: $sortField
+      sortOrder: $sortOrder
+      id: $id
     ) {
       asset {
         id
@@ -151,6 +231,7 @@ const SCAN_FETCH: TypedDocumentNode<Query, QueryScanFetchArgs> = gql`
         }
         assetUrl
       }
+      offset
       lastOffset
     }
   }
@@ -162,7 +243,7 @@ export function Browse() {
   const [assetQuery] = createResource(browseParams, async (args: any) => {
     if ('query' in args) {
       const { data } = await client.query({
-        query: SCAN_FETCH,
+        query: SCAN_FETCH_OFFSET,
         variables: {
           query: args.query,
           sortField: args.sortField,
@@ -170,15 +251,51 @@ export function Browse() {
           offset: args.offset
         }
       });
-      return data!.scanFetch;
+      return data!.scanFetchOffset;
     }
     const { offset, ...params } = args;
     const { data } = await client.query({
-      query: SEARCH_FETCH,
+      query: SEARCH_FETCH_OFFSET,
       variables: { params, offset }
     });
-    return data!.searchFetch;
+    return data!.searchFetchOffset;
   });
+  const assetChanged = action(async (newId: string) => {
+    // asset details were edited or the asset itself was replaced, need to
+    // perform the scan/search again and find the offset of the asset with the
+    // given (possibly new) identifier
+    const args: any = browseParams();
+    let newOffset;
+    if ('query' in args) {
+      const { data } = await client.query({
+        query: SCAN_FETCH_BY_ID,
+        variables: {
+          query: args.query,
+          sortField: args.sortField,
+          sortOrder: args.sortOrder,
+          id: newId
+        }
+      });
+      newOffset = data!.scanFetchById.offset;
+    } else {
+      const { offset, ...params } = args;
+      const { data } = await client.query({
+        query: SEARCH_FETCH_BY_ID,
+        variables: { params, id: newId }
+      });
+      newOffset = data!.searchFetchById.offset;
+    }
+    if (args.offset === newOffset) {
+      // in case asset was replaced, need to reload the window
+      window.location.reload();
+    } else {
+      const offset = Math.max(newOffset, 0);
+      setBrowseParams((p: any) => {
+        return Object.assign({}, p, { offset });
+      });
+    }
+  });
+  const changedAction = useAction(assetChanged);
 
   return (
     <div class="container">
@@ -195,7 +312,10 @@ export function Browse() {
           </div>
           <div class="column">
             <AssetFigure asset={assetQuery()?.asset!} />
-            <AssetForm asset={assetQuery()?.asset!} />
+            <AssetForm
+              asset={assetQuery()?.asset!}
+              changed={(newId) => changedAction(newId)}
+            />
           </div>
           <div
             class="px-0 column is-narrow"
@@ -393,6 +513,7 @@ declare module 'solid-js' {
 
 interface AssetFormProps {
   asset: Asset;
+  changed: (assetId: string) => void;
 }
 
 function AssetForm(props: AssetFormProps) {
@@ -411,6 +532,24 @@ function AssetForm(props: AssetFormProps) {
     props.asset.location?.region ?? ''
   );
   const [mediaType, setMediaType] = createSignal(props.asset.mediaType);
+  // The form input signals are not automatically updated when the component
+  // props change (due to browsing among the search results) so use an effect to
+  // forcily update the values.
+  createEffect(
+    on(
+      () => props.asset,
+      () => {
+        setDatetime(props.asset.datetime);
+        setFilename(props.asset.filename);
+        setCaption(props.asset.caption ?? '');
+        setTags(props.asset.tags);
+        setLocationLabel(props.asset.location?.label ?? '');
+        setLocationCity(props.asset.location?.city ?? '');
+        setLocationRegion(props.asset.location?.region ?? '');
+        setMediaType(props.asset.mediaType);
+      }
+    )
+  );
 
   // update asset details
   const updateAction = action(async (): Promise<{ ok: boolean }> => {
@@ -439,6 +578,7 @@ function AssetForm(props: AssetFormProps) {
       console.error('asset update failed:', error);
       return { ok: false };
     }
+    props.changed(props.asset.id);
     return { ok: true };
   }, 'updateAssets');
   const startUpdate = useAction(updateAction);
@@ -499,7 +639,7 @@ function AssetForm(props: AssetFormProps) {
       console.error('Error uploading files:', error);
     }
     if (newId) {
-      throw redirect(`/asset/${newId}`);
+      props.changed(newId);
     }
   });
   const startUpload = useAction(uploadAction);

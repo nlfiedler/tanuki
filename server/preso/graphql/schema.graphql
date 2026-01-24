@@ -102,6 +102,8 @@ type SearchMeta {
 type BrowseMeta {
   "An asset, if any are available."
   asset: Asset
+  "Zero-based offset of this asset."
+  offset: Int!
   "Offset of the last search result."
   lastOffset: Int!
 }
@@ -179,13 +181,22 @@ type Query {
     limit: Int
   ): SearchMeta!
   "Search and retrieve the details for the result at the given offset."
-  searchFetch(params: SearchParams!, offset: Int!): BrowseMeta!
+  searchFetchOffset(params: SearchParams!, offset: Int!): BrowseMeta!
   "Scan and retrieve the details for the result at the given offset."
-  scanFetch(
+  scanFetchOffset(
     query: String!
     sortField: SortField
     sortOrder: SortOrder
     offset: Int!
+  ): BrowseMeta!
+  "Search and retrieve the details for the result with the given identifier."
+  searchFetchById(params: SearchParams!, id: ID!): BrowseMeta!
+  "Scan and retrieve the details for the result with the given identifier."
+  scanFetchById(
+    query: String!
+    sortField: SortField
+    sortOrder: SortOrder
+    id: ID!
   ): BrowseMeta!
   """
   Retrieve the union of tags for the given assets. The count for each tag

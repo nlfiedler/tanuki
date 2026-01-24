@@ -1,14 +1,12 @@
 * Action Items
 ** Rewrite 2025
-*** commit =230801d= was when old JS code was removed
-*** commit =3263ae7= was last Rust commit
+*** TODO namazu blob repo should not upload existing file again
+**** local blob repo detects this already, but namazu does not
+*** TODO identical location string appears twice on pending page (e.g. ~lake tahoe; California~)
 *** TODO check browser console for issues
 *** TODO changing light/dark in System Preferences does not cause page theme to change
 *** TODO fix the cross-origin errors in the browser console
-*** TODO document the supported date-time formats in query (anything JavaScript can parse)
-*** TODO improve =jsdoc= documentation [0/2]
-- [ ] associate ~global~ functions as belonging to certain source files
-- [ ] fill in the huge gaping hole in the ~Home~ page
+**** these happen seemingly at random, redeploying fixes it temporarily(?)
 ** Help
 *** write help pages for each of the main pages
 **** location string parsing
@@ -71,6 +69,7 @@
 *** display modes: have an option that makes the images really big (single column, huge images)
 *** hovering over asset should show larger version in a large tooltip
 ** Home
+*** look into making the ~Year~ selector scrollable, list is getting longer than the screen
 *** hover button: download raw asset
 **** https://dev.to/sanchithasr/how-to-overlay-icons-on-top-of-images-with-css-1kb9
 **** https://stackoverflow.com/questions/56640043/make-a-button-appear-when-hover-over-a-image
@@ -108,6 +107,9 @@
 **** PhotoPrism has a ~calendar~ view that shows months of years in descending order with a random thumbnail
 **** clicking on the month opens an "album" of everything in that month
 ** Details
+*** browsing buttons
+**** would be neat if the buttons appeared over the image on hover, like a carousel
+**** c.f. https://buefy.org/documentation/carousel
 *** bug: replacing an asset fails to reload the page
 **** seems like useParams() and createResource() are not triggering when params.id changes
 *** completion for tags (like bulk edit form)

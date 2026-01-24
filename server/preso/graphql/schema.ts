@@ -28,8 +28,10 @@ import type {
   MutationUpdateArgs,
   Resolvers,
   QueryAssetArgs,
-  QueryScanFetchArgs,
-  QuerySearchFetchArgs,
+  QueryScanFetchByIdArgs,
+  QueryScanFetchOffsetArgs,
+  QuerySearchFetchByIdArgs,
+  QuerySearchFetchOffsetArgs,
   QueryPendingArgs,
   QueryScanArgs,
   QuerySearchArgs,
@@ -196,9 +198,9 @@ export const resolvers: Resolvers = {
       return getAssetTags(args.assets);
     },
 
-    async scanFetch(
+    async scanFetchOffset(
       _parent: any,
-      args: QueryScanFetchArgs,
+      args: QueryScanFetchOffsetArgs,
       _context: any,
       _info: GraphQLResolveInfo
     ): Promise<BrowseMeta> {
@@ -207,21 +209,49 @@ export const resolvers: Resolvers = {
       const sortOrder = sortOrderFromGQL(args.sortOrder);
       const scanAssets = container.resolve('scanAssets');
       const results = await scanAssets(query, sortField, sortOrder);
-      logger.info('scanFetch yielded %d results', results.length);
-      return fetchResult(results, args.offset);
+      logger.info('scanFetchOffset yielded %d results', results.length);
+      return fetchResultOffset(results, args.offset);
     },
 
-    async searchFetch(
+    async searchFetchOffset(
       _parent: any,
-      args: QuerySearchFetchArgs,
+      args: QuerySearchFetchOffsetArgs,
       _context: any,
       _info: GraphQLResolveInfo
     ): Promise<BrowseMeta> {
       const params = searchParamsFromGQL(args.params);
       const searchAssets = container.resolve('searchAssets');
       const results = await searchAssets(params);
-      logger.info('searchFetch yielded %d results', results.length);
-      return fetchResult(results, args.offset);
+      logger.info('searchFetchOffset yielded %d results', results.length);
+      return fetchResultOffset(results, args.offset);
+    },
+
+    async scanFetchById(
+      _parent: any,
+      args: QueryScanFetchByIdArgs,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<BrowseMeta> {
+      const query = args.query;
+      const sortField = sortFieldFromGQL(args.sortField);
+      const sortOrder = sortOrderFromGQL(args.sortOrder);
+      const scanAssets = container.resolve('scanAssets');
+      const results = await scanAssets(query, sortField, sortOrder);
+      logger.info('scanFetchById yielded %d results', results.length);
+      return fetchResultById(results, args.id);
+    },
+
+    async searchFetchById(
+      _parent: any,
+      args: QuerySearchFetchByIdArgs,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<BrowseMeta> {
+      const params = searchParamsFromGQL(args.params);
+      const searchAssets = container.resolve('searchAssets');
+      const results = await searchAssets(params);
+      logger.info('searchFetchById yielded %d results', results.length);
+      return fetchResultById(results, args.id);
     }
   },
 
@@ -299,7 +329,7 @@ function paginateResults(
   };
 }
 
-async function fetchResult(
+async function fetchResultOffset(
   results: SearchResult[],
   offset: number
 ): Promise<BrowseMeta> {
@@ -308,12 +338,28 @@ async function fetchResult(
     const asset = await getAsset(results[offset]!.assetId);
     return {
       asset: assetToGQL(asset),
+      offset,
       lastOffset: results.length - 1
     };
   }
   return {
     asset: null,
+    offset,
     lastOffset: results.length === 0 ? 0 : results.length - 1
+  };
+}
+
+async function fetchResultById(
+  results: SearchResult[],
+  assetId: string
+): Promise<BrowseMeta> {
+  const getAsset = container.resolve('getAsset');
+  const offset = results.findIndex((r) => r.assetId == assetId);
+  const asset = await getAsset(assetId);
+  return {
+    asset: assetToGQL(asset),
+    offset,
+    lastOffset: results.length - 1
   };
 }
 
