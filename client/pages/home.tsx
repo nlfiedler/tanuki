@@ -233,7 +233,7 @@ function Home() {
               <SeasonSelector
                 selectedSeason={selectedSeason}
                 setSeason={(season) => {
-                  if (selectedYear() === null) {
+                  if (season && selectedYear() === null) {
                     setSelectedYear(new Date().getFullYear());
                   }
                   setSelectedSeason(season);
@@ -285,6 +285,7 @@ function Home() {
                 // return a new array so SolidJS will take note
                 return tags.filter((t) => t !== attr);
               });
+              setSelectedPage(1);
             }}
           />
           <AttributeChips
@@ -294,6 +295,7 @@ function Home() {
                 // return a new array so SolidJS will take note
                 return locations.filter((l) => l !== attr);
               });
+              setSelectedPage(1);
             }}
           />
         </div>

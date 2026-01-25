@@ -100,10 +100,11 @@
 **** PhotoPrism has a ~calendar~ view that shows months of years in descending order with a random thumbnail
 **** clicking on the month opens an "album" of everything in that month
 ** Details
-*** browsing buttons
+*** browsing buttons improvements
 **** would be neat if the buttons appeared over the image on hover, like a carousel
 **** c.f. https://buefy.org/documentation/carousel
 *** bug: replacing an asset fails to reload the page
+**** only affects the =/asset= route
 **** seems like useParams() and createResource() are not triggering when params.id changes
 *** completion for tags (like bulk edit form)
 *** completion for location fields (like bulk edit form)
