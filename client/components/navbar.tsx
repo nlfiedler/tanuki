@@ -27,7 +27,7 @@ function Navbar() {
 
       <div id="navbarMenu" class="navbar-menu">
         <div class="navbar-start">
-          <A class="navbar-item" href="/">
+          <A class="navbar-item" href="/" end={true}>
             Browse
           </A>
 

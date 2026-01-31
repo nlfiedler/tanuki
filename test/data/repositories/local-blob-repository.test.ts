@@ -47,7 +47,7 @@ describe('LocalBlobRepository', function () {
     // arrange
     const relpath = '2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg';
     const buf = Buffer.from(relpath, 'utf8');
-    const key = buf.toString('base64');
+    const key = buf.toString('base64url');
     const asset = new Asset(key);
     const tmpdir = temporaryDirectory();
     // copy test file to temporary path as it will be (re)moved
@@ -68,7 +68,7 @@ describe('LocalBlobRepository', function () {
     // arrange
     const relpath = '2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg';
     const buf = Buffer.from(relpath, 'utf8');
-    const key = buf.toString('base64');
+    const key = buf.toString('base64url');
     const tmpdir = temporaryDirectory();
     // copy test file to blob store path as it will be (re)moved
     const filepath = path.join(tmpdir, 'blobs', relpath);

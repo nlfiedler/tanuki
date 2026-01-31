@@ -66,7 +66,7 @@ class Asset {
    * @returns relative path of the asset.
    */
   filepath(): string {
-    const buf = Buffer.from(this.key, 'base64');
+    const buf = Buffer.from(this.key, 'base64url');
     return buf.toString('utf8');
   }
 

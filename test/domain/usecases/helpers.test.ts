@@ -27,7 +27,7 @@ describe('Generate identifier helper', function () {
     // act
     const actual = helpers.newAssetId(datetime, mimetype);
     // assert
-    const buf = Buffer.from(actual, 'base64');
+    const buf = Buffer.from(actual, 'base64url');
     const decoded = buf.toString('utf8');
     const prefix = path.normalize('2018/05/31/2100/');
     expect(decoded.startsWith(prefix)).toBeTrue();

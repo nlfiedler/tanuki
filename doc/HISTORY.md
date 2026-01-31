@@ -107,3 +107,7 @@ Added support for [SQLite](https://sqlite.org) and [DuckDB](https://duckdb.org) 
 ## November/December 2025
 
 Rewrite the backend in [TypeScript](https://www.typescriptlang.org) (again) and store the asset records in [CouchDB](http://couchdb.apache.org) (again). Rewrite the front-end using TypeScript and [SolidJS](https://www.solidjs.com). Dropped support for RocksDB, DuckDB, and SQLite for the time being. Asset storage is unchanged.
+
+## January 2026
+
+After eight years, realized that Base64 enocoded identifiers are not URL-safe, migrated everything to Base64URL.

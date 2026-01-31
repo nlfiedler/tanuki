@@ -18,6 +18,7 @@ When an asset is added to the system, several steps are performed:
    - the minutes are rounded to `:00`, `:15`, `:30`, or `:45`
    - the base filename is the ULID
    - an appropriate extension is added
+1. The asset path is Base64URL encoded to produce a URL-safe identifier.
 
 In previous versions of the application, assets were stored in a directory structure reflecting the checksum of the asset, similar to the object store in Git. There were two directory levels consisting of two pairs of leading digits from the checksum, and the filename was the remainder of the checksum.
 
@@ -39,6 +40,6 @@ In previous versions of the application, assets were stored in a directory struc
 
 ### Drawbacks
 
-The generated identifiers are long, averaging about 64 characters (`MjAyNS8xMS8yOS8yMzAwLzAxa2I5c2Y2NmEwOHgxanZ4M2pjZ2E0amZqLmpwZw==` is a typical value), which is much longer than a ULID (16 bytes in base-32 encoded form is 26 characters). This consumes more disk space in the B-tree database in both the primary table and in the secondary indices. The value is time-oriented which results in new records being added to the end of the database, which is generally good. Aside from the length, the keys are adequate considering the anticipated number of database records (tens of thousands versus millions).
+The generated identifiers are long, averaging about 62 characters (`MjAyNS8xMS8yOS8yMzAwLzAxa2I5c2Y2NmEwOHgxanZ4M2pjZ2E0amZqLmpwZw` is a typical value), which is much longer than a ULID (16 bytes in base-32 encoded form is 26 characters). This consumes more disk space in the B-tree database in both the primary table and in the secondary indices. The value is time-oriented which results in new records being added to the end of the database, which is generally good. Aside from the length, the keys are adequate considering the anticipated number of database records (tens of thousands versus millions).
 
 The files are renamed, which might be a bother to some people. In many cases, the file names are largely irrelevant, as most are of the form `IMG_1234.JPG`. In other cases, the names are something ridiculous, like `20150419171116-63EK7JXWKEVMDJVV-P1510081.jpg`, which encodes a date-time and some seemingly random sequence of letters and numbers. The good news is the original file name is recorded in the database.

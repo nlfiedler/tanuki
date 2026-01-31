@@ -36,7 +36,7 @@ export async function checksumFile(filepath: string): Promise<string> {
 
 /**
  * Use the datetime and media type to produce a relative path, and return as a
- * base64 encoded value, suitable as an identifier.
+ * base64url encoded value, suitable as an identifier.
  *
  * The decoded identifier is suitable to be used as a file path within blob
  * storage. The generated filename will be universally unique and the path will
@@ -67,7 +67,7 @@ export function newAssetId(datetime: Date, mimetype: string): string {
   const name = ulid() + '.' + mime.getExtension(mimetype);
   const assetpath = path.join(datepath, name).toLowerCase();
   const buf = Buffer.from(assetpath, 'utf8');
-  return buf.toString('base64');
+  return buf.toString('base64url');
 }
 
 /**

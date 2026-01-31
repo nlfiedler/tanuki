@@ -25,7 +25,7 @@ class LocalBlobRepository implements BlobRepository {
 
   /** Convert the asset identifier to the full path of the asset. */
   blobPath(assetId: string): string {
-    const buf = Buffer.from(assetId, 'base64');
+    const buf = Buffer.from(assetId, 'base64url');
     const relpath = buf.toString('utf8');
     return path.join(this.basepath, relpath);
   }
