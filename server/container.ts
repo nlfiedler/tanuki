@@ -13,6 +13,7 @@ import DumpAssets from 'tanuki/server/domain/usecases/dump-assets.ts';
 import EditAssets from 'tanuki/server/domain/usecases/edit-assets.ts';
 import FindPending from 'tanuki/server/domain/usecases/find-pending.ts';
 import GetAsset from 'tanuki/server/domain/usecases/get-asset.ts';
+import GetAssetByDigest from 'tanuki/server/domain/usecases/get-asset-by-digest.ts';
 import GetAssetTags from 'tanuki/server/domain/usecases/get-asset-tags.ts';
 import GetLocationParts from 'tanuki/server/domain/usecases/get-location-parts.ts';
 import GetLocationRecords from 'tanuki/server/domain/usecases/get-location-records.ts';
@@ -82,6 +83,7 @@ container.register({
   editAssets: asFunction(EditAssets),
   findPending: asFunction(FindPending),
   getAsset: asFunction(GetAsset),
+  getAssetByDigest: asFunction(GetAssetByDigest),
   getAssetTags: asFunction(GetAssetTags),
   getLocationParts: asFunction(GetLocationParts),
   getLocationRecords: asFunction(GetLocationRecords),

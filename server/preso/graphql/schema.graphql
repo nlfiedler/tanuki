@@ -35,7 +35,7 @@ type LocationValues {
 
 """
 An `Asset` defines a single entity in the storage system. This typically refers
-to an image or video, but could by any type of file.
+to an image or video, but could be any type of file.
 """
 type Asset {
   "The unique asset identifier."
