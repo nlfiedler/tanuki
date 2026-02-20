@@ -17,9 +17,11 @@ import {
 describe('LocalBlobRepository', function () {
   test('should produce a URL for the full asset', async function () {
     // arrange
-    const assetId =
-      'MjAxOC8wNS8zMS8yMTAwLzAxYng1enprYmthY3Rhdjl3ZXZnZW1tdnJ6LmpwZw==';
-    const expected = path.normalize('/assets/raw/' + assetId);
+    const assetpath = '2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg';
+    const assetId = Buffer.from(path.normalize(assetpath), 'utf8').toString(
+      'base64url'
+    );
+    const expected = '/assets/raw/' + assetId;
     const settingsRepository = new EnvSettingsRepository();
     settingsRepository.set('ASSETS_PATH', 'ignored');
     const sut = new LocalBlobRepository({ settingsRepository });
@@ -31,9 +33,11 @@ describe('LocalBlobRepository', function () {
 
   test('should produce a URL for the thumbnail', async function () {
     // arrange
-    const assetId =
-      'MjAxOC8wNS8zMS8yMTAwLzAxYng1enprYmthY3Rhdjl3ZXZnZW1tdnJ6LmpwZw==';
-    const expected = path.normalize('/assets/thumbnail/480/320/' + assetId);
+    const assetpath = '2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg';
+    const assetId = Buffer.from(path.normalize(assetpath), 'utf8').toString(
+      'base64url'
+    );
+    const expected = '/assets/thumbnail/480/320/' + assetId;
     const settingsRepository = new EnvSettingsRepository();
     settingsRepository.set('ASSETS_PATH', 'ignored');
     const sut = new LocalBlobRepository({ settingsRepository });
