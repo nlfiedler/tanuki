@@ -19,9 +19,20 @@ bun install
 
 The unit tests require several environment variables, described in the **Configuration** section below. Namely, the `DATABASE_*` settings and `GOOGLE_MAPS_API_KEY` will be needed for the tests to pass successfully.
 
-Use `bun test` to run the test suite. The automated tests will create a database named `unit-tests`, and each time the tests are run that database will be destroyed and recreated.
+To run the automated tests, create a `test/.env` file that defines the necessary settings, making sure the values are appropriate for your setup, and then invoke `bun test` to run the test suite.
 
-Use `bun start` to run the server locally, listening for HTTP connections on port `3000` by default. The GraphQL web interface will be available at `/graphql`.
+```shell
+DATABASE_URL=http://192.168.1.3:5984
+DATABASE_NAME=unit-tests
+DATABASE_USER=admin
+DATABASE_PASSWORD=admin
+GOOGLE_MAPS_API_KEY=sE9tVvuPtnE6YqAIzaSyCb2V4yRAcCsEXMbyLK0
+SQLITE_DBPATH=tmp/test/sqlite
+```
+
+The automated tests will destroy and recreate the database(s) each time the tests are run.
+
+To run the application locally, create a `.env.development` file with the appropriate settings and then invoke `bun start` to run the server -- it will be listening for HTTP connections on port `3000` by default. The GraphQL web interface is available at `/graphql`.
 
 ## Configuration
 

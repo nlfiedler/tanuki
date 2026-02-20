@@ -126,7 +126,8 @@
 **** use =details= and =summary= HTML tags to create expandable sections
 ** Uploads
 *** some times temporary files are left behind in =uploads= folder
-**** they are all 10,430,846 bytes long
+**** some are 10,430,846 bytes long
+**** some are 11,234,688 bytes long
 *** make the uploads form super fancy like https://github.com/Swappea/solid-file-upload
 *** theoretically could show the thumbnail of images before uploading
 **** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
@@ -160,6 +161,8 @@
 ** Additional blob stores
 *** any store that accomodates asset identifiers will work (S3-like)
 *** thumbnails can be generated locally and cached if necessary
+** Additional databases
+*** https://jasonisnthappy.soham.sh
 ** Attribute management
 *** search query to find assets that have no tags (>1,000)
 *** search query to find assets that have no location (~2,000)
