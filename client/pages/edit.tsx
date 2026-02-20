@@ -124,6 +124,9 @@ function Edit() {
     if (target) {
       setSelectedPage(1);
       setQueryString(target.value);
+      // wipe out the invisible add/remove tags inputs
+      setAddedTags(new Set<string>());
+      setRemovedTags(new Set<string>());
       event.stopPropagation();
     }
   };
@@ -774,15 +777,15 @@ function ConfirmDialog(props: ConfirmDialogProps) {
         ></button>
       </header>
       <section class="modal-card-body">
-        <Show when={props.addedTags.size > 0} fallback={<></>}>
-          <p>
-            <strong>Add tags:</strong> {Array.from(props.addedTags).join(', ')}
-          </p>
-        </Show>
         <Show when={props.removedTags.size > 0} fallback={<></>}>
           <p>
             <strong>Remove tags:</strong>{' '}
             {Array.from(props.removedTags).join(', ')}
+          </p>
+        </Show>
+        <Show when={props.addedTags.size > 0} fallback={<></>}>
+          <p>
+            <strong>Add tags:</strong> {Array.from(props.addedTags).join(', ')}
           </p>
         </Show>
         <Switch>
