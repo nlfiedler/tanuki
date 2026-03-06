@@ -20,6 +20,7 @@ import {
   action,
   redirect,
   useAction,
+  useLocation,
   useParams,
   useSubmission
 } from '@solidjs/router';
@@ -78,11 +79,13 @@ const REPLACE_ASSET: TypedDocumentNode<Mutation, MutationReplaceArgs> = gql`
 `;
 
 export function AssetDetails() {
-  // BUG: useParams() and createResource() fail to refresh when the id path
-  // parameter changes, but createEffect() will show that a change occurs
   const params = useParams();
   const client = useApolloClient();
-  const [assetQuery] = createResource(
+  // BUG: useParams() and createResource() fail to refresh when the id path
+  // parameter changes, but createEffect() will show that a change occurs;
+  // work-around with useLocation() and refetch() to force the data refresh
+  // (https://github.com/solidjs/solid/discussions/1745)
+  const [assetQuery, { refetch }] = createResource(
     () => params.id,
     async (assetId) => {
       const { data } = await client.query({
@@ -92,6 +95,9 @@ export function AssetDetails() {
       return data;
     }
   );
+  const location = useLocation();
+  // the pathname is not actually used, just listening for route changes
+  createEffect(() => refetch(location.pathname));
   const assetChanged = action(async (newId: string) => {
     throw redirect(`/asset/${newId}`);
   });
@@ -924,5 +930,3 @@ function AssetForm(props: AssetFormProps) {
     </>
   );
 }
-
-export default AssetDetails;
