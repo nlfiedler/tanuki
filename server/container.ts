@@ -29,6 +29,7 @@ import ScanAssets from 'tanuki/server/domain/usecases/scan-assets.ts';
 import SearchAssets from 'tanuki/server/domain/usecases/search-assets.ts';
 import UpdateAsset from 'tanuki/server/domain/usecases/update-asset.ts';
 import { CouchDBRecordRepository } from 'tanuki/server/data/repositories/couchdb-record-repository.ts';
+import { PouchDBRecordRepository } from 'tanuki/server/data/repositories/pouchdb-record-repository.ts';
 import { SqliteRecordRepository } from 'tanuki/server/data/repositories/sqlite-record-repository.ts';
 import { DummyLocationRepository } from 'tanuki/server/data/repositories/dummy-location-repository.ts';
 import { EnvSettingsRepository } from 'tanuki/server/data/repositories/env-settings-repository.ts';
@@ -57,6 +58,8 @@ if ('GOOGLE_MAPS_API_KEY' in process.env) {
 let RecordRepository: any = CouchDBRecordRepository;
 if ('SQLITE_DBPATH' in process.env) {
   RecordRepository = SqliteRecordRepository;
+} else if ('POUCHDB_PATH' in process.env) {
+  RecordRepository = PouchDBRecordRepository;
 }
 
 container.register({

@@ -1,4 +1,17 @@
 * Action Items
+** BUG: home page fails to load anything (GraphQL and images)
+*** cause? seems to happen after the docker engine is updated and containers restart
+*** browser console shows error about cross-origin-opener-policy, but that always happens
+*** fix: redeploying everything seems to fix it
+*** maybe try simply restarting the app container alone
+*** no indication of problems in the log files
+*** could be that CouchDB started later than app and hence the app gets stuck
+*** TODO look for ~database initialization error~ in log output
+*** TODO maybe =stayAlive()= needs to catch any errors and invoke =initialize()= if error
+**** maybe extract some of =initialize()= into a new =connect()= to just do the connect part, stayAlive() calls that
+** TODO try reading date-time from MP4 files
+*** https://github.com/gpac/mp4box.js/
+** TODO remove unused files in =test/fixtures=
 ** Help
 *** write help pages for each of the main pages
 **** location string parsing
@@ -43,8 +56,6 @@
 **** details page
 - replacing the asset with the exact same file content will have no effect, even if a different file name
 - replacing an asset will change the asset identifier, media type, file name, etc
-- n.b. QuickTime Player can export an AVI as MOV; be sure to rename the file to .mp4 for Chrome
-- n.b. when converting videos, make sure quality and frame rate are as good as the original
 **** edit page
 - search is always case insensitive
 - supports advanced query strings
@@ -56,7 +67,7 @@
 - asset importer ignores hidden files and directories
 ** Pending
 *** clicking > button above pending asset should navigate to ~adjust~ page
-**** adjust page is like details page but w/o download/upload buttons
+**** adjust page is a version of the details page
 **** ~Save~ button navigates back the pending page on successful save
 *** display modes: have an option that makes the images really big (single column, huge images)
 *** hovering over asset should show larger version in a large tooltip
@@ -103,9 +114,6 @@
 *** browsing buttons improvements
 **** would be neat if the buttons appeared over the image on hover, like a carousel
 **** c.f. https://buefy.org/documentation/carousel
-*** bug: replacing an asset fails to reload the page
-**** only affects the =/asset= route
-**** seems like useParams() and createResource() are not triggering when params.id changes
 *** completion for tags (like bulk edit form)
 *** completion for location fields (like bulk edit form)
 *** add ~copy~ button next to asset path
@@ -131,6 +139,9 @@
 *** make the uploads form super fancy like https://github.com/Swappea/solid-file-upload
 *** theoretically could show the thumbnail of images before uploading
 **** c.f. https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
+** Search
+*** add search query =size:= with =size:gt=, =size:lt=, =size:eq=
+**** find assets whose size is greather than, less than, or equal
 ** Edit
 *** hover over asset thumbnail will show larger version as tooltip
 *** add option to set the caption
@@ -160,6 +171,7 @@
 *** consider deploying in read-only mode (sync would be tricky)
 ** Additional blob stores
 *** any store that accomodates asset identifiers will work (S3-like)
+**** otherwise would track in the database and cache the mapping in memory
 *** thumbnails can be generated locally and cached if necessary
 ** Additional databases
 *** https://jasonisnthappy.soham.sh
@@ -178,8 +190,6 @@
 **** boolean argument ~yes~ to actually perform the delete
 **** if ~yes~ is not truthy, reports what would be deleted
 ** Data Format Support
-*** placeholder images for each media type
-**** if a thumbnail cannot be produced, return a suitable placeholder for the main type (~image~, ~video~, etc)
 *** read original date-time from MP4 videos
 **** https://kevinnadro.com/blog/parsing-creation-time-from-mp4-metadata-in-javascript
 *** PNG files apparently (can) have EXIF data, including orientation, check if this works
@@ -204,7 +214,6 @@ include it in the database records.
 **** https://github.com/catdad-experiments/heic-decode
 *** read original date-time from RIFF/AVI files
 **** easier to just convert them to MOV/MP4 using QuickTime player
-**** RIFF/AVI code exists in Rust code =src/domain/usecases.rs=
 ** Machine learning
 *** ML to identify objects, people, etc in photos
 **** could use OpenCV for face recognition
@@ -233,18 +242,7 @@ include it in the database records.
 *** Multiple libraries (like Apple Photos)
 ** Data Integrity
 *** Add a GraphQL mutation that will delete and rebuild all indices
-*** Guard against concurrent modifications
-**** consider how to manage multiple users making changes
-**** this is known as the ~lost update~ problem
-**** usually managed with a revision number on the record
-***** asset entity could contain a ~revision~ field (from CouchDB), updates would need to match that
-***** updates must include the revision number; if mismatch, raise error
-***** HTTP uses the =ETag= value and the =If-Match= header for this purpose
 *** Find files for which there are no documents
-*** Manage automated backups of the database
-**** every M operations or T minutes/hours/days
-**** retain N copies of the backup
-**** use EXAF to backup the database
 ** Bulk Export
 *** Easy selection and export of multiple images
 ** Easy publishing to sharing sites (e.g. Google Photos)
