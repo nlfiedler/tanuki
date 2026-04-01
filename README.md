@@ -55,7 +55,7 @@ The application is configured using environment variables.
   - Password for the CouchDB user named in `DATABASE_USER`.
 - **DATABASE_HEARTBEAT_MS**
   - Frequency in milliseconds for requesting latest changes from the database in order to keep the connection alive. Default is `60000` (60 seconds).
-- **GOOGLE_MAPS_API_KEY**'
+- **GOOGLE_MAPS_API_KEY**
   - If defined, enables reverse geocoding using the Google Maps API.
 - **LOG_LEVEL**
   - One of the Winston [logging levels](https://github.com/winstonjs/winston?tab=readme-ov-file#logging-levels)
