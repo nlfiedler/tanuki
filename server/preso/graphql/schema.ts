@@ -43,8 +43,8 @@ import type {
 } from 'tanuki/generated/graphql.ts';
 import logger from 'tanuki/server/logger.ts';
 
-const settings = container.resolve('settingsRepository');
-const blobs = container.resolve('blobRepository');
+const settings: any = container.resolve('settingsRepository');
+const blobs: any = container.resolve('blobRepository');
 
 // The GraphQL schema
 const schemaPath = path.join(import.meta.dirname, 'schema.graphql');
@@ -59,7 +59,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<GQLAsset> {
       logger.info('asset: %s', args.id);
-      const getAsset = container.resolve('getAsset');
+      const getAsset: any = container.resolve('getAsset');
       const output = await getAsset(args.id);
       return assetToGQL(output);
     },
@@ -71,7 +71,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<GQLAsset> {
       logger.info('lookup: %s', args.checksum);
-      const getAssetByDigest = container.resolve('getAssetByDigest');
+      const getAssetByDigest: any = container.resolve('getAssetByDigest');
       const output = await getAssetByDigest(args.checksum);
       return assetToGQL(output);
     },
@@ -83,7 +83,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<number> {
       logger.info('count');
-      const countAssets = container.resolve('countAssets');
+      const countAssets: any = container.resolve('countAssets');
       try {
         return countAssets();
       } catch (error: any) {
@@ -99,7 +99,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<AttributeCount[]> {
       logger.info('tags');
-      const getTags = container.resolve('getTags');
+      const getTags: any = container.resolve('getTags');
       return getTags();
     },
 
@@ -110,7 +110,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<AttributeCount[]> {
       logger.info('locationParts');
-      const getLocationParts = container.resolve('getLocationParts');
+      const getLocationParts: any = container.resolve('getLocationParts');
       return getLocationParts();
     },
 
@@ -121,7 +121,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<Location[]> {
       logger.info('locationRecords');
-      const getLocationRecords = container.resolve('getLocationRecords');
+      const getLocationRecords: any = container.resolve('getLocationRecords');
       return getLocationRecords();
     },
 
@@ -132,7 +132,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<LocationValues> {
       logger.info('locationValues');
-      const getLocationValues = container.resolve('getLocationValues');
+      const getLocationValues: any = container.resolve('getLocationValues');
       return getLocationValues();
     },
 
@@ -143,7 +143,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<AttributeCount[]> {
       logger.info('years');
-      const getYears = container.resolve('getYears');
+      const getYears: any = container.resolve('getYears');
       return getYears();
     },
 
@@ -154,7 +154,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<AttributeCount[]> {
       logger.info('mediaTypes');
-      const getMediaTypes = container.resolve('getMediaTypes');
+      const getMediaTypes: any = container.resolve('getMediaTypes');
       return getMediaTypes();
     },
 
@@ -166,7 +166,7 @@ export const resolvers: Resolvers = {
     ): Promise<SearchMeta> {
       logger.info('pending');
       const params = pendingParamsFromGQL(args.params);
-      const findPending = container.resolve('findPending');
+      const findPending: any = container.resolve('findPending');
       const results = await findPending(params);
       logger.info('found %d pending assets', results.length);
       return paginateResults(results, args.offset, args.limit);
@@ -179,7 +179,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<SearchMeta> {
       const params = searchParamsFromGQL(args.params);
-      const searchAssets = container.resolve('searchAssets');
+      const searchAssets: any = container.resolve('searchAssets');
       const results = await searchAssets(params);
       logger.info('search yielded %d results', results.length);
       return paginateResults(results, args.offset, args.limit);
@@ -194,7 +194,7 @@ export const resolvers: Resolvers = {
       const query = args.query;
       const sortField = sortFieldFromGQL(args.sortField);
       const sortOrder = sortOrderFromGQL(args.sortOrder);
-      const scanAssets = container.resolve('scanAssets');
+      const scanAssets: any = container.resolve('scanAssets');
       const results = await scanAssets(query, sortField, sortOrder);
       logger.info('scan yielded %d results', results.length);
       return paginateResults(results, args.offset, args.limit);
@@ -207,7 +207,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<AttributeCount[]> {
       logger.info('tagsForAssets');
-      const getAssetTags = container.resolve('getAssetTags');
+      const getAssetTags: any = container.resolve('getAssetTags');
       return getAssetTags(args.assets);
     },
 
@@ -220,7 +220,7 @@ export const resolvers: Resolvers = {
       const query = args.query;
       const sortField = sortFieldFromGQL(args.sortField);
       const sortOrder = sortOrderFromGQL(args.sortOrder);
-      const scanAssets = container.resolve('scanAssets');
+      const scanAssets: any = container.resolve('scanAssets');
       const results = await scanAssets(query, sortField, sortOrder);
       logger.info('scanFetchOffset yielded %d results', results.length);
       return fetchResultOffset(results, args.offset);
@@ -233,7 +233,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<BrowseMeta> {
       const params = searchParamsFromGQL(args.params);
-      const searchAssets = container.resolve('searchAssets');
+      const searchAssets: any = container.resolve('searchAssets');
       const results = await searchAssets(params);
       logger.info('searchFetchOffset yielded %d results', results.length);
       return fetchResultOffset(results, args.offset);
@@ -248,7 +248,7 @@ export const resolvers: Resolvers = {
       const query = args.query;
       const sortField = sortFieldFromGQL(args.sortField);
       const sortOrder = sortOrderFromGQL(args.sortOrder);
-      const scanAssets = container.resolve('scanAssets');
+      const scanAssets: any = container.resolve('scanAssets');
       const results = await scanAssets(query, sortField, sortOrder);
       logger.info('scanFetchById yielded %d results', results.length);
       return fetchResultById(results, args.id);
@@ -261,7 +261,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<BrowseMeta> {
       const params = searchParamsFromGQL(args.params);
-      const searchAssets = container.resolve('searchAssets');
+      const searchAssets: any = container.resolve('searchAssets');
       const results = await searchAssets(params);
       logger.info('searchFetchById yielded %d results', results.length);
       return fetchResultById(results, args.id);
@@ -277,7 +277,7 @@ export const resolvers: Resolvers = {
     ): Promise<number> {
       logger.info('import');
       const uploadsPath = settings.get('UPLOAD_PATH');
-      const importUploads = container.resolve('importUploads');
+      const importUploads: any = container.resolve('importUploads');
       return importUploads(uploadsPath);
     },
 
@@ -288,7 +288,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<GQLAsset> {
       logger.info('update');
-      const updateAsset = container.resolve('updateAsset');
+      const updateAsset: any = container.resolve('updateAsset');
       const input = assetInputFromGQL(args.id, args.asset);
       const output = await updateAsset(input);
       return assetToGQL(output);
@@ -301,7 +301,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<number> {
       logger.info('edit');
-      const editAssets = container.resolve('editAssets');
+      const editAssets: any = container.resolve('editAssets');
       const operations = operationsFromGQL(args.operations);
       return editAssets(args.assetIds, operations);
     },
@@ -313,7 +313,7 @@ export const resolvers: Resolvers = {
       _info: GraphQLResolveInfo
     ): Promise<GQLAsset> {
       logger.info('replace');
-      const replaceAsset = container.resolve('replaceAsset');
+      const replaceAsset: any = container.resolve('replaceAsset');
       const output = await replaceAsset(args.oldAssetId, args.newAssetId);
       return assetToGQL(output);
     }
@@ -347,7 +347,7 @@ async function fetchResultOffset(
   offset: number
 ): Promise<BrowseMeta> {
   if (results.length > offset) {
-    const getAsset = container.resolve('getAsset');
+    const getAsset: any = container.resolve('getAsset');
     const asset = await getAsset(results[offset]!.assetId);
     return {
       asset: assetToGQL(asset),
@@ -366,7 +366,7 @@ async function fetchResultById(
   results: SearchResult[],
   assetId: string
 ): Promise<BrowseMeta> {
-  const getAsset = container.resolve('getAsset');
+  const getAsset: any = container.resolve('getAsset');
   const offset = results.findIndex((r) => r.assetId == assetId);
   const asset = await getAsset(assetId);
   return {

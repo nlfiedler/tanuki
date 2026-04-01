@@ -8,14 +8,14 @@ import sharp from 'sharp';
 import container from 'tanuki/server/container.ts';
 import logger from 'tanuki/server/logger.ts';
 
-const settings = container.resolve('settingsRepository');
-const importAsset = container.resolve('importAsset');
+const settings: any = container.resolve('settingsRepository');
+const importAsset: any = container.resolve('importAsset');
 // This router assumes that the blob repository implementation is going to be
 // LocalBlobRepository, which generates URLs that map to the endpoints defined
 // by this router. The coupling is bidirectional since the routes defined here
 // will invoke methods on LocalBlobRepository to get the local asset path.
-const blobs = container.resolve('blobRepository');
-const records = container.resolve('recordRepository');
+const blobs: any = container.resolve('blobRepository');
+const records: any = container.resolve('recordRepository');
 
 const uploads = settings.get('UPLOAD_PATH');
 await fs.mkdir(uploads, { recursive: true });

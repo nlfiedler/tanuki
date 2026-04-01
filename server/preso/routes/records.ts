@@ -9,9 +9,9 @@ import multer from 'multer';
 import container from 'tanuki/server/container.ts';
 import logger from 'tanuki/server/logger.ts';
 
-const settings = container.resolve('settingsRepository');
-const dumpAssets = container.resolve('dumpAssets');
-const loadAssets = container.resolve('loadAssets');
+const settings: any = container.resolve('settingsRepository');
+const dumpAssets: any = container.resolve('dumpAssets');
+const loadAssets: any = container.resolve('loadAssets');
 
 const uploads = settings.get('UPLOAD_PATH');
 const storage = multer.diskStorage({

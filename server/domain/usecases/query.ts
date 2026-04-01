@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import MIMEType from 'whatwg-mimetype';
+import { MIMEType } from 'whatwg-mimetype';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { AsyncQueue } from 'tanuki/server/shared/collections/async-queue.ts';
 

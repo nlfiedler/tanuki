@@ -20,7 +20,7 @@ import recordsRouter from 'tanuki/server/preso/routes/records.ts';
 import { typeDefs, resolvers } from 'tanuki/server/preso/graphql/schema.ts';
 
 // (asynchronously) prepare the database
-const database = container.resolve('recordRepository');
+const database: any = container.resolve('recordRepository');
 database
   .initialize()
   .then(() => {
