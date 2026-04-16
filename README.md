@@ -37,6 +37,13 @@ The automated tests will destroy and recreate the database(s) each time the test
 
 To run the application locally, create a `.env.development` file with the appropriate settings and then invoke `bun start` to run the server -- it will be listening for HTTP connections on port `3000` by default. The GraphQL web interface is available at `/graphql`.
 
+```shell
+bun start            # run dev server (auto-runs codegen first)
+bun test             # run all tests
+bun test <path>      # run a single test file, e.g.: bun test test/shared/collections/array-deque.test.ts
+bun run codegen      # regenerate GraphQL TypeScript types from schema
+```
+
 ## Configuration
 
 The application is configured using environment variables.

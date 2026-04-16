@@ -9,8 +9,14 @@
 *** TODO look for ~database initialization error~ in log output
 *** TODO maybe =stayAlive()= needs to catch any errors and invoke =initialize()= if error
 **** maybe extract some of =initialize()= into a new =connect()= to just do the connect part, stayAlive() calls that
+** TODO assets page: ~Replace~ should be loading and disabled while uploading
+** TODO Migrate to Vite 8.0
+*** https://vite.dev/blog/announcing-vite8
 ** TODO try reading date-time from MP4 files
 *** https://github.com/gpac/mp4box.js/
+*** write a usecase and GraphQL mutation to fix existing records
+**** find any videos with null =originalDate= and try to determine the actual date-time
+*** what about the user date field? should it be cleared if original date is corrected?
 ** TODO remove unused files in =test/fixtures=
 ** Help
 *** write help pages for each of the main pages
