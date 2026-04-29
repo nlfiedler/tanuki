@@ -9,9 +9,10 @@
 *** TODO look for ~database initialization error~ in log output
 *** TODO maybe =stayAlive()= needs to catch any errors and invoke =initialize()= if error
 **** maybe extract some of =initialize()= into a new =connect()= to just do the connect part, stayAlive() calls that
-** TODO assets page: ~Replace~ should be loading and disabled while uploading
 ** TODO try reading date-time from MP4 files
 *** https://github.com/gpac/mp4box.js/
+*** add a =has:= predicate to the query support
+*** use =has:original_date= and =has:user_date= to find assets that have both (and =is:video=)
 *** write a usecase and GraphQL mutation to fix existing records
 **** find any videos with null =originalDate= and try to determine the actual date-time
 *** what about the user date field? should it be cleared if original date is corrected?

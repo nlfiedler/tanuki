@@ -667,7 +667,7 @@ function AssetForm(props: AssetFormProps) {
       <nav class="m-4 level">
         <div class="level-left">
           <div class="level-item">
-            <div class="file">
+            <div class="file" classList={{ 'is-loading': uploadSubmission.pending }}>
               <label class="file-label">
                 <input
                   class="file-input"
