@@ -303,6 +303,61 @@ describe('Query language support', function () {
       expect(no_label_and_paris.matches(asset)).toBeTrue();
     });
 
+    test('should parse query and match by has', async function () {
+      const bare = new Asset('monday1')
+        .setChecksum('sha1-cafebabe')
+        .setFilename('img_1234.jpg')
+        .setByteLength(1024)
+        .setMediaType('image/jpeg')
+        .setImportDate(new Date(2018, 4, 31, 21, 10, 11));
+
+      const has_caption = await parse('has:caption');
+      expect(has_caption.matches(bare)).toBeFalse();
+      const has_location = await parse('has:location');
+      expect(has_location.matches(bare)).toBeFalse();
+      const has_user_date = await parse('has:userDate');
+      expect(has_user_date.matches(bare)).toBeFalse();
+      const has_tags = await parse('has:tags');
+      expect(has_tags.matches(bare)).toBeFalse();
+      const has_filename = await parse('has:filename');
+      expect(has_filename.matches(bare)).toBeTrue();
+      const has_unknown = await parse('has:nonexistent');
+      expect(has_unknown.matches(bare)).toBeFalse();
+
+      const populated = new Asset('monday2')
+        .setChecksum('sha1-cafebabe')
+        .setFilename('img_1234.jpg')
+        .setByteLength(1024)
+        .setMediaType('image/jpeg')
+        .setTags(['kitten', 'puppy'])
+        .setImportDate(new Date(2018, 4, 31, 21, 10, 11))
+        .setCaption('a fine afternoon')
+        .setLocation(Location.parse('museum; Paris, France'))
+        .setUserDate(new Date(2018, 5, 1, 12, 0, 0))
+        .setOriginalDate(new Date(2018, 4, 31, 18, 30, 0));
+
+      const has_caption_pop = await parse('has:caption');
+      expect(has_caption_pop.matches(populated)).toBeTrue();
+      const has_location_pop = await parse('has:location');
+      expect(has_location_pop.matches(populated)).toBeTrue();
+      const has_tags_pop = await parse('has:tags');
+      expect(has_tags_pop.matches(populated)).toBeTrue();
+      const has_user_camel = await parse('has:userDate');
+      expect(has_user_camel.matches(populated)).toBeTrue();
+      const has_user_snake = await parse('has:user_date');
+      expect(has_user_snake.matches(populated)).toBeTrue();
+      const has_user_kebab = await parse('has:user-date');
+      expect(has_user_kebab.matches(populated)).toBeTrue();
+      const has_user_upper = await parse('has:USERDATE');
+      expect(has_user_upper.matches(populated)).toBeTrue();
+      const has_original_snake = await parse('has:original_date');
+      expect(has_original_snake.matches(populated)).toBeTrue();
+
+      const combined = await parse('has:caption and tag:kitten');
+      expect(combined.matches(populated)).toBeTrue();
+      expect(combined.matches(bare)).toBeFalse();
+    });
+
     test('should parse groups and match accordingly', async function () {
       const asset = new Asset('monday1')
         .setChecksum('sha1-cafebabe')

@@ -111,6 +111,28 @@ class TagConstraint {
   }
 }
 
+/** Matches if the asset has a populated value for the named field. */
+class HasConstraint {
+  field: string;
+
+  constructor(field: string) {
+    this.field = field.toLowerCase().replaceAll('-', '').replaceAll('_', '');
+  }
+
+  matches(asset: Asset): boolean {
+    for (const key of Object.keys(asset)) {
+      if (key.toLowerCase().replaceAll('-', '').replaceAll('_', '') === this.field) {
+        const value = (asset as unknown as Record<string, unknown>)[key];
+        if (value == null) return false;
+        if (Array.isArray(value) && value.length === 0) return false;
+        if (typeof value === 'string' && value.length === 0) return false;
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
 enum LocationField {
   Any,
   Label,
@@ -240,6 +262,8 @@ function buildPredicate(atom: string[]): Constraint {
     }
   } else if (keyword == 'tag') {
     return new TagConstraint(atom.shift()!);
+  } else if (keyword == 'has') {
+    return new HasConstraint(atom.shift()!);
   } else {
     throw new Error(`unsupported predicate: ${keyword}`);
   }
