@@ -9,7 +9,6 @@
 *** TODO look for ~database initialization error~ in log output
 *** TODO maybe =stayAlive()= needs to catch any errors and invoke =initialize()= if error
 **** maybe extract some of =initialize()= into a new =connect()= to just do the connect part, stayAlive() calls that
-** TODO remove unused files in =test/fixtures=
 ** Help
 *** write help pages for each of the main pages
 **** location string parsing
