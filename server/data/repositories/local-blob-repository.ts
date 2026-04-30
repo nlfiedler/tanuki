@@ -52,6 +52,24 @@ class LocalBlobRepository implements BlobRepository {
   }
 
   /** @inheritdoc */
+  async fetchRange(
+    assetId: string,
+    start: number,
+    end: number
+  ): Promise<Buffer> {
+    const filepath = this.blobPath(assetId);
+    const length = Math.max(0, end - start + 1);
+    const handle = await fs.open(filepath, 'r');
+    try {
+      const view = new Uint8Array(length);
+      const { bytesRead } = await handle.read(view, 0, length, start);
+      return Buffer.from(view.buffer, 0, bytesRead);
+    } finally {
+      await handle.close();
+    }
+  }
+
+  /** @inheritdoc */
   assetUrl(assetId: string): string {
     // served by an endpoint defined in preso/routes/assets.ts
     return `/assets/raw/${assetId}`;

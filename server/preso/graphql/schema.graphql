@@ -307,6 +307,12 @@ type Mutation {
   Deletes the old asset from the database and the corresponding blob.
   """
   replace(oldAssetId: String!, newAssetId: String!): Asset!
+  """
+  One-shot backfill: read just enough of each video blob to parse its
+  mp4/mov creation time and set `originalDate` on records that lack it.
+  Returns the number of assets updated.
+  """
+  updateVideoDates: Int!
 }
 
 schema {

@@ -28,6 +28,7 @@ import ReplaceAsset from 'tanuki/server/domain/usecases/replace-asset.ts';
 import ScanAssets from 'tanuki/server/domain/usecases/scan-assets.ts';
 import SearchAssets from 'tanuki/server/domain/usecases/search-assets.ts';
 import UpdateAsset from 'tanuki/server/domain/usecases/update-asset.ts';
+import UpdateVideoDates from 'tanuki/server/domain/usecases/update-video-dates.ts';
 import { CouchDBRecordRepository } from 'tanuki/server/data/repositories/couchdb-record-repository.ts';
 import { PouchDBRecordRepository } from 'tanuki/server/data/repositories/pouchdb-record-repository.ts';
 import { SqliteRecordRepository } from 'tanuki/server/data/repositories/sqlite-record-repository.ts';
@@ -100,7 +101,8 @@ container.register({
   replaceAsset: asFunction(ReplaceAsset),
   scanAssets: asFunction(ScanAssets),
   searchAssets: asFunction(SearchAssets),
-  updateAsset: asFunction(UpdateAsset)
+  updateAsset: asFunction(UpdateAsset),
+  updateVideoDates: asFunction(UpdateVideoDates)
 });
 
 export default container;

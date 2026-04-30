@@ -25,6 +25,18 @@ interface BlobRepository {
   deleteBlob(assetId: string): Promise<void>;
 
   /**
+   * Read a byte range from the asset blob. Returns however many bytes are
+   * actually available within the requested range; an empty buffer means
+   * the start offset is at or past the end of the blob.
+   *
+   * @param assetId - unique asset identifier.
+   * @param start - inclusive zero-based start offset.
+   * @param end - inclusive end offset.
+   * @returns buffer containing the bytes that were read.
+   */
+  fetchRange(assetId: string, start: number, end: number): Promise<Buffer>;
+
+  /**
    * Return the URL for fetching the asset.
    *
    * @param assetId - unique asset identifier.

@@ -9,12 +9,6 @@
 *** TODO look for ~database initialization error~ in log output
 *** TODO maybe =stayAlive()= needs to catch any errors and invoke =initialize()= if error
 **** maybe extract some of =initialize()= into a new =connect()= to just do the connect part, stayAlive() calls that
-** TODO try reading date-time from MP4 files
-*** DONE add support for reading date-time from video files
-*** DONE add a =has:= predicate to the query support
-*** TODO write a GraphQL mutation that finds video assets with no =original_date=, try to read from video
-*** TODO use =has:original_date= and =has:user_date= to find assets that have both (and =is:video=)
-*** TODO consider adding option to Edit page to clear userdate field of selected assets
 ** TODO remove unused files in =test/fixtures=
 ** Help
 *** write help pages for each of the main pages

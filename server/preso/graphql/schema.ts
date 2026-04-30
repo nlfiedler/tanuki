@@ -316,6 +316,17 @@ export const resolvers: Resolvers = {
       const replaceAsset: any = container.resolve('replaceAsset');
       const output = await replaceAsset(args.oldAssetId, args.newAssetId);
       return assetToGQL(output);
+    },
+
+    async updateVideoDates(
+      _parent: any,
+      _args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<number> {
+      logger.info('updateVideoDates');
+      const updateVideoDates: any = container.resolve('updateVideoDates');
+      return updateVideoDates();
     }
   }
 };

@@ -97,17 +97,24 @@ export function recordRepositoryMock({
 export function blobRepositoryMock({
   storeBlob = undefined,
   deleteBlob = undefined,
+  fetchRange = undefined,
   assetUrl = undefined,
   thumbnailUrl = undefined
 }: {
   storeBlob?: (filepath: string, asset: Asset) => Promise<void>;
   deleteBlob?: (assetId: string) => Promise<void>;
+  fetchRange?: (
+    assetId: string,
+    start: number,
+    end: number
+  ) => Promise<Buffer>;
   assetUrl?: (assetId: string) => string;
   thumbnailUrl?: (assetId: string, width: number, height: number) => string;
 }): BlobRepository {
   const mockBlobRepository: BlobRepository = {
     storeBlob: storeBlob || mock(() => Promise.resolve()),
     deleteBlob: deleteBlob || mock(() => Promise.resolve()),
+    fetchRange: fetchRange || mock(() => Promise.resolve(Buffer.alloc(0))),
     assetUrl: assetUrl || mock(() => ''),
     thumbnailUrl: thumbnailUrl || mock(() => '')
   };

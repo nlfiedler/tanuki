@@ -179,6 +179,58 @@ function getCreationTime(filepath: string): Promise<number | null> {
   });
 }
 
+/**
+ * Variant of {@link getCreationTime} that reads from a caller-supplied byte
+ * range fetcher rather than a local file path. Used to extract the creation
+ * time from a video blob that may live on a remote store, without having to
+ * fetch the entire file.
+ *
+ * @param fetcher - callback that returns a buffer of bytes for the inclusive
+ *   `[start, end]` range; an empty buffer indicates EOF.
+ * @returns Milliseconds since epoch if successful, null otherwise.
+ */
+export async function getCreationTimeFromBlob(
+  fetcher: (start: number, end: number) => Promise<Buffer>
+): Promise<number | null> {
+  const mp4boxfile = createFile();
+  let result: number | null | undefined;
+  mp4boxfile.onReady = (info: Movie) => {
+    result = info.created instanceof Date ? info.created.getTime() : null;
+  };
+  mp4boxfile.onError = () => {
+    if (result === undefined) result = null;
+  };
+  const CHUNK_SIZE = 65_536;
+  let offset = 0;
+  while (result === undefined) {
+    let chunk: Buffer;
+    try {
+      chunk = await fetcher(offset, offset + CHUNK_SIZE - 1);
+    } catch {
+      return null;
+    }
+    if (chunk.length === 0) {
+      try {
+        mp4boxfile.flush();
+      } catch {
+        // ignore flush errors; falls through to null below
+      }
+      return result ?? null;
+    }
+    const ab = MP4BoxBuffer.fromArrayBuffer(
+      chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength),
+      offset
+    );
+    offset += chunk.length;
+    try {
+      mp4boxfile.appendBuffer(ab);
+    } catch {
+      return null;
+    }
+  }
+  return result;
+}
+
 const DATE_REGEXP = new RegExp(
   // https://www.media.mit.edu/pia/Research/deepview/exif.html -- DateTime
   //  yyyy  :    MM  :    dd       HH  :    mm  :    ss

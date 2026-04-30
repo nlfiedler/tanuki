@@ -73,6 +73,33 @@ class NamazuBlobRepository implements BlobRepository {
   }
 
   /** @inheritdoc */
+  async fetchRange(
+    assetId: string,
+    start: number,
+    end: number
+  ): Promise<Buffer> {
+    const url = this.makeAssetUrl(assetId);
+    const response = await fetch(url, {
+      headers: { Range: `bytes=${start}-${end}` }
+    });
+    if (response.status === 416) {
+      // requested range is past the end of the blob
+      return Buffer.alloc(0);
+    }
+    // 206 is the expected partial-content response; 200 can occur if the
+    // server chose to ignore the Range header (e.g. for very small blobs),
+    // in which case we slice the full body down to the requested range
+    if (response.status !== 206 && response.status !== 200) {
+      throw new Error(`unexpected ${response.status} fetching range`);
+    }
+    const body = Buffer.from(await response.arrayBuffer());
+    if (response.status === 200) {
+      return body.subarray(start, Math.min(body.length, end + 1));
+    }
+    return body;
+  }
+
+  /** @inheritdoc */
   assetUrl(assetId: string): string {
     return this.makeAssetUrl(assetId);
   }
