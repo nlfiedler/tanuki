@@ -2,11 +2,13 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import crypto from 'node:crypto';
+import { createReadStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import dayjs from 'dayjs';
 import ExifReader from 'exifreader';
 import mime from 'mime';
+import { createFile, Log, MP4BoxBuffer, type Movie } from 'mp4box';
 import { ulid } from 'ulid';
 import {
   Coordinates,
@@ -106,14 +108,75 @@ export async function getOriginalDate(
       if ('DateTimeOriginal' in tags) {
         return parseExifDate(tags.DateTimeOriginal!.description);
       }
-      // } else if (mimetype.startsWith('video/')) {
-      //   return getCreationTime(filepath);
+    } else if (mimetype.startsWith('video/')) {
+      return getCreationTime(filepath);
     }
   } catch {
     // failed to read file/data for whatever reason
     return null;
   }
   return null;
+}
+
+/**
+ * Read the creation_time from the movie header of an MP4 or QuickTime (MOV)
+ * file. Uses mp4box.js to parse the file incrementally; returns null for files
+ * that are not valid MP4/QuickTime or that lack a parseable mvhd box.
+ *
+ * @param filepath - path to the video file.
+ * @returns Milliseconds since epoch if successful, null otherwise.
+ */
+// Silence mp4box's BoxParser console output. Its setLogLevel() bottoms out at
+// ERROR, so warnings like "Invalid box type" still print; we only care about
+// the resolved info or a null result.
+Log.error = () => {};
+Log.warn = () => {};
+Log.info = () => {};
+Log.debug = () => {};
+
+function getCreationTime(filepath: string): Promise<number | null> {
+  return new Promise((resolve) => {
+    const mp4boxfile = createFile();
+    let settled = false;
+    const finish = (value: number | null) => {
+      if (!settled) {
+        settled = true;
+        resolve(value);
+      }
+    };
+    mp4boxfile.onReady = (info: Movie) => {
+      finish(info.created instanceof Date ? info.created.getTime() : null);
+    };
+    mp4boxfile.onError = () => finish(null);
+
+    const stream = createReadStream(filepath, { highWaterMark: 65_536 });
+    let fileOffset = 0;
+    stream.on('data', (chunk: Buffer) => {
+      if (settled) return;
+      const ab = MP4BoxBuffer.fromArrayBuffer(
+        chunk.buffer.slice(
+          chunk.byteOffset,
+          chunk.byteOffset + chunk.byteLength
+        ),
+        fileOffset
+      );
+      fileOffset += chunk.length;
+      try {
+        mp4boxfile.appendBuffer(ab);
+      } catch {
+        finish(null);
+      }
+    });
+    stream.on('end', () => {
+      try {
+        mp4boxfile.flush();
+      } catch {
+        // ignore flush errors; finish(null) handles it
+      }
+      finish(null);
+    });
+    stream.on('error', () => finish(null));
+  });
 }
 
 const DATE_REGEXP = new RegExp(

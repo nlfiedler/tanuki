@@ -80,46 +80,41 @@ describe('EXIF original date-time', function () {
     expect(actual).toBeNull();
   });
 
-  //     // MP4-encoded quicktime/mpeg video file
-  //     let filename = "./test/fixtures/100_1206.MOV";
-  //     let mt: mime::Mime = "video/mp4".parse().unwrap();
-  //     let filepath = Path::new(filename);
-  //     let actual = get_original_date(&mt, filepath);
-  //     // note that get_original_date() is sensitive to the mp4 crate's ability
-  //     // to parse the file successfully, resulting in misleading errors
-  //     assert!(actual.is_ok());
-  //     let date = actual.unwrap();
-  //     assert_eq!(date.year(), 2007);
-  //     assert_eq!(date.month(), 9);
-  //     assert_eq!(date.day(), 14);
+  test('should read creation_time from MOV', async function () {
+    // arrange
+    const mimetype = 'video/quicktime';
+    const filepath = 'test/fixtures/100_1206.MOV';
+    // act
+    const raw = await helpers.getOriginalDate(mimetype, filepath);
+    const actual = new Date(raw || 0);
+    // assert
+    expect(actual.getUTCFullYear()).toEqual(2007);
+    expect(actual.getUTCMonth()).toEqual(8); // zero-based: September
+    expect(actual.getUTCDate()).toEqual(14);
+  });
 
-  //     // MP4 file with out-of-order tracks
-  //     let filename = "./test/fixtures/ooo_tracks.mp4";
-  //     let mt: mime::Mime = "video/mp4".parse().unwrap();
-  //     let filepath = Path::new(filename);
-  //     let actual = get_original_date(&mt, filepath);
-  //     assert!(actual.is_ok());
-  //     let date = actual.unwrap();
-  //     assert_eq!(date.year(), 2016);
-  //     assert_eq!(date.month(), 9);
-  //     assert_eq!(date.day(), 5);
+  test('should read creation_time from MP4 with out-of-order tracks', async function () {
+    // arrange
+    const mimetype = 'video/mp4';
+    const filepath = 'test/fixtures/ooo_tracks.mp4';
+    // act
+    const raw = await helpers.getOriginalDate(mimetype, filepath);
+    const actual = new Date(raw || 0);
+    // assert
+    expect(actual.getUTCFullYear()).toEqual(2016);
+    expect(actual.getUTCMonth()).toEqual(8); // zero-based: September
+    expect(actual.getUTCDate()).toEqual(5);
+  });
 
-  //     // RIFF-encoded AVI video file
-  //     let filename = "./test/fixtures/MVI_0727.AVI";
-  //     let mt: mime::Mime = "video/x-msvideo".parse().unwrap();
-  //     let filepath = Path::new(filename);
-  //     let actual = get_original_date(&mt, filepath);
-  //     assert!(actual.is_ok());
-  //     let date = actual.unwrap();
-  //     assert_eq!(date.year(), 2009);
-  //     assert_eq!(date.month(), 1);
-  //     assert_eq!(date.day(), 19);
-
-  //     // not an actual video, despite the media type
-  //     let filename = "./test/fixtures/lorem-ipsum.txt";
-  //     let filepath = Path::new(filename);
-  //     let actual = get_original_date(&mt, filepath);
-  //     assert!(actual.is_err());
+  test('should return null for non-video file with video mimetype', async function () {
+    // arrange
+    const mimetype = 'video/mp4';
+    const filepath = 'test/fixtures/lorem-ipsum.txt';
+    // act
+    const actual = await helpers.getOriginalDate(mimetype, filepath);
+    // assert
+    expect(actual).toBeNull();
+  });
 });
 
 describe('EXIF GPS coordinates', function () {
