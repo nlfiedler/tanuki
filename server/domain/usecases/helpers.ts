@@ -118,14 +118,6 @@ export async function getOriginalDate(
   return null;
 }
 
-/**
- * Read the creation_time from the movie header of an MP4 or QuickTime (MOV)
- * file. Uses mp4box.js to parse the file incrementally; returns null for files
- * that are not valid MP4/QuickTime or that lack a parseable mvhd box.
- *
- * @param filepath - path to the video file.
- * @returns Milliseconds since epoch if successful, null otherwise.
- */
 // Silence mp4box's BoxParser console output. Its setLogLevel() bottoms out at
 // ERROR, so warnings like "Invalid box type" still print; we only care about
 // the resolved info or a null result.
@@ -134,6 +126,14 @@ Log.warn = () => {};
 Log.info = () => {};
 Log.debug = () => {};
 
+/**
+ * Read the creation_time from the movie header of an MP4 or QuickTime (MOV)
+ * file. Uses mp4box.js to parse the file incrementally; returns null for files
+ * that are not valid MP4/QuickTime or that lack a parseable mvhd box.
+ *
+ * @param filepath - path to the video file.
+ * @returns Milliseconds since epoch if successful, null otherwise.
+ */
 function getCreationTime(filepath: string): Promise<number | null> {
   return new Promise((resolve) => {
     const mp4boxfile = createFile();
