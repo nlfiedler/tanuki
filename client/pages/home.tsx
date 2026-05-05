@@ -470,7 +470,10 @@ function YearSelector(props: YearSelectorProps) {
           </button>
         </div>
         <div class="dropdown-menu" id="dropdown-menu" role="menu">
-          <div class="dropdown-content">
+          <div
+            class="dropdown-content"
+            style={{ 'max-height': '60vh', 'overflow-y': 'auto' }}
+          >
             <a
               class="dropdown-item"
               on:click={(_) => {
