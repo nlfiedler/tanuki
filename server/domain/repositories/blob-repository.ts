@@ -53,6 +53,19 @@ interface BlobRepository {
    * @returns URL from which to GET the thumbnail.
    */
   thumbnailUrl(assetId: string, width: number, height: number): string;
+
+  /**
+   * Return a URL for producing an aspect-preserving preview of the asset,
+   * sized by either width or height (exactly one).
+   *
+   * @param assetId - unique asset identifier.
+   * @param opts - either `{ width }` or `{ height }` in pixels.
+   * @returns URL from which to GET the preview.
+   */
+  previewUrl(
+    assetId: string,
+    opts: { width: number } | { height: number }
+  ): string;
 }
 
 export { type BlobRepository };

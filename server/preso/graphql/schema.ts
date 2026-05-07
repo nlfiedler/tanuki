@@ -342,6 +342,7 @@ function paginateResults(
   const pageRows = results.slice(off, off + lim).map((r) => {
     return Object.assign({}, r, {
       thumbnailUrl: blobs.thumbnailUrl(r.assetId, 960, 960),
+      previewUrl: blobs.previewUrl(r.assetId, { height: 800 }),
       assetUrl: blobs.assetUrl(r.assetId)
     });
   });

@@ -84,6 +84,8 @@ type SearchResult {
   mediaType: String!
   "URL for retrieving a thumbnail version of the asset."
   thumbnailUrl: String!
+  "URL for retrieving an aspect-preserving preview of the asset."
+  previewUrl: String!
   "URL for retrieving the raw asset (mainly for videos)."
   assetUrl: String!
 }

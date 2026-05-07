@@ -45,6 +45,28 @@ describe('NamazuBlobRepository', function () {
     expect(actual).toEqual(expected);
   });
 
+  test('should produce a width-sized preview URL', async function () {
+    const assetId =
+      'MjAxOC8wNS8zMS8yMTAwLzAxYng1enprYmthY3Rhdjl3ZXZnZW1tdnJ6LmpwZw==';
+    const settingsRepository = new EnvSettingsRepository();
+    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    const sut = new NamazuBlobRepository({ settingsRepository });
+    expect(sut.previewUrl(assetId, { width: 800 })).toEqual(
+      `http://example.com/preview/${assetId}?width=800`
+    );
+  });
+
+  test('should produce a height-sized preview URL', async function () {
+    const assetId =
+      'MjAxOC8wNS8zMS8yMTAwLzAxYng1enprYmthY3Rhdjl3ZXZnZW1tdnJ6LmpwZw==';
+    const settingsRepository = new EnvSettingsRepository();
+    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    const sut = new NamazuBlobRepository({ settingsRepository });
+    expect(sut.previewUrl(assetId, { height: 600 })).toEqual(
+      `http://example.com/preview/${assetId}?height=600`
+    );
+  });
+
   test('should store new file and get a 201 response', async function () {
     const relpath = '2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg';
     const buf = Buffer.from(relpath, 'utf8');

@@ -108,6 +108,16 @@ class NamazuBlobRepository implements BlobRepository {
   thumbnailUrl(assetId: string, width: number, height: number): string {
     return `${this.baseurl}/thumbnail/${width}/${height}/${assetId}`;
   }
+
+  /** @inheritdoc */
+  previewUrl(
+    assetId: string,
+    opts: { width: number } | { height: number }
+  ): string {
+    const param =
+      'width' in opts ? `width=${opts.width}` : `height=${opts.height}`;
+    return `${this.baseurl}/preview/${assetId}?${param}`;
+  }
 }
 
 export { NamazuBlobRepository };

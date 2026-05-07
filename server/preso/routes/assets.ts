@@ -4,9 +4,13 @@
 import fs from 'node:fs/promises';
 import express from 'express';
 import multer from 'multer';
-import sharp from 'sharp';
 import container from 'tanuki/server/container.ts';
 import logger from 'tanuki/server/logger.ts';
+import {
+  MAX_RENDER_DIMENSION,
+  parsePositiveInt,
+  renderResizedJpeg
+} from 'tanuki/server/preso/routes/render-helpers.ts';
 
 const settings: any = container.resolve('settingsRepository');
 const importAsset: any = container.resolve('importAsset');
@@ -54,29 +58,65 @@ router.post(
   }
 );
 
-router.get('/thumbnail/:w/:h/:id', async function (req, res, _next) {
-  const width = Number.parseInt(req.params.w);
-  const height = Number.parseInt(req.params.h);
+router.get('/preview/:id', async function (req, res, _next) {
   const id = req.params.id;
+  const widthRaw =
+    typeof req.query.width === 'string' ? req.query.width : undefined;
+  const heightRaw =
+    typeof req.query.height === 'string' ? req.query.height : undefined;
+  const hasWidth = widthRaw !== undefined && widthRaw.length > 0;
+  const hasHeight = heightRaw !== undefined && heightRaw.length > 0;
+  if (hasWidth === hasHeight) {
+    res.status(400).send('exactly one of width or height is required');
+    return;
+  }
+  const width = hasWidth ? parsePositiveInt(widthRaw) : undefined;
+  const height = hasHeight ? parsePositiveInt(heightRaw) : undefined;
+  if ((hasWidth && width === null) || (hasHeight && height === null)) {
+    res
+      .status(400)
+      .send(
+        `width/height must be a positive integer no greater than ${MAX_RENDER_DIMENSION}`
+      );
+    return;
+  }
   try {
-    // fit the image into a box of the given size, convert to jpeg
-    const result = await sharp(blobs.blobPath(id), { autoOrient: true })
-      .resize({
-        width,
-        height,
-        fit: 'inside',
-        withoutEnlargement: true
-      })
-      .toFormat('jpeg')
-      .toBuffer();
-    if (result === null) {
-      res.status(404).send('no such asset');
-    } else {
-      // thumbnails will always be in JPEG format
-      res.set({ 'Content-Type': 'image/jpeg' });
-      // send() handles Content-Length and ETag support
-      res.send(result);
-    }
+    const result = await renderResizedJpeg(blobs.blobPath(id), {
+      width: width ?? undefined,
+      height: height ?? undefined,
+      withoutEnlargement: true
+    });
+    res.set({ 'Content-Type': 'image/jpeg' });
+    res.send(result);
+  } catch (error: any) {
+    logger.error(error);
+    res.redirect('/placeholder.svg');
+  }
+});
+
+router.get('/thumbnail/:w/:h/:id', async function (req, res, _next) {
+  const width = parsePositiveInt(req.params.w);
+  const height = parsePositiveInt(req.params.h);
+  const id = req.params.id;
+  if (width === null || height === null) {
+    res
+      .status(400)
+      .send(
+        `width and height must be positive integers no greater than ${MAX_RENDER_DIMENSION}`
+      );
+    return;
+  }
+  try {
+    const result = await renderResizedJpeg(blobs.blobPath(id), {
+      width,
+      height,
+      fit: 'inside',
+      withoutEnlargement: true
+    });
+    // thumbnails will always be in JPEG format
+    res.set({ 'Content-Type': 'image/jpeg' });
+    // send() handles Content-Length and ETag support
+    res.send(result);
   } catch (error: any) {
     logger.error(error);
     res.redirect('/placeholder.svg');

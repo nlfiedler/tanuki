@@ -47,6 +47,32 @@ describe('LocalBlobRepository', function () {
     expect(actual).toEqual(expected);
   });
 
+  test('should produce a width-sized preview URL', async function () {
+    const assetpath = '2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg';
+    const assetId = Buffer.from(path.normalize(assetpath), 'utf8').toString(
+      'base64url'
+    );
+    const settingsRepository = new EnvSettingsRepository();
+    settingsRepository.set('ASSETS_PATH', 'ignored');
+    const sut = new LocalBlobRepository({ settingsRepository });
+    expect(sut.previewUrl(assetId, { width: 800 })).toEqual(
+      `/assets/preview/${assetId}?width=800`
+    );
+  });
+
+  test('should produce a height-sized preview URL', async function () {
+    const assetpath = '2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg';
+    const assetId = Buffer.from(path.normalize(assetpath), 'utf8').toString(
+      'base64url'
+    );
+    const settingsRepository = new EnvSettingsRepository();
+    settingsRepository.set('ASSETS_PATH', 'ignored');
+    const sut = new LocalBlobRepository({ settingsRepository });
+    expect(sut.previewUrl(assetId, { height: 600 })).toEqual(
+      `/assets/preview/${assetId}?height=600`
+    );
+  });
+
   test('should move a new file into the blob store', async function () {
     // arrange
     const relpath = '2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg';

@@ -99,7 +99,8 @@ export function blobRepositoryMock({
   deleteBlob = undefined,
   fetchRange = undefined,
   assetUrl = undefined,
-  thumbnailUrl = undefined
+  thumbnailUrl = undefined,
+  previewUrl = undefined
 }: {
   storeBlob?: (filepath: string, asset: Asset) => Promise<void>;
   deleteBlob?: (assetId: string) => Promise<void>;
@@ -110,13 +111,18 @@ export function blobRepositoryMock({
   ) => Promise<Buffer>;
   assetUrl?: (assetId: string) => string;
   thumbnailUrl?: (assetId: string, width: number, height: number) => string;
+  previewUrl?: (
+    assetId: string,
+    opts: { width: number } | { height: number }
+  ) => string;
 }): BlobRepository {
   const mockBlobRepository: BlobRepository = {
     storeBlob: storeBlob || mock(() => Promise.resolve()),
     deleteBlob: deleteBlob || mock(() => Promise.resolve()),
     fetchRange: fetchRange || mock(() => Promise.resolve(Buffer.alloc(0))),
     assetUrl: assetUrl || mock(() => ''),
-    thumbnailUrl: thumbnailUrl || mock(() => '')
+    thumbnailUrl: thumbnailUrl || mock(() => ''),
+    previewUrl: previewUrl || mock(() => '')
   };
   return mockBlobRepository;
 }

@@ -80,6 +80,16 @@ class LocalBlobRepository implements BlobRepository {
     // served by an endpoint defined in preso/routes/assets.ts
     return `/assets/thumbnail/${width}/${height}/${assetId}`;
   }
+
+  /** @inheritdoc */
+  previewUrl(
+    assetId: string,
+    opts: { width: number } | { height: number }
+  ): string {
+    const param =
+      'width' in opts ? `width=${opts.width}` : `height=${opts.height}`;
+    return `/assets/preview/${assetId}?${param}`;
+  }
 }
 
 /**
