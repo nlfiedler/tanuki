@@ -12,7 +12,7 @@ import dotenv from 'dotenv';
 
 // Override any existing .env file by loading the test configuration.
 if (existsSync('test/.env')) {
-  dotenv.config({ quiet: true, path: 'test/.env' });
+  dotenv.config({ quiet: true, path: 'test/.env', override: true });
 } else {
   throw new Error('Must define test/.env before testing.');
 }
