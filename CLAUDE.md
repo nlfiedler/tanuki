@@ -20,6 +20,8 @@ Tests require a `test/.env` file with database credentials and `GOOGLE_MAPS_API_
 
 For local development, create `.env.development` (not `.env` — that interferes with tests) with the required environment variables.
 
+`ffmpeg` must be on `PATH` when running with the local blob store — the `/assets/preview/:id` and `/assets/thumbnail/*/:id` routes shell out to it for video frame extraction. (The Namazu blob store handles video previews itself.)
+
 ## Architecture
 
 The server follows a clean architecture with three layers:

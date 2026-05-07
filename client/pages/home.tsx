@@ -22,7 +22,7 @@ import {
   SortOrder
 } from 'tanuki/generated/graphql.ts';
 import AttributeChips from '../components/attribute-chips.tsx';
-import CardsGrid from '../components/cards-grid.tsx';
+import JustifiedRows from '../components/justified-rows.tsx';
 import Pagination from '../components/pagination.tsx';
 import TagSelector from '../components/tag-selector.tsx';
 import useClickOutside from '../hooks/use-click-outside.ts';
@@ -35,14 +35,8 @@ const SEARCH_ASSETS: TypedDocumentNode<Query, QuerySearchArgs> = gql`
         assetId
         datetime
         filename
-        location {
-          label
-          city
-          region
-        }
         mediaType
-        thumbnailUrl
-        assetUrl
+        previewUrl
       }
       count
       lastPage
@@ -149,7 +143,6 @@ function Home() {
     1
   );
   const [_, setParams] = useLocalStorage('browse-params', {});
-  const [selectedAssets] = createSignal(new Set<string>());
   const [pageSize, setPageSize] = useLocalStorage('page-size', 18);
   const browseParams = createMemo(() => ({
     tags: selectedTags(),
@@ -302,9 +295,8 @@ function Home() {
       </div>
 
       <Suspense fallback={<button class="button is-loading">...</button>}>
-        <CardsGrid
+        <JustifiedRows
           results={assetsQuery()?.search.results}
-          selectedAssets={selectedAssets}
           onClick={(_, index) => beginBrowsing(index)}
         />
       </Suspense>

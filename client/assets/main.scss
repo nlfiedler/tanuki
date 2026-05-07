@@ -8,3 +8,122 @@ body {
 .selected {
   border: medium solid hsl(217, 71%, 53%);
 }
+
+// Justified-rows photo gallery used on the home page.
+// Each tile's flex-basis is (--aspect * --row-height) so tiles in a row grow
+// proportionally to fill the available width while the row settles at a
+// consistent height. The ::after phantom item with flex-grow: 10 absorbs
+// leftover space in the last (incomplete) row instead of stretching the
+// trailing tiles.
+.gallery {
+  --row-height: 40vh;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+
+  @media (orientation: portrait) {
+    --row-height: 30vh;
+  }
+  @media (max-height: 480px) and (orientation: landscape) {
+    --row-height: 80vh;
+  }
+}
+
+.gallery::after {
+  content: '';
+  flex-grow: 10;
+}
+
+.gallery-tile {
+  position: relative;
+  flex: 1 1 calc(var(--aspect, 1.5) * var(--row-height));
+  height: var(--row-height);
+  overflow: hidden;
+  cursor: pointer;
+  background-color: hsl(0, 0%, 90%);
+  // Strip native <button> chrome so the tile renders edge-to-edge.
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  appearance: none;
+
+  &:focus-visible {
+    outline: 2px solid hsl(217, 71%, 53%);
+    outline-offset: -2px;
+  }
+}
+
+.gallery-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.25rem 0.5rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.65));
+  color: white;
+  font-size: 0.85rem;
+  text-align: left;
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+  pointer-events: none;
+}
+
+.gallery-tile:hover .gallery-caption {
+  opacity: 1;
+}
+
+.gallery-play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.5rem;
+  color: white;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+.gallery-audio-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 30vh;
+  gap: 0.5rem;
+  color: hsl(0, 0%, 30%);
+
+  .fa-music {
+    font-size: 2rem;
+  }
+}
+
+.gallery-audio-filename {
+  font-size: 0.75rem;
+  padding: 0 0.5rem;
+  text-align: center;
+  word-break: break-all;
+}
+
+// On very narrow viewports, abandon the row layout and stack tiles full-width
+// at their intrinsic aspect.
+@media (max-width: 480px) {
+  .gallery-tile {
+    flex: 0 0 100%;
+    height: auto;
+  }
+  .gallery-image {
+    height: auto;
+  }
+}

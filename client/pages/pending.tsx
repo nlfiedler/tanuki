@@ -680,6 +680,7 @@ function ImageThumbnail(props: ImageThumbnailProps) {
     <img
       src={props.asset.thumbnailUrl}
       alt={props.asset.filename}
+      loading="lazy"
       style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
     />
   );

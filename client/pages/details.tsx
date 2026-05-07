@@ -415,6 +415,7 @@ function ImageThumbnail(props: ImageThumbnailProps) {
       <img
         src={props.asset.assetUrl}
         alt={props.asset.filename}
+        loading="lazy"
         style="max-width: 100%; width: auto; padding: inherit; margin: auto; display: block;"
       />
     </a>
@@ -667,7 +668,10 @@ function AssetForm(props: AssetFormProps) {
       <nav class="m-4 level">
         <div class="level-left">
           <div class="level-item">
-            <div class="file" classList={{ 'is-loading': uploadSubmission.pending }}>
+            <div
+              class="file"
+              classList={{ 'is-loading': uploadSubmission.pending }}
+            >
               <label class="file-label">
                 <input
                   class="file-input"

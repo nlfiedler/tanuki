@@ -70,9 +70,46 @@
 **** ~Save~ button navigates back the pending page on successful save
 *** display modes: have an option that makes the images really big (single column, huge images)
 *** hovering over asset should show larger version in a large tooltip
+** TODO photo gallery modes
+*** DONE Flickr style ~justified rows~ layout; clean lines; portraits get truncated
+*** TODO Pinterest style ~masonry grid~ (columns) layout; preserves aspect ratio
+*** TODO search page should have some gallery features as home page
+*** DONE add ~loading="lazy"~ to =img= tags
+*** DONE captions should be displayed using an overlay on hover
+*** TODO GraphQL to serve image ~width/height~ and/or ~aspectRatio~
+**** would need to join search result with asset table
+*** TODO use https://blurha.sh to have quick placeholders while images load
+**** clear the cache and evaluate whether image loading is a problem
+**** would need to join search result with asset table
+*** some of these will need a join on another database with extra information for each asset
+**** query can pass =include_docs=, but then cached results will be much larger
+**** maybe GraphQL can do a ~batch~ fetch of many records at once to avoid 1+N query
+**** =POST /{db}/_all_docs?include_docs=true= and provide multiple document keys
+*** https://piccalil.li/blog/a-simple-masonry-like-composable-layout/
+*** https://blog.logrocket.com/responsive-image-gallery-css-flexbox/ (bottom of page)
+*** https://nazanin-ashrafi.hashnode.dev/create-an-image-gallery-using-flexbox (bottom of page)
+*** Masonry Photo Gallery Grid (actually justified rows) -- https://codepen.io/michydev/pen/ZEYdOEZ
+*** Responsive Photo Gallery with CSS Grid -- https://codepen.io/optimisticweb/pen/pvzoELv
+*** Responsive Photo Gallery Grid with Lightbox -- https://codepen.io/alchatti/pen/NOdzLO
+*** grid of 640x640 images with caption info (date, location/filename) (a la PhotoPrism)
+**** details below the thumbnail with tiny icons (see screenshot on desktop)
+- label / city / year
+- user friendly date-time + TZ
+- camera make and model
+- camera settings (aperature, shutter speed, etc)
+- format (JPEG), dimensions, file size
+- original file name
+- location place, city, region
+*** wide blocks with thumbnails on left, more details on right (c.f. anilist.co)
+*** adaptive photo layout with flexbox: https://css-tricks.com/adaptive-photo-layout-with-flexbox/
+*** grid of just images, maybe 180x180; images cropped to the square (a la Apple Photos)
+*** list of rows, tiny thumbnail (96x96), caption, location, date
+*** zoom level slider to change size of thumbnails
+** TODO PDF viewer support
+*** there is a single PDF file that is a mini-book by Christina
+*** probably need the webui to recognize the =application/pdf= and show appropriately, not fetch a thumbnail
 ** Home
 *** changing light/dark in System Preferences does not cause page theme to change
-*** look into making the ~Year~ selector scrollable, list is getting longer than the screen
 *** hover button: download raw asset
 **** https://dev.to/sanchithasr/how-to-overlay-icons-on-top-of-images-with-css-1kb9
 **** https://stackoverflow.com/questions/56640043/make-a-button-appear-when-hover-over-a-image
@@ -87,13 +124,6 @@
 *** when multiple attributes are selected, add a ~clear all~ button/tag
 *** filter years in ~Year~ selector when there are results available
 **** that is, find all possible years available among the results, only show those
-*** hovering over asset should fetch and display details in a large tooltip
-*** display modes
-**** grid of 300x300 images with caption info (date, location/filename) (a la PhotoPrism)
-**** wide blocks with thumbnails on left, more details on right (c.f. anilist.co)
-**** adaptive photo layout with flexbox: https://css-tricks.com/adaptive-photo-layout-with-flexbox/
-**** grid of just images, maybe 180x180; images cropped to the square (a la Apple Photos)
-**** list of rows, tiny thumbnail (96x96), caption, location, date
 *** navigation rail for filtering assets
 **** Nextcloud has a side bar for photos with these options:
 ***** Photos
@@ -160,7 +190,7 @@
 ** Finding/removing duplicates
 *** many assets are very similar to each other, probably differ only in metadata (HEIC->JPG conversion?)
 *** Immich has a ~view similar photos~ feature
-*** find a means (histogram?) of detecting near-duplicates
+*** find a means (histogram? vector db?) of detecting near-duplicates
 ** GraphQL landing page
 *** eventually do away with the need for the landing page in production
 **** will need to improve the web interface enough to offer everything that is needed
