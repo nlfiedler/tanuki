@@ -1,8 +1,8 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-import { type Accessor, For, Match, Show, Switch } from 'solid-js';
-import type { Location, SearchResult } from 'tanuki/generated/graphql.ts';
+import { type Accessor, For, Match, Switch } from 'solid-js';
+import type { SearchResult } from 'tanuki/generated/graphql.ts';
 import * as format from '../helpers/formatting.ts';
 
 interface CardsGridProps {
@@ -37,10 +37,7 @@ function CardsGrid(props: CardsGridProps) {
                 </div>
                 <div class="card-content">
                   <div class="content">
-                    <CardContent
-                      datetime={asset.datetime}
-                      location={asset.location}
-                    />
+                    <CardContent datetime={asset.datetime} />
                   </div>
                 </div>
               </div>
@@ -103,17 +100,12 @@ function AudioThumbnail(props: AudioThumbnailProps) {
 
 interface CardContentProps {
   datetime: Date;
-  location: Location | null | undefined;
 }
 
 function CardContent(props: CardContentProps) {
   return (
     <div class="content">
       <time>{format.formatDatetime(props.datetime)}</time>
-      <Show when={props.location} fallback={<></>}>
-        <br />
-        <span>{format.formatLocation(props.location!)}</span>
-      </Show>
     </div>
   );
 }

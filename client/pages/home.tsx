@@ -22,11 +22,19 @@ import {
   SortOrder
 } from 'tanuki/generated/graphql.ts';
 import AttributeChips from '../components/attribute-chips.tsx';
+import CardsGrid from '../components/cards-grid.tsx';
 import JustifiedRows from '../components/justified-rows.tsx';
+import LayoutSelector, {
+  type GalleryLayout
+} from '../components/layout-selector.tsx';
+import MasonryGrid from '../components/masonry-grid.tsx';
 import Pagination from '../components/pagination.tsx';
 import TagSelector from '../components/tag-selector.tsx';
 import useClickOutside from '../hooks/use-click-outside.ts';
 import useLocalStorage from '../hooks/use-local-storage.ts';
+
+const EMPTY_SELECTED_ASSETS = new Set<string>();
+const emptySelectedAssets = () => EMPTY_SELECTED_ASSETS;
 
 const SEARCH_ASSETS: TypedDocumentNode<Query, QuerySearchArgs> = gql`
   query Search($params: SearchParams!, $offset: Int, $limit: Int) {
@@ -37,6 +45,8 @@ const SEARCH_ASSETS: TypedDocumentNode<Query, QuerySearchArgs> = gql`
         filename
         mediaType
         previewUrl
+        thumbnailUrl
+        assetUrl
       }
       count
       lastPage
@@ -144,6 +154,10 @@ function Home() {
   );
   const [_, setParams] = useLocalStorage('browse-params', {});
   const [pageSize, setPageSize] = useLocalStorage('page-size', 18);
+  const [galleryLayout, setGalleryLayout] = useLocalStorage<GalleryLayout>(
+    'home-gallery-layout',
+    'cards'
+  );
   const browseParams = createMemo(() => ({
     tags: selectedTags(),
     locations: selectedLocations(),
@@ -265,6 +279,12 @@ function Home() {
                 setPageSize={setPageSize}
               />
             </Suspense>
+            <div class="level-item">
+              <LayoutSelector
+                selectedLayout={galleryLayout}
+                setLayout={(layout) => setGalleryLayout(layout)}
+              />
+            </div>
           </div>
         </nav>
       </div>
@@ -295,10 +315,27 @@ function Home() {
       </div>
 
       <Suspense fallback={<button class="button is-loading">...</button>}>
-        <JustifiedRows
-          results={assetsQuery()?.search.results}
-          onClick={(_, index) => beginBrowsing(index)}
-        />
+        <Switch>
+          <Match when={galleryLayout() === 'rows'}>
+            <JustifiedRows
+              results={assetsQuery()?.search.results}
+              onClick={(_, index) => beginBrowsing(index)}
+            />
+          </Match>
+          <Match when={galleryLayout() === 'cards'}>
+            <CardsGrid
+              results={assetsQuery()?.search.results}
+              selectedAssets={emptySelectedAssets}
+              onClick={(_, index) => beginBrowsing(index)}
+            />
+          </Match>
+          <Match when={galleryLayout() === 'masonry'}>
+            <MasonryGrid
+              results={assetsQuery()?.search.results}
+              onClick={(_, index) => beginBrowsing(index)}
+            />
+          </Match>
+        </Switch>
       </Suspense>
     </>
   );

@@ -1,19 +1,19 @@
 //
 // Copyright (c) 2026 Nathan Fiedler
 //
-import { createSignal, For } from 'solid-js';
+import { For } from 'solid-js';
 import type { SearchResult } from 'tanuki/generated/graphql.ts';
 import * as format from '../helpers/formatting.ts';
 import GalleryMedia from './gallery-media.tsx';
 
-interface JustifiedRowsProps {
+interface MasonryGridProps {
   results?: SearchResult[];
   onClick: (assetId: string, index: number) => void;
 }
 
-function JustifiedRows(props: JustifiedRowsProps) {
+function MasonryGrid(props: MasonryGridProps) {
   return (
-    <div class="gallery">
+    <div class="masonry">
       <For each={props.results}>
         {(asset, index) => (
           <Tile
@@ -32,28 +32,14 @@ interface TileProps {
 }
 
 function Tile(props: TileProps) {
-  // Default 3:2 landscape until the image reports its natural aspect; then
-  // the flex-basis formula (--aspect * --row-height) gives each tile its
-  // proper proportional width within the row.
-  const [aspect, setAspect] = createSignal(1.5);
-
   return (
-    <button
-      type="button"
-      class="gallery-tile"
-      style={{ '--aspect': String(aspect()) }}
-      onClick={props.onClick}
-    >
-      <GalleryMedia
-        asset={props.asset}
-        imageClass="gallery-image"
-        onAspect={setAspect}
-      />
-      <time class="gallery-caption">
+    <button type="button" class="masonry-tile" onClick={props.onClick}>
+      <GalleryMedia asset={props.asset} imageClass="masonry-image" />
+      <time class="masonry-caption">
         {format.formatDatetime(props.asset.datetime)}
       </time>
     </button>
   );
 }
 
-export default JustifiedRows;
+export default MasonryGrid;
