@@ -86,6 +86,7 @@ function Pagination(props: PaginationProps) {
                           ? 'dropdown-item is-active'
                           : 'dropdown-item'
                       }
+                      role="menuitem"
                       on:click={(_) => {
                         props.setPageSize(size);
                         props.setSelectedPage(1);

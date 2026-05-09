@@ -538,6 +538,7 @@ function SortOrder(props: SortOrderProps) {
                 ? 'dropdown-item is-active'
                 : 'dropdown-item'
             }
+            role="menuitem"
             on:click={(_) => {
               props.setSortCombo('DateAsc');
               setDropdownOpen(false);
@@ -554,6 +555,7 @@ function SortOrder(props: SortOrderProps) {
                 ? 'dropdown-item is-active'
                 : 'dropdown-item'
             }
+            role="menuitem"
             on:click={(_) => {
               props.setSortCombo('DateDesc');
               setDropdownOpen(false);
@@ -570,6 +572,7 @@ function SortOrder(props: SortOrderProps) {
                 ? 'dropdown-item is-active'
                 : 'dropdown-item'
             }
+            role="menuitem"
             on:click={(_) => {
               props.setSortCombo('FileAsc');
               setDropdownOpen(false);
@@ -586,6 +589,7 @@ function SortOrder(props: SortOrderProps) {
                 ? 'dropdown-item is-active'
                 : 'dropdown-item'
             }
+            role="menuitem"
             on:click={(_) => {
               props.setSortCombo('FileDesc');
               setDropdownOpen(false);

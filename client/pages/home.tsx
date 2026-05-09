@@ -505,6 +505,7 @@ function YearSelector(props: YearSelectorProps) {
           >
             <a
               class="dropdown-item"
+              role="menuitem"
               on:click={(_) => {
                 props.setyear(null);
                 setDropdownOpen(false);
@@ -516,6 +517,7 @@ function YearSelector(props: YearSelectorProps) {
               {(year) => (
                 <a
                   class="dropdown-item"
+                  role="menuitem"
                   on:click={(_) => {
                     props.setyear(year.year);
                     setDropdownOpen(false);
@@ -592,6 +594,7 @@ function SeasonSelector(props: SeasonSelectorProps) {
         <div class="dropdown-content">
           <a
             class="dropdown-item"
+            role="menuitem"
             on:click={(_) => {
               props.setSeason(null);
               setDropdownOpen(false);
@@ -601,6 +604,7 @@ function SeasonSelector(props: SeasonSelectorProps) {
           </a>
           <a
             class="dropdown-item"
+            role="menuitem"
             on:click={(_) => {
               props.setSeason(Season.Winter);
               setDropdownOpen(false);
@@ -610,6 +614,7 @@ function SeasonSelector(props: SeasonSelectorProps) {
           </a>
           <a
             class="dropdown-item"
+            role="menuitem"
             on:click={(_) => {
               props.setSeason(Season.Spring);
               setDropdownOpen(false);
@@ -619,6 +624,7 @@ function SeasonSelector(props: SeasonSelectorProps) {
           </a>
           <a
             class="dropdown-item"
+            role="menuitem"
             on:click={(_) => {
               props.setSeason(Season.Summer);
               setDropdownOpen(false);
@@ -628,6 +634,7 @@ function SeasonSelector(props: SeasonSelectorProps) {
           </a>
           <a
             class="dropdown-item"
+            role="menuitem"
             on:click={(_) => {
               props.setSeason(Season.Fall);
               setDropdownOpen(false);
@@ -698,6 +705,7 @@ function MediaTypeSelector(props: MediaTypeSelectorProps) {
           <div class="dropdown-content">
             <a
               class="dropdown-item"
+              role="menuitem"
               on:click={(_) => {
                 props.setMediaType(null);
                 setDropdownOpen(false);
@@ -709,6 +717,7 @@ function MediaTypeSelector(props: MediaTypeSelectorProps) {
               {(mediaType) => (
                 <a
                   class="dropdown-item"
+                  role="menuitem"
                   on:click={(_) => {
                     props.setMediaType(mediaType.label);
                     setDropdownOpen(false);

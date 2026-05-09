@@ -50,6 +50,7 @@ function ColorTheme() {
             class={
               theme() == 'light' ? 'dropdown-item is-active' : 'dropdown-item'
             }
+            role="menuitem"
             on:click={() => {
               setTheme('light');
               setDropdownOpen(false);
@@ -64,6 +65,7 @@ function ColorTheme() {
             class={
               theme() == 'dark' ? 'dropdown-item is-active' : 'dropdown-item'
             }
+            role="menuitem"
             on:click={() => {
               setTheme('dark');
               setDropdownOpen(false);
@@ -78,6 +80,7 @@ function ColorTheme() {
             class={
               theme() == 'auto' ? 'dropdown-item is-active' : 'dropdown-item'
             }
+            role="menuitem"
             on:click={() => {
               setTheme('auto');
               setDropdownOpen(false);

@@ -63,6 +63,7 @@ function LayoutSelector(props: LayoutSelectorProps) {
         <div class="dropdown-content">
           <a
             class="dropdown-item"
+            role="menuitem"
             classList={{ 'is-active': props.selectedLayout() === 'cards' }}
             on:click={(_) => {
               props.setLayout('cards');
@@ -76,6 +77,7 @@ function LayoutSelector(props: LayoutSelectorProps) {
           </a>
           <a
             class="dropdown-item"
+            role="menuitem"
             classList={{ 'is-active': props.selectedLayout() === 'rows' }}
             on:click={(_) => {
               props.setLayout('rows');
@@ -89,6 +91,7 @@ function LayoutSelector(props: LayoutSelectorProps) {
           </a>
           <a
             class="dropdown-item"
+            role="menuitem"
             classList={{ 'is-active': props.selectedLayout() === 'masonry' }}
             on:click={(_) => {
               props.setLayout('masonry');
