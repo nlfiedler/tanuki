@@ -2,6 +2,7 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
+import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
 import { AttributeCount } from 'tanuki/server/domain/entities/attributes.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/search.ts';
@@ -148,6 +149,19 @@ interface RecordRepository {
    * than simply iterating over the set and invoking `putAsset()`.
    */
   storeAssets(incoming: Asset[]): Promise<void>;
+
+  /**
+   * Fetch the metadata for the given asset identifiers in a single batched
+   * request. The returned map contains an entry for every requested id: the
+   * value is the asset's metadata, or null if the asset has no metadata
+   * recorded (or the asset itself does not exist).
+   *
+   * @param assetIds - identifiers of the assets to fetch metadata for.
+   * @returns map from asset identifier to metadata (or null).
+   */
+  fetchMetadata(
+    assetIds: string[]
+  ): Promise<Map<string, AssetMetadata | null>>;
 }
 
 export { type RecordRepository };

@@ -2,6 +2,7 @@
 // Copyright (c) 2025 Nathan Fiedler
 //
 import assert from 'node:assert';
+import { metadataFromDocument } from 'tanuki/server/data/repositories/asset-metadata-codec.ts';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
@@ -48,6 +49,10 @@ export default ({
       }
       if (r.original_date) {
         asset.setOriginalDate(new Date(r.original_date));
+      }
+      const metadata = metadataFromDocument(r.metadata);
+      if (metadata !== null) {
+        asset.setMetadata(metadata);
       }
       return asset;
     });

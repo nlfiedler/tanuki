@@ -31,6 +31,7 @@
     "@solidjs/router": "^0.16.1",
     "awilix": "^13.0.3",
     "cors": "^2.8.6",
+    "dataloader": "^2.2.3",
     "dayjs": "^1.11.20",
     "dotenv": "^17.4.2",
     "exifreader": "^4.38.1",

@@ -6,6 +6,7 @@ import { describe, expect, test } from 'bun:test';
 // prepare the test environment as early as possible
 import 'tanuki/test/env.ts';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
+import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import { EnvSettingsRepository } from 'tanuki/server/data/repositories/env-settings-repository.ts';
 import { CouchDBRecordRepository } from 'tanuki/server/data/repositories/couchdb-record-repository.ts';
@@ -787,6 +788,76 @@ describe('CouchDBRecordRepository', function () {
     expect(stormy?.key).toEqual('stormy');
     const wingtim = await sut.getAssetById('wingtim');
     expect(wingtim?.key).toEqual('wingtim');
+  });
+
+  test('should round-trip AssetMetadata via putAsset and getAssetById', async function () {
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new CouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    const asset = buildBasicAsset('meta-roundtrip');
+    const meta = new AssetMetadata();
+    meta.cameraMake = 'Canon';
+    meta.cameraModel = 'EOS 5D Mark IV';
+    meta.fNumber = 2.8;
+    meta.iso = 400;
+    meta.originalDateOffset = '+09:00';
+    meta.gpsLatitude = 35.6895;
+    meta.gpsLongitude = 139.6917;
+    meta.displayWidth = 6720;
+    meta.displayHeight = 4480;
+    meta.raw = { Make: { description: 'Canon' } };
+    asset.metadata = meta;
+    await sut.putAsset(asset);
+
+    const fetched = await sut.getAssetById('meta-roundtrip');
+    expect(fetched?.metadata).not.toBeNull();
+    expect(fetched?.metadata?.cameraMake).toEqual('Canon');
+    expect(fetched?.metadata?.cameraModel).toEqual('EOS 5D Mark IV');
+    expect(fetched?.metadata?.fNumber).toBeCloseTo(2.8);
+    expect(fetched?.metadata?.iso).toEqual(400);
+    expect(fetched?.metadata?.originalDateOffset).toEqual('+09:00');
+    expect(fetched?.metadata?.gpsLatitude).toBeCloseTo(35.6895);
+    expect(fetched?.metadata?.gpsLongitude).toBeCloseTo(139.6917);
+    expect(fetched?.metadata?.displayWidth).toEqual(6720);
+    expect(fetched?.metadata?.displayHeight).toEqual(4480);
+    expect(fetched?.metadata?.raw).toEqual({ Make: { description: 'Canon' } });
+
+    // updating with metadata=null should drop the sub-document
+    asset.metadata = null;
+    await sut.putAsset(asset);
+    const cleared = await sut.getAssetById('meta-roundtrip');
+    expect(cleared?.metadata).toBeNull();
+  });
+
+  test('fetchMetadata should return a map keyed by asset id with missing entries as null', async function () {
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new CouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    const withMeta = buildBasicAsset('with-meta');
+    const meta = new AssetMetadata();
+    meta.cameraMake = 'Sony';
+    meta.fNumber = 1.8;
+    withMeta.metadata = meta;
+    await sut.putAsset(withMeta);
+
+    const withoutMeta = buildBasicAsset('without-meta');
+    await sut.putAsset(withoutMeta);
+
+    const result = await sut.fetchMetadata([
+      'with-meta',
+      'without-meta',
+      'does-not-exist'
+    ]);
+    expect(result.size).toEqual(3);
+    expect(result.get('with-meta')?.cameraMake).toEqual('Sony');
+    expect(result.get('with-meta')?.fNumber).toBeCloseTo(1.8);
+    expect(result.get('without-meta')).toBeNull();
+    expect(result.get('does-not-exist')).toBeNull();
+
+    const empty = await sut.fetchMetadata([]);
+    expect(empty.size).toEqual(0);
   });
 });
 

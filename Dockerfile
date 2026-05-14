@@ -41,10 +41,11 @@ RUN bun run codegen
 RUN bunx --bun vite build
 
 FROM base AS release
-# ensure SSL and CA certificates are available for HTTPS clients
+# ensure SSL and CA certificates are available for HTTPS clients, and ffmpeg is
+# available for the local blob store to extract video frames and probe metadata
 ENV DEBIAN_FRONTEND="noninteractive"
 RUN apt-get -q update && \
-    apt-get -q -y install openssl ca-certificates
+    apt-get -q -y install openssl ca-certificates ffmpeg
 # copy production dependencies, server code, and compiled front-end into the final image
 COPY --from=install /build/prod/node_modules node_modules
 COPY --from=prerelease /app/dist dist

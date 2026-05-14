@@ -18,6 +18,7 @@ import container from 'tanuki/server/container.ts';
 import assetsRouter from 'tanuki/server/preso/routes/assets.ts';
 import recordsRouter from 'tanuki/server/preso/routes/records.ts';
 import { typeDefs, resolvers } from 'tanuki/server/preso/graphql/schema.ts';
+import { createMetadataLoader } from 'tanuki/server/preso/graphql/metadata-loader.ts';
 
 // (asynchronously) prepare the database
 const database: any = container.resolve('recordRepository');
@@ -66,7 +67,17 @@ await graphqlServer.start();
 app.get('/liveness', (_req, res) => {
   res.status(200).json({ status: 'healthy', uptime: process.uptime() });
 });
-app.use('/graphql', cors(), express.json(), expressMiddleware(graphqlServer));
+app.use(
+  '/graphql',
+  cors(),
+  express.json(),
+  expressMiddleware(graphqlServer, {
+    context: async () => {
+      const recordRepository: any = container.resolve('recordRepository');
+      return { metadataLoader: createMetadataLoader(recordRepository) };
+    }
+  })
+);
 app.use('/assets', assetsRouter);
 app.use('/records', recordsRouter);
 

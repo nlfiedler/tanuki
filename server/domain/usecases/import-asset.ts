@@ -49,11 +49,33 @@ export default ({
       // eslint-disable-next-line unicorn/no-await-expression-member
       const length = (await fs.stat(filepath)).size;
 
+      // Single-pass extraction: one EXIF read for images (date, coords,
+      // metadata) or one ffprobe call for videos. Either may return null for
+      // unsupported / unparseable files; in that case fall back to the file's
+      // modified time for the original date.
+      let extractedDate: number | null = null;
+      let coords = null;
+      let metadata = null;
+      if (mimetype.startsWith('image/')) {
+        const info = await helpers.extractImageInfo(filepath);
+        if (info) {
+          extractedDate = info.originalDate;
+          coords = info.coordinates;
+          metadata = info.metadata;
+        }
+      } else if (mimetype.startsWith('video/')) {
+        const info = await helpers.extractVideoInfo(filepath);
+        if (info) {
+          extractedDate = info.originalDate;
+          metadata = info.metadata;
+        }
+      }
+
       // some applications (e.g. Photos.app) will set the file modified time
       // appropriately, so if the asset itself does not have an original
       // date/time, use that
-      const exifDate = await helpers.getOriginalDate(mimetype, filepath);
-      const originalDate = exifDate === null ? modified : new Date(exifDate);
+      const originalDate =
+        extractedDate === null ? modified : new Date(extractedDate);
       asset = new Asset(assetId);
       asset.checksum = digest;
       asset.filename = originalname;
@@ -61,10 +83,10 @@ export default ({
       asset.mediaType = mimetype;
       asset.importDate = now;
       asset.originalDate = originalDate;
+      asset.metadata = metadata && metadata.hasValues() ? metadata : null;
 
       // attempt to fill in the city and region if the asset has GPS coordinates
       // and a reverse gecoding location repository has been configured
-      const coords = await helpers.getCoordinates(mimetype, filepath);
       if (coords) {
         const geocoded = await locationRepository.findLocation(coords);
         if (geocoded !== null) {

@@ -4,9 +4,11 @@
 import assert from 'node:assert';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import ExifReader from 'exifreader';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { type BlobRepository } from 'tanuki/server/domain/repositories/blob-repository.ts';
 import { type SettingsRepository } from 'tanuki/server/domain/repositories/settings-repository.ts';
+import { runFfprobe, stripRawImageTags } from 'tanuki/server/domain/usecases/helpers.ts';
 
 /**
  * Blob repository that stores assets in attached disk storage.
@@ -89,6 +91,26 @@ class LocalBlobRepository implements BlobRepository {
     const param =
       'width' in opts ? `width=${opts.width}` : `height=${opts.height}`;
     return `/assets/preview/${assetId}?${param}`;
+  }
+
+  /** @inheritdoc */
+  async fetchMetadata(
+    assetId: string,
+    mediaType: string
+  ): Promise<object | null> {
+    const filepath = this.blobPath(assetId);
+    if (mediaType.startsWith('image/')) {
+      try {
+        const tags = await ExifReader.load(filepath);
+        return stripRawImageTags(tags);
+      } catch {
+        return null;
+      }
+    }
+    if (mediaType.startsWith('video/')) {
+      return runFfprobe(filepath);
+    }
+    return null;
   }
 }
 

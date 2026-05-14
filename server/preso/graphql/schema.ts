@@ -7,6 +7,7 @@ import type { GraphQLResolveInfo } from 'graphql';
 import container from 'tanuki/server/container.ts';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { AssetInput } from 'tanuki/server/domain/entities/asset.ts';
+import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
 import * as ops from 'tanuki/server/domain/entities/edit.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import {
@@ -20,6 +21,7 @@ import type {
   Asset as GQLAsset,
   AssetEdit,
   AssetInput as GQLAssetInput,
+  AssetMetadata as GQLAssetMetadata,
   AttributeCount,
   BrowseMeta,
   LocationValues,
@@ -41,6 +43,7 @@ import type {
   PendingParams as GQLPendingParams,
   SearchParams as GQLSearchParams
 } from 'tanuki/generated/graphql.ts';
+import type { GraphQLContext } from 'tanuki/server/preso/graphql/metadata-loader.ts';
 import logger from 'tanuki/server/logger.ts';
 
 const settings: any = container.resolve('settingsRepository');
@@ -51,6 +54,25 @@ const schemaPath = path.join(import.meta.dirname, 'schema.graphql');
 export const typeDefs = await fs.readFile(schemaPath, 'utf8');
 
 export const resolvers: Resolvers = {
+  Asset: {
+    metadata: async (parent: any, _args, context: GraphQLContext) => {
+      // The asset resolver attaches `metadata` to the parent when the
+      // underlying read path already hydrated it (e.g. getAssetById). In that
+      // case we hand back the inline value to avoid an extra fetch. For paths
+      // where metadata is not on the parent, fall back to the DataLoader.
+      if (parent?.metadata !== undefined) {
+        return metadataToGQL(parent.metadata);
+      }
+      const meta = await context.metadataLoader.load(parent.id);
+      return metadataToGQL(meta);
+    }
+  },
+  SearchResult: {
+    metadata: async (parent: any, _args, context: GraphQLContext) => {
+      const meta = await context.metadataLoader.load(parent.assetId);
+      return metadataToGQL(meta);
+    }
+  },
   Query: {
     async asset(
       _parent: any,
@@ -327,6 +349,39 @@ export const resolvers: Resolvers = {
       logger.info('updateVideoDates');
       const updateVideoDates: any = container.resolve('updateVideoDates');
       return updateVideoDates();
+    },
+
+    async backfillImageMetadata(
+      _parent: any,
+      _args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<number> {
+      logger.info('backfillImageMetadata');
+      const backfill: any = container.resolve('backfillImageMetadata');
+      return backfill();
+    },
+
+    async backfillVideoMetadata(
+      _parent: any,
+      _args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<number> {
+      logger.info('backfillVideoMetadata');
+      const backfill: any = container.resolve('backfillVideoMetadata');
+      return backfill();
+    },
+
+    async fixOriginalDates(
+      _parent: any,
+      _args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<number> {
+      logger.info('fixOriginalDates');
+      const fix: any = container.resolve('fixOriginalDates');
+      return fix();
     }
   }
 };
@@ -551,6 +606,33 @@ function assetToGQL(entity: Asset): GQLAsset {
     tags: entity.tags,
     caption: entity.caption,
     location: entity.location,
-    assetUrl: blobs.assetUrl(entity.key)
+    assetUrl: blobs.assetUrl(entity.key),
+    // pass the AssetMetadata instance through verbatim; the Asset.metadata
+    // field resolver coerces it on demand (avoids double-coercion).
+    metadata: entity.metadata as unknown as GQLAssetMetadata | null
+  };
+}
+
+function metadataToGQL(
+  metadata: AssetMetadata | null | undefined
+): GQLAssetMetadata | null {
+  if (!metadata) return null;
+  return {
+    cameraMake: metadata.cameraMake,
+    cameraModel: metadata.cameraModel,
+    lensMake: metadata.lensMake,
+    lensModel: metadata.lensModel,
+    exposureTime: metadata.exposureTime,
+    fNumber: metadata.fNumber,
+    iso: metadata.iso,
+    focalLength35mm: metadata.focalLength35mm,
+    originalDateOffset: metadata.originalDateOffset,
+    gpsLatitude: metadata.gpsLatitude,
+    gpsLongitude: metadata.gpsLongitude,
+    displayWidth: metadata.displayWidth,
+    displayHeight: metadata.displayHeight,
+    duration: metadata.duration,
+    frameRate: metadata.frameRate,
+    videoCodec: metadata.videoCodec
   };
 }

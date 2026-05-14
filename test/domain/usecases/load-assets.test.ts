@@ -124,4 +124,76 @@ describe('LoadAssets use case', function () {
     expect(mockRecordRepository.storeAssets).toHaveBeenCalledTimes(1);
     mock.clearAllMocks();
   });
+
+  test('should hydrate metadata from dump records', async function () {
+    // arrange
+    const mockDatabase = new Array<Asset>();
+    const mockRecordRepository = recordRepositoryMock({
+      storeAssets: mock((incoming: Asset[]) => {
+        for (const entry of incoming) {
+          mockDatabase.push(entry);
+        }
+        return Promise.resolve();
+      })
+    });
+    const mockSearchRepository = searchRepositoryMock({});
+    const usecase = LoadAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository
+    });
+    // act
+    const inputs = [
+      {
+        key: 'withmeta',
+        checksum: 'sha256-abc',
+        filename: 'a.jpg',
+        byte_length: 10,
+        media_type: 'image/jpeg',
+        tags: [],
+        import_date: new Date(2024, 0, 1).toISOString(),
+        caption: null,
+        location: null,
+        user_date: null,
+        original_date: null,
+        dimensions: null,
+        metadata: {
+          cameraMake: 'Nikon',
+          cameraModel: 'D750',
+          fNumber: 1.8,
+          iso: 800,
+          displayWidth: 6016,
+          displayHeight: 4016,
+          raw: { Make: 'Nikon' }
+        }
+      },
+      {
+        key: 'nometa',
+        checksum: 'sha256-def',
+        filename: 'b.jpg',
+        byte_length: 20,
+        media_type: 'image/jpeg',
+        tags: [],
+        import_date: new Date(2024, 0, 2).toISOString(),
+        caption: null,
+        location: null,
+        user_date: null,
+        original_date: null,
+        dimensions: null,
+        metadata: null
+      }
+    ];
+    await usecase(inputs);
+    // assert
+    expect(mockDatabase).toHaveLength(2);
+    expect(mockDatabase[0]?.metadata).not.toBeNull();
+    expect(mockDatabase[0]?.metadata?.cameraMake).toEqual('Nikon');
+    expect(mockDatabase[0]?.metadata?.cameraModel).toEqual('D750');
+    expect(mockDatabase[0]?.metadata?.fNumber).toEqual(1.8);
+    expect(mockDatabase[0]?.metadata?.iso).toEqual(800);
+    expect(mockDatabase[0]?.metadata?.displayWidth).toEqual(6016);
+    expect(mockDatabase[0]?.metadata?.displayHeight).toEqual(4016);
+    expect(mockDatabase[0]?.metadata?.raw).toEqual({ Make: 'Nikon' });
+    expect(mockDatabase[1]?.metadata).toBeNull();
+    mock.clearAllMocks();
+  });
 });

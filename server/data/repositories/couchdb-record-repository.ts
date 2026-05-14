@@ -4,11 +4,16 @@
 import assert from 'node:assert';
 import nano from 'nano';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
+import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
 import { AttributeCount } from 'tanuki/server/domain/entities/attributes.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/search.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
 import { type SettingsRepository } from 'tanuki/server/domain/repositories/settings-repository.ts';
+import {
+  metadataFromDocument,
+  metadataToDocument
+} from './asset-metadata-codec.ts';
 import * as views from './couchdb-views.js';
 
 /**
@@ -216,9 +221,11 @@ class CouchDBRecordRepository implements RecordRepository {
 
   /** @inheritDoc */
   async putAsset(asset: Asset): Promise<void> {
-    // strip the `key` property since that will be the _id anyway
-    const { key, ...doc } = asset;
+    // strip `key` (it becomes _id) and `metadata` (encoded separately to avoid
+    // copying the AssetMetadata class instance into the doc)
+    const { key, metadata, ...doc } = asset;
     convertDatesIn(doc);
+    (doc as any).metadata = metadataToDocument(metadata);
     try {
       const oldDoc = await this.database.get(key);
       await this.database.insert({ ...doc, _id: key, _rev: oldDoc._rev });
@@ -229,6 +236,22 @@ class CouchDBRecordRepository implements RecordRepository {
         throw error;
       }
     }
+  }
+
+  /** @inheritDoc */
+  async fetchMetadata(
+    assetIds: string[]
+  ): Promise<Map<string, AssetMetadata | null>> {
+    const result = new Map<string, AssetMetadata | null>();
+    for (const id of assetIds) result.set(id, null);
+    if (assetIds.length === 0) return result;
+    const res = await this.database.fetch({ keys: assetIds });
+    for (const row of res.rows) {
+      if (row.doc && !row.doc._deleted) {
+        result.set(row.id, metadataFromDocument(row.doc.metadata));
+      }
+    }
+    return result;
   }
 
   /** @inheritDoc */
@@ -509,6 +532,7 @@ function assetFromDocument(doc: any): any {
   if (doc.originalDate !== null) {
     asset.setOriginalDate(new Date(doc.originalDate));
   }
+  asset.setMetadata(metadataFromDocument(doc.metadata));
   return asset;
 }
 

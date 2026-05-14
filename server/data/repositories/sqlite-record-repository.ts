@@ -6,11 +6,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Database } from 'bun:sqlite';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
+import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
 import { AttributeCount } from 'tanuki/server/domain/entities/attributes.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/search.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
 import { type SettingsRepository } from 'tanuki/server/domain/repositories/settings-repository.ts';
+import { runMigrations } from './sqlite-migrations.ts';
 
 /**
  * Repository for entity records stored in a SQLite database.
@@ -125,6 +127,8 @@ class SqliteRecordRepository implements RecordRepository {
         UNION ALL
         SELECT LOWER(loc_region) FROM assets WHERE loc_region IS NOT NULL AND loc_region != '';`
     );
+
+    runMigrations(this.database);
   }
 
   /** @inheritDoc */
@@ -138,14 +142,27 @@ class SqliteRecordRepository implements RecordRepository {
   async getAssetById(assetId: string): Promise<Asset | null> {
     const query = this.database!.query('SELECT * FROM assets WHERE key = ?;');
     const row = query.get(assetId);
-    return row ? assetFromRow(row) : null;
+    if (!row) return null;
+    const asset = assetFromRow(row);
+    asset.metadata = this.loadMetadata(assetId);
+    return asset;
   }
 
   /** @inheritDoc */
   async getAssetByDigest(digest: string): Promise<Asset | null> {
     const query = this.database!.query('SELECT * FROM assets WHERE hash = ?;');
     const row = query.get(digest);
-    return row ? assetFromRow(row) : null;
+    if (!row) return null;
+    const asset = assetFromRow(row);
+    asset.metadata = this.loadMetadata(asset.key);
+    return asset;
+  }
+
+  private loadMetadata(assetId: string): AssetMetadata | null {
+    const row = this.database!
+      .query('SELECT * FROM metadata WHERE asset_id = ?')
+      .get(assetId);
+    return row ? metadataFromRow(row) : null;
   }
 
   /** @inheritDoc */
@@ -214,21 +231,82 @@ class SqliteRecordRepository implements RecordRepository {
     const orig_date = asset.originalDate
       ? Math.trunc(asset.originalDate.getTime() / 1000)
       : null;
-    insert.run({
-      $key: asset.key,
-      $hash: asset.checksum,
-      $filename: asset.filename,
-      $filesize: asset.byteLength,
-      $mimetype: asset.mediaType,
-      $caption: asset.caption || null,
-      $tags: asset.tags.join('\t') || null,
-      $loc_label: asset.location?.label || null,
-      $loc_city: asset.location?.city || null,
-      $loc_region: asset.location?.region || null,
-      $imported: Math.trunc(asset.importDate.getTime() / 1000),
-      $user_date: user_date,
-      $orig_date: orig_date
-    });
+    // Wrap the asset upsert and metadata upsert in a single transaction so a
+    // failure in either rolls back both writes.
+    this.database!.transaction(() => {
+      insert.run({
+        $key: asset.key,
+        $hash: asset.checksum,
+        $filename: asset.filename,
+        $filesize: asset.byteLength,
+        $mimetype: asset.mediaType,
+        $caption: asset.caption || null,
+        $tags: asset.tags.join('\t') || null,
+        $loc_label: asset.location?.label || null,
+        $loc_city: asset.location?.city || null,
+        $loc_region: asset.location?.region || null,
+        $imported: Math.trunc(asset.importDate.getTime() / 1000),
+        $user_date: user_date,
+        $orig_date: orig_date
+      });
+      this.upsertMetadata(asset.key, asset.metadata);
+    })();
+  }
+
+  private upsertMetadata(
+    assetId: string,
+    metadata: AssetMetadata | null
+  ): void {
+    if (metadata === null || !metadata.hasValues()) {
+      this.database!
+        .query('DELETE FROM metadata WHERE asset_id = ?')
+        .run(assetId);
+      return;
+    }
+    this.database!
+      .query(
+        `INSERT INTO metadata (
+          asset_id, camera_make, camera_model, lens_make, lens_model,
+          exposure_time, f_number, iso, focal_length_35mm, original_date_offset,
+          gps_latitude, gps_longitude, display_width, display_height,
+          duration, frame_rate, video_codec, raw
+        ) VALUES (
+          $asset_id, $camera_make, $camera_model, $lens_make, $lens_model,
+          $exposure_time, $f_number, $iso, $focal_length_35mm, $original_date_offset,
+          $gps_latitude, $gps_longitude, $display_width, $display_height,
+          $duration, $frame_rate, $video_codec, $raw
+        )
+        ON CONFLICT(asset_id) DO UPDATE SET
+          camera_make = $camera_make, camera_model = $camera_model,
+          lens_make = $lens_make, lens_model = $lens_model,
+          exposure_time = $exposure_time, f_number = $f_number, iso = $iso,
+          focal_length_35mm = $focal_length_35mm,
+          original_date_offset = $original_date_offset,
+          gps_latitude = $gps_latitude, gps_longitude = $gps_longitude,
+          display_width = $display_width, display_height = $display_height,
+          duration = $duration, frame_rate = $frame_rate,
+          video_codec = $video_codec, raw = $raw;`
+      )
+      .run({
+        $asset_id: assetId,
+        $camera_make: metadata.cameraMake,
+        $camera_model: metadata.cameraModel,
+        $lens_make: metadata.lensMake,
+        $lens_model: metadata.lensModel,
+        $exposure_time: metadata.exposureTime,
+        $f_number: metadata.fNumber,
+        $iso: metadata.iso,
+        $focal_length_35mm: metadata.focalLength35mm,
+        $original_date_offset: metadata.originalDateOffset,
+        $gps_latitude: metadata.gpsLatitude,
+        $gps_longitude: metadata.gpsLongitude,
+        $display_width: metadata.displayWidth,
+        $display_height: metadata.displayHeight,
+        $duration: metadata.duration,
+        $frame_rate: metadata.frameRate,
+        $video_codec: metadata.videoCodec,
+        $raw: metadata.raw ? JSON.stringify(metadata.raw) : null
+      });
   }
 
   /** @inheritDoc */
@@ -392,41 +470,67 @@ class SqliteRecordRepository implements RecordRepository {
     for (const row of query.iterate(cursor ?? '0', limit)) {
       results.push(assetFromRow(row));
     }
+    if (results.length > 0) {
+      const metadataMap = await this.fetchMetadata(results.map((a) => a.key));
+      for (const asset of results) {
+        asset.metadata = metadataMap.get(asset.key) ?? null;
+      }
+    }
     cursor = results.at(-1)?.key ?? 'done';
     return [results, cursor];
   }
 
   /** @inheritDoc */
+  async fetchMetadata(
+    assetIds: string[]
+  ): Promise<Map<string, AssetMetadata | null>> {
+    const result = new Map<string, AssetMetadata | null>();
+    for (const id of assetIds) result.set(id, null);
+    if (assetIds.length === 0) return result;
+    const placeholders = assetIds.map(() => '?').join(',');
+    const query = this.database!.query(
+      `SELECT * FROM metadata WHERE asset_id IN (${placeholders})`
+    );
+    for (const row of query.iterate(...assetIds)) {
+      result.set((row as any).asset_id, metadataFromRow(row));
+    }
+    return result;
+  }
+
+  /** @inheritDoc */
   async storeAssets(incoming: Asset[]): Promise<void> {
-    for (const asset of incoming) {
-      const insert = this.database!.query(
-        `INSERT OR REPLACE INTO assets (key, hash, filename, filesize, mimetype, caption,
+    const insert = this.database!.query(
+      `INSERT OR REPLACE INTO assets (key, hash, filename, filesize, mimetype, caption,
         tags, loc_label, loc_city, loc_region, imported, user_date, orig_date)
        VALUES ($key, $hash, $filename, $filesize, $mimetype, $caption,
         $tags, $loc_label, $loc_city, $loc_region, $imported, $user_date, $orig_date);`
-      );
-      const user_date = asset.userDate
-        ? Math.trunc(asset.userDate.getTime() / 1000)
-        : null;
-      const orig_date = asset.originalDate
-        ? Math.trunc(asset.originalDate.getTime() / 1000)
-        : null;
-      insert.run({
-        $key: asset.key,
-        $hash: asset.checksum,
-        $filename: asset.filename,
-        $filesize: asset.byteLength,
-        $mimetype: asset.mediaType,
-        $caption: asset.caption || null,
-        $tags: asset.tags.join('\t') || null,
-        $loc_label: asset.location?.label || null,
-        $loc_city: asset.location?.city || null,
-        $loc_region: asset.location?.region || null,
-        $imported: Math.trunc(asset.importDate.getTime() / 1000),
-        $user_date: user_date,
-        $orig_date: orig_date
-      });
-    }
+    );
+    this.database!.transaction(() => {
+      for (const asset of incoming) {
+        const user_date = asset.userDate
+          ? Math.trunc(asset.userDate.getTime() / 1000)
+          : null;
+        const orig_date = asset.originalDate
+          ? Math.trunc(asset.originalDate.getTime() / 1000)
+          : null;
+        insert.run({
+          $key: asset.key,
+          $hash: asset.checksum,
+          $filename: asset.filename,
+          $filesize: asset.byteLength,
+          $mimetype: asset.mediaType,
+          $caption: asset.caption || null,
+          $tags: asset.tags.join('\t') || null,
+          $loc_label: asset.location?.label || null,
+          $loc_city: asset.location?.city || null,
+          $loc_region: asset.location?.region || null,
+          $imported: Math.trunc(asset.importDate.getTime() / 1000),
+          $user_date: user_date,
+          $orig_date: orig_date
+        });
+        this.upsertMetadata(asset.key, asset.metadata);
+      }
+    })();
   }
 }
 
@@ -464,6 +568,34 @@ function assetFromRow(row: any): any {
     asset.setOriginalDate(new Date(row.orig_date * 1000));
   }
   return asset;
+}
+
+function metadataFromRow(row: any): AssetMetadata {
+  const m = new AssetMetadata();
+  m.cameraMake = row.camera_make ?? null;
+  m.cameraModel = row.camera_model ?? null;
+  m.lensMake = row.lens_make ?? null;
+  m.lensModel = row.lens_model ?? null;
+  m.exposureTime = row.exposure_time ?? null;
+  m.fNumber = row.f_number ?? null;
+  m.iso = row.iso ?? null;
+  m.focalLength35mm = row.focal_length_35mm ?? null;
+  m.originalDateOffset = row.original_date_offset ?? null;
+  m.gpsLatitude = row.gps_latitude ?? null;
+  m.gpsLongitude = row.gps_longitude ?? null;
+  m.displayWidth = row.display_width ?? null;
+  m.displayHeight = row.display_height ?? null;
+  m.duration = row.duration ?? null;
+  m.frameRate = row.frame_rate ?? null;
+  m.videoCodec = row.video_codec ?? null;
+  if (row.raw) {
+    try {
+      m.raw = JSON.parse(row.raw);
+    } catch {
+      m.raw = null;
+    }
+  }
+  return m;
 }
 
 function searchResultFromRow(row: any): SearchResult {

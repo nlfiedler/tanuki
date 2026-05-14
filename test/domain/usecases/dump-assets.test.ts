@@ -3,6 +3,7 @@
 //
 import { describe, expect, mock, test } from 'bun:test';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
+import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import DumpAssets from 'tanuki/server/domain/usecases/dump-assets.ts';
 import { recordRepositoryMock } from './mocking.ts';
@@ -70,7 +71,56 @@ describe('DumpAssets use case', function () {
     expect(results[0]?.user_date).toBeNull();
     expect(results[0]?.original_date).toBeNull();
     expect(results[0]?.dimensions).toBeNull();
+    expect(results[0]?.metadata).toBeNull();
     expect(mockRecordRepository.fetchAssets).toHaveBeenCalledTimes(2);
+    mock.clearAllMocks();
+  });
+
+  test('should serialize metadata when present', async function () {
+    // arrange
+    const metadata = new AssetMetadata();
+    metadata.cameraMake = 'Canon';
+    metadata.cameraModel = 'EOS 5D';
+    metadata.fNumber = 2.8;
+    metadata.iso = 400;
+    metadata.displayWidth = 4000;
+    metadata.displayHeight = 3000;
+    metadata.raw = { Make: 'Canon', Model: 'EOS 5D' };
+    const assets = [
+      new Asset('monday1')
+        .setChecksum('sha1-cafebabe')
+        .setFilename('img_1234.jpg')
+        .setByteLength(1024)
+        .setMediaType('image/jpeg')
+        .setTags(['cat'])
+        .setImportDate(new Date(2018, 4, 31, 21, 10, 11))
+        .setMetadata(metadata)
+    ];
+    const mockFn = mock();
+    mockFn.mockImplementationOnce(() => Promise.resolve([assets, 'done']));
+    mockFn.mockImplementation(() => Promise.resolve([[], 'done']));
+    const mockRecordRepository = recordRepositoryMock({
+      fetchAssets: mockFn
+    });
+    const usecase = DumpAssets({
+      recordRepository: mockRecordRepository
+    });
+    // act
+    const results = [];
+    for await (const entry of usecase(10)) {
+      results.push(entry);
+    }
+    // assert
+    expect(results).toHaveLength(1);
+    const dumped: any = results[0]?.metadata;
+    expect(dumped).not.toBeNull();
+    expect(dumped.cameraMake).toEqual('Canon');
+    expect(dumped.cameraModel).toEqual('EOS 5D');
+    expect(dumped.fNumber).toEqual(2.8);
+    expect(dumped.iso).toEqual(400);
+    expect(dumped.displayWidth).toEqual(4000);
+    expect(dumped.displayHeight).toEqual(3000);
+    expect(dumped.raw).toEqual({ Make: 'Canon', Model: 'EOS 5D' });
     mock.clearAllMocks();
   });
 

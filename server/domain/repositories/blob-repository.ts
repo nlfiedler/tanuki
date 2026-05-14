@@ -66,6 +66,17 @@ interface BlobRepository {
     assetId: string,
     opts: { width: number } | { height: number }
   ): string;
+
+  /**
+   * Fetch the raw extractor JSON for the asset (EXIF tag map for images,
+   * ffprobe output for videos). Returns null when extraction is not
+   * applicable (non-image / non-video) or has failed.
+   *
+   * @param assetId - unique asset identifier.
+   * @param mediaType - media type of the asset.
+   * @returns raw extractor JSON, or null.
+   */
+  fetchMetadata(assetId: string, mediaType: string): Promise<object | null>;
 }
 
 export { type BlobRepository };

@@ -1,6 +1,7 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
+import { AssetMetadata } from './asset-metadata.ts';
 import { Location } from './location.ts';
 
 /**
@@ -29,6 +30,8 @@ class Asset {
   userDate: Date | null;
   /** Date of the asset as extracted from metadata. */
   originalDate: Date | null;
+  /** Intrinsic metadata extracted from the asset file (EXIF, ffprobe). */
+  metadata: AssetMetadata | null;
 
   constructor(key: string) {
     this.key = key;
@@ -42,6 +45,7 @@ class Asset {
     this.location = null;
     this.userDate = null;
     this.originalDate = null;
+    this.metadata = null;
   }
 
   /**
@@ -117,6 +121,11 @@ class Asset {
 
   setOriginalDate(originalDate: Date): Asset {
     this.originalDate = originalDate;
+    return this;
+  }
+
+  setMetadata(metadata: AssetMetadata | null): Asset {
+    this.metadata = metadata;
     return this;
   }
 }

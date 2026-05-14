@@ -3,6 +3,7 @@
 //
 import { mock } from 'bun:test';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
+import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
 import { AttributeCount } from 'tanuki/server/domain/entities/attributes.ts';
 import {
   Coordinates,
@@ -40,7 +41,8 @@ export function recordRepositoryMock({
   queryDateRange = undefined,
   queryNewborn = undefined,
   fetchAssets = undefined,
-  storeAssets = undefined
+  storeAssets = undefined,
+  fetchMetadata = undefined
 }: {
   countAssets?: () => Promise<number>;
   getAssetById?: (assetId: string) => Promise<Asset | null>;
@@ -61,6 +63,9 @@ export function recordRepositoryMock({
   queryNewborn?: (after: Date) => Promise<SearchResult[]>;
   fetchAssets?: (cursor: any, limit: number) => Promise<[Asset[], any]>;
   storeAssets?: (incoming: Asset[]) => Promise<void>;
+  fetchMetadata?: (
+    assetIds: string[]
+  ) => Promise<Map<string, AssetMetadata | null>>;
 }): RecordRepository {
   const mockRecordRepository: RecordRepository = {
     countAssets: countAssets || mock(() => Promise.resolve(0)),
@@ -85,7 +90,10 @@ export function recordRepositoryMock({
       mock(() =>
         Promise.resolve([new Array<Asset>(), 'done'] as [Asset[], any])
       ),
-    storeAssets: storeAssets || mock(() => Promise.resolve())
+    storeAssets: storeAssets || mock(() => Promise.resolve()),
+    fetchMetadata:
+      fetchMetadata ||
+      mock(() => Promise.resolve(new Map<string, AssetMetadata | null>()))
   };
   return mockRecordRepository;
 }
@@ -100,7 +108,8 @@ export function blobRepositoryMock({
   fetchRange = undefined,
   assetUrl = undefined,
   thumbnailUrl = undefined,
-  previewUrl = undefined
+  previewUrl = undefined,
+  fetchMetadata = undefined
 }: {
   storeBlob?: (filepath: string, asset: Asset) => Promise<void>;
   deleteBlob?: (assetId: string) => Promise<void>;
@@ -115,6 +124,10 @@ export function blobRepositoryMock({
     assetId: string,
     opts: { width: number } | { height: number }
   ) => string;
+  fetchMetadata?: (
+    assetId: string,
+    mediaType: string
+  ) => Promise<object | null>;
 }): BlobRepository {
   const mockBlobRepository: BlobRepository = {
     storeBlob: storeBlob || mock(() => Promise.resolve()),
@@ -122,7 +135,8 @@ export function blobRepositoryMock({
     fetchRange: fetchRange || mock(() => Promise.resolve(Buffer.alloc(0))),
     assetUrl: assetUrl || mock(() => ''),
     thumbnailUrl: thumbnailUrl || mock(() => ''),
-    previewUrl: previewUrl || mock(() => '')
+    previewUrl: previewUrl || mock(() => ''),
+    fetchMetadata: fetchMetadata || mock(() => Promise.resolve(null))
   };
   return mockBlobRepository;
 }

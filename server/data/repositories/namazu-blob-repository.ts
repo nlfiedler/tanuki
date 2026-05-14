@@ -118,6 +118,28 @@ class NamazuBlobRepository implements BlobRepository {
       'width' in opts ? `width=${opts.width}` : `height=${opts.height}`;
     return `${this.baseurl}/preview/${assetId}?${param}`;
   }
+
+  /** @inheritdoc */
+  async fetchMetadata(
+    assetId: string,
+    _mediaType: string
+  ): Promise<object | null> {
+    const url = `${this.baseurl}/metadata/${assetId}`;
+    let response: Response;
+    try {
+      response = await fetch(url);
+    } catch {
+      return null;
+    }
+    // 204 = extractor not applicable (or empty). Treat as null.
+    if (response.status === 204) return null;
+    if (!response.ok) return null;
+    try {
+      return await response.json();
+    } catch {
+      return null;
+    }
+  }
 }
 
 export { NamazuBlobRepository };

@@ -136,6 +136,76 @@ describe('EXIF GPS coordinates', function () {
   });
 });
 
+describe('extractImageInfo', function () {
+  test('returns metadata, original date, and coords for an image with EXIF', async function () {
+    const info = await helpers.extractImageInfo('test/fixtures/IMG_0385.JPG');
+    expect(info).not.toBeNull();
+    expect(info!.coordinates).not.toBeNull();
+    expect(info!.metadata.gpsLatitude).toBeGreaterThan(37);
+    expect(info!.metadata.gpsLongitude).toBeLessThan(0);
+    expect(info!.metadata.hasValues()).toBeTrue();
+  });
+
+  test('returns null for a non-image file', async function () {
+    const info = await helpers.extractImageInfo('test/fixtures/lorem-ipsum.txt');
+    expect(info).toBeNull();
+  });
+});
+
+describe('parseVideoMetadata', function () {
+  test('extracts duration, codec, and rotation-adjusted dimensions', function () {
+    // synthesized ffprobe output for a portrait video with Display Matrix
+    const probe = {
+      format: {
+        duration: '10.500000',
+        tags: { creation_time: '2024-01-15T10:30:00.000000Z' }
+      },
+      streams: [
+        {
+          codec_type: 'video',
+          codec_name: 'h264',
+          width: 1920,
+          height: 1080,
+          r_frame_rate: '30000/1001',
+          side_data_list: [{ rotation: -90 }]
+        }
+      ]
+    };
+    const { metadata, originalDate } = helpers.parseVideoMetadata(probe);
+    expect(metadata.duration).toBeCloseTo(10.5);
+    expect(metadata.videoCodec).toEqual('h264');
+    expect(metadata.frameRate).toBeCloseTo(29.97, 2);
+    // sideways rotation swaps width/height
+    expect(metadata.displayWidth).toEqual(1080);
+    expect(metadata.displayHeight).toEqual(1920);
+    expect(originalDate).toEqual(Date.UTC(2024, 0, 15, 10, 30, 0));
+  });
+
+  test('returns null fields when probe has no video stream', function () {
+    const probe = { format: { duration: '1.0' }, streams: [] };
+    const { metadata } = helpers.parseVideoMetadata(probe);
+    expect(metadata.videoCodec).toBeNull();
+    expect(metadata.duration).toBeCloseTo(1);
+  });
+
+  test('honors stream.tags.rotate fallback', function () {
+    const probe = {
+      streams: [
+        {
+          codec_type: 'video',
+          codec_name: 'h264',
+          width: 1920,
+          height: 1080,
+          tags: { rotate: '90' }
+        }
+      ]
+    };
+    const { metadata } = helpers.parseVideoMetadata(probe);
+    expect(metadata.displayWidth).toEqual(1080);
+    expect(metadata.displayHeight).toEqual(1920);
+  });
+});
+
 describe('Merge locations helper', function () {
   test('should merge various location objects', async function () {
     // both are none, result is none

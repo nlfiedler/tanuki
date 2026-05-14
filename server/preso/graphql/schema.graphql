@@ -34,6 +34,46 @@ type LocationValues {
 }
 
 """
+Intrinsic metadata extracted from the asset file itself (EXIF for images,
+ffprobe for videos). All fields are nullable because real-world files vary
+widely in what they record.
+"""
+type AssetMetadata {
+  "Camera manufacturer (EXIF Make)."
+  cameraMake: String
+  "Camera model (EXIF Model)."
+  cameraModel: String
+  "Lens manufacturer (EXIF LensMake)."
+  lensMake: String
+  "Lens model (EXIF LensModel)."
+  lensModel: String
+  "Exposure time, formatted like \"1/250\"."
+  exposureTime: String
+  "Aperture f-stop number (EXIF FNumber)."
+  fNumber: Float
+  "ISO speed rating."
+  iso: Int
+  "Focal length in 35mm equivalent millimeters."
+  focalLength35mm: Float
+  "Timezone offset for the original date-time, e.g. \"+09:00\"."
+  originalDateOffset: String
+  "GPS latitude in decimal degrees (negative for south)."
+  gpsLatitude: Float
+  "GPS longitude in decimal degrees (negative for west)."
+  gpsLongitude: Float
+  "Width in pixels in the displayed orientation."
+  displayWidth: Int
+  "Height in pixels in the displayed orientation."
+  displayHeight: Int
+  "Video duration in seconds."
+  duration: Float
+  "Video frame rate in frames per second."
+  frameRate: Float
+  "Video codec name (ffprobe codec_name)."
+  videoCodec: String
+}
+
+"""
 An `Asset` defines a single entity in the storage system. This typically refers
 to an image or video, but could be any type of file.
 """
@@ -60,6 +100,8 @@ type Asset {
   location: Location
   "URL for retrieving the raw asset."
   assetUrl: String!
+  "Intrinsic metadata extracted from the asset file."
+  metadata: AssetMetadata
 }
 
 "An attribute name and the number of assets it references."
@@ -88,6 +130,8 @@ type SearchResult {
   previewUrl: String!
   "URL for retrieving the raw asset (mainly for videos)."
   assetUrl: String!
+  "Intrinsic metadata extracted from the asset file."
+  metadata: AssetMetadata
 }
 
 "`SearchMeta` is returned from the search query."
@@ -315,6 +359,25 @@ type Mutation {
   Returns the number of assets updated.
   """
   updateVideoDates: Int!
+  """
+  One-shot backfill: walk every image asset that lacks persisted metadata,
+  fetch its EXIF tags from the blob store, and populate `AssetMetadata`.
+  Returns the number of assets updated.
+  """
+  backfillImageMetadata: Int!
+  """
+  One-shot backfill: walk every video asset that lacks persisted metadata,
+  fetch its ffprobe output from the blob store, and populate `AssetMetadata`.
+  Returns the number of assets updated.
+  """
+  backfillVideoMetadata: Int!
+  """
+  One-shot fix: re-parse `originalDate` on image assets using the EXIF
+  `OffsetTimeOriginal` tag (when present). Corrects records whose existing
+  `originalDate` was stored as a UTC interpretation of local-clock EXIF
+  fields. Returns the number of assets whose date changed.
+  """
+  fixOriginalDates: Int!
 }
 
 schema {

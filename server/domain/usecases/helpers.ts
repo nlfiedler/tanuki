@@ -10,6 +10,7 @@ import ExifReader from 'exifreader';
 import mime from 'mime';
 import { createFile, Log, MP4BoxBuffer, type Movie } from 'mp4box';
 import { ulid } from 'ulid';
+import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
 import {
   Coordinates,
   Geocoded,
@@ -237,22 +238,42 @@ const DATE_REGEXP = new RegExp(
   String.raw`^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})`
 );
 
+// EXIF OffsetTimeOriginal values like "+09:00" or "-08:00", or "Z".
+const OFFSET_REGEXP = /^([+-])(\d{2}):(\d{2})$/;
+
 /**
  * Convert the Exif formatted date/time into UTC milliseconds, or null if the
- * value could not be parsed successfully.
+ * value could not be parsed successfully. If `offset` is supplied (a string
+ * like "+09:00", "-08:00", or "Z"), the EXIF date is treated as local time in
+ * that offset and converted to UTC. If `offset` is omitted, the date is
+ * treated as already in UTC — historically the only behavior, kept as a
+ * fallback for files without `OffsetTimeOriginal`.
  */
-function parseExifDate(value: string): number | null {
+function parseExifDate(value: string, offset?: string | null): number | null {
   const m = DATE_REGEXP.exec(value);
   if (m == null) {
     return null;
   }
-  return Date.UTC(
+  const utcGuess = Date.UTC(
     Number.parseInt(m[1] || '0'),
     Number.parseInt(m[2] || '0') - 1, // Date uses zero-based month
     Number.parseInt(m[3] || '0'),
     Number.parseInt(m[4] || '0'),
-    Number.parseInt(m[5] || '0')
+    Number.parseInt(m[5] || '0'),
+    Number.parseInt(m[6] || '0')
   );
+  if (!offset) return utcGuess;
+  if (offset === 'Z') return utcGuess;
+  const om = OFFSET_REGEXP.exec(offset);
+  if (om == null) return utcGuess;
+  const sign = om[1] === '-' ? -1 : 1;
+  const offsetMinutes =
+    sign *
+    (Number.parseInt(om[2] || '0') * 60 + Number.parseInt(om[3] || '0'));
+  // `utcGuess` reads the local-clock components as if they were UTC. To get
+  // true UTC, subtract the offset (a +09:00 local time is 9 hours ahead of
+  // UTC, so true UTC = local - 9h).
+  return utcGuess - offsetMinutes * 60 * 1000;
 }
 
 // help TypeScript check the type of the latitude/longitude data
@@ -331,6 +352,302 @@ export async function getCoordinates(
 //     ],
 //     description: 122.06325555555556,
 //   },
+
+/**
+ * Combined output of reading the EXIF tags from an image file.
+ */
+export type ImageInfo = {
+  originalDate: number | null;
+  coordinates: Coordinates | null;
+  metadata: AssetMetadata;
+};
+
+/**
+ * Single-pass EXIF read for an image file. Returns the original date (as
+ * milliseconds since epoch, offset-aware when `OffsetTimeOriginal` is
+ * present), GPS coordinates, and an `AssetMetadata` populated from the file's
+ * tags. Returns null if EXIF could not be read at all.
+ *
+ * Strips embedded thumbnails / preview blobs from the raw tag map before
+ * storing it on the metadata, so the persisted `raw` field stays compact.
+ */
+export async function extractImageInfo(
+  filepath: string
+): Promise<ImageInfo | null> {
+  try {
+    const tags: any = await ExifReader.load(filepath);
+    return parseImageTags(tags);
+  } catch {
+    return null;
+  }
+}
+
+function tagDescription(tag: any): string | null {
+  if (!tag) return null;
+  if (typeof tag.description === 'string' && tag.description.length > 0) {
+    return tag.description.trim();
+  }
+  if (Array.isArray(tag.value) && tag.value.length > 0) {
+    return String(tag.value[0]).trim();
+  }
+  if (typeof tag.value === 'string') return tag.value.trim();
+  if (typeof tag.value === 'number') return String(tag.value);
+  return null;
+}
+
+function tagNumber(tag: any): number | null {
+  if (!tag) return null;
+  if (typeof tag.value === 'number') return tag.value;
+  if (Array.isArray(tag.value) && tag.value.length > 0) {
+    const v = tag.value[0];
+    if (typeof v === 'number') return v;
+    // rational [num, den]
+    if (Array.isArray(v) && v.length === 2 && typeof v[0] === 'number') {
+      const den = typeof v[1] === 'number' && v[1] !== 0 ? v[1] : 1;
+      return v[0] / den;
+    }
+  }
+  if (typeof tag.description === 'string') {
+    const n = Number.parseFloat(tag.description);
+    if (!Number.isNaN(n)) return n;
+  }
+  return null;
+}
+
+export function parseImageTags(tags: any): ImageInfo {
+  const metadata = new AssetMetadata();
+
+  metadata.cameraMake = tagDescription(tags.Make);
+  metadata.cameraModel = tagDescription(tags.Model);
+  metadata.lensMake = tagDescription(tags.LensMake);
+  metadata.lensModel = tagDescription(tags.LensModel);
+  metadata.exposureTime = tagDescription(tags.ExposureTime);
+  metadata.fNumber = tagNumber(tags.FNumber);
+  metadata.iso = tagNumber(tags.ISOSpeedRatings);
+  metadata.focalLength35mm =
+    tagNumber(tags.FocalLengthIn35mmFilm) ?? tagNumber(tags.FocalLength);
+  metadata.originalDateOffset = tagDescription(tags.OffsetTimeOriginal);
+
+  // Image dimensions adjusted for EXIF Orientation.
+  const orientation = tagNumber(tags.Orientation) ?? 1;
+  // ExifReader exposes dimensions under several keys depending on the source
+  // segment: PixelXDimension/PixelYDimension (EXIF), ImageWidth/ImageLength
+  // (TIFF), and 'Image Width'/'Image Height' (file-level / JFIF).
+  const rawW =
+    tagNumber(tags.PixelXDimension) ??
+    tagNumber(tags.ImageWidth) ??
+    tagNumber(tags['Image Width']);
+  const rawH =
+    tagNumber(tags.PixelYDimension) ??
+    tagNumber(tags.ImageLength) ??
+    tagNumber(tags.ImageHeight) ??
+    tagNumber(tags['Image Height']);
+  if (rawW !== null && rawH !== null) {
+    const sideways = orientation >= 5 && orientation <= 8;
+    metadata.displayWidth = sideways ? rawH : rawW;
+    metadata.displayHeight = sideways ? rawW : rawH;
+  }
+
+  // Coordinates (also returned separately so the import path can geocode).
+  const coordinates = parseGpsCoords(tags);
+  if (coordinates) {
+    const [lat, lon] = coordinates.intoDecimals();
+    metadata.gpsLatitude = lat;
+    metadata.gpsLongitude = lon;
+  }
+
+  // Original date, offset-aware when OffsetTimeOriginal is present.
+  let originalDate: number | null = null;
+  if (tags.DateTimeOriginal) {
+    originalDate = parseExifDate(
+      tags.DateTimeOriginal.description,
+      metadata.originalDateOffset
+    );
+  }
+
+  // Strip large embedded blobs from the raw tag map before storing.
+  metadata.raw = stripRawImageTags(tags);
+
+  return { originalDate, coordinates, metadata };
+}
+
+function parseGpsCoords(tags: any): Coordinates | null {
+  if (!Array.isArray(tags.GPSLatitudeRef?.value)) return null;
+  const coords = new Coordinates('N', [0, 0, 0], 'E', [0, 0, 0]);
+  if (tags.GPSLatitudeRef.value[0] === 'S') coords.setLatitudeRef('S');
+  if (Array.isArray(tags.GPSLatitude?.value)) {
+    const numbers = tags.GPSLatitude.value as ExifNumberPairs;
+    coords.setLatitudeDegrees(numbers[0][0] / numbers[0][1]);
+    coords.setLatitudeMinutes(numbers[1][0] / numbers[1][1]);
+    coords.setLatitudeSeconds(numbers[2][0] / numbers[2][1]);
+  }
+  if (Array.isArray(tags.GPSLongitudeRef?.value)) {
+    if (tags.GPSLongitudeRef.value[0] === 'W') coords.setLongitudeRef('W');
+    if (Array.isArray(tags.GPSLongitude?.value)) {
+      const numbers = tags.GPSLongitude.value as ExifNumberPairs;
+      coords.setLongitudeDegrees(numbers[0][0] / numbers[0][1]);
+      coords.setLongitudeMinutes(numbers[1][0] / numbers[1][1]);
+      coords.setLongitudeSeconds(numbers[2][0] / numbers[2][1]);
+    }
+  }
+  return coords;
+}
+
+// Tag names that contain large embedded blobs (base64-encoded image data or
+// proprietary maker notes). These are useless to Tanuki and bloat the stored
+// raw JSON.
+const RAW_TAGS_TO_STRIP = new Set([
+  'Thumbnail',
+  'PreviewImage',
+  'MakerNote',
+  'Images',
+  'Exif IFD Pointer',
+  'GPS Info IFD Pointer',
+  'Interoperability IFD Pointer'
+]);
+
+export function stripRawImageTags(tags: any): object {
+  const out: any = {};
+  for (const [key, value] of Object.entries(tags)) {
+    if (RAW_TAGS_TO_STRIP.has(key)) continue;
+    out[key] = value;
+  }
+  return out;
+}
+
+/**
+ * Combined output of running ffprobe on a video file.
+ */
+export type VideoInfo = {
+  originalDate: number | null;
+  metadata: AssetMetadata;
+  raw: object;
+};
+
+/**
+ * Run ffprobe on the file at the given path and return the parsed JSON.
+ * Returns null if ffprobe exits non-zero or the output cannot be parsed.
+ *
+ * Uses the canonical "dump useful info" invocation: `-show_format` for
+ * container info and tags, `-show_streams` for per-stream details. This is
+ * the same shape Namazu returns from `GET /metadata/:id` for videos.
+ */
+export async function runFfprobe(filepath: string): Promise<any | null> {
+  try {
+    const proc = Bun.spawn(
+      [
+        'ffprobe',
+        '-v',
+        'error',
+        '-print_format',
+        'json',
+        '-show_format',
+        '-show_streams',
+        filepath
+      ],
+      { stdout: 'pipe', stderr: 'pipe' }
+    );
+    const stdout = await new Response(proc.stdout).text();
+    await proc.exited;
+    if (proc.exitCode !== 0) return null;
+    return JSON.parse(stdout);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extract video metadata and the creation_time date from a parsed ffprobe
+ * result. The shape of `probe` matches the JSON returned by
+ * `ffprobe -print_format json -show_format -show_streams`.
+ */
+export function parseVideoMetadata(probe: any): {
+  metadata: AssetMetadata;
+  originalDate: number | null;
+} {
+  const metadata = new AssetMetadata();
+  const format = probe?.format ?? null;
+  const streams: any[] = Array.isArray(probe?.streams) ? probe.streams : [];
+  const videoStream = streams.find((s) => s.codec_type === 'video') ?? null;
+
+  // duration: prefer the format-level value, fall back to the stream's.
+  if (format?.duration) {
+    const d = Number.parseFloat(format.duration);
+    if (!Number.isNaN(d)) metadata.duration = d;
+  }
+  if (metadata.duration === null && videoStream?.duration) {
+    const d = Number.parseFloat(videoStream.duration);
+    if (!Number.isNaN(d)) metadata.duration = d;
+  }
+
+  if (videoStream) {
+    metadata.videoCodec = videoStream.codec_name ?? null;
+    metadata.frameRate = parseRational(videoStream.r_frame_rate);
+    let w = typeof videoStream.width === 'number' ? videoStream.width : null;
+    let h = typeof videoStream.height === 'number' ? videoStream.height : null;
+    if (w !== null && h !== null && isSideways(videoStream)) {
+      [w, h] = [h, w];
+    }
+    metadata.displayWidth = w;
+    metadata.displayHeight = h;
+  }
+
+  let originalDate: number | null = null;
+  const ct = format?.tags?.creation_time ?? videoStream?.tags?.creation_time;
+  if (typeof ct === 'string') {
+    const parsed = Date.parse(ct);
+    if (!Number.isNaN(parsed)) originalDate = parsed;
+  }
+
+  metadata.raw = probe;
+  return { metadata, originalDate };
+}
+
+function parseRational(value: any): number | null {
+  if (typeof value !== 'string') return null;
+  const parts = value.split('/');
+  if (parts.length !== 2) return null;
+  const num = Number.parseFloat(parts[0] || '');
+  const den = Number.parseFloat(parts[1] || '');
+  if (Number.isNaN(num) || Number.isNaN(den) || den === 0) return null;
+  return num / den;
+}
+
+function isSideways(stream: any): boolean {
+  // Modern ffprobe reports rotation in side_data_list entries of type
+  // "Display Matrix". Older versions used stream.tags.rotate. Accept either.
+  const sideData: any[] = Array.isArray(stream.side_data_list)
+    ? stream.side_data_list
+    : [];
+  for (const entry of sideData) {
+    if (typeof entry.rotation === 'number') {
+      const abs = Math.abs(entry.rotation);
+      if (abs === 90 || abs === 270) return true;
+    }
+  }
+  const tagRotate = stream.tags?.rotate;
+  if (tagRotate !== undefined) {
+    const r = Number.parseInt(String(tagRotate), 10);
+    if (!Number.isNaN(r)) {
+      const abs = Math.abs(r) % 360;
+      if (abs === 90 || abs === 270) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Combined ffprobe + metadata extraction for a video file at a local path.
+ * Returns null if ffprobe failed.
+ */
+export async function extractVideoInfo(
+  filepath: string
+): Promise<VideoInfo | null> {
+  const probe = await runFfprobe(filepath);
+  if (probe === null) return null;
+  const { metadata, originalDate } = parseVideoMetadata(probe);
+  return { metadata, originalDate, raw: probe };
+}
 
 /**
  * Sort the search results if the field is specified, in the order given.
