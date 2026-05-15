@@ -122,7 +122,7 @@ class NamazuBlobRepository implements BlobRepository {
   /** @inheritdoc */
   async fetchMetadata(
     assetId: string,
-    _mediaType: string
+    mediaType: string
   ): Promise<object | null> {
     const url = `${this.baseurl}/metadata/${assetId}`;
     let response: Response;
@@ -134,12 +134,52 @@ class NamazuBlobRepository implements BlobRepository {
     // 204 = extractor not applicable (or empty). Treat as null.
     if (response.status === 204) return null;
     if (!response.ok) return null;
+    let json: any;
     try {
-      return await response.json();
+      json = await response.json();
     } catch {
       return null;
     }
+    if (mediaType.startsWith('image/')) {
+      return normalizeNamazuImageTags(json);
+    }
+    return json;
   }
+}
+
+// Reconcile namazu's `/metadata` output with the ExifReader-shaped tag map
+// that `parseImageTags` reads. Namazu (via kamadak-exif) renders ASCII
+// tags inside literal double quotes and uses hyphens in DateTime display
+// strings, and appends units like " s" to ExposureTime — none of which
+// match what ExifReader produces. Fortunately each tag also carries the
+// raw typed `value`, so we can substitute the unquoted/raw form there.
+function normalizeNamazuImageTags(tags: any): any {
+  if (!tags || typeof tags !== 'object') return tags;
+  const out: any = {};
+  for (const [key, entry] of Object.entries(tags)) {
+    if (
+      entry &&
+      typeof entry === 'object' &&
+      'description' in entry &&
+      'value' in entry
+    ) {
+      const e = entry as { description: string; value: unknown };
+      let description = e.description;
+      if (
+        Array.isArray(e.value) &&
+        e.value.length > 0 &&
+        e.value.every((v) => typeof v === 'string')
+      ) {
+        description = e.value[0] as string;
+      } else if (key === 'ExposureTime' && description.endsWith(' s')) {
+        description = description.slice(0, -2);
+      }
+      out[key] = { ...e, description };
+    } else {
+      out[key] = entry;
+    }
+  }
+  return out;
 }
 
 export { NamazuBlobRepository };

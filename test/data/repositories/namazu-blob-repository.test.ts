@@ -129,6 +129,105 @@ describe('NamazuBlobRepository', function () {
     await sut.storeBlob(incoming, asset);
   });
 
+  test('fetchMetadata normalizes image tags from namazu shape', async function () {
+    const assetId = 'MjAxOC8wNS8zMS8yMTAwL2Zvby5qcGc';
+    // Mirrors namazu's actual `/metadata` response: each tag is an object
+    // with kamadak-exif's display `description` and the raw typed `value`.
+    mockFetch(
+      {
+        url: `http://example.com/metadata/${assetId}`,
+        method: 'GET'
+      },
+      Response.json({
+        Make: {
+          description: '"EASTMAN KODAK COMPANY"',
+          value: ['EASTMAN KODAK COMPANY']
+        },
+        Model: {
+          description: '"KODAK DC280 ZOOM DIGITAL CAMERA"',
+          value: ['KODAK DC280 ZOOM DIGITAL CAMERA']
+        },
+        DateTimeOriginal: {
+          description: '2003-09-03 17:24:35',
+          value: ['2003:09:03 17:24:35']
+        },
+        ExposureTime: {
+          description: '1/125 s',
+          value: [[1, 125]]
+        },
+        FNumber: {
+          description: 'f/9.5',
+          value: [[95, 10]]
+        },
+        Orientation: {
+          description: 'row 0 at top and column 0 at left',
+          value: [1]
+        }
+      })
+    );
+
+    const settingsRepository = new EnvSettingsRepository();
+    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    const sut = new NamazuBlobRepository({ settingsRepository });
+    const result: any = await sut.fetchMetadata(assetId, 'image/jpeg');
+
+    // ASCII tags use raw value: no embedded quotes.
+    expect(result.Make.description).toEqual('EASTMAN KODAK COMPANY');
+    expect(result.Model.description).toEqual('KODAK DC280 ZOOM DIGITAL CAMERA');
+    // DateTimeOriginal uses colon-separated format from raw value so
+    // parseExifDate can read it.
+    expect(result.DateTimeOriginal.description).toEqual('2003:09:03 17:24:35');
+    // ExposureTime drops the trailing seconds unit.
+    expect(result.ExposureTime.description).toEqual('1/125');
+    // Non-ASCII, non-ExposureTime descriptions pass through unchanged.
+    expect(result.FNumber.description).toEqual('f/9.5');
+    expect(result.Orientation.description).toEqual(
+      'row 0 at top and column 0 at left'
+    );
+    // Raw typed value is preserved on every tag.
+    expect(result.FNumber.value).toEqual([[95, 10]]);
+    expect(result.Orientation.value).toEqual([1]);
+  });
+
+  test('fetchMetadata passes video metadata through unchanged', async function () {
+    const assetId = 'MjAxOS0wNC0xNS8wODMwL3ZpZGVvLm1wNA';
+    const videoMeta = {
+      streams: [
+        { codec_type: 'video', codec_name: 'h264', width: 1920, height: 1080 }
+      ],
+      format: { duration: '12.5' }
+    };
+    mockFetch(
+      {
+        url: `http://example.com/metadata/${assetId}`,
+        method: 'GET'
+      },
+      Response.json(videoMeta)
+    );
+
+    const settingsRepository = new EnvSettingsRepository();
+    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    const sut = new NamazuBlobRepository({ settingsRepository });
+    const result = await sut.fetchMetadata(assetId, 'video/mp4');
+    expect(result).toEqual(videoMeta);
+  });
+
+  test('fetchMetadata returns null on 204', async function () {
+    const assetId = 'MjAxOS0wNC0xNS8wODMwL2VtcHR5LnR4dA';
+    mockFetch(
+      {
+        url: `http://example.com/metadata/${assetId}`,
+        method: 'GET'
+      },
+      new Response(null, { status: 204 })
+    );
+    const settingsRepository = new EnvSettingsRepository();
+    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    const sut = new NamazuBlobRepository({ settingsRepository });
+    const result = await sut.fetchMetadata(assetId, 'image/jpeg');
+    expect(result).toBeNull();
+  });
+
   test('should delete file and get a 200 response', async function () {
     const relpath = '2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg';
     const buf = Buffer.from(relpath, 'utf8');
