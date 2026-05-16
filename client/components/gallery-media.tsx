@@ -34,6 +34,7 @@ function GalleryMedia(props: GalleryMediaProps) {
             asset={props.asset}
             imageClass={props.imageClass}
             onAspect={props.onAspect}
+            src={props.asset.thumbnailUrl}
           />
           <span class="gallery-play-overlay" aria-hidden="true">
             <i class="fa-solid fa-circle-play"></i>
@@ -51,13 +52,17 @@ interface PreviewImageProps {
   asset: SearchResult;
   imageClass: string;
   onAspect?: (aspect: number) => void;
+  // Override the image source; defaults to the asset's preview URL. Used for
+  // videos, where the thumbnail route extracts a frame but the preview route
+  // (on the namazu backend) does not.
+  src?: string;
 }
 
 function PreviewImage(props: PreviewImageProps) {
   return (
     <img
       class={props.imageClass}
-      src={props.asset.previewUrl}
+      src={props.src ?? props.asset.previewUrl}
       alt={props.asset.filename}
       loading="lazy"
       onLoad={(e) => {

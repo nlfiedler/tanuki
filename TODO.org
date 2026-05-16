@@ -90,7 +90,7 @@
 - format (JPEG), dimensions, file size
 - original file name
 - location place, city, region
-*** TODO can videos show a thumbnail instead of placeholder?
+*** DONE can videos show a thumbnail instead of placeholder?
 *** TODO search page should have same gallery features as home page
 *** TODO deploy and run the backfill operations on chihiro
 *** TODO run back-fill: fix original dates

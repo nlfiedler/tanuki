@@ -7,6 +7,7 @@ import sharp from 'sharp';
 const VIDEO_EXTENSIONS = new Set([
   '.mp4',
   '.mov',
+  '.qt',
   '.m4v',
   '.webm',
   '.mkv',
