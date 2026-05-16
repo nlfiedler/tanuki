@@ -150,6 +150,22 @@ describe('extractImageInfo', function () {
     const info = await helpers.extractImageInfo('test/fixtures/lorem-ipsum.txt');
     expect(info).toBeNull();
   });
+
+  test('returns displayWidth/displayHeight for f1t.jpg', async function () {
+    const info = await helpers.extractImageInfo('test/fixtures/f1t.jpg');
+    expect(info).not.toBeNull();
+    expect(info!.metadata.displayWidth).toEqual(48);
+    expect(info!.metadata.displayHeight).toEqual(80);
+  });
+
+  test('falls back to sharp dimensions when ExifReader fails', async function () {
+    // SVG is an image format sharp can read but ExifReader rejects, forcing
+    // the imageInfoFromDimensions fallback path.
+    const info = await helpers.extractImageInfo('test/fixtures/red-rect.svg');
+    expect(info).not.toBeNull();
+    expect(info!.metadata.displayWidth).toEqual(80);
+    expect(info!.metadata.displayHeight).toEqual(46);
+  });
 });
 
 describe('parseVideoMetadata', function () {

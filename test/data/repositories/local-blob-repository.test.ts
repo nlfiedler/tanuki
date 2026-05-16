@@ -94,6 +94,41 @@ describe('LocalBlobRepository', function () {
     expect(await accessible(incoming)).toBeFalse();
   });
 
+  test('should return image dimensions for f1t.jpg', async function () {
+    // arrange
+    const relpath = 'f1t.jpg';
+    const key = Buffer.from(relpath, 'utf8').toString('base64url');
+    const settingsRepository = new EnvSettingsRepository();
+    settingsRepository.set('ASSETS_PATH', 'test/fixtures');
+    const sut = new LocalBlobRepository({ settingsRepository });
+    // act
+    const tags: any = await sut.fetchMetadata(key, 'image/jpeg');
+    // assert
+    expect(tags).not.toBeNull();
+    const width =
+      tags.PixelXDimension?.value ?? tags['Image Width']?.value;
+    const height =
+      tags.PixelYDimension?.value ?? tags['Image Height']?.value;
+    expect(width).toEqual(48);
+    expect(height).toEqual(80);
+  });
+
+  test('should fall back to sharp dimensions when ExifReader fails', async function () {
+    // arrange — SVG is an image format sharp can read but ExifReader rejects,
+    // forcing the imageDimensionTags fallback path in fetchMetadata.
+    const relpath = 'red-rect.svg';
+    const key = Buffer.from(relpath, 'utf8').toString('base64url');
+    const settingsRepository = new EnvSettingsRepository();
+    settingsRepository.set('ASSETS_PATH', 'test/fixtures');
+    const sut = new LocalBlobRepository({ settingsRepository });
+    // act
+    const tags: any = await sut.fetchMetadata(key, 'image/svg+xml');
+    // assert
+    expect(tags).not.toBeNull();
+    expect(tags.PixelXDimension?.value).toEqual(80);
+    expect(tags.PixelYDimension?.value).toEqual(46);
+  });
+
   test('should delete a file from the blob store', async function () {
     // arrange
     const relpath = '2018/05/31/2100/01bx5zzkbkactav9wevgemmvrz.jpg';

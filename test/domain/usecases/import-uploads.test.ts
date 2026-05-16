@@ -67,6 +67,13 @@ describe('ImportUploads use case', function () {
           expect(asset.mediaType).toEqual('video/x-msvideo');
           expect(asset.filename).toEqual('MVI_0727.AVI');
         }
+        if (
+          asset.checksum ===
+          'sha256-eed73695f69ab102300cf1bb4b7aa9227fce5d29ab1e3820d5da8c8a782b5e7e'
+        ) {
+          expect(asset.mediaType).toEqual('image/svg+xml');
+          expect(asset.filename).toEqual('red-rect.svg');
+        }
         return Promise.resolve();
       })
     });
@@ -83,9 +90,9 @@ describe('ImportUploads use case', function () {
     // act
     const actual = await usecase('test/fixtures');
     // assert
-    expect(actual).toEqual(12);
-    expect(mockBlobRepository.storeBlob).toHaveBeenCalledTimes(12);
-    expect(mockRecordRepository.putAsset).toHaveBeenCalledTimes(12);
+    expect(actual).toEqual(13);
+    expect(mockBlobRepository.storeBlob).toHaveBeenCalledTimes(13);
+    expect(mockRecordRepository.putAsset).toHaveBeenCalledTimes(13);
     mock.clearAllMocks();
   });
 });

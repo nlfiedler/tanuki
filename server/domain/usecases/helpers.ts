@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import ExifReader from 'exifreader';
 import mime from 'mime';
 import { createFile, Log, MP4BoxBuffer, type Movie } from 'mp4box';
+import sharp from 'sharp';
 import { ulid } from 'ulid';
 import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
 import {
@@ -377,6 +378,24 @@ export async function extractImageInfo(
   try {
     const tags: any = await ExifReader.load(filepath);
     return parseImageTags(tags);
+  } catch {
+    return imageInfoFromDimensions(filepath);
+  }
+}
+
+// Fallback for images lacking an EXIF header: probe pixel dimensions with
+// sharp and surface them as displayWidth/displayHeight so the asset still
+// gets dimensional metadata.
+async function imageInfoFromDimensions(
+  filepath: string
+): Promise<ImageInfo | null> {
+  try {
+    const { width, height } = await sharp(filepath).metadata();
+    if (typeof width !== 'number' || typeof height !== 'number') return null;
+    const metadata = new AssetMetadata();
+    metadata.displayWidth = width;
+    metadata.displayHeight = height;
+    return { originalDate: null, coordinates: null, metadata };
   } catch {
     return null;
   }

@@ -5,6 +5,7 @@ import assert from 'node:assert';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import ExifReader from 'exifreader';
+import sharp from 'sharp';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { type BlobRepository } from 'tanuki/server/domain/repositories/blob-repository.ts';
 import { type SettingsRepository } from 'tanuki/server/domain/repositories/settings-repository.ts';
@@ -104,12 +105,32 @@ class LocalBlobRepository implements BlobRepository {
         const tags = await ExifReader.load(filepath);
         return stripRawImageTags(tags);
       } catch {
-        return null;
+        return imageDimensionTags(filepath);
       }
     }
     if (mediaType.startsWith('video/')) {
       return runFfprobe(filepath);
     }
+    return null;
+  }
+}
+
+/**
+ * Fallback for images lacking an EXIF header: probe the raw pixel dimensions
+ * with sharp and return them shaped like ExifReader tags so downstream
+ * consumers (parseImageTags, etc.) can read them via the usual keys.
+ */
+async function imageDimensionTags(
+  filepath: string
+): Promise<object | null> {
+  try {
+    const { width, height } = await sharp(filepath).metadata();
+    if (typeof width !== 'number' || typeof height !== 'number') return null;
+    return {
+      PixelXDimension: { value: width, description: String(width) },
+      PixelYDimension: { value: height, description: String(height) }
+    };
+  } catch {
     return null;
   }
 }
