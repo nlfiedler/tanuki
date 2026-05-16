@@ -21,6 +21,11 @@ import {
   SortOrder
 } from 'tanuki/generated/graphql.ts';
 import CardsGrid from '../components/cards-grid.tsx';
+import JustifiedRows from '../components/justified-rows.tsx';
+import LayoutSelector, {
+  type GalleryLayout
+} from '../components/layout-selector.tsx';
+import MasonryGrid from '../components/masonry-grid.tsx';
 import Pagination from '../components/pagination.tsx';
 import useLocalStorage from '../hooks/use-local-storage.ts';
 
@@ -49,6 +54,7 @@ const SCAN_ASSETS: TypedDocumentNode<Query, QueryScanArgs> = gql`
           region
         }
         mediaType
+        previewUrl
         thumbnailUrl
         assetUrl
         metadata {
@@ -98,6 +104,10 @@ function Search() {
     1
   );
   const [pageSize, setPageSize] = useLocalStorage('page-size', 18);
+  const [galleryLayout, setGalleryLayout] = useLocalStorage<GalleryLayout>(
+    'search-gallery-layout',
+    'cards'
+  );
   const scanParams = createMemo(() => ({
     query: queryString(),
     offset: pageSize() * (selectedPage() - 1),
@@ -189,16 +199,38 @@ function Search() {
                 setPageSize={setPageSize}
               />
             </Suspense>
+            <div class="level-item">
+              <LayoutSelector
+                selectedLayout={galleryLayout}
+                setLayout={(layout) => setGalleryLayout(layout)}
+              />
+            </div>
           </div>
         </nav>
       </div>
 
       <Suspense fallback={<button class="button is-loading">...</button>}>
-        <CardsGrid
-          results={assetsQuery()?.scan.results}
-          selectedAssets={selectedAssets}
-          onClick={(_, index) => beginBrowsing(index)}
-        />
+        <Switch>
+          <Match when={galleryLayout() === 'rows'}>
+            <JustifiedRows
+              results={assetsQuery()?.scan.results}
+              onClick={(_, index) => beginBrowsing(index)}
+            />
+          </Match>
+          <Match when={galleryLayout() === 'cards'}>
+            <CardsGrid
+              results={assetsQuery()?.scan.results}
+              selectedAssets={selectedAssets}
+              onClick={(_, index) => beginBrowsing(index)}
+            />
+          </Match>
+          <Match when={galleryLayout() === 'masonry'}>
+            <MasonryGrid
+              results={assetsQuery()?.scan.results}
+              onClick={(_, index) => beginBrowsing(index)}
+            />
+          </Match>
+        </Switch>
       </Suspense>
     </>
   );
