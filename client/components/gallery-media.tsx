@@ -59,12 +59,19 @@ interface PreviewImageProps {
 }
 
 function PreviewImage(props: PreviewImageProps) {
+  // Intrinsic dimensions from extracted metadata let the browser reserve the
+  // correct aspect ratio before the image loads (preventing layout shift). CSS
+  // still controls the rendered size; width/height here only fix the ratio.
+  const intrinsicWidth = () => props.asset.metadata?.displayWidth ?? undefined;
+  const intrinsicHeight = () => props.asset.metadata?.displayHeight ?? undefined;
   return (
     <img
       class={props.imageClass}
       src={props.src ?? props.asset.previewUrl}
       alt={props.asset.filename}
       loading="lazy"
+      width={intrinsicWidth()}
+      height={intrinsicHeight()}
       onLoad={(e) => {
         if (!props.onAspect) return;
         const img = e.currentTarget;

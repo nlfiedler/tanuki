@@ -59,6 +59,10 @@ const SCAN_ASSETS: TypedDocumentNode<Query, QueryScanArgs> = gql`
         mediaType
         thumbnailUrl
         assetUrl
+        metadata {
+          displayWidth
+          displayHeight
+        }
       }
       count
       lastPage

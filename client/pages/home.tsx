@@ -47,6 +47,10 @@ const SEARCH_ASSETS: TypedDocumentNode<Query, QuerySearchArgs> = gql`
         previewUrl
         thumbnailUrl
         assetUrl
+        metadata {
+          displayWidth
+          displayHeight
+        }
       }
       count
       lastPage

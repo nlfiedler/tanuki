@@ -49,6 +49,10 @@ const PENDING_ASSETS: TypedDocumentNode<Query, QueryPendingArgs> = gql`
         mediaType
         thumbnailUrl
         assetUrl
+        metadata {
+          displayWidth
+          displayHeight
+        }
       }
       count
       lastPage

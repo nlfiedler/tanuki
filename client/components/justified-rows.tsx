@@ -32,10 +32,16 @@ interface TileProps {
 }
 
 function Tile(props: TileProps) {
-  // Default 3:2 landscape until the image reports its natural aspect; then
-  // the flex-basis formula (--aspect * --row-height) gives each tile its
-  // proper proportional width within the row.
-  const [aspect, setAspect] = createSignal(1.5);
+  // Seed from extracted metadata when available so the row packs correctly on
+  // first paint; otherwise fall back to 3:2 landscape and let onAspect update
+  // once the image loads. The flex-basis formula (--aspect * --row-height)
+  // gives each tile its proper proportional width within the row.
+  const initialAspect = () => {
+    const w = props.asset.metadata?.displayWidth;
+    const h = props.asset.metadata?.displayHeight;
+    return w && h && h > 0 ? w / h : 1.5;
+  };
+  const [aspect, setAspect] = createSignal(initialAspect());
 
   return (
     <button

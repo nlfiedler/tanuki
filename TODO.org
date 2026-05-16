@@ -80,7 +80,7 @@
 *** DONE run the following locally to test the operations (nothing changed)
 *** DONE dump/load use cases should round-trip ~metadata~
 *** DONE import new assets locally to test the behavior via GraphQL
-*** TODO use search result =metadata.displayHeight= and =.displayWidth= to help column layout
+*** DONE use search result =metadata.displayHeight= and =.displayWidth= to help column layout
 *** TODO grid of 640x640 images with caption info (date, location/filename) (a la PhotoPrism)
 **** details below the thumbnail with tiny icons (see screenshot on desktop)
 - label / city / year
