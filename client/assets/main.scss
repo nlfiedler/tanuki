@@ -193,3 +193,98 @@ body {
 .masonry-tile:hover .masonry-caption {
   opacity: 1;
 }
+
+// Details (PhotoPrism-style) gallery: a grid of fixed-aspect square thumbnails
+// with several lines of metadata text below each one. The grid auto-fills the
+// viewport with cells; each cell crops its image to a square via object-fit.
+.thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.thumb-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: hidden;
+  cursor: pointer;
+  background-color: hsl(0, 0%, 12%);
+  color: hsl(0, 0%, 95%);
+  border-radius: 6px;
+  // Strip native <button> chrome.
+  padding: 0;
+  border: 0;
+  font: inherit;
+  text-align: inherit;
+  appearance: none;
+
+  &:focus-visible {
+    outline: 2px solid hsl(217, 71%, 53%);
+    outline-offset: -2px;
+  }
+}
+
+.thumb-image-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background-color: hsl(0, 0%, 18%);
+}
+
+.thumb-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumb-info {
+  padding: 0.6rem 0.8rem 0.75rem;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.thumb-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thumb-line {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  .icon {
+    flex: 0 0 auto;
+    width: 1em;
+    height: 1em;
+    color: hsl(0, 0%, 65%);
+  }
+
+  span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

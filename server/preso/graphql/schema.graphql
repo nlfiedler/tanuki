@@ -71,6 +71,8 @@ type AssetMetadata {
   frameRate: Float
   "Video codec name (ffprobe codec_name)."
   videoCodec: String
+  "Size in bytes of the stored asset blob."
+  byteLength: BigInt
 }
 
 """

@@ -775,11 +775,13 @@ describe('SqliteRecordRepository', function () {
     const afterPut = await sut.getAssetById('meta-clear');
     expect(afterPut?.metadata).not.toBeNull();
 
-    // then store again with metadata null — row should be deleted
+    // then store again with metadata null — extracted metadata row should be
+    // deleted, leaving a byteLength-only metadata on read.
     asset.metadata = null;
     await sut.putAsset(asset);
     const afterClear = await sut.getAssetById('meta-clear');
-    expect(afterClear?.metadata).toBeNull();
+    expect(afterClear?.metadata?.hasValues()).toBe(false);
+    expect(afterClear?.metadata?.byteLength).toEqual(asset.byteLength);
 
     // empty AssetMetadata (no values) behaves the same as null
     asset.metadata = meta; // restore
@@ -787,7 +789,8 @@ describe('SqliteRecordRepository', function () {
     asset.metadata = new AssetMetadata();
     await sut.putAsset(asset);
     const afterEmpty = await sut.getAssetById('meta-clear');
-    expect(afterEmpty?.metadata).toBeNull();
+    expect(afterEmpty?.metadata?.hasValues()).toBe(false);
+    expect(afterEmpty?.metadata?.byteLength).toEqual(asset.byteLength);
   });
 
   test('fetchMetadata should return a map keyed by asset id with missing entries as null', async function () {
@@ -809,7 +812,10 @@ describe('SqliteRecordRepository', function () {
     expect(result.size).toEqual(3);
     expect(result.get('with-meta')?.cameraMake).toEqual('Sony');
     expect(result.get('with-meta')?.fNumber).toBeCloseTo(1.8);
-    expect(result.get('without-meta')).toBeNull();
+    // Without extracted metadata, the repo still returns a metadata object so
+    // callers can read `byteLength` (sourced from the parent asset row).
+    expect(result.get('without-meta')?.hasValues()).toBe(false);
+    expect(result.get('without-meta')?.byteLength).toEqual(withoutMeta.byteLength);
     expect(result.get('does-not-exist')).toBeNull();
 
     // empty input returns empty map

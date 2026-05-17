@@ -6,8 +6,9 @@ import useClickOutside from '../hooks/use-click-outside.ts';
 import galleryCardGridRaw from '../assets/icons/gallery-card-grid.svg?raw';
 import galleryJustifiedRaw from '../assets/icons/gallery-justified.svg?raw';
 import galleryMasonryRaw from '../assets/icons/gallery-masonry.svg?raw';
+import galleryThumbListRaw from '../assets/icons/gallery-thumb-list.svg?raw';
 
-export type GalleryLayout = 'cards' | 'rows' | 'masonry';
+export type GalleryLayout = 'cards' | 'rows' | 'masonry' | 'details';
 
 const withCurrentColor = (svg: string) =>
   svg.replace('<svg ', '<svg fill="currentColor" ');
@@ -15,6 +16,7 @@ const withCurrentColor = (svg: string) =>
 const cardGridIcon = withCurrentColor(galleryCardGridRaw);
 const justifiedIcon = withCurrentColor(galleryJustifiedRaw);
 const masonryIcon = withCurrentColor(galleryMasonryRaw);
+const thumbListIcon = withCurrentColor(galleryThumbListRaw);
 
 interface LayoutSelectorProps {
   selectedLayout: Accessor<GalleryLayout>;
@@ -35,6 +37,9 @@ function LayoutSelector(props: LayoutSelectorProps) {
       }
       case 'masonry': {
         return masonryIcon;
+      }
+      case 'details': {
+        return thumbListIcon;
       }
       default: {
         return cardGridIcon;
@@ -101,6 +106,20 @@ function LayoutSelector(props: LayoutSelectorProps) {
             <span class="icon-text">
               <span class="icon" innerHTML={masonryIcon} />
               <span>Columns</span>
+            </span>
+          </a>
+          <a
+            class="dropdown-item"
+            role="menuitem"
+            classList={{ 'is-active': props.selectedLayout() === 'details' }}
+            on:click={(_) => {
+              props.setLayout('details');
+              setDropdownOpen(false);
+            }}
+          >
+            <span class="icon-text">
+              <span class="icon" innerHTML={thumbListIcon} />
+              <span>Details</span>
             </span>
           </a>
         </div>

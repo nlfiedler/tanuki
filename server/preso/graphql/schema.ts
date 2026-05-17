@@ -633,6 +633,7 @@ function metadataToGQL(
     displayHeight: metadata.displayHeight,
     duration: metadata.duration,
     frameRate: metadata.frameRate,
-    videoCodec: metadata.videoCodec
+    videoCodec: metadata.videoCodec,
+    byteLength: metadata.byteLength
   };
 }

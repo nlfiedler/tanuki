@@ -248,7 +248,10 @@ class CouchDBRecordRepository implements RecordRepository {
     const res = await this.database.fetch({ keys: assetIds });
     for (const row of res.rows) {
       if (row.doc && !row.doc._deleted) {
-        result.set(row.id, metadataFromDocument(row.doc.metadata));
+        const metadata =
+          metadataFromDocument(row.doc.metadata) ?? new AssetMetadata();
+        metadata.byteLength = row.doc.byteLength ?? null;
+        result.set(row.id, metadata);
       }
     }
     return result;
@@ -532,7 +535,9 @@ function assetFromDocument(doc: any): any {
   if (doc.originalDate !== null) {
     asset.setOriginalDate(new Date(doc.originalDate));
   }
-  asset.setMetadata(metadataFromDocument(doc.metadata));
+  const metadata = metadataFromDocument(doc.metadata) ?? new AssetMetadata();
+  metadata.byteLength = doc.byteLength ?? null;
+  asset.setMetadata(metadata);
   return asset;
 }
 

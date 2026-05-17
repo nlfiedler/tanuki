@@ -30,7 +30,10 @@ export default ({
       if (assets.length === 0) break;
       for (const asset of assets) {
         if (!asset.mediaType.startsWith('video/')) continue;
-        if (asset.metadata !== null) continue;
+        // Record repos may return a metadata object carrying only `byteLength`
+        // for assets that have not been processed yet; treat that as "no
+        // extracted metadata" via `hasValues()`.
+        if (asset.metadata !== null && asset.metadata.hasValues()) continue;
         try {
           const raw = await blobRepository.fetchMetadata(
             asset.key,

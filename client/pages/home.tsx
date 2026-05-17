@@ -30,6 +30,7 @@ import LayoutSelector, {
 import MasonryGrid from '../components/masonry-grid.tsx';
 import Pagination from '../components/pagination.tsx';
 import TagSelector from '../components/tag-selector.tsx';
+import ThumbList from '../components/thumb-list.tsx';
 import useClickOutside from '../hooks/use-click-outside.ts';
 import useLocalStorage from '../hooks/use-local-storage.ts';
 
@@ -43,13 +44,28 @@ const SEARCH_ASSETS: TypedDocumentNode<Query, QuerySearchArgs> = gql`
         assetId
         datetime
         filename
+        location {
+          label
+          city
+          region
+        }
         mediaType
         previewUrl
         thumbnailUrl
         assetUrl
         metadata {
+          cameraMake
+          cameraModel
+          lensMake
+          lensModel
+          exposureTime
+          fNumber
+          iso
+          focalLength35mm
+          originalDateOffset
           displayWidth
           displayHeight
+          byteLength
         }
       }
       count
@@ -335,6 +351,12 @@ function Home() {
           </Match>
           <Match when={galleryLayout() === 'masonry'}>
             <MasonryGrid
+              results={assetsQuery()?.search.results}
+              onClick={(_, index) => beginBrowsing(index)}
+            />
+          </Match>
+          <Match when={galleryLayout() === 'details'}>
+            <ThumbList
               results={assetsQuery()?.search.results}
               onClick={(_, index) => beginBrowsing(index)}
             />

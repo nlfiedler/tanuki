@@ -44,6 +44,13 @@ class AssetMetadata {
   frameRate: number | null = null;
   /** Video codec name (ffprobe `codec_name`). */
   videoCodec: string | null = null;
+  /**
+   * Size in bytes of the stored asset blob. Populated at read time by the
+   * record repository from the parent asset record (Couch `doc.byteLength` /
+   * SQLite `assets.filesize`); not extracted from the file itself and not
+   * persisted via `metadataToDocument` or considered by `hasValues()`.
+   */
+  byteLength: number | null = null;
   /** Raw extractor output (EXIF tag map or ffprobe JSON). Not exposed in GraphQL. */
   raw: object | null = null;
 

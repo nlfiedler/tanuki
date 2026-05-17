@@ -159,8 +159,14 @@ class SqliteRecordRepository implements RecordRepository {
   }
 
   private loadMetadata(assetId: string): AssetMetadata | null {
+    // LEFT JOIN from assets so the file size is available even when no
+    // metadata row exists yet (e.g. unprocessed asset).
     const row = this.database!
-      .query('SELECT * FROM metadata WHERE asset_id = ?')
+      .query(
+        `SELECT m.*, a.filesize FROM assets a
+           LEFT JOIN metadata m ON m.asset_id = a.key
+           WHERE a.key = ?`
+      )
       .get(assetId);
     return row ? metadataFromRow(row) : null;
   }
@@ -488,8 +494,12 @@ class SqliteRecordRepository implements RecordRepository {
     for (const id of assetIds) result.set(id, null);
     if (assetIds.length === 0) return result;
     const placeholders = assetIds.map(() => '?').join(',');
+    // LEFT JOIN from assets so we return byteLength-only metadata for assets
+    // that have a row in `assets` but none in `metadata` yet.
     const query = this.database!.query(
-      `SELECT * FROM metadata WHERE asset_id IN (${placeholders})`
+      `SELECT m.*, a.key AS asset_id, a.filesize FROM assets a
+         LEFT JOIN metadata m ON m.asset_id = a.key
+         WHERE a.key IN (${placeholders})`
     );
     for (const row of query.iterate(...assetIds)) {
       result.set((row as any).asset_id, metadataFromRow(row));
@@ -588,6 +598,7 @@ function metadataFromRow(row: any): AssetMetadata {
   m.duration = row.duration ?? null;
   m.frameRate = row.frame_rate ?? null;
   m.videoCodec = row.video_codec ?? null;
+  m.byteLength = row.filesize ?? null;
   if (row.raw) {
     try {
       m.raw = JSON.parse(row.raw);

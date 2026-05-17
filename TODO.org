@@ -81,24 +81,13 @@
 *** DONE dump/load use cases should round-trip ~metadata~
 *** DONE import new assets locally to test the behavior via GraphQL
 *** DONE use search result =metadata.displayHeight= and =.displayWidth= to help column layout
-*** TODO grid of 640x640 images with caption info (date, location/filename) (a la PhotoPrism)
-**** details below the thumbnail with tiny icons (see screenshot on desktop)
-- label / city / year
-- user friendly date-time + TZ
-- camera make and model
-- camera settings (aperature, shutter speed, etc)
-- format (JPEG), dimensions, file size
-- original file name
-- location place, city, region
+*** DONE grid of 640x640 images with caption info (date, location/filename) (a la PhotoPrism)
 *** DONE can videos show a thumbnail instead of placeholder?
-*** TODO search page should have same gallery features as home page
-*** TODO deploy and run the backfill operations on chihiro
-*** TODO run back-fill: fix original dates
-*** TODO run back-fill: backfill image metadata
-*** TODO run back-fill: backfill video metadata
-*** TODO use https://blurha.sh to have quick placeholders while images load
-**** clear the cache and evaluate whether image loading is a problem
-**** would need to join search result with asset table
+*** DONE search page should have same gallery features as home page
+*** TODO deploy and run the backfill operations on chihiro [/]
+- [ ] run back-fill: fix original dates
+- [ ] run back-fill: backfill image metadata
+- [ ] run back-fill: backfill video metadata
 *** wide blocks with thumbnails on left, more details on right (c.f. anilist.co)
 *** grid of just images, maybe 180x180; images cropped to the square (a la Apple Photos)
 *** list of rows, tiny thumbnail (96x96), caption, location, date

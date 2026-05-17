@@ -823,11 +823,13 @@ describe('CouchDBRecordRepository', function () {
     expect(fetched?.metadata?.displayHeight).toEqual(4480);
     expect(fetched?.metadata?.raw).toEqual({ Make: { description: 'Canon' } });
 
-    // updating with metadata=null should drop the sub-document
+    // updating with metadata=null should drop the sub-document, leaving a
+    // byteLength-only metadata on read.
     asset.metadata = null;
     await sut.putAsset(asset);
     const cleared = await sut.getAssetById('meta-roundtrip');
-    expect(cleared?.metadata).toBeNull();
+    expect(cleared?.metadata?.hasValues()).toBe(false);
+    expect(cleared?.metadata?.byteLength).toEqual(asset.byteLength);
   });
 
   test('fetchMetadata should return a map keyed by asset id with missing entries as null', async function () {
@@ -853,7 +855,10 @@ describe('CouchDBRecordRepository', function () {
     expect(result.size).toEqual(3);
     expect(result.get('with-meta')?.cameraMake).toEqual('Sony');
     expect(result.get('with-meta')?.fNumber).toBeCloseTo(1.8);
-    expect(result.get('without-meta')).toBeNull();
+    // Without extracted metadata, the repo still returns a metadata object so
+    // callers can read `byteLength` (sourced from the parent asset doc).
+    expect(result.get('without-meta')?.hasValues()).toBe(false);
+    expect(result.get('without-meta')?.byteLength).toEqual(withoutMeta.byteLength);
     expect(result.get('does-not-exist')).toBeNull();
 
     const empty = await sut.fetchMetadata([]);

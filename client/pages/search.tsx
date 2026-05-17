@@ -27,6 +27,7 @@ import LayoutSelector, {
 } from '../components/layout-selector.tsx';
 import MasonryGrid from '../components/masonry-grid.tsx';
 import Pagination from '../components/pagination.tsx';
+import ThumbList from '../components/thumb-list.tsx';
 import useLocalStorage from '../hooks/use-local-storage.ts';
 
 const SCAN_ASSETS: TypedDocumentNode<Query, QueryScanArgs> = gql`
@@ -58,8 +59,18 @@ const SCAN_ASSETS: TypedDocumentNode<Query, QueryScanArgs> = gql`
         thumbnailUrl
         assetUrl
         metadata {
+          cameraMake
+          cameraModel
+          lensMake
+          lensModel
+          exposureTime
+          fNumber
+          iso
+          focalLength35mm
+          originalDateOffset
           displayWidth
           displayHeight
+          byteLength
         }
       }
       count
@@ -226,6 +237,12 @@ function Search() {
           </Match>
           <Match when={galleryLayout() === 'masonry'}>
             <MasonryGrid
+              results={assetsQuery()?.scan.results}
+              onClick={(_, index) => beginBrowsing(index)}
+            />
+          </Match>
+          <Match when={galleryLayout() === 'details'}>
+            <ThumbList
               results={assetsQuery()?.scan.results}
               onClick={(_, index) => beginBrowsing(index)}
             />
