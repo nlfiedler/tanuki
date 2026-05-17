@@ -18,6 +18,8 @@ curl -o dump.json http://192.168.1.4:3000/records/dump
 curl -F dump=@dump.json http://192.168.1.4:3000/records/load
 ```
 
+## Queries
+
 ### Fetching Tags
 
 ```shell
@@ -65,4 +67,26 @@ How to find entries in the dump file that have duplicate checksums:
 ```shell
 jq -r '. | "\(.checksum) \(.key)"' assets/dump.json | sort > hashes.txt
 cut -d ' ' hashes.txt -f 1 | uniq -d
+```
+
+## Mutations
+
+### Backfills
+
+```shell
+curl -g -X POST -H "Content-Type: application/json" \
+     -d '{"query":"mutation { fixOriginalDates }"}' \
+     http://192.168.1.4:3000/graphql
+```
+
+```shell
+curl -g -X POST -H "Content-Type: application/json" \
+     -d '{"query":"mutation { backfillImageMetadata }"}' \
+     http://192.168.1.4:3000/graphql
+```
+
+```shell
+curl -g -X POST -H "Content-Type: application/json" \
+     -d '{"query":"mutation { backfillVideoMetadata }"}' \
+     http://192.168.1.4:3000/graphql
 ```
