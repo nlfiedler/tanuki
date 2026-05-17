@@ -87,7 +87,8 @@ export function formatCamera(meta: AssetMetadata | null | undefined): string {
  */
 export function formatLens(meta: AssetMetadata | null | undefined): string {
   if (!meta) return '';
-  const lens = joinNonEmpty([meta.lensMake, meta.lensModel], ' ');
+  const lensMake = meta.lensMake === meta.cameraMake ? null : meta.lensMake;
+  const lens = joinNonEmpty([lensMake, meta.lensModel], ' ');
   const parts: string[] = [];
   if (lens) parts.push(lens);
   if (meta.fNumber != null) parts.push(`f/${meta.fNumber}`);
