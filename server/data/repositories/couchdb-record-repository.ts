@@ -16,6 +16,40 @@ import {
 } from './asset-metadata-codec.ts';
 import * as views from './couchdb-views.js';
 
+// When CouchDB is unreachable (e.g. container not up yet), nano rewraps the
+// underlying undici exception as a plain `Error` with the message prefix below
+// (see node_modules/nano/lib/nano.js around line 136). The raw .code from
+// undici is not preserved on the rejection, so we detect by message. The
+// listed network codes are scanned as substrings of the message as a
+// secondary signal in case nano changes its wrapping in the future.
+const NANO_CONNECTION_ERROR_PREFIX = 'error happened in your connection';
+const RETRYABLE_NETWORK_CODES = [
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'EHOSTUNREACH',
+  'ENETUNREACH'
+];
+
+function isRetryableConnectError(error: any): boolean {
+  if (!error) return false;
+  // Anything with an HTTP statusCode means CouchDB answered — don't retry.
+  if (error.statusCode !== undefined) return false;
+  const message: string = error.message ?? '';
+  if (message.includes(NANO_CONNECTION_ERROR_PREFIX)) return true;
+  if (RETRYABLE_NETWORK_CODES.some((code) => message.includes(code))) {
+    return true;
+  }
+  const code = error.code ?? error.cause?.code;
+  return typeof code === 'string' && RETRYABLE_NETWORK_CODES.includes(code);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Repository for entity records stored in a CouchDB database.
  */
@@ -27,6 +61,9 @@ class CouchDBRecordRepository implements RecordRepository {
   conn: any;
   database: any;
   heartbeat: number;
+  connectRetries: number;
+  connectBackoffMs: number;
+  connectBackoffMaxMs: number;
 
   constructor({
     settingsRepository
@@ -42,6 +79,18 @@ class CouchDBRecordRepository implements RecordRepository {
     this.password = settingsRepository.get('DATABASE_PASSWORD');
     assert.ok(this.password, 'missing DATABASE_PASSWORD environment variable');
     this.heartbeat = settingsRepository.getInt('DATABASE_HEARTBEAT_MS', 60_000);
+    this.connectRetries = settingsRepository.getInt(
+      'DATABASE_CONNECT_RETRIES',
+      8
+    );
+    this.connectBackoffMs = settingsRepository.getInt(
+      'DATABASE_CONNECT_BACKOFF_MS',
+      1000
+    );
+    this.connectBackoffMaxMs = settingsRepository.getInt(
+      'DATABASE_CONNECT_BACKOFF_MAX_MS',
+      30_000
+    );
     this.conn = nano(this.url);
     this.database = null;
   }
@@ -57,7 +106,7 @@ class CouchDBRecordRepository implements RecordRepository {
       'production',
       'destroy() called in production!'
     );
-    await this.conn.auth(this.username, this.password);
+    await this.connectWithRetry();
     try {
       await this.conn.db.destroy(this.dbname);
     } catch {
@@ -69,23 +118,50 @@ class CouchDBRecordRepository implements RecordRepository {
   /**
    * Create the database if it is missing. This must be called to connect to
    * the database and authenticate as a valid user before proceeding.
+   *
+   * Retries with exponential backoff on connection-level errors so the app can
+   * survive racing CouchDB at container startup. HTTP responses (auth failures,
+   * etc.) fail fast — only network errors are retried.
    */
   async initialize(): Promise<void> {
-    try {
-      await this.conn.auth(this.username, this.password);
-      await this.conn.db.get(this.dbname);
-      this.database = this.conn.db.use(this.dbname);
-    } catch (error: any) {
-      if (error.statusCode == 404) {
-        await this.conn.db.create(this.dbname);
-        this.database = this.conn.db.use(this.dbname);
-      } else {
-        throw error;
-      }
-    }
+    await this.connectWithRetry();
     await this.createIndices(assetsDefinition);
     await this.createIndices(newbornsDefinition);
     this.stayAlive();
+  }
+
+  private async connectWithRetry(): Promise<void> {
+    let delay = this.connectBackoffMs;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await this.conn.auth(this.username, this.password);
+        try {
+          await this.conn.db.get(this.dbname);
+          this.database = this.conn.db.use(this.dbname);
+        } catch (error: any) {
+          if (error.statusCode == 404) {
+            await this.conn.db.create(this.dbname);
+            this.database = this.conn.db.use(this.dbname);
+          } else {
+            throw error;
+          }
+        }
+        return;
+      } catch (error: any) {
+        if (
+          !isRetryableConnectError(error) ||
+          attempt >= this.connectRetries
+        ) {
+          throw error;
+        }
+        console.warn(
+          `CouchDB unreachable at ${this.url} (${error.code ?? error.cause?.code}); ` +
+            `attempt ${attempt}/${this.connectRetries}, retrying in ${delay}ms`
+        );
+        await sleep(delay);
+        delay = Math.min(delay * 2, this.connectBackoffMaxMs);
+      }
+    }
   }
 
   /**
