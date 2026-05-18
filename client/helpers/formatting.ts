@@ -88,7 +88,11 @@ export function formatCamera(meta: AssetMetadata | null | undefined): string {
 export function formatLens(meta: AssetMetadata | null | undefined): string {
   if (!meta) return '';
   const lensMake = meta.lensMake === meta.cameraMake ? null : meta.lensMake;
-  const lens = joinNonEmpty([lensMake, meta.lensModel], ' ');
+  let lensModel = meta.lensModel === meta.cameraModel ? null : meta.lensModel;
+  if (lensModel && meta.cameraModel && lensModel.startsWith(meta.cameraModel)) {
+    lensModel = lensModel.slice(meta.cameraModel.length).trimStart() || null;
+  }
+  const lens = joinNonEmpty([lensMake, lensModel], ' ');
   const parts: string[] = [];
   if (lens) parts.push(lens);
   if (meta.fNumber != null) parts.push(`f/${meta.fNumber}`);
