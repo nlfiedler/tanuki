@@ -128,8 +128,12 @@ type SearchResult {
   mediaType: String!
   "URL for retrieving a thumbnail version of the asset."
   thumbnailUrl: String!
-  "URL for retrieving an aspect-preserving preview of the asset."
-  previewUrl: String!
+  """
+  URL for retrieving an aspect-preserving preview of the asset.
+  Pass exactly one of `width` or `height` to size the preview; if neither
+  is given the preview defaults to 800px on the longer (height) axis.
+  """
+  previewUrl(width: Int, height: Int): String!
   "URL for retrieving the raw asset (mainly for videos)."
   assetUrl: String!
   "Intrinsic metadata extracted from the asset file."

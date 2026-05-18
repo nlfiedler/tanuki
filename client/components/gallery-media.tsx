@@ -11,6 +11,9 @@ interface GalleryMediaProps {
   // receive the preview's natural aspect ratio once it loads; layouts that
   // don't (masonry) omit it.
   onAspect?: (aspect: number) => void;
+  // Override the image source for image assets (e.g. a smaller sized preview
+  // for fixed-size layouts). Video assets always use thumbnailUrl regardless.
+  imageSrc?: string;
 }
 
 function GalleryMedia(props: GalleryMediaProps) {
@@ -26,6 +29,7 @@ function GalleryMedia(props: GalleryMediaProps) {
           asset={props.asset}
           imageClass={props.imageClass}
           onAspect={props.onAspect}
+          src={props.imageSrc}
         />
       </Match>
       <Match when={isVideo()}>

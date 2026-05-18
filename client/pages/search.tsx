@@ -27,6 +27,7 @@ import LayoutSelector, {
 } from '../components/layout-selector.tsx';
 import MasonryGrid from '../components/masonry-grid.tsx';
 import Pagination from '../components/pagination.tsx';
+import SquareGrid from '../components/square-grid.tsx';
 import ThumbList from '../components/thumb-list.tsx';
 import useLocalStorage from '../hooks/use-local-storage.ts';
 
@@ -56,6 +57,7 @@ const SCAN_ASSETS: TypedDocumentNode<Query, QueryScanArgs> = gql`
         }
         mediaType
         previewUrl
+        previewUrlSmall: previewUrl(height: 320)
         thumbnailUrl
         assetUrl
         metadata {
@@ -243,6 +245,12 @@ function Search() {
           </Match>
           <Match when={galleryLayout() === 'details'}>
             <ThumbList
+              results={assetsQuery()?.scan.results}
+              onClick={(_, index) => beginBrowsing(index)}
+            />
+          </Match>
+          <Match when={galleryLayout() === 'squares'}>
+            <SquareGrid
               results={assetsQuery()?.scan.results}
               onClick={(_, index) => beginBrowsing(index)}
             />

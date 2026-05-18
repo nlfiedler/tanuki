@@ -71,6 +71,20 @@ export const resolvers: Resolvers = {
     metadata: async (parent: any, _args, context: GraphQLContext) => {
       const meta = await context.metadataLoader.load(parent.assetId);
       return metadataToGQL(meta);
+    },
+    previewUrl: (
+      parent: any,
+      args: { width?: number | null; height?: number | null }
+    ) => {
+      const w = args.width ?? null;
+      const h = args.height ?? null;
+      if (w !== null && w > 0) {
+        return blobs.previewUrl(parent.assetId, { width: w });
+      }
+      if (h !== null && h > 0) {
+        return blobs.previewUrl(parent.assetId, { height: h });
+      }
+      return blobs.previewUrl(parent.assetId, { height: 800 });
     }
   },
   Query: {
@@ -397,13 +411,14 @@ function paginateResults(
   const pageRows = results.slice(off, off + lim).map((r) => {
     return Object.assign({}, r, {
       thumbnailUrl: blobs.thumbnailUrl(r.assetId, 960, 960),
-      previewUrl: blobs.previewUrl(r.assetId, { height: 800 }),
       assetUrl: blobs.assetUrl(r.assetId)
     });
   });
   const lastPage = count == 0 ? 1 : Math.ceil(count / lim);
+  // previewUrl is computed lazily by the SearchResult field resolver, so the
+  // shaped rows omit it; cast to SearchMeta's row type.
   return {
-    results: pageRows,
+    results: pageRows as unknown as SearchMeta['results'],
     count,
     lastPage
   };

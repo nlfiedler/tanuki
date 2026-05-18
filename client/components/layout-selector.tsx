@@ -6,9 +6,15 @@ import useClickOutside from '../hooks/use-click-outside.ts';
 import galleryCardGridRaw from '../assets/icons/gallery-card-grid.svg?raw';
 import galleryJustifiedRaw from '../assets/icons/gallery-justified.svg?raw';
 import galleryMasonryRaw from '../assets/icons/gallery-masonry.svg?raw';
+import gallerySquareGridRaw from '../assets/icons/gallery-square-grid.svg?raw';
 import galleryThumbListRaw from '../assets/icons/gallery-thumb-list.svg?raw';
 
-export type GalleryLayout = 'cards' | 'rows' | 'masonry' | 'details';
+export type GalleryLayout =
+  | 'cards'
+  | 'rows'
+  | 'masonry'
+  | 'details'
+  | 'squares';
 
 const withCurrentColor = (svg: string) =>
   svg.replace('<svg ', '<svg fill="currentColor" ');
@@ -16,6 +22,7 @@ const withCurrentColor = (svg: string) =>
 const cardGridIcon = withCurrentColor(galleryCardGridRaw);
 const justifiedIcon = withCurrentColor(galleryJustifiedRaw);
 const masonryIcon = withCurrentColor(galleryMasonryRaw);
+const squareGridIcon = withCurrentColor(gallerySquareGridRaw);
 const thumbListIcon = withCurrentColor(galleryThumbListRaw);
 
 interface LayoutSelectorProps {
@@ -40,6 +47,9 @@ function LayoutSelector(props: LayoutSelectorProps) {
       }
       case 'details': {
         return thumbListIcon;
+      }
+      case 'squares': {
+        return squareGridIcon;
       }
       default: {
         return cardGridIcon;
@@ -120,6 +130,20 @@ function LayoutSelector(props: LayoutSelectorProps) {
             <span class="icon-text">
               <span class="icon" innerHTML={thumbListIcon} />
               <span>Details</span>
+            </span>
+          </a>
+          <a
+            class="dropdown-item"
+            role="menuitem"
+            classList={{ 'is-active': props.selectedLayout() === 'squares' }}
+            on:click={(_) => {
+              props.setLayout('squares');
+              setDropdownOpen(false);
+            }}
+          >
+            <span class="icon-text">
+              <span class="icon" innerHTML={squareGridIcon} />
+              <span>Squares</span>
             </span>
           </a>
         </div>
