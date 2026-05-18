@@ -22,6 +22,7 @@ import {
   SortOrder
 } from 'tanuki/generated/graphql.ts';
 import AttributeChips from '../components/attribute-chips.tsx';
+import BackToTop from '../components/back-to-top.tsx';
 import CardsGrid from '../components/cards-grid.tsx';
 import JustifiedRows from '../components/justified-rows.tsx';
 import LayoutSelector, {
@@ -218,6 +219,7 @@ function Home() {
 
   return (
     <>
+      <BackToTop />
       <div class="container">
         <nav class="level">
           <div class="level-left">

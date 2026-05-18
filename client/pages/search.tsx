@@ -20,6 +20,7 @@ import {
   SortField,
   SortOrder
 } from 'tanuki/generated/graphql.ts';
+import BackToTop from '../components/back-to-top.tsx';
 import CardsGrid from '../components/cards-grid.tsx';
 import JustifiedRows from '../components/justified-rows.tsx';
 import LayoutSelector, {
@@ -165,6 +166,7 @@ function Search() {
 
   return (
     <>
+      <BackToTop />
       <div class="container my-3">
         <nav class="level">
           <div class="level-left">
