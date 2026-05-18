@@ -4,7 +4,7 @@ An application for organizing assets, primarily images and videos. Written in [T
 
 Originally inspired by [perkeep](https://perkeep.org) as a means of organizing personal photos and videos. A key aspect of this application is that it stores all of the assets in unmodified form (no chunking or packing) in a logical directory structure. The database is used to associate tags and additional location information with assets to enable searching. The import process discards duplicates by computing a checksum and checking the database for a match. The batch editing feature allows for adding and removing tags, changing the location labels, and assigning a date-time to multiple assets.
 
-The home and search pages offer multiple gallery display options, including Bulma cards in a flexible grid, Flickr-style justified rows, Pinterest-style masonry columns, and a grid with square thumbnails and metadata that strongly resembles [PhotoPrism](https://www.photoprism.app).
+The home and search pages offer multiple gallery display options, including Bulma cards in a flexible grid, Flickr-style justified rows, Pinterest-style masonry columns, a grid with square thumbnails and metadata that strongly resembles [PhotoPrism](https://www.photoprism.app), and a grid with smaller fixed-size thumbnails centered on the page.
 
 ## Requirements
 
