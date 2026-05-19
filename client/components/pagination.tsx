@@ -16,11 +16,32 @@ interface PaginationProps {
 
 function Pagination(props: PaginationProps) {
   const [dropdownOpen, setDropdownOpen] = createSignal(false);
+  const [editingPage, setEditingPage] = createSignal(false);
+  const [pageInput, setPageInput] = createSignal('');
   let dropdownRef: HTMLDivElement | undefined;
+  let pageInputRef: HTMLInputElement | undefined;
   useClickOutside(
     () => dropdownRef,
     () => setDropdownOpen(false)
   );
+
+  function openPageEditor() {
+    setPageInput(String(props.selectedPage()));
+    setEditingPage(true);
+    queueMicrotask(() => {
+      pageInputRef?.focus();
+      pageInputRef?.select();
+    });
+  }
+
+  function commitPageInput() {
+    const parsed = Number.parseInt(pageInput(), 10);
+    if (Number.isFinite(parsed)) {
+      const clamped = Math.min(Math.max(parsed, 1), props.lastPage());
+      props.setSelectedPage(clamped);
+    }
+    setEditingPage(false);
+  }
 
   return (
     <>
@@ -40,7 +61,45 @@ function Pagination(props: PaginationProps) {
         </div>
       </div>
       <div class="level-item">
-        <span>{`Page ${props.selectedPage()} of ${props.lastPage()}`}</span>
+        {editingPage() ? (
+          <form
+            on:submit={(e) => {
+              e.preventDefault();
+              commitPageInput();
+            }}
+          >
+            <div class="field is-grouped is-align-items-center mb-0">
+              <p class="control">
+                <input
+                  ref={(el: HTMLInputElement) => (pageInputRef = el)}
+                  class="input is-small"
+                  style="width: 4rem"
+                  type="number"
+                  min="1"
+                  max={props.lastPage()}
+                  value={pageInput()}
+                  on:input={(e) => setPageInput(e.currentTarget.value)}
+                  on:blur={() => setEditingPage(false)}
+                  on:keydown={(e) => {
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setEditingPage(false);
+                    }
+                  }}
+                />
+              </p>
+              <span>{` of ${props.lastPage()}`}</span>
+            </div>
+          </form>
+        ) : (
+          <button
+            class="button is-text"
+            disabled={props.lastPage() <= 1}
+            on:click={(_) => openPageEditor()}
+          >
+            {`Page ${props.selectedPage()} of ${props.lastPage()}`}
+          </button>
+        )}
       </div>
       <div class="level-item">
         <div class="field">
