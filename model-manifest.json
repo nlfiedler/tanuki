@@ -1,0 +1,29 @@
+{
+  "version": "models-v1",
+  "files": [
+    {
+      "name": "mobilenet_v2.onnx",
+      "url": "https://github.com/nlfiedler/tanuki/releases/download/models-v1/mobilenet_v2.onnx",
+      "sha256": "c0c3f76d93fa3fd6580652a45618618a220fced18babf65774ed169de0432ad5",
+      "bytes": 13964571
+    },
+    {
+      "name": "scrfd_2.5g.onnx",
+      "url": "https://github.com/nlfiedler/tanuki/releases/download/models-v1/scrfd_2.5g.onnx",
+      "sha256": "5e4447f50245bbd7966bd6c0fa52938c61474a04ec7def48753668a9d8b4ea3a",
+      "bytes": 2524817
+    },
+    {
+      "name": "mobilefacenet.onnx",
+      "url": "https://github.com/nlfiedler/tanuki/releases/download/models-v1/mobilefacenet.onnx",
+      "sha256": "9cc6e4a75f0e2bf0b1aed94578f144d15175f357bdc05e815e5c4a02b319eb4f",
+      "bytes": 13616099
+    },
+    {
+      "name": "labels-map.json",
+      "url": "https://github.com/nlfiedler/tanuki/releases/download/models-v1/labels-map.json",
+      "sha256": "228a08e54a207301d7d7931e3f9ceb4ff9c46f5c3a3baa48cfd494d2c9f577d0",
+      "bytes": 86909
+    }
+  ]
+}
