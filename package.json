@@ -18,10 +18,14 @@
     "./*": "./*"
   },
   "scripts": {
-    "prestart": "bun run codegen",
+    "prestart": "bun run codegen && bun run fetch-models",
+    "pretest": "bun run fetch-models",
+    "prebuild": "bun run fetch-models",
     "start": "bun server/main.ts",
     "doc": "bunx jsdoc --recurse server",
-    "codegen": "graphql-codegen --config codegen.ts"
+    "codegen": "graphql-codegen --config codegen.ts",
+    "fetch-models": "bun run scripts/fetch-models.ts",
+    "build-release-assets": "bun run scripts/build-release-assets.ts"
   },
   "dependencies": {
     "@apollo/client": "^4.1.7",

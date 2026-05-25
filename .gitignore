@@ -29,3 +29,8 @@ generated
 # temporary data
 tmp
 .tmp
+
+# ML model files (fetched via scripts/fetch-models.ts) and release assets
+# (produced by scripts/build-release-assets.ts)
+models
+release
