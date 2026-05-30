@@ -39,6 +39,10 @@ function Navbar() {
             Labels
           </A>
 
+          <A class="navbar-item" href="/people">
+            People
+          </A>
+
           <A class="navbar-item" href="/upload">
             Upload
           </A>

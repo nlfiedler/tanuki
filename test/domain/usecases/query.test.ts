@@ -238,6 +238,35 @@ describe('Query language support', function () {
       expect(negated.matches(labelled)).toBeTrue();
     });
 
+    test('should parse and match by person via the resolver', async function () {
+      const alice = new Asset('alice1')
+        .setChecksum('sha1-aaa')
+        .setFilename('a.jpg')
+        .setByteLength(1024)
+        .setMediaType('image/jpeg')
+        .setTags(['party'])
+        .setImportDate(new Date(2018, 4, 31, 21, 10, 11));
+      const other = new Asset('other1')
+        .setChecksum('sha1-bbb')
+        .setFilename('b.jpg')
+        .setByteLength(1024)
+        .setMediaType('image/jpeg')
+        .setTags(['party'])
+        .setImportDate(new Date(2018, 4, 31, 21, 10, 11));
+
+      const cons = await parse('person:p1', resolvePerson);
+      expect(cons.matches(alice)).toBeTrue();
+      expect(cons.matches(other)).toBeFalse();
+
+      // composes with other predicates
+      const compound = await parse('person:p1 and tag:party', resolvePerson);
+      expect(compound.matches(alice)).toBeTrue();
+      expect(compound.matches(other)).toBeFalse();
+
+      // without a resolver the predicate is unsupported
+      expect(parse('person:p1')).rejects.toThrow('not supported');
+    });
+
     test('should parse query and match by type', async function () {
       const asset = new Asset('monday1')
         .setChecksum('sha1-cafebabe')
@@ -416,6 +445,11 @@ describe('Query language support', function () {
     });
   });
 });
+
+/** Test resolver mapping person id `p1` to a single asset. */
+async function resolvePerson(id: string): Promise<Set<string>> {
+  return id === 'p1' ? new Set(['alice1']) : new Set<string>();
+}
 
 async function drainTokens(chan: AsyncQueue<Token>): Promise<Array<Token>> {
   const tokens = [];

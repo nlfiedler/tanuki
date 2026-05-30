@@ -11,6 +11,7 @@ import { AssetDetails, Browse } from './pages/details.tsx';
 import Edit from './pages/edit.tsx';
 import Home from './pages/home.tsx';
 import { Labels, LabelAssets } from './pages/labels.tsx';
+import { People, PersonDetail } from './pages/people.tsx';
 import Pending from './pages/pending.tsx';
 import Search from './pages/search.tsx';
 import Upload from './pages/upload.tsx';
@@ -35,6 +36,8 @@ render(
         <Route path="/browse" component={Browse} />
         <Route path="/labels" component={Labels} />
         <Route path="/labels/:label" component={LabelAssets} />
+        <Route path="/people" component={People} />
+        <Route path="/people/:id" component={PersonDetail} />
         <Route path="/asset/:id" component={AssetDetails} />
         <Route path="/edit" component={Edit} />
         <Route path="*paramName" component={NotFound} />

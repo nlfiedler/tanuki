@@ -170,11 +170,22 @@ class SyntheticWorkerPool {
       `synthetic job ${job.id} (${job.kind}) for asset ${job.assetId} failed after ${attempts} attempts: ${message}`
     );
     try {
-      await this.recordRepository.setSynthetic(
-        job.assetId,
-        null,
-        SyntheticStatus.FAILED
-      );
+      // Record FAILED against the kind that failed: labels status lives on the
+      // asset record, faces status lives in the face store. The GraphQL
+      // syntheticStatus is the worse of the two, so this surfaces correctly
+      // even when the other kind succeeded.
+      if (job.kind === 'faces') {
+        await this.faceStore.setFacesStatus(
+          job.assetId,
+          SyntheticStatus.FAILED
+        );
+      } else {
+        await this.recordRepository.setSynthetic(
+          job.assetId,
+          null,
+          SyntheticStatus.FAILED
+        );
+      }
       await this.invalidateSearchCache();
     } catch (markError: any) {
       logger.error('synthetic worker: failed to mark asset FAILED:', markError);

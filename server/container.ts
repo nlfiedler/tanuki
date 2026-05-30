@@ -32,15 +32,25 @@ import UpdateVideoDates from 'tanuki/server/domain/usecases/update-video-dates.t
 import BackfillImageMetadata from 'tanuki/server/domain/usecases/backfill-image-metadata.ts';
 import BackfillVideoMetadata from 'tanuki/server/domain/usecases/backfill-video-metadata.ts';
 import BackfillLabels from 'tanuki/server/domain/usecases/backfill-labels.ts';
+import BackfillFaceRecognition from 'tanuki/server/domain/usecases/backfill-face-recognition.ts';
 import RetrySyntheticJobs from 'tanuki/server/domain/usecases/retry-synthetic-jobs.ts';
 import GetLabels from 'tanuki/server/domain/usecases/get-labels.ts';
 import AssetsByLabel from 'tanuki/server/domain/usecases/assets-by-label.ts';
+import GetPeople from 'tanuki/server/domain/usecases/get-people.ts';
+import GetPersonFaces from 'tanuki/server/domain/usecases/get-person-faces.ts';
+import AssetsByPerson from 'tanuki/server/domain/usecases/assets-by-person.ts';
+import RenamePerson from 'tanuki/server/domain/usecases/rename-person.ts';
+import MergePeople from 'tanuki/server/domain/usecases/merge-people.ts';
+import ReassignFaces from 'tanuki/server/domain/usecases/reassign-faces.ts';
+import HidePerson from 'tanuki/server/domain/usecases/hide-person.ts';
+import SetPersonThumbnail from 'tanuki/server/domain/usecases/set-person-thumbnail.ts';
 import FixOriginalDates from 'tanuki/server/domain/usecases/fix-original-dates.ts';
 import { CouchDBRecordRepository } from 'tanuki/server/data/repositories/couchdb-record-repository.ts';
 import { PouchDBRecordRepository } from 'tanuki/server/data/repositories/pouchdb-record-repository.ts';
 import { SqliteRecordRepository } from 'tanuki/server/data/repositories/sqlite-record-repository.ts';
 import { SqliteFaceStore } from 'tanuki/server/data/repositories/sqlite-face-store.ts';
 import { LocalSyntheticDetector } from 'tanuki/server/data/repositories/local-synthetic-detector.ts';
+import { NamazuSyntheticDetector } from 'tanuki/server/data/repositories/namazu-synthetic-detector.ts';
 import { DetectingSyntheticJobProcessor } from 'tanuki/server/data/repositories/detecting-synthetic-job-processor.ts';
 import { SyntheticWorkerPool } from 'tanuki/server/domain/services/synthetic-worker-pool.ts';
 import { DummyLocationRepository } from 'tanuki/server/data/repositories/dummy-location-repository.ts';
@@ -59,6 +69,14 @@ const container = createContainer({
 let BlobRepository: any = LocalBlobRepository;
 if ('NAMAZU_URL' in process.env) {
   BlobRepository = NamazuBlobRepository;
+}
+
+// Push ML inference (labels and faces) to Namazu when it is the blob store,
+// since it has byte-level access to the asset; otherwise run the models in
+// process. Both produce the same curated labels and comparable embeddings.
+let SyntheticDetector: any = LocalSyntheticDetector;
+if ('NAMAZU_URL' in process.env) {
+  SyntheticDetector = NamazuSyntheticDetector;
 }
 
 let LocationRepository: any = DummyLocationRepository;
@@ -87,10 +105,10 @@ container.register({
   faceStore: asClass(SqliteFaceStore, {
     lifetime: Lifetime.SINGLETON
   }),
-  // Label detector (MobileNetV2 via onnxruntime-node), reading bytes from
-  // whichever blob store is configured. The Namazu HTTP push-down is a future
-  // optimization that would swap this registration.
-  syntheticDetector: asClass(LocalSyntheticDetector, {
+  // Synthetic-data detector: in-process ONNX (MobileNetV2 + SCRFD +
+  // MobileFaceNet) for the local blob store, or the Namazu HTTP push-down when
+  // NAMAZU_URL is set (selected above).
+  syntheticDetector: asClass(SyntheticDetector, {
     lifetime: Lifetime.SINGLETON
   }),
   // Drains the synthetic_jobs queue, running the detector and persisting labels.
@@ -135,9 +153,18 @@ container.register({
   backfillImageMetadata: asFunction(BackfillImageMetadata),
   backfillVideoMetadata: asFunction(BackfillVideoMetadata),
   backfillLabels: asFunction(BackfillLabels),
+  backfillFaceRecognition: asFunction(BackfillFaceRecognition),
   retrySyntheticJobs: asFunction(RetrySyntheticJobs),
   getLabels: asFunction(GetLabels),
   assetsByLabel: asFunction(AssetsByLabel),
+  getPeople: asFunction(GetPeople),
+  getPersonFaces: asFunction(GetPersonFaces),
+  assetsByPerson: asFunction(AssetsByPerson),
+  renamePerson: asFunction(RenamePerson),
+  mergePeople: asFunction(MergePeople),
+  reassignFaces: asFunction(ReassignFaces),
+  hidePerson: asFunction(HidePerson),
+  setPersonThumbnail: asFunction(SetPersonThumbnail),
   fixOriginalDates: asFunction(FixOriginalDates)
 });
 

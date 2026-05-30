@@ -7,6 +7,7 @@ import { Location } from 'tanuki/server/domain/entities/location.ts';
 import ReplaceAsset from 'tanuki/server/domain/usecases/replace-asset.ts';
 import {
   blobRepositoryMock,
+  faceStoreMock,
   recordRepositoryMock,
   searchRepositoryMock
 } from './mocking.ts';
@@ -39,10 +40,12 @@ describe('ReplaceAsset use case', function () {
       })
     });
     const mockSearchRepository = searchRepositoryMock({});
+    const mockFaceStore = faceStoreMock({});
     const usecase = ReplaceAsset({
       blobRepository: mockBlobRepository,
       recordRepository: mockRecordRepository,
-      searchRepository: mockSearchRepository
+      searchRepository: mockSearchRepository,
+      faceStore: mockFaceStore
     });
     // act
     const updated = await usecase('kittens1', 'kitties2');
@@ -60,6 +63,7 @@ describe('ReplaceAsset use case', function () {
     expect(mockRecordRepository.getAssetById).toHaveBeenCalledTimes(2);
     expect(mockRecordRepository.putAsset).toHaveBeenCalledTimes(1);
     expect(mockRecordRepository.deleteAsset).toHaveBeenCalledTimes(1);
+    expect(mockFaceStore.deleteByAssetId).toHaveBeenCalledWith('kittens1');
     expect(mockBlobRepository.deleteBlob).toHaveBeenCalledTimes(1);
     mock.clearAllMocks();
   });

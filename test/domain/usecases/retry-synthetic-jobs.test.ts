@@ -65,20 +65,41 @@ describe('RetrySyntheticJobs use case', function () {
     );
   });
 
-  test('kind=faces is a no-op in Phase 1', async function () {
-    const fetchAssets = mock(() =>
-      Promise.resolve([[asset('a1')], 'done'] as [Asset[], any])
+  test('kind=faces re-enqueues FAILED faces from the face store', async function () {
+    // f1: FAILED, no job -> enqueue + reset; f2: FAILED but already queued -> skip
+    const assetIdsWithFacesStatus = mock(() => Promise.resolve(['f1', 'f2']));
+    const hasPendingJob = mock((assetId: string) =>
+      Promise.resolve(assetId === 'f2')
     );
-    const mockRecordRepository = recordRepositoryMock({ fetchAssets });
-    const mockFaceStore = faceStoreMock({});
+    const mockRecordRepository = recordRepositoryMock({});
+    const mockFaceStore = faceStoreMock({
+      assetIdsWithFacesStatus,
+      hasPendingJob
+    });
     const usecase = RetrySyntheticJobs({
       recordRepository: mockRecordRepository,
       faceStore: mockFaceStore
     });
 
-    expect(await usecase('faces')).toEqual(0);
-    // short-circuits before even scanning assets
+    expect(await usecase('faces')).toEqual(1);
+    // the labels scan is skipped entirely for kind=faces
     expect(mockRecordRepository.fetchAssets).toHaveBeenCalledTimes(0);
-    expect(mockFaceStore.enqueueJob).toHaveBeenCalledTimes(0);
+    expect(mockFaceStore.enqueueJob).toHaveBeenCalledWith('f1', 'faces');
+    expect(mockFaceStore.setFacesStatus).toHaveBeenCalledWith(
+      'f1',
+      SyntheticStatus.PENDING
+    );
+  });
+
+  test('an unknown kind is a no-op', async function () {
+    const mockRecordRepository = recordRepositoryMock({});
+    const mockFaceStore = faceStoreMock({});
+    const usecase = RetrySyntheticJobs({
+      recordRepository: mockRecordRepository,
+      faceStore: mockFaceStore
+    });
+    expect(await usecase('bogus')).toEqual(0);
+    expect(mockRecordRepository.fetchAssets).toHaveBeenCalledTimes(0);
+    expect(mockFaceStore.assetIdsWithFacesStatus).toHaveBeenCalledTimes(0);
   });
 });

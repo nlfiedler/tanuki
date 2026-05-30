@@ -355,3 +355,48 @@ body {
     text-overflow: ellipsis;
   }
 }
+
+// When the tile image wrapper is itself a <button> (People page), strip the
+// native button chrome so it matches the non-interactive span variant.
+button.thumb-image-wrap {
+  display: block;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  appearance: none;
+}
+
+// Cluster-management grid of face crops on the person detail page.
+.face-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.face-tile {
+  position: relative;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  background: hsl(0, 0%, 18%);
+  appearance: none;
+
+  img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+  }
+
+  &.is-selected {
+    border-color: hsl(217, 71%, 53%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid hsl(217, 71%, 53%);
+    outline-offset: 2px;
+  }
+}

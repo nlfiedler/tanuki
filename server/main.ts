@@ -17,9 +17,11 @@ import logger from 'tanuki/server/logger.ts';
 import container from 'tanuki/server/container.ts';
 import assetsRouter from 'tanuki/server/preso/routes/assets.ts';
 import recordsRouter from 'tanuki/server/preso/routes/records.ts';
+import facesRouter from 'tanuki/server/preso/routes/faces.ts';
 import { typeDefs, resolvers } from 'tanuki/server/preso/graphql/schema.ts';
 import {
   createMetadataLoader,
+  createPeopleLoader,
   createSyntheticLoader,
   createSyntheticStatusLoader
 } from 'tanuki/server/preso/graphql/metadata-loader.ts';
@@ -113,16 +115,22 @@ app.use(
   expressMiddleware(graphqlServer, {
     context: async () => {
       const recordRepository: any = container.resolve('recordRepository');
+      const faceStore: any = container.resolve('faceStore');
       return {
         metadataLoader: createMetadataLoader(recordRepository),
         syntheticLoader: createSyntheticLoader(recordRepository),
-        syntheticStatusLoader: createSyntheticStatusLoader(recordRepository)
+        syntheticStatusLoader: createSyntheticStatusLoader(
+          recordRepository,
+          faceStore
+        ),
+        peopleLoader: createPeopleLoader(faceStore)
       };
     }
   })
 );
 app.use('/assets', assetsRouter);
 app.use('/records', recordsRouter);
+app.use('/faces', facesRouter);
 
 const port = Number.parseInt(process.env['PORT'] || '3000');
 ViteExpress.listen(app, port, () => logger.info(`Server listening at ${port}`));

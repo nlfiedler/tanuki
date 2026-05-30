@@ -33,6 +33,15 @@ interface SettingsRepository {
   getInt(name: string, fallback: number): number;
 
   /**
+   * Return the floating-point value of the named setting, default is fallback.
+   *
+   * @param name - name of property to retrieve.
+   * @param fallback - value to return if property not found or not a number.
+   * @returns value of property or fallback if not found.
+   */
+  getFloat(name: string, fallback: number): number;
+
+  /**
    * Return true if the settings repository contains the named setting.
    *
    * @param name - name of property to locate.

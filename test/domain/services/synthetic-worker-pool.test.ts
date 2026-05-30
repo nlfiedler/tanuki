@@ -179,12 +179,19 @@ describe('SyntheticWorkerPool', function () {
       }
     );
     pool.start();
-    await until(() => recordRepository.failed.length === 1);
+    // a faces failure is recorded in the face store (not on the asset record)
+    const facesStatus = async (): Promise<SyntheticStatus | undefined> => {
+      const map = await faceStore.fetchFacesStatus(['doomed']);
+      return map.get('doomed');
+    };
+    await until(async () => (await facesStatus()) === SyntheticStatus.FAILED);
     await pool.stop();
 
     // three runs total (initial + two retries), then give up
     expect(calls).toEqual(3);
-    expect(recordRepository.failed).toEqual(['doomed']);
+    expect(await facesStatus()).toEqual(SyntheticStatus.FAILED);
+    // labels status untouched: kind-aware failure handling
+    expect(recordRepository.failed).toEqual([]);
     // queue is empty: a FAILED job is not left lingering
     expect(await faceStore.pendingJobCount()).toEqual(0);
     // the search cache was cleared on terminal failure (and would be on success)

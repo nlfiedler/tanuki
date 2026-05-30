@@ -106,15 +106,17 @@ export default ({
       await blobRepository.storeBlob(filepath, asset);
       await searchRepository.clear();
 
-      // Queue background synthetic-data extraction for images. Phase 1 only
-      // enqueues labels; faces will be added once that pipeline lands. A queue
-      // hiccup must not fail the import — the asset is already stored, and
-      // backfillLabels can pick it up later.
+      // Queue background synthetic-data extraction for images: one job per
+      // kind, both at live-import priority so they preempt backfill. A queue
+      // hiccup must not fail the import — the asset is already stored, and the
+      // backfill mutations can pick it up later.
       if (mimetype.startsWith('image/')) {
-        try {
-          await faceStore.enqueueJob(asset.key, 'labels', LIVE_IMPORT_PRIORITY);
-        } catch (error: any) {
-          logger.warn('import-asset: failed to enqueue labels job:', error);
+        for (const kind of ['labels', 'faces'] as const) {
+          try {
+            await faceStore.enqueueJob(asset.key, kind, LIVE_IMPORT_PRIORITY);
+          } catch (error: any) {
+            logger.warn(`import-asset: failed to enqueue ${kind} job:`, error);
+          }
         }
       }
     } else {

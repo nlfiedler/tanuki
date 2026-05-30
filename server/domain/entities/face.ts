@@ -127,5 +127,51 @@ class Face {
   }
 }
 
-export { Face, Person, SyntheticJob };
-export type { JobKind };
+/**
+ * The output of the face pipeline for one detected face, before it is
+ * clustered and persisted. Unlike {@link Face} it has no id or person
+ * assignment yet — the job processor mints those when it stores the face.
+ */
+class DetectedFace {
+  /** Bounding box `[x, y, w, h]` in displayed-orientation pixels. */
+  bbox: [number, number, number, number];
+  /** L2-normalized embedding (512 floats for MobileFaceNet). */
+  embedding: Float32Array;
+  /** ~128px JPEG of the aligned face crop. */
+  thumbnail: Uint8Array;
+  /** Detector confidence in `[0, 1]`. */
+  score: number;
+  /** Model that produced the embedding, e.g. `mobilefacenet-v1`. */
+  modelVersion: string;
+
+  constructor(
+    bbox: [number, number, number, number],
+    embedding: Float32Array,
+    thumbnail: Uint8Array,
+    score: number,
+    modelVersion: string
+  ) {
+    this.bbox = bbox;
+    this.embedding = embedding;
+    this.thumbnail = thumbnail;
+    this.score = score;
+    this.modelVersion = modelVersion;
+  }
+}
+
+/**
+ * A {@link Person} enriched with the derived values the People page and the
+ * `synthetic.people` GraphQL field need but that do not live on the `person`
+ * row itself: how many faces are clustered under the person, and which face is
+ * the representative thumbnail (the explicit `thumbnailFace` when set and still
+ * valid, otherwise the largest face by bbox area, breaking ties by detector
+ * score). `representativeFaceId` is null only for a person with no faces.
+ */
+interface PersonSummary {
+  person: Person;
+  faceCount: number;
+  representativeFaceId: string | null;
+}
+
+export { DetectedFace, Face, Person, SyntheticJob };
+export type { JobKind, PersonSummary };

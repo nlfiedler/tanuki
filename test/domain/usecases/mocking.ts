@@ -16,8 +16,10 @@ import {
 } from 'tanuki/server/domain/entities/location.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/search.ts';
 import {
+  Person,
+  type Face,
   type JobKind,
-  type Person,
+  type PersonSummary,
   type SyntheticJob
 } from 'tanuki/server/domain/entities/face.ts';
 import { type BlobRepository } from 'tanuki/server/domain/repositories/blob-repository.ts';
@@ -232,7 +234,25 @@ export function faceStoreMock({
   hasPendingJob = undefined,
   fetchPeopleByAssetIds = undefined,
   assetIdsByPerson = undefined,
-  deleteByAssetId = undefined
+  deleteByAssetId = undefined,
+  insertFace = undefined,
+  nearestPerson = undefined,
+  createPerson = undefined,
+  listPeople = undefined,
+  getPersonSummary = undefined,
+  personIdsByName = undefined,
+  facesForPerson = undefined,
+  faceThumbnail = undefined,
+  renamePerson = undefined,
+  mergePeople = undefined,
+  reassignFaces = undefined,
+  hidePerson = undefined,
+  setPersonThumbnail = undefined,
+  allFaceAssetIds = undefined,
+  setFacesStatus = undefined,
+  fetchFacesStatus = undefined,
+  assetIdsWithFacesStatus = undefined,
+  modelVersionsByAssets = undefined
 }: {
   enqueueJob?: (
     assetId: string,
@@ -245,13 +265,44 @@ export function faceStoreMock({
   hasPendingJob?: (assetId: string, kind: JobKind) => Promise<boolean>;
   fetchPeopleByAssetIds?: (
     assetIds: string[]
-  ) => Promise<Map<string, Person[]>>;
+  ) => Promise<Map<string, PersonSummary[]>>;
   assetIdsByPerson?: (
     personId: string,
     offset: number,
     limit: number
   ) => Promise<{ ids: string[]; total: number }>;
   deleteByAssetId?: (assetId: string) => Promise<void>;
+  insertFace?: (face: Face) => Promise<void>;
+  nearestPerson?: (
+    embedding: Float32Array,
+    modelVersion: string
+  ) => Promise<{ personId: string; score: number } | null>;
+  createPerson?: () => Promise<Person>;
+  listPeople?: (includeHidden: boolean) => Promise<PersonSummary[]>;
+  getPersonSummary?: (id: string) => Promise<PersonSummary | null>;
+  personIdsByName?: (name: string) => Promise<string[]>;
+  facesForPerson?: (personId: string) => Promise<Face[]>;
+  faceThumbnail?: (faceId: string) => Promise<Uint8Array | null>;
+  renamePerson?: (id: string, name: string | null) => Promise<void>;
+  mergePeople?: (sourceId: string, targetId: string) => Promise<void>;
+  reassignFaces?: (
+    faceIds: string[],
+    personId: string | null
+  ) => Promise<string>;
+  hidePerson?: (id: string, hidden: boolean) => Promise<void>;
+  setPersonThumbnail?: (id: string, faceId: string) => Promise<void>;
+  allFaceAssetIds?: () => Promise<string[]>;
+  setFacesStatus?: (
+    assetId: string,
+    status: SyntheticStatus
+  ) => Promise<void>;
+  fetchFacesStatus?: (
+    assetIds: string[]
+  ) => Promise<Map<string, SyntheticStatus>>;
+  assetIdsWithFacesStatus?: (status: SyntheticStatus) => Promise<string[]>;
+  modelVersionsByAssets?: (
+    assetIds: string[]
+  ) => Promise<Map<string, Set<string>>>;
 }): FaceStore {
   const mockFaceStore: FaceStore = {
     enqueueJob: enqueueJob || mock(() => Promise.resolve(1)),
@@ -261,11 +312,39 @@ export function faceStoreMock({
     hasPendingJob: hasPendingJob || mock(() => Promise.resolve(false)),
     fetchPeopleByAssetIds:
       fetchPeopleByAssetIds ||
-      mock(() => Promise.resolve(new Map<string, Person[]>())),
+      mock(() => Promise.resolve(new Map<string, PersonSummary[]>())),
     assetIdsByPerson:
       assetIdsByPerson ||
       mock(() => Promise.resolve({ ids: [] as string[], total: 0 })),
-    deleteByAssetId: deleteByAssetId || mock(() => Promise.resolve())
+    deleteByAssetId: deleteByAssetId || mock(() => Promise.resolve()),
+    insertFace: insertFace || mock(() => Promise.resolve()),
+    nearestPerson: nearestPerson || mock(() => Promise.resolve(null)),
+    createPerson:
+      createPerson ||
+      mock(() => Promise.resolve(new Person('mock-person'))),
+    listPeople: listPeople || mock(() => Promise.resolve([] as PersonSummary[])),
+    getPersonSummary: getPersonSummary || mock(() => Promise.resolve(null)),
+    personIdsByName:
+      personIdsByName || mock(() => Promise.resolve([] as string[])),
+    facesForPerson: facesForPerson || mock(() => Promise.resolve([] as Face[])),
+    faceThumbnail: faceThumbnail || mock(() => Promise.resolve(null)),
+    renamePerson: renamePerson || mock(() => Promise.resolve()),
+    mergePeople: mergePeople || mock(() => Promise.resolve()),
+    reassignFaces:
+      reassignFaces || mock(() => Promise.resolve('mock-person')),
+    hidePerson: hidePerson || mock(() => Promise.resolve()),
+    setPersonThumbnail: setPersonThumbnail || mock(() => Promise.resolve()),
+    allFaceAssetIds:
+      allFaceAssetIds || mock(() => Promise.resolve([] as string[])),
+    setFacesStatus: setFacesStatus || mock(() => Promise.resolve()),
+    fetchFacesStatus:
+      fetchFacesStatus ||
+      mock(() => Promise.resolve(new Map<string, SyntheticStatus>())),
+    assetIdsWithFacesStatus:
+      assetIdsWithFacesStatus || mock(() => Promise.resolve([] as string[])),
+    modelVersionsByAssets:
+      modelVersionsByAssets ||
+      mock(() => Promise.resolve(new Map<string, Set<string>>()))
   };
   return mockFaceStore;
 }

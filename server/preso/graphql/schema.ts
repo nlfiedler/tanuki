@@ -73,16 +73,16 @@ export const resolvers: Resolvers = {
       return metadataToGQL(meta);
     },
     synthetic: async (parent: any, _args, context: GraphQLContext) => {
-      if (parent?.synthetic !== undefined) {
-        return syntheticToGQL(parent.synthetic);
-      }
-      const data = await context.syntheticLoader.load(parent.id);
-      return syntheticToGQL(data);
+      const data =
+        parent?.synthetic === undefined
+          ? await context.syntheticLoader.load(parent.id)
+          : parent.synthetic;
+      return syntheticToGQL(data, parent.id);
     },
     syntheticStatus: async (parent: any, _args, context: GraphQLContext) => {
-      if (parent?.syntheticStatus !== undefined) {
-        return statusToGQL(parent.syntheticStatus);
-      }
+      // Always go through the loader: the surfaced status is the worse of the
+      // labels status (on the record, carried inline) and the faces status
+      // (in the face store), so the inline value alone is not authoritative.
       const status = await context.syntheticStatusLoader.load(parent.id);
       return statusToGQL(status);
     }
@@ -94,7 +94,7 @@ export const resolvers: Resolvers = {
     },
     synthetic: async (parent: any, _args, context: GraphQLContext) => {
       const data = await context.syntheticLoader.load(parent.assetId);
-      return syntheticToGQL(data);
+      return syntheticToGQL(data, parent.assetId);
     },
     syntheticStatus: async (parent: any, _args, context: GraphQLContext) => {
       const status = await context.syntheticStatusLoader.load(parent.assetId);
@@ -113,6 +113,14 @@ export const resolvers: Resolvers = {
         return blobs.previewUrl(parent.assetId, { height: h });
       }
       return blobs.previewUrl(parent.assetId, { height: 800 });
+    }
+  },
+  SyntheticData: {
+    // People are resolved from the face store via a per-request DataLoader,
+    // keyed by the asset id threaded onto the parent by the `synthetic` field.
+    people: async (parent: any, _args, context: GraphQLContext) => {
+      const summaries = await context.peopleLoader.load(parent._assetId);
+      return summaries.map((s) => personToGQL(s));
     }
   },
   Query: {
@@ -249,6 +257,61 @@ export const resolvers: Resolvers = {
       const assetsByLabel: any = container.resolve('assetsByLabel');
       const results = await assetsByLabel(args.label);
       return paginateResults(results, args.offset, args.limit);
+    },
+
+    async people(
+      _parent: any,
+      args: { includeHidden?: boolean | null },
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<any[]> {
+      logger.info('people');
+      const getPeople: any = container.resolve('getPeople');
+      const summaries = await getPeople(args.includeHidden ?? false);
+      return summaries.map((s: any) => personToGQL(s));
+    },
+
+    async personFaces(
+      _parent: any,
+      args: { id: string },
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<any[]> {
+      logger.info('personFaces');
+      const getPersonFaces: any = container.resolve('getPersonFaces');
+      const faces = await getPersonFaces(args.id);
+      return faces.map((f: any) => ({
+        id: f.id,
+        assetId: f.assetId,
+        thumbnail: faceThumbUrl(f.id)
+      }));
+    },
+
+    async assetsByPerson(
+      _parent: any,
+      args: { id: string; offset?: number | null; limit?: number | null },
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<SearchMeta> {
+      logger.info('assetsByPerson');
+      const assetsByPerson: any = container.resolve('assetsByPerson');
+      // The face store pages at the source, so pass offset/limit through and
+      // build the meta from the store's total rather than slicing a full list.
+      const offset = Math.max(0, args.offset ?? 0);
+      const limit = boundedIntValue(args.limit, 16, 1, 256);
+      const { results, total } = await assetsByPerson(args.id, offset, limit);
+      const pageRows = results.map((r: SearchResult) =>
+        Object.assign({}, r, {
+          thumbnailUrl: blobs.thumbnailUrl(r.assetId, 960, 960),
+          assetUrl: blobs.assetUrl(r.assetId)
+        })
+      );
+      const lastPage = total === 0 ? 1 : Math.ceil(total / limit);
+      return {
+        results: pageRows as unknown as SearchMeta['results'],
+        count: total,
+        lastPage
+      };
     },
 
     async pending(
@@ -475,6 +538,81 @@ export const resolvers: Resolvers = {
       logger.info('retrySyntheticJobs');
       const retry: any = container.resolve('retrySyntheticJobs');
       return retry(args.kind);
+    },
+
+    async backfillFaceRecognition(
+      _parent: any,
+      args: { force?: boolean | null },
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<number> {
+      logger.info('backfillFaceRecognition');
+      const backfill: any = container.resolve('backfillFaceRecognition');
+      return backfill(args.force ?? false);
+    },
+
+    async renamePerson(
+      _parent: any,
+      args: { id: string; name?: string | null },
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<any> {
+      logger.info('renamePerson');
+      const renamePerson: any = container.resolve('renamePerson');
+      return personOrThrow(await renamePerson(args.id, args.name ?? null), args.id);
+    },
+
+    async mergePeople(
+      _parent: any,
+      args: { sourceId: string; targetId: string },
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<any> {
+      logger.info('mergePeople');
+      const mergePeople: any = container.resolve('mergePeople');
+      return personOrThrow(
+        await mergePeople(args.sourceId, args.targetId),
+        args.targetId
+      );
+    },
+
+    async reassignFaces(
+      _parent: any,
+      args: { faceIds: string[]; personId?: string | null },
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<any> {
+      logger.info('reassignFaces');
+      const reassignFaces: any = container.resolve('reassignFaces');
+      return personOrThrow(
+        await reassignFaces(args.faceIds, args.personId ?? null),
+        'new person'
+      );
+    },
+
+    async hidePerson(
+      _parent: any,
+      args: { id: string; hidden: boolean },
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<any> {
+      logger.info('hidePerson');
+      const hidePerson: any = container.resolve('hidePerson');
+      return personOrThrow(await hidePerson(args.id, args.hidden), args.id);
+    },
+
+    async setPersonThumbnail(
+      _parent: any,
+      args: { id: string; faceId: string },
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<any> {
+      logger.info('setPersonThumbnail');
+      const setPersonThumbnail: any = container.resolve('setPersonThumbnail');
+      return personOrThrow(
+        await setPersonThumbnail(args.id, args.faceId),
+        args.id
+      );
     }
   }
 };
@@ -709,14 +847,44 @@ function assetToGQL(entity: Asset): GQLAsset {
   };
 }
 
+/**
+ * Shape a `SyntheticData` for GraphQL. Always returns an object (never null) so
+ * the `people` field is reachable even when an asset produced no labels; the
+ * asset id is threaded on (as `_assetId`, not part of the schema) for the
+ * `people` field resolver's DataLoader.
+ */
 function syntheticToGQL(
-  synthetic: SyntheticData | null | undefined
-): GQLSyntheticData | null {
-  if (!synthetic) return null;
+  synthetic: SyntheticData | null | undefined,
+  assetId: string
+): GQLSyntheticData {
   return {
-    labels: synthetic.labels,
-    primaryLabel: synthetic.primaryLabel
+    labels: synthetic?.labels ?? [],
+    primaryLabel: synthetic?.primaryLabel ?? null,
+    _assetId: assetId
+  } as unknown as GQLSyntheticData;
+}
+
+/** URL for a face crop thumbnail (served by the /faces route). */
+function faceThumbUrl(faceId: string | null): string {
+  // Persons always have at least one face, but fall back defensively.
+  return faceId ? `/faces/${faceId}/thumb` : '/placeholder.svg';
+}
+
+/** Map a domain PersonSummary to the GraphQL Person shape. */
+function personToGQL(summary: any): any {
+  return {
+    id: summary.person.id,
+    name: summary.person.name,
+    thumbnail: faceThumbUrl(summary.representativeFaceId),
+    hidden: summary.person.hidden,
+    faceCount: summary.faceCount
   };
+}
+
+/** Coerce a possibly-null person summary into a GQL person, or throw. */
+function personOrThrow(summary: any, id: string): any {
+  if (!summary) throw new Error(`no such person: ${id}`);
+  return personToGQL(summary);
 }
 
 /**

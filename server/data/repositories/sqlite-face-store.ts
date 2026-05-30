@@ -2,14 +2,18 @@
 // Copyright (c) 2026 Nathan Fiedler
 //
 import assert from 'node:assert';
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Database } from 'bun:sqlite';
 import {
+  Face,
   type JobKind,
   Person,
+  type PersonSummary,
   SyntheticJob
 } from 'tanuki/server/domain/entities/face.ts';
+import { SyntheticStatus } from 'tanuki/server/domain/entities/synthetic-data.ts';
 import { type FaceStore } from 'tanuki/server/domain/repositories/face-store.ts';
 import { type SettingsRepository } from 'tanuki/server/domain/repositories/settings-repository.ts';
 
@@ -39,6 +43,80 @@ function jobFromRow(row: JobRow): SyntheticJob {
     row.enqueued_at
   );
 }
+
+interface PersonRow {
+  id: string;
+  name: string | null;
+  thumbnail_face: string | null;
+  hidden: number;
+  created_at: number;
+}
+
+function personFromRow(row: PersonRow): Person {
+  return new Person(
+    row.id,
+    row.name,
+    row.thumbnail_face,
+    row.hidden !== 0,
+    row.created_at
+  );
+}
+
+interface FaceRow {
+  id: string;
+  asset_id: string;
+  person_id: string | null;
+  bbox: string;
+  embedding: Uint8Array;
+  thumbnail: Uint8Array;
+  detector_score: number | null;
+  model_version: string;
+}
+
+/**
+ * Decode a stored embedding BLOB into a Float32Array. The bytes come back from
+ * SQLite as a Uint8Array whose backing buffer may not be 4-byte aligned, so we
+ * copy into a fresh, aligned ArrayBuffer before viewing it as floats.
+ */
+function embeddingFromBlob(blob: Uint8Array): Float32Array {
+  const copy = blob.buffer.slice(
+    blob.byteOffset,
+    blob.byteOffset + blob.byteLength
+  );
+  return new Float32Array(copy);
+}
+
+/** Encode an embedding as a BLOB-ready byte view (no copy). */
+function embeddingToBlob(embedding: Float32Array): Uint8Array {
+  return new Uint8Array(
+    embedding.buffer,
+    embedding.byteOffset,
+    embedding.byteLength
+  );
+}
+
+function faceFromRow(row: FaceRow): Face {
+  return new Face(
+    row.id,
+    row.asset_id,
+    JSON.parse(row.bbox) as [number, number, number, number],
+    embeddingFromBlob(row.embedding),
+    row.thumbnail,
+    row.model_version,
+    row.person_id,
+    row.detector_score
+  );
+}
+
+/**
+ * SQL fragment ordering a person's faces so the "best" representative comes
+ * first: largest bounding-box area, breaking ties by detector score. Used both
+ * to pick a default thumbnail and (implicitly) to keep that choice stable.
+ */
+const REPRESENTATIVE_ORDER =
+  `ORDER BY (CAST(json_extract(bbox, '$[2]') AS REAL) * ` +
+  `CAST(json_extract(bbox, '$[3]') AS REAL)) DESC, ` +
+  `detector_score DESC`;
 
 /**
  * SQLite-backed {@link FaceStore}. Lives in its own database file, separate
@@ -148,6 +226,17 @@ class SqliteFaceStore implements FaceStore {
       }
     }
 
+    // Terminal faces-extraction status per asset (absence = PENDING). Kept in
+    // the face store so the labels path and the three record backends are
+    // untouched; the GraphQL status is the worse of this and the labels status.
+    this.database.run(
+      `CREATE TABLE IF NOT EXISTS face_status (
+        asset_id TEXT NOT NULL PRIMARY KEY,
+        status TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      ) STRICT`
+    );
+
     this.database.run(
       'CREATE INDEX IF NOT EXISTS face_by_person ON face(person_id)'
     );
@@ -255,24 +344,418 @@ class SqliteFaceStore implements FaceStore {
 
   /** @inheritDoc */
   async fetchPeopleByAssetIds(
-    _assetIds: string[]
-  ): Promise<Map<string, Person[]>> {
-    throw new Error('FaceStore.fetchPeopleByAssetIds is a Phase 2 feature');
+    assetIds: string[]
+  ): Promise<Map<string, PersonSummary[]>> {
+    const result = new Map<string, PersonSummary[]>();
+    for (const id of assetIds) result.set(id, []);
+    if (assetIds.length === 0) return result;
+
+    const placeholders = assetIds.map(() => '?').join(',');
+    const rows = this.database!
+      .query(
+        `SELECT DISTINCT asset_id, person_id FROM face
+          WHERE person_id IS NOT NULL AND asset_id IN (${placeholders})`
+      )
+      .all(...assetIds) as { asset_id: string; person_id: string }[];
+
+    // Summarize each distinct person once, then fan the summary out to every
+    // asset it appears in.
+    const summaries = new Map<string, PersonSummary>();
+    for (const row of rows) {
+      if (!summaries.has(row.person_id)) {
+        const summary = this.summarizePersonById(row.person_id);
+        if (summary) summaries.set(row.person_id, summary);
+      }
+    }
+    for (const row of rows) {
+      const summary = summaries.get(row.person_id);
+      if (summary) result.get(row.asset_id)!.push(summary);
+    }
+    return result;
   }
 
   /** @inheritDoc */
   async assetIdsByPerson(
-    _personId: string,
-    _offset: number,
-    _limit: number
+    personId: string,
+    offset: number,
+    limit: number
   ): Promise<{ ids: string[]; total: number }> {
-    throw new Error('FaceStore.assetIdsByPerson is a Phase 2 feature');
+    const total = (
+      this.database!
+        .query(
+          'SELECT COUNT(DISTINCT asset_id) AS count FROM face WHERE person_id = ?'
+        )
+        .get(personId) as { count: number }
+    ).count;
+    // Group by asset so an asset with several faces of the same person appears
+    // once; order by the newest contributing face (highest rowid).
+    const rows = this.database!
+      .query(
+        `SELECT asset_id, MAX(rowid) AS r FROM face
+          WHERE person_id = ?
+          GROUP BY asset_id
+          ORDER BY r DESC
+          LIMIT ? OFFSET ?`
+      )
+      .all(personId, limit, offset) as { asset_id: string }[];
+    return { ids: rows.map((row) => row.asset_id), total };
   }
 
   /** @inheritDoc */
-  async deleteByAssetId(_assetId: string): Promise<void> {
-    throw new Error('FaceStore.deleteByAssetId is a Phase 2 feature');
+  async deleteByAssetId(assetId: string): Promise<void> {
+    this.database!.transaction(() => {
+      const affected = this.database!
+        .query(
+          `SELECT DISTINCT person_id FROM face
+            WHERE asset_id = ? AND person_id IS NOT NULL`
+        )
+        .all(assetId) as { person_id: string }[];
+      this.database!.query('DELETE FROM face WHERE asset_id = ?').run(assetId);
+      this.database!
+        .query('DELETE FROM face_status WHERE asset_id = ?')
+        .run(assetId);
+      this.cleanupEmptyPeople(affected.map((row) => row.person_id));
+    })();
   }
+
+  /** @inheritDoc */
+  async setFacesStatus(
+    assetId: string,
+    status: SyntheticStatus
+  ): Promise<void> {
+    if (status === SyntheticStatus.PENDING) {
+      // PENDING is the implicit default; clear any stored row.
+      this.database!
+        .query('DELETE FROM face_status WHERE asset_id = ?')
+        .run(assetId);
+      return;
+    }
+    this.database!.query(
+      `INSERT INTO face_status (asset_id, status, updated_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(asset_id) DO UPDATE SET status = excluded.status,
+         updated_at = excluded.updated_at`
+    ).run(assetId, status, now());
+  }
+
+  /** @inheritDoc */
+  async fetchFacesStatus(
+    assetIds: string[]
+  ): Promise<Map<string, SyntheticStatus>> {
+    const result = new Map<string, SyntheticStatus>();
+    for (const id of assetIds) result.set(id, SyntheticStatus.PENDING);
+    if (assetIds.length === 0) return result;
+    const placeholders = assetIds.map(() => '?').join(',');
+    const rows = this.database!
+      .query(
+        `SELECT asset_id, status FROM face_status
+          WHERE asset_id IN (${placeholders})`
+      )
+      .all(...assetIds) as { asset_id: string; status: string }[];
+    for (const row of rows) {
+      result.set(row.asset_id, parseFacesStatus(row.status));
+    }
+    return result;
+  }
+
+  /** @inheritDoc */
+  async assetIdsWithFacesStatus(
+    status: SyntheticStatus
+  ): Promise<string[]> {
+    const rows = this.database!
+      .query('SELECT asset_id FROM face_status WHERE status = ?')
+      .all(status) as { asset_id: string }[];
+    return rows.map((row) => row.asset_id);
+  }
+
+  /** @inheritDoc */
+  async modelVersionsByAssets(
+    assetIds: string[]
+  ): Promise<Map<string, Set<string>>> {
+    const result = new Map<string, Set<string>>();
+    if (assetIds.length === 0) return result;
+    const placeholders = assetIds.map(() => '?').join(',');
+    const rows = this.database!
+      .query(
+        `SELECT DISTINCT asset_id, model_version FROM face
+          WHERE asset_id IN (${placeholders})`
+      )
+      .all(...assetIds) as { asset_id: string; model_version: string }[];
+    for (const row of rows) {
+      let versions = result.get(row.asset_id);
+      if (!versions) {
+        versions = new Set<string>();
+        result.set(row.asset_id, versions);
+      }
+      versions.add(row.model_version);
+    }
+    return result;
+  }
+
+  /** @inheritDoc */
+  async insertFace(face: Face): Promise<void> {
+    this.database!.query(
+      `INSERT INTO face
+         (id, asset_id, person_id, bbox, embedding, thumbnail,
+          detector_score, model_version)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      face.id,
+      face.assetId,
+      face.personId,
+      JSON.stringify(face.bbox),
+      embeddingToBlob(face.embedding),
+      face.thumbnail,
+      face.detectorScore,
+      face.modelVersion
+    );
+  }
+
+  /** @inheritDoc */
+  async nearestPerson(
+    embedding: Float32Array,
+    modelVersion: string
+  ): Promise<{ personId: string; score: number } | null> {
+    const rows = this.database!
+      .query(
+        `SELECT person_id, embedding FROM face
+          WHERE person_id IS NOT NULL AND model_version = ?`
+      )
+      .all(modelVersion) as { person_id: string; embedding: Uint8Array }[];
+    let bestPerson: string | null = null;
+    let bestScore = -Infinity;
+    for (const row of rows) {
+      const other = embeddingFromBlob(row.embedding);
+      const score = dot(embedding, other);
+      if (score > bestScore) {
+        bestScore = score;
+        bestPerson = row.person_id;
+      }
+    }
+    return bestPerson === null
+      ? null
+      : { personId: bestPerson, score: bestScore };
+  }
+
+  /** @inheritDoc */
+  async createPerson(): Promise<Person> {
+    const id = crypto.randomUUID();
+    const createdAt = now();
+    this.insertPersonRow(id, createdAt);
+    return new Person(id, null, null, false, createdAt);
+  }
+
+  /** Insert a bare, unnamed person row. Synchronous for use inside transactions. */
+  private insertPersonRow(id: string, createdAt: number): void {
+    this.database!.query(
+      `INSERT INTO person (id, name, thumbnail_face, hidden, created_at)
+       VALUES (?, NULL, NULL, 0, ?)`
+    ).run(id, createdAt);
+  }
+
+  /** @inheritDoc */
+  async listPeople(includeHidden: boolean): Promise<PersonSummary[]> {
+    const rows = this.database!
+      .query(
+        `SELECT id, name, thumbnail_face, hidden, created_at FROM person
+          ${includeHidden ? '' : 'WHERE hidden = 0'}
+          ORDER BY created_at ASC, id ASC`
+      )
+      .all() as PersonRow[];
+    return rows.map((row) => this.summarizePersonRow(row));
+  }
+
+  /** @inheritDoc */
+  async getPersonSummary(id: string): Promise<PersonSummary | null> {
+    return this.summarizePersonById(id);
+  }
+
+  /** @inheritDoc */
+  async personIdsByName(name: string): Promise<string[]> {
+    const rows = this.database!
+      .query(
+        `SELECT id FROM person
+          WHERE name IS NOT NULL AND LOWER(name) = LOWER(?)`
+      )
+      .all(name) as { id: string }[];
+    return rows.map((row) => row.id);
+  }
+
+  /** @inheritDoc */
+  async facesForPerson(personId: string): Promise<Face[]> {
+    const rows = this.database!
+      .query(
+        `SELECT id, asset_id, person_id, bbox, embedding, thumbnail,
+                detector_score, model_version
+           FROM face WHERE person_id = ? ORDER BY rowid ASC`
+      )
+      .all(personId) as FaceRow[];
+    return rows.map((row) => faceFromRow(row));
+  }
+
+  /** @inheritDoc */
+  async faceThumbnail(faceId: string): Promise<Uint8Array | null> {
+    const row = this.database!
+      .query('SELECT thumbnail FROM face WHERE id = ?')
+      .get(faceId) as { thumbnail: Uint8Array } | undefined;
+    return row ? row.thumbnail : null;
+  }
+
+  /** @inheritDoc */
+  async renamePerson(id: string, name: string | null): Promise<void> {
+    // Normalize blank/whitespace-only names to null so "unnamed" is a single
+    // canonical state rather than a mix of null and "".
+    const normalized = name && name.trim().length > 0 ? name.trim() : null;
+    this.database!.query('UPDATE person SET name = ? WHERE id = ?').run(
+      normalized,
+      id
+    );
+  }
+
+  /** @inheritDoc */
+  async mergePeople(sourceId: string, targetId: string): Promise<void> {
+    if (sourceId === targetId) return;
+    this.database!.transaction(() => {
+      this.database!.query(
+        'UPDATE face SET person_id = ? WHERE person_id = ?'
+      ).run(targetId, sourceId);
+      this.database!.query('DELETE FROM person WHERE id = ?').run(sourceId);
+    })();
+  }
+
+  /** @inheritDoc */
+  async reassignFaces(
+    faceIds: string[],
+    personId: string | null
+  ): Promise<string> {
+    if (faceIds.length === 0) {
+      throw new Error('reassignFaces requires at least one face');
+    }
+    return this.database!.transaction(() => {
+      const placeholders = faceIds.map(() => '?').join(',');
+      // Remember the source clusters so we can prune any that empty out.
+      const sources = this.database!
+        .query(
+          `SELECT DISTINCT person_id FROM face
+            WHERE person_id IS NOT NULL AND id IN (${placeholders})`
+        )
+        .all(...faceIds) as { person_id: string }[];
+
+      let destination = personId;
+      if (destination === null) {
+        destination = crypto.randomUUID();
+        this.insertPersonRow(destination, now());
+      }
+      this.database!
+        .query(
+          `UPDATE face SET person_id = ? WHERE id IN (${placeholders})`
+        )
+        .run(destination, ...faceIds);
+
+      this.cleanupEmptyPeople(
+        sources.map((row) => row.person_id).filter((id) => id !== destination)
+      );
+      return destination;
+    })();
+  }
+
+  /** @inheritDoc */
+  async hidePerson(id: string, hidden: boolean): Promise<void> {
+    this.database!.query('UPDATE person SET hidden = ? WHERE id = ?').run(
+      hidden ? 1 : 0,
+      id
+    );
+  }
+
+  /** @inheritDoc */
+  async setPersonThumbnail(id: string, faceId: string): Promise<void> {
+    const belongs = this.database!
+      .query('SELECT 1 FROM face WHERE id = ? AND person_id = ?')
+      .get(faceId, id);
+    if (!belongs) {
+      throw new Error(`face ${faceId} does not belong to person ${id}`);
+    }
+    this.database!.query(
+      'UPDATE person SET thumbnail_face = ? WHERE id = ?'
+    ).run(faceId, id);
+  }
+
+  /** @inheritDoc */
+  async allFaceAssetIds(): Promise<string[]> {
+    const rows = this.database!
+      .query('SELECT DISTINCT asset_id FROM face')
+      .all() as { asset_id: string }[];
+    return rows.map((row) => row.asset_id);
+  }
+
+  /** Build a {@link PersonSummary} for a person id, or null if absent. */
+  private summarizePersonById(id: string): PersonSummary | null {
+    const row = this.database!
+      .query(
+        'SELECT id, name, thumbnail_face, hidden, created_at FROM person WHERE id = ?'
+      )
+      .get(id) as PersonRow | undefined;
+    return row ? this.summarizePersonRow(row) : null;
+  }
+
+  /** Enrich a person row with face count and resolved representative face. */
+  private summarizePersonRow(row: PersonRow): PersonSummary {
+    const faceCount = (
+      this.database!
+        .query('SELECT COUNT(*) AS count FROM face WHERE person_id = ?')
+        .get(row.id) as { count: number }
+    ).count;
+
+    // Honor an explicit pinned thumbnail only while it still belongs to the
+    // person; otherwise fall back to the largest/highest-scoring face.
+    let representativeFaceId: string | null = null;
+    if (row.thumbnail_face) {
+      const pinned = this.database!
+        .query('SELECT 1 FROM face WHERE id = ? AND person_id = ?')
+        .get(row.thumbnail_face, row.id);
+      if (pinned) representativeFaceId = row.thumbnail_face;
+    }
+    if (representativeFaceId === null) {
+      const best = this.database!
+        .query(
+          `SELECT id FROM face WHERE person_id = ? ${REPRESENTATIVE_ORDER} LIMIT 1`
+        )
+        .get(row.id) as { id: string } | undefined;
+      representativeFaceId = best?.id ?? null;
+    }
+    return { person: personFromRow(row), faceCount, representativeFaceId };
+  }
+
+  /**
+   * Delete any of the given person rows that no longer have faces. The last
+   * face referencing a person being removed cascades to deleting the person
+   * row (and its assigned name) per the cluster-lifecycle rules.
+   */
+  private cleanupEmptyPeople(personIds: string[]): void {
+    for (const id of new Set(personIds)) {
+      const remaining = this.database!
+        .query('SELECT 1 FROM face WHERE person_id = ? LIMIT 1')
+        .get(id);
+      if (!remaining) {
+        this.database!.query('DELETE FROM person WHERE id = ?').run(id);
+      }
+    }
+  }
+}
+
+/** Parse a stored faces-status string, defaulting to PENDING on anything odd. */
+function parseFacesStatus(value: string): SyntheticStatus {
+  if (value === SyntheticStatus.READY) return SyntheticStatus.READY;
+  if (value === SyntheticStatus.FAILED) return SyntheticStatus.FAILED;
+  return SyntheticStatus.PENDING;
+}
+
+/** Dot product of two equal-length vectors (cosine similarity for unit vectors). */
+function dot(a: Float32Array, b: Float32Array): number {
+  let sum = 0;
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) sum += a[i]! * b[i]!;
+  return sum;
 }
 
 export { SqliteFaceStore };

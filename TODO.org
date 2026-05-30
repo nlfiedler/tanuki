@@ -1,12 +1,6 @@
 * Action Items
 ** TODO ML labels
-*** DONE model licenses
-*** DONE publish models and mapping to tanuki releases
-*** TODO compare =/synthetic= output of tanuki to the 3 fixtures from namazu
-*** TODO make sure there is a ~namazu~ detector on the tanuki side that calls =/synthetic= route
-*** DONE document =label:<class>= query predicate
-*** TODO document =person:id= query predicate (with face recognition)
-*** TODO add advice about deployment (CouchDB + namazu)
+*** TODO add advice about deployment (CouchDB + namazu), databases in two paths
 *** TODO add =FACE_STORE_PATH= to settings and docker deployment
 ** TODO PDF support
 *** there is a single PDF file that is a mini-book by Christina
@@ -96,6 +90,7 @@
 | format   | format:jpeg           | match on the media ~subtype~   |
 | tag      | tag:cats              | match on a tag                 |
 | label    | label:beach           | match on an ML-derived label   |
+| person   | perons:id/name        | match on person UUID or name   |
 | loc      | loc:paris             | match on any location field    |
 | loc      | loc:any:nice          | match on any location field    |
 | loc      | loc:label:beach       | match on location label field  |

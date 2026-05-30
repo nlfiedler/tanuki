@@ -132,6 +132,23 @@ class LabelConstraint {
   }
 }
 
+/**
+ * Matches assets belonging to a person (face cluster). People live in the face
+ * store, not on the asset, so this constraint holds a pre-resolved set of the
+ * person's asset ids (fetched while parsing) and matches by membership.
+ */
+class PersonConstraint {
+  assetIds: Set<string>;
+
+  constructor(assetIds: Set<string>) {
+    this.assetIds = assetIds;
+  }
+
+  matches(asset: Asset): boolean {
+    return this.assetIds.has(asset.key);
+  }
+}
+
 /** Matches if the asset has a populated value for the named field. */
 class HasConstraint {
   field: string;
@@ -259,8 +276,18 @@ class EmptyConstraint {
   }
 }
 
+/**
+ * Resolves a person id to the set of asset ids that person appears in. Injected
+ * into the parser so the (otherwise pure, in-memory) `person:` predicate can be
+ * pre-resolved against the face store.
+ */
+type ResolvePerson = (personId: string) => Promise<Set<string>>;
+
 /** Convert a keyword and its arguments into a constraint. */
-function buildPredicate(atom: string[]): Constraint {
+async function buildPredicate(
+  atom: string[],
+  resolvePerson?: ResolvePerson
+): Promise<Constraint> {
   const keyword = atom.shift() ?? 'undefined';
   if (keyword == 'after') {
     return new AfterConstraint(new Date(atom.shift()!));
@@ -285,6 +312,12 @@ function buildPredicate(atom: string[]): Constraint {
     return new TagConstraint(atom.shift()!);
   } else if (keyword == 'label') {
     return new LabelConstraint(atom.shift()!);
+  } else if (keyword == 'person') {
+    const personId = atom.shift()!;
+    if (!resolvePerson) {
+      throw new Error('person: predicate is not supported in this context');
+    }
+    return new PersonConstraint(await resolvePerson(personId));
   } else if (keyword == 'has') {
     return new HasConstraint(atom.shift()!);
   } else {
@@ -297,9 +330,18 @@ function buildPredicate(atom: string[]): Constraint {
  * perkeep application (https://perkeep.org).
  */
 
-/** Parse the given query and return a constraint for filtering assets. */
-async function parse(query: string): Promise<Constraint> {
-  const parser = new QueryParser(query);
+/**
+ * Parse the given query and return a constraint for filtering assets.
+ *
+ * @param query - the query string.
+ * @param resolvePerson - optional hook to resolve `person:<id>` terms against
+ *   the face store; when omitted, a `person:` term throws.
+ */
+async function parse(
+  query: string,
+  resolvePerson?: ResolvePerson
+): Promise<Constraint> {
+  const parser = new QueryParser(query, resolvePerson);
   const result = await parser.parseExpression();
   await parser.drainLexer();
   return result;
@@ -308,10 +350,12 @@ async function parse(query: string): Promise<Constraint> {
 class QueryParser {
   tokens: AsyncQueue<Token>;
   peeked: Token | null;
+  resolvePerson?: ResolvePerson;
 
-  constructor(query: string) {
+  constructor(query: string, resolvePerson?: ResolvePerson) {
     this.tokens = lex(query);
     this.peeked = null;
+    this.resolvePerson = resolvePerson;
   }
 
   /**
@@ -451,7 +495,7 @@ class QueryParser {
       }
       break;
     }
-    return buildPredicate(a);
+    return buildPredicate(a, this.resolvePerson);
   }
 
   /// Current token is expected to be an open paren.
@@ -897,4 +941,4 @@ function is_search_word_rune(ch: string): boolean {
   return !/\s/.test(ch);
 }
 
-export { lex, Token, TokenType, parse, type Constraint };
+export { lex, Token, TokenType, parse, type Constraint, type ResolvePerson };

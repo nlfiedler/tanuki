@@ -6,7 +6,11 @@ import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/search.ts';
 import ScanAssets from 'tanuki/server/domain/usecases/scan-assets.ts';
-import { recordRepositoryMock, searchRepositoryMock } from './mocking.ts';
+import {
+  faceStoreMock,
+  recordRepositoryMock,
+  searchRepositoryMock
+} from './mocking.ts';
 
 describe('ScanAssets use case', function () {
   test('should do nothing when empty query', async function () {
@@ -15,7 +19,8 @@ describe('ScanAssets use case', function () {
     const mockSearchRepository = searchRepositoryMock({});
     const usecase = ScanAssets({
       recordRepository: mockRecordRepository,
-      searchRepository: mockSearchRepository
+      searchRepository: mockSearchRepository,
+      faceStore: faceStoreMock({})
     });
     // act
     const actual = await usecase('   ');
@@ -31,7 +36,8 @@ describe('ScanAssets use case', function () {
     const mockSearchRepository = searchRepositoryMock({});
     const usecase = ScanAssets({
       recordRepository: mockRecordRepository,
-      searchRepository: mockSearchRepository
+      searchRepository: mockSearchRepository,
+      faceStore: faceStoreMock({})
     });
     // act
     const actual = await usecase('tag:kitten');
@@ -63,7 +69,8 @@ describe('ScanAssets use case', function () {
     const mockSearchRepository = searchRepositoryMock({});
     const usecase = ScanAssets({
       recordRepository: mockRecordRepository,
-      searchRepository: mockSearchRepository
+      searchRepository: mockSearchRepository,
+      faceStore: faceStoreMock({})
     });
     // act
     const actual = await usecase('tag:kitten');
@@ -116,7 +123,8 @@ describe('ScanAssets use case', function () {
     const mockSearchRepository = searchRepositoryMock({});
     const usecase = ScanAssets({
       recordRepository: mockRecordRepository,
-      searchRepository: mockSearchRepository
+      searchRepository: mockSearchRepository,
+      faceStore: faceStoreMock({})
     });
     // act
     const actual = await usecase('tag:cat');
@@ -147,7 +155,8 @@ describe('ScanAssets use case', function () {
     });
     const usecase = ScanAssets({
       recordRepository: mockRecordRepository,
-      searchRepository: mockSearchRepository
+      searchRepository: mockSearchRepository,
+      faceStore: faceStoreMock({})
     });
     // act
     const actual = await usecase('tag:cat');
@@ -157,6 +166,53 @@ describe('ScanAssets use case', function () {
     expect(mockRecordRepository.fetchAssets).toHaveBeenCalledTimes(0);
     expect(mockSearchRepository.get).toHaveBeenCalledTimes(1);
     expect(mockSearchRepository.put).toHaveBeenCalledTimes(0);
+    mock.clearAllMocks();
+  });
+
+  test('should match assets by person name through the face store', async function () {
+    // arrange
+    const assets = [
+      new Asset('alice1')
+        .setChecksum('sha1-a')
+        .setFilename('a.jpg')
+        .setByteLength(1024)
+        .setMediaType('image/jpeg')
+        .setImportDate(new Date(2020, 0, 1)),
+      new Asset('other1')
+        .setChecksum('sha1-b')
+        .setFilename('b.jpg')
+        .setByteLength(1024)
+        .setMediaType('image/jpeg')
+        .setImportDate(new Date(2020, 0, 1))
+    ];
+    const fetchAssets = mock();
+    fetchAssets.mockImplementationOnce(() => Promise.resolve([assets, 'done']));
+    fetchAssets.mockImplementation(() => Promise.resolve([[], 'done']));
+    const mockRecordRepository = recordRepositoryMock({ fetchAssets });
+    const mockSearchRepository = searchRepositoryMock({});
+    // "Alice" resolves to person p1 (whose only asset is alice1); the token
+    // treated as an id resolves to nothing.
+    const personIdsByName = mock((name: string) =>
+      Promise.resolve(name.toLowerCase() === 'alice' ? ['p1'] : [])
+    );
+    const assetIdsByPerson = mock((personId: string) =>
+      Promise.resolve(
+        personId === 'p1'
+          ? { ids: ['alice1'], total: 1 }
+          : { ids: [] as string[], total: 0 }
+      )
+    );
+    const mockFaceStore = faceStoreMock({ personIdsByName, assetIdsByPerson });
+    const usecase = ScanAssets({
+      recordRepository: mockRecordRepository,
+      searchRepository: mockSearchRepository,
+      faceStore: mockFaceStore
+    });
+    // act
+    const actual = await usecase('person:Alice');
+    // assert
+    expect(actual.map((r) => r.assetId)).toEqual(['alice1']);
+    expect(personIdsByName).toHaveBeenCalledWith('Alice');
     mock.clearAllMocks();
   });
 });

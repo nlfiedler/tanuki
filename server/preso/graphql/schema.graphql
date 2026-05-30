@@ -98,6 +98,35 @@ type SyntheticData {
   labels: [String!]!
   "Top label, denormalized for fast queries; null if no labels survived curation."
   primaryLabel: String
+  "People (face clusters) appearing in this asset; empty when none were detected."
+  people: [Person!]!
+}
+
+"""
+A clustered identity derived from face recognition. The id is opaque; the name
+is user-assigned and may be null. The thumbnail is the representative face crop.
+"""
+type Person {
+  "Opaque person identifier."
+  id: ID!
+  "User-assigned display name, or null if unnamed."
+  name: String
+  "URL for the representative face crop (served by /faces/<face_id>/thumb)."
+  thumbnail: String!
+  "True when excluded from the People page."
+  hidden: Boolean!
+  "Number of faces clustered under this person."
+  faceCount: Int!
+}
+
+"A single detected face, for the cluster-management view."
+type Face {
+  "Opaque face identifier (used with reassignFaces / setPersonThumbnail)."
+  id: ID!
+  "The asset this face was detected in."
+  assetId: String!
+  "URL for the aligned face crop (served by /faces/<id>/thumb)."
+  thumbnail: String!
 }
 
 """
@@ -314,6 +343,18 @@ type Query {
   (case-insensitive). Results are paginated by `offset` / `limit`.
   """
   assetsByLabel(label: String!, offset: Int, limit: Int): SearchMeta!
+  """
+  Every person (face cluster) for the People page, each with a representative
+  thumbnail and face count. Hidden people are omitted unless `includeHidden`.
+  """
+  people(includeHidden: Boolean = false): [Person!]!
+  """
+  Assets in which the given person appears, most-recently-detected first,
+  paginated by `offset` / `limit`.
+  """
+  assetsByPerson(id: ID!, offset: Int, limit: Int): SearchMeta!
+  "Every face clustered under a person, for the cluster-management view."
+  personFaces(id: ID!): [Face!]!
 }
 
 "One row in the Labels page index."
@@ -446,10 +487,32 @@ type Mutation {
   backfillLabels: Int!
   """
   Re-enqueue extraction jobs for assets whose synthetic status is `FAILED`,
-  resetting them to `PENDING`. Optionally restrict to one job kind (`labels`).
-  Returns the number of assets re-enqueued.
+  resetting them to `PENDING`. Optionally restrict to one job kind (`labels` or
+  `faces`). Returns the number of assets re-enqueued.
   """
   retrySyntheticJobs(kind: String): Int!
+  """
+  Backfill: enqueue a background `faces` extraction job for every image asset
+  that lacks current face data (never processed, or produced by a stale model
+  version) and is not already queued. Idempotent and resumable. Pass
+  `force: true` to re-enqueue every image regardless of its current status —
+  useful after switching detectors (e.g. to the Namazu push-down). Returns the
+  number of assets enqueued.
+  """
+  backfillFaceRecognition(force: Boolean = false): Int!
+  "Set or clear a person's user-assigned name."
+  renamePerson(id: ID!, name: String): Person!
+  "Merge the source person into the target; the source person is deleted."
+  mergePeople(sourceId: ID!, targetId: ID!): Person!
+  """
+  Reassign the given faces to a person (splitting a cluster). A null `personId`
+  creates a new person to receive them. Returns the destination person.
+  """
+  reassignFaces(faceIds: [ID!]!, personId: ID): Person!
+  "Hide or unhide a person; hidden people are excluded from the People page."
+  hidePerson(id: ID!, hidden: Boolean!): Person!
+  "Pin a specific face (which must belong to the person) as its thumbnail."
+  setPersonThumbnail(id: ID!, faceId: ID!): Person!
 }
 
 schema {

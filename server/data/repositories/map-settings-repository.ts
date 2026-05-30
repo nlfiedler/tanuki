@@ -38,6 +38,12 @@ class MapSettingsRepository implements SettingsRepository {
   }
 
   /** @inheritdoc */
+  getFloat(name: string, fallback: number): number {
+    const value = Number.parseFloat(this._props.get(name));
+    return Number.isNaN(value) ? fallback : value;
+  }
+
+  /** @inheritdoc */
   has(name: string): boolean {
     return this._props.has(name);
   }

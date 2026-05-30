@@ -92,9 +92,9 @@ describe('ImportUploads use case', function () {
     // act
     const actual = await usecase('test/fixtures');
     // assert
-    expect(actual).toEqual(13);
-    expect(mockBlobRepository.storeBlob).toHaveBeenCalledTimes(13);
-    expect(mockRecordRepository.putAsset).toHaveBeenCalledTimes(13);
+    expect(actual).toEqual(14);
+    expect(mockBlobRepository.storeBlob).toHaveBeenCalledTimes(14);
+    expect(mockRecordRepository.putAsset).toHaveBeenCalledTimes(14);
     mock.clearAllMocks();
   });
 });

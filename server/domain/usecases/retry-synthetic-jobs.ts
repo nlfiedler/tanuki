@@ -17,17 +17,26 @@ export default ({
   assert.ok(faceStore, 'face store must be defined');
   /**
    * Re-enqueue extraction jobs for every asset whose synthetic status is
-   * `FAILED`, resetting each back to `PENDING`. Phase 1 only has `labels`
-   * jobs, so a `kind` of `faces` is a no-op until that pipeline lands.
+   * `FAILED`, resetting each back to `PENDING`. Labels status lives on the
+   * asset record; faces status lives in the face store, so the two kinds are
+   * scanned from their respective stores.
    *
-   * Idempotent: an asset already carrying a queued labels job is left alone.
+   * Idempotent: an asset already carrying a queued job for that kind is left
+   * alone.
    *
    * @param kind - restrict to one pipeline (`labels` / `faces`), or null for all.
    * @returns the number of assets re-enqueued.
    */
   return async (kind?: string | null): Promise<number> => {
-    // nothing other than labels can be retried in Phase 1
-    if (kind && kind !== 'labels') return 0;
+    if (kind && kind !== 'labels' && kind !== 'faces') return 0;
+    let requeued = 0;
+    if (!kind || kind === 'labels') requeued += await retryLabels();
+    if (!kind || kind === 'faces') requeued += await retryFaces();
+    return requeued;
+  };
+
+  /** Re-enqueue labels jobs for assets whose labels status is FAILED. */
+  async function retryLabels(): Promise<number> {
     let requeued = 0;
     let cursor = null;
     while (true) {
@@ -53,5 +62,21 @@ export default ({
       cursor = next;
     }
     return requeued;
-  };
+  }
+
+  /** Re-enqueue faces jobs for assets whose faces status is FAILED. */
+  async function retryFaces(): Promise<number> {
+    let requeued = 0;
+    const failed = await faceStore.assetIdsWithFacesStatus(
+      SyntheticStatus.FAILED
+    );
+    for (const assetId of failed) {
+      if (await faceStore.hasPendingJob(assetId, 'faces')) continue;
+      // Reset to PENDING before enqueuing (same race rationale as labels).
+      await faceStore.setFacesStatus(assetId, SyntheticStatus.PENDING);
+      await faceStore.enqueueJob(assetId, 'faces');
+      requeued++;
+    }
+    return requeued;
+  }
 };

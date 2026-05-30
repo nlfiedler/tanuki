@@ -48,11 +48,16 @@ describe('ImportAsset use case', function () {
     expect(mockRecordRepository.getAssetByDigest).toHaveBeenCalledTimes(1);
     expect(mockBlobRepository.storeBlob).toHaveBeenCalledTimes(1);
     expect(mockRecordRepository.putAsset).toHaveBeenCalledTimes(1);
-    // a labels job is enqueued for the new image
-    expect(mockFaceStore.enqueueJob).toHaveBeenCalledTimes(1);
+    // both a labels and a faces job are enqueued for the new image
+    expect(mockFaceStore.enqueueJob).toHaveBeenCalledTimes(2);
     expect(mockFaceStore.enqueueJob).toHaveBeenCalledWith(
       actual.key,
       'labels',
+      10
+    );
+    expect(mockFaceStore.enqueueJob).toHaveBeenCalledWith(
+      actual.key,
+      'faces',
       10
     );
     mock.clearAllMocks();
