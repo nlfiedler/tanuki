@@ -64,6 +64,16 @@ The application is configured using environment variables.
   - Password for the CouchDB user named in `DATABASE_USER`.
 - **DATABASE_HEARTBEAT_MS**
   - Frequency in milliseconds for requesting latest changes from the database in order to keep the connection alive. Default is `60000` (60 seconds).
+- **FACE_CLUSTER_THRESHOLD**
+  - Cosine-similarity threshold for online clustering: a detected face joins the nearest existing person when their similarity is at least this, otherwise it seeds a new person. Default is `0.5`, which is well-characterized for MobileFaceNet on aligned crops.
+- **FACE_DETECT_MODEL_PATH**
+  - Path to the SCRFD face-detection ONNX model. Defaults to `models/scrfd_2.5g.onnx`. Only used when `NAMAZU_URL` is not set (otherwise face detection runs on the namazu server).
+- **FACE_EMBED_MODEL_PATH**
+  - Path to the MobileFaceNet face-embedding ONNX model. Defaults to `models/mobilefacenet.onnx`. Only used when `NAMAZU_URL` is not set.
+- **FACE_MODEL_VERSION**
+  - Identifier recorded on each stored face embedding; embeddings are only ever compared within the same version. Defaults to `mobilefacenet-v1`. Override only to match a namazu deployment whose embedding model has advanced ahead of this build.
+- **FACE_STORE_PATH**
+  - Path and filename for the face recognition database file (SQLite). This is always needed, regardless of whether CouchDB, PouchDB, or SQLite is used for the records store (SQLite is bested suited for storing the heaps of binary data involved with face recognition).
 - **GOOGLE_MAPS_API_KEY**
   - If defined, enables reverse geocoding using the Google Maps API.
 - **LOG_LEVEL**
@@ -72,16 +82,24 @@ The application is configured using environment variables.
   - URL for the [namazu](https://github.com/nlfiedler/namazu) blob store. If not set, assets will be stored in `ASSETS_PATH`.
 - **NODE_ENV**
   - If set to `production`, changes the logging format. Some 3rd party modules may alter their behavior slightly.
+- **ORPHAN_SWEEP_INTERVAL_MS**
+  - Interval in milliseconds between defensive face-store orphan sweeps, which remove face rows whose asset no longer exists. Defaults to `86400000` (24 hours); set to `0` to disable.
 - **PORT**
   - Port number on which to listen for HTTP connections, defaults to `3000`.
 - **POUCHDB_PATH**
   - Directory in which PouchDB will store its database files. Setting this will switch the application from using CouchDB to using PouchDB for the database (all `DATABASE_*` settings will be ignored).
 - **SQLITE_DBPATH**
   - Directory in which `tanuki.sqlite` will be created, if set. Setting this will switch the application from using CouchDB to using SQLite for the database (all `DATABASE_*` settings will be ignored).
+- **SYNTHETIC_CONCURRENCY**
+  - Number of background workers draining the synthetic-data (labels and faces) job queue. Defaults to `2`.
+- **SYNTHETIC_MODEL_PATH**
+  - Path to the MobileNetV2 image-classification ONNX model. Defaults to `models/mobilenet_v2.onnx`. Only used when `NAMAZU_URL` is not set.
 
 The application can be configured with a `.env` file thanks to Bun and [dotenv](https://github.com/motdotla/dotenv). Note, however, that during development, Bun will read this file before considering anything else, and thus it may interfere with the automated tests, which need to have tight control of the environment in order to set up mocks and spies.
 
 As such, it is preferable to create a `.env.development` file which Bun will _not_ read when running the unit tests.
+
+See [doc/DEPLOY.md](doc/DEPLOY.md) for deployment guidance, including the multiple stores involved, backups, and where machine-learning inference runs.
 
 ## Origin of the name
 

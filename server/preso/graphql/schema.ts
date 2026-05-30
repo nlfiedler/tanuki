@@ -300,15 +300,9 @@ export const resolvers: Resolvers = {
       const offset = Math.max(0, args.offset ?? 0);
       const limit = boundedIntValue(args.limit, 16, 1, 256);
       const { results, total } = await assetsByPerson(args.id, offset, limit);
-      const pageRows = results.map((r: SearchResult) =>
-        Object.assign({}, r, {
-          thumbnailUrl: blobs.thumbnailUrl(r.assetId, 960, 960),
-          assetUrl: blobs.assetUrl(r.assetId)
-        })
-      );
       const lastPage = total === 0 ? 1 : Math.ceil(total / limit);
       return {
-        results: pageRows as unknown as SearchMeta['results'],
+        results: shapeSearchRows(results),
         count: total,
         lastPage
       };
@@ -584,10 +578,11 @@ export const resolvers: Resolvers = {
     ): Promise<any> {
       logger.info('reassignFaces');
       const reassignFaces: any = container.resolve('reassignFaces');
-      return personOrThrow(
-        await reassignFaces(args.faceIds, args.personId ?? null),
-        'new person'
-      );
+      // reassignFaces always resolves to a destination person (it creates one
+      // when personId is null), so a null summary is a genuine internal error.
+      const summary = await reassignFaces(args.faceIds, args.personId ?? null);
+      if (!summary) throw new Error('reassignFaces produced no person');
+      return personToGQL(summary);
     },
 
     async hidePerson(
@@ -617,6 +612,20 @@ export const resolvers: Resolvers = {
   }
 };
 
+/**
+ * Attach the per-row URL fields a SearchMeta row needs. `previewUrl` is
+ * computed lazily by the SearchResult field resolver, so it is omitted here;
+ * the cast reconciles the shaped rows with SearchMeta's row type.
+ */
+function shapeSearchRows(results: SearchResult[]): SearchMeta['results'] {
+  return results.map((r) =>
+    Object.assign({}, r, {
+      thumbnailUrl: blobs.thumbnailUrl(r.assetId, 960, 960),
+      assetUrl: blobs.assetUrl(r.assetId)
+    })
+  ) as unknown as SearchMeta['results'];
+}
+
 function paginateResults(
   results: SearchResult[],
   offset?: number | null,
@@ -625,17 +634,9 @@ function paginateResults(
   const count = results.length;
   const off = boundedIntValue(offset, 0, 0, count);
   const lim = boundedIntValue(limit, 16, 1, 256);
-  const pageRows = results.slice(off, off + lim).map((r) => {
-    return Object.assign({}, r, {
-      thumbnailUrl: blobs.thumbnailUrl(r.assetId, 960, 960),
-      assetUrl: blobs.assetUrl(r.assetId)
-    });
-  });
   const lastPage = count == 0 ? 1 : Math.ceil(count / lim);
-  // previewUrl is computed lazily by the SearchResult field resolver, so the
-  // shaped rows omit it; cast to SearchMeta's row type.
   return {
-    results: pageRows as unknown as SearchMeta['results'],
+    results: shapeSearchRows(results.slice(off, off + lim)),
     count,
     lastPage
   };

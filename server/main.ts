@@ -30,9 +30,11 @@ import {
 // start the background worker pool. The pool must wait for BOTH databases —
 // it calls recordRepository.getAssetById(), which would throw if the asset
 // DB were still null while the face store has leftover queue rows.
+const settings: any = container.resolve('settingsRepository');
 const database: any = container.resolve('recordRepository');
 const faceStore: any = container.resolve('faceStore');
 const pool: any = container.resolve('syntheticWorkerPool');
+const sweepOrphanFaces: any = container.resolve('sweepOrphanFaces');
 // eslint-disable-next-line unicorn/prefer-top-level-await
 const databaseReady = database.initialize().then(() => {
   logger.info('database initialization complete');
@@ -44,11 +46,36 @@ const faceStoreReady = faceStore.initialize().then(() => {
 Promise.all([databaseReady, faceStoreReady])
   .then(() => {
     pool.start();
+    scheduleOrphanSweep();
   })
   // eslint-disable-next-line unicorn/prefer-top-level-await
   .catch((error: any) => {
     logger.error('synthetic store initialization error:', error);
   });
+
+// Defensive, periodic cross-store sweep removing faces whose asset no longer
+// exists (belt-and-braces against any delete path that bypassed the use case).
+// Runs once after startup and then on an interval; set the interval to 0 to
+// disable. Skips a tick if the previous sweep is still running.
+let orphanSweepTimer: ReturnType<typeof setInterval> | null = null;
+function scheduleOrphanSweep(): void {
+  const intervalMs = settings.getInt('ORPHAN_SWEEP_INTERVAL_MS', 86_400_000);
+  if (intervalMs <= 0) return;
+  let running = false;
+  const run = async (): Promise<void> => {
+    if (running) return;
+    running = true;
+    try {
+      await sweepOrphanFaces();
+    } catch (error: any) {
+      logger.error('orphan sweep failed:', error);
+    } finally {
+      running = false;
+    }
+  };
+  void run();
+  orphanSweepTimer = setInterval(() => void run(), intervalMs);
+}
 
 // Drain the worker pool on graceful shutdown so claimed-but-not-yet-finished
 // jobs are recorded properly rather than vanishing with the process.
@@ -57,6 +84,7 @@ async function shutdown(signal: string): Promise<void> {
   if (shuttingDown) return;
   shuttingDown = true;
   logger.info(`received ${signal}, stopping worker pool…`);
+  if (orphanSweepTimer) clearInterval(orphanSweepTimer);
   try {
     await pool.stop();
   } catch (error: any) {

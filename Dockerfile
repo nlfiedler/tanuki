@@ -58,6 +58,7 @@ COPY containers/healthcheck.ts healthcheck.ts
 VOLUME /assets
 ENV PORT=3000
 ENV HEALTHCHECK_PATH="/liveness"
+ENV FACE_STORE_PATH="faces.db"
 EXPOSE ${PORT}
 HEALTHCHECK CMD ["bun", "run", "healthcheck.ts"]
 ENTRYPOINT [ "bun", "run", "server/main.ts" ]

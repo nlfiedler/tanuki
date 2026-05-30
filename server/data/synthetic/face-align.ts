@@ -154,8 +154,21 @@ export function warpAffineBilinear(
   return out;
 }
 
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : (Math.min(v, hi));
+/** Constrain `v` to the inclusive range `[lo, hi]`. */
+export function clamp(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : Math.min(v, hi);
+}
+
+/**
+ * Dot product of two equal-length vectors. For L2-normalized embeddings this is
+ * their cosine similarity, which is how face clustering scores candidates.
+ * Falls back to the shorter length defensively.
+ */
+export function dot(a: Float32Array, b: Float32Array): number {
+  let sum = 0;
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) sum += a[i]! * b[i]!;
+  return sum;
 }
 
 /**

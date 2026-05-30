@@ -16,6 +16,7 @@ import {
 import { SyntheticStatus } from 'tanuki/server/domain/entities/synthetic-data.ts';
 import { type FaceStore } from 'tanuki/server/domain/repositories/face-store.ts';
 import { type SettingsRepository } from 'tanuki/server/domain/repositories/settings-repository.ts';
+import { dot } from 'tanuki/server/data/synthetic/face-align.ts';
 
 /** Current epoch seconds, matching the integer-time convention used elsewhere. */
 function now(): number {
@@ -358,15 +359,19 @@ class SqliteFaceStore implements FaceStore {
       )
       .all(...assetIds) as { asset_id: string; person_id: string }[];
 
-    // Summarize each distinct person once, then fan the summary out to every
-    // asset it appears in.
-    const summaries = new Map<string, PersonSummary>();
-    for (const row of rows) {
-      if (!summaries.has(row.person_id)) {
-        const summary = this.summarizePersonById(row.person_id);
-        if (summary) summaries.set(row.person_id, summary);
-      }
-    }
+    // Load the distinct people in one query and summarize them in a batch,
+    // then fan each summary out to every asset it appears in.
+    const personIds = [...new Set(rows.map((row) => row.person_id))];
+    const personPlaceholders = personIds.map(() => '?').join(',');
+    const personRows = this.database!
+      .query(
+        `SELECT id, name, thumbnail_face, hidden, created_at FROM person
+          WHERE id IN (${personPlaceholders})`
+      )
+      .all(...personIds) as PersonRow[];
+    const summaries = new Map<string, PersonSummary>(
+      this.summarizePersonRows(personRows).map((s) => [s.person.id, s])
+    );
     for (const row of rows) {
       const summary = summaries.get(row.person_id);
       if (summary) result.get(row.asset_id)!.push(summary);
@@ -562,7 +567,7 @@ class SqliteFaceStore implements FaceStore {
           ORDER BY created_at ASC, id ASC`
       )
       .all() as PersonRow[];
-    return rows.map((row) => this.summarizePersonRow(row));
+    return this.summarizePersonRows(rows);
   }
 
   /** @inheritDoc */
@@ -695,35 +700,78 @@ class SqliteFaceStore implements FaceStore {
         'SELECT id, name, thumbnail_face, hidden, created_at FROM person WHERE id = ?'
       )
       .get(id) as PersonRow | undefined;
-    return row ? this.summarizePersonRow(row) : null;
+    return row ? (this.summarizePersonRows([row])[0] ?? null) : null;
   }
 
-  /** Enrich a person row with face count and resolved representative face. */
-  private summarizePersonRow(row: PersonRow): PersonSummary {
-    const faceCount = (
-      this.database!
-        .query('SELECT COUNT(*) AS count FROM face WHERE person_id = ?')
-        .get(row.id) as { count: number }
-    ).count;
+  /**
+   * Enrich many person rows with face count and resolved representative face
+   * using three batched queries (counts grouped by person, the best face per
+   * person via a window function, and pinned-thumbnail validity) instead of a
+   * per-person fan-out — so list/loader paths issue O(1) queries regardless of
+   * how many people are on the page. The representative is the explicit pinned
+   * thumbnail while it still belongs to the person, otherwise the largest face
+   * by bbox area (ties broken by detector score).
+   */
+  private summarizePersonRows(rows: PersonRow[]): PersonSummary[] {
+    if (rows.length === 0) return [];
+    const ids = rows.map((row) => row.id);
+    const placeholders = ids.map(() => '?').join(',');
 
-    // Honor an explicit pinned thumbnail only while it still belongs to the
-    // person; otherwise fall back to the largest/highest-scoring face.
-    let representativeFaceId: string | null = null;
-    if (row.thumbnail_face) {
-      const pinned = this.database!
-        .query('SELECT 1 FROM face WHERE id = ? AND person_id = ?')
-        .get(row.thumbnail_face, row.id);
-      if (pinned) representativeFaceId = row.thumbnail_face;
+    const counts = new Map<string, number>();
+    for (const row of this.database!
+      .query(
+        `SELECT person_id, COUNT(*) AS count FROM face
+          WHERE person_id IN (${placeholders}) GROUP BY person_id`
+      )
+      .all(...ids) as { person_id: string; count: number }[]) {
+      counts.set(row.person_id, row.count);
     }
-    if (representativeFaceId === null) {
-      const best = this.database!
+
+    // One representative face per person: rank within each person and keep #1.
+    const best = new Map<string, string>();
+    for (const row of this.database!
+      .query(
+        `SELECT person_id, id FROM (
+           SELECT person_id, id,
+             ROW_NUMBER() OVER (PARTITION BY person_id ${REPRESENTATIVE_ORDER})
+               AS rn
+           FROM face WHERE person_id IN (${placeholders})
+         ) WHERE rn = 1`
+      )
+      .all(...ids) as { person_id: string; id: string }[]) {
+      best.set(row.person_id, row.id);
+    }
+
+    // A pinned thumbnail counts only while that face still belongs to the
+    // person; validate all pinned faces in one query (keyed person:face).
+    const pinned = rows
+      .map((row) => row.thumbnail_face)
+      .filter((face): face is string => face !== null);
+    const validPinned = new Set<string>();
+    if (pinned.length > 0) {
+      const pinnedPlaceholders = pinned.map(() => '?').join(',');
+      for (const row of this.database!
         .query(
-          `SELECT id FROM face WHERE person_id = ? ${REPRESENTATIVE_ORDER} LIMIT 1`
+          `SELECT id, person_id FROM face WHERE id IN (${pinnedPlaceholders})`
         )
-        .get(row.id) as { id: string } | undefined;
-      representativeFaceId = best?.id ?? null;
+        .all(...pinned) as { id: string; person_id: string | null }[]) {
+        validPinned.add(`${row.person_id}:${row.id}`);
+      }
     }
-    return { person: personFromRow(row), faceCount, representativeFaceId };
+
+    return rows.map((row) => {
+      const pinnedOk =
+        row.thumbnail_face !== null &&
+        validPinned.has(`${row.id}:${row.thumbnail_face}`);
+      const representativeFaceId = pinnedOk
+        ? row.thumbnail_face
+        : (best.get(row.id) ?? null);
+      return {
+        person: personFromRow(row),
+        faceCount: counts.get(row.id) ?? 0,
+        representativeFaceId
+      };
+    });
   }
 
   /**
@@ -748,14 +796,6 @@ function parseFacesStatus(value: string): SyntheticStatus {
   if (value === SyntheticStatus.READY) return SyntheticStatus.READY;
   if (value === SyntheticStatus.FAILED) return SyntheticStatus.FAILED;
   return SyntheticStatus.PENDING;
-}
-
-/** Dot product of two equal-length vectors (cosine similarity for unit vectors). */
-function dot(a: Float32Array, b: Float32Array): number {
-  let sum = 0;
-  const n = Math.min(a.length, b.length);
-  for (let i = 0; i < n; i++) sum += a[i]! * b[i]!;
-  return sum;
 }
 
 export { SqliteFaceStore };

@@ -33,6 +33,7 @@ import BackfillImageMetadata from 'tanuki/server/domain/usecases/backfill-image-
 import BackfillVideoMetadata from 'tanuki/server/domain/usecases/backfill-video-metadata.ts';
 import BackfillLabels from 'tanuki/server/domain/usecases/backfill-labels.ts';
 import BackfillFaceRecognition from 'tanuki/server/domain/usecases/backfill-face-recognition.ts';
+import SweepOrphanFaces from 'tanuki/server/domain/usecases/sweep-orphan-faces.ts';
 import RetrySyntheticJobs from 'tanuki/server/domain/usecases/retry-synthetic-jobs.ts';
 import GetLabels from 'tanuki/server/domain/usecases/get-labels.ts';
 import AssetsByLabel from 'tanuki/server/domain/usecases/assets-by-label.ts';
@@ -154,6 +155,7 @@ container.register({
   backfillVideoMetadata: asFunction(BackfillVideoMetadata),
   backfillLabels: asFunction(BackfillLabels),
   backfillFaceRecognition: asFunction(BackfillFaceRecognition),
+  sweepOrphanFaces: asFunction(SweepOrphanFaces),
   retrySyntheticJobs: asFunction(RetrySyntheticJobs),
   getLabels: asFunction(GetLabels),
   assetsByLabel: asFunction(AssetsByLabel),

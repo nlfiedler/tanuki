@@ -7,6 +7,7 @@ import {
   createResource,
   createSignal,
   For,
+  type JSX,
   on,
   Show,
   Suspense
@@ -148,6 +149,56 @@ function focusOnMount(el: HTMLInputElement): void {
   });
 }
 
+interface InlineRenameProps {
+  /** Current name (null/undefined = unnamed). */
+  name: string | null | undefined;
+  /** Commit handler; receives the trimmed name, or null to clear. */
+  onRename: (name: string | null) => void;
+  /** Bulma size class for the input (e.g. `input` or `input is-small`). */
+  inputClass: string;
+  /** Renders the non-editing trigger; call `start` to enter edit mode. */
+  children: (start: (e: MouseEvent) => void) => JSX.Element;
+}
+
+/**
+ * Inline name editor shared by the People grid tile and the person-detail
+ * header: clicking the caller-rendered trigger swaps in a focused text field
+ * that commits on Enter/blur (blank → null) and cancels on Escape.
+ */
+function InlineRename(props: InlineRenameProps) {
+  const [editing, setEditing] = createSignal(false);
+  const [value, setValue] = createSignal('');
+  const start = (e: MouseEvent) => {
+    // stop the click from also triggering an enclosing handler (tile open)
+    e.stopPropagation();
+    setValue(props.name ?? '');
+    setEditing(true);
+  };
+  const commit = () => {
+    const next = value().trim();
+    setEditing(false);
+    if (next !== (props.name ?? '')) {
+      props.onRename(next.length > 0 ? next : null);
+    }
+  };
+  return (
+    <Show when={editing()} fallback={props.children(start)}>
+      <input
+        class={props.inputClass}
+        value={value()}
+        placeholder="Name"
+        ref={focusOnMount}
+        onInput={(e) => setValue(e.currentTarget.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit();
+          if (e.key === 'Escape') setEditing(false);
+        }}
+      />
+    </Show>
+  );
+}
+
 /**
  * Grid of every (non-hidden by default) person, each a tile with a
  * representative face crop, an inline-editable name, and a face count. The
@@ -234,23 +285,8 @@ interface PersonTileProps {
 }
 
 function PersonTile(props: PersonTileProps) {
-  const [editing, setEditing] = createSignal(false);
-  const [value, setValue] = createSignal('');
   const countText = () =>
     `${props.person.faceCount} ${props.person.faceCount === 1 ? 'face' : 'faces'}`;
-
-  function startEdit(e: MouseEvent) {
-    e.stopPropagation();
-    setValue(props.person.name ?? '');
-    setEditing(true);
-  }
-  function commit() {
-    const next = value().trim();
-    setEditing(false);
-    if (next !== (props.person.name ?? '')) {
-      props.onRename(next.length > 0 ? next : null);
-    }
-  }
 
   return (
     <div class="thumb-tile">
@@ -268,13 +304,16 @@ function PersonTile(props: PersonTileProps) {
         />
       </button>
       <div class="thumb-info">
-        <Show
-          when={editing()}
-          fallback={
+        <InlineRename
+          name={props.person.name}
+          onRename={props.onRename}
+          inputClass="input is-small"
+        >
+          {(start) => (
             <button
               type="button"
               class="thumb-title button is-ghost is-small px-0"
-              onClick={startEdit}
+              onClick={start}
               title="Click to rename"
             >
               {displayName(props.person.name)}
@@ -282,21 +321,8 @@ function PersonTile(props: PersonTileProps) {
                 <span class="tag is-light ml-2">hidden</span>
               </Show>
             </button>
-          }
-        >
-          <input
-            class="input is-small"
-            value={value()}
-            placeholder="Name"
-            ref={focusOnMount}
-            onInput={(e) => setValue(e.currentTarget.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') commit();
-              if (e.key === 'Escape') setEditing(false);
-            }}
-          />
-        </Show>
+          )}
+        </InlineRename>
         <div class="thumb-line">
           <span class="icon">
             <i class="fa-regular fa-user" aria-hidden="true"></i>
@@ -496,59 +522,29 @@ interface PersonHeaderProps {
 }
 
 function PersonHeader(props: PersonHeaderProps) {
-  const [editing, setEditing] = createSignal(false);
-  const [value, setValue] = createSignal('');
-  function commit() {
-    const next = value().trim();
-    setEditing(false);
-    if (next !== (props.person.name ?? '')) {
-      props.onRename(next.length > 0 ? next : null);
-    }
-  }
   return (
     <nav class="level">
       <div class="level-left">
         <div class="level-item">
-          <Show
-            when={editing()}
-            fallback={
-              <h1
-                class="title is-4"
-                onClick={() => {
-                  setValue(props.person.name ?? '');
-                  setEditing(true);
-                }}
-                title="Click to rename"
-              >
+          <InlineRename
+            name={props.person.name}
+            onRename={props.onRename}
+            inputClass="input"
+          >
+            {(start) => (
+              <h1 class="title is-4" onClick={start} title="Click to rename">
                 <span class="has-text-grey-light">Person /</span>{' '}
                 {displayName(props.person.name)}
               </h1>
-            }
-          >
-            <input
-              class="input"
-              value={value()}
-              placeholder="Name"
-              ref={focusOnMount}
-              onInput={(e) => setValue(e.currentTarget.value)}
-              onBlur={commit}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') commit();
-                if (e.key === 'Escape') setEditing(false);
-              }}
-            />
-          </Show>
+            )}
+          </InlineRename>
         </div>
         <div class="level-item has-text-grey">
           {props.total} {props.total === 1 ? 'photo' : 'photos'}
         </div>
       </div>
       <div class="level-right">
-        <button
-          type="button"
-          class="button"
-          onClick={props.onToggleHidden}
-        >
+        <button type="button" class="button" onClick={props.onToggleHidden}>
           {props.person.hidden ? 'Unhide' : 'Hide'}
         </button>
       </div>

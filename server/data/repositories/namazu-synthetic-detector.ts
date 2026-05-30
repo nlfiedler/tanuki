@@ -46,9 +46,21 @@ interface NamazuSyntheticResponse {
  * {@link import('./local-synthetic-detector.ts').LocalSyntheticDetector}; no
  * local ONNX runtime or model files are exercised in that configuration.
  */
+/**
+ * How long a `/synthetic` response is reused for the same asset. The labels and
+ * faces jobs are separate but run close together (both enqueued at import), so a
+ * brief memo lets them share one inference round-trip instead of two. The asset
+ * bytes are immutable, so caching by asset id is always correct within the TTL.
+ */
+const RESPONSE_TTL_MS = 15_000;
+
 class NamazuSyntheticDetector implements SyntheticDetector {
   private baseUrl: string;
   private modelVersion: string;
+  private cache = new Map<
+    string,
+    { promise: Promise<NamazuSyntheticResponse | null>; expires: number }
+  >();
 
   constructor({
     settingsRepository
@@ -103,9 +115,10 @@ class NamazuSyntheticDetector implements SyntheticDetector {
   }
 
   /**
-   * POST the asset to Namazu's `/synthetic` endpoint and return the parsed
-   * response, or null for a non-image (204) or non-image-typed asset. Throws on
-   * any other non-2xx so the worker pool retries and ultimately records FAILED.
+   * Return the parsed `/synthetic` response for an asset, or null for a
+   * non-image. Coalesces the labels and faces jobs onto a single in-flight (and
+   * briefly cached) request so Namazu runs inference once per asset rather than
+   * once per kind. Failures are not cached, so a retry re-hits Namazu.
    */
   private async fetchSynthetic(
     asset: Asset
@@ -113,7 +126,30 @@ class NamazuSyntheticDetector implements SyntheticDetector {
     if (!asset.mediaType.startsWith('image/') || asset.byteLength <= 0) {
       return null;
     }
-    const url = `${this.baseUrl}/synthetic/${asset.key}`;
+    const now = Date.now();
+    for (const [key, entry] of this.cache) {
+      if (entry.expires <= now) this.cache.delete(key);
+    }
+    const cached = this.cache.get(asset.key);
+    if (cached) return cached.promise;
+
+    const promise = this.requestSynthetic(asset.key);
+    // Drop the entry if the request fails so a retry re-hits Namazu rather than
+    // replaying the cached rejection.
+    promise.catch(() => this.cache.delete(asset.key));
+    this.cache.set(asset.key, { promise, expires: now + RESPONSE_TTL_MS });
+    return promise;
+  }
+
+  /**
+   * POST the asset to Namazu's `/synthetic` endpoint. Returns null for a
+   * non-image (204); throws on any other non-2xx so the worker pool retries and
+   * ultimately records FAILED.
+   */
+  private async requestSynthetic(
+    assetKey: string
+  ): Promise<NamazuSyntheticResponse | null> {
+    const url = `${this.baseUrl}/synthetic/${assetKey}`;
     const response = await fetch(url, { method: 'POST' });
     if (response.status === 204) return null;
     if (!response.ok) {

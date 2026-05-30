@@ -119,4 +119,38 @@ describe('NamazuSyntheticDetector', function () {
   test('faceModelVersion defaults to the shared identifier', function () {
     expect(detector().faceModelVersion()).toEqual('mobilefacenet-v1');
   });
+
+  test('coalesces labels + faces for one asset into a single request', async function () {
+    const fn = stubFetch(() => ({
+      status: 200,
+      ok: true,
+      json: async () => ({
+        labels: [{ name: 'coat', score: 0.5 }],
+        faces: []
+      })
+    }));
+    // both jobs run against the same detector instance close together
+    const det = detector();
+    const asset = imageAsset('asset-1');
+    await det.detectLabels(asset);
+    await det.detectFaces(asset);
+    // one /synthetic round-trip serves both, not two
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not cache a failed request', async function () {
+    let calls = 0;
+    stubFetch(() => {
+      calls++;
+      return calls === 1
+        ? { status: 500, ok: false, text: async () => 'boom' }
+        : { status: 200, ok: true, json: async () => ({ labels: [], faces: [] }) };
+    });
+    const det = detector();
+    const asset = imageAsset('asset-1');
+    await expect(det.detectFaces(asset)).rejects.toThrow('500');
+    // a retry re-hits Namazu rather than replaying the cached rejection
+    expect(await det.detectFaces(asset)).toEqual([]);
+    expect(calls).toEqual(2);
+  });
 });

@@ -23,6 +23,7 @@ import {
   FACE_CROP,
   FACE_MODEL_VERSION,
   arcfacePreprocess,
+  clamp,
   estimateSimilarityTransform,
   l2normalize,
   warpAffineBilinear
@@ -306,10 +307,6 @@ class LocalSyntheticDetector implements SyntheticDetector {
       FACE_MODEL_VERSION
     );
   }
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : Math.min(v, hi);
 }
 
 /** Order detector heads by descending anchor count, i.e. stride [8, 16, 32]. */
