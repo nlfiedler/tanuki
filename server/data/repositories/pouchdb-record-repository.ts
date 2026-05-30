@@ -8,8 +8,16 @@ import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
 import { AttributeCount } from 'tanuki/server/domain/entities/attributes.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/search.ts';
+import {
+  SyntheticData,
+  SyntheticStatus
+} from 'tanuki/server/domain/entities/synthetic-data.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
 import { type SettingsRepository } from 'tanuki/server/domain/repositories/settings-repository.ts';
+import {
+  syntheticFromDocument,
+  syntheticToDocument
+} from './synthetic-data-codec.ts';
 import {
   metadataFromDocument,
   metadataToDocument
@@ -140,6 +148,16 @@ class PouchDBRecordRepository implements RecordRepository {
   }
 
   /** @inheritDoc */
+  async allPrimaryLabels(): Promise<AttributeCount[]> {
+    const res = await this.database.query('assets/all_primary_labels', {
+      group_level: 1
+    });
+    return res.rows.map((row: { key: string; value: number }) => {
+      return new AttributeCount(row.key, row.value);
+    });
+  }
+
+  /** @inheritDoc */
   async allLocations(): Promise<AttributeCount[]> {
     const res = await this.database.query('assets/all_location_parts', {
       group_level: 1
@@ -184,11 +202,13 @@ class PouchDBRecordRepository implements RecordRepository {
 
   /** @inheritDoc */
   async putAsset(asset: Asset): Promise<void> {
-    // strip `key` (it becomes _id) and `metadata` (encoded separately to avoid
-    // copying the AssetMetadata class instance into the doc)
-    const { key, metadata, ...doc } = asset;
+    // strip `key` (it becomes _id), `metadata`, `synthetic`, and
+    // `syntheticStatus` (each encoded separately to avoid copying class
+    // instances into the doc).
+    const { key, metadata, synthetic, syntheticStatus, ...doc } = asset;
     convertDatesIn(doc);
     (doc as any).metadata = metadataToDocument(metadata);
+    (doc as any).synthetic = syntheticToDocument(synthetic, syntheticStatus);
     try {
       const oldDoc = await this.database.get(key);
       await this.database.put({ ...doc, _id: key, _rev: oldDoc._rev });
@@ -228,6 +248,88 @@ class PouchDBRecordRepository implements RecordRepository {
       }
     }
     return result;
+  }
+
+  /** @inheritDoc */
+  async fetchSynthetic(
+    assetIds: string[]
+  ): Promise<Map<string, SyntheticData | null>> {
+    const result = new Map<string, SyntheticData | null>();
+    const unique = Array.from(new Set(assetIds));
+    for (const id of assetIds) result.set(id, null);
+    if (unique.length === 0) return result;
+    const res = await this.database.allDocs({
+      keys: unique,
+      include_docs: true
+    });
+    for (const row of res.rows) {
+      if (row.error) continue;
+      if (row.value && row.value.deleted) continue;
+      if (row.doc) {
+        const { data } = syntheticFromDocument(row.doc.synthetic);
+        result.set(row.id, data);
+      }
+    }
+    return result;
+  }
+
+  /** @inheritDoc */
+  async fetchSyntheticStatus(
+    assetIds: string[]
+  ): Promise<Map<string, SyntheticStatus>> {
+    const result = new Map<string, SyntheticStatus>();
+    const unique = Array.from(new Set(assetIds));
+    for (const id of assetIds) result.set(id, SyntheticStatus.PENDING);
+    if (unique.length === 0) return result;
+    const res = await this.database.allDocs({
+      keys: unique,
+      include_docs: true
+    });
+    for (const row of res.rows) {
+      if (row.error) continue;
+      if (row.value && row.value.deleted) continue;
+      if (row.doc) {
+        const { status } = syntheticFromDocument(row.doc.synthetic);
+        result.set(row.id, status);
+      }
+    }
+    return result;
+  }
+
+  /** @inheritDoc */
+  async setSynthetic(
+    assetId: string,
+    data: SyntheticData | null,
+    status: SyntheticStatus
+  ): Promise<void> {
+    // Conflict-retry loop: a concurrent updateAsset can bump _rev between the
+    // .get() and .put(); without retry, every brief overlap surfaces as a
+    // worker failure and burns a retry attempt. 404 is a no-op (asset was
+    // deleted out from under us).
+    const maxAttempts = 5;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      let doc: any;
+      try {
+        doc = await this.database.get(assetId);
+      } catch (error: any) {
+        if (error?.status === 404 || error?.name === 'not_found') return;
+        throw error;
+      }
+      doc.synthetic = syntheticToDocument(data, status);
+      try {
+        await this.database.put(doc);
+        return;
+      } catch (error: any) {
+        if (
+          (error?.status === 409 || error?.name === 'conflict') &&
+          attempt < maxAttempts - 1
+        ) {
+          continue;
+        }
+        if (error?.status === 404 || error?.name === 'not_found') return;
+        throw error;
+      }
+    }
   }
 
   /** @inheritDoc */
@@ -275,6 +377,43 @@ class PouchDBRecordRepository implements RecordRepository {
   /** @inheritDoc */
   async queryByTags(tags: string[]): Promise<SearchResult[]> {
     return this.queryAllKeys('by_tag', tags);
+  }
+
+  /** @inheritDoc */
+  async queryByLabel(label: string): Promise<SearchResult[]> {
+    const queryResults = await this.database.query('assets/by_primary_label', {
+      key: label.toLowerCase()
+    });
+    return queryResults.rows.map((row: any) => convertViewResult(row));
+  }
+
+  /** @inheritDoc */
+  async latestAssetByLabel(
+    label: string
+  ): Promise<{ assetId: string; primaryLabel: string } | null> {
+    // One round-trip per label, bounded by docs-per-label. include_docs is
+    // needed to recover the original-cased primary_label (the view emits a
+    // lowercased key for case-insensitive matching).
+    const res = await this.database.query('assets/by_primary_label', {
+      key: label.toLowerCase(),
+      include_docs: true
+    });
+    let bestId: string | null = null;
+    let bestLabel: string | null = null;
+    let bestDate = Number.NEGATIVE_INFINITY;
+    for (const row of res.rows) {
+      const bestdate = Array.isArray(row.value) ? Number(row.value[0]) : 0;
+      const primary = row.doc?.synthetic?.primaryLabel;
+      if (typeof primary !== 'string') continue;
+      if (bestId === null || bestdate > bestDate) {
+        bestId = row.id;
+        bestLabel = primary;
+        bestDate = bestdate;
+      }
+    }
+    return bestId && bestLabel !== null
+      ? { assetId: bestId, primaryLabel: bestLabel }
+      : null;
   }
 
   /** @inheritDoc */
@@ -396,7 +535,7 @@ type ViewResult = {
 const assetsDefinition = {
   _id: '_design/assets',
   // monotonically increasing version number for tracking schema changes
-  version: 2,
+  version: 4,
   views: {
     by_checksum: {
       map: views.by_checksum.toString(),
@@ -437,6 +576,13 @@ const assetsDefinition = {
     },
     all_media_types: {
       map: views.all_media_types.toString(),
+      reduce: '_count'
+    },
+    by_primary_label: {
+      map: views.insertBestDate(views.by_primary_label)
+    },
+    all_primary_labels: {
+      map: views.all_primary_labels.toString(),
       reduce: '_count'
     }
   }
@@ -511,6 +657,9 @@ function assetFromDocument(doc: any): any {
   const metadata = metadataFromDocument(doc.metadata) ?? new AssetMetadata();
   metadata.byteLength = doc.byteLength ?? null;
   asset.setMetadata(metadata);
+  const { data, status } = syntheticFromDocument(doc.synthetic);
+  asset.setSynthetic(data);
+  asset.setSyntheticStatus(status);
   return asset;
 }
 

@@ -10,6 +10,7 @@ import { Geocoded } from 'tanuki/server/domain/entities/location.ts';
 import ImportAsset from 'tanuki/server/domain/usecases/import-asset.ts';
 import {
   blobRepositoryMock,
+  faceStoreMock,
   locationRepositoryMock,
   recordRepositoryMock,
   searchRepositoryMock
@@ -22,6 +23,7 @@ describe('ImportAsset use case', function () {
     const mockBlobRepository = blobRepositoryMock({});
     const mockLocationRepository = locationRepositoryMock({});
     const mockSearchRepository = searchRepositoryMock({});
+    const mockFaceStore = faceStoreMock({});
     const filepath = './test/fixtures/dcp_1069.jpg';
     const mimetype = 'image/jpeg';
     const modified = new Date();
@@ -29,7 +31,8 @@ describe('ImportAsset use case', function () {
       recordRepository: mockRecordRepository,
       blobRepository: mockBlobRepository,
       locationRepository: mockLocationRepository,
-      searchRepository: mockSearchRepository
+      searchRepository: mockSearchRepository,
+      faceStore: mockFaceStore
     });
     // act
     const actual = await usecase(filepath, 'dcp_1069.jpg', mimetype, modified);
@@ -45,6 +48,13 @@ describe('ImportAsset use case', function () {
     expect(mockRecordRepository.getAssetByDigest).toHaveBeenCalledTimes(1);
     expect(mockBlobRepository.storeBlob).toHaveBeenCalledTimes(1);
     expect(mockRecordRepository.putAsset).toHaveBeenCalledTimes(1);
+    // a labels job is enqueued for the new image
+    expect(mockFaceStore.enqueueJob).toHaveBeenCalledTimes(1);
+    expect(mockFaceStore.enqueueJob).toHaveBeenCalledWith(
+      actual.key,
+      'labels',
+      10
+    );
     mock.clearAllMocks();
   });
 
@@ -61,13 +71,15 @@ describe('ImportAsset use case', function () {
     const mockBlobRepository = blobRepositoryMock({});
     const mockLocationRepository = locationRepositoryMock({});
     const mockSearchRepository = searchRepositoryMock({});
+    const mockFaceStore = faceStoreMock({});
     const mimetype = 'image/jpeg';
     const modified = new Date();
     const usecase = ImportAsset({
       recordRepository: mockRecordRepository,
       blobRepository: mockBlobRepository,
       locationRepository: mockLocationRepository,
-      searchRepository: mockSearchRepository
+      searchRepository: mockSearchRepository,
+      faceStore: mockFaceStore
     });
     // copy test file to temporary path as it will be (re)moved
     const tmpdir = temporaryDirectory();
@@ -84,6 +96,8 @@ describe('ImportAsset use case', function () {
     expect(mockRecordRepository.getAssetByDigest).toHaveBeenCalledTimes(1);
     expect(mockBlobRepository.storeBlob).toHaveBeenCalledTimes(0);
     expect(mockRecordRepository.putAsset).toHaveBeenCalledTimes(0);
+    // existing asset: no job enqueued
+    expect(mockFaceStore.enqueueJob).toHaveBeenCalledTimes(0);
     mock.clearAllMocks();
   });
 
@@ -97,6 +111,7 @@ describe('ImportAsset use case', function () {
       )
     });
     const mockSearchRepository = searchRepositoryMock({});
+    const mockFaceStore = faceStoreMock({});
     // file needs GPS coordinates for the location repository to be invoked
     const filepath = './test/fixtures/IMG_0385.JPG';
     const mimetype = 'image/jpeg';
@@ -105,7 +120,8 @@ describe('ImportAsset use case', function () {
       recordRepository: mockRecordRepository,
       blobRepository: mockBlobRepository,
       locationRepository: mockLocationRepository,
-      searchRepository: mockSearchRepository
+      searchRepository: mockSearchRepository,
+      faceStore: mockFaceStore
     });
     // act
     const actual = await usecase(filepath, 'IMG_0385.JPG', mimetype, modified);

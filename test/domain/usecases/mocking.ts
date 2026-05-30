@@ -6,12 +6,22 @@ import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
 import { AttributeCount } from 'tanuki/server/domain/entities/attributes.ts';
 import {
+  SyntheticData,
+  SyntheticStatus
+} from 'tanuki/server/domain/entities/synthetic-data.ts';
+import {
   Coordinates,
   Geocoded,
   Location
 } from 'tanuki/server/domain/entities/location.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/search.ts';
+import {
+  type JobKind,
+  type Person,
+  type SyntheticJob
+} from 'tanuki/server/domain/entities/face.ts';
 import { type BlobRepository } from 'tanuki/server/domain/repositories/blob-repository.ts';
+import { type FaceStore } from 'tanuki/server/domain/repositories/face-store.ts';
 import { type LocationRepository } from 'tanuki/server/domain/repositories/location-repository.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
 import { type SearchRepository } from 'tanuki/server/domain/repositories/search-repository.ts';
@@ -31,6 +41,9 @@ export function recordRepositoryMock({
   rawLocations = undefined,
   allYears = undefined,
   allMediaTypes = undefined,
+  allPrimaryLabels = undefined,
+  queryByLabel = undefined,
+  latestAssetByLabel = undefined,
   putAsset = undefined,
   deleteAsset = undefined,
   queryByTags = undefined,
@@ -42,7 +55,10 @@ export function recordRepositoryMock({
   queryNewborn = undefined,
   fetchAssets = undefined,
   storeAssets = undefined,
-  fetchMetadata = undefined
+  fetchMetadata = undefined,
+  fetchSynthetic = undefined,
+  fetchSyntheticStatus = undefined,
+  setSynthetic = undefined
 }: {
   countAssets?: () => Promise<number>;
   getAssetById?: (assetId: string) => Promise<Asset | null>;
@@ -52,6 +68,11 @@ export function recordRepositoryMock({
   rawLocations?: () => Promise<Location[]>;
   allYears?: () => Promise<AttributeCount[]>;
   allMediaTypes?: () => Promise<AttributeCount[]>;
+  allPrimaryLabels?: () => Promise<AttributeCount[]>;
+  queryByLabel?: (label: string) => Promise<SearchResult[]>;
+  latestAssetByLabel?: (
+    label: string
+  ) => Promise<{ assetId: string; primaryLabel: string } | null>;
   putAsset?: (asset: Asset) => Promise<void>;
   deleteAsset?: (assetId: string) => Promise<void>;
   queryByTags?: (tags: string[]) => Promise<SearchResult[]>;
@@ -66,6 +87,17 @@ export function recordRepositoryMock({
   fetchMetadata?: (
     assetIds: string[]
   ) => Promise<Map<string, AssetMetadata | null>>;
+  fetchSynthetic?: (
+    assetIds: string[]
+  ) => Promise<Map<string, SyntheticData | null>>;
+  fetchSyntheticStatus?: (
+    assetIds: string[]
+  ) => Promise<Map<string, SyntheticStatus>>;
+  setSynthetic?: (
+    assetId: string,
+    data: SyntheticData | null,
+    status: SyntheticStatus
+  ) => Promise<void>;
 }): RecordRepository {
   const mockRecordRepository: RecordRepository = {
     countAssets: countAssets || mock(() => Promise.resolve(0)),
@@ -76,6 +108,10 @@ export function recordRepositoryMock({
     rawLocations: rawLocations || mock(() => Promise.resolve([])),
     allYears: allYears || mock(() => Promise.resolve([])),
     allMediaTypes: allMediaTypes || mock(() => Promise.resolve([])),
+    allPrimaryLabels: allPrimaryLabels || mock(() => Promise.resolve([])),
+    queryByLabel: queryByLabel || mock(() => Promise.resolve([])),
+    latestAssetByLabel:
+      latestAssetByLabel || mock(() => Promise.resolve(null)),
     putAsset: putAsset || mock(() => Promise.resolve()),
     deleteAsset: deleteAsset || mock(() => Promise.resolve()),
     queryByTags: queryByTags || mock(() => Promise.resolve([])),
@@ -93,7 +129,14 @@ export function recordRepositoryMock({
     storeAssets: storeAssets || mock(() => Promise.resolve()),
     fetchMetadata:
       fetchMetadata ||
-      mock(() => Promise.resolve(new Map<string, AssetMetadata | null>()))
+      mock(() => Promise.resolve(new Map<string, AssetMetadata | null>())),
+    fetchSynthetic:
+      fetchSynthetic ||
+      mock(() => Promise.resolve(new Map<string, SyntheticData | null>())),
+    fetchSyntheticStatus:
+      fetchSyntheticStatus ||
+      mock(() => Promise.resolve(new Map<string, SyntheticStatus>())),
+    setSynthetic: setSynthetic || mock(() => Promise.resolve())
   };
   return mockRecordRepository;
 }
@@ -175,4 +218,54 @@ export function searchRepositoryMock({
     clear: clear || mock(() => Promise.resolve())
   };
   return mockSearchRepository;
+}
+
+/**
+ * Helper for producing a mock face store implementation. Any undefined
+ * functions return a benign empty result (no job, empty maps, etc.).
+ */
+export function faceStoreMock({
+  enqueueJob = undefined,
+  claimNextJob = undefined,
+  requeueJob = undefined,
+  pendingJobCount = undefined,
+  hasPendingJob = undefined,
+  fetchPeopleByAssetIds = undefined,
+  assetIdsByPerson = undefined,
+  deleteByAssetId = undefined
+}: {
+  enqueueJob?: (
+    assetId: string,
+    kind: JobKind,
+    priority?: number
+  ) => Promise<number>;
+  claimNextJob?: () => Promise<SyntheticJob | null>;
+  requeueJob?: (job: SyntheticJob, error: string) => Promise<number>;
+  pendingJobCount?: (kind?: JobKind) => Promise<number>;
+  hasPendingJob?: (assetId: string, kind: JobKind) => Promise<boolean>;
+  fetchPeopleByAssetIds?: (
+    assetIds: string[]
+  ) => Promise<Map<string, Person[]>>;
+  assetIdsByPerson?: (
+    personId: string,
+    offset: number,
+    limit: number
+  ) => Promise<{ ids: string[]; total: number }>;
+  deleteByAssetId?: (assetId: string) => Promise<void>;
+}): FaceStore {
+  const mockFaceStore: FaceStore = {
+    enqueueJob: enqueueJob || mock(() => Promise.resolve(1)),
+    claimNextJob: claimNextJob || mock(() => Promise.resolve(null)),
+    requeueJob: requeueJob || mock(() => Promise.resolve(1)),
+    pendingJobCount: pendingJobCount || mock(() => Promise.resolve(0)),
+    hasPendingJob: hasPendingJob || mock(() => Promise.resolve(false)),
+    fetchPeopleByAssetIds:
+      fetchPeopleByAssetIds ||
+      mock(() => Promise.resolve(new Map<string, Person[]>())),
+    assetIdsByPerson:
+      assetIdsByPerson ||
+      mock(() => Promise.resolve({ ids: [] as string[], total: 0 })),
+    deleteByAssetId: deleteByAssetId || mock(() => Promise.resolve())
+  };
+  return mockFaceStore;
 }

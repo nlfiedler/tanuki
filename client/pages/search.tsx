@@ -75,6 +75,9 @@ const SCAN_ASSETS: TypedDocumentNode<Query, QueryScanArgs> = gql`
           displayHeight
           byteLength
         }
+        synthetic {
+          primaryLabel
+        }
       }
       count
       lastPage

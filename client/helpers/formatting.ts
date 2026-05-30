@@ -44,11 +44,16 @@ export function formatLocation(location: Location): string {
 }
 
 /**
- * Format a SearchResult's "title" line in the style of PhotoPrism's gallery
- * detail view: location label / city / year. Falls back to the filename when
- * no location is known.
+ * Format a SearchResult's "title" line. Prefers the ML-derived
+ * `synthetic.primaryLabel` so a labelled asset surfaces what it depicts.
+ * When no primary label is available (asset still pending, no labels above
+ * the score floor, or detection failed), falls back to the existing chain
+ * (location label / city / year) so the line is never blank for assets that
+ * had a sensible title before; falls back further to the filename.
  */
 export function formatTitle(asset: SearchResult): string {
+  const primaryLabel = asset.synthetic?.primaryLabel;
+  if (primaryLabel) return primaryLabel;
   const datetime =
     typeof asset.datetime === 'string'
       ? new Date(asset.datetime)

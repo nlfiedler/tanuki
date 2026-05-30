@@ -70,6 +70,9 @@ const SEARCH_ASSETS: TypedDocumentNode<Query, QuerySearchArgs> = gql`
           displayHeight
           byteLength
         }
+        synthetic {
+          primaryLabel
+        }
       }
       count
       lastPage

@@ -7,6 +7,7 @@ import ImportAsset from 'tanuki/server/domain/usecases/import-asset.ts';
 import ImportUploads from 'tanuki/server/domain/usecases/import-uploads.ts';
 import {
   blobRepositoryMock,
+  faceStoreMock,
   locationRepositoryMock,
   recordRepositoryMock,
   searchRepositoryMock
@@ -84,7 +85,8 @@ describe('ImportUploads use case', function () {
       recordRepository: mockRecordRepository,
       blobRepository: mockBlobRepository,
       locationRepository: mockLocationRepository,
-      searchRepository: mockSearchRepository
+      searchRepository: mockSearchRepository,
+      faceStore: faceStoreMock({})
     });
     const usecase = ImportUploads({ importAsset });
     // act

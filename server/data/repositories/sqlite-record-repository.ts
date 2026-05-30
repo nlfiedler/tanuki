@@ -10,8 +10,13 @@ import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
 import { AttributeCount } from 'tanuki/server/domain/entities/attributes.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/search.ts';
+import {
+  SyntheticData,
+  SyntheticStatus
+} from 'tanuki/server/domain/entities/synthetic-data.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
 import { type SettingsRepository } from 'tanuki/server/domain/repositories/settings-repository.ts';
+import { parseStatus } from './synthetic-data-codec.ts';
 import { runMigrations } from './sqlite-migrations.ts';
 
 /**
@@ -145,6 +150,7 @@ class SqliteRecordRepository implements RecordRepository {
     if (!row) return null;
     const asset = assetFromRow(row);
     asset.metadata = this.loadMetadata(assetId);
+    this.applySynthetic(asset);
     return asset;
   }
 
@@ -155,6 +161,7 @@ class SqliteRecordRepository implements RecordRepository {
     if (!row) return null;
     const asset = assetFromRow(row);
     asset.metadata = this.loadMetadata(asset.key);
+    this.applySynthetic(asset);
     return asset;
   }
 
@@ -169,6 +176,22 @@ class SqliteRecordRepository implements RecordRepository {
       )
       .get(assetId);
     return row ? metadataFromRow(row) : null;
+  }
+
+  private applySynthetic(asset: Asset): void {
+    const row = this.database!
+      .query(
+        'SELECT primary_label, labels, status FROM synthetic_data WHERE asset_id = ?'
+      )
+      .get(asset.key);
+    if (!row) {
+      asset.synthetic = null;
+      asset.syntheticStatus = SyntheticStatus.PENDING;
+      return;
+    }
+    const { data, status } = syntheticFromRow(row);
+    asset.synthetic = data;
+    asset.syntheticStatus = status;
   }
 
   /** @inheritDoc */
@@ -219,6 +242,21 @@ class SqliteRecordRepository implements RecordRepository {
   }
 
   /** @inheritDoc */
+  async allPrimaryLabels(): Promise<AttributeCount[]> {
+    // Group case-insensitively so accidental casing variants collapse, but
+    // surface the curated casing for display. SQLite (uniquely) allows a
+    // non-aggregated column with GROUP BY and picks an arbitrary row — fine
+    // because curated labels have one canonical casing per logical label.
+    const query = this.database!.query(
+      `SELECT primary_label AS label, COUNT(*) AS count
+         FROM synthetic_data
+        WHERE primary_label IS NOT NULL AND primary_label != ''
+        GROUP BY LOWER(primary_label);`
+    ).as(AttributeCount);
+    return query.all();
+  }
+
+  /** @inheritDoc */
   async putAsset(asset: Asset): Promise<void> {
     // attempt to insert a new row, but on conflict update only certain
     // fields which can be changed by the update usecase
@@ -237,8 +275,8 @@ class SqliteRecordRepository implements RecordRepository {
     const orig_date = asset.originalDate
       ? Math.trunc(asset.originalDate.getTime() / 1000)
       : null;
-    // Wrap the asset upsert and metadata upsert in a single transaction so a
-    // failure in either rolls back both writes.
+    // Wrap the asset upsert, metadata upsert, and synthetic upsert in a single
+    // transaction so a failure in any rolls back all the writes.
     this.database!.transaction(() => {
       insert.run({
         $key: asset.key,
@@ -256,6 +294,7 @@ class SqliteRecordRepository implements RecordRepository {
         $orig_date: orig_date
       });
       this.upsertMetadata(asset.key, asset.metadata);
+      this.upsertSynthetic(asset.key, asset.synthetic, asset.syntheticStatus);
     })();
   }
 
@@ -319,6 +358,41 @@ class SqliteRecordRepository implements RecordRepository {
   async deleteAsset(assetId: string): Promise<void> {
     const rm = this.database!.query('DELETE FROM assets WHERE key = ?');
     rm.run(assetId);
+  }
+
+  /** @inheritDoc */
+  async queryByLabel(label: string): Promise<SearchResult[]> {
+    const query = this.database!.query(
+      `SELECT a.key, a.filename, a.mimetype, a.loc_label, a.loc_city, a.loc_region,
+          coalesce(a.user_date, a.orig_date, a.imported) AS date
+         FROM assets a JOIN synthetic_data s ON s.asset_id = a.key
+        WHERE LOWER(s.primary_label) = ?;`
+    );
+    const results: SearchResult[] = [];
+    for (const row of query.all(label.toLowerCase())) {
+      results.push(searchResultFromRow(row));
+    }
+    return results;
+  }
+
+  /** @inheritDoc */
+  async latestAssetByLabel(
+    label: string
+  ): Promise<{ assetId: string; primaryLabel: string } | null> {
+    const row = this.database!
+      .query(
+        `SELECT a.key AS asset_id, s.primary_label AS primary_label
+           FROM assets a JOIN synthetic_data s ON s.asset_id = a.key
+          WHERE LOWER(s.primary_label) = ?
+          ORDER BY coalesce(a.user_date, a.orig_date, a.imported) DESC
+          LIMIT 1;`
+      )
+      .get(label.toLowerCase()) as
+      | { asset_id: string; primary_label: string }
+      | undefined;
+    return row
+      ? { assetId: row.asset_id, primaryLabel: row.primary_label }
+      : null;
   }
 
   /** @inheritDoc */
@@ -477,9 +551,15 @@ class SqliteRecordRepository implements RecordRepository {
       results.push(assetFromRow(row));
     }
     if (results.length > 0) {
-      const metadataMap = await this.fetchMetadata(results.map((a) => a.key));
+      const ids = results.map((a) => a.key);
+      const metadataMap = await this.fetchMetadata(ids);
+      const syntheticMap = await this.fetchSynthetic(ids);
+      const statusMap = await this.fetchSyntheticStatus(ids);
       for (const asset of results) {
         asset.metadata = metadataMap.get(asset.key) ?? null;
+        asset.synthetic = syntheticMap.get(asset.key) ?? null;
+        asset.syntheticStatus =
+          statusMap.get(asset.key) ?? SyntheticStatus.PENDING;
       }
     }
     cursor = results.at(-1)?.key ?? 'done';
@@ -505,6 +585,92 @@ class SqliteRecordRepository implements RecordRepository {
       result.set((row as any).asset_id, metadataFromRow(row));
     }
     return result;
+  }
+
+  /** @inheritDoc */
+  async fetchSynthetic(
+    assetIds: string[]
+  ): Promise<Map<string, SyntheticData | null>> {
+    const result = new Map<string, SyntheticData | null>();
+    for (const id of assetIds) result.set(id, null);
+    if (assetIds.length === 0) return result;
+    const placeholders = assetIds.map(() => '?').join(',');
+    const query = this.database!.query(
+      `SELECT asset_id, primary_label, labels, status FROM synthetic_data
+         WHERE asset_id IN (${placeholders})`
+    );
+    for (const row of query.iterate(...assetIds)) {
+      const { data } = syntheticFromRow(row);
+      result.set((row as any).asset_id, data);
+    }
+    return result;
+  }
+
+  /** @inheritDoc */
+  async fetchSyntheticStatus(
+    assetIds: string[]
+  ): Promise<Map<string, SyntheticStatus>> {
+    const result = new Map<string, SyntheticStatus>();
+    for (const id of assetIds) result.set(id, SyntheticStatus.PENDING);
+    if (assetIds.length === 0) return result;
+    const placeholders = assetIds.map(() => '?').join(',');
+    const query = this.database!.query(
+      `SELECT asset_id, status FROM synthetic_data
+         WHERE asset_id IN (${placeholders})`
+    );
+    for (const row of query.iterate(...assetIds)) {
+      result.set((row as any).asset_id, parseStatus((row as any).status));
+    }
+    return result;
+  }
+
+  /** @inheritDoc */
+  async setSynthetic(
+    assetId: string,
+    data: SyntheticData | null,
+    status: SyntheticStatus
+  ): Promise<void> {
+    this.upsertSynthetic(assetId, data, status);
+  }
+
+  /**
+   * Insert or update the synthetic_data row for `assetId`. PENDING with no
+   * labels and no primary label is the implicit default and is represented by
+   * the absence of a row; in that case we delete any existing row so
+   * `fetchSyntheticStatus` correctly returns PENDING without leaving stale
+   * data behind.
+   */
+  private upsertSynthetic(
+    assetId: string,
+    data: SyntheticData | null,
+    status: SyntheticStatus
+  ): void {
+    const hasData = data !== null && data.hasValues();
+    if (!hasData && status === SyntheticStatus.PENDING) {
+      this.database!
+        .query('DELETE FROM synthetic_data WHERE asset_id = ?')
+        .run(assetId);
+      return;
+    }
+    const labels = hasData ? JSON.stringify(data!.labels) : null;
+    const primaryLabel = data?.primaryLabel ?? null;
+    this.database!
+      .query(
+        `INSERT INTO synthetic_data (asset_id, primary_label, labels, status, updated_at)
+         VALUES ($asset_id, $primary_label, $labels, $status, $updated_at)
+         ON CONFLICT(asset_id) DO UPDATE SET
+           primary_label = $primary_label,
+           labels = $labels,
+           status = $status,
+           updated_at = $updated_at`
+      )
+      .run({
+        $asset_id: assetId,
+        $primary_label: primaryLabel,
+        $labels: labels,
+        $status: status,
+        $updated_at: Math.trunc(Date.now() / 1000)
+      });
   }
 
   /** @inheritDoc */
@@ -539,6 +705,7 @@ class SqliteRecordRepository implements RecordRepository {
           $orig_date: orig_date
         });
         this.upsertMetadata(asset.key, asset.metadata);
+        this.upsertSynthetic(asset.key, asset.synthetic, asset.syntheticStatus);
       }
     })();
   }
@@ -578,6 +745,30 @@ function assetFromRow(row: any): any {
     asset.setOriginalDate(new Date(row.orig_date * 1000));
   }
   return asset;
+}
+
+function syntheticFromRow(row: any): {
+  data: SyntheticData | null;
+  status: SyntheticStatus;
+} {
+  const status = parseStatus(row.status);
+  let labels: string[] = [];
+  if (row.labels) {
+    try {
+      const parsed = JSON.parse(row.labels);
+      if (Array.isArray(parsed)) labels = parsed.filter((s) => typeof s === 'string');
+    } catch {
+      labels = [];
+    }
+  }
+  const primaryLabel = row.primary_label ?? null;
+  if (labels.length === 0 && primaryLabel === null) {
+    return { data: null, status };
+  }
+  const data = new SyntheticData();
+  data.labels = labels;
+  data.primaryLabel = primaryLabel;
+  return { data, status };
 }
 
 function metadataFromRow(row: any): AssetMetadata {

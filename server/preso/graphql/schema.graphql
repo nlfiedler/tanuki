@@ -76,6 +76,31 @@ type AssetMetadata {
 }
 
 """
+Progress of synthetic-data extraction for an asset. Every asset has a status;
+PENDING is the default until a worker (or backfill) records a terminal value.
+"""
+enum SyntheticStatus {
+  "No worker has finished processing the asset yet."
+  PENDING
+  "Synthetic data has been extracted and stored."
+  READY
+  "All retry attempts failed; operator action required."
+  FAILED
+}
+
+"""
+Synthetic data derived from an image asset by machine-learning models. Phase 1
+covers the label-tagging fields; the `people` collection arrives with Phase 2
+and is resolved from a separate face store.
+"""
+type SyntheticData {
+  "Curated display labels, ordered by descending classifier confidence."
+  labels: [String!]!
+  "Top label, denormalized for fast queries; null if no labels survived curation."
+  primaryLabel: String
+}
+
+"""
 An `Asset` defines a single entity in the storage system. This typically refers
 to an image or video, but could be any type of file.
 """
@@ -104,6 +129,10 @@ type Asset {
   assetUrl: String!
   "Intrinsic metadata extracted from the asset file."
   metadata: AssetMetadata
+  "ML-derived synthetic data; null until extraction completes."
+  synthetic: SyntheticData
+  "Progress of synthetic-data extraction for this asset."
+  syntheticStatus: SyntheticStatus!
 }
 
 "An attribute name and the number of assets it references."
@@ -138,6 +167,10 @@ type SearchResult {
   assetUrl: String!
   "Intrinsic metadata extracted from the asset file."
   metadata: AssetMetadata
+  "ML-derived synthetic data; null until extraction completes."
+  synthetic: SyntheticData
+  "Progress of synthetic-data extraction for this asset."
+  syntheticStatus: SyntheticStatus!
 }
 
 "`SearchMeta` is returned from the search query."
@@ -270,6 +303,27 @@ type Query {
   years: [AttributeCount!]!
   "Retrieve the list of media types and their associated asset count."
   mediaTypes: [AttributeCount!]!
+  """
+  Retrieve every distinct `primaryLabel` with the number of assets carrying
+  it and a thumbnail URL pulled from the most recently dated such asset.
+  Backs the Labels page.
+  """
+  labels: [LabelEntry!]!
+  """
+  Search for assets whose `primaryLabel` matches the given label
+  (case-insensitive). Results are paginated by `offset` / `limit`.
+  """
+  assetsByLabel(label: String!, offset: Int, limit: Int): SearchMeta!
+}
+
+"One row in the Labels page index."
+type LabelEntry {
+  "The curated display label."
+  label: String!
+  "How many assets currently carry this as their `primaryLabel`."
+  count: Int!
+  "URL for a thumbnail of the representative (most recent) asset."
+  thumbnail: String!
 }
 
 "Information regarding a location for an asset."
@@ -384,6 +438,18 @@ type Mutation {
   fields. Returns the number of assets whose date changed.
   """
   fixOriginalDates: Int!
+  """
+  Backfill: enqueue a background `labels` extraction job for every image asset
+  that lacks label data and is not already queued. Idempotent and resumable.
+  Returns the number of assets enqueued.
+  """
+  backfillLabels: Int!
+  """
+  Re-enqueue extraction jobs for assets whose synthetic status is `FAILED`,
+  resetting them to `PENDING`. Optionally restrict to one job kind (`labels`).
+  Returns the number of assets re-enqueued.
+  """
+  retrySyntheticJobs(kind: String): Int!
 }
 
 schema {

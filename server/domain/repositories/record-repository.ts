@@ -6,6 +6,10 @@ import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
 import { AttributeCount } from 'tanuki/server/domain/entities/attributes.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import { SearchResult } from 'tanuki/server/domain/entities/search.ts';
+import {
+  SyntheticData,
+  SyntheticStatus
+} from 'tanuki/server/domain/entities/synthetic-data.ts';
 
 /**
  * Repository for entity records.
@@ -64,6 +68,13 @@ interface RecordRepository {
   allMediaTypes(): Promise<AttributeCount[]>;
 
   /**
+   * Return the distinct `synthetic.primaryLabel` values and the number of
+   * assets carrying each. Assets with no primary label (no synthetic data,
+   * or status not `READY`) are not counted.
+   */
+  allPrimaryLabels(): Promise<AttributeCount[]>;
+
+  /**
    * Store the asset record in the database either as a new record or updating
    * an existing record, as determined by its unique identifier.
    *
@@ -99,6 +110,27 @@ interface RecordRepository {
    * Search for assets whose media type matches the one given.
    */
   queryByMediaType(media_type: string): Promise<SearchResult[]>;
+
+  /**
+   * Search for assets whose `synthetic.primaryLabel` matches (case-insensitive).
+   *
+   * @param label - the curated display label to match exactly.
+   */
+  queryByLabel(label: string): Promise<SearchResult[]>;
+
+  /**
+   * Return the most-recent asset whose `synthetic.primaryLabel` matches
+   * (case-insensitive). Returns the asset id together with the actual
+   * (case-preserved) stored label, for use as a representative thumbnail and
+   * display name on the Labels page. Returns `null` if no asset matches.
+   *
+   * Cheaper than {@link queryByLabel} when the caller only needs one row.
+   *
+   * @param label - the curated display label to match (case-insensitive).
+   */
+  latestAssetByLabel(
+    label: string
+  ): Promise<{ assetId: string; primaryLabel: string } | null>;
 
   /**
    * Search for asssets whose best date is before the one given.
@@ -162,6 +194,51 @@ interface RecordRepository {
   fetchMetadata(
     assetIds: string[]
   ): Promise<Map<string, AssetMetadata | null>>;
+
+  /**
+   * Fetch synthetic data (labels) for the given asset identifiers in a single
+   * batched request. The returned map contains an entry for every requested
+   * id: the value is the asset's synthetic data, or `null` if the asset has
+   * none recorded (still pending, failed, or the asset itself does not exist).
+   *
+   * @param assetIds - identifiers of the assets to fetch synthetic data for.
+   * @returns map from asset identifier to synthetic data (or null).
+   */
+  fetchSynthetic(
+    assetIds: string[]
+  ): Promise<Map<string, SyntheticData | null>>;
+
+  /**
+   * Fetch the extraction status for the given asset identifiers in a single
+   * batched request. The returned map contains an entry for every requested
+   * id; assets with no row recorded yet return `PENDING` (the default).
+   * Identifiers that do not correspond to any known asset still appear in the
+   * map with a `PENDING` value — the caller is responsible for filtering by
+   * asset existence if that distinction matters.
+   *
+   * @param assetIds - identifiers of the assets to fetch status for.
+   * @returns map from asset identifier to extraction status.
+   */
+  fetchSyntheticStatus(
+    assetIds: string[]
+  ): Promise<Map<string, SyntheticStatus>>;
+
+  /**
+   * Set the synthetic data and status for a single asset. Used by the
+   * background worker pool when an extraction job completes (success or
+   * failure) and by backfill use cases. Passing `null` for `data` clears any
+   * existing labels while still recording the status (useful for `FAILED` or
+   * for resetting before a retry).
+   *
+   * @param assetId - identifier of the asset to update.
+   * @param data - the synthetic data to record, or null to clear.
+   * @param status - the extraction status to record.
+   */
+  setSynthetic(
+    assetId: string,
+    data: SyntheticData | null,
+    status: SyntheticStatus
+  ): Promise<void>;
 }
 
 export { type RecordRepository };

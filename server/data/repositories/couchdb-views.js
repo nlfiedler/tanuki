@@ -3,6 +3,8 @@
 //
 
 /* global emit */
+/* eslint-disable no-unassigned-vars -- each `let bestdate` is a marker that
+   insertBestDate() rewrites into an assignment before CouchDB sees the view. */
 
 // JavaScript functions that will be inserted into CouchDB as strings.
 //
@@ -145,4 +147,23 @@ export const all_years = function (doc) {
 
 export const all_media_types = function (doc) {
   emit(doc.mediaType.toLowerCase(), 1)
+}
+
+export const by_primary_label = function (doc) {
+  if (doc.synthetic && doc.synthetic.primaryLabel) {
+    // see insertBestDate() for how bestdate works
+    let bestdate
+    // Keys are still lowercased so queryByLabel can match case-insensitively;
+    // the original-cased label is fetched separately via latestAssetByLabel.
+    emit(doc.synthetic.primaryLabel.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
+  }
+}
+
+export const all_primary_labels = function (doc) {
+  if (doc.synthetic && doc.synthetic.primaryLabel) {
+    // Emit the original-cased label as the key so the Labels page shows the
+    // curated casing rather than lowercase. Curated labels have one canonical
+    // casing per logical label, so this does not split groups in practice.
+    emit(doc.synthetic.primaryLabel, 1)
+  }
 }

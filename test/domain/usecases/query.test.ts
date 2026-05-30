@@ -4,6 +4,7 @@
 import { describe, expect, test } from 'bun:test';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
+import { SyntheticData } from 'tanuki/server/domain/entities/synthetic-data.ts';
 import { AsyncQueue } from 'tanuki/server/shared/collections/async-queue.ts';
 import {
   lex,
@@ -195,6 +196,46 @@ describe('Query language support', function () {
 
       const neither = await parse('tag:fluffy or tag:furry');
       expect(neither.matches(asset)).toBeFalse();
+    });
+
+    test('should parse query and match by ML label', async function () {
+      const synthetic = new SyntheticData();
+      synthetic.labels = ['beach', 'palm tree', 'sunset'];
+      synthetic.primaryLabel = 'beach';
+      const labelled = new Asset('monday1')
+        .setChecksum('sha1-cafebabe')
+        .setFilename('img_1234.jpg')
+        .setByteLength(1024)
+        .setMediaType('image/jpeg')
+        .setTags(['vacation'])
+        .setImportDate(new Date(2018, 4, 31, 21, 10, 11))
+        .setSynthetic(synthetic);
+      const unlabelled = new Asset('monday2')
+        .setChecksum('sha1-deadbeef')
+        .setFilename('img_5678.jpg')
+        .setByteLength(1024)
+        .setMediaType('image/jpeg')
+        .setTags(['vacation'])
+        .setImportDate(new Date(2018, 4, 31, 21, 10, 11));
+
+      // primary label matches
+      const primary = await parse('label:beach');
+      expect(primary.matches(labelled)).toBeTrue();
+      // secondary labels also match (case-insensitive)
+      const secondary = await parse('label:"palm tree"');
+      expect(secondary.matches(labelled)).toBeTrue();
+      const upper = await parse('label:SUNSET');
+      expect(upper.matches(labelled)).toBeTrue();
+      // non-matching label
+      const miss = await parse('label:mountain');
+      expect(miss.matches(labelled)).toBeFalse();
+      // assets without synthetic data never match
+      expect(primary.matches(unlabelled)).toBeFalse();
+      // composes with other predicates via and/or/-
+      const compound = await parse('label:beach and tag:vacation');
+      expect(compound.matches(labelled)).toBeTrue();
+      const negated = await parse('-label:mountain');
+      expect(negated.matches(labelled)).toBeTrue();
     });
 
     test('should parse query and match by type', async function () {

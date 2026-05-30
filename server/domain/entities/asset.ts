@@ -3,6 +3,7 @@
 //
 import { AssetMetadata } from './asset-metadata.ts';
 import { Location } from './location.ts';
+import { SyntheticData, SyntheticStatus } from './synthetic-data.ts';
 
 /**
  * Asset entity represents an image, video, or other file in the system.
@@ -32,6 +33,10 @@ class Asset {
   originalDate: Date | null;
   /** Intrinsic metadata extracted from the asset file (EXIF, ffprobe). */
   metadata: AssetMetadata | null;
+  /** ML-derived synthetic data (labels, etc.); null until extraction completes. */
+  synthetic: SyntheticData | null;
+  /** Progress of synthetic-data extraction; defaults to PENDING. */
+  syntheticStatus: SyntheticStatus;
 
   constructor(key: string) {
     this.key = key;
@@ -46,6 +51,8 @@ class Asset {
     this.userDate = null;
     this.originalDate = null;
     this.metadata = null;
+    this.synthetic = null;
+    this.syntheticStatus = SyntheticStatus.PENDING;
   }
 
   /**
@@ -126,6 +133,16 @@ class Asset {
 
   setMetadata(metadata: AssetMetadata | null): Asset {
     this.metadata = metadata;
+    return this;
+  }
+
+  setSynthetic(synthetic: SyntheticData | null): Asset {
+    this.synthetic = synthetic;
+    return this;
+  }
+
+  setSyntheticStatus(status: SyntheticStatus): Asset {
+    this.syntheticStatus = status;
     return this;
   }
 }

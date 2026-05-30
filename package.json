@@ -48,6 +48,7 @@
     "mp4box": "^2.3.0",
     "multer": "^2.1.1",
     "nano": "^11.0.5",
+    "onnxruntime-node": "^1.26.0",
     "pouchdb": "^9.0.0",
     "sharp": "^0.34.5",
     "solid-js": "^1.9.12",
@@ -83,5 +84,8 @@
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.8",
     "vite-plugin-solid": "^2.11.12"
-  }
+  },
+  "trustedDependencies": [
+    "onnxruntime-node"
+  ]
 }

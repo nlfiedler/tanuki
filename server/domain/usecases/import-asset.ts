@@ -4,27 +4,35 @@
 import assert from 'node:assert';
 import fs from 'node:fs/promises';
 import * as helpers from './helpers.ts';
+import logger from 'tanuki/server/logger.ts';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { type BlobRepository } from 'tanuki/server/domain/repositories/blob-repository.ts';
+import { type FaceStore } from 'tanuki/server/domain/repositories/face-store.ts';
 import { type LocationRepository } from 'tanuki/server/domain/repositories/location-repository.ts';
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
 import { type SearchRepository } from 'tanuki/server/domain/repositories/search-repository.ts';
+
+/** Priority for live-import jobs, so they preempt backfill (priority 0). */
+const LIVE_IMPORT_PRIORITY = 10;
 
 export default ({
   recordRepository,
   blobRepository,
   locationRepository,
-  searchRepository
+  searchRepository,
+  faceStore
 }: {
   recordRepository: RecordRepository;
   blobRepository: BlobRepository;
   locationRepository: LocationRepository;
   searchRepository: SearchRepository;
+  faceStore: FaceStore;
 }) => {
   assert.ok(recordRepository, 'record repository must be defined');
   assert.ok(blobRepository, 'blob repository must be defined');
   assert.ok(locationRepository, 'location repository must be defined');
   assert.ok(searchRepository, 'search repository must be defined');
+  assert.ok(faceStore, 'face store must be defined');
   /**
    * Import the given file into the system as a new asset, moving the file into
    * the blob storage and creating a new record in the repository.
@@ -97,6 +105,18 @@ export default ({
       // blob repository will ensure the temporary file is (re)moved
       await blobRepository.storeBlob(filepath, asset);
       await searchRepository.clear();
+
+      // Queue background synthetic-data extraction for images. Phase 1 only
+      // enqueues labels; faces will be added once that pipeline lands. A queue
+      // hiccup must not fail the import — the asset is already stored, and
+      // backfillLabels can pick it up later.
+      if (mimetype.startsWith('image/')) {
+        try {
+          await faceStore.enqueueJob(asset.key, 'labels', LIVE_IMPORT_PRIORITY);
+        } catch (error: any) {
+          logger.warn('import-asset: failed to enqueue labels job:', error);
+        }
+      }
     } else {
       // remove the temporary file
       await fs.rm(filepath);

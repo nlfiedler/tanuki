@@ -53,6 +53,9 @@ const PENDING_ASSETS: TypedDocumentNode<Query, QueryPendingArgs> = gql`
           displayWidth
           displayHeight
         }
+        synthetic {
+          primaryLabel
+        }
       }
       count
       lastPage

@@ -31,10 +31,18 @@ import UpdateAsset from 'tanuki/server/domain/usecases/update-asset.ts';
 import UpdateVideoDates from 'tanuki/server/domain/usecases/update-video-dates.ts';
 import BackfillImageMetadata from 'tanuki/server/domain/usecases/backfill-image-metadata.ts';
 import BackfillVideoMetadata from 'tanuki/server/domain/usecases/backfill-video-metadata.ts';
+import BackfillLabels from 'tanuki/server/domain/usecases/backfill-labels.ts';
+import RetrySyntheticJobs from 'tanuki/server/domain/usecases/retry-synthetic-jobs.ts';
+import GetLabels from 'tanuki/server/domain/usecases/get-labels.ts';
+import AssetsByLabel from 'tanuki/server/domain/usecases/assets-by-label.ts';
 import FixOriginalDates from 'tanuki/server/domain/usecases/fix-original-dates.ts';
 import { CouchDBRecordRepository } from 'tanuki/server/data/repositories/couchdb-record-repository.ts';
 import { PouchDBRecordRepository } from 'tanuki/server/data/repositories/pouchdb-record-repository.ts';
 import { SqliteRecordRepository } from 'tanuki/server/data/repositories/sqlite-record-repository.ts';
+import { SqliteFaceStore } from 'tanuki/server/data/repositories/sqlite-face-store.ts';
+import { LocalSyntheticDetector } from 'tanuki/server/data/repositories/local-synthetic-detector.ts';
+import { DetectingSyntheticJobProcessor } from 'tanuki/server/data/repositories/detecting-synthetic-job-processor.ts';
+import { SyntheticWorkerPool } from 'tanuki/server/domain/services/synthetic-worker-pool.ts';
 import { DummyLocationRepository } from 'tanuki/server/data/repositories/dummy-location-repository.ts';
 import { EnvSettingsRepository } from 'tanuki/server/data/repositories/env-settings-repository.ts';
 import { GoogleLocationRepository } from 'tanuki/server/data/repositories/google-location-repository.ts';
@@ -74,6 +82,24 @@ container.register({
   recordRepository: asClass(RecordRepository, {
     lifetime: Lifetime.SINGLETON
   }),
+  // The face store is always SQLite, regardless of the asset record backend:
+  // embeddings, face crops, and the job queue need relational/BLOB semantics.
+  faceStore: asClass(SqliteFaceStore, {
+    lifetime: Lifetime.SINGLETON
+  }),
+  // Label detector (MobileNetV2 via onnxruntime-node), reading bytes from
+  // whichever blob store is configured. The Namazu HTTP push-down is a future
+  // optimization that would swap this registration.
+  syntheticDetector: asClass(LocalSyntheticDetector, {
+    lifetime: Lifetime.SINGLETON
+  }),
+  // Drains the synthetic_jobs queue, running the detector and persisting labels.
+  syntheticJobProcessor: asClass(DetectingSyntheticJobProcessor, {
+    lifetime: Lifetime.SINGLETON
+  }),
+  syntheticWorkerPool: asClass(SyntheticWorkerPool, {
+    lifetime: Lifetime.SINGLETON
+  }),
   blobRepository: asClass(BlobRepository, {
     lifetime: Lifetime.SINGLETON
   }),
@@ -108,6 +134,10 @@ container.register({
   updateVideoDates: asFunction(UpdateVideoDates),
   backfillImageMetadata: asFunction(BackfillImageMetadata),
   backfillVideoMetadata: asFunction(BackfillVideoMetadata),
+  backfillLabels: asFunction(BackfillLabels),
+  retrySyntheticJobs: asFunction(RetrySyntheticJobs),
+  getLabels: asFunction(GetLabels),
+  assetsByLabel: asFunction(AssetsByLabel),
   fixOriginalDates: asFunction(FixOriginalDates)
 });
 

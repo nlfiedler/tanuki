@@ -7,6 +7,10 @@ import { describe, expect, test } from 'bun:test';
 import 'tanuki/test/env.ts';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
+import {
+  SyntheticData,
+  SyntheticStatus
+} from 'tanuki/server/domain/entities/synthetic-data.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import { EnvSettingsRepository } from 'tanuki/server/data/repositories/env-settings-repository.ts';
 import { PouchDBRecordRepository } from 'tanuki/server/data/repositories/pouchdb-record-repository.ts';
@@ -863,6 +867,200 @@ describe('PouchDBRecordRepository', function () {
 
     const empty = await sut.fetchMetadata([]);
     expect(empty.size).toEqual(0);
+  });
+
+  test('synthetic data should default to PENDING with no sub-document', async function () {
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new PouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    const asset = buildBasicAsset('synth-default');
+    await sut.putAsset(asset);
+
+    const fetched = await sut.getAssetById('synth-default');
+    expect(fetched?.synthetic).toBeNull();
+    expect(fetched?.syntheticStatus).toEqual(SyntheticStatus.PENDING);
+
+    const dataMap = await sut.fetchSynthetic(['synth-default']);
+    const statusMap = await sut.fetchSyntheticStatus(['synth-default']);
+    expect(dataMap.get('synth-default')).toBeNull();
+    expect(statusMap.get('synth-default')).toEqual(SyntheticStatus.PENDING);
+  });
+
+  test('putAsset should round-trip synthetic data on the Asset entity', async function () {
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new PouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    const asset = buildBasicAsset('synth-put-roundtrip');
+    const data = new SyntheticData();
+    data.labels = ['cat', 'sofa'];
+    data.primaryLabel = 'cat';
+    asset.synthetic = data;
+    asset.syntheticStatus = SyntheticStatus.READY;
+    await sut.putAsset(asset);
+
+    const fetched = await sut.getAssetById('synth-put-roundtrip');
+    expect(fetched?.synthetic?.labels).toEqual(['cat', 'sofa']);
+    expect(fetched?.synthetic?.primaryLabel).toEqual('cat');
+    expect(fetched?.syntheticStatus).toEqual(SyntheticStatus.READY);
+  });
+
+  test('setSynthetic should round-trip labels and status', async function () {
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new PouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    const asset = buildBasicAsset('synth-roundtrip');
+    await sut.putAsset(asset);
+
+    const data = new SyntheticData();
+    data.labels = ['beach', 'palm tree', 'sunset'];
+    data.primaryLabel = 'beach';
+    await sut.setSynthetic('synth-roundtrip', data, SyntheticStatus.READY);
+
+    const fetched = await sut.getAssetById('synth-roundtrip');
+    expect(fetched?.synthetic?.labels).toEqual(['beach', 'palm tree', 'sunset']);
+    expect(fetched?.synthetic?.primaryLabel).toEqual('beach');
+    expect(fetched?.syntheticStatus).toEqual(SyntheticStatus.READY);
+  });
+
+  test('setSynthetic with FAILED status persists status with no data', async function () {
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new PouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    const asset = buildBasicAsset('synth-failed');
+    await sut.putAsset(asset);
+
+    await sut.setSynthetic('synth-failed', null, SyntheticStatus.FAILED);
+    const fetched = await sut.getAssetById('synth-failed');
+    expect(fetched?.synthetic).toBeNull();
+    expect(fetched?.syntheticStatus).toEqual(SyntheticStatus.FAILED);
+  });
+
+  test('fetchSynthetic batch returns a map with missing entries as null', async function () {
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new PouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    const withSynth = buildBasicAsset('with-synth');
+    await sut.putAsset(withSynth);
+    const data = new SyntheticData();
+    data.labels = ['dog'];
+    data.primaryLabel = 'dog';
+    await sut.setSynthetic('with-synth', data, SyntheticStatus.READY);
+
+    const withoutSynth = buildBasicAsset('without-synth');
+    await sut.putAsset(withoutSynth);
+
+    const dataMap = await sut.fetchSynthetic([
+      'with-synth',
+      'without-synth',
+      'does-not-exist'
+    ]);
+    expect(dataMap.size).toEqual(3);
+    expect(dataMap.get('with-synth')?.primaryLabel).toEqual('dog');
+    expect(dataMap.get('without-synth')).toBeNull();
+    expect(dataMap.get('does-not-exist')).toBeNull();
+
+    const statusMap = await sut.fetchSyntheticStatus([
+      'with-synth',
+      'without-synth',
+      'does-not-exist'
+    ]);
+    expect(statusMap.get('with-synth')).toEqual(SyntheticStatus.READY);
+    expect(statusMap.get('without-synth')).toEqual(SyntheticStatus.PENDING);
+    expect(statusMap.get('does-not-exist')).toEqual(SyntheticStatus.PENDING);
+  });
+
+  test('allPrimaryLabels groups by primary_label and counts assets', async function () {
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new PouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    const a = buildBasicAsset('label-a');
+    const b = buildBasicAsset('label-b');
+    const c = buildBasicAsset('label-c');
+    const d = buildBasicAsset('label-d');
+    for (const asset of [a, b, c, d]) await sut.putAsset(asset);
+    const beach = new SyntheticData();
+    beach.labels = ['beach'];
+    beach.primaryLabel = 'beach';
+    const cat = new SyntheticData();
+    cat.labels = ['cat'];
+    cat.primaryLabel = 'cat';
+    await sut.setSynthetic('label-a', beach, SyntheticStatus.READY);
+    await sut.setSynthetic('label-b', beach, SyntheticStatus.READY);
+    await sut.setSynthetic('label-c', cat, SyntheticStatus.READY);
+
+    const all = await sut.allPrimaryLabels();
+    all.sort((x, y) => x.label.localeCompare(y.label));
+    expect(all).toHaveLength(2);
+    expect(all[0]?.label).toEqual('beach');
+    expect(all[0]?.count).toEqual(2);
+    expect(all[1]?.label).toEqual('cat');
+    expect(all[1]?.count).toEqual(1);
+  });
+
+  test('queryByLabel returns assets whose primaryLabel matches (case-insensitive)', async function () {
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new PouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    const a = buildBasicAsset('q-a');
+    const b = buildBasicAsset('q-b');
+    const c = buildBasicAsset('q-c');
+    for (const asset of [a, b, c]) await sut.putAsset(asset);
+    const beach = new SyntheticData();
+    beach.labels = ['beach'];
+    beach.primaryLabel = 'Beach';
+    const cat = new SyntheticData();
+    cat.labels = ['cat'];
+    cat.primaryLabel = 'cat';
+    await sut.setSynthetic('q-a', beach, SyntheticStatus.READY);
+    await sut.setSynthetic('q-b', beach, SyntheticStatus.READY);
+    await sut.setSynthetic('q-c', cat, SyntheticStatus.READY);
+
+    const matches = await sut.queryByLabel('beach');
+    const ids = matches.map((r) => r.assetId).sort();
+    expect(ids).toEqual(['q-a', 'q-b']);
+
+    const cats = await sut.queryByLabel('cat');
+    expect(cats.map((r) => r.assetId)).toEqual(['q-c']);
+
+    const none = await sut.queryByLabel('nothing-here');
+    expect(none).toEqual([]);
+  });
+
+  test('latestAssetByLabel returns the most-recent asset with its case-preserved label', async function () {
+    const settingsRepository = new EnvSettingsRepository();
+    const sut = new PouchDBRecordRepository({ settingsRepository });
+    await sut.destroyAndCreate();
+
+    const older = buildBasicAsset('latest-older');
+    older.setUserDate(new Date(2020, 0, 1));
+    const newer = buildBasicAsset('latest-newer');
+    newer.setUserDate(new Date(2025, 5, 1));
+    const other = buildBasicAsset('latest-other');
+    await sut.putAsset(older);
+    await sut.putAsset(newer);
+    await sut.putAsset(other);
+    const beach = new SyntheticData();
+    beach.labels = ['Beach'];
+    beach.primaryLabel = 'Beach';
+    const cat = new SyntheticData();
+    cat.labels = ['cat'];
+    cat.primaryLabel = 'cat';
+    await sut.setSynthetic('latest-older', beach, SyntheticStatus.READY);
+    await sut.setSynthetic('latest-newer', beach, SyntheticStatus.READY);
+    await sut.setSynthetic('latest-other', cat, SyntheticStatus.READY);
+
+    const result = await sut.latestAssetByLabel('beach');
+    expect(result).not.toBeNull();
+    expect(result!.assetId).toEqual('latest-newer');
+    expect(result!.primaryLabel).toEqual('Beach');
+    expect(await sut.latestAssetByLabel('nothing')).toBeNull();
   });
 });
 

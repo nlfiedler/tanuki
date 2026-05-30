@@ -35,6 +35,10 @@ function Navbar() {
             Search
           </A>
 
+          <A class="navbar-item" href="/labels">
+            Labels
+          </A>
+
           <A class="navbar-item" href="/upload">
             Upload
           </A>

@@ -111,6 +111,27 @@ class TagConstraint {
   }
 }
 
+/**
+ * Matches any ML-derived synthetic label on the asset, primary or otherwise.
+ * Matching the full `synthetic.labels` list (not just `primaryLabel`) lets a
+ * user search for `label:dog` and find images where "dog" was a secondary
+ * detection. Assets without synthetic data never match.
+ */
+class LabelConstraint {
+  label: string;
+
+  constructor(label: string) {
+    this.label = label.toLowerCase();
+  }
+
+  matches(asset: Asset): boolean {
+    return (
+      asset.synthetic?.labels.some((e) => e.toLowerCase() == this.label) ??
+      false
+    );
+  }
+}
+
 /** Matches if the asset has a populated value for the named field. */
 class HasConstraint {
   field: string;
@@ -262,6 +283,8 @@ function buildPredicate(atom: string[]): Constraint {
     }
   } else if (keyword == 'tag') {
     return new TagConstraint(atom.shift()!);
+  } else if (keyword == 'label') {
+    return new LabelConstraint(atom.shift()!);
   } else if (keyword == 'has') {
     return new HasConstraint(atom.shift()!);
   } else {

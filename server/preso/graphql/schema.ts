@@ -8,6 +8,10 @@ import container from 'tanuki/server/container.ts';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { AssetInput } from 'tanuki/server/domain/entities/asset.ts';
 import { AssetMetadata } from 'tanuki/server/domain/entities/asset-metadata.ts';
+import {
+  SyntheticData,
+  SyntheticStatus
+} from 'tanuki/server/domain/entities/synthetic-data.ts';
 import * as ops from 'tanuki/server/domain/entities/edit.ts';
 import { Location } from 'tanuki/server/domain/entities/location.ts';
 import {
@@ -22,6 +26,8 @@ import type {
   AssetEdit,
   AssetInput as GQLAssetInput,
   AssetMetadata as GQLAssetMetadata,
+  SyntheticData as GQLSyntheticData,
+  SyntheticStatus as GQLSyntheticStatus,
   AttributeCount,
   BrowseMeta,
   LocationValues,
@@ -65,12 +71,34 @@ export const resolvers: Resolvers = {
       }
       const meta = await context.metadataLoader.load(parent.id);
       return metadataToGQL(meta);
+    },
+    synthetic: async (parent: any, _args, context: GraphQLContext) => {
+      if (parent?.synthetic !== undefined) {
+        return syntheticToGQL(parent.synthetic);
+      }
+      const data = await context.syntheticLoader.load(parent.id);
+      return syntheticToGQL(data);
+    },
+    syntheticStatus: async (parent: any, _args, context: GraphQLContext) => {
+      if (parent?.syntheticStatus !== undefined) {
+        return statusToGQL(parent.syntheticStatus);
+      }
+      const status = await context.syntheticStatusLoader.load(parent.id);
+      return statusToGQL(status);
     }
   },
   SearchResult: {
     metadata: async (parent: any, _args, context: GraphQLContext) => {
       const meta = await context.metadataLoader.load(parent.assetId);
       return metadataToGQL(meta);
+    },
+    synthetic: async (parent: any, _args, context: GraphQLContext) => {
+      const data = await context.syntheticLoader.load(parent.assetId);
+      return syntheticToGQL(data);
+    },
+    syntheticStatus: async (parent: any, _args, context: GraphQLContext) => {
+      const status = await context.syntheticStatusLoader.load(parent.assetId);
+      return statusToGQL(status);
     },
     previewUrl: (
       parent: any,
@@ -192,6 +220,35 @@ export const resolvers: Resolvers = {
       logger.info('mediaTypes');
       const getMediaTypes: any = container.resolve('getMediaTypes');
       return getMediaTypes();
+    },
+
+    async labels(
+      _parent: any,
+      _args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<any[]> {
+      logger.info('labels');
+      const getLabels: any = container.resolve('getLabels');
+      const entries = await getLabels();
+      // map domain LabelEntry -> GraphQL LabelEntry (build the thumbnail URL)
+      return entries.map((e: any) => ({
+        label: e.label,
+        count: e.count,
+        thumbnail: blobs.thumbnailUrl(e.thumbnailAssetId, 240, 240)
+      }));
+    },
+
+    async assetsByLabel(
+      _parent: any,
+      args: { label: string; offset?: number | null; limit?: number | null },
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<SearchMeta> {
+      logger.info('assetsByLabel');
+      const assetsByLabel: any = container.resolve('assetsByLabel');
+      const results = await assetsByLabel(args.label);
+      return paginateResults(results, args.offset, args.limit);
     },
 
     async pending(
@@ -396,6 +453,28 @@ export const resolvers: Resolvers = {
       logger.info('fixOriginalDates');
       const fix: any = container.resolve('fixOriginalDates');
       return fix();
+    },
+
+    async backfillLabels(
+      _parent: any,
+      _args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<number> {
+      logger.info('backfillLabels');
+      const backfill: any = container.resolve('backfillLabels');
+      return backfill();
+    },
+
+    async retrySyntheticJobs(
+      _parent: any,
+      args: { kind?: string | null },
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<number> {
+      logger.info('retrySyntheticJobs');
+      const retry: any = container.resolve('retrySyntheticJobs');
+      return retry(args.kind);
     }
   }
 };
@@ -622,10 +701,31 @@ function assetToGQL(entity: Asset): GQLAsset {
     caption: entity.caption,
     location: entity.location,
     assetUrl: blobs.assetUrl(entity.key),
-    // pass the AssetMetadata instance through verbatim; the Asset.metadata
-    // field resolver coerces it on demand (avoids double-coercion).
-    metadata: entity.metadata as unknown as GQLAssetMetadata | null
+    // pass the AssetMetadata and SyntheticData instances through verbatim;
+    // the field resolvers coerce them on demand (avoids double-coercion).
+    metadata: entity.metadata as unknown as GQLAssetMetadata | null,
+    synthetic: entity.synthetic as unknown as GQLSyntheticData | null,
+    syntheticStatus: statusToGQL(entity.syntheticStatus)
   };
+}
+
+function syntheticToGQL(
+  synthetic: SyntheticData | null | undefined
+): GQLSyntheticData | null {
+  if (!synthetic) return null;
+  return {
+    labels: synthetic.labels,
+    primaryLabel: synthetic.primaryLabel
+  };
+}
+
+/**
+ * Convert a domain SyntheticStatus to the codegen'd GraphQL enum. TypeScript
+ * treats the two enum declarations as nominally distinct even though their
+ * string values match exactly, so this helper centralizes the (safe) coercion.
+ */
+function statusToGQL(status: SyntheticStatus): GQLSyntheticStatus {
+  return status as unknown as GQLSyntheticStatus;
 }
 
 function metadataToGQL(

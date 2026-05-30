@@ -18,19 +18,58 @@ import container from 'tanuki/server/container.ts';
 import assetsRouter from 'tanuki/server/preso/routes/assets.ts';
 import recordsRouter from 'tanuki/server/preso/routes/records.ts';
 import { typeDefs, resolvers } from 'tanuki/server/preso/graphql/schema.ts';
-import { createMetadataLoader } from 'tanuki/server/preso/graphql/metadata-loader.ts';
+import {
+  createMetadataLoader,
+  createSyntheticLoader,
+  createSyntheticStatusLoader
+} from 'tanuki/server/preso/graphql/metadata-loader.ts';
 
-// (asynchronously) prepare the database
+// (asynchronously) prepare the asset record store and the face store, then
+// start the background worker pool. The pool must wait for BOTH databases —
+// it calls recordRepository.getAssetById(), which would throw if the asset
+// DB were still null while the face store has leftover queue rows.
 const database: any = container.resolve('recordRepository');
-database
-  .initialize()
+const faceStore: any = container.resolve('faceStore');
+const pool: any = container.resolve('syntheticWorkerPool');
+// eslint-disable-next-line unicorn/prefer-top-level-await
+const databaseReady = database.initialize().then(() => {
+  logger.info('database initialization complete');
+});
+// eslint-disable-next-line unicorn/prefer-top-level-await
+const faceStoreReady = faceStore.initialize().then(() => {
+  logger.info('face store initialization complete');
+});
+Promise.all([databaseReady, faceStoreReady])
   .then(() => {
-    logger.info('database initialization complete');
+    pool.start();
   })
   // eslint-disable-next-line unicorn/prefer-top-level-await
   .catch((error: any) => {
-    logger.error('database initialization error:', error);
+    logger.error('synthetic store initialization error:', error);
   });
+
+// Drain the worker pool on graceful shutdown so claimed-but-not-yet-finished
+// jobs are recorded properly rather than vanishing with the process.
+let shuttingDown = false;
+async function shutdown(signal: string): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info(`received ${signal}, stopping worker pool…`);
+  try {
+    await pool.stop();
+  } catch (error: any) {
+    logger.error('worker pool stop error:', error);
+  }
+  // server process: signal handlers really do need to exit
+  // eslint-disable-next-line unicorn/no-process-exit
+  process.exit(0);
+}
+process.on('SIGTERM', () => {
+  void shutdown('SIGTERM');
+});
+process.on('SIGINT', () => {
+  void shutdown('SIGINT');
+});
 
 // set up Express.js application
 const app = express();
@@ -74,7 +113,11 @@ app.use(
   expressMiddleware(graphqlServer, {
     context: async () => {
       const recordRepository: any = container.resolve('recordRepository');
-      return { metadataLoader: createMetadataLoader(recordRepository) };
+      return {
+        metadataLoader: createMetadataLoader(recordRepository),
+        syntheticLoader: createSyntheticLoader(recordRepository),
+        syntheticStatusLoader: createSyntheticStatusLoader(recordRepository)
+      };
     }
   })
 );

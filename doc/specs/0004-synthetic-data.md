@@ -53,7 +53,7 @@ Acceptance: a freshly imported image with a known face is grouped under the righ
 Both Tanuki (local detector) and Namazu (Rust detector) use the same ONNX model files so that embeddings are directly comparable across backends:
 
 - **Face detection**: SCRFD-2.5g (~3 MB ONNX) — produces bounding boxes + 5-point landmarks.
-- **Face embedding**: MobileFaceNet (~5 MB ONNX, ArcFace-trained) — produces 128-dimensional L2-normalized embeddings.
+- **Face embedding**: MobileFaceNet (~5 MB ONNX, ArcFace-trained, `w600k_mbf` variant) — produces 512-dimensional L2-normalized embeddings.
 
 Both backends ship the same `scrfd_2.5g.onnx` and `mobilefacenet.onnx` files, and use the same `model_version` identifier (e.g. `mobilefacenet-v1`). The embeddings are byte-comparable: a face recognized as Alice by the Namazu detector will match the same Alice cluster after re-import through the local detector.
 
@@ -139,7 +139,7 @@ synthetic_data
   asset_id        TEXT PRIMARY KEY REFERENCES assets(id) ON DELETE CASCADE
   primary_label   TEXT
   labels          TEXT  -- JSON array of display labels (post-curation, ordered by score)
-  status          TEXT  -- 'pending' | 'ready' | 'failed'
+  status          TEXT  -- 'PENDING' | 'READY' | 'FAILED' (matches GraphQL enum casing)
   updated_at      INTEGER
 
 INDEX sd_primary_label   ON synthetic_data(primary_label)
@@ -166,7 +166,7 @@ face
   asset_id        TEXT NOT NULL     -- no SQL FK; asset lives in a different store
   person_id       TEXT REFERENCES person(id) ON DELETE SET NULL
   bbox            TEXT NOT NULL      -- JSON [x, y, w, h] in displayed-orientation pixels
-  embedding       BLOB NOT NULL      -- raw Float32Array, 128 floats (512 bytes) for MobileFaceNet
+  embedding       BLOB NOT NULL      -- raw Float32Array, 512 floats (2048 bytes) for MobileFaceNet
   thumbnail       BLOB NOT NULL      -- ~128px JPEG of the cropped face
   detector_score  REAL
   model_version   TEXT NOT NULL      -- e.g. 'mobilefacenet-v1'
@@ -344,7 +344,7 @@ POST /synthetic/:blobId
     {
       "labels": [ { "name": "beach", "score": 0.91 }, ... ],
       "faces":  [ { "bbox": [x,y,w,h],
-                    "embedding": "<base64 little-endian Float32, 128 floats>",
+                    "embedding": "<base64 little-endian Float32, 512 floats>",
                     "thumbnail": "<base64 JPEG, ~128px>",
                     "score": 0.97,
                     "model_version": "mobilefacenet-v1" }, ... ],

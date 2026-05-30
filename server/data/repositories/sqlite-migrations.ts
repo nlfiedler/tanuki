@@ -50,6 +50,24 @@ const MIGRATIONS: Migration[] = [
         ) STRICT`
       );
     }
+  },
+  {
+    version: 3,
+    up: (db: Database) => {
+      db.run(
+        `CREATE TABLE IF NOT EXISTS synthetic_data (
+          asset_id TEXT NOT NULL PRIMARY KEY REFERENCES assets(key) ON DELETE CASCADE,
+          primary_label TEXT,
+          labels TEXT,
+          status TEXT NOT NULL DEFAULT 'PENDING',
+          updated_at INTEGER NOT NULL
+        ) STRICT`
+      );
+      db.run(
+        `CREATE INDEX IF NOT EXISTS sd_primary_label
+           ON synthetic_data(primary_label)`
+      );
+    }
   }
 ];
 
