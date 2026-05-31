@@ -534,6 +534,13 @@ type Mutation {
   reassignFaces(faceIds: [ID!]!, personId: ID): Person!
   "Hide or unhide a person; hidden people are excluded from the People page."
   hidePerson(id: ID!, hidden: Boolean!): Person!
+  """
+  Hide every remaining unnamed person in one pass, clearing the long tail of
+  auto-clustered strangers from the People page once the people worth naming
+  have been named. Named and already-hidden people are untouched. Returns the
+  number of people newly hidden.
+  """
+  hideUnnamedPeople: Int!
   "Pin a specific face (which must belong to the person) as its thumbnail."
   setPersonThumbnail(id: ID!, faceId: ID!): Person!
 }

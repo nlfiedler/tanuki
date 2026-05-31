@@ -247,6 +247,7 @@ export function faceStoreMock({
   mergePeople = undefined,
   reassignFaces = undefined,
   hidePerson = undefined,
+  hideUnnamedPeople = undefined,
   setPersonThumbnail = undefined,
   allFaceAssetIds = undefined,
   setFacesStatus = undefined,
@@ -291,6 +292,7 @@ export function faceStoreMock({
     personId: string | null
   ) => Promise<string>;
   hidePerson?: (id: string, hidden: boolean) => Promise<void>;
+  hideUnnamedPeople?: () => Promise<number>;
   setPersonThumbnail?: (id: string, faceId: string) => Promise<void>;
   allFaceAssetIds?: () => Promise<string[]>;
   setFacesStatus?: (
@@ -335,6 +337,7 @@ export function faceStoreMock({
     reassignFaces:
       reassignFaces || mock(() => Promise.resolve('mock-person')),
     hidePerson: hidePerson || mock(() => Promise.resolve()),
+    hideUnnamedPeople: hideUnnamedPeople || mock(() => Promise.resolve(0)),
     setPersonThumbnail: setPersonThumbnail || mock(() => Promise.resolve()),
     allFaceAssetIds:
       allFaceAssetIds || mock(() => Promise.resolve([] as string[])),

@@ -307,6 +307,49 @@ describe('SqliteFaceStore', function () {
       );
     });
 
+    test('listPeople orders by descending face count', async function () {
+      const lonely = await sut.createPerson();
+      await sut.insertFace(makeFace({ assetId: 'a', personId: lonely.id }));
+      const popular = await sut.createPerson();
+      await sut.insertFace(makeFace({ assetId: 'b', personId: popular.id }));
+      await sut.insertFace(makeFace({ assetId: 'c', personId: popular.id }));
+      await sut.insertFace(makeFace({ assetId: 'd', personId: popular.id }));
+      const middling = await sut.createPerson();
+      await sut.insertFace(makeFace({ assetId: 'e', personId: middling.id }));
+      await sut.insertFace(makeFace({ assetId: 'f', personId: middling.id }));
+
+      const people = await sut.listPeople(false);
+      // most-photographed first, regardless of creation order
+      expect(people.map((s) => s.person.id)).toEqual([
+        popular.id,
+        middling.id,
+        lonely.id
+      ]);
+      expect(people.map((s) => s.faceCount)).toEqual([3, 2, 1]);
+    });
+
+    test('hideUnnamedPeople hides only visible, unnamed people', async function () {
+      const named = await sut.createPerson();
+      await sut.renamePerson(named.id, 'Alice');
+      const unnamed1 = await sut.createPerson();
+      const unnamed2 = await sut.createPerson();
+      const alreadyHidden = await sut.createPerson();
+      await sut.hidePerson(alreadyHidden.id, true);
+
+      // only the two visible unnamed people are newly hidden
+      expect(await sut.hideUnnamedPeople()).toEqual(2);
+      const visible = await sut.listPeople(false);
+      expect(visible.map((s) => s.person.id)).toEqual([named.id]);
+      // running again is a no-op now that nothing visible is unnamed
+      expect(await sut.hideUnnamedPeople()).toEqual(0);
+      // the named person is still untouched and visible
+      expect((await sut.getPersonSummary(named.id))!.person.hidden).toBeFalse();
+      // the previously-unnamed clusters are now hidden
+      for (const id of [unnamed1.id, unnamed2.id]) {
+        expect((await sut.getPersonSummary(id))!.person.hidden).toBeTrue();
+      }
+    });
+
     test('facesForPerson and faceThumbnail return stored crops', async function () {
       const person = await sut.createPerson();
       await sut.insertFace(

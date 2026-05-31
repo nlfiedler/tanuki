@@ -575,7 +575,20 @@ class SqliteFaceStore implements FaceStore {
           ORDER BY created_at ASC, id ASC`
       )
       .all() as PersonRow[];
-    return this.summarizePersonRows(rows);
+    const summaries = this.summarizePersonRows(rows);
+    // Surface the most-photographed ("popular") people first. The face count
+    // is only known after summarization, so sort here rather than in SQL; the
+    // sort is stable, so equal counts keep the creation order from above.
+    summaries.sort((a, b) => b.faceCount - a.faceCount);
+    return summaries;
+  }
+
+  /** @inheritDoc */
+  async hideUnnamedPeople(): Promise<number> {
+    const { changes } = this.database!
+      .query('UPDATE person SET hidden = 1 WHERE name IS NULL AND hidden = 0')
+      .run();
+    return changes;
   }
 
   /** @inheritDoc */

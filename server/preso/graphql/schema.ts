@@ -609,6 +609,17 @@ export const resolvers: Resolvers = {
       return personOrThrow(await hidePerson(args.id, args.hidden), args.id);
     },
 
+    async hideUnnamedPeople(
+      _parent: any,
+      _args: Record<string, never>,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<number> {
+      logger.info('hideUnnamedPeople');
+      const hideUnnamedPeople: any = container.resolve('hideUnnamedPeople');
+      return hideUnnamedPeople();
+    },
+
     async setPersonThumbnail(
       _parent: any,
       args: { id: string; faceId: string },

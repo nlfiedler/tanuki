@@ -104,6 +104,13 @@ const HIDE_PERSON: TypedDocumentNode<Mutation, MutationHidePersonArgs> = gql`
   }
 `;
 
+const HIDE_UNNAMED_PEOPLE: TypedDocumentNode<Mutation, Record<string, never>> =
+  gql`
+    mutation HideUnnamedPeople {
+      hideUnnamedPeople
+    }
+  `;
+
 const REASSIGN_FACES: TypedDocumentNode<Mutation, MutationReassignFacesArgs> =
   gql`
     mutation ReassignFaces($faceIds: [ID!]!, $personId: ID) {
@@ -231,6 +238,26 @@ function People() {
     await refetch();
   }
 
+  // Count the unnamed, currently-visible people so the bulk-hide button can
+  // both label how many it will affect and disable itself when there are none.
+  const unnamedCount = createMemo(
+    () => people().filter((p) => !p.name && !p.hidden).length
+  );
+  async function hideUnnamed() {
+    const count = unnamedCount();
+    if (count === 0) return;
+    if (
+      !window.confirm(
+        `Hide ${count} unnamed ${count === 1 ? 'person' : 'people'}? ` +
+          'They can be brought back with "Show hidden".'
+      )
+    ) {
+      return;
+    }
+    await client.mutate({ mutation: HIDE_UNNAMED_PEOPLE });
+    await refetch();
+  }
+
   return (
     <section class="section">
       <div class="container">
@@ -241,6 +268,17 @@ function People() {
             </div>
           </div>
           <div class="level-right">
+            <div class="level-item mx-6">
+              <button
+                type="button"
+                class="button is-small is-warning"
+                disabled={unnamedCount() === 0}
+                onClick={hideUnnamed}
+                title="Hide every unnamed person"
+              >
+                Hide {unnamedCount()} unnamed
+              </button>
+            </div>
             <label class="checkbox level-item">
               <input
                 type="checkbox"

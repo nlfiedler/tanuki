@@ -156,11 +156,23 @@ interface FaceStore {
 
   /**
    * List people for the People page, each enriched with face count and
-   * representative face. Sorted by creation order.
+   * representative face. Sorted by descending face count (most-photographed
+   * "popular" people first), with creation order breaking ties.
    *
    * @param includeHidden - when false, omit people flagged hidden.
    */
   listPeople(includeHidden: boolean): Promise<PersonSummary[]>;
+
+  /**
+   * Hide every currently-visible unnamed person (one with no user-assigned
+   * name) in a single pass, excluding them from the People page without
+   * removing any faces. Named and already-hidden people are untouched. Used to
+   * clear out the long tail of auto-clustered strangers once the people worth
+   * naming have been named.
+   *
+   * @returns how many people were newly hidden.
+   */
+  hideUnnamedPeople(): Promise<number>;
 
   /**
    * Fetch a single person enriched with face count and representative face, or

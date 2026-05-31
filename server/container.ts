@@ -45,6 +45,7 @@ import RenamePerson from 'tanuki/server/domain/usecases/rename-person.ts';
 import MergePeople from 'tanuki/server/domain/usecases/merge-people.ts';
 import ReassignFaces from 'tanuki/server/domain/usecases/reassign-faces.ts';
 import HidePerson from 'tanuki/server/domain/usecases/hide-person.ts';
+import HideUnnamedPeople from 'tanuki/server/domain/usecases/hide-unnamed-people.ts';
 import SetPersonThumbnail from 'tanuki/server/domain/usecases/set-person-thumbnail.ts';
 import FixOriginalDates from 'tanuki/server/domain/usecases/fix-original-dates.ts';
 import { CouchDBRecordRepository } from 'tanuki/server/data/repositories/couchdb-record-repository.ts';
@@ -168,6 +169,7 @@ container.register({
   mergePeople: asFunction(MergePeople),
   reassignFaces: asFunction(ReassignFaces),
   hidePerson: asFunction(HidePerson),
+  hideUnnamedPeople: asFunction(HideUnnamedPeople),
   setPersonThumbnail: asFunction(SetPersonThumbnail),
   fixOriginalDates: asFunction(FixOriginalDates)
 });
