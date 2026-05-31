@@ -73,7 +73,7 @@ The application is configured using environment variables.
 - **FACE_MODEL_VERSION**
   - Identifier recorded on each stored face embedding; embeddings are only ever compared within the same version. Defaults to `mobilefacenet-v1`. Override only to match a namazu deployment whose embedding model has advanced ahead of this build.
 - **FACE_STORE_PATH**
-  - Path and filename for the face recognition database file (SQLite). This is always needed, regardless of whether CouchDB, PouchDB, or SQLite is used for the records store (SQLite is bested suited for storing the heaps of binary data involved with face recognition).
+  - Path for the face recognition database files (SQLite). This is always needed, regardless of whether CouchDB, PouchDB, or SQLite is used for the records store (SQLite is bested suited for storing the heaps of binary data involved with face recognition).
 - **GOOGLE_MAPS_API_KEY**
   - If defined, enables reverse geocoding using the Google Maps API.
 - **LOG_LEVEL**

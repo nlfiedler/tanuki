@@ -16,7 +16,7 @@ Rarely is there ever a problem with upgrades, but a backup is a good idea in gen
 curl -o dump.json http://192.168.1.4:3000/records/dump
 ```
 
-The face recognition database is always stored in an SQLite file located at the path given by the `FACE_STORE_PATH` environment variable. That should also be saved since it is _not_ part of the dump and load procedure. If this database is ever lost, you can run the `backfillFaceRecognition` GraphQL mutation via the GraphQL playground (at the `/graphql` route).
+The face recognition database is always stored in SQLite files located at the path given by the `FACE_STORE_PATH` environment variable. Those files should also be saved since they are _not_ part of the dump and load procedure. If this database is ever lost, you can run the `backfillFaceRecognition` GraphQL mutation via the GraphQL playground (at the `/graphql` route).
 
 ## Using Docker
 
