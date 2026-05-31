@@ -31,6 +31,7 @@ import type {
 } from 'tanuki/generated/graphql.ts';
 import Pagination from '../components/pagination.tsx';
 import ThumbList from '../components/thumb-list.tsx';
+import SyntheticProgress from '../components/synthetic-progress.tsx';
 import useLocalStorage from '../hooks/use-local-storage.ts';
 
 const PEOPLE: TypedDocumentNode<Query, QueryPeopleArgs> = gql`
@@ -250,6 +251,7 @@ function People() {
             </label>
           </div>
         </nav>
+        <SyntheticProgress kind="faces" />
         <Suspense fallback={<p>Loading people…</p>}>
           <Show
             when={people().length > 0}

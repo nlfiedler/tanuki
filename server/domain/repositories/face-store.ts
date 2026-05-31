@@ -281,6 +281,16 @@ interface FaceStore {
   assetIdsWithFacesStatus(status: SyntheticStatus): Promise<string[]>;
 
   /**
+   * Count the assets currently recorded at the given faces status. Backs the
+   * `syntheticJobStatus` query's progress readout (READY / FAILED tallies)
+   * without materializing the id list. Assets with no stored status (implicit
+   * PENDING) are not counted.
+   *
+   * @param status - the status to match.
+   */
+  facesStatusCount(status: SyntheticStatus): Promise<number>;
+
+  /**
    * Return, for each requested asset, the set of `model_version` values across
    * its face rows. Used by `backfillFaceRecognition` to detect assets whose
    * faces were produced by a stale model and need reprocessing. Assets with no

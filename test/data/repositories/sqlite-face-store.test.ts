@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, test } from 'bun:test';
 // prepare the test environment as early as possible
 import 'tanuki/test/env.ts';
 import { Face } from 'tanuki/server/domain/entities/face.ts';
+import { SyntheticStatus } from 'tanuki/server/domain/entities/synthetic-data.ts';
 import { EnvSettingsRepository } from 'tanuki/server/data/repositories/env-settings-repository.ts';
 import { SqliteFaceStore } from 'tanuki/server/data/repositories/sqlite-face-store.ts';
 
@@ -110,6 +111,18 @@ describe('SqliteFaceStore', function () {
 
       // a job is only back on the queue when explicitly requeued
       expect(await sut.pendingJobCount()).toEqual(0);
+    });
+
+    test('facesStatusCount tallies assets per terminal status', async function () {
+      expect(await sut.facesStatusCount(SyntheticStatus.READY)).toEqual(0);
+      await sut.setFacesStatus('asset-a', SyntheticStatus.READY);
+      await sut.setFacesStatus('asset-b', SyntheticStatus.READY);
+      await sut.setFacesStatus('asset-c', SyntheticStatus.FAILED);
+      expect(await sut.facesStatusCount(SyntheticStatus.READY)).toEqual(2);
+      expect(await sut.facesStatusCount(SyntheticStatus.FAILED)).toEqual(1);
+      // PENDING clears the row, so it stops counting toward any terminal status
+      await sut.setFacesStatus('asset-a', SyntheticStatus.PENDING);
+      expect(await sut.facesStatusCount(SyntheticStatus.READY)).toEqual(1);
     });
   });
 

@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2026 Nathan Fiedler
 //
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 // prepare the test environment as early as possible
 import 'tanuki/test/env.ts';
 import { SyntheticData, SyntheticStatus } from 'tanuki/server/domain/entities/synthetic-data.ts';
@@ -9,6 +9,7 @@ import { SyntheticJob } from 'tanuki/server/domain/entities/face.ts';
 import { EnvSettingsRepository } from 'tanuki/server/data/repositories/env-settings-repository.ts';
 import { SqliteFaceStore } from 'tanuki/server/data/repositories/sqlite-face-store.ts';
 import { SyntheticWorkerPool } from 'tanuki/server/domain/services/synthetic-worker-pool.ts';
+import logger from 'tanuki/server/logger.ts';
 
 /** Wait until `predicate` is true, polling briefly; throws on timeout. */
 async function until(
@@ -260,6 +261,38 @@ describe('SyntheticWorkerPool', function () {
 
     expect(calls).toEqual(2);
     expect(recordRepository.failed).toEqual([]);
+  });
+
+  test('logs a progress line every logEvery completed jobs', async function () {
+    const processor = {
+      async process(_job: SyntheticJob): Promise<void> {}
+    };
+    for (const id of ['a', 'b', 'c', 'd']) {
+      await faceStore.enqueueJob(id, 'labels');
+    }
+    const infoSpy = spyOn(logger, 'info');
+
+    pool = new SyntheticWorkerPool(
+      {
+        faceStore,
+        recordRepository,
+        searchRepository,
+        syntheticJobProcessor: processor,
+        settingsRepository
+      },
+      // single worker keeps the completion order deterministic; log every 2
+      { sleep, concurrency: 1, idleMs: 0, logEvery: 2 }
+    );
+    pool.start();
+    await until(async () => (await faceStore.pendingJobCount()) === 0);
+    await pool.stop();
+
+    // four jobs at logEvery=2 => exactly two progress lines (after #2 and #4)
+    const progress = infoSpy.mock.calls.filter((call) =>
+      String(call[0]).includes('jobs processed this run')
+    );
+    expect(progress.length).toEqual(2);
+    infoSpy.mockRestore();
   });
 
   test('stop() resolves and the loop processes nothing further', async function () {

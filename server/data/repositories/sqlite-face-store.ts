@@ -474,6 +474,14 @@ class SqliteFaceStore implements FaceStore {
   }
 
   /** @inheritDoc */
+  async facesStatusCount(status: SyntheticStatus): Promise<number> {
+    const row = this.database!
+      .query('SELECT COUNT(*) AS count FROM face_status WHERE status = ?')
+      .get(status) as { count: number };
+    return row.count;
+  }
+
+  /** @inheritDoc */
   async modelVersionsByAssets(
     assetIds: string[]
   ): Promise<Map<string, Set<string>>> {

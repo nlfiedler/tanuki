@@ -92,6 +92,8 @@ The application is configured using environment variables.
   - Directory in which `tanuki.sqlite` will be created, if set. Setting this will switch the application from using CouchDB to using SQLite for the database (all `DATABASE_*` settings will be ignored).
 - **SYNTHETIC_CONCURRENCY**
   - Number of background workers draining the synthetic-data (labels and faces) job queue. Defaults to `2`.
+- **SYNTHETIC_LOG_EVERY**
+  - How many completed synthetic-data jobs between progress log lines (each reports the count processed this run and the jobs still queued). Useful for watching a backfill drain. Defaults to `100`. The same figures are also available live via the `syntheticJobStatus` GraphQL query.
 - **SYNTHETIC_MODEL_PATH**
   - Path to the MobileNetV2 image-classification ONNX model. Defaults to `models/mobilenet_v2.onnx`. Only used when `NAMAZU_URL` is not set.
 

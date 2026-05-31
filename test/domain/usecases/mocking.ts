@@ -252,6 +252,7 @@ export function faceStoreMock({
   setFacesStatus = undefined,
   fetchFacesStatus = undefined,
   assetIdsWithFacesStatus = undefined,
+  facesStatusCount = undefined,
   modelVersionsByAssets = undefined
 }: {
   enqueueJob?: (
@@ -300,6 +301,7 @@ export function faceStoreMock({
     assetIds: string[]
   ) => Promise<Map<string, SyntheticStatus>>;
   assetIdsWithFacesStatus?: (status: SyntheticStatus) => Promise<string[]>;
+  facesStatusCount?: (status: SyntheticStatus) => Promise<number>;
   modelVersionsByAssets?: (
     assetIds: string[]
   ) => Promise<Map<string, Set<string>>>;
@@ -342,6 +344,7 @@ export function faceStoreMock({
       mock(() => Promise.resolve(new Map<string, SyntheticStatus>())),
     assetIdsWithFacesStatus:
       assetIdsWithFacesStatus || mock(() => Promise.resolve([] as string[])),
+    facesStatusCount: facesStatusCount || mock(() => Promise.resolve(0)),
     modelVersionsByAssets:
       modelVersionsByAssets ||
       mock(() => Promise.resolve(new Map<string, Set<string>>()))

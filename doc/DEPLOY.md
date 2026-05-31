@@ -38,6 +38,42 @@ docker compose down
 docker compose up --build -d
 ```
 
+### Restarting and redeploying safely
+
+The background synthetic-data work (label and face extraction) is queued in the
+face store's SQLite database, so as long as `FACE_STORE_PATH` is on a persistent
+volume (see [Stores](#stores)), a stop/redeploy does not lose progress:
+
+- **Completed work is durable.** Each asset's results are committed to the face
+  store as the job finishes.
+- **The queue resumes on its own.** On startup the worker pool drains whatever
+  jobs remain in `synthetic_jobs`; you do _not_ need to re-run a backfill for the
+  jobs still in the queue.
+- **In-flight jobs are drained gracefully.** On `SIGTERM` the server stops
+  claiming new jobs and waits for the one or two currently processing to finish
+  and persist before exiting.
+
+The only caveat is the shutdown grace period. `docker stop` (and
+`docker compose down`) send `SIGTERM` and then `SIGKILL` after **10 seconds** by
+default. Face inference is normally well under a second per image, but a large
+image or a slow `NAMAZU_URL` round-trip could exceed that window, in which case
+the kill drops up to `SYNTHETIC_CONCURRENCY` (default 2) in-flight assets back to
+`PENDING` (not corrupted, just skipped). To give the drain room to complete:
+
+```shell
+docker stop -t 60 <container>     # 60s grace instead of 10s
+```
+
+For Compose, set `stop_grace_period: 60s` on the service instead.
+
+After the new container is up, you can optionally run the
+`backfillFaceRecognition` mutation once via the GraphQL playground (`/graphql`).
+It is idempotent — it re-enqueues only the handful of assets (if any) that were
+mid-flight at shutdown and skips everything already processed. To watch a
+backfill drain, query `syntheticJobStatus` (also surfaced as a progress banner on
+the Labels and People pages) or follow the worker pool's periodic progress log
+lines (cadence set by `SYNTHETIC_LOG_EVERY`).
+
 ## Machine learning inference
 
 Image classification (labels) and face recognition run on machine-learning

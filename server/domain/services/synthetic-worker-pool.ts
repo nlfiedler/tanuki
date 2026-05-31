@@ -16,6 +16,8 @@ const DEFAULT_MAX_ATTEMPTS = 3;
 const DEFAULT_BACKOFF_MS = [1000, 4000, 16_000];
 /** How long a worker waits before re-polling an empty queue. */
 const DEFAULT_IDLE_MS = 1000;
+/** Emit a progress log line once every this many completed jobs. */
+const DEFAULT_LOG_EVERY = 100;
 
 function realSleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -42,9 +44,12 @@ class SyntheticWorkerPool {
   private maxAttempts: number;
   private backoffMs: number[];
   private idleMs: number;
+  private logEvery: number;
   private sleep: (ms: number) => Promise<void>;
   private running = false;
   private workers: Promise<void>[] = [];
+  /** Jobs completed (success or terminal failure) since the pool last started. */
+  private processed = 0;
 
   /**
    * Constructed by awilix from the container cradle (first arg). Tests pass a
@@ -72,6 +77,7 @@ class SyntheticWorkerPool {
       maxAttempts?: number;
       backoffMs?: number[];
       idleMs?: number;
+      logEvery?: number;
     } = {}
   ) {
     this.faceStore = faceStore;
@@ -86,6 +92,11 @@ class SyntheticWorkerPool {
     this.maxAttempts = overrides.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
     this.backoffMs = overrides.backoffMs ?? DEFAULT_BACKOFF_MS;
     this.idleMs = overrides.idleMs ?? DEFAULT_IDLE_MS;
+    this.logEvery = Math.max(
+      1,
+      overrides.logEvery ??
+        settingsRepository.getInt('SYNTHETIC_LOG_EVERY', DEFAULT_LOG_EVERY)
+    );
     this.sleep = overrides.sleep ?? realSleep;
   }
 
@@ -93,6 +104,7 @@ class SyntheticWorkerPool {
   start(): void {
     if (this.running) return;
     this.running = true;
+    this.processed = 0;
     this.workers = [];
     for (let i = 0; i < this.concurrency; i++) {
       this.workers.push(this.runLoop());
@@ -131,11 +143,13 @@ class SyntheticWorkerPool {
       // the search cache so a query made before classification returns the
       // newly labelled asset.
       await this.invalidateSearchCache();
+      await this.recordCompletion();
     } catch (error: any) {
       const message = error instanceof Error ? error.message : String(error);
       const attempts = job.attempts + 1;
       if (attempts >= this.maxAttempts) {
         await this.markFailed(job, attempts, message);
+        await this.recordCompletion();
         return;
       }
       // Requeue immediately with a not_before delay equal to the backoff
@@ -157,7 +171,29 @@ class SyntheticWorkerPool {
           requeueError
         );
         await this.markFailed(job, attempts, message);
+        await this.recordCompletion();
       }
+    }
+  }
+
+  /**
+   * Tally a finished job (success or terminal failure — not a retry requeue)
+   * and emit a progress line every `logEvery` completions, including the
+   * jobs still queued so an operator can gauge how far a backfill has to go.
+   */
+  private async recordCompletion(): Promise<void> {
+    this.processed++;
+    if (this.processed % this.logEvery !== 0) return;
+    try {
+      const remaining = await this.faceStore.pendingJobCount();
+      logger.info(
+        `synthetic worker pool: ${this.processed} jobs processed this run, ~${remaining} still queued`
+      );
+    } catch {
+      // A failed count read must not interrupt processing; log progress anyway.
+      logger.info(
+        `synthetic worker pool: ${this.processed} jobs processed this run`
+      );
     }
   }
 

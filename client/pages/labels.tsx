@@ -19,6 +19,7 @@ import type {
 } from 'tanuki/generated/graphql.ts';
 import Pagination from '../components/pagination.tsx';
 import ThumbList from '../components/thumb-list.tsx';
+import SyntheticProgress from '../components/synthetic-progress.tsx';
 import useLocalStorage from '../hooks/use-local-storage.ts';
 
 const LABELS: TypedDocumentNode<Query, Record<string, never>> = gql`
@@ -84,6 +85,7 @@ function Labels() {
     <section class="section">
       <div class="container">
         <h1 class="title is-4">Labels</h1>
+        <SyntheticProgress kind="labels" />
         <Suspense fallback={<p>Loading labels…</p>}>
           <Show
             when={entries().length > 0}

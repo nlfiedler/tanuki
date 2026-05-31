@@ -35,6 +35,7 @@ import BackfillLabels from 'tanuki/server/domain/usecases/backfill-labels.ts';
 import BackfillFaceRecognition from 'tanuki/server/domain/usecases/backfill-face-recognition.ts';
 import SweepOrphanFaces from 'tanuki/server/domain/usecases/sweep-orphan-faces.ts';
 import RetrySyntheticJobs from 'tanuki/server/domain/usecases/retry-synthetic-jobs.ts';
+import GetSyntheticJobStatus from 'tanuki/server/domain/usecases/get-synthetic-job-status.ts';
 import GetLabels from 'tanuki/server/domain/usecases/get-labels.ts';
 import AssetsByLabel from 'tanuki/server/domain/usecases/assets-by-label.ts';
 import GetPeople from 'tanuki/server/domain/usecases/get-people.ts';
@@ -157,6 +158,7 @@ container.register({
   backfillFaceRecognition: asFunction(BackfillFaceRecognition),
   sweepOrphanFaces: asFunction(SweepOrphanFaces),
   retrySyntheticJobs: asFunction(RetrySyntheticJobs),
+  getSyntheticJobStatus: asFunction(GetSyntheticJobStatus),
   getLabels: asFunction(GetLabels),
   assetsByLabel: asFunction(AssetsByLabel),
   getPeople: asFunction(GetPeople),

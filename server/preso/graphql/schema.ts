@@ -287,6 +287,19 @@ export const resolvers: Resolvers = {
       }));
     },
 
+    async syntheticJobStatus(
+      _parent: any,
+      _args: any,
+      _context: any,
+      _info: GraphQLResolveInfo
+    ): Promise<any> {
+      logger.info('syntheticJobStatus');
+      const getSyntheticJobStatus: any = container.resolve(
+        'getSyntheticJobStatus'
+      );
+      return getSyntheticJobStatus();
+    },
+
     async assetsByPerson(
       _parent: any,
       args: { id: string; offset?: number | null; limit?: number | null },

@@ -89,6 +89,24 @@ enum SyntheticStatus {
 }
 
 """
+A snapshot of the background synthetic-data extraction queue, for monitoring a
+backfill as it drains. `facesQueued` reaching (and holding) zero means the faces
+work is done. In-flight jobs are briefly absent from the queue while a worker
+holds them, so a count can momentarily read a touch low; treat a sustained zero
+as complete.
+"""
+type SyntheticJobStatus {
+  "Jobs still waiting in the queue across both kinds (includes retry backoff)."
+  queued: Int!
+  "`faces` jobs still waiting in the queue."
+  facesQueued: Int!
+  "Assets whose faces extraction completed successfully."
+  facesReady: Int!
+  "Assets whose faces extraction failed after exhausting all retries."
+  facesFailed: Int!
+}
+
+"""
 Synthetic data derived from an image asset by machine-learning models. Phase 1
 covers the label-tagging fields; the `people` collection arrives with Phase 2
 and is resolved from a separate face store.
@@ -355,6 +373,11 @@ type Query {
   assetsByPerson(id: ID!, offset: Int, limit: Int): SearchMeta!
   "Every face clustered under a person, for the cluster-management view."
   personFaces(id: ID!): [Face!]!
+  """
+  Current state of the background synthetic-data extraction queue, for watching
+  a backfill drain to completion.
+  """
+  syntheticJobStatus: SyntheticJobStatus!
 }
 
 "One row in the Labels page index."
