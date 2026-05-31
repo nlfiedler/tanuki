@@ -131,9 +131,17 @@ function Edit() {
     if (target) {
       setSelectedPage(1);
       setQueryString(target.value);
-      // wipe out the invisible add/remove tags inputs
+      // A new query replaces the visible assets, so the current selection and
+      // any pending edits are stale: reset the whole form so the Confirm button
+      // returns to its disabled state.
+      setSelectedAssets(new Set<string>());
       setAddedTags(new Set<string>());
       setRemovedTags(new Set<string>());
+      setPlace('');
+      setCity('');
+      setRegion('');
+      setDatetime('');
+      setDays(0);
       event.stopPropagation();
     }
   };
@@ -301,8 +309,11 @@ function Edit() {
         />
 
         <LocationSetter
+          place={place}
           setPlace={setPlace}
+          city={city}
           setCity={setCity}
+          region={region}
           setRegion={setRegion}
         />
 
@@ -553,8 +564,11 @@ const ALL_LOCATION_VALUES: TypedDocumentNode<
 `;
 
 interface LocationSetterProps {
+  place: Accessor<string>;
   setPlace: (value: string) => void;
+  city: Accessor<string>;
   setCity: (value: string) => void;
+  region: Accessor<string>;
   setRegion: (value: string) => void;
 }
 
@@ -590,6 +604,7 @@ function LocationSetter(props: LocationSetterProps) {
               id="place-input"
               list="place-labels"
               placeholder="Place"
+              value={props.place()}
               on:change={(event) => {
                 const target = event.currentTarget;
                 if (target) {
@@ -616,6 +631,7 @@ function LocationSetter(props: LocationSetterProps) {
               id="city-input"
               list="city-labels"
               placeholder="City"
+              value={props.city()}
               on:change={(event) => {
                 const target = event.currentTarget;
                 if (target) {
@@ -642,6 +658,7 @@ function LocationSetter(props: LocationSetterProps) {
               id="region-input"
               list="region-labels"
               placeholder="Region"
+              value={props.region()}
               on:change={(event) => {
                 const target = event.currentTarget;
                 if (target) {
