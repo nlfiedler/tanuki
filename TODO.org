@@ -7,7 +7,6 @@
 *** tanuki and namazu should generate a thumbnail for SVG files
 ** TODO (better) audio support
 *** extract metadata (=ID3= tags?), populate database
-** TODO edit page: clear field, tags and Confirm button not updated
 ** Albums
 *** add to navbar
 *** multi-select assets, use FAB to assign to an album

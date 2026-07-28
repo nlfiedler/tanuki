@@ -3,6 +3,7 @@
 //
 import path from 'node:path';
 import sharp from 'sharp';
+import type { ResizeOptions } from 'sharp';
 
 const VIDEO_EXTENSIONS = new Set([
   '.mp4',
@@ -56,7 +57,7 @@ async function extractVideoFrame(filepath: string): Promise<Buffer> {
 
 async function renderResizedJpeg(
   filepath: string,
-  resizeOptions: sharp.ResizeOptions
+  resizeOptions: ResizeOptions
 ): Promise<Buffer> {
   const source: Buffer | string = isVideoPath(filepath)
     ? await extractVideoFrame(filepath)

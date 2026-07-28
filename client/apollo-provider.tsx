@@ -4,6 +4,22 @@
 import { createContext, useContext } from 'solid-js';
 import { HttpLink, ApolloClient, InMemoryCache } from '@apollo/client';
 
+// Apollo Client 4.2+ requires application-wide default options to be declared
+// at the type level before they can be set. See:
+// https://www.apollographql.com/docs/react/data/typescript#declaring-default-options-for-type-safety
+declare module '@apollo/client' {
+  namespace ApolloClient {
+    namespace DeclareDefaultOptions {
+      interface Query {
+        errorPolicy: 'all';
+      }
+      interface WatchQuery {
+        errorPolicy: 'all';
+      }
+    }
+  }
+}
+
 const ApolloContext = createContext<ApolloClient | undefined>();
 
 export function ApolloProvider(props: { children: any }) {

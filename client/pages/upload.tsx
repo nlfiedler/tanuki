@@ -14,7 +14,7 @@ import { type TypedDocumentNode, gql } from '@apollo/client';
 import { type Mutation } from 'tanuki/generated/graphql.ts';
 import { useApolloClient } from '../apollo-provider';
 
-const IMPORT_ASSETS: TypedDocumentNode<Mutation, void> = gql`
+const IMPORT_ASSETS: TypedDocumentNode<Mutation, Record<string, never>> = gql`
   mutation {
     import
   }

@@ -21,6 +21,8 @@ bun install
 
 ## Testing and Running
 
+**Note:** Some of the tests rely on `ffmpeg` being on the path. On macOS with [Homebrew](https://brew.sh) install you can run `brew install ffmpeg` to easily install FFmpeg, or visit the web page [FFmpeg](https://www.ffmpeg.org) for installation instructions.
+
 The unit tests require several environment variables, described in the **Configuration** section below. Namely, the `DATABASE_*` settings and `GOOGLE_MAPS_API_KEY` will be needed for the tests to pass successfully.
 
 To run the automated tests, create a `test/.env` file that defines the necessary settings, making sure the values are appropriate for your setup, and then invoke `bun test` to run the test suite.
