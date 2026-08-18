@@ -1,6 +1,6 @@
 # Use Flutter for Frontend
 
-- Status: accepted
+- Status: superseded
 - Deciders: Nathan Fiedler
 - Date: 2020-08-20
 

@@ -1,6 +1,6 @@
 # Use Application State Management
 
-- Status: accepted
+- Status: superseded
 - Deciders: Nathan Fiedler
 - Date: 2020-08-20
 

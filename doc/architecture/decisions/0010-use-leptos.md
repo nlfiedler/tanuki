@@ -1,6 +1,6 @@
 # Use Leptos for Frontend
 
-- Status: accepted
+- Status: superseded
 - Deciders: Nathan Fiedler
 - Date: 2024-10-17
 

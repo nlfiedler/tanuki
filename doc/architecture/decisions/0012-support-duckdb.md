@@ -1,6 +1,6 @@
 # Use RocksDB
 
-- Status: accepted
+- Status: superseded
 - Deciders: Nathan Fiedler
 - Date: 2025-03-21
 

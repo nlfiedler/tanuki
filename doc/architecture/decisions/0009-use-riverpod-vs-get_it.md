@@ -1,6 +1,6 @@
 # Use Riverpod for Service Location
 
-- Status: accepted
+- Status: superseded
 - Deciders: Nathan Fiedler
 - Date: 2021-01-02
 
