@@ -35,20 +35,23 @@ const database: any = container.resolve('recordRepository');
 const faceStore: any = container.resolve('faceStore');
 const pool: any = container.resolve('syntheticWorkerPool');
 const sweepOrphanFaces: any = container.resolve('sweepOrphanFaces');
-// eslint-disable-next-line unicorn/prefer-top-level-await
+ 
+// eslint-disable-next-line unicorn/prefer-await
 const databaseReady = database.initialize().then(() => {
   logger.info('database initialization complete');
 });
-// eslint-disable-next-line unicorn/prefer-top-level-await
+
+// eslint-disable-next-line unicorn/prefer-await
 const faceStoreReady = faceStore.initialize().then(() => {
   logger.info('face store initialization complete');
 });
 Promise.all([databaseReady, faceStoreReady])
+  // eslint-disable-next-line unicorn/prefer-await
   .then(() => {
     pool.start();
     scheduleOrphanSweep();
   })
-  // eslint-disable-next-line unicorn/prefer-top-level-await
+  // eslint-disable-next-line unicorn/prefer-top-level-await, unicorn/prefer-await
   .catch((error: any) => {
     logger.error('synthetic store initialization error:', error);
   });
@@ -57,34 +60,36 @@ Promise.all([databaseReady, faceStoreReady])
 // exists (belt-and-braces against any delete path that bypassed the use case).
 // Runs once after startup and then on an interval; set the interval to 0 to
 // disable. Skips a tick if the previous sweep is still running.
-let orphanSweepTimer: ReturnType<typeof setInterval> | null = null;
+const lifecycle: {
+  orphanSweepTimer: ReturnType<typeof setInterval> | null;
+  isShuttingDown: boolean;
+} = { orphanSweepTimer: null, isShuttingDown: false };
 function scheduleOrphanSweep(): void {
   const intervalMs = settings.getInt('ORPHAN_SWEEP_INTERVAL_MS', 86_400_000);
   if (intervalMs <= 0) return;
-  let running = false;
+  let isRunning = false;
   const run = async (): Promise<void> => {
-    if (running) return;
-    running = true;
+    if (isRunning) return;
+    isRunning = true;
     try {
       await sweepOrphanFaces();
     } catch (error: any) {
       logger.error('orphan sweep failed:', error);
     } finally {
-      running = false;
+      isRunning = false;
     }
   };
   void run();
-  orphanSweepTimer = setInterval(() => void run(), intervalMs);
+  lifecycle.orphanSweepTimer = setInterval(() => void run(), intervalMs);
 }
 
 // Drain the worker pool on graceful shutdown so claimed-but-not-yet-finished
 // jobs are recorded properly rather than vanishing with the process.
-let shuttingDown = false;
 async function shutdown(signal: string): Promise<void> {
-  if (shuttingDown) return;
-  shuttingDown = true;
+  if (lifecycle.isShuttingDown) return;
+  lifecycle.isShuttingDown = true;
   logger.info(`received ${signal}, stopping worker pool…`);
-  if (orphanSweepTimer) clearInterval(orphanSweepTimer);
+  if (lifecycle.orphanSweepTimer) clearInterval(lifecycle.orphanSweepTimer);
   try {
     await pool.stop();
   } catch (error: any) {

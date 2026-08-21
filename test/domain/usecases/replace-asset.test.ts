@@ -33,7 +33,8 @@ describe('ReplaceAsset use case', function () {
       getAssetById: mock((assetId: string) => {
         if (assetId === 'kittens1') {
           return Promise.resolve(oldAsset);
-        } else if (assetId === 'kitties2') {
+        }
+        if (assetId === 'kitties2') {
           return Promise.resolve(newAsset);
         }
         return Promise.reject('wrong');

@@ -13,7 +13,7 @@ const GET_ASSET_COUNT: TypedDocumentNode<Query, Record<string, never>> = gql`
   }
 `;
 
-function AssetCount() {
+export default function AssetCount() {
   const client = useApolloClient();
   const [countQuery, { refetch }] = createResource(async () => {
     const { data } = await client.query({ query: GET_ASSET_COUNT });
@@ -28,5 +28,3 @@ function AssetCount() {
     </Suspense>
   );
 }
-
-export default AssetCount;

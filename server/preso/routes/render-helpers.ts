@@ -81,8 +81,8 @@ function parsePositiveInt(
   if (typeof raw !== 'string' || !/^\d+$/.test(raw)) {
     return null;
   }
-  const n = Number.parseInt(raw, 10);
-  if (!Number.isInteger(n) || n < 1 || n > max) {
+  const n = Math.trunc(Number(raw));
+  if (!Number.isSafeInteger(n) || n < 1 || n > max) {
     return null;
   }
   return n;

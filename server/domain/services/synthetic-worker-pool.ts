@@ -10,13 +10,21 @@ import { type SettingsRepository } from 'tanuki/server/domain/repositories/setti
 import { type SyntheticJobProcessor } from './synthetic-job-processor.ts';
 import logger from 'tanuki/server/logger.ts';
 
-/** Total runs allowed per job before it is abandoned (`up to 3 attempts`). */
+/**
+Total runs allowed per job before it is abandoned (`up to 3 attempts`).
+*/
 const DEFAULT_MAX_ATTEMPTS = 3;
-/** Exponential backoff between attempts, in milliseconds (1s, 4s, 16s). */
+/**
+Exponential backoff between attempts, in milliseconds (1s, 4s, 16s).
+*/
 const DEFAULT_BACKOFF_MS = [1000, 4000, 16_000];
-/** How long a worker waits before re-polling an empty queue. */
+/**
+How long a worker waits before re-polling an empty queue.
+*/
 const DEFAULT_IDLE_MS = 1000;
-/** Emit a progress log line once every this many completed jobs. */
+/**
+Emit a progress log line once every this many completed jobs.
+*/
 const DEFAULT_LOG_EVERY = 100;
 
 function realSleep(ms: number): Promise<void> {
@@ -48,7 +56,9 @@ class SyntheticWorkerPool {
   private sleep: (ms: number) => Promise<void>;
   private running = false;
   private workers: Promise<void>[] = [];
-  /** Jobs completed (success or terminal failure) since the pool last started. */
+  /**
+  Jobs completed (success or terminal failure) since the pool last started.
+  */
   private processed = 0;
 
   /**
@@ -98,25 +108,6 @@ class SyntheticWorkerPool {
         settingsRepository.getInt('SYNTHETIC_LOG_EVERY', DEFAULT_LOG_EVERY)
     );
     this.sleep = overrides.sleep ?? realSleep;
-  }
-
-  /** Start the worker loops. Idempotent: a second call while running is a no-op. */
-  start(): void {
-    if (this.running) return;
-    this.running = true;
-    this.processed = 0;
-    this.workers = [];
-    for (let i = 0; i < this.concurrency; i++) {
-      this.workers.push(this.runLoop());
-    }
-    logger.info(`synthetic worker pool started (concurrency ${this.concurrency})`);
-  }
-
-  /** Stop accepting work and wait for in-flight loops to finish. */
-  async stop(): Promise<void> {
-    this.running = false;
-    await Promise.allSettled(this.workers);
-    this.workers = [];
   }
 
   private async runLoop(): Promise<void> {
@@ -235,6 +226,30 @@ class SyntheticWorkerPool {
       logger.warn('synthetic worker: search cache invalidation failed:', error);
     }
   }
+
+  /**
+  Start the worker loops. Idempotent: a second call while running is a no-op.
+  */
+  start(): void {
+    if (this.running) return;
+    this.running = true;
+    this.processed = 0;
+    this.workers = [];
+    for (let i = 0; i < this.concurrency; i++) {
+      this.workers.push(this.runLoop());
+    }
+    logger.info(`synthetic worker pool started (concurrency ${this.concurrency})`);
+  }
+
+  /**
+  Stop accepting work and wait for in-flight loops to finish.
+  */
+  async stop(): Promise<void> {
+    this.running = false;
+    await Promise.allSettled(this.workers);
+    this.workers = [];
+  }
+
 }
 
 export { SyntheticWorkerPool };

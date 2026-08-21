@@ -20,10 +20,7 @@ describe('DumpAssets use case', function () {
       recordRepository: mockRecordRepository
     });
     // act
-    const results = [];
-    for await (const entry of usecase(10)) {
-      results.push(entry);
-    }
+    const results = await Array.fromAsync(usecase(10));
     // assert
     expect(results).toHaveLength(0);
     expect(mockRecordRepository.fetchAssets).toHaveBeenCalledTimes(1);
@@ -53,10 +50,7 @@ describe('DumpAssets use case', function () {
       recordRepository: mockRecordRepository
     });
     // act
-    const results = [];
-    for await (const entry of usecase(10)) {
-      results.push(entry);
-    }
+    const results = await Array.fromAsync(usecase(10));
     // assert
     expect(results).toHaveLength(1);
     expect(results[0]?.key).toEqual('monday1');
@@ -106,10 +100,7 @@ describe('DumpAssets use case', function () {
       recordRepository: mockRecordRepository
     });
     // act
-    const results = [];
-    for await (const entry of usecase(10)) {
-      results.push(entry);
-    }
+    const results = await Array.fromAsync(usecase(10));
     // assert
     expect(results).toHaveLength(1);
     const dumped: any = results[0]?.metadata;
@@ -168,10 +159,7 @@ describe('DumpAssets use case', function () {
       recordRepository: mockRecordRepository
     });
     // act
-    const results = [];
-    for await (const entry of usecase(10)) {
-      results.push(entry);
-    }
+    const results = await Array.fromAsync(usecase(10));
     // assert
     expect(results).toHaveLength(3);
     expect(results[0]?.key).toEqual('monday1');

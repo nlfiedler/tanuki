@@ -46,10 +46,10 @@ export const by_checksum = function (doc) {
 }
 
 export const newborn = function (doc) {
-  const notags = !Array.isArray(doc.tags) || doc.tags.length === 0
-  const nocaption = doc.caption === undefined || doc.caption === null || doc.caption === ''
-  const nolocation = doc.location === null || doc.location.label === undefined || doc.location.label === null || doc.location.label === ''
-  if (notags && nocaption && nolocation) {
+  const isNotags = !Array.isArray(doc.tags) || doc.tags.length === 0
+  const isNocaption = [undefined, null, ''].includes(doc.caption)
+  const isNolocation = doc.location === null || [undefined, null, ''].includes(doc.location.label)
+  if (isNotags && isNocaption && isNolocation) {
     let bestdate
     // newborn assets have no caption, tags, or location label (city and region
     // may be populated by reverse geocoding during import)
@@ -61,12 +61,14 @@ export const newborn = function (doc) {
 }
 
 export const by_tag = function (doc) {
-  if (doc.tags && Array.isArray(doc.tags)) {
-    // see insertBestDate() for how bestdate works
-    let bestdate
-    for (const tag of doc.tags) {
-      emit(tag.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
-    }
+  if (!(doc.tags && Array.isArray(doc.tags))) {
+  	return;
+  }
+
+  // see insertBestDate() for how bestdate works
+  let bestdate
+  for (const tag of doc.tags) {
+    emit(tag.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
   }
 }
 
@@ -83,19 +85,21 @@ export const by_filename = function (doc) {
 }
 
 export const by_location = function (doc) {
-  if (doc.location) {
-    // see insertBestDate() for how bestdate works
-    let bestdate
-    // emit only the location fields that have truthy values
-    if (doc.location.label) {
-      emit(doc.location.label.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
-    }
-    if (doc.location.city) {
-      emit(doc.location.city.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
-    }
-    if (doc.location.region) {
-      emit(doc.location.region.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
-    }
+  if (!doc.location) {
+  	return;
+  }
+
+  // see insertBestDate() for how bestdate works
+  let bestdate
+  // emit only the location fields that have truthy values
+  if (doc.location.label) {
+    emit(doc.location.label.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
+  }
+  if (doc.location.city) {
+    emit(doc.location.city.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
+  }
+  if (doc.location.region) {
+    emit(doc.location.region.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
   }
 }
 
@@ -106,13 +110,15 @@ export const by_mimetype = function (doc) {
 }
 
 export const all_location_records = function (doc) {
-  if (doc.location) {
-    const l = doc.location.label || ''
-    const c = doc.location.city || ''
-    const r = doc.location.region || ''
-    // a completely empty location will be emitted as two tab characters
-    emit(`${l}\t${c}\t${r}`, 1)
+  if (!doc.location) {
+  	return;
   }
+
+  const l = doc.location.label || ''
+  const c = doc.location.city || ''
+  const r = doc.location.region || ''
+  // a completely empty location will be emitted as two tab characters
+  emit(`${l}\t${c}\t${r}`, 1)
 }
 
 export const all_location_parts = function (doc) {
@@ -150,13 +156,15 @@ export const all_media_types = function (doc) {
 }
 
 export const by_primary_label = function (doc) {
-  if (doc.synthetic && doc.synthetic.primaryLabel) {
-    // see insertBestDate() for how bestdate works
-    let bestdate
-    // Keys are still lowercased so queryByLabel can match case-insensitively;
-    // the original-cased label is fetched separately via latestAssetByLabel.
-    emit(doc.synthetic.primaryLabel.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
+  if (!(doc.synthetic && doc.synthetic.primaryLabel)) {
+  	return;
   }
+
+  // see insertBestDate() for how bestdate works
+  let bestdate
+  // Keys are still lowercased so queryByLabel can match case-insensitively;
+  // the original-cased label is fetched separately via latestAssetByLabel.
+  emit(doc.synthetic.primaryLabel.toLowerCase(), [bestdate, doc.filename, doc.location, doc.mediaType])
 }
 
 export const all_primary_labels = function (doc) {

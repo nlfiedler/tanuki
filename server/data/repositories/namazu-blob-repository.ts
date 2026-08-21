@@ -26,7 +26,9 @@ class NamazuBlobRepository implements BlobRepository {
     return this.baseurl + '/assets/' + assetId;
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   async storeBlob(filepath: string, asset: Asset) {
     const url = this.makeAssetUrl(asset.key);
     let retries = 0;
@@ -62,7 +64,9 @@ class NamazuBlobRepository implements BlobRepository {
     await fs.rm(filepath);
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   async deleteBlob(assetId: string) {
     const url = this.makeAssetUrl(assetId);
     const request = new Request(url, { method: 'DELETE' });
@@ -72,7 +76,9 @@ class NamazuBlobRepository implements BlobRepository {
     }
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   async fetchRange(
     assetId: string,
     start: number,
@@ -99,17 +105,23 @@ class NamazuBlobRepository implements BlobRepository {
     return body;
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   assetUrl(assetId: string): string {
     return this.makeAssetUrl(assetId);
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   thumbnailUrl(assetId: string, width: number, height: number): string {
     return `${this.baseurl}/thumbnail/${width}/${height}/${assetId}`;
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   previewUrl(
     assetId: string,
     opts: { width: number } | { height: number }
@@ -119,7 +131,9 @@ class NamazuBlobRepository implements BlobRepository {
     return `${this.baseurl}/preview/${assetId}?${param}`;
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   async fetchMetadata(
     assetId: string,
     mediaType: string

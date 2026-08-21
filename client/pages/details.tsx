@@ -593,9 +593,11 @@ function AssetForm(props: AssetFormProps) {
   const saveButtonClass = createMemo(() => {
     if (updateSubmission.pending) {
       return 'button is-loading';
-    } else if (updateSubmission.result?.ok == false) {
+    }
+    if (updateSubmission.result?.ok == false) {
       return 'button is-danger';
-    } else if (updateSubmission.result?.ok) {
+    }
+    if (updateSubmission.result?.ok) {
       return 'button is-success';
     }
     return 'button is-primary';

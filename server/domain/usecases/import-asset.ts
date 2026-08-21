@@ -12,7 +12,9 @@ import { type LocationRepository } from 'tanuki/server/domain/repositories/locat
 import { type RecordRepository } from 'tanuki/server/domain/repositories/record-repository.ts';
 import { type SearchRepository } from 'tanuki/server/domain/repositories/search-repository.ts';
 
-/** Priority for live-import jobs, so they preempt backfill (priority 0). */
+/**
+Priority for live-import jobs, so they preempt backfill (priority 0).
+*/
 const LIVE_IMPORT_PRIORITY = 10;
 
 export default ({

@@ -97,7 +97,9 @@ class PouchDBRecordRepository implements RecordRepository {
     }
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async countAssets(): Promise<number> {
     // list() returns 'id', 'key', and 'value' which is an object with 'rev'
     const allDocs = await this.database.allDocs();
@@ -109,7 +111,9 @@ class PouchDBRecordRepository implements RecordRepository {
     return allDocs.total_rows - designCount;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async getAssetById(assetId: string): Promise<Asset | null> {
     try {
       const asset = await this.database.get(assetId);
@@ -123,7 +127,9 @@ class PouchDBRecordRepository implements RecordRepository {
     }
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async getAssetByDigest(digest: string): Promise<Asset | null> {
     // should only be 1 result, but limit to 1 anyway
     const res = await this.database.query('assets/by_checksum', {
@@ -137,7 +143,9 @@ class PouchDBRecordRepository implements RecordRepository {
     return null;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allTags(): Promise<AttributeCount[]> {
     const res = await this.database.query('assets/all_tags', {
       group_level: 1
@@ -147,7 +155,9 @@ class PouchDBRecordRepository implements RecordRepository {
     });
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allPrimaryLabels(): Promise<AttributeCount[]> {
     const res = await this.database.query('assets/all_primary_labels', {
       group_level: 1
@@ -157,7 +167,9 @@ class PouchDBRecordRepository implements RecordRepository {
     });
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allLocations(): Promise<AttributeCount[]> {
     const res = await this.database.query('assets/all_location_parts', {
       group_level: 1
@@ -167,7 +179,9 @@ class PouchDBRecordRepository implements RecordRepository {
     });
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async rawLocations(): Promise<Location[]> {
     const res = await this.database.query('assets/all_location_records', {
       group_level: 1
@@ -178,7 +192,9 @@ class PouchDBRecordRepository implements RecordRepository {
     });
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allYears(): Promise<AttributeCount[]> {
     const res = await this.database.query('assets/all_years', {
       group_level: 1
@@ -190,7 +206,9 @@ class PouchDBRecordRepository implements RecordRepository {
     });
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allMediaTypes(): Promise<AttributeCount[]> {
     const res = await this.database.query('assets/all_media_types', {
       group_level: 1
@@ -200,7 +218,9 @@ class PouchDBRecordRepository implements RecordRepository {
     });
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async putAsset(asset: Asset): Promise<void> {
     // strip `key` (it becomes _id), `metadata`, `synthetic`, and
     // `syntheticStatus` (each encoded separately to avoid copying class
@@ -221,7 +241,9 @@ class PouchDBRecordRepository implements RecordRepository {
     }
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchMetadata(
     assetIds: string[]
   ): Promise<Map<string, AssetMetadata | null>> {
@@ -250,7 +272,9 @@ class PouchDBRecordRepository implements RecordRepository {
     return result;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchSynthetic(
     assetIds: string[]
   ): Promise<Map<string, SyntheticData | null>> {
@@ -273,7 +297,9 @@ class PouchDBRecordRepository implements RecordRepository {
     return result;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchSyntheticStatus(
     assetIds: string[]
   ): Promise<Map<string, SyntheticStatus>> {
@@ -296,7 +322,9 @@ class PouchDBRecordRepository implements RecordRepository {
     return result;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async setSynthetic(
     assetId: string,
     data: SyntheticData | null,
@@ -332,7 +360,9 @@ class PouchDBRecordRepository implements RecordRepository {
     }
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async deleteAsset(assetId: string): Promise<void> {
     const asset = await this.database.get(assetId);
     await this.database.remove(asset._id, asset._rev);
@@ -348,9 +378,9 @@ class PouchDBRecordRepository implements RecordRepository {
   async queryAllKeys(view: string, keys: string[]): Promise<SearchResult[]> {
     // find all documents that have any one of the given keys
     const queryResults = await this.database.query(`assets/${view}`, {
-      keys: Array.from(keys)
-        .map((e) => e.toLowerCase())
-        .sort()
+      keys: Array.from(keys, (e) => e.toLowerCase()).sort((a, b) =>
+        a.localeCompare(b)
+      )
     });
     // reduce the documents to those that have all of the given keys
     const keyCounts = queryResults.rows.reduce((acc: any, row: any) => {
@@ -374,12 +404,16 @@ class PouchDBRecordRepository implements RecordRepository {
     return uniqueResults.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryByTags(tags: string[]): Promise<SearchResult[]> {
     return this.queryAllKeys('by_tag', tags);
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryByLabel(label: string): Promise<SearchResult[]> {
     const queryResults = await this.database.query('assets/by_primary_label', {
       key: label.toLowerCase()
@@ -387,7 +421,9 @@ class PouchDBRecordRepository implements RecordRepository {
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async latestAssetByLabel(
     label: string
   ): Promise<{ assetId: string; primaryLabel: string } | null> {
@@ -400,7 +436,7 @@ class PouchDBRecordRepository implements RecordRepository {
     });
     let bestId: string | null = null;
     let bestLabel: string | null = null;
-    let bestDate = Number.NEGATIVE_INFINITY;
+    let bestDate = -Infinity;
     for (const row of res.rows) {
       const bestdate = Array.isArray(row.value) ? Number(row.value[0]) : 0;
       const primary = row.doc?.synthetic?.primaryLabel;
@@ -416,12 +452,16 @@ class PouchDBRecordRepository implements RecordRepository {
       : null;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryByLocations(locations: string[]): Promise<SearchResult[]> {
     return this.queryAllKeys('by_location', locations);
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryByMediaType(media_type: string): Promise<SearchResult[]> {
     const queryResults = await this.database.query('assets/by_mimetype', {
       key: media_type.toLowerCase()
@@ -429,7 +469,9 @@ class PouchDBRecordRepository implements RecordRepository {
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryBeforeDate(before: Date): Promise<SearchResult[]> {
     const queryResults = await this.database.query('assets/by_date', {
       endkey: before.getTime() - 1
@@ -437,7 +479,9 @@ class PouchDBRecordRepository implements RecordRepository {
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryAfterDate(after: Date): Promise<SearchResult[]> {
     const queryResults = await this.database.query('assets/by_date', {
       startkey: after.getTime()
@@ -445,7 +489,9 @@ class PouchDBRecordRepository implements RecordRepository {
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryDateRange(after: Date, before: Date): Promise<SearchResult[]> {
     const queryResults = await this.database.query('assets/by_date', {
       startkey: after.getTime(),
@@ -454,7 +500,9 @@ class PouchDBRecordRepository implements RecordRepository {
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryNewborn(after: Date): Promise<SearchResult[]> {
     const queryResults = await this.database.query('newborns/newborn', {
       startkey: after.getTime()
@@ -462,7 +510,9 @@ class PouchDBRecordRepository implements RecordRepository {
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchAssets(cursor: any, limit: number): Promise<[Asset[], any]> {
     // The cursor is either null, a document identifier, or 'done'. By using a
     // document identifier as the start key, PouchDB will begin retrieving
@@ -502,7 +552,9 @@ class PouchDBRecordRepository implements RecordRepository {
     return [assets, cursor];
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async storeAssets(incoming: Asset[]): Promise<void> {
     // db.bulk() requires both _id and _rev in order to update existing records
     for (const record of incoming) {

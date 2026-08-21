@@ -12,13 +12,17 @@ import {
   l2normalize
 } from 'tanuki/server/data/synthetic/face-align.ts';
 
-/** One label entry in a Namazu `/synthetic` response (already curated). */
+/**
+One label entry in a Namazu `/synthetic` response (already curated).
+*/
 interface NamazuLabel {
   name: string;
   score: number;
 }
 
-/** One face entry in a Namazu `/synthetic` response. */
+/**
+One face entry in a Namazu `/synthetic` response.
+*/
 interface NamazuFace {
   bbox: [number, number, number, number];
   embedding: string; // base64 little-endian Float32, 512 floats
@@ -75,45 +79,6 @@ class NamazuSyntheticDetector implements SyntheticDetector {
       settingsRepository.get('FACE_MODEL_VERSION') || FACE_MODEL_VERSION;
   }
 
-  /** @inheritDoc */
-  async detectLabels(asset: Asset): Promise<string[]> {
-    const data = await this.fetchSynthetic(asset);
-    if (data === null) return [];
-    const labels = data.labels ?? [];
-    // The names are already curated; de-duplicate keeping the highest score,
-    // sort by score descending, and cap to match the local detector's output.
-    const best = new Map<string, number>();
-    for (const { name, score } of labels) {
-      if (!best.has(name) || score > best.get(name)!) best.set(name, score);
-    }
-    return [...best.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, MAX_LABELS)
-      .map(([name]) => name);
-  }
-
-  /** @inheritDoc */
-  async detectFaces(asset: Asset): Promise<DetectedFace[]> {
-    const data = await this.fetchSynthetic(asset);
-    if (data === null) return [];
-    return (data.faces ?? []).map(
-      (face) =>
-        new DetectedFace(
-          face.bbox,
-          // re-normalize defensively; cosine clustering assumes unit vectors
-          l2normalize(decodeEmbedding(face.embedding)),
-          decodeBase64(face.thumbnail),
-          face.score,
-          face.model_version || this.modelVersion
-        )
-    );
-  }
-
-  /** @inheritDoc */
-  faceModelVersion(): string {
-    return this.modelVersion;
-  }
-
   /**
    * Return the parsed `/synthetic` response for an asset, or null for a
    * non-image. Coalesces the labels and faces jobs onto a single in-flight (and
@@ -135,7 +100,9 @@ class NamazuSyntheticDetector implements SyntheticDetector {
 
     const promise = this.requestSynthetic(asset.key);
     // Drop the entry if the request fails so a retry re-hits Namazu rather than
-    // replaying the cached rejection.
+    // replaying the cached rejection. Attached, not awaited: `promise` itself
+    // is cached and returned in-flight to callers.
+    // eslint-disable-next-line unicorn/prefer-await
     promise.catch(() => this.cache.delete(asset.key));
     this.cache.set(asset.key, { promise, expires: now + RESPONSE_TTL_MS });
     return promise;
@@ -153,16 +120,69 @@ class NamazuSyntheticDetector implements SyntheticDetector {
     const response = await fetch(url, { method: 'POST' });
     if (response.status === 204) return null;
     if (!response.ok) {
-      const body = await response.text().catch(() => '');
+      let body = '';
+      try {
+        body = await response.text();
+      } catch {
+        // fall through with an empty body
+      }
       throw new Error(
         `namazu /synthetic returned ${response.status}: ${body.slice(0, 200)}`
       );
     }
     return (await response.json()) as NamazuSyntheticResponse;
   }
+
+  /**
+  @inheritDoc
+  */
+  async detectLabels(asset: Asset): Promise<string[]> {
+    const data = await this.fetchSynthetic(asset);
+    if (data === null) return [];
+    const labels = data.labels ?? [];
+    // The names are already curated; de-duplicate keeping the highest score,
+    // sort by score descending, and cap to match the local detector's output.
+    const best = new Map<string, number>();
+    for (const { name, score } of labels) {
+      if (!best.has(name) || score > best.get(name)!) best.set(name, score);
+    }
+    return [...best]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, MAX_LABELS)
+      .map(([name]) => name);
+  }
+
+  /**
+  @inheritDoc
+  */
+  async detectFaces(asset: Asset): Promise<DetectedFace[]> {
+    const data = await this.fetchSynthetic(asset);
+    if (data === null) return [];
+    return (data.faces ?? []).map(
+      (face) =>
+        new DetectedFace(
+          face.bbox,
+          // re-normalize defensively; cosine clustering assumes unit vectors
+          l2normalize(decodeEmbedding(face.embedding)),
+          decodeBase64(face.thumbnail),
+          face.score,
+          face.model_version || this.modelVersion
+        )
+    );
+  }
+
+  /**
+  @inheritDoc
+  */
+  faceModelVersion(): string {
+    return this.modelVersion;
+  }
+
 }
 
-/** Decode a base64 little-endian Float32 buffer into a Float32Array. */
+/**
+Decode a base64 little-endian Float32 buffer into a Float32Array.
+*/
 function decodeEmbedding(base64: string): Float32Array {
   const buf = Buffer.from(base64, 'base64');
   const view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
@@ -173,7 +193,9 @@ function decodeEmbedding(base64: string): Float32Array {
   return floats;
 }
 
-/** Decode base64 into a standalone Uint8Array (e.g. a JPEG thumbnail). */
+/**
+Decode base64 into a standalone Uint8Array (e.g. a JPEG thumbnail).
+*/
 function decodeBase64(base64: string): Uint8Array {
   const buf = Buffer.from(base64, 'base64');
   return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);

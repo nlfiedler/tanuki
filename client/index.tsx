@@ -1,7 +1,9 @@
 //
 // Copyright (c) 2025 Nathan Fiedler
 //
-/* @refresh reload */
+/*
+@refresh reload
+*/
 import { render } from 'solid-js/web';
 import { Router, Route } from '@solidjs/router';
 import './assets/main.scss';

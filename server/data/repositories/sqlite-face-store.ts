@@ -18,7 +18,9 @@ import { type FaceStore } from 'tanuki/server/domain/repositories/face-store.ts'
 import { type SettingsRepository } from 'tanuki/server/domain/repositories/settings-repository.ts';
 import { dot } from 'tanuki/server/data/synthetic/face-align.ts';
 
-/** Current epoch seconds, matching the integer-time convention used elsewhere. */
+/**
+Current epoch seconds, matching the integer-time convention used elsewhere.
+*/
 function now(): number {
   return Math.trunc(Date.now() / 1000);
 }
@@ -87,7 +89,9 @@ function embeddingFromBlob(blob: Uint8Array): Float32Array {
   return new Float32Array(copy);
 }
 
-/** Encode an embedding as a BLOB-ready byte view (no copy). */
+/**
+Encode an embedding as a BLOB-ready byte view (no copy).
+*/
 function embeddingToBlob(embedding: Float32Array): Uint8Array {
   return new Uint8Array(
     embedding.buffer,
@@ -137,6 +141,119 @@ class SqliteFaceStore implements FaceStore {
     assert.ok(basepath, 'missing FACE_STORE_PATH environment variable');
     this.dbpath = path.join(basepath, 'faces.sqlite');
     this.database = null;
+  }
+
+  /**
+  Insert a bare, unnamed person row. Synchronous for use inside transactions.
+  */
+  private insertPersonRow(id: string, createdAt: number): void {
+    this.database!.query(
+      `INSERT INTO person (id, name, thumbnail_face, hidden, created_at)
+       VALUES (?, NULL, NULL, 0, ?)`
+    ).run(id, createdAt);
+  }
+
+  /**
+  Build a {@link PersonSummary} for a person id, or null if absent.
+  */
+  private summarizePersonById(id: string): PersonSummary | null {
+    const row = this.database!
+      .query(
+        'SELECT id, name, thumbnail_face, hidden, created_at FROM person WHERE id = ?'
+      )
+      .get(id) as PersonRow | undefined;
+    return row ? (this.summarizePersonRows([row])[0] ?? null) : null;
+  }
+
+  /**
+   * Enrich many person rows with face count and resolved representative face
+   * using three batched queries (counts grouped by person, the best face per
+   * person via a window function, and pinned-thumbnail validity) instead of a
+   * per-person fan-out — so list/loader paths issue O(1) queries regardless of
+   * how many people are on the page. The representative is the explicit pinned
+   * thumbnail while it still belongs to the person, otherwise the largest face
+   * by bbox area (ties broken by detector score).
+   */
+  private summarizePersonRows(rows: PersonRow[]): PersonSummary[] {
+    if (rows.length === 0) return [];
+    const ids = rows.map((row) => row.id);
+    const placeholders = ids.map(() => '?').join(',');
+
+    const counts = new Map<string, number>();
+    const countRows = this.database!
+      .query(
+        `SELECT person_id, COUNT(*) AS count FROM face
+          WHERE person_id IN (${placeholders}) GROUP BY person_id`
+      )
+      .all(...ids) as { person_id: string; count: number }[];
+    for (const row of countRows) {
+      counts.set(row.person_id, row.count);
+    }
+
+    // One representative face per person: rank within each person and keep #1.
+    const best = new Map<string, string>();
+    const bestRows = this.database!
+      .query(
+        `SELECT person_id, id FROM (
+           SELECT person_id, id,
+             ROW_NUMBER() OVER (PARTITION BY person_id ${REPRESENTATIVE_ORDER})
+               AS rn
+           FROM face WHERE person_id IN (${placeholders})
+         ) WHERE rn = 1`
+      )
+      .all(...ids) as { person_id: string; id: string }[];
+    for (const row of bestRows) {
+      best.set(row.person_id, row.id);
+    }
+
+    // A pinned thumbnail counts only while that face still belongs to the
+    // person; validate all pinned faces in one query (keyed person:face).
+    const pinned = rows
+      .map((row) => row.thumbnail_face)
+      .filter((face): face is string => face !== null);
+    const validPinned = new Set<string>();
+    if (pinned.length > 0) {
+      const pinnedPlaceholders = pinned.map(() => '?').join(',');
+      const pinnedRows = this.database!
+        .query(
+          `SELECT id, person_id FROM face WHERE id IN (${pinnedPlaceholders})`
+        )
+        .all(...pinned) as { id: string; person_id: string | null }[];
+      for (const row of pinnedRows) {
+        validPinned.add(`${row.person_id}:${row.id}`);
+      }
+    }
+
+    return rows.map((row) => {
+      const isPinnedOk =
+        row.thumbnail_face !== null &&
+        validPinned.has(`${row.id}:${row.thumbnail_face}`);
+      const representativeFaceId = isPinnedOk
+        ? row.thumbnail_face
+        : (best.get(row.id) ?? null);
+      return {
+        person: personFromRow(row),
+        faceCount: counts.get(row.id) ?? 0,
+        representativeFaceId
+      };
+    });
+  }
+
+  /**
+   * Delete any of the given person rows that no longer have faces. The last
+   * face referencing a person being removed cascades to deleting the person
+   * row (and its assigned name) per the cluster-lifecycle rules.
+   */
+  private cleanupEmptyPeople(personIds: string[]): void {
+    const uniqueIds = new Set(personIds);
+    for (const id of uniqueIds) {
+      const remaining = this.database!
+        .query('SELECT 1 FROM face WHERE person_id = ? LIMIT 1')
+        .get(id);
+      if (!remaining) {
+        this.database!.query('DELETE FROM person WHERE id = ?').run(id);
+      }
+    }
   }
 
   /**
@@ -253,7 +370,9 @@ class SqliteFaceStore implements FaceStore {
     );
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async enqueueJob(
     assetId: string,
     kind: JobKind,
@@ -270,7 +389,9 @@ class SqliteFaceStore implements FaceStore {
     return row.id;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async claimNextJob(): Promise<SyntheticJob | null> {
     // Atomic claim: delete the highest-priority, oldest, currently-eligible row
     // and return it in one statement so two workers can never claim the same
@@ -291,7 +412,9 @@ class SqliteFaceStore implements FaceStore {
     return row ? jobFromRow(row) : null;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async requeueJob(
     job: SyntheticJob,
     error: string,
@@ -319,7 +442,9 @@ class SqliteFaceStore implements FaceStore {
     return attempts;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async pendingJobCount(kind?: JobKind): Promise<number> {
     const row = kind
       ? (this.database!
@@ -333,7 +458,9 @@ class SqliteFaceStore implements FaceStore {
     return row.count;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async hasPendingJob(assetId: string, kind: JobKind): Promise<boolean> {
     const row = this.database!
       .query(
@@ -343,7 +470,9 @@ class SqliteFaceStore implements FaceStore {
     return row !== null && row !== undefined;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchPeopleByAssetIds(
     assetIds: string[]
   ): Promise<Map<string, PersonSummary[]>> {
@@ -379,7 +508,9 @@ class SqliteFaceStore implements FaceStore {
     return result;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async assetIdsByPerson(
     personId: string,
     offset: number,
@@ -406,7 +537,9 @@ class SqliteFaceStore implements FaceStore {
     return { ids: rows.map((row) => row.asset_id), total };
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async deleteByAssetId(assetId: string): Promise<void> {
     this.database!.transaction(() => {
       const affected = this.database!
@@ -423,7 +556,9 @@ class SqliteFaceStore implements FaceStore {
     })();
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async setFacesStatus(
     assetId: string,
     status: SyntheticStatus
@@ -443,7 +578,9 @@ class SqliteFaceStore implements FaceStore {
     ).run(assetId, status, now());
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchFacesStatus(
     assetIds: string[]
   ): Promise<Map<string, SyntheticStatus>> {
@@ -463,7 +600,9 @@ class SqliteFaceStore implements FaceStore {
     return result;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async assetIdsWithFacesStatus(
     status: SyntheticStatus
   ): Promise<string[]> {
@@ -473,7 +612,9 @@ class SqliteFaceStore implements FaceStore {
     return rows.map((row) => row.asset_id);
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async facesStatusCount(status: SyntheticStatus): Promise<number> {
     const row = this.database!
       .query('SELECT COUNT(*) AS count FROM face_status WHERE status = ?')
@@ -481,7 +622,9 @@ class SqliteFaceStore implements FaceStore {
     return row.count;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async modelVersionsByAssets(
     assetIds: string[]
   ): Promise<Map<string, Set<string>>> {
@@ -505,7 +648,9 @@ class SqliteFaceStore implements FaceStore {
     return result;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async insertFace(face: Face): Promise<void> {
     this.database!.query(
       `INSERT INTO face
@@ -524,7 +669,9 @@ class SqliteFaceStore implements FaceStore {
     );
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async nearestPerson(
     embedding: Float32Array,
     modelVersion: string
@@ -550,7 +697,9 @@ class SqliteFaceStore implements FaceStore {
       : { personId: bestPerson, score: bestScore };
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async createPerson(): Promise<Person> {
     const id = crypto.randomUUID();
     const createdAt = now();
@@ -558,15 +707,9 @@ class SqliteFaceStore implements FaceStore {
     return new Person(id, null, null, false, createdAt);
   }
 
-  /** Insert a bare, unnamed person row. Synchronous for use inside transactions. */
-  private insertPersonRow(id: string, createdAt: number): void {
-    this.database!.query(
-      `INSERT INTO person (id, name, thumbnail_face, hidden, created_at)
-       VALUES (?, NULL, NULL, 0, ?)`
-    ).run(id, createdAt);
-  }
-
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async listPeople(includeHidden: boolean): Promise<PersonSummary[]> {
     const rows = this.database!
       .query(
@@ -583,7 +726,9 @@ class SqliteFaceStore implements FaceStore {
     return summaries;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async hideUnnamedPeople(): Promise<number> {
     const { changes } = this.database!
       .query('UPDATE person SET hidden = 1 WHERE name IS NULL AND hidden = 0')
@@ -591,12 +736,16 @@ class SqliteFaceStore implements FaceStore {
     return changes;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async getPersonSummary(id: string): Promise<PersonSummary | null> {
     return this.summarizePersonById(id);
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async personIdsByName(name: string): Promise<string[]> {
     const rows = this.database!
       .query(
@@ -607,7 +756,9 @@ class SqliteFaceStore implements FaceStore {
     return rows.map((row) => row.id);
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async facesForPerson(personId: string): Promise<Face[]> {
     const rows = this.database!
       .query(
@@ -619,7 +770,9 @@ class SqliteFaceStore implements FaceStore {
     return rows.map((row) => faceFromRow(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async faceThumbnail(faceId: string): Promise<Uint8Array | null> {
     const row = this.database!
       .query('SELECT thumbnail FROM face WHERE id = ?')
@@ -627,7 +780,9 @@ class SqliteFaceStore implements FaceStore {
     return row ? row.thumbnail : null;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async renamePerson(id: string, name: string | null): Promise<void> {
     // Normalize blank/whitespace-only names to null so "unnamed" is a single
     // canonical state rather than a mix of null and "".
@@ -638,7 +793,9 @@ class SqliteFaceStore implements FaceStore {
     );
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async mergePeople(sourceId: string, targetId: string): Promise<void> {
     if (sourceId === targetId) return;
     this.database!.transaction(() => {
@@ -649,7 +806,9 @@ class SqliteFaceStore implements FaceStore {
     })();
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async reassignFaces(
     faceIds: string[],
     personId: string | null
@@ -685,7 +844,9 @@ class SqliteFaceStore implements FaceStore {
     })();
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async hidePerson(id: string, hidden: boolean): Promise<void> {
     this.database!.query('UPDATE person SET hidden = ? WHERE id = ?').run(
       hidden ? 1 : 0,
@@ -693,7 +854,9 @@ class SqliteFaceStore implements FaceStore {
     );
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async setPersonThumbnail(id: string, faceId: string): Promise<void> {
     const belongs = this.database!
       .query('SELECT 1 FROM face WHERE id = ? AND person_id = ?')
@@ -706,7 +869,9 @@ class SqliteFaceStore implements FaceStore {
     ).run(faceId, id);
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allFaceAssetIds(): Promise<string[]> {
     const rows = this.database!
       .query('SELECT DISTINCT asset_id FROM face')
@@ -714,105 +879,11 @@ class SqliteFaceStore implements FaceStore {
     return rows.map((row) => row.asset_id);
   }
 
-  /** Build a {@link PersonSummary} for a person id, or null if absent. */
-  private summarizePersonById(id: string): PersonSummary | null {
-    const row = this.database!
-      .query(
-        'SELECT id, name, thumbnail_face, hidden, created_at FROM person WHERE id = ?'
-      )
-      .get(id) as PersonRow | undefined;
-    return row ? (this.summarizePersonRows([row])[0] ?? null) : null;
-  }
-
-  /**
-   * Enrich many person rows with face count and resolved representative face
-   * using three batched queries (counts grouped by person, the best face per
-   * person via a window function, and pinned-thumbnail validity) instead of a
-   * per-person fan-out — so list/loader paths issue O(1) queries regardless of
-   * how many people are on the page. The representative is the explicit pinned
-   * thumbnail while it still belongs to the person, otherwise the largest face
-   * by bbox area (ties broken by detector score).
-   */
-  private summarizePersonRows(rows: PersonRow[]): PersonSummary[] {
-    if (rows.length === 0) return [];
-    const ids = rows.map((row) => row.id);
-    const placeholders = ids.map(() => '?').join(',');
-
-    const counts = new Map<string, number>();
-    for (const row of this.database!
-      .query(
-        `SELECT person_id, COUNT(*) AS count FROM face
-          WHERE person_id IN (${placeholders}) GROUP BY person_id`
-      )
-      .all(...ids) as { person_id: string; count: number }[]) {
-      counts.set(row.person_id, row.count);
-    }
-
-    // One representative face per person: rank within each person and keep #1.
-    const best = new Map<string, string>();
-    for (const row of this.database!
-      .query(
-        `SELECT person_id, id FROM (
-           SELECT person_id, id,
-             ROW_NUMBER() OVER (PARTITION BY person_id ${REPRESENTATIVE_ORDER})
-               AS rn
-           FROM face WHERE person_id IN (${placeholders})
-         ) WHERE rn = 1`
-      )
-      .all(...ids) as { person_id: string; id: string }[]) {
-      best.set(row.person_id, row.id);
-    }
-
-    // A pinned thumbnail counts only while that face still belongs to the
-    // person; validate all pinned faces in one query (keyed person:face).
-    const pinned = rows
-      .map((row) => row.thumbnail_face)
-      .filter((face): face is string => face !== null);
-    const validPinned = new Set<string>();
-    if (pinned.length > 0) {
-      const pinnedPlaceholders = pinned.map(() => '?').join(',');
-      for (const row of this.database!
-        .query(
-          `SELECT id, person_id FROM face WHERE id IN (${pinnedPlaceholders})`
-        )
-        .all(...pinned) as { id: string; person_id: string | null }[]) {
-        validPinned.add(`${row.person_id}:${row.id}`);
-      }
-    }
-
-    return rows.map((row) => {
-      const pinnedOk =
-        row.thumbnail_face !== null &&
-        validPinned.has(`${row.id}:${row.thumbnail_face}`);
-      const representativeFaceId = pinnedOk
-        ? row.thumbnail_face
-        : (best.get(row.id) ?? null);
-      return {
-        person: personFromRow(row),
-        faceCount: counts.get(row.id) ?? 0,
-        representativeFaceId
-      };
-    });
-  }
-
-  /**
-   * Delete any of the given person rows that no longer have faces. The last
-   * face referencing a person being removed cascades to deleting the person
-   * row (and its assigned name) per the cluster-lifecycle rules.
-   */
-  private cleanupEmptyPeople(personIds: string[]): void {
-    for (const id of new Set(personIds)) {
-      const remaining = this.database!
-        .query('SELECT 1 FROM face WHERE person_id = ? LIMIT 1')
-        .get(id);
-      if (!remaining) {
-        this.database!.query('DELETE FROM person WHERE id = ?').run(id);
-      }
-    }
-  }
 }
 
-/** Parse a stored faces-status string, defaulting to PENDING on anything odd. */
+/**
+Parse a stored faces-status string, defaulting to PENDING on anything odd.
+*/
 function parseFacesStatus(value: string): SyntheticStatus {
   if (value === SyntheticStatus.READY) return SyntheticStatus.READY;
   if (value === SyntheticStatus.FAILED) return SyntheticStatus.FAILED;

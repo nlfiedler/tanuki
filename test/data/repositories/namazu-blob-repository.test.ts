@@ -21,9 +21,9 @@ describe('NamazuBlobRepository', function () {
     // arrange
     const assetId =
       'MjAxOC8wNS8zMS8yMTAwLzAxYng1enprYmthY3Rhdjl3ZXZnZW1tdnJ6LmpwZw==';
-    const expected = 'http://example.com/assets/' + assetId;
+    const expected = 'https://example.com/assets/' + assetId;
     const settingsRepository = new EnvSettingsRepository();
-    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    settingsRepository.set('NAMAZU_URL', 'https://example.com');
     const sut = new NamazuBlobRepository({ settingsRepository });
     // act
     const actual = sut.assetUrl(assetId);
@@ -35,9 +35,9 @@ describe('NamazuBlobRepository', function () {
     // arrange
     const assetId =
       'MjAxOC8wNS8zMS8yMTAwLzAxYng1enprYmthY3Rhdjl3ZXZnZW1tdnJ6LmpwZw==';
-    const expected = 'http://example.com/thumbnail/480/320/' + assetId;
+    const expected = 'https://example.com/thumbnail/480/320/' + assetId;
     const settingsRepository = new EnvSettingsRepository();
-    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    settingsRepository.set('NAMAZU_URL', 'https://example.com');
     const sut = new NamazuBlobRepository({ settingsRepository });
     // act
     const actual = sut.thumbnailUrl(assetId, 480, 320);
@@ -49,10 +49,10 @@ describe('NamazuBlobRepository', function () {
     const assetId =
       'MjAxOC8wNS8zMS8yMTAwLzAxYng1enprYmthY3Rhdjl3ZXZnZW1tdnJ6LmpwZw==';
     const settingsRepository = new EnvSettingsRepository();
-    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    settingsRepository.set('NAMAZU_URL', 'https://example.com');
     const sut = new NamazuBlobRepository({ settingsRepository });
     expect(sut.previewUrl(assetId, { width: 800 })).toEqual(
-      `http://example.com/preview/${assetId}?width=800`
+      `https://example.com/preview/${assetId}?width=800`
     );
   });
 
@@ -60,10 +60,10 @@ describe('NamazuBlobRepository', function () {
     const assetId =
       'MjAxOC8wNS8zMS8yMTAwLzAxYng1enprYmthY3Rhdjl3ZXZnZW1tdnJ6LmpwZw==';
     const settingsRepository = new EnvSettingsRepository();
-    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    settingsRepository.set('NAMAZU_URL', 'https://example.com');
     const sut = new NamazuBlobRepository({ settingsRepository });
     expect(sut.previewUrl(assetId, { height: 600 })).toEqual(
-      `http://example.com/preview/${assetId}?height=600`
+      `https://example.com/preview/${assetId}?height=600`
     );
   });
 
@@ -75,7 +75,7 @@ describe('NamazuBlobRepository', function () {
 
     mockFetch(
       {
-        url: `http://example.com/assets/${key}`,
+        url: `https://example.com/assets/${key}`,
         method: 'PUT',
         headers: {
           'Content-Type': 'image/jpeg'
@@ -93,7 +93,7 @@ describe('NamazuBlobRepository', function () {
     await fs.copyFile('./test/fixtures/fighting_kittens.jpg', incoming);
 
     const settingsRepository = new EnvSettingsRepository();
-    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    settingsRepository.set('NAMAZU_URL', 'https://example.com');
     const sut = new NamazuBlobRepository({ settingsRepository });
     await sut.storeBlob(incoming, asset);
   });
@@ -106,7 +106,7 @@ describe('NamazuBlobRepository', function () {
 
     mockFetch(
       {
-        url: `http://example.com/assets/${key}`,
+        url: `https://example.com/assets/${key}`,
         method: 'PUT',
         headers: {
           'Content-Type': 'image/jpeg'
@@ -124,7 +124,7 @@ describe('NamazuBlobRepository', function () {
     await fs.copyFile('./test/fixtures/fighting_kittens.jpg', incoming);
 
     const settingsRepository = new EnvSettingsRepository();
-    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    settingsRepository.set('NAMAZU_URL', 'https://example.com');
     const sut = new NamazuBlobRepository({ settingsRepository });
     await sut.storeBlob(incoming, asset);
   });
@@ -135,7 +135,7 @@ describe('NamazuBlobRepository', function () {
     // with kamadak-exif's display `description` and the raw typed `value`.
     mockFetch(
       {
-        url: `http://example.com/metadata/${assetId}`,
+        url: `https://example.com/metadata/${assetId}`,
         method: 'GET'
       },
       Response.json({
@@ -167,7 +167,7 @@ describe('NamazuBlobRepository', function () {
     );
 
     const settingsRepository = new EnvSettingsRepository();
-    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    settingsRepository.set('NAMAZU_URL', 'https://example.com');
     const sut = new NamazuBlobRepository({ settingsRepository });
     const result: any = await sut.fetchMetadata(assetId, 'image/jpeg');
 
@@ -199,14 +199,14 @@ describe('NamazuBlobRepository', function () {
     };
     mockFetch(
       {
-        url: `http://example.com/metadata/${assetId}`,
+        url: `https://example.com/metadata/${assetId}`,
         method: 'GET'
       },
       Response.json(videoMeta)
     );
 
     const settingsRepository = new EnvSettingsRepository();
-    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    settingsRepository.set('NAMAZU_URL', 'https://example.com');
     const sut = new NamazuBlobRepository({ settingsRepository });
     const result = await sut.fetchMetadata(assetId, 'video/mp4');
     expect(result).toEqual(videoMeta);
@@ -216,13 +216,13 @@ describe('NamazuBlobRepository', function () {
     const assetId = 'MjAxOS0wNC0xNS8wODMwL2VtcHR5LnR4dA';
     mockFetch(
       {
-        url: `http://example.com/metadata/${assetId}`,
+        url: `https://example.com/metadata/${assetId}`,
         method: 'GET'
       },
       new Response(null, { status: 204 })
     );
     const settingsRepository = new EnvSettingsRepository();
-    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    settingsRepository.set('NAMAZU_URL', 'https://example.com');
     const sut = new NamazuBlobRepository({ settingsRepository });
     const result = await sut.fetchMetadata(assetId, 'image/jpeg');
     expect(result).toBeNull();
@@ -235,7 +235,7 @@ describe('NamazuBlobRepository', function () {
 
     mockFetch(
       {
-        url: `http://example.com/assets/${key}`,
+        url: `https://example.com/assets/${key}`,
         method: 'DELETE'
       },
       new Response('', {
@@ -245,7 +245,7 @@ describe('NamazuBlobRepository', function () {
     );
 
     const settingsRepository = new EnvSettingsRepository();
-    settingsRepository.set('NAMAZU_URL', 'http://example.com');
+    settingsRepository.set('NAMAZU_URL', 'https://example.com');
     const sut = new NamazuBlobRepository({ settingsRepository });
     await sut.deleteBlob(key);
   });

@@ -35,7 +35,7 @@ function Pagination(props: PaginationProps) {
   }
 
   function commitPageInput() {
-    const parsed = Number.parseInt(pageInput(), 10);
+    const parsed = Math.trunc(Number(pageInput()));
     if (Number.isFinite(parsed)) {
       const clamped = Math.min(Math.max(parsed, 1), props.lastPage());
       props.setSelectedPage(clamped);
@@ -81,10 +81,12 @@ function Pagination(props: PaginationProps) {
                   on:input={(e) => setPageInput(e.currentTarget.value)}
                   on:blur={() => setEditingPage(false)}
                   on:keydown={(e) => {
-                    if (e.key === 'Escape') {
-                      e.preventDefault();
-                      setEditingPage(false);
+                    if (e.key !== 'Escape') {
+                    	return;
                     }
+
+                    e.preventDefault();
+                    setEditingPage(false);
                   }}
                 />
               </p>

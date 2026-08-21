@@ -56,7 +56,7 @@ export function syntheticFromDocument(doc: any): {
   // is never meaningful and would otherwise survive `??` and look like a real
   // entry to downstream code.
   const primaryLabel = doc.primaryLabel || null;
-  if (labels.length === 0 && primaryLabel === null) {
+  if (primaryLabel === null && labels.length === 0) {
     return { data: null, status };
   }
   const data = new SyntheticData();
@@ -65,16 +65,14 @@ export function syntheticFromDocument(doc: any): {
   return { data, status };
 }
 
-/** Parse a persisted status value, defaulting to PENDING on unrecognized input. */
+/**
+Parse a persisted status value, defaulting to PENDING on unrecognized input.
+*/
 export function parseStatus(value: unknown): SyntheticStatus {
-  if (value === SyntheticStatus.READY || value === 'READY' || value === 'ready') {
+  if ([SyntheticStatus.READY, 'READY', 'ready'].includes(value as any)) {
     return SyntheticStatus.READY;
   }
-  if (
-    value === SyntheticStatus.FAILED ||
-    value === 'FAILED' ||
-    value === 'failed'
-  ) {
+  if ([SyntheticStatus.FAILED, 'FAILED', 'failed'].includes(value as any)) {
     return SyntheticStatus.FAILED;
   }
   return SyntheticStatus.PENDING;

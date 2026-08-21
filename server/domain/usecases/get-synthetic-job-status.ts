@@ -5,15 +5,25 @@ import assert from 'node:assert';
 import { SyntheticStatus } from 'tanuki/server/domain/entities/synthetic-data.ts';
 import { type FaceStore } from 'tanuki/server/domain/repositories/face-store.ts';
 
-/** Snapshot of the synthetic-data extraction queue, for progress monitoring. */
+/**
+Snapshot of the synthetic-data extraction queue, for progress monitoring.
+*/
 interface SyntheticJobStatus {
-  /** Jobs still waiting in the queue across both kinds (includes retry backoff). */
+  /**
+  Jobs still waiting in the queue across both kinds (includes retry backoff).
+  */
   queued: number;
-  /** `faces` jobs still waiting in the queue. */
+  /**
+  `faces` jobs still waiting in the queue.
+  */
   facesQueued: number;
-  /** Assets whose faces extraction completed successfully. */
+  /**
+  Assets whose faces extraction completed successfully.
+  */
   facesReady: number;
-  /** Assets whose faces extraction failed after exhausting all retries. */
+  /**
+  Assets whose faces extraction failed after exhausting all retries.
+  */
   facesFailed: number;
 }
 

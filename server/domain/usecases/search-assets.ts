@@ -45,7 +45,9 @@ export default ({
   };
 };
 
-/** Perform an initial search of the assets. */
+/**
+Perform an initial search of the assets.
+*/
 async function queryAssets(
   recordRepository: RecordRepository,
   params: SearchParams
@@ -59,34 +61,40 @@ async function queryAssets(
   // which would be useless.
   if (params.tags.length > 0) {
     return recordRepository.queryByTags(params.tags);
-  } else if (params.afterDate && params.beforeDate) {
+  }
+  if (params.afterDate && params.beforeDate) {
     const after = params.afterDate;
     const before = params.beforeDate;
     params.afterDate = null;
     params.beforeDate = null;
     return recordRepository.queryDateRange(after, before);
-  } else if (params.beforeDate) {
+  }
+  if (params.beforeDate) {
     const before = params.beforeDate;
     params.beforeDate = null;
     return recordRepository.queryBeforeDate(before);
-  } else if (params.afterDate) {
+  }
+  if (params.afterDate) {
     const after = params.afterDate;
     params.afterDate = null;
     return recordRepository.queryAfterDate(after);
-  } else if (params.locations.length > 0) {
+  }
+  if (params.locations.length > 0) {
     const locations = params.locations;
     params.locations = [];
     return recordRepository.queryByLocations(locations);
-  } else if (params.mediaType) {
+  }
+  if (params.mediaType) {
     const mediaType = params.mediaType;
     params.mediaType = null;
     return recordRepository.queryByMediaType(mediaType);
-  } else {
-    return [];
   }
+  return [];
 }
 
-/** Filter the search results by date range, if specified by the parameters. */
+/**
+Filter the search results by date range, if specified by the parameters.
+*/
 function filterByDateRange(
   results: SearchResult[],
   params: SearchParams
@@ -95,10 +103,12 @@ function filterByDateRange(
     const a = params.afterDate;
     const b = params.beforeDate;
     return results.filter((r) => r.datetime > a && r.datetime < b);
-  } else if (params.beforeDate) {
+  }
+  if (params.beforeDate) {
     const b = params.beforeDate;
     return results.filter((r) => r.datetime < b);
-  } else if (params.afterDate) {
+  }
+  if (params.afterDate) {
     const a = params.afterDate;
     return results.filter((r) => r.datetime > a);
   }
@@ -133,7 +143,9 @@ function filterByLocations(
   return results;
 }
 
-/** Filter the search results by media type, if specified. */
+/**
+Filter the search results by media type, if specified.
+*/
 function filterByMediaType(
   results: SearchResult[],
   params: SearchParams

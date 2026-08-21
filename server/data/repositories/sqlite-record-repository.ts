@@ -37,6 +37,131 @@ class SqliteRecordRepository implements RecordRepository {
     this.database = null;
   }
 
+  private loadMetadata(assetId: string): AssetMetadata | null {
+    // LEFT JOIN from assets so the file size is available even when no
+    // metadata row exists yet (e.g. unprocessed asset).
+    const row = this.database!
+      .query(
+        `SELECT m.*, a.filesize FROM assets a
+           LEFT JOIN metadata m ON m.asset_id = a.key
+           WHERE a.key = ?`
+      )
+      .get(assetId);
+    return row ? metadataFromRow(row) : null;
+  }
+
+  private applySynthetic(asset: Asset): void {
+    const row = this.database!
+      .query(
+        'SELECT primary_label, labels, status FROM synthetic_data WHERE asset_id = ?'
+      )
+      .get(asset.key);
+    if (!row) {
+      asset.synthetic = null;
+      asset.syntheticStatus = SyntheticStatus.PENDING;
+      return;
+    }
+    const { data, status } = syntheticFromRow(row);
+    asset.synthetic = data;
+    asset.syntheticStatus = status;
+  }
+
+  private upsertMetadata(
+    assetId: string,
+    metadata: AssetMetadata | null
+  ): void {
+    if (metadata === null || !metadata.hasValues()) {
+      this.database!
+        .query('DELETE FROM metadata WHERE asset_id = ?')
+        .run(assetId);
+      return;
+    }
+    this.database!
+      .query(
+        `INSERT INTO metadata (
+          asset_id, camera_make, camera_model, lens_make, lens_model,
+          exposure_time, f_number, iso, focal_length_35mm, original_date_offset,
+          gps_latitude, gps_longitude, display_width, display_height,
+          duration, frame_rate, video_codec, raw
+        ) VALUES (
+          $asset_id, $camera_make, $camera_model, $lens_make, $lens_model,
+          $exposure_time, $f_number, $iso, $focal_length_35mm, $original_date_offset,
+          $gps_latitude, $gps_longitude, $display_width, $display_height,
+          $duration, $frame_rate, $video_codec, $raw
+        )
+        ON CONFLICT(asset_id) DO UPDATE SET
+          camera_make = $camera_make, camera_model = $camera_model,
+          lens_make = $lens_make, lens_model = $lens_model,
+          exposure_time = $exposure_time, f_number = $f_number, iso = $iso,
+          focal_length_35mm = $focal_length_35mm,
+          original_date_offset = $original_date_offset,
+          gps_latitude = $gps_latitude, gps_longitude = $gps_longitude,
+          display_width = $display_width, display_height = $display_height,
+          duration = $duration, frame_rate = $frame_rate,
+          video_codec = $video_codec, raw = $raw;`
+      )
+      .run({
+        $asset_id: assetId,
+        $camera_make: metadata.cameraMake,
+        $camera_model: metadata.cameraModel,
+        $lens_make: metadata.lensMake,
+        $lens_model: metadata.lensModel,
+        $exposure_time: metadata.exposureTime,
+        $f_number: metadata.fNumber,
+        $iso: metadata.iso,
+        $focal_length_35mm: metadata.focalLength35mm,
+        $original_date_offset: metadata.originalDateOffset,
+        $gps_latitude: metadata.gpsLatitude,
+        $gps_longitude: metadata.gpsLongitude,
+        $display_width: metadata.displayWidth,
+        $display_height: metadata.displayHeight,
+        $duration: metadata.duration,
+        $frame_rate: metadata.frameRate,
+        $video_codec: metadata.videoCodec,
+        $raw: metadata.raw ? JSON.stringify(metadata.raw) : null
+      });
+  }
+
+  /**
+   * Insert or update the synthetic_data row for `assetId`. PENDING with no
+   * labels and no primary label is the implicit default and is represented by
+   * the absence of a row; in that case we delete any existing row so
+   * `fetchSyntheticStatus` correctly returns PENDING without leaving stale
+   * data behind.
+   */
+  private upsertSynthetic(
+    assetId: string,
+    data: SyntheticData | null,
+    status: SyntheticStatus
+  ): void {
+    const hasData = data !== null && data.hasValues();
+    if (!hasData && status === SyntheticStatus.PENDING) {
+      this.database!
+        .query('DELETE FROM synthetic_data WHERE asset_id = ?')
+        .run(assetId);
+      return;
+    }
+    const labels = hasData ? JSON.stringify(data!.labels) : null;
+    const primaryLabel = data?.primaryLabel ?? null;
+    this.database!
+      .query(
+        `INSERT INTO synthetic_data (asset_id, primary_label, labels, status, updated_at)
+         VALUES ($asset_id, $primary_label, $labels, $status, $updated_at)
+         ON CONFLICT(asset_id) DO UPDATE SET
+           primary_label = $primary_label,
+           labels = $labels,
+           status = $status,
+           updated_at = $updated_at`
+      )
+      .run({
+        $asset_id: assetId,
+        $primary_label: primaryLabel,
+        $labels: labels,
+        $status: status,
+        $updated_at: Math.trunc(Date.now() / 1000)
+      });
+  }
+
   /**
    * Destroy and create the database from scratch.
    *
@@ -136,14 +261,18 @@ class SqliteRecordRepository implements RecordRepository {
     runMigrations(this.database);
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async countAssets(): Promise<number> {
     const query = this.database!.query('SELECT COUNT(*) AS count FROM assets');
     const row = query.get() as { count: number } | undefined;
     return row!.count;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async getAssetById(assetId: string): Promise<Asset | null> {
     const query = this.database!.query('SELECT * FROM assets WHERE key = ?;');
     const row = query.get(assetId);
@@ -154,7 +283,9 @@ class SqliteRecordRepository implements RecordRepository {
     return asset;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async getAssetByDigest(digest: string): Promise<Asset | null> {
     const query = this.database!.query('SELECT * FROM assets WHERE hash = ?;');
     const row = query.get(digest);
@@ -165,36 +296,9 @@ class SqliteRecordRepository implements RecordRepository {
     return asset;
   }
 
-  private loadMetadata(assetId: string): AssetMetadata | null {
-    // LEFT JOIN from assets so the file size is available even when no
-    // metadata row exists yet (e.g. unprocessed asset).
-    const row = this.database!
-      .query(
-        `SELECT m.*, a.filesize FROM assets a
-           LEFT JOIN metadata m ON m.asset_id = a.key
-           WHERE a.key = ?`
-      )
-      .get(assetId);
-    return row ? metadataFromRow(row) : null;
-  }
-
-  private applySynthetic(asset: Asset): void {
-    const row = this.database!
-      .query(
-        'SELECT primary_label, labels, status FROM synthetic_data WHERE asset_id = ?'
-      )
-      .get(asset.key);
-    if (!row) {
-      asset.synthetic = null;
-      asset.syntheticStatus = SyntheticStatus.PENDING;
-      return;
-    }
-    const { data, status } = syntheticFromRow(row);
-    asset.synthetic = data;
-    asset.syntheticStatus = status;
-  }
-
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allTags(): Promise<AttributeCount[]> {
     const query = this.database!.query(
       'SELECT tag AS label, COUNT(*) AS count FROM tags_view GROUP BY tag;'
@@ -202,7 +306,9 @@ class SqliteRecordRepository implements RecordRepository {
     return query.all();
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allLocations(): Promise<AttributeCount[]> {
     const query = this.database!.query(
       'SELECT value AS label, COUNT(*) AS count FROM locations_view GROUP BY value;'
@@ -210,7 +316,9 @@ class SqliteRecordRepository implements RecordRepository {
     return query.all();
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async rawLocations(): Promise<Location[]> {
     const query = this.database!.query(
       `SELECT DISTINCT CONCAT(loc_label, ';', loc_city, ',', loc_region) AS location FROM assets;`
@@ -225,7 +333,9 @@ class SqliteRecordRepository implements RecordRepository {
     return results;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allYears(): Promise<AttributeCount[]> {
     const query = this.database!.query(
       'SELECT year AS label, COUNT(*) AS count FROM assets GROUP BY year;'
@@ -233,7 +343,9 @@ class SqliteRecordRepository implements RecordRepository {
     return query.all();
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allMediaTypes(): Promise<AttributeCount[]> {
     const query = this.database!.query(
       'SELECT mimetype AS label, COUNT(*) AS count FROM assets GROUP BY mimetype;'
@@ -241,7 +353,9 @@ class SqliteRecordRepository implements RecordRepository {
     return query.all();
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allPrimaryLabels(): Promise<AttributeCount[]> {
     // Group case-insensitively so accidental casing variants collapse, but
     // surface the curated casing for display. SQLite (uniquely) allows a
@@ -256,7 +370,9 @@ class SqliteRecordRepository implements RecordRepository {
     return query.all();
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async putAsset(asset: Asset): Promise<void> {
     // attempt to insert a new row, but on conflict update only certain
     // fields which can be changed by the update usecase
@@ -298,69 +414,17 @@ class SqliteRecordRepository implements RecordRepository {
     })();
   }
 
-  private upsertMetadata(
-    assetId: string,
-    metadata: AssetMetadata | null
-  ): void {
-    if (metadata === null || !metadata.hasValues()) {
-      this.database!
-        .query('DELETE FROM metadata WHERE asset_id = ?')
-        .run(assetId);
-      return;
-    }
-    this.database!
-      .query(
-        `INSERT INTO metadata (
-          asset_id, camera_make, camera_model, lens_make, lens_model,
-          exposure_time, f_number, iso, focal_length_35mm, original_date_offset,
-          gps_latitude, gps_longitude, display_width, display_height,
-          duration, frame_rate, video_codec, raw
-        ) VALUES (
-          $asset_id, $camera_make, $camera_model, $lens_make, $lens_model,
-          $exposure_time, $f_number, $iso, $focal_length_35mm, $original_date_offset,
-          $gps_latitude, $gps_longitude, $display_width, $display_height,
-          $duration, $frame_rate, $video_codec, $raw
-        )
-        ON CONFLICT(asset_id) DO UPDATE SET
-          camera_make = $camera_make, camera_model = $camera_model,
-          lens_make = $lens_make, lens_model = $lens_model,
-          exposure_time = $exposure_time, f_number = $f_number, iso = $iso,
-          focal_length_35mm = $focal_length_35mm,
-          original_date_offset = $original_date_offset,
-          gps_latitude = $gps_latitude, gps_longitude = $gps_longitude,
-          display_width = $display_width, display_height = $display_height,
-          duration = $duration, frame_rate = $frame_rate,
-          video_codec = $video_codec, raw = $raw;`
-      )
-      .run({
-        $asset_id: assetId,
-        $camera_make: metadata.cameraMake,
-        $camera_model: metadata.cameraModel,
-        $lens_make: metadata.lensMake,
-        $lens_model: metadata.lensModel,
-        $exposure_time: metadata.exposureTime,
-        $f_number: metadata.fNumber,
-        $iso: metadata.iso,
-        $focal_length_35mm: metadata.focalLength35mm,
-        $original_date_offset: metadata.originalDateOffset,
-        $gps_latitude: metadata.gpsLatitude,
-        $gps_longitude: metadata.gpsLongitude,
-        $display_width: metadata.displayWidth,
-        $display_height: metadata.displayHeight,
-        $duration: metadata.duration,
-        $frame_rate: metadata.frameRate,
-        $video_codec: metadata.videoCodec,
-        $raw: metadata.raw ? JSON.stringify(metadata.raw) : null
-      });
-  }
-
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async deleteAsset(assetId: string): Promise<void> {
     const rm = this.database!.query('DELETE FROM assets WHERE key = ?');
     rm.run(assetId);
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryByLabel(label: string): Promise<SearchResult[]> {
     const query = this.database!.query(
       `SELECT a.key, a.filename, a.mimetype, a.loc_label, a.loc_city, a.loc_region,
@@ -368,14 +432,13 @@ class SqliteRecordRepository implements RecordRepository {
          FROM assets a JOIN synthetic_data s ON s.asset_id = a.key
         WHERE LOWER(s.primary_label) = ?;`
     );
-    const results: SearchResult[] = [];
-    for (const row of query.all(label.toLowerCase())) {
-      results.push(searchResultFromRow(row));
-    }
+    const results: SearchResult[] = Array.from(query.all(label.toLowerCase()), row => searchResultFromRow(row));
     return results;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async latestAssetByLabel(
     label: string
   ): Promise<{ assetId: string; primaryLabel: string } | null> {
@@ -395,7 +458,9 @@ class SqliteRecordRepository implements RecordRepository {
       : null;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryByTags(tags: string[]): Promise<SearchResult[]> {
     const query = this.database!.query(
       `SELECT key, filename, mimetype, loc_label, loc_city, loc_region,
@@ -419,7 +484,9 @@ class SqliteRecordRepository implements RecordRepository {
     return results;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryByLocations(locations: string[]): Promise<SearchResult[]> {
     const query = this.database!.query(
       `SELECT key, filename, mimetype, loc_label, loc_city, loc_region,
@@ -446,21 +513,22 @@ class SqliteRecordRepository implements RecordRepository {
     return results;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryByMediaType(media_type: string): Promise<SearchResult[]> {
     const query = this.database!.query(
       `SELECT key, filename, mimetype, loc_label, loc_city, loc_region,
           coalesce(user_date, orig_date, imported) AS date
         FROM assets WHERE mimetype = ?;`
     );
-    const results: SearchResult[] = [];
-    for (const row of query.iterate(media_type)) {
-      results.push(searchResultFromRow(row));
-    }
+    const results: SearchResult[] = Array.from(query.iterate(media_type), row => searchResultFromRow(row));
     return results;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryBeforeDate(before: Date): Promise<SearchResult[]> {
     //
     // SQLite "indexes on expressions" stipulates that the expression used
@@ -472,14 +540,17 @@ class SqliteRecordRepository implements RecordRepository {
           coalesce(user_date, orig_date, imported) AS date
         FROM assets WHERE date < ?;`
     );
-    const results: SearchResult[] = [];
-    for (const row of query.iterate(Math.trunc(before.getTime() / 1000))) {
-      results.push(searchResultFromRow(row));
-    }
+    const beforeSeconds = Math.trunc(before.getTime() / 1000);
+    const rows = query.iterate(beforeSeconds);
+    const results: SearchResult[] = Array.from(rows, (row) =>
+      searchResultFromRow(row)
+    );
     return results;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryAfterDate(after: Date): Promise<SearchResult[]> {
     //
     // SQLite "indexes on expressions" stipulates that the expression used
@@ -491,14 +562,17 @@ class SqliteRecordRepository implements RecordRepository {
           coalesce(user_date, orig_date, imported) AS date
         FROM assets WHERE date >= ?;`
     );
-    const results: SearchResult[] = [];
-    for (const row of query.iterate(Math.trunc(after.getTime() / 1000))) {
-      results.push(searchResultFromRow(row));
-    }
+    const afterSeconds = Math.trunc(after.getTime() / 1000);
+    const rows = query.iterate(afterSeconds);
+    const results: SearchResult[] = Array.from(rows, (row) =>
+      searchResultFromRow(row)
+    );
     return results;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryDateRange(after: Date, before: Date): Promise<SearchResult[]> {
     //
     // SQLite "indexes on expressions" stipulates that the expression used
@@ -510,17 +584,18 @@ class SqliteRecordRepository implements RecordRepository {
           coalesce(user_date, orig_date, imported) AS date
         FROM assets WHERE date >= ?1 AND date < ?2;`
     );
-    const results: SearchResult[] = [];
-    for (const row of query.iterate(
-      Math.trunc(after.getTime() / 1000),
-      Math.trunc(before.getTime() / 1000)
-    )) {
-      results.push(searchResultFromRow(row));
-    }
+    const afterSeconds = Math.trunc(after.getTime() / 1000);
+    const beforeSeconds = Math.trunc(before.getTime() / 1000);
+    const rows = query.iterate(afterSeconds, beforeSeconds);
+    const results: SearchResult[] = Array.from(rows, (row) =>
+      searchResultFromRow(row)
+    );
     return results;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryNewborn(after: Date): Promise<SearchResult[]> {
     const query = this.database!.query(
       `SELECT key, filename, mimetype, loc_label, loc_city, loc_region,
@@ -528,14 +603,17 @@ class SqliteRecordRepository implements RecordRepository {
         FROM assets
         WHERE imported >= ? AND tags IS NULL AND caption IS NULL AND loc_label IS NULL;`
     );
-    const results: SearchResult[] = [];
-    for (const row of query.iterate(Math.trunc(after.getTime() / 1000))) {
-      results.push(searchResultFromRow(row));
-    }
+    const afterSeconds = Math.trunc(after.getTime() / 1000);
+    const rows = query.iterate(afterSeconds);
+    const results: SearchResult[] = Array.from(rows, (row) =>
+      searchResultFromRow(row)
+    );
     return results;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchAssets(cursor: any, limit: number): Promise<[Asset[], any]> {
     // The cursor is either null, a document identifier, or 'done'.
     if (cursor === 'done') {
@@ -546,10 +624,7 @@ class SqliteRecordRepository implements RecordRepository {
     const query = this.database!.query(
       `SELECT * FROM assets WHERE key > ?1 ORDER BY key LIMIT ?2;`
     );
-    const results: Asset[] = [];
-    for (const row of query.iterate(cursor ?? '0', limit)) {
-      results.push(assetFromRow(row));
-    }
+    const results: Asset[] = Array.from(query.iterate(cursor ?? '0', limit), row => assetFromRow(row));
     if (results.length > 0) {
       const ids = results.map((a) => a.key);
       const metadataMap = await this.fetchMetadata(ids);
@@ -566,7 +641,9 @@ class SqliteRecordRepository implements RecordRepository {
     return [results, cursor];
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchMetadata(
     assetIds: string[]
   ): Promise<Map<string, AssetMetadata | null>> {
@@ -581,13 +658,16 @@ class SqliteRecordRepository implements RecordRepository {
          LEFT JOIN metadata m ON m.asset_id = a.key
          WHERE a.key IN (${placeholders})`
     );
-    for (const row of query.iterate(...assetIds)) {
+    const rows = query.iterate(...assetIds);
+    for (const row of rows) {
       result.set((row as any).asset_id, metadataFromRow(row));
     }
     return result;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchSynthetic(
     assetIds: string[]
   ): Promise<Map<string, SyntheticData | null>> {
@@ -599,14 +679,17 @@ class SqliteRecordRepository implements RecordRepository {
       `SELECT asset_id, primary_label, labels, status FROM synthetic_data
          WHERE asset_id IN (${placeholders})`
     );
-    for (const row of query.iterate(...assetIds)) {
+    const rows = query.iterate(...assetIds);
+    for (const row of rows) {
       const { data } = syntheticFromRow(row);
       result.set((row as any).asset_id, data);
     }
     return result;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchSyntheticStatus(
     assetIds: string[]
   ): Promise<Map<string, SyntheticStatus>> {
@@ -618,13 +701,16 @@ class SqliteRecordRepository implements RecordRepository {
       `SELECT asset_id, status FROM synthetic_data
          WHERE asset_id IN (${placeholders})`
     );
-    for (const row of query.iterate(...assetIds)) {
+    const rows = query.iterate(...assetIds);
+    for (const row of rows) {
       result.set((row as any).asset_id, parseStatus((row as any).status));
     }
     return result;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async setSynthetic(
     assetId: string,
     data: SyntheticData | null,
@@ -634,46 +720,8 @@ class SqliteRecordRepository implements RecordRepository {
   }
 
   /**
-   * Insert or update the synthetic_data row for `assetId`. PENDING with no
-   * labels and no primary label is the implicit default and is represented by
-   * the absence of a row; in that case we delete any existing row so
-   * `fetchSyntheticStatus` correctly returns PENDING without leaving stale
-   * data behind.
-   */
-  private upsertSynthetic(
-    assetId: string,
-    data: SyntheticData | null,
-    status: SyntheticStatus
-  ): void {
-    const hasData = data !== null && data.hasValues();
-    if (!hasData && status === SyntheticStatus.PENDING) {
-      this.database!
-        .query('DELETE FROM synthetic_data WHERE asset_id = ?')
-        .run(assetId);
-      return;
-    }
-    const labels = hasData ? JSON.stringify(data!.labels) : null;
-    const primaryLabel = data?.primaryLabel ?? null;
-    this.database!
-      .query(
-        `INSERT INTO synthetic_data (asset_id, primary_label, labels, status, updated_at)
-         VALUES ($asset_id, $primary_label, $labels, $status, $updated_at)
-         ON CONFLICT(asset_id) DO UPDATE SET
-           primary_label = $primary_label,
-           labels = $labels,
-           status = $status,
-           updated_at = $updated_at`
-      )
-      .run({
-        $asset_id: assetId,
-        $primary_label: primaryLabel,
-        $labels: labels,
-        $status: status,
-        $updated_at: Math.trunc(Date.now() / 1000)
-      });
-  }
-
-  /** @inheritDoc */
+  @inheritDoc
+  */
   async storeAssets(incoming: Asset[]): Promise<void> {
     const insert = this.database!.query(
       `INSERT OR REPLACE INTO assets (key, hash, filename, filesize, mimetype, caption,
@@ -762,7 +810,7 @@ function syntheticFromRow(row: any): {
     }
   }
   const primaryLabel = row.primary_label ?? null;
-  if (labels.length === 0 && primaryLabel === null) {
+  if (primaryLabel === null && labels.length === 0) {
     return { data: null, status };
   }
   const data = new SyntheticData();

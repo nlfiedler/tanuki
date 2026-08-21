@@ -15,7 +15,8 @@ export function formatDatetime(
 ): string {
   if (typeof datetime === 'string') {
     return new Date(datetime).toDateString();
-  } else if (datetime) {
+  }
+  if (datetime) {
     return datetime.toDateString();
   }
   return '';
@@ -27,17 +28,23 @@ export function formatDatetime(
 export function formatLocation(location: Location): string {
   if (location.label && location.city && location.region) {
     return `${location.label}; ${location.city}, ${location.region}`;
-  } else if (location.city && location.region) {
+  }
+  if (location.city && location.region) {
     return `${location.city}, ${location.region}`;
-  } else if (location.label && location.city) {
+  }
+  if (location.label && location.city) {
     return `${location.label}; ${location.city}`;
-  } else if (location.label && location.region) {
+  }
+  if (location.label && location.region) {
     return `${location.label}; ${location.region}`;
-  } else if (location.label) {
+  }
+  if (location.label) {
     return location.label;
-  } else if (location.city) {
+  }
+  if (location.city) {
     return location.city;
-  } else if (location.region) {
+  }
+  if (location.region) {
     return location.region;
   }
   return '';
@@ -115,7 +122,7 @@ export function formatFormat(
   meta: AssetMetadata | null | undefined
 ): string {
   const parts: string[] = [];
-  const subtype = mediaType.split('/')[1];
+  const subtype = mediaType.split('/', 2)[1];
   if (subtype) parts.push(subtype.toUpperCase());
   if (meta?.displayWidth && meta.displayHeight) {
     parts.push(`${meta.displayWidth} × ${meta.displayHeight}`);
@@ -126,7 +133,9 @@ export function formatFormat(
   return parts.join(', ');
 }
 
-/** Format a byte count as a short human-readable string (e.g. "1.7 MB"). */
+/**
+Format a byte count as a short human-readable string (e.g. "1.7 MB").
+*/
 export function formatFileSize(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes < 0) return '';
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];

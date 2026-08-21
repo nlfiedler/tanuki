@@ -11,7 +11,9 @@ import { SqliteFaceStore } from 'tanuki/server/data/repositories/sqlite-face-sto
 import { SyntheticWorkerPool } from 'tanuki/server/domain/services/synthetic-worker-pool.ts';
 import logger from 'tanuki/server/logger.ts';
 
-/** Wait until `predicate` is true, polling briefly; throws on timeout. */
+/**
+Wait until `predicate` is true, polling briefly; throws on timeout.
+*/
 async function until(
   predicate: () => boolean | Promise<boolean>,
   timeoutMs = 2000
@@ -25,7 +27,9 @@ async function until(
   }
 }
 
-/** Captures setSynthetic calls; everything else is unused by the pool. */
+/**
+Captures setSynthetic calls; everything else is unused by the pool.
+*/
 function makeRecordRepository(): any {
   const failed: string[] = [];
   return {
@@ -40,7 +44,9 @@ function makeRecordRepository(): any {
   };
 }
 
-/** Captures clear() calls so tests can assert the search cache was invalidated. */
+/**
+Captures clear() calls so tests can assert the search cache was invalidated.
+*/
 function makeSearchRepository(): any {
   let cleared = 0;
   return {
@@ -80,10 +86,12 @@ describe('SyntheticWorkerPool', function () {
   // stop any pool a test started, even if it failed before its own stop(),
   // so a runaway loop can't hammer the database during the next beforeEach
   afterEach(async function () {
-    if (pool) {
-      await pool.stop();
-      pool = null;
+    if (!pool) {
+    	return;
     }
+
+    await pool.stop();
+    pool = null;
   });
 
   test('drains every queued job exactly once', async function () {
@@ -111,7 +119,7 @@ describe('SyntheticWorkerPool', function () {
     await until(async () => (await faceStore.pendingJobCount()) === 0);
     await pool.stop();
 
-    expect(seen.slice().sort()).toEqual(['a', 'b', 'c']);
+    expect(seen.slice().sort((a, b) => a.localeCompare(b))).toEqual(['a', 'b', 'c']);
     expect(await faceStore.pendingJobCount()).toEqual(0);
     expect(recordRepository.failed).toEqual([]);
   });

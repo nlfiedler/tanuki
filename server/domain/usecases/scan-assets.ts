@@ -13,7 +13,9 @@ import {
 import { parse } from './query.ts';
 import * as helpers from './helpers.ts';
 
-/** Upper bound on a person's assets resolved for a `person:` query term. */
+/**
+Upper bound on a person's assets resolved for a `person:` query term.
+*/
 const PERSON_ASSET_LIMIT = 1_000_000;
 
 export default ({
@@ -58,7 +60,8 @@ export default ({
       // work — and a name shared by several clusters matches all of them.
       const cons = await parse(query, async (token) => {
         const personIds = new Set<string>([token]);
-        for (const id of await faceStore.personIdsByName(token)) {
+        const matchingIds = await faceStore.personIdsByName(token);
+        for (const id of matchingIds) {
           personIds.add(id);
         }
         const assetIds = new Set<string>();

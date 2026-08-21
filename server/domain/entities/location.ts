@@ -6,19 +6,6 @@
  * Location information regarding an asset.
  */
 class Location {
-  /** User-defined label describing the location. */
-  label: string | null;
-  /** Name of the city associated with this location. */
-  city: string | null;
-  /** Name of the region (state, province) associated with this location. */
-  region: string | null;
-
-  constructor(label: string) {
-    this.label = label.length > 0 ? label : null;
-    this.city = null;
-    this.region = null;
-  }
-
   /**
    * Construct a Location using all of the parts given. If any parts are
    * empty, then the corresponding field will be null.
@@ -38,7 +25,9 @@ class Location {
     return ret;
   }
 
-  /** Build a Location from exactly the input values without any processing. */
+  /**
+  Build a Location from exactly the input values without any processing.
+  */
   static fromRaw(
     label: string | null,
     city: string | null,
@@ -73,14 +62,15 @@ class Location {
     //
     if (s.length === 0) {
       return new Location('');
-    } else if (s.includes(';')) {
+    }
+    if (s.includes(';')) {
       const label_tail = s.split(';');
       if (label_tail.length == 2) {
         if (label_tail[1]?.includes(',')) {
           // label; city, region
           const city_region = label_tail[1]?.split(',');
           if (city_region.length == 2) {
-            return Location.fromParts(
+            return this.fromParts(
               label_tail[0]?.trim() || '',
               city_region[0]?.trim() || '',
               city_region[1]?.trim() || ''
@@ -88,7 +78,7 @@ class Location {
           }
         } else {
           // label; city
-          return Location.fromParts(
+          return this.fromParts(
             label_tail[0]?.trim() || '',
             label_tail[1]?.trim() || '',
             ''
@@ -99,7 +89,7 @@ class Location {
       const city_region = s.split(',');
       if (city_region.length == 2) {
         // city, region
-        return Location.fromParts(
+        return this.fromParts(
           '',
           city_region[0]?.trim() || '',
           city_region[1]?.trim() || ''
@@ -111,22 +101,47 @@ class Location {
   }
 
   /**
+  User-defined label describing the location.
+  */
+  label: string | null;
+  /**
+  Name of the city associated with this location.
+  */
+  city: string | null;
+  /**
+  Name of the region (state, province) associated with this location.
+  */
+  region: string | null;
+
+  constructor(label: string) {
+    this.label = label.length > 0 ? label : null;
+    this.city = null;
+    this.region = null;
+  }
+
+  /**
    * Format a Location field as a string.
    */
   toString(): string {
     if (this.label && this.city && this.region) {
       return `${this.label}; ${this.city}, ${this.region}`;
-    } else if (this.city && this.region) {
+    }
+    if (this.city && this.region) {
       return `${this.city}, ${this.region}`;
-    } else if (this.label && this.city) {
+    }
+    if (this.label && this.city) {
       return `${this.label}; ${this.city}`;
-    } else if (this.label && this.region) {
+    }
+    if (this.label && this.region) {
       return `${this.label}; ${this.region}`;
-    } else if (this.label) {
+    }
+    if (this.label) {
       return this.label;
-    } else if (this.city) {
+    }
+    if (this.city) {
       return this.city;
-    } else if (this.region) {
+    }
+    if (this.region) {
       return this.region;
     }
     return '';
@@ -246,11 +261,17 @@ class Coordinates {
  * Location information returned from a reverse geocoding service.
  */
 class Geocoded {
-  /** Name of the city (locality). */
+  /**
+  Name of the city (locality).
+  */
   city: string | null;
-  /** Name of the region (administrative_area_level_1). */
+  /**
+  Name of the region (administrative_area_level_1).
+  */
   region: string | null;
-  /** Name of the country (country). */
+  /**
+  Name of the country (country).
+  */
   country: string | null;
 
   constructor(

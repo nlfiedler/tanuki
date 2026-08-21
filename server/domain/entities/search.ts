@@ -80,8 +80,8 @@ class SearchParams {
     const locations = this.locations.map((l) => `loc:${l}`).join(' ');
     let result = locations ? `${tags} ${locations}` : tags;
     if (this.mediaType) {
-      const [main, sub] = this.mediaType.split('/');
-      result = result + ` is:${main} format:${sub}`;
+      const [main, sub] = this.mediaType.split('/', 2);
+      result += ` is:${main} format:${sub}`;
     }
     if (this.beforeDate) {
       result = result + ' before:' + this.beforeDate.toISOString().slice(0, 16);
@@ -139,15 +139,38 @@ class PendingParams {
  * Returned from the record repository when performing a query.
  */
 class SearchResult {
-  /** Asset identifier. */
+  /**
+  Construct a search result from the given asset.
+  */
+  static fromAsset(asset: Asset): SearchResult {
+    return new SearchResult(
+      asset.key,
+      asset.filename,
+      asset.mediaType,
+      asset.location,
+      asset.bestDate()
+    );
+  }
+
+  /**
+  Asset identifier.
+  */
   assetId: string;
-  /** Original filename of the asset. */
+  /**
+  Original filename of the asset.
+  */
   filename: string;
-  /** Media type (formerly MIME type) of the asset. */
+  /**
+  Media type (formerly MIME type) of the asset.
+  */
   mediaType: string;
-  /** Location of the asset. */
+  /**
+  Location of the asset.
+  */
   location: Location | null;
-  /** Best date/time for the indexed asset. */
+  /**
+  Best date/time for the indexed asset.
+  */
   datetime: Date;
 
   constructor(
@@ -162,17 +185,6 @@ class SearchResult {
     this.mediaType = mediaType;
     this.location = location;
     this.datetime = datetime;
-  }
-
-  /** Construct a search result from the given asset. */
-  static fromAsset(asset: Asset): SearchResult {
-    return new SearchResult(
-      asset.key,
-      asset.filename,
-      asset.mediaType,
-      asset.location,
-      asset.bestDate()
-    );
   }
 }
 

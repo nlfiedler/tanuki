@@ -32,7 +32,9 @@ interface Manifest {
 const MANIFEST_PATH = "model-manifest.json";
 const MODELS_DIR = "models";
 
-/** Files listed in the manifest that this runtime does not need locally. */
+/**
+Files listed in the manifest that this runtime does not need locally.
+*/
 const SKIP = new Set<string>(["labels-map.json"]);
 
 async function readManifest(): Promise<Manifest> {
@@ -51,7 +53,6 @@ async function sha256Of(path: string): Promise<string | null> {
 
 async function fetchEntry(entry: ManifestEntry): Promise<void> {
   const finalPath = path.join(MODELS_DIR, entry.name);
-  const tmpPath = `${finalPath}.tmp`;
 
   // Hash placeholder in the manifest means the release hasn't been cut yet.
   if (!/^[0-9a-f]{64}$/i.test(entry.sha256)) {
@@ -61,6 +62,8 @@ async function fetchEntry(entry: ManifestEntry): Promise<void> {
         `manifest populated?`
     );
   }
+
+  const tmpPath = `${finalPath}.tmp`;
 
   // Skip if file exists and matches manifest hash.
   const existing = await sha256Of(finalPath);

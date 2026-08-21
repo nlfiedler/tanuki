@@ -4,14 +4,18 @@
 import { ArrayDeque } from './array-deque.ts';
 import { CircularBuffer } from './circular-buffer.ts';
 
-/** That which waits to place items into the queue when it has capacity. */
+/**
+That which waits to place items into the queue when it has capacity.
+*/
 type Sender<T> = {
   value: T;
   resolve: (value: unknown) => void;
   reject: (err: any) => void;
 };
 
-/** That which waits for items to become available in the queue. */
+/**
+That which waits for items to become available in the queue.
+*/
 type Receiver<T> = {
   resolve: (value: T) => void;
   reject: (err: any) => void;
@@ -124,27 +128,37 @@ export class AsyncQueue<T> {
     }
   }
 
-  /** Checks if the queue is empty. */
+  /**
+  Checks if the queue is empty.
+  */
   get isEmpty(): boolean {
     return this.items.isEmpty();
   }
 
-  /** Checks if the queue is full. */
+  /**
+  Checks if the queue is full.
+  */
   get isFull(): boolean {
     return this.items.isFull();
   }
 
-  /** Returns the current number of items in the queue. */
+  /**
+  Returns the current number of items in the queue.
+  */
   get length(): number {
     return this.items.length;
   }
 
-  /** Returns true if the queue has been closed and all items have been dequeued. */
+  /**
+  Returns true if the queue has been closed and all items have been dequeued.
+  */
   get done(): boolean {
     return this.isClosed && this.items.length === 0;
   }
 
-  /** Returns true if the queue has been closed. */
+  /**
+  Returns true if the queue has been closed.
+  */
   get closed(): boolean {
     return this.isClosed;
   }

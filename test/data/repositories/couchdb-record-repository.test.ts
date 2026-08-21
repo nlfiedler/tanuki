@@ -1023,7 +1023,7 @@ describe('CouchDBRecordRepository', function () {
     await sut.setSynthetic('q-c', cat, SyntheticStatus.READY);
 
     const matches = await sut.queryByLabel('beach');
-    const ids = matches.map((r) => r.assetId).sort();
+    const ids = matches.map((r) => r.assetId).sort((a, b) => a.localeCompare(b));
     expect(ids).toEqual(['q-a', 'q-b']);
 
     const cats = await sut.queryByLabel('cat');

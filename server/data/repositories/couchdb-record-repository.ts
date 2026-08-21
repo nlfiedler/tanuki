@@ -103,6 +103,40 @@ class CouchDBRecordRepository implements RecordRepository {
     this.database = null;
   }
 
+  private async connectWithRetry(): Promise<void> {
+    let delay = this.connectBackoffMs;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await this.conn.auth(this.username, this.password);
+        try {
+          await this.conn.db.get(this.dbname);
+          this.database = this.conn.db.use(this.dbname);
+        } catch (error: any) {
+          if (error.statusCode == 404) {
+            await this.conn.db.create(this.dbname);
+            this.database = this.conn.db.use(this.dbname);
+          } else {
+            throw error;
+          }
+        }
+        return;
+      } catch (error: any) {
+        if (
+          !isRetryableConnectError(error) ||
+          attempt >= this.connectRetries
+        ) {
+          throw error;
+        }
+        console.warn(
+          `CouchDB unreachable at ${this.url} (${error.code ?? error.cause?.code}); ` +
+            `attempt ${attempt}/${this.connectRetries}, retrying in ${delay}ms`
+        );
+        await sleep(delay);
+        delay = Math.min(delay * 2, this.connectBackoffMaxMs);
+      }
+    }
+  }
+
   /**
    * Destroy and create the database from scratch.
    *
@@ -136,40 +170,6 @@ class CouchDBRecordRepository implements RecordRepository {
     await this.createIndices(assetsDefinition);
     await this.createIndices(newbornsDefinition);
     this.stayAlive();
-  }
-
-  private async connectWithRetry(): Promise<void> {
-    let delay = this.connectBackoffMs;
-    for (let attempt = 1; ; attempt++) {
-      try {
-        await this.conn.auth(this.username, this.password);
-        try {
-          await this.conn.db.get(this.dbname);
-          this.database = this.conn.db.use(this.dbname);
-        } catch (error: any) {
-          if (error.statusCode == 404) {
-            await this.conn.db.create(this.dbname);
-            this.database = this.conn.db.use(this.dbname);
-          } else {
-            throw error;
-          }
-        }
-        return;
-      } catch (error: any) {
-        if (
-          !isRetryableConnectError(error) ||
-          attempt >= this.connectRetries
-        ) {
-          throw error;
-        }
-        console.warn(
-          `CouchDB unreachable at ${this.url} (${error.code ?? error.cause?.code}); ` +
-            `attempt ${attempt}/${this.connectRetries}, retrying in ${delay}ms`
-        );
-        await sleep(delay);
-        delay = Math.min(delay * 2, this.connectBackoffMaxMs);
-      }
-    }
   }
 
   /**
@@ -210,7 +210,9 @@ class CouchDBRecordRepository implements RecordRepository {
     }, this.heartbeat);
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async countAssets(): Promise<number> {
     // list() returns 'id', 'key', and 'value' which is an object with 'rev'
     const allDocs = await this.database.list();
@@ -222,7 +224,9 @@ class CouchDBRecordRepository implements RecordRepository {
     return allDocs.total_rows - designCount;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async getAssetById(assetId: string): Promise<Asset | null> {
     try {
       const asset = await this.database.get(assetId);
@@ -236,7 +240,9 @@ class CouchDBRecordRepository implements RecordRepository {
     }
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async getAssetByDigest(digest: string): Promise<Asset | null> {
     // should only be 1 result, but limit to 1 anyway
     const res = await this.database.view('assets', 'by_checksum', {
@@ -250,7 +256,9 @@ class CouchDBRecordRepository implements RecordRepository {
     return null;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allTags(): Promise<AttributeCount[]> {
     const res = await this.database.view('assets', 'all_tags', {
       group_level: 1
@@ -260,7 +268,9 @@ class CouchDBRecordRepository implements RecordRepository {
     });
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allPrimaryLabels(): Promise<AttributeCount[]> {
     const res = await this.database.view('assets', 'all_primary_labels', {
       group_level: 1
@@ -270,7 +280,9 @@ class CouchDBRecordRepository implements RecordRepository {
     });
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allLocations(): Promise<AttributeCount[]> {
     const res = await this.database.view('assets', 'all_location_parts', {
       group_level: 1
@@ -280,7 +292,9 @@ class CouchDBRecordRepository implements RecordRepository {
     });
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async rawLocations(): Promise<Location[]> {
     const res = await this.database.view('assets', 'all_location_records', {
       group_level: 1
@@ -291,7 +305,9 @@ class CouchDBRecordRepository implements RecordRepository {
     });
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allYears(): Promise<AttributeCount[]> {
     const res = await this.database.view('assets', 'all_years', {
       group_level: 1
@@ -303,7 +319,9 @@ class CouchDBRecordRepository implements RecordRepository {
     });
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async allMediaTypes(): Promise<AttributeCount[]> {
     const res = await this.database.view('assets', 'all_media_types', {
       group_level: 1
@@ -313,7 +331,9 @@ class CouchDBRecordRepository implements RecordRepository {
     });
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async putAsset(asset: Asset): Promise<void> {
     // strip `key` (it becomes _id), `metadata`, `synthetic`, and
     // `syntheticStatus` (each encoded separately to avoid copying class
@@ -334,7 +354,9 @@ class CouchDBRecordRepository implements RecordRepository {
     }
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchMetadata(
     assetIds: string[]
   ): Promise<Map<string, AssetMetadata | null>> {
@@ -343,17 +365,21 @@ class CouchDBRecordRepository implements RecordRepository {
     if (assetIds.length === 0) return result;
     const res = await this.database.fetch({ keys: assetIds });
     for (const row of res.rows) {
-      if (row.doc && !row.doc._deleted) {
-        const metadata =
-          metadataFromDocument(row.doc.metadata) ?? new AssetMetadata();
-        metadata.byteLength = row.doc.byteLength ?? null;
-        result.set(row.id, metadata);
+      if (!row.doc || row.doc._deleted) {
+      	continue;
       }
+
+      const metadata =
+        metadataFromDocument(row.doc.metadata) ?? new AssetMetadata();
+      metadata.byteLength = row.doc.byteLength ?? null;
+      result.set(row.id, metadata);
     }
     return result;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchSynthetic(
     assetIds: string[]
   ): Promise<Map<string, SyntheticData | null>> {
@@ -362,15 +388,19 @@ class CouchDBRecordRepository implements RecordRepository {
     if (assetIds.length === 0) return result;
     const res = await this.database.fetch({ keys: assetIds });
     for (const row of res.rows) {
-      if (row.doc && !row.doc._deleted) {
-        const { data } = syntheticFromDocument(row.doc.synthetic);
-        result.set(row.id, data);
+      if (!row.doc || row.doc._deleted) {
+      	continue;
       }
+
+      const { data } = syntheticFromDocument(row.doc.synthetic);
+      result.set(row.id, data);
     }
     return result;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchSyntheticStatus(
     assetIds: string[]
   ): Promise<Map<string, SyntheticStatus>> {
@@ -379,15 +409,19 @@ class CouchDBRecordRepository implements RecordRepository {
     if (assetIds.length === 0) return result;
     const res = await this.database.fetch({ keys: assetIds });
     for (const row of res.rows) {
-      if (row.doc && !row.doc._deleted) {
-        const { status } = syntheticFromDocument(row.doc.synthetic);
-        result.set(row.id, status);
+      if (!row.doc || row.doc._deleted) {
+      	continue;
       }
+
+      const { status } = syntheticFromDocument(row.doc.synthetic);
+      result.set(row.id, status);
     }
     return result;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async setSynthetic(
     assetId: string,
     data: SyntheticData | null,
@@ -423,7 +457,9 @@ class CouchDBRecordRepository implements RecordRepository {
     }
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async deleteAsset(assetId: string): Promise<void> {
     const asset = await this.database.get(assetId);
     await this.database.destroy(assetId, asset._rev);
@@ -439,9 +475,9 @@ class CouchDBRecordRepository implements RecordRepository {
   async queryAllKeys(view: string, keys: string[]): Promise<SearchResult[]> {
     // find all documents that have any one of the given keys
     const queryResults = await this.database.view('assets', view, {
-      keys: Array.from(keys)
-        .map((e) => e.toLowerCase())
-        .sort()
+      keys: Array.from(keys, (e) => e.toLowerCase()).sort((a, b) =>
+        a.localeCompare(b)
+      )
     });
     // reduce the documents to those that have all of the given keys
     const keyCounts = queryResults.rows.reduce((acc: any, row: any) => {
@@ -465,12 +501,16 @@ class CouchDBRecordRepository implements RecordRepository {
     return uniqueResults.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryByTags(tags: string[]): Promise<SearchResult[]> {
     return this.queryAllKeys('by_tag', tags);
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryByLabel(label: string): Promise<SearchResult[]> {
     const queryResults = await this.database.view('assets', 'by_primary_label', {
       key: label.toLowerCase()
@@ -478,7 +518,9 @@ class CouchDBRecordRepository implements RecordRepository {
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async latestAssetByLabel(
     label: string
   ): Promise<{ assetId: string; primaryLabel: string } | null> {
@@ -491,7 +533,7 @@ class CouchDBRecordRepository implements RecordRepository {
     });
     let bestId: string | null = null;
     let bestLabel: string | null = null;
-    let bestDate = Number.NEGATIVE_INFINITY;
+    let bestDate = -Infinity;
     for (const row of res.rows) {
       const bestdate = Array.isArray(row.value) ? Number(row.value[0]) : 0;
       const primary = row.doc?.synthetic?.primaryLabel;
@@ -507,12 +549,16 @@ class CouchDBRecordRepository implements RecordRepository {
       : null;
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryByLocations(locations: string[]): Promise<SearchResult[]> {
     return this.queryAllKeys('by_location', locations);
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryByMediaType(media_type: string): Promise<SearchResult[]> {
     const queryResults = await this.database.view('assets', 'by_mimetype', {
       key: media_type.toLowerCase()
@@ -520,7 +566,9 @@ class CouchDBRecordRepository implements RecordRepository {
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryBeforeDate(before: Date): Promise<SearchResult[]> {
     const queryResults = await this.database.view('assets', 'by_date', {
       endkey: before.getTime() - 1
@@ -528,7 +576,9 @@ class CouchDBRecordRepository implements RecordRepository {
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryAfterDate(after: Date): Promise<SearchResult[]> {
     const queryResults = await this.database.view('assets', 'by_date', {
       startkey: after.getTime()
@@ -536,7 +586,9 @@ class CouchDBRecordRepository implements RecordRepository {
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryDateRange(after: Date, before: Date): Promise<SearchResult[]> {
     const queryResults = await this.database.view('assets', 'by_date', {
       startkey: after.getTime(),
@@ -545,7 +597,9 @@ class CouchDBRecordRepository implements RecordRepository {
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async queryNewborn(after: Date): Promise<SearchResult[]> {
     const queryResults = await this.database.view('newborns', 'newborn', {
       startkey: after.getTime()
@@ -553,7 +607,9 @@ class CouchDBRecordRepository implements RecordRepository {
     return queryResults.rows.map((row: any) => convertViewResult(row));
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async fetchAssets(cursor: any, limit: number): Promise<[Asset[], any]> {
     // The cursor is either null, a document identifier, or 'done'. By using a
     // document identifier as the start key, CouchDB will begin retrieving
@@ -593,7 +649,9 @@ class CouchDBRecordRepository implements RecordRepository {
     return [assets, cursor];
   }
 
-  /** @inheritDoc */
+  /**
+  @inheritDoc
+  */
   async storeAssets(incoming: Asset[]): Promise<void> {
     // db.bulk() requires both _id and _rev in order to update existing records
     for (const record of incoming) {

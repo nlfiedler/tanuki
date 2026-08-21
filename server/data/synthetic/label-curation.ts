@@ -4,22 +4,34 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-/** One entry of the ImageNet-class → display-label curation map. */
+/**
+One entry of the ImageNet-class → display-label curation map.
+*/
 export interface LabelEntry {
-  /** Original ImageNet class name (informational). */
+  /**
+  Original ImageNet class name (informational).
+  */
   raw: string;
-  /** Curated display label, or `null` to drop the class entirely. */
+  /**
+  Curated display label, or `null` to drop the class entirely.
+  */
   label: string | null;
-  /** Internal grouping (e.g. `animal`, `person`); not exposed via GraphQL. */
+  /**
+  Internal grouping (e.g. `animal`, `person`); not exposed via GraphQL.
+  */
   category: string;
 }
 
-/** Scores at or below this softmax probability are floored out as noise. */
+/**
+Scores at or below this softmax probability are floored out as noise.
+*/
 export const SCORE_FLOOR = 0.05;
-/** Maximum number of display labels emitted per asset. */
+/**
+Maximum number of display labels emitted per asset.
+*/
 export const MAX_LABELS = 20;
 
-let cachedMap: Map<number, LabelEntry> | null = null;
+const labelMapCache: { map: Map<number, LabelEntry> | null } = { map: null };
 
 /**
  * Load the curated label map (`labels-map.json`, keyed by ImageNet class
@@ -27,7 +39,7 @@ let cachedMap: Map<number, LabelEntry> | null = null;
  * backends produce identical display labels.
  */
 export function loadLabelMap(): Map<number, LabelEntry> {
-  if (cachedMap !== null) return cachedMap;
+  if (labelMapCache.map !== null) return labelMapCache.map;
   const file = path.join(import.meta.dir, 'labels-map.json');
   const raw = JSON.parse(readFileSync(file, 'utf8')) as Record<
     string,
@@ -35,9 +47,9 @@ export function loadLabelMap(): Map<number, LabelEntry> {
   >;
   const map = new Map<number, LabelEntry>();
   for (const [index, entry] of Object.entries(raw)) {
-    map.set(Number.parseInt(index, 10), entry);
+    map.set(Math.trunc(Number(index)), entry);
   }
-  cachedMap = map;
+  labelMapCache.map = map;
   return map;
 }
 
@@ -48,7 +60,7 @@ export function loadLabelMap(): Map<number, LabelEntry> {
  * @returns probabilities summing to 1.
  */
 export function softmax(logits: Float32Array | number[]): Float32Array {
-  let max = Number.NEGATIVE_INFINITY;
+  let max = -Infinity;
   for (const value of logits) {
     if (value > max) max = value;
   }
@@ -91,7 +103,7 @@ export function curateScores(
       byLabel.set(entry.label, score);
     }
   }
-  return [...byLabel.entries()]
+  return [...byLabel]
     .sort((a, b) => b[1] - a[1])
     .slice(0, MAX_LABELS)
     .map(([label]) => label);

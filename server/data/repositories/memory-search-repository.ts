@@ -19,17 +19,23 @@ class MemorySearchRepository implements SearchRepository {
     this.cache = new LRUCache(32_768);
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   async put(key: string, results: SearchResult[]): Promise<void> {
     this.cache.set(key, results, results.length);
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   async get(key: string): Promise<SearchResult[] | undefined> {
     return this.cache.get(key);
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   async clear(): Promise<void> {
     this.cache.clear();
   }

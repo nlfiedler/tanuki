@@ -6,7 +6,7 @@ import tanukiPng from '../assets/tanuki.png';
 import AssetCount from './asset-count.tsx';
 import ColorTheme from './color-theme.tsx';
 
-function Navbar() {
+export default function Navbar() {
   return (
     <nav class="navbar" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
@@ -68,5 +68,3 @@ function Navbar() {
     </nav>
   );
 }
-
-export default Navbar;

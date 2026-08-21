@@ -36,17 +36,19 @@ router.post('/load', upload.single('dump'), async function (req, res, _next) {
     });
     let inputs: any[] = [];
     for await (const line of rl) {
-      if (line.trim().length > 0) {
-        inputs.push(JSON.parse(line));
-        if (inputs.length >= 1024) {
-          await loadAssets(inputs);
-          recordCount += inputs.length;
-          inputs = [];
-        }
+      if (line.trim().length === 0) {
+      	continue;
+      }
+
+      inputs.push(JSON.parse(line));
+      if (inputs.length >= 1024) {
+        await loadAssets(inputs);
+        recordCount += inputs.length;
+        inputs = [];
       }
     }
     // process any remaining entries in the queue
-    if (inputs.length >= 0) {
+    if (inputs.length > 0) {
       await loadAssets(inputs);
       recordCount += inputs.length;
     }

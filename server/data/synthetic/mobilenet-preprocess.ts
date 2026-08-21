@@ -3,11 +3,17 @@
 //
 import sharp from 'sharp';
 
-/** Target square crop fed to the network. */
+/**
+Target square crop fed to the network.
+*/
 export const CROP = 224;
-/** Shorter-edge resize target before center-cropping. */
+/**
+Shorter-edge resize target before center-cropping.
+*/
 const RESIZE = 256;
-/** Per-channel ImageNet normalization (RGB). */
+/**
+Per-channel ImageNet normalization (RGB).
+*/
 const MEAN = [0.485, 0.456, 0.406];
 const STD = [0.229, 0.224, 0.225];
 

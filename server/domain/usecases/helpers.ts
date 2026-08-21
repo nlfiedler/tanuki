@@ -139,12 +139,14 @@ Log.debug = () => {};
 function getCreationTime(filepath: string): Promise<number | null> {
   return new Promise((resolve) => {
     const mp4boxfile = createFile();
-    let settled = false;
+    let isSettled = false;
     const finish = (value: number | null) => {
-      if (!settled) {
-        settled = true;
-        resolve(value);
+      if (isSettled) {
+      	return;
       }
+
+      isSettled = true;
+      resolve(value);
     };
     mp4boxfile.onReady = (info: Movie) => {
       finish(info.created instanceof Date ? info.created.getTime() : null);
@@ -154,7 +156,7 @@ function getCreationTime(filepath: string): Promise<number | null> {
     const stream = createReadStream(filepath, { highWaterMark: 65_536 });
     let fileOffset = 0;
     stream.on('data', (chunk: Buffer) => {
-      if (settled) return;
+      if (isSettled) return;
       const ab = MP4BoxBuffer.fromArrayBuffer(
         chunk.buffer.slice(
           chunk.byteOffset,
@@ -427,7 +429,7 @@ function tagNumber(tag: any): number | null {
     }
   }
   if (typeof tag.description === 'string') {
-    const n = Number.parseFloat(tag.description);
+    const n = Number(tag.description);
     if (!Number.isNaN(n)) return n;
   }
   return null;
@@ -591,11 +593,11 @@ export function parseVideoMetadata(probe: any): {
 
   // duration: prefer the format-level value, fall back to the stream's.
   if (format?.duration) {
-    const d = Number.parseFloat(format.duration);
+    const d = Number(format.duration);
     if (!Number.isNaN(d)) metadata.duration = d;
   }
   if (metadata.duration === null && videoStream?.duration) {
-    const d = Number.parseFloat(videoStream.duration);
+    const d = Number(videoStream.duration);
     if (!Number.isNaN(d)) metadata.duration = d;
   }
 
@@ -626,9 +628,9 @@ function parseRational(value: any): number | null {
   if (typeof value !== 'string') return null;
   const parts = value.split('/');
   if (parts.length !== 2) return null;
-  const num = Number.parseFloat(parts[0] || '');
-  const den = Number.parseFloat(parts[1] || '');
-  if (Number.isNaN(num) || Number.isNaN(den) || den === 0) return null;
+  const num = Number(parts[0] || '');
+  const den = Number(parts[1] || '');
+  if (den === 0 || Number.isNaN(num) || Number.isNaN(den)) return null;
   return num / den;
 }
 
@@ -639,14 +641,16 @@ function isSideways(stream: any): boolean {
     ? stream.side_data_list
     : [];
   for (const entry of sideData) {
-    if (typeof entry.rotation === 'number') {
-      const abs = Math.abs(entry.rotation);
-      if (abs === 90 || abs === 270) return true;
+    if (typeof entry.rotation !== 'number') {
+    	continue;
     }
+
+    const abs = Math.abs(entry.rotation);
+    if (abs === 90 || abs === 270) return true;
   }
   const tagRotate = stream.tags?.rotate;
   if (tagRotate !== undefined) {
-    const r = Number.parseInt(String(tagRotate), 10);
+    const r = Math.trunc(Number(String(tagRotate)));
     if (!Number.isNaN(r)) {
       const abs = Math.abs(r) % 360;
       if (abs === 90 || abs === 270) return true;
@@ -764,10 +768,9 @@ export function mergeLocations(
         }
       }
       return outgoing;
-    } else {
-      // input was null, return original value
-      return asset;
     }
+    // input was null, return original value
+    return asset;
   }
   // original value is undefined, return input as-is
   return input;
@@ -867,7 +870,8 @@ function lexStart(l: CaptionLexer): LexerFun {
   while (ch) {
     if (ch == '#') {
       return lexTag;
-    } else if (ch == '@') {
+    }
+    if (ch == '@') {
       return lexLocation;
     }
     ch = l.next();
@@ -893,10 +897,9 @@ function lexLocation(l: CaptionLexer): LexerFun {
       while (ch) {
         if (ch == '"') {
           break;
-        } else {
-          ident += ch;
-          l.next();
         }
+        ident += ch;
+        l.next();
         ch = l.peek();
       }
       l.location = ident;
@@ -908,31 +911,26 @@ function lexLocation(l: CaptionLexer): LexerFun {
   return lexStart;
 }
 
-/** Processes the text as a tag or location. */
+/**
+Processes the text as a tag or location.
+*/
 function acceptIdentifier(l: CaptionLexer): string {
   let ident = '';
   let ch = l.peek();
   while (ch) {
     if (isDelimiter(ch)) {
       break;
-    } else {
-      ident += ch;
-      l.next();
     }
+    ident += ch;
+    l.next();
     ch = l.peek();
   }
   return ident;
 }
 
-/** Returns true if `ch` is a delimiter character. */
+/**
+Returns true if `ch` is a delimiter character.
+*/
 function isDelimiter(ch: string): boolean {
-  return (
-    ch === ' ' ||
-    ch === '.' ||
-    ch === ',' ||
-    ch === ';' ||
-    ch === '(' ||
-    ch === ')' ||
-    ch === '"'
-  );
+  return [' ', '.', ',', ';', '(', ')', '"'].includes(ch);
 }

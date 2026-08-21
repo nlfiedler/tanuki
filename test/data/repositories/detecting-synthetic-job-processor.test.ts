@@ -23,7 +23,9 @@ import {
 
 const settingsRepository: any = { getFloat: (_n: string, fb: number) => fb };
 
-/** Build an L2-normalized embedding. */
+/**
+Build an L2-normalized embedding.
+*/
 function unit(values: number[]): Float32Array {
   const v = Float32Array.from(values);
   const norm = Math.hypot(...values) || 1;
@@ -147,7 +149,7 @@ describe('DetectingSyntheticJobProcessor', function () {
 
       const people = await faceStore.listPeople(true);
       expect(people).toHaveLength(2);
-      expect(people.map((p) => p.faceCount).sort()).toEqual([1, 2]);
+      expect(people.map((p) => p.faceCount).sort((a, b) => a - b)).toEqual([1, 2]);
       const status = await faceStore.fetchFacesStatus(['asset-1']);
       expect(status.get('asset-1')).toEqual(SyntheticStatus.READY);
     });

@@ -164,7 +164,8 @@ function Edit() {
   };
   const selectAllAction = action(async () => {
     const coll = new Set<string>();
-    for (const asset of assetsQuery()?.scan.results ?? []) {
+    const results = assetsQuery()?.scan.results ?? [];
+    for (const asset of results) {
       coll.add(asset.assetId);
     }
     setSelectedAssets(coll);
@@ -579,13 +580,19 @@ function LocationSetter(props: LocationSetterProps) {
     return data;
   });
   const sortedPlaces = createMemo(() => {
-    return Array.from(locationsQuery()?.locationValues.labels ?? []).sort();
+    return Array.from(locationsQuery()?.locationValues.labels ?? []).sort(
+      (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })
+    );
   });
   const sortedCities = createMemo(() => {
-    return Array.from(locationsQuery()?.locationValues.cities ?? []).sort();
+    return Array.from(locationsQuery()?.locationValues.cities ?? []).sort(
+      (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })
+    );
   });
   const sortedRegions = createMemo(() => {
-    return Array.from(locationsQuery()?.locationValues.regions ?? []).sort();
+    return Array.from(locationsQuery()?.locationValues.regions ?? []).sort(
+      (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })
+    );
   });
 
   return (

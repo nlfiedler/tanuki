@@ -9,7 +9,9 @@ import { SyntheticStatus } from 'tanuki/server/domain/entities/synthetic-data.ts
 import { EnvSettingsRepository } from 'tanuki/server/data/repositories/env-settings-repository.ts';
 import { SqliteFaceStore } from 'tanuki/server/data/repositories/sqlite-face-store.ts';
 
-/** Build an L2-normalized embedding from raw values (cosine = dot for units). */
+/**
+Build an L2-normalized embedding from raw values (cosine = dot for units).
+*/
 function unit(values: number[]): Float32Array {
   const v = Float32Array.from(values);
   const norm = Math.hypot(...values) || 1;
@@ -17,8 +19,10 @@ function unit(values: number[]): Float32Array {
   return v;
 }
 
-let faceSeq = 0;
-/** Construct a Face entity with sensible defaults for the field under test. */
+const faceSeq = { value: 0 };
+/**
+Construct a Face entity with sensible defaults for the field under test.
+*/
 function makeFace(opts: {
   assetId: string;
   personId?: string | null;
@@ -30,7 +34,7 @@ function makeFace(opts: {
   id?: string;
 }): Face {
   return new Face(
-    opts.id ?? `face-${++faceSeq}`,
+    opts.id ?? `face-${++faceSeq.value}`,
     opts.assetId,
     opts.bbox ?? [0, 0, 10, 10],
     opts.embedding ?? unit([1, 0, 0]),
@@ -193,9 +197,12 @@ describe('SqliteFaceStore', function () {
       await sut.insertFace(makeFace({ assetId: 'asset-2', personId: null }));
 
       const map = await sut.fetchPeopleByAssetIds(['asset-1', 'asset-2', 'asset-3']);
-      expect(map.get('asset-1')!.map((s) => s.person.id).sort()).toEqual(
-        [alice.id, bob.id].sort()
-      );
+      expect(
+        map
+          .get('asset-1')!
+          .map((s) => s.person.id)
+          .sort((a, b) => a.localeCompare(b))
+      ).toEqual([alice.id, bob.id].sort((a, b) => a.localeCompare(b)));
       expect(map.get('asset-2')!.map((s) => s.person.id)).toEqual([alice.id]);
       expect(map.get('asset-3')).toEqual([]);
     });
@@ -273,7 +280,7 @@ describe('SqliteFaceStore', function () {
       const person = await sut.createPerson();
       await sut.renamePerson(person.id, '  Alice  ');
       expect((await sut.getPersonSummary(person.id))!.person.name).toEqual('Alice');
-      await sut.renamePerson(person.id, '   ');
+      await sut.renamePerson(person.id, ' '.repeat(3));
       expect((await sut.getPersonSummary(person.id))!.person.name).toBeNull();
     });
 
@@ -287,7 +294,9 @@ describe('SqliteFaceStore', function () {
       await sut.renamePerson(bob.id, 'Bob');
 
       const aliceMatches = await sut.personIdsByName('ALICE');
-      expect(aliceMatches.sort()).toEqual([alice1.id, alice2.id].sort());
+      expect(aliceMatches.sort((a, b) => a.localeCompare(b))).toEqual(
+        [alice1.id, alice2.id].sort((a, b) => a.localeCompare(b))
+      );
       expect(await sut.personIdsByName('bob')).toEqual([bob.id]);
       expect(await sut.personIdsByName('nobody')).toEqual([]);
       // the unnamed person is never matched
@@ -302,9 +311,9 @@ describe('SqliteFaceStore', function () {
       const shown = await sut.listPeople(false);
       expect(shown.map((s) => s.person.id)).toEqual([visible.id]);
       const all = await sut.listPeople(true);
-      expect(all.map((s) => s.person.id).sort()).toEqual(
-        [visible.id, hidden.id].sort()
-      );
+      expect(
+        all.map((s) => s.person.id).sort((a, b) => a.localeCompare(b))
+      ).toEqual([visible.id, hidden.id].sort((a, b) => a.localeCompare(b)));
     });
 
     test('listPeople orders by descending face count', async function () {

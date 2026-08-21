@@ -28,13 +28,13 @@ export default ({
       if (asset === null) {
         throw new Error(`asset ${assetId} not found`);
       }
-      let modded = false;
+      let isModded = false;
       for (const mod of mods) {
         if (mod.perform(asset)) {
-          modded = true;
+          isModded = true;
         }
       }
-      if (modded) {
+      if (isModded) {
         await recordRepository.putAsset(asset);
         fixedCount++;
       }

@@ -6,7 +6,7 @@ import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { NamazuSyntheticDetector } from 'tanuki/server/data/repositories/namazu-synthetic-detector.ts';
 
 const settingsRepository: any = {
-  get: (name: string) => (name === 'NAMAZU_URL' ? 'http://namazu.test/' : undefined)
+  get: (name: string) => (name === 'NAMAZU_URL' ? 'https://namazu.test/' : undefined)
 };
 
 function detector(): NamazuSyntheticDetector {
@@ -20,22 +20,28 @@ function imageAsset(key = 'asset-1'): Asset {
   return a;
 }
 
-/** base64 of a little-endian Float32 vector. */
+/**
+base64 of a little-endian Float32 vector.
+*/
 function embedB64(values: number[]): string {
   const f = Float32Array.from(values);
   return Buffer.from(f.buffer, f.byteOffset, f.byteLength).toString('base64');
 }
 
-/** Install a fetch stub returning the given response shape; returns the mock. */
+/**
+Install a fetch stub returning the given response shape; returns the mock.
+*/
 function stubFetch(impl: (url: string, init?: any) => any) {
   const fn = mock(impl);
   // @ts-expect-error overriding the global for the test
+  // eslint-disable-next-line unicorn/no-global-object-property-assignment
   globalThis.fetch = fn;
   return fn;
 }
 
-const realFetch = globalThis.fetch;
+const realFetch = fetch;
 afterEach(() => {
+  // eslint-disable-next-line unicorn/no-global-object-property-assignment
   globalThis.fetch = realFetch;
 });
 
@@ -73,7 +79,7 @@ describe('NamazuSyntheticDetector', function () {
   test('detectFaces decodes embeddings and thumbnails', async function () {
     const thumb = Uint8Array.from([0xFF, 0xD8, 0xAB]);
     stubFetch((url: string) => {
-      expect(url).toEqual('http://namazu.test/synthetic/asset-1');
+      expect(url).toEqual('https://namazu.test/synthetic/asset-1');
       return {
         status: 200,
         ok: true,

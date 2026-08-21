@@ -99,8 +99,8 @@ function buildParams({
   limit: number;
   sortOrder: SortOrder;
 }): QuerySearchArgs {
-  let before = undefined;
-  let after = undefined;
+  let before;
+  let after;
   if (year && season) {
     // JavaScript months are zero-based
     switch (season) {
@@ -401,10 +401,7 @@ function LocationSelector(props: LocationSelectorProps) {
   });
   const sortedLocations = () => {
     // the locations returned from the server are in no particular order
-    const sorted = [];
-    for (const location of locationsQuery()?.locationParts ?? []) {
-      sorted.push({ label: location.label, count: location.count });
-    }
+    const sorted = Array.from(locationsQuery()?.locationParts ?? [], location => ({ label: location.label, count: location.count }));
     sorted.sort((a, b) => a.label.localeCompare(b.label));
     return sorted;
   };
@@ -501,7 +498,8 @@ function YearSelector(props: YearSelectorProps) {
   const sortedYears = () => {
     // the years returned from the server are in no particular order
     const sorted = new Array<YearAttribute>();
-    for (const year of yearsQuery()?.years ?? []) {
+    const years = yearsQuery()?.years ?? [];
+    for (const year of years) {
       sorted.push(new YearAttribute(year.label, year.count));
     }
     // inject the current year if not already present so that the season
@@ -715,10 +713,7 @@ function MediaTypeSelector(props: MediaTypeSelectorProps) {
   });
   const sortedMediaTypes = () => {
     // the media types returned from the server are in no particular order
-    const sorted = [];
-    for (const mediaType of mediaTypesQuery()?.mediaTypes ?? []) {
-      sorted.push({ label: mediaType.label, count: mediaType.count });
-    }
+    const sorted = Array.from(mediaTypesQuery()?.mediaTypes ?? [], mediaType => ({ label: mediaType.label, count: mediaType.count }));
     sorted.sort((a, b) => a.label.localeCompare(b.label));
     return sorted;
   };

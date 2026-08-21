@@ -17,7 +17,8 @@ export function parseLocation(s: string): Location {
   //
   if (s.length === 0) {
     return { label: null, city: null, region: null };
-  } else if (s.includes(';')) {
+  }
+  if (s.includes(';')) {
     const label_tail = s.split(';');
     if (label_tail.length == 2) {
       if (label_tail[1]?.includes(',')) {

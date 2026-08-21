@@ -4,7 +4,9 @@
 import { Asset } from './asset.ts';
 import { Location } from './location.ts';
 
-/** Makes a modification on an asset (add tag, set location, etc). */
+/**
+Makes a modification on an asset (add tag, set location, etc).
+*/
 export interface Operation {
   /**
    * Possibly make a change to the given asset.
@@ -15,7 +17,9 @@ export interface Operation {
   perform(asset: Asset): boolean;
 }
 
-/** Adds a tag to an asset. */
+/**
+Adds a tag to an asset.
+*/
 export class TagAdd {
   name: string;
 
@@ -32,7 +36,9 @@ export class TagAdd {
   }
 }
 
-/** Removes a tag from an asset. */
+/**
+Removes a tag from an asset.
+*/
 export class TagRemove {
   name: string;
 
@@ -55,7 +61,9 @@ export enum LocationField {
   Region
 }
 
-/** Clears a specific field of the location of the asset. */
+/**
+Clears a specific field of the location of the asset.
+*/
 export class LocationClearField {
   field: LocationField;
 
@@ -93,7 +101,9 @@ export class LocationClearField {
   }
 }
 
-/** Sets the field of the location of the asset to a given value. */
+/**
+Sets the field of the location of the asset to a given value.
+*/
 export class LocationSetField {
   field: LocationField;
   value: string;
@@ -134,7 +144,9 @@ export class LocationSetField {
   }
 }
 
-/** Clears the user date-time field of an asset. */
+/**
+Clears the user date-time field of an asset.
+*/
 export class DatetimeClear {
   perform(asset: Asset): boolean {
     if (asset.userDate) {
@@ -145,7 +157,9 @@ export class DatetimeClear {
   }
 }
 
-/** Sets the user date-time field of an asset. */
+/**
+Sets the user date-time field of an asset.
+*/
 export class DatetimeSet {
   value: Date;
 

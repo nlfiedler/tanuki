@@ -26,14 +26,18 @@ class LocalBlobRepository implements BlobRepository {
     assert.ok(this.basepath, 'missing ASSETS_PATH environment variable');
   }
 
-  /** Convert the asset identifier to the full path of the asset. */
+  /**
+  Convert the asset identifier to the full path of the asset.
+  */
   blobPath(assetId: string): string {
     const buf = Buffer.from(assetId, 'base64url');
     const relpath = buf.toString('utf8');
     return path.join(this.basepath, relpath);
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   async storeBlob(filepath: string, asset: Asset) {
     const destpath = this.blobPath(asset.key);
     // do not overwrite existing asset blobs
@@ -48,13 +52,17 @@ class LocalBlobRepository implements BlobRepository {
     await fs.rm(filepath);
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   async deleteBlob(assetId: string) {
     const filepath = this.blobPath(assetId);
     await fs.rm(filepath);
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   async fetchRange(
     assetId: string,
     start: number,
@@ -66,25 +74,31 @@ class LocalBlobRepository implements BlobRepository {
     try {
       const view = new Uint8Array(length);
       const { bytesRead } = await handle.read(view, 0, length, start);
-      return Buffer.from(view.buffer, 0, bytesRead);
+      return Buffer.from(view.buffer, view.byteOffset, bytesRead);
     } finally {
       await handle.close();
     }
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   assetUrl(assetId: string): string {
     // served by an endpoint defined in preso/routes/assets.ts
     return `/assets/raw/${assetId}`;
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   thumbnailUrl(assetId: string, width: number, height: number): string {
     // served by an endpoint defined in preso/routes/assets.ts
     return `/assets/thumbnail/${width}/${height}/${assetId}`;
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   previewUrl(
     assetId: string,
     opts: { width: number } | { height: number }
@@ -94,7 +108,9 @@ class LocalBlobRepository implements BlobRepository {
     return `/assets/preview/${assetId}?${param}`;
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   async fetchMetadata(
     assetId: string,
     mediaType: string

@@ -2,7 +2,9 @@
 // Copyright (c) 2026 Nathan Fiedler
 //
 
-/** Node for the doubly-linked list. */
+/**
+Node for the doubly-linked list.
+*/
 class Node<K, V> {
   key: K;
   value: V;
@@ -19,12 +21,16 @@ class Node<K, V> {
   }
 }
 
-/** A doubly-linked list for maintaining the order of items in the LRU cache. */
+/**
+A doubly-linked list for maintaining the order of items in the LRU cache.
+*/
 class DoublyLinkedList<K, V> {
   head: Node<K, V> | null = null;
   tail: Node<K, V> | null = null;
 
-  /** Add the node to the head of the list. */
+  /**
+  Add the node to the head of the list.
+  */
   addHead(node: Node<K, V>) {
     if (this.head === null) {
       this.head = node;
@@ -36,7 +42,9 @@ class DoublyLinkedList<K, V> {
     }
   }
 
-  /** Remove the node from the list. */
+  /**
+  Remove the node from the list.
+  */
   removeNode(node: Node<K, V>) {
     if (node === this.head && node === this.tail) {
       this.head = null;
@@ -55,7 +63,9 @@ class DoublyLinkedList<K, V> {
     node.prev = null;
   }
 
-  /** Remove the tail (LRU) node. */
+  /**
+  Remove the tail (LRU) node.
+  */
   removeTail() {
     if (!this.tail) {
       return null;
@@ -65,7 +75,9 @@ class DoublyLinkedList<K, V> {
     return removedNode;
   }
 
-  /** Move an existing node to the head (MRU). */
+  /**
+  Move an existing node to the head (MRU).
+  */
   moveToHead(node: Node<K, V>) {
     this.removeNode(node);
     this.addHead(node);
@@ -120,15 +132,14 @@ class LRUCache<K, V> {
       const newNode = new Node(key, value, weight);
       this.cache.set(key, newNode);
       this.list.addHead(newNode);
-      this.weight += weight;
     } else {
       // Update existing item
       this.weight -= existingNode.weight;
       existingNode.value = value;
       existingNode.weight = weight;
       this.list.moveToHead(existingNode);
-      this.weight += weight;
     }
+    this.weight += weight;
 
     // Eviction policy: remove LRU items by weight until capacity is met,
     // possibly leaving the cache empty if the last item is too large

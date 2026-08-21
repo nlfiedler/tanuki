@@ -13,7 +13,9 @@ import {
 
 const map = loadLabelMap();
 
-/** Build a length-1000 probability vector from index→score pairs. */
+/**
+Build a length-1000 probability vector from index→score pairs.
+*/
 function probs(pairs: Record<number, number>): Float32Array {
   const a = new Float32Array(1000);
   for (const [index, score] of Object.entries(pairs)) a[Number(index)] = score;
@@ -63,7 +65,7 @@ describe('label curation', function () {
       list.push(index);
       byLabel.set(entry.label, list);
     }
-    const dup = [...byLabel.entries()].find(([, idxs]) => idxs.length >= 2)!;
+    const dup = [...byLabel].find(([, idxs]) => idxs.length >= 2)!;
     const [label, [a, b]] = dup;
     const result = curateScores(probs({ [a!]: 0.3, [b!]: 0.7 }));
     expect(result).toEqual([label]);
@@ -81,7 +83,8 @@ describe('label curation', function () {
   test('caps the result at MAX_LABELS', function () {
     const pairs: Record<number, number> = {};
     let score = 0.99;
-    for (const { index } of [...byDistinctLabel()].slice(0, MAX_LABELS + 5)) {
+    const topEntries = [...byDistinctLabel()].slice(0, MAX_LABELS + 5);
+    for (const { index } of topEntries) {
       pairs[index] = score;
       score -= 0.001;
     }
@@ -98,7 +101,9 @@ describe('softmax', function () {
   });
 });
 
-/** Distinct (index, label) pairs, one index per display label. */
+/**
+Distinct (index, label) pairs, one index per display label.
+*/
 function* byDistinctLabel(): Generator<{ index: number; label: string }> {
   const seen = new Set<string>();
   for (const [index, entry] of map) {

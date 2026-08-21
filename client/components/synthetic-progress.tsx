@@ -18,11 +18,15 @@ const SYNTHETIC_JOB_STATUS: TypedDocumentNode<Query, Record<string, never>> =
     }
   `;
 
-/** How often to re-poll the queue while the page is open, in milliseconds. */
+/**
+How often to re-poll the queue while the page is open, in milliseconds.
+*/
 const POLL_MS = 5000;
 
 interface SyntheticProgressProps {
-  /** Which pipeline's progress this banner reports. */
+  /**
+  Which pipeline's progress this banner reports.
+  */
   kind: 'faces' | 'labels';
 }
 

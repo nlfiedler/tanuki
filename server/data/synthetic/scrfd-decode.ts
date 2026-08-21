@@ -14,11 +14,17 @@ export interface RawDetection {
   kps: number[];
 }
 
-/** SCRFD-2.5g FPN strides; the model emits one (score, bbox, kps) head per stride. */
+/**
+SCRFD-2.5g FPN strides; the model emits one (score, bbox, kps) head per stride.
+*/
 const FEAT_STRIDES = [8, 16, 32];
-/** Anchors per spatial cell; the two anchors share a center and are interleaved. */
+/**
+Anchors per spatial cell; the two anchors share a center and are interleaved.
+*/
 const NUM_ANCHORS = 2;
-/** Number of facial landmarks SCRFD regresses. */
+/**
+Number of facial landmarks SCRFD regresses.
+*/
 const NUM_KPS = 5;
 
 /**
@@ -81,7 +87,9 @@ export function decodeScrfd(
   return detections;
 }
 
-/** Intersection-over-union of two `[x1, y1, x2, y2]` boxes. */
+/**
+Intersection-over-union of two `[x1, y1, x2, y2]` boxes.
+*/
 function iou(
   a: [number, number, number, number],
   b: [number, number, number, number]
@@ -114,14 +122,14 @@ export function nms(
   const order = [...detections].sort((x, y) => y.score - x.score);
   const kept: RawDetection[] = [];
   for (const candidate of order) {
-    let suppressed = false;
+    let isSuppressed = false;
     for (const winner of kept) {
       if (iou(candidate.box, winner.box) > iouThreshold) {
-        suppressed = true;
+        isSuppressed = true;
         break;
       }
     }
-    if (!suppressed) kept.push(candidate);
+    if (!isSuppressed) kept.push(candidate);
   }
   return kept;
 }

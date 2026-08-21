@@ -446,7 +446,9 @@ describe('Query language support', function () {
   });
 });
 
-/** Test resolver mapping person id `p1` to a single asset. */
+/**
+Test resolver mapping person id `p1` to a single asset.
+*/
 async function resolvePerson(id: string): Promise<Set<string>> {
   return id === 'p1' ? new Set(['alice1']) : new Set<string>();
 }

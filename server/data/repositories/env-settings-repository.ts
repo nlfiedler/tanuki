@@ -8,10 +8,10 @@ import { type SettingsRepository } from 'tanuki/server/domain/repositories/setti
  * process environment otherwise.
  */
 class EnvSettingsRepository implements SettingsRepository {
-  _props: Map<string, any>;
+  #props: Map<string, any>;
 
   constructor() {
-    this._props = new Map();
+    this.#props = new Map();
   }
 
   /**
@@ -20,43 +20,55 @@ class EnvSettingsRepository implements SettingsRepository {
    * @returns iterator of name/value pairs.
    */
   entries(): object {
-    return this._props.entries();
+    return this.#props.entries();
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   get(name: string): any {
-    if (this._props.has(name)) {
-      return this._props.get(name);
+    if (this.#props.has(name)) {
+      return this.#props.get(name);
     }
     // fallback to reading directly from process environment to support a
     // container-based deployment that does not use a .env file
     return process.env[name];
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   getBool(name: string): boolean {
     return /true/i.test(this.get(name));
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   getInt(name: string, fallback: number): number {
-    return Number.parseInt(this.get(name), 10) || fallback;
+    return Math.trunc(Number(this.get(name))) || fallback;
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   getFloat(name: string, fallback: number): number {
-    const value = Number.parseFloat(this.get(name));
+    const value = Number(this.get(name));
     return Number.isNaN(value) ? fallback : value;
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   has(name: string): boolean {
-    return this._props.has(name) || name in process.env;
+    return this.#props.has(name) || Object.hasOwn(process.env, name);
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   set(name: string, value: any): void {
-    this._props.set(name, value);
+    this.#props.set(name, value);
   }
 }
 

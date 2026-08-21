@@ -105,10 +105,10 @@ export const resolvers: Resolvers = {
       args: { width?: number | null; height?: number | null }
     ) => {
       const w = args.width ?? null;
-      const h = args.height ?? null;
       if (w !== null && w > 0) {
         return blobs.previewUrl(parent.assetId, { width: w });
       }
+      const h = args.height ?? null;
       if (h !== null && h > 0) {
         return blobs.previewUrl(parent.assetId, { height: h });
       }
@@ -889,13 +889,17 @@ function syntheticToGQL(
   } as unknown as GQLSyntheticData;
 }
 
-/** URL for a face crop thumbnail (served by the /faces route). */
+/**
+URL for a face crop thumbnail (served by the /faces route).
+*/
 function faceThumbUrl(faceId: string | null): string {
   // Persons always have at least one face, but fall back defensively.
   return faceId ? `/faces/${faceId}/thumb` : '/placeholder.svg';
 }
 
-/** Map a domain PersonSummary to the GraphQL Person shape. */
+/**
+Map a domain PersonSummary to the GraphQL Person shape.
+*/
 function personToGQL(summary: any): any {
   return {
     id: summary.person.id,
@@ -906,7 +910,9 @@ function personToGQL(summary: any): any {
   };
 }
 
-/** Coerce a possibly-null person summary into a GQL person, or throw. */
+/**
+Coerce a possibly-null person summary into a GQL person, or throw.
+*/
 function personOrThrow(summary: any, id: string): any {
   if (!summary) throw new Error(`no such person: ${id}`);
   return personToGQL(summary);

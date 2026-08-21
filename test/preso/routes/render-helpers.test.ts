@@ -48,7 +48,7 @@ describe('parsePositiveInt', function () {
   });
 
   test('rejects undefined', function () {
-    // eslint-disable-next-line unicorn/no-useless-undefined
+     
     expect(parsePositiveInt(undefined)).toBeNull();
   });
 

@@ -23,7 +23,7 @@ describe('ScanAssets use case', function () {
       faceStore: faceStoreMock({})
     });
     // act
-    const actual = await usecase('   ');
+    const actual = await usecase(' '.repeat(3));
     // assert
     expect(actual).toHaveLength(0);
     expect(mockRecordRepository.fetchAssets).toHaveBeenCalledTimes(0);

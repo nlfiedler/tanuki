@@ -24,10 +24,12 @@ if (userArgs.length === 0) {
     crlfDelay: Infinity
   });
   for await (const line of rl) {
-    if (line.trim().length > 0) {
-      const entry = JSON.parse(line);
-      entry.key = Buffer.from(entry.key, 'base64').toString('base64url');
-      console.info(JSON.stringify(entry));
+    if (line.trim().length === 0) {
+    	continue;
     }
+
+    const entry = JSON.parse(line);
+    entry.key = Buffer.from(entry.key, 'base64').toString('base64url');
+    console.info(JSON.stringify(entry));
   }
 }

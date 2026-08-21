@@ -43,7 +43,7 @@ class GoogleLocationRepository implements LocationRepository {
 
     let retries = 0;
     while (retries < 10) {
-      const response = await fetch(url.toString());
+      const response = await fetch(url.href);
       if (!response.ok) {
         throw new Error('expected 200 response');
       }
@@ -62,7 +62,8 @@ class GoogleLocationRepository implements LocationRepository {
         // the first entry in the results array is the most specific and the
         // remaining entries increase in scope, we only want the first one
         const location = new Geocoded(null, null, null);
-        for (const component of result.results[0].address_components) {
+        const addressComponents = result.results[0].address_components;
+        for (const component of addressComponents) {
           for (const type_ of component.types) {
             switch (type_) {
               case 'locality': {

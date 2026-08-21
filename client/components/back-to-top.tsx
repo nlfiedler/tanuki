@@ -9,7 +9,7 @@ const UP_THRESHOLD = 40;
 // Minimum scroll position for the button to appear at all.
 const MIN_OFFSET = 200;
 
-function BackToTop() {
+export default function BackToTop() {
   const [visible, setVisible] = createSignal(false);
   let lastY = 0;
   let upAccum = 0;
@@ -66,5 +66,3 @@ function BackToTop() {
     </Show>
   );
 }
-
-export default BackToTop;

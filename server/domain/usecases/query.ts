@@ -5,13 +5,19 @@ import { MIMEType } from 'whatwg-mimetype';
 import { Asset } from 'tanuki/server/domain/entities/asset.ts';
 import { AsyncQueue } from 'tanuki/server/shared/collections/async-queue.ts';
 
-/** Determines if an asset matches certain criteria. */
+/**
+Determines if an asset matches certain criteria.
+*/
 interface Constraint {
-  /** For a given asset, return `true` if the asset matches. */
+  /**
+  For a given asset, return `true` if the asset matches.
+  */
   matches(asset: Asset): boolean;
 }
 
-/** Matches if both sides also match. */
+/**
+Matches if both sides also match.
+*/
 class AndConstraint {
   lhs: Constraint;
   rhs: Constraint;
@@ -26,7 +32,9 @@ class AndConstraint {
   }
 }
 
-/** Matches if either side matches. */
+/**
+Matches if either side matches.
+*/
 class OrConstraint {
   lhs: Constraint;
   rhs: Constraint;
@@ -41,7 +49,9 @@ class OrConstraint {
   }
 }
 
-/** Mathces only if right-hand-side predicate does not match. */
+/**
+Mathces only if right-hand-side predicate does not match.
+*/
 class NotConstraint {
   rhs: Constraint;
 
@@ -54,7 +64,9 @@ class NotConstraint {
   }
 }
 
-/** Matches the filename field of the asset. */
+/**
+Matches the filename field of the asset.
+*/
 class FilenameConstraint {
   name: string;
 
@@ -70,7 +82,9 @@ class FilenameConstraint {
 // Extended Backus–Naur form of media type:
 // mime-type = type "/" [tree "."] subtype ["+" suffix] *[";" parameter];
 
-/** Matches the 'type' of the mediaType field of the asset. */
+/**
+Matches the 'type' of the mediaType field of the asset.
+*/
 class TypeConstraint {
   type: string;
 
@@ -84,7 +98,9 @@ class TypeConstraint {
   }
 }
 
-/** Matches the 'subtype' of the mediaType field of the asset. */
+/**
+Matches the 'subtype' of the mediaType field of the asset.
+*/
 class SubtypeConstraint {
   subtype: string;
 
@@ -98,7 +114,9 @@ class SubtypeConstraint {
   }
 }
 
-/** Matches any of the values in the tag field of the asset. */
+/**
+Matches any of the values in the tag field of the asset.
+*/
 class TagConstraint {
   tag: string;
 
@@ -149,18 +167,21 @@ class PersonConstraint {
   }
 }
 
-/** Matches if the asset has a populated value for the named field. */
+/**
+Matches if the asset has a populated value for the named field.
+*/
 class HasConstraint {
   field: string;
 
   constructor(field: string) {
-    this.field = field.toLowerCase().replaceAll('-', '').replaceAll('_', '');
+    this.field = field.toLowerCase().replaceAll(/[-_]/g, '');
   }
 
   matches(asset: Asset): boolean {
-    for (const key of Object.keys(asset)) {
-      if (key.toLowerCase().replaceAll('-', '').replaceAll('_', '') === this.field) {
-        const value = (asset as unknown as Record<string, unknown>)[key];
+    for (const [key, value] of Object.entries(
+      asset as unknown as Record<string, unknown>
+    )) {
+      if (key.toLowerCase().replaceAll(/[-_]/g, '') === this.field) {
         if (value == null) return false;
         if (Array.isArray(value) && value.length === 0) return false;
         if (typeof value === 'string' && value.length === 0) return false;
@@ -181,15 +202,17 @@ enum LocationField {
 function stringToLocationField(s: string): LocationField {
   if (s == 'label') {
     return LocationField.Label;
-  } else if (s == 'city') {
-    return LocationField.City;
-  } else if (s == 'region') {
-    return LocationField.Region;
-  } else if (s == 'any') {
-    return LocationField.Any;
-  } else {
-    throw new Error("field must be 'any', 'label', 'city', or 'region'");
   }
+  if (s == 'city') {
+    return LocationField.City;
+  }
+  if (s == 'region') {
+    return LocationField.Region;
+  }
+  if (s == 'any') {
+    return LocationField.Any;
+  }
+  throw new Error("field must be 'any', 'label', 'city', or 'region'");
 }
 
 // struct LocationPredicate(LocationField, String);
@@ -243,7 +266,9 @@ class LocationConstraint {
   }
 }
 
-/** Matches if the asset's best date is after the one given. */
+/**
+Matches if the asset's best date is after the one given.
+*/
 class AfterConstraint {
   after: Date;
 
@@ -256,7 +281,9 @@ class AfterConstraint {
   }
 }
 
-/** Matches if the asset's best date is before the one given. */
+/**
+Matches if the asset's best date is before the one given.
+*/
 class BeforeConstraint {
   before: Date;
 
@@ -269,7 +296,9 @@ class BeforeConstraint {
   }
 }
 
-/** An empty constraint that matches nothing. */
+/**
+An empty constraint that matches nothing.
+*/
 class EmptyConstraint {
   matches(asset: Asset): boolean {
     return false;
@@ -283,7 +312,9 @@ class EmptyConstraint {
  */
 type ResolvePerson = (personId: string) => Promise<Set<string>>;
 
-/** Convert a keyword and its arguments into a constraint. */
+/**
+Convert a keyword and its arguments into a constraint.
+*/
 async function buildPredicate(
   atom: string[],
   resolvePerson?: ResolvePerson
@@ -291,38 +322,46 @@ async function buildPredicate(
   const keyword = atom.shift() ?? 'undefined';
   if (keyword == 'after') {
     return new AfterConstraint(new Date(atom.shift()!));
-  } else if (keyword == 'before') {
+  }
+  if (keyword == 'before') {
     return new BeforeConstraint(new Date(atom.shift()!));
-  } else if (keyword == 'is') {
+  }
+  if (keyword == 'is') {
     return new TypeConstraint(atom.shift()!);
-  } else if (keyword == 'format') {
+  }
+  if (keyword == 'format') {
     return new SubtypeConstraint(atom.shift()!);
-  } else if (keyword == 'filename') {
+  }
+  if (keyword == 'filename') {
     return new FilenameConstraint(atom.shift()!);
-  } else if (keyword == 'loc') {
+  }
+  if (keyword == 'loc') {
     if (atom.length == 1) {
       return new LocationConstraint(LocationField.Any, atom.shift()!);
-    } else if (atom.length == 2) {
+    }
+    if (atom.length == 2) {
       const field = stringToLocationField(atom.shift()!);
       return new LocationConstraint(field, atom.shift()!);
-    } else {
-      throw new Error('loc: requires 1 or 2 arguments');
     }
-  } else if (keyword == 'tag') {
+    throw new Error('loc: requires 1 or 2 arguments');
+  }
+  if (keyword == 'tag') {
     return new TagConstraint(atom.shift()!);
-  } else if (keyword == 'label') {
+  }
+  if (keyword == 'label') {
     return new LabelConstraint(atom.shift()!);
-  } else if (keyword == 'person') {
-    const personId = atom.shift()!;
+  }
+  if (keyword == 'person') {
     if (!resolvePerson) {
       throw new Error('person: predicate is not supported in this context');
     }
+    const personId = atom.shift()!;
     return new PersonConstraint(await resolvePerson(personId));
-  } else if (keyword == 'has') {
-    return new HasConstraint(atom.shift()!);
-  } else {
-    throw new Error(`unsupported predicate: ${keyword}`);
   }
+  if (keyword == 'has') {
+    return new HasConstraint(atom.shift()!);
+  }
+  throw new Error(`unsupported predicate: ${keyword}`);
 }
 
 /*
@@ -426,11 +465,14 @@ class QueryParser {
     const op = await this.peek();
     if (op?.typ == TokenType.Error) {
       throw new Error(op.val);
-    } else if (op?.typ == TokenType.Eof) {
+    }
+    if (op?.typ == TokenType.Eof) {
       throw new Error(`error: expected operand, got ${op.val}`);
-    } else if (op?.typ == TokenType.Close) {
+    }
+    if (op?.typ == TokenType.Close) {
       throw new Error(`error: found ) without (, got ${op.val}`);
-    } else if (
+    }
+    if (
       op?.typ == TokenType.Predicate ||
       op?.typ == TokenType.Colon ||
       op?.typ == TokenType.Arg
@@ -450,17 +492,17 @@ class QueryParser {
    * and `false` otherwise.
    */
   async stripNot(): Promise<boolean> {
-    let negated = false;
+    let isNegated = false;
     while (true) {
       const p = await this.peek();
       if (p?.typ == TokenType.Not) {
         this.next();
-        negated = !negated;
+        isNegated = !isNegated;
         continue;
       }
       break;
     }
-    return negated;
+    return isNegated;
   }
 
   /// Current token is expected to be a predicate, followed by a colon,
@@ -476,20 +518,21 @@ class QueryParser {
     } else {
       throw new Error(`expected predicate, got ${i}`);
     }
-    let arg_expected = false;
+    let isArg_expected = false;
     while (true) {
       i = await this.peek();
       if (i?.typ == TokenType.Colon) {
-        arg_expected = true;
+        isArg_expected = true;
         this.next();
         continue;
-      } else if (i?.typ == TokenType.Arg) {
-        arg_expected = false;
+      }
+      if (i?.typ == TokenType.Arg) {
+        isArg_expected = false;
         i = await this.next();
         a.push(i!.val);
         continue;
       }
-      if (arg_expected) {
+      if (isArg_expected) {
         // inject an empty argument after the trailing colon
         a.push('');
       }
@@ -567,7 +610,9 @@ class QueryParser {
   }
 }
 
-/** Defines the type of a particular token. */
+/**
+Defines the type of a particular token.
+*/
 enum TokenType {
   And,
   Arg,
@@ -581,7 +626,9 @@ enum TokenType {
   Predicate
 }
 
-/** Represents a single token emitted by the lexer. */
+/**
+Represents a single token emitted by the lexer.
+*/
 class Token {
   typ: TokenType;
   val: string;
@@ -637,13 +684,17 @@ class QueryLexer {
     this.start = this.pos;
   }
 
-  /** passes the message back to the client via the channel */
+  /**
+  passes the message back to the client via the channel
+  */
   async emitError(msg: string) {
     await this.chan.enqueue(new Token(TokenType.Error, msg));
     this.start = this.pos;
   }
 
-  /** passes the given token back to the client via the channel */
+  /**
+  passes the given token back to the client via the channel
+  */
   async emitString(t: TokenType, text: string) {
     await this.chan.enqueue(new Token(t, text));
     this.start = this.pos;
@@ -658,7 +709,9 @@ class QueryLexer {
     return ch;
   }
 
-  /** returns but does not consume the next rune in the input */
+  /**
+  returns but does not consume the next rune in the input
+  */
   peek(): string | undefined {
     if (this.pos >= this.length) {
       return undefined;
@@ -666,7 +719,9 @@ class QueryLexer {
     return this.input[this.pos];
   }
 
-  /** skips over the pending input before this point */
+  /**
+  skips over the pending input before this point
+  */
   ignore() {
     this.start = this.pos;
   }
@@ -677,9 +732,8 @@ class QueryLexer {
     const ch = this.peek();
     if (ch) {
       return valid.includes(ch);
-    } else {
-      return false;
     }
+    return false;
   }
 
   /** consumes the next set of characters if they match
@@ -694,7 +748,9 @@ class QueryLexer {
     return true;
   }
 
-  /** consumes a run of runes from the valid set */
+  /**
+  consumes a run of runes from the valid set
+  */
   acceptRun(valid: string): boolean {
     const oldPos = this.pos;
     let ch = this.peek();
@@ -710,7 +766,9 @@ class QueryLexer {
     return oldPos < this.pos;
   }
 
-  /** consumes a run of runes until the function returns `false` */
+  /**
+  consumes a run of runes until the function returns `false`
+  */
   acceptRunFn(valid: (ch: string) => boolean): boolean {
     const oldPos = this.pos;
     let ch = this.peek();
@@ -726,7 +784,9 @@ class QueryLexer {
     return oldPos < this.pos;
   }
 
-  /** moves the current position back to the start of the current token */
+  /**
+  moves the current position back to the start of the current token
+  */
   rewind() {
     this.pos = this.start;
   }
@@ -760,7 +820,9 @@ const WHITESPACE: string = '\t\n\r ';
 // operator boundary
 const OP_BOUND: string = '\t\n\r (';
 
-/** emits an error token and returns `null' to end lexing */
+/**
+emits an error token and returns `null' to end lexing
+*/
 async function errorf(l: QueryLexer, message: string): Promise<LexerFun> {
   await l.emitError(message);
   return null;
@@ -789,13 +851,14 @@ async function lexStart(l: QueryLexer): Promise<LexerFun> {
         return lexPredicate;
       }
     }
-  } else {
-    await l.emit(TokenType.Eof);
-    return null;
   }
+  await l.emit(TokenType.Eof);
+  return null;
 }
 
-/** expects to find a boolean operator such as "and" or "or" */
+/**
+expects to find a boolean operator such as "and" or "or"
+*/
 async function lexOperator(l: QueryLexer): Promise<LexerFun> {
   l.acceptRun(WHITESPACE);
   l.ignore();
@@ -812,7 +875,9 @@ async function lexOperator(l: QueryLexer): Promise<LexerFun> {
   }
 }
 
-/** expects to find 'and' followed by whitespace or open paren */
+/**
+expects to find 'and' followed by whitespace or open paren
+*/
 async function lexAnd(l: QueryLexer): Promise<LexerFun> {
   if (l.acceptString('and') && l.isMatch(OP_BOUND)) {
     await l.emit(TokenType.And);
@@ -821,7 +886,9 @@ async function lexAnd(l: QueryLexer): Promise<LexerFun> {
   return lexPredicate;
 }
 
-/** expects to find 'or' followed by whitespace or open paren */
+/**
+expects to find 'or' followed by whitespace or open paren
+*/
 async function lexOr(l: QueryLexer): Promise<LexerFun> {
   if (l.acceptString('or') && l.isMatch(OP_BOUND)) {
     await l.emit(TokenType.Or);
@@ -851,7 +918,8 @@ async function lexArgument(l: QueryLexer): Promise<LexerFun> {
   if (ch) {
     if (ch === '"') {
       return lexStringDouble;
-    } else if (ch === "'") {
+    }
+    if (ch === "'") {
       return lexStringSingle;
     }
     // anything else must be a raw value
@@ -882,7 +950,9 @@ async function lexStringSingle(l: QueryLexer): Promise<LexerFun> {
   return lexString(l, "'");
 }
 
-/** Scan the quoted string until the end character is found (' or "). */
+/**
+Scan the quoted string until the end character is found (' or ").
+*/
 async function lexString(l: QueryLexer, end: string): Promise<LexerFun> {
   let text = '';
   let ch = l.next();
@@ -925,7 +995,9 @@ async function lexString(l: QueryLexer, end: string): Promise<LexerFun> {
   return errorf(l, 'unclosed quoted string');
 }
 
-/** return true if the character is classified as a Unicode "Letter" */
+/**
+return true if the character is classified as a Unicode "Letter"
+*/
 function isAlphabetic(ch: string): boolean {
   const regex = /\p{L}/u;
   return ch.match(regex) !== null;

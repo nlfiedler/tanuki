@@ -58,13 +58,13 @@ export default ({
           : await faceStore.modelVersionsByAssets(ids);
         for (const asset of images) {
           if (!force) {
-            const ready = statusMap!.get(asset.key) === SyntheticStatus.READY;
+            const isReady = statusMap!.get(asset.key) === SyntheticStatus.READY;
             const versions = versionsMap!.get(asset.key);
             // Stale when any stored face used a different model version.
-            const stale =
+            const isStale =
               versions !== undefined &&
               [...versions].some((v) => v !== currentVersion);
-            if (ready && !stale) continue;
+            if (isReady && !isStale) continue;
           }
           if (await faceStore.hasPendingJob(asset.key, 'faces')) continue;
           await faceStore.enqueueJob(asset.key, 'faces');

@@ -22,11 +22,17 @@ import { copyFile, mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 
 interface Source {
-  /** Filename in the release (must match model-manifest.json `name`). */
+  /**
+  Filename in the release (must match model-manifest.json `name`).
+  */
   name: string;
-  /** Upstream URL to fetch from. */
+  /**
+  Upstream URL to fetch from.
+  */
   url: string;
-  /** Optional expected SHA256 (hex). If absent, script prints the actual hash. */
+  /**
+  Optional expected SHA256 (hex). If absent, script prints the actual hash.
+  */
   sha256?: string;
 }
 

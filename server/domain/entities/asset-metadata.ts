@@ -12,37 +12,69 @@
  * re-reading every blob.
  */
 class AssetMetadata {
-  /** Camera manufacturer (EXIF `Make`). */
+  /**
+  Camera manufacturer (EXIF `Make`).
+  */
   cameraMake: string | null = null;
-  /** Camera model (EXIF `Model`). */
+  /**
+  Camera model (EXIF `Model`).
+  */
   cameraModel: string | null = null;
-  /** Lens manufacturer (EXIF `LensMake`). */
+  /**
+  Lens manufacturer (EXIF `LensMake`).
+  */
   lensMake: string | null = null;
-  /** Lens model (EXIF `LensModel`). */
+  /**
+  Lens model (EXIF `LensModel`).
+  */
   lensModel: string | null = null;
-  /** Exposure time, formatted like `"1/250"` (EXIF `ExposureTime`). */
+  /**
+  Exposure time, formatted like `"1/250"` (EXIF `ExposureTime`).
+  */
   exposureTime: string | null = null;
-  /** Aperture f-stop number (EXIF `FNumber`). */
+  /**
+  Aperture f-stop number (EXIF `FNumber`).
+  */
   fNumber: number | null = null;
-  /** ISO speed rating (EXIF `ISOSpeedRatings`). */
+  /**
+  ISO speed rating (EXIF `ISOSpeedRatings`).
+  */
   iso: number | null = null;
-  /** Focal length in 35mm equivalent millimeters. */
+  /**
+  Focal length in 35mm equivalent millimeters.
+  */
   focalLength35mm: number | null = null;
-  /** Timezone offset for the original date-time, e.g. `"+09:00"`. */
+  /**
+  Timezone offset for the original date-time, e.g. `"+09:00"`.
+  */
   originalDateOffset: string | null = null;
-  /** GPS latitude in decimal degrees, negative for south. */
+  /**
+  GPS latitude in decimal degrees, negative for south.
+  */
   gpsLatitude: number | null = null;
-  /** GPS longitude in decimal degrees, negative for west. */
+  /**
+  GPS longitude in decimal degrees, negative for west.
+  */
   gpsLongitude: number | null = null;
-  /** Width in pixels in the displayed orientation. */
+  /**
+  Width in pixels in the displayed orientation.
+  */
   displayWidth: number | null = null;
-  /** Height in pixels in the displayed orientation. */
+  /**
+  Height in pixels in the displayed orientation.
+  */
   displayHeight: number | null = null;
-  /** Video duration in seconds. */
+  /**
+  Video duration in seconds.
+  */
   duration: number | null = null;
-  /** Video frame rate in frames per second. */
+  /**
+  Video frame rate in frames per second.
+  */
   frameRate: number | null = null;
-  /** Video codec name (ffprobe `codec_name`). */
+  /**
+  Video codec name (ffprobe `codec_name`).
+  */
   videoCodec: string | null = null;
   /**
    * Size in bytes of the stored asset blob. Populated at read time by the
@@ -51,10 +83,14 @@ class AssetMetadata {
    * persisted via `metadataToDocument` or considered by `hasValues()`.
    */
   byteLength: number | null = null;
-  /** Raw extractor output (EXIF tag map or ffprobe JSON). Not exposed in GraphQL. */
+  /**
+  Raw extractor output (EXIF tag map or ffprobe JSON). Not exposed in GraphQL.
+  */
   raw: object | null = null;
 
-  /** Returns true if any field carries a non-null value. */
+  /**
+  Returns true if any field carries a non-null value.
+  */
   hasValues(): boolean {
     return (
       this.cameraMake !== null ||

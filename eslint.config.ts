@@ -6,6 +6,9 @@ import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
   {
+    ignores: ['generated/**']
+  },
+  {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
     plugins: { js },
     extends: ['js/recommended'],
@@ -21,14 +24,17 @@ export default defineConfig([
       '@typescript-eslint/no-namespace': 'off',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      'unicorn/consistent-boolean-name': 'off',
       'unicorn/no-anonymous-default-export': 'off',
       'unicorn/no-array-reduce': 'off',
       'unicorn/no-array-sort': 'off',
+      'unicorn/no-break-in-nested-loop': 'off',
       'unicorn/no-null': 'off',
+      'unicorn/no-top-level-side-effects': 'off',
       'unicorn/prefer-global-this': 'off',
       'unicorn/prefer-spread': 'off',
       'unicorn/prefer-ternary': 'off',
-      'unicorn/prevent-abbreviations': 'off',
+      'unicorn/name-replacements': 'off',
     }
   }
 ]);

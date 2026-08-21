@@ -29,17 +29,25 @@ import {
   warpAffineBilinear
 } from 'tanuki/server/data/synthetic/face-align.ts';
 
-/** Default locations of the bundled ONNX models. */
+/**
+Default locations of the bundled ONNX models.
+*/
 const DEFAULT_LABEL_MODEL = 'models/mobilenet_v2.onnx';
 const DEFAULT_DETECT_MODEL = 'models/scrfd_2.5g.onnx';
 const DEFAULT_EMBED_MODEL = 'models/mobilefacenet.onnx';
 
-/** SCRFD detector input is a fixed square; images are letterboxed into it. */
+/**
+SCRFD detector input is a fixed square; images are letterboxed into it.
+*/
 const DETECT_SIZE = 640;
-/** InsightFace defaults: discard faces below this score, suppress above this IoU. */
+/**
+InsightFace defaults: discard faces below this score, suppress above this IoU.
+*/
 const SCORE_THRESHOLD = 0.5;
 const NMS_IOU = 0.4;
-/** Cap faces per asset, matching the Namazu inference contract. */
+/**
+Cap faces per asset, matching the Namazu inference contract.
+*/
 const MAX_FACES = 20;
 
 /**
@@ -75,13 +83,17 @@ class LocalSyntheticDetector implements SyntheticDetector {
       settingsRepository.get('FACE_EMBED_MODEL_PATH') || DEFAULT_EMBED_MODEL;
   }
 
-  /** Lazily create (and cache) an ONNX session for the given model path. */
+  /**
+  Lazily create (and cache) an ONNX session for the given model path.
+  */
   private session(path: string): Promise<ort.InferenceSession> {
     const existing = this.sessions.get(path);
     if (existing) return existing;
     const p = ort.InferenceSession.create(path);
     // Clear the cache on rejection so a transient load failure (missing/locked
-    // model file) doesn't permanently poison every future call.
+    // model file) doesn't permanently poison every future call. Attached, not
+    // awaited: `p` itself is cached and returned in-flight to callers.
+    // eslint-disable-next-line unicorn/prefer-await
     p.catch(() => {
       if (this.sessions.get(path) === p) this.sessions.delete(path);
     });
@@ -89,7 +101,9 @@ class LocalSyntheticDetector implements SyntheticDetector {
     return p;
   }
 
-  /** Read an image asset's bytes, or null if it is not a usable image. */
+  /**
+  Read an image asset's bytes, or null if it is not a usable image.
+  */
   private async imageBytes(asset: Asset): Promise<Buffer | null> {
     if (!asset.mediaType.startsWith('image/') || asset.byteLength <= 0) {
       return null;
@@ -100,67 +114,6 @@ class LocalSyntheticDetector implements SyntheticDetector {
       asset.byteLength - 1
     );
     return bytes.length === 0 ? null : bytes;
-  }
-
-  /** @inheritDoc */
-  async detectLabels(asset: Asset): Promise<string[]> {
-    const bytes = await this.imageBytes(asset);
-    if (bytes === null) return [];
-
-    const input = await preprocessImage(bytes);
-    const session = await this.session(this.labelModelPath);
-    const tensor = new ort.Tensor('float32', input, [1, 3, CROP, CROP]);
-    const results = await session.run({ [session.inputNames[0]!]: tensor });
-    const logits = results[session.outputNames[0]!]!.data as Float32Array;
-    return curateLogits(logits);
-  }
-
-  /** @inheritDoc */
-  faceModelVersion(): string {
-    return FACE_MODEL_VERSION;
-  }
-
-  /** @inheritDoc */
-  async detectFaces(asset: Asset): Promise<DetectedFace[]> {
-    const bytes = await this.imageBytes(asset);
-    if (bytes === null) return [];
-
-    // Decode once in displayed orientation (apply EXIF rotation) so bounding
-    // boxes and crops are in the same frame as metadata.displayWidth/Height.
-    const base = sharp(bytes, { failOn: 'none' })
-      .rotate()
-      .removeAlpha()
-      .toColourspace('srgb');
-    const { data: fullBuf, info } = await base
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-    const full = new Uint8Array(
-      fullBuf.buffer,
-      fullBuf.byteOffset,
-      fullBuf.byteLength
-    );
-    const width = info.width;
-    const height = info.height;
-    if (width === 0 || height === 0) return [];
-
-    const detections = await this.runDetection(full, width, height);
-    if (detections.length === 0) return [];
-
-    const embedSession = await this.session(this.embedModelPath);
-    const faces: DetectedFace[] = [];
-    // Highest-confidence faces first, capped per the inference contract.
-    detections.sort((a, b) => b.score - a.score);
-    for (const det of detections.slice(0, MAX_FACES)) {
-      const face = await this.embedFace(
-        det,
-        full,
-        width,
-        height,
-        embedSession
-      );
-      faces.push(face);
-    }
-    return faces;
   }
 
   /**
@@ -264,7 +217,9 @@ class LocalSyntheticDetector implements SyntheticDetector {
     return kept;
   }
 
-  /** Align, embed, and crop a single detected face into a {@link DetectedFace}. */
+  /**
+  Align, embed, and crop a single detected face into a {@link DetectedFace}.
+  */
   private async embedFace(
     det: RawDetection,
     full: Uint8Array,
@@ -307,9 +262,79 @@ class LocalSyntheticDetector implements SyntheticDetector {
       FACE_MODEL_VERSION
     );
   }
+
+  /**
+  @inheritDoc
+  */
+  async detectLabels(asset: Asset): Promise<string[]> {
+    const bytes = await this.imageBytes(asset);
+    if (bytes === null) return [];
+
+    const input = await preprocessImage(bytes);
+    const session = await this.session(this.labelModelPath);
+    const tensor = new ort.Tensor('float32', input, [1, 3, CROP, CROP]);
+    const results = await session.run({ [session.inputNames[0]!]: tensor });
+    const logits = results[session.outputNames[0]!]!.data as Float32Array;
+    return curateLogits(logits);
+  }
+
+  /**
+  @inheritDoc
+  */
+  faceModelVersion(): string {
+    return FACE_MODEL_VERSION;
+  }
+
+  /**
+  @inheritDoc
+  */
+  async detectFaces(asset: Asset): Promise<DetectedFace[]> {
+    const bytes = await this.imageBytes(asset);
+    if (bytes === null) return [];
+
+    // Decode once in displayed orientation (apply EXIF rotation) so bounding
+    // boxes and crops are in the same frame as metadata.displayWidth/Height.
+    const base = sharp(bytes, { failOn: 'none' })
+      .rotate()
+      .removeAlpha()
+      .toColourspace('srgb');
+    const { data: fullBuf, info } = await base
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const full = new Uint8Array(
+      fullBuf.buffer,
+      fullBuf.byteOffset,
+      fullBuf.byteLength
+    );
+    const width = info.width;
+    const height = info.height;
+    if (width === 0 || height === 0) return [];
+
+    const detections = await this.runDetection(full, width, height);
+    if (detections.length === 0) return [];
+
+    const embedSession = await this.session(this.embedModelPath);
+    const faces: DetectedFace[] = [];
+    // Highest-confidence faces first, capped per the inference contract.
+    detections.sort((a, b) => b.score - a.score);
+    for (const det of detections.slice(0, MAX_FACES)) {
+      const face = await this.embedFace(
+        det,
+        full,
+        width,
+        height,
+        embedSession
+      );
+      faces.push(face);
+    }
+    return faces;
+  }
+
 }
 
-/** Order detector heads by descending anchor count, i.e. stride [8, 16, 32]. */
+/**
+Order detector heads by descending anchor count, i.e. stride [8, 16, 32].
+*/
 function byAnchorsDesc(a: { n: number }, b: { n: number }): number {
   return b.n - a.n;
 }

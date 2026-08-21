@@ -183,7 +183,8 @@ function Pending() {
   const saveButtonClass = createMemo(() => {
     if (updateSubmission.pending) {
       return 'button is-loading';
-    } else if (submittable()) {
+    }
+    if (submittable()) {
       return 'button is-primary';
     }
     return 'button';

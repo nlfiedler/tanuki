@@ -13,7 +13,9 @@ class CircularBuffer<T> {
   tail: number;
   size: number;
 
-  /** Constructs a circular buffer with the given capacity. */
+  /**
+  Constructs a circular buffer with the given capacity.
+  */
   constructor(capacity: number) {
     this.capacity = capacity;
     this.buffer = Array.from({ length: capacity });
@@ -22,7 +24,9 @@ class CircularBuffer<T> {
     this.size = 0;
   }
 
-  /** Adds an element to the buffer. */
+  /**
+  Adds an element to the buffer.
+  */
   enqueue(item: T) {
     this.buffer[this.tail] = item;
     this.tail = (this.tail + 1) % this.capacity;
@@ -33,7 +37,9 @@ class CircularBuffer<T> {
     }
   }
 
-  /** Removes and returns the oldest element from the buffer. */
+  /**
+  Removes and returns the oldest element from the buffer.
+  */
   dequeue(): T | undefined {
     if (this.size === 0) {
       return undefined;
@@ -44,7 +50,9 @@ class CircularBuffer<T> {
     return item;
   }
 
-  /** Returns the oldest element without removing it. */
+  /**
+  Returns the oldest element without removing it.
+  */
   peek() {
     if (this.size === 0) {
       return;
@@ -52,17 +60,23 @@ class CircularBuffer<T> {
     return this.buffer[this.head];
   }
 
-  /** Checks if the buffer is empty. */
+  /**
+  Checks if the buffer is empty.
+  */
   isEmpty() {
     return this.size === 0;
   }
 
-  /** Checks if the buffer is full. */
+  /**
+  Checks if the buffer is full.
+  */
   isFull() {
     return this.size === this.capacity;
   }
 
-  /** Returns the number of elements in the buffer. */
+  /**
+  Returns the number of elements in the buffer.
+  */
   get length() {
     return this.size;
   }

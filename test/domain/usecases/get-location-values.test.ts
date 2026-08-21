@@ -67,16 +67,23 @@ describe('GetLocationValues use case', function () {
     const { labels, cities, regions } = await usecase();
     // assert
     expect(labels).toHaveLength(3);
-    expect(labels.toSorted()).toEqual(['beach', 'hotel', 'museum']);
+    expect(labels.toSorted((a, b) => a.localeCompare(b))).toEqual([
+      'beach',
+      'hotel',
+      'museum'
+    ]);
     expect(cities).toHaveLength(4);
-    expect(cities.toSorted()).toEqual([
+    expect(cities.toSorted((a, b) => a.localeCompare(b))).toEqual([
       'Alameda',
       'Kailua-Kona',
       'Oahu',
       'Oakland'
     ]);
     expect(regions).toHaveLength(2);
-    expect(regions.toSorted()).toEqual(['California', 'Hawaii']);
+    expect(regions.toSorted((a, b) => a.localeCompare(b))).toEqual([
+      'California',
+      'Hawaii'
+    ]);
     expect(mockRecordRepository.rawLocations).toHaveBeenCalledTimes(1);
     mock.clearAllMocks();
   });

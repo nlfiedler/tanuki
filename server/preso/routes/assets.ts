@@ -97,7 +97,6 @@ router.get('/preview/:id', async function (req, res, _next) {
 router.get('/thumbnail/:w/:h/:id', async function (req, res, _next) {
   const width = parsePositiveInt(req.params.w);
   const height = parsePositiveInt(req.params.h);
-  const id = req.params.id;
   if (width === null || height === null) {
     res
       .status(400)
@@ -106,6 +105,7 @@ router.get('/thumbnail/:w/:h/:id', async function (req, res, _next) {
       );
     return;
   }
+  const id = req.params.id;
   try {
     const result = await renderResizedJpeg(blobs.blobPath(id), {
       width,

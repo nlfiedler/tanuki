@@ -35,7 +35,9 @@ export default ({
     return requeued;
   };
 
-  /** Re-enqueue labels jobs for assets whose labels status is FAILED. */
+  /**
+  Re-enqueue labels jobs for assets whose labels status is FAILED.
+  */
   async function retryLabels(): Promise<number> {
     let requeued = 0;
     let cursor = null;
@@ -64,7 +66,9 @@ export default ({
     return requeued;
   }
 
-  /** Re-enqueue faces jobs for assets whose faces status is FAILED. */
+  /**
+  Re-enqueue faces jobs for assets whose faces status is FAILED.
+  */
   async function retryFaces(): Promise<number> {
     let requeued = 0;
     const failed = await faceStore.assetIdsWithFacesStatus(

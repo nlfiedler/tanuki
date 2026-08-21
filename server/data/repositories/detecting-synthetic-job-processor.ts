@@ -57,22 +57,6 @@ class DetectingSyntheticJobProcessor implements SyntheticJobProcessor {
     );
   }
 
-  /** @inheritDoc */
-  async process(job: SyntheticJob): Promise<void> {
-    const asset = await this.recordRepository.getAssetById(job.assetId);
-    if (asset === null) {
-      // asset was deleted before we got to it; nothing to do (don't retry)
-      return;
-    }
-    if (job.kind === 'labels') {
-      await this.processLabels(job.assetId, asset);
-    } else if (job.kind === 'faces') {
-      await this.processFaces(job.assetId, asset);
-    } else {
-      throw new Error(`unsupported synthetic job kind: ${job.kind}`);
-    }
-  }
-
   private async processLabels(assetId: string, asset: Asset): Promise<void> {
     const labels = await this.detector.detectLabels(asset);
     const data = new SyntheticData();
@@ -114,7 +98,7 @@ class DetectingSyntheticJobProcessor implements SyntheticJobProcessor {
     // recording READY with zero faces — which, combined with the
     // deleteByAssetId above, would also have wiped any prior faces and never be
     // revisited by retry/backfill.
-    if (detected.length > 0 && persisted === 0) {
+    if (persisted === 0 && detected.length > 0) {
       throw new Error(
         `failed to persist any of ${detected.length} detected faces for asset ${assetId}`
       );
@@ -122,7 +106,9 @@ class DetectingSyntheticJobProcessor implements SyntheticJobProcessor {
     await this.faceStore.setFacesStatus(assetId, SyntheticStatus.READY);
   }
 
-  /** Cluster one detected face into a person and store it. */
+  /**
+  Cluster one detected face into a person and store it.
+  */
   private async persistFace(
     assetId: string,
     detected: DetectedFace
@@ -149,6 +135,24 @@ class DetectingSyntheticJobProcessor implements SyntheticJobProcessor {
       detected.score
     );
     await this.faceStore.insertFace(face);
+  }
+
+  /**
+  @inheritDoc
+  */
+  async process(job: SyntheticJob): Promise<void> {
+    const asset = await this.recordRepository.getAssetById(job.assetId);
+    if (asset === null) {
+      // asset was deleted before we got to it; nothing to do (don't retry)
+      return;
+    }
+    if (job.kind === 'labels') {
+      await this.processLabels(job.assetId, asset);
+    } else if (job.kind === 'faces') {
+      await this.processFaces(job.assetId, asset);
+    } else {
+      throw new Error(`unsupported synthetic job kind: ${job.kind}`);
+    }
   }
 }
 

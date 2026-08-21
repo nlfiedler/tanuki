@@ -140,7 +140,9 @@ const SET_THUMBNAIL: TypedDocumentNode<
   }
 `;
 
-/** Display name for a person, falling back to a placeholder when unnamed. */
+/**
+Display name for a person, falling back to a placeholder when unnamed.
+*/
 function displayName(name: string | null | undefined): string {
   return name && name.length > 0 ? name : 'Unnamed';
 }
@@ -158,13 +160,21 @@ function focusOnMount(el: HTMLInputElement): void {
 }
 
 interface InlineRenameProps {
-  /** Current name (null/undefined = unnamed). */
+  /**
+  Current name (null/undefined = unnamed).
+  */
   name: string | null | undefined;
-  /** Commit handler; receives the trimmed name, or null to clear. */
+  /**
+  Commit handler; receives the trimmed name, or null to clear.
+  */
   onRename: (name: string | null) => void;
-  /** Bulma size class for the input (e.g. `input` or `input is-small`). */
+  /**
+  Bulma size class for the input (e.g. `input` or `input is-small`).
+  */
   inputClass: string;
-  /** Renders the non-editing trigger; call `start` to enter edit mode. */
+  /**
+  Renders the non-editing trigger; call `start` to enter edit mode.
+  */
   children: (start: (e: MouseEvent) => void) => JSX.Element;
 }
 
@@ -200,7 +210,7 @@ function InlineRename(props: InlineRenameProps) {
         onBlur={commit}
         onKeyDown={(e) => {
           if (e.key === 'Enter') commit();
-          if (e.key === 'Escape') setEditing(false);
+          else if (e.key === 'Escape') setEditing(false);
         }}
       />
     </Show>

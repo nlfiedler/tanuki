@@ -8,11 +8,17 @@
  * terminal value.
  */
 enum SyntheticStatus {
-  /** No worker has finished processing the asset yet. */
+  /**
+  No worker has finished processing the asset yet.
+  */
   PENDING = 'PENDING',
-  /** Synthetic data has been extracted and stored. */
+  /**
+  Synthetic data has been extracted and stored.
+  */
   READY = 'READY',
-  /** All retry attempts failed; operator action required. */
+  /**
+  All retry attempts failed; operator action required.
+  */
   FAILED = 'FAILED'
 }
 
@@ -23,7 +29,9 @@ enum SyntheticStatus {
  * store at query time, so this entity does not carry it.
  */
 class SyntheticData {
-  /** Curated display labels (post-curation), ordered by descending score. */
+  /**
+  Curated display labels (post-curation), ordered by descending score.
+  */
   labels: string[] = [];
   /**
    * Top label, denormalized for fast queries on `assets-by-primary-label`.
@@ -31,7 +39,9 @@ class SyntheticData {
    */
   primaryLabel: string | null = null;
 
-  /** Returns true if any label or a primary label is present. */
+  /**
+  Returns true if any label or a primary label is present.
+  */
   hasValues(): boolean {
     return this.labels.length > 0 || this.primaryLabel !== null;
   }

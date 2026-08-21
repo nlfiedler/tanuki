@@ -15,19 +15,33 @@ type JobKind = 'labels' | 'faces';
  * failure (with `attempts` incremented).
  */
 class SyntheticJob {
-  /** Auto-increment row id; assigned by the store on enqueue. */
+  /**
+  Auto-increment row id; assigned by the store on enqueue.
+  */
   id: number;
-  /** Asset the job operates on. No FK — the asset lives in another store. */
+  /**
+  Asset the job operates on. No FK — the asset lives in another store.
+  */
   assetId: string;
-  /** Pipeline to run. */
+  /**
+  Pipeline to run.
+  */
   kind: JobKind;
-  /** Higher runs first; live imports use 10, backfill uses 0. */
+  /**
+  Higher runs first; live imports use 10, backfill uses 0.
+  */
   priority: number;
-  /** Number of times this job has already failed and been re-enqueued. */
+  /**
+  Number of times this job has already failed and been re-enqueued.
+  */
   attempts: number;
-  /** Message from the most recent failure, or null if never failed. */
+  /**
+  Message from the most recent failure, or null if never failed.
+  */
   lastError: string | null;
-  /** Epoch seconds when the (current incarnation of the) job was enqueued. */
+  /**
+  Epoch seconds when the (current incarnation of the) job was enqueued.
+  */
   enqueuedAt: number;
 
   constructor(
@@ -56,15 +70,25 @@ class SyntheticJob {
  * these rows.
  */
 class Person {
-  /** Opaque UUID. */
+  /**
+  Opaque UUID.
+  */
   id: string;
-  /** User-assigned display name, or null if unnamed. */
+  /**
+  User-assigned display name, or null if unnamed.
+  */
   name: string | null;
-  /** `Face.id` chosen as the representative thumbnail, or null. */
+  /**
+  `Face.id` chosen as the representative thumbnail, or null.
+  */
   thumbnailFace: string | null;
-  /** True when excluded from the People page. */
+  /**
+  True when excluded from the People page.
+  */
   hidden: boolean;
-  /** Epoch seconds when the person row was created. */
+  /**
+  Epoch seconds when the person row was created.
+  */
   createdAt: number;
 
   constructor(
@@ -89,21 +113,37 @@ class Person {
  * these rows.
  */
 class Face {
-  /** Opaque id. */
+  /**
+  Opaque id.
+  */
   id: string;
-  /** Asset the face was detected in (no SQL FK; cross-store reference). */
+  /**
+  Asset the face was detected in (no SQL FK; cross-store reference).
+  */
   assetId: string;
-  /** Owning person cluster, or null if unassigned. */
+  /**
+  Owning person cluster, or null if unassigned.
+  */
   personId: string | null;
-  /** Bounding box `[x, y, w, h]` in displayed-orientation pixels. */
+  /**
+  Bounding box `[x, y, w, h]` in displayed-orientation pixels.
+  */
   bbox: [number, number, number, number];
-  /** L2-normalized embedding (512 floats for MobileFaceNet). */
+  /**
+  L2-normalized embedding (512 floats for MobileFaceNet).
+  */
   embedding: Float32Array;
-  /** ~128px JPEG of the aligned face crop. */
+  /**
+  ~128px JPEG of the aligned face crop.
+  */
   thumbnail: Uint8Array;
-  /** Detector confidence, or null. */
+  /**
+  Detector confidence, or null.
+  */
   detectorScore: number | null;
-  /** Model that produced the embedding, e.g. `mobilefacenet-v1`. */
+  /**
+  Model that produced the embedding, e.g. `mobilefacenet-v1`.
+  */
   modelVersion: string;
 
   constructor(
@@ -133,15 +173,25 @@ class Face {
  * assignment yet — the job processor mints those when it stores the face.
  */
 class DetectedFace {
-  /** Bounding box `[x, y, w, h]` in displayed-orientation pixels. */
+  /**
+  Bounding box `[x, y, w, h]` in displayed-orientation pixels.
+  */
   bbox: [number, number, number, number];
-  /** L2-normalized embedding (512 floats for MobileFaceNet). */
+  /**
+  L2-normalized embedding (512 floats for MobileFaceNet).
+  */
   embedding: Float32Array;
-  /** ~128px JPEG of the aligned face crop. */
+  /**
+  ~128px JPEG of the aligned face crop.
+  */
   thumbnail: Uint8Array;
-  /** Detector confidence in `[0, 1]`. */
+  /**
+  Detector confidence in `[0, 1]`.
+  */
   score: number;
-  /** Model that produced the embedding, e.g. `mobilefacenet-v1`. */
+  /**
+  Model that produced the embedding, e.g. `mobilefacenet-v1`.
+  */
   modelVersion: string;
 
   constructor(

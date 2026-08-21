@@ -15,15 +15,15 @@ describe('MobileNetV2 preprocessing', function () {
 
     expect(tensor.length).toEqual(3 * CROP * CROP);
     // every value is finite and lands in a plausible post-normalization band
-    let min = Number.POSITIVE_INFINITY;
-    let max = Number.NEGATIVE_INFINITY;
-    let allFinite = true;
+    let min = Infinity;
+    let max = -Infinity;
+    let isAllFinite = true;
     for (const v of tensor) {
-      if (!Number.isFinite(v)) allFinite = false;
+      if (!Number.isFinite(v)) isAllFinite = false;
       if (v < min) min = v;
       if (v > max) max = v;
     }
-    expect(allFinite).toBe(true);
+    expect(isAllFinite).toBe(true);
     // ImageNet normalization pushes values roughly into [-2.2, 2.7]
     expect(min).toBeGreaterThan(-3);
     expect(max).toBeLessThan(3);

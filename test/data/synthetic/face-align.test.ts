@@ -11,7 +11,9 @@ import {
   warpAffineBilinear
 } from 'tanuki/server/data/synthetic/face-align.ts';
 
-/** Apply a 2×3 affine to a point. */
+/**
+Apply a 2×3 affine to a point.
+*/
 function apply(m: Affine, x: number, y: number): [number, number] {
   return [m[0][0] * x + m[0][1] * y + m[0][2], m[1][0] * x + m[1][1] * y + m[1][2]];
 }
@@ -118,8 +120,8 @@ describe('arcfacePreprocess', function () {
     const t = arcfacePreprocess(rgb);
     expect(t).toHaveLength(3 * 112 * 112);
     // (128 - 127.5) / 128 = 0.00390625 for every channel
-    expect(t[0]).toBeCloseTo(0.003_906_25, 6);
-    expect(t[112 * 112]).toBeCloseTo(0.003_906_25, 6);
+    expect(t[0]).toBeCloseTo(0.00390625, 6);
+    expect(t[112 * 112]).toBeCloseTo(0.00390625, 6);
   });
 });
 

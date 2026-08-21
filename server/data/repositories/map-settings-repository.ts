@@ -7,10 +7,10 @@ import { type SettingsRepository } from 'tanuki/server/domain/repositories/setti
  * Implementation of the settings repository backed by a Map.
  */
 class MapSettingsRepository implements SettingsRepository {
-  _props: Map<string, any>;
+  #props: Map<string, any>;
 
   constructor() {
-    this._props = new Map();
+    this.#props = new Map();
   }
 
   /**
@@ -19,48 +19,64 @@ class MapSettingsRepository implements SettingsRepository {
    * @returns iterator of name/value pairs.
    */
   entries(): object {
-    return this._props.entries();
+    return this.#props.entries();
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   get(name: string): any {
-    return this._props.get(name);
+    return this.#props.get(name);
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   getBool(name: string): boolean {
-    return /true/i.test(this._props.get(name));
+    return /true/i.test(this.#props.get(name));
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   getInt(name: string, fallback: number): number {
-    return Number.parseInt(this._props.get(name), 10) || fallback;
+    return Math.trunc(Number(this.#props.get(name))) || fallback;
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   getFloat(name: string, fallback: number): number {
-    const value = Number.parseFloat(this._props.get(name));
+    const value = Number(this.#props.get(name));
     return Number.isNaN(value) ? fallback : value;
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   has(name: string): boolean {
-    return this._props.has(name);
+    return this.#props.has(name);
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   set(name: string, value: any): void {
-    this._props.set(name, value);
+    this.#props.set(name, value);
   }
 
-  /** @inheritdoc */
+  /**
+  @inheritdoc
+  */
   delete(name: string): void {
-    this._props.delete(name);
+    this.#props.delete(name);
   }
 
-  /** Removes all elements from the underlying map. */
+  /**
+  Removes all elements from the underlying map.
+  */
   clear(): void {
-    this._props.clear();
+    this.#props.clear();
   }
 }
 

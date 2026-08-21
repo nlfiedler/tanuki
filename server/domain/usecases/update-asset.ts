@@ -36,14 +36,18 @@ export default ({
   };
 };
 
-/** Modify the given asset using the values from the asset input. */
+/**
+Modify the given asset using the values from the asset input.
+*/
 function mergeAssetInput(asset: Asset, assetInput: AssetInput) {
   if (Array.isArray(assetInput.tags)) {
     // incoming tags replace existing tags, even if the are none
     const nonEmpty = assetInput.tags
       .map((e: string) => e.trim())
       .filter((e: string) => e.length > 0);
-    asset.tags = Array.from<string>(new Set(nonEmpty)).sort();
+    asset.tags = Array.from<string>(new Set(nonEmpty)).sort((a, b) =>
+      a.localeCompare(b)
+    );
   }
   if (assetInput.filename && assetInput.filename.length > 0) {
     asset.filename = assetInput.filename;
@@ -59,7 +63,9 @@ function mergeAssetInput(asset: Asset, assetInput: AssetInput) {
     const { tags, location } = helpers.parseCaption(assetInput.caption);
     // tags in the caption are merged with the asset/input tags
     const alltags = asset.tags.concat(tags);
-    asset.tags = Array.from<string>(new Set(alltags)).sort();
+    asset.tags = Array.from<string>(new Set(alltags)).sort((a, b) =>
+      a.localeCompare(b)
+    );
     if (!asset.location?.hasValues()) {
       // do not overwrite current location if it is already set
       asset.location = location;

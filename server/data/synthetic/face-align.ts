@@ -13,7 +13,9 @@ export const ARCFACE_TEMPLATE: number[] = [
   70.7299, 92.2041
 ];
 
-/** Side length of the aligned face crop (the ArcFace input size). */
+/**
+Side length of the aligned face crop (the ArcFace input size).
+*/
 export const FACE_CROP = 112;
 
 /**
@@ -25,7 +27,9 @@ export const FACE_CROP = 112;
  */
 export const FACE_MODEL_VERSION = 'mobilefacenet-v1';
 
-/** A 2×3 affine transform `[[a, b, c], [d, e, f]]`. */
+/**
+A 2×3 affine transform `[[a, b, c], [d, e, f]]`.
+*/
 export type Affine = [[number, number, number], [number, number, number]];
 
 /**
@@ -86,7 +90,9 @@ export function estimateSimilarityTransform(
   ];
 }
 
-/** Invert a 2×3 affine transform. Throws if the linear part is singular. */
+/**
+Invert a 2×3 affine transform. Throws if the linear part is singular.
+*/
 export function invertAffine(m: Affine): Affine {
   const [[a, b, c], [d, e, f]] = m;
   const det = a * e - b * d;
@@ -154,7 +160,9 @@ export function warpAffineBilinear(
   return out;
 }
 
-/** Constrain `v` to the inclusive range `[lo, hi]`. */
+/**
+Constrain `v` to the inclusive range `[lo, hi]`.
+*/
 export function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : Math.min(v, hi);
 }

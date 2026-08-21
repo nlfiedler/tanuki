@@ -9,33 +9,61 @@ import { SyntheticData, SyntheticStatus } from './synthetic-data.ts';
  * Asset entity represents an image, video, or other file in the system.
  */
 class Asset {
-  /** The unique identifier of the asset. */
+  /**
+  The unique identifier of the asset.
+  */
   key: string;
-  /** Hash digest of the asset contents. */
+  /**
+  Hash digest of the asset contents.
+  */
   checksum: string;
-  /** Original filename of the asset. */
+  /**
+  Original filename of the asset.
+  */
   filename: string;
-  /** Size of the asset in bytes. */
+  /**
+  Size of the asset in bytes.
+  */
   byteLength: number;
-  /** Media type (formerly MIME type) of the asset. */
+  /**
+  Media type (formerly MIME type) of the asset.
+  */
   mediaType: string;
-  /** Set of user-assigned labels for the asset. */
+  /**
+  Set of user-assigned labels for the asset.
+  */
   tags: string[];
-  /** Date when the asset was imported. */
+  /**
+  Date when the asset was imported.
+  */
   importDate: Date;
-  /** Caption provided by the user. */
+  /**
+  Caption provided by the user.
+  */
   caption: string | null;
-  /** Location information for the asset. */
+  /**
+  Location information for the asset.
+  */
   location: Location | null;
-  /** User-specified date of the asset. */
+  /**
+  User-specified date of the asset.
+  */
   userDate: Date | null;
-  /** Date of the asset as extracted from metadata. */
+  /**
+  Date of the asset as extracted from metadata.
+  */
   originalDate: Date | null;
-  /** Intrinsic metadata extracted from the asset file (EXIF, ffprobe). */
+  /**
+  Intrinsic metadata extracted from the asset file (EXIF, ffprobe).
+  */
   metadata: AssetMetadata | null;
-  /** ML-derived synthetic data (labels, etc.); null until extraction completes. */
+  /**
+  ML-derived synthetic data (labels, etc.); null until extraction completes.
+  */
   synthetic: SyntheticData | null;
-  /** Progress of synthetic-data extraction; defaults to PENDING. */
+  /**
+  Progress of synthetic-data extraction; defaults to PENDING.
+  */
   syntheticStatus: SyntheticStatus;
 
   constructor(key: string) {
@@ -65,7 +93,8 @@ class Asset {
   bestDate(): Date {
     if (this.userDate !== null) {
       return this.userDate;
-    } else if (this.originalDate !== null) {
+    }
+    if (this.originalDate !== null) {
       return this.originalDate;
     }
     return this.importDate;
@@ -151,7 +180,9 @@ class Asset {
  * AssetInput captures changes to be made to an existing asset entity.
  */
 class AssetInput {
-  /** Identifier for the asset to be updated. */
+  /**
+  Identifier for the asset to be updated.
+  */
   key: string;
   /**
    * Any values here will replace the existing values, and are sorted and
@@ -171,11 +202,17 @@ class AssetInput {
    * precedence over any @location value in the caption.
    */
   location: Location | null;
-  /** Any value here overwrites the user-defined date. */
+  /**
+  Any value here overwrites the user-defined date.
+  */
   datetime: Date | null;
-  /** Any value here overwrites the media_type property. */
+  /**
+  Any value here overwrites the media_type property.
+  */
   mediaType: string | null;
-  /** Any value here overwrites the filename property. */
+  /**
+  Any value here overwrites the filename property.
+  */
   filename: string | null;
 
   constructor(key: string) {
@@ -188,7 +225,9 @@ class AssetInput {
     this.filename = '';
   }
 
-  /** Return `true` if any of the fields have a value. */
+  /**
+  Return `true` if any of the fields have a value.
+  */
   hasValues(): boolean {
     return (
       (this.tags !== null && this.tags.length > 0) ||
