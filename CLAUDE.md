@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Tanuki is a digital asset management application for organizing images, videos, and other files. It stores assets unmodified in a date-time directory structure, with metadata (tags, location, dates) in a pluggable database. The server is TypeScript on Bun with Express + Apollo GraphQL; the client is SolidJS.
+Tanuki is a digital asset management application for organizing images, videos, and other files. It stores assets unmodified in a date-time directory structure, with metadata (tags, location, dates) in a pluggable database.
 
 ## Commands
 
