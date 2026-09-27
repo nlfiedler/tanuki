@@ -115,3 +115,7 @@ After eight years, realized that Base64 enocoded identifiers are not URL-safe, m
 ## March 2026
 
 Added [PouchDB](https://pouchdb.com) support (again) as an alternative to CouchDB and SQLite.
+
+## May 2026
+
+Added image classification and face recognition with the face and person data stored in an SQLite database.

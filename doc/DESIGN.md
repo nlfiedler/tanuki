@@ -43,3 +43,7 @@ In previous versions of the application, assets were stored in a directory struc
 The generated identifiers are long, averaging about 62 characters (`MjAyNS8xMS8yOS8yMzAwLzAxa2I5c2Y2NmEwOHgxanZ4M2pjZ2E0amZqLmpwZw` is a typical value), which is much longer than a ULID (16 bytes in base-32 encoded form is 26 characters). This consumes more disk space in the B-tree database in both the primary table and in the secondary indices. The value is time-oriented which results in new records being added to the end of the database, which is generally good. Aside from the length, the keys are adequate considering the anticipated number of database records (tens of thousands versus millions).
 
 The files are renamed, which might be a bother to some people. In many cases, the file names are largely irrelevant, as most are of the form `IMG_1234.JPG`. In other cases, the names are something ridiculous, like `20150419171116-63EK7JXWKEVMDJVV-P1510081.jpg`, which encodes a date-time and some seemingly random sequence of letters and numbers. The good news is the original file name is recorded in the database.
+
+## Synthetic Data
+
+The synthetic data features, particularly the face recognition, utilize an SQLite database whose path is identified by the `FACE_STORE_PATH` environment variable. See the [MODELS.md](./MODELS.md) document and [specification](./specs/0004-synthetic-data.md) for details.
