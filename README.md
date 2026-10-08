@@ -103,7 +103,7 @@ The application can be configured with a `.env` file thanks to Bun and [dotenv](
 
 As such, it is preferable to create a `.env.development` file which Bun will _not_ read when running the unit tests.
 
-See [doc/DEPLOY.md](doc/DEPLOY.md) for deployment guidance, including the multiple stores involved, backups, and where machine-learning inference runs.
+See [docs/DEPLOY.md](docs/DEPLOY.md) for deployment guidance, including the multiple stores involved, backups, and where machine-learning inference runs.
 
 ## Origin of the name
 

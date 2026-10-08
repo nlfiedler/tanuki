@@ -1,10 +1,4 @@
 * Action Items
-** TODO PDF support
-*** there is a single PDF file that is a mini-book by Christina
-*** probably need the webui to recognize the =application/pdf= and show appropriately, not fetch a thumbnail
-*** tanuki and namazu should generate a thumbnail for PDF files
-** TODO SVG support
-*** tanuki and namazu should generate a thumbnail for SVG files
 ** TODO (better) audio support
 *** extract metadata (=ID3= tags?), populate database
 ** Albums
